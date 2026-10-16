@@ -55,10 +55,10 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
 
   useLayoutEffect(() => {
     if (!open) { setPos(null); return }
-    const a = anchor.current, t = tip.current
-    if (!a || !t) return
+    const a = anchor.current, item = tip.current
+    if (!a || !item) return
     const r = a.getBoundingClientRect()
-    const w = t.offsetWidth, h = t.offsetHeight
+    const w = item.offsetWidth, h = item.offsetHeight
     const vw = document.documentElement.clientWidth, vh = window.innerHeight
     if (side === 'right') {
       // Beside the control (the collapsed sidebar's icon rail); falls back below it at the viewport's edge.

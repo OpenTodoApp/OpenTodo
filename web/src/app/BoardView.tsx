@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useWide } from './overlay'
 import type { Label, Project, Section, Task } from '../lib/types'
 import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
+import { t } from '../lib/i18n'
 
 export interface BoardColumn {
   /** Section id, or '' for "No section". */
@@ -32,7 +33,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
   onCurrentColumn?: (name: string | null) => void
 }) {
   const sections = columns.filter((c) => c.section)
-  const names = columns.map((col) => (col.section ? col.section.name || 'Untitled section' : 'No section'))
+  const names = columns.map((col) => (col.section ? col.section.name || t('Untitled section') : t('No section')))
   // Phones (below 640 px): columns are 88 % of the screen with snapping; a dot pager
   // follows the scroll position and the current column's name goes to the page bar.
   const wide = useWide()
@@ -57,9 +58,9 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
     <>
     {!wide && columns.length > 1 && (
       <div className="mb-2 flex items-center justify-center gap-2" data-board-pager>
-        <span className="sr-only" aria-live="polite">{`Column ${current + 1} of ${columns.length}: ${names[current]}`}</span>
+        <span className="sr-only" aria-live="polite">{t('Column {n} of {count}: {name}', { n: current + 1, count: columns.length, name: names[current] })}</span>
         {columns.map((col, i) => (
-          <button key={col.key || 'none'} type="button" onClick={() => goTo(i)} aria-label={`${names[i]}, column ${i + 1} of ${columns.length}`} aria-current={i === current ? 'true' : undefined}
+          <button key={col.key || 'none'} type="button" onClick={() => goTo(i)} aria-label={t('{name}, column {n} of {count}', { name: names[i], n: i + 1, count: columns.length })} aria-current={i === current ? 'true' : undefined}
             className="touch-target flex items-center justify-center" data-board-dot={i === current ? 'current' : ''}>
             <span aria-hidden="true" className={`block h-2 w-2 rounded-full ${i === current ? 'bg-accent' : 'bg-faint'}`} />
           </button>
@@ -69,13 +70,13 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
     <div ref={scroller} onScroll={wide ? undefined : onScroll} className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
       {columns.map((col) => {
         const idx = sections.findIndex((c) => c.key === col.key)
-        const name = col.section ? col.section.name || 'Untitled section' : 'No section'
+        const name = col.section ? col.section.name || t('Untitled section') : t('No section')
         return (
           <section
             key={col.key || 'none'}
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
-            aria-label={`${name}, ${col.cards.length} open ${col.cards.length === 1 ? 'task' : 'tasks'}`}
+            aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: col.cards.length })}
             className="flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken data-drop-active:ring-2 data-drop-active:ring-accent sm:w-72 sm:max-w-72"
           >
             <SectionHeader
@@ -88,7 +89,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               onAdd={() => setAddingTo(col.key)}
             />
             <ul className="min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
-              {col.cards.map((t) => renderCard(t))}
+              {col.cards.map((tk) => renderCard(tk))}
             </ul>
             {addingTo === col.key && editable && (
               <SectionQuickAdd project={project} sectionId={col.key || null} sectionName={name} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />

@@ -10,6 +10,7 @@ import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { setPageBar } from './pageBar'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
+import { t } from '../../lib/i18n'
 
 export type PageWidth = 'list' | 'form' | 'full'
 
@@ -124,11 +125,11 @@ export function PageActions({ actions, overflow, menu, help }: Pick<PageHeaderPr
       {actions}
       {menu}
       {overflow && (
-        <Menu kind="menu" label="More actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
+        <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
           {overflow}
         </Menu>
       )}
-      {help && <IconButton icon="circle-help" label="Help" size="sm" data-help-screen={help} aria-haspopup="dialog" onClick={(e) => openHelp(help, e.currentTarget)} />}
+      {help && <IconButton icon="circle-help" label={t('Help')} size="sm" data-help-screen={help} aria-haspopup="dialog" onClick={(e) => openHelp(help, e.currentTarget)} />}
     </>
   )
 }

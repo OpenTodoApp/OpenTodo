@@ -7,6 +7,7 @@ import { compareByPosition } from '../../lib/ordering'
 import type { Project } from '../../lib/types'
 import { taskDefaults } from '../listActions'
 import type { Route } from '../router'
+import { t, msg } from '../../lib/i18n'
 
 export interface CommandSpec {
   name: string
@@ -15,17 +16,17 @@ export interface CommandSpec {
 }
 
 export const COMMANDS: CommandSpec[] = [
-  { name: 'inbox', desc: 'Go to the Inbox' },
-  { name: 'today', desc: 'Go to Today' },
-  { name: 'upcoming', desc: 'Go to Upcoming' },
-  { name: 'completed', desc: 'Go to Completed' },
-  { name: 'settings', desc: 'Go to Settings' },
-  { name: 'project', arg: '<name>', desc: 'Go to the first project whose name starts with <name>' },
-  { name: 'new', arg: '<title>', desc: 'Create a task with the current view’s defaults (project, date, label)' },
-  { name: 'triage', desc: 'Process the Inbox one task at a time' },
-  { name: 'q', desc: 'Close the task panel, else clear the selection; in triage, leave it' },
-  { name: 'sync', desc: 'Sync now' },
-  { name: 'help', arg: '[topic]', desc: 'Show the keyboard shortcuts; with a topic, open Help on it (:help board)' },
+  { name: 'inbox', desc: msg('Go to the Inbox') },
+  { name: 'today', desc: msg('Go to Today') },
+  { name: 'upcoming', desc: msg('Go to Upcoming') },
+  { name: 'completed', desc: msg('Go to Completed') },
+  { name: 'settings', desc: msg('Go to Settings') },
+  { name: 'project', arg: '<name>', desc: msg('Go to the first project whose name starts with {arg}') },
+  { name: 'new', arg: '<title>', desc: msg('Create a task with the current view’s defaults (project, date, label)') },
+  { name: 'triage', desc: msg('Process the Inbox one task at a time') },
+  { name: 'q', desc: msg('Close the task panel, else clear the selection; in triage, leave it') },
+  { name: 'sync', desc: msg('Sync now') },
+  { name: 'help', arg: '[topic]', desc: msg('Show the keyboard shortcuts; with a topic, open Help on it (:help board)') },
 ]
 
 function split(input: string): { name: string; arg: string; spaced: boolean } {
@@ -78,7 +79,7 @@ export async function runCommand(input: string, ctx: CommandContext): Promise<Co
   const { name, arg } = split(input)
   if (!name) return { ok: true }
   const spec = resolveCommand(name)
-  if (!spec) return { ok: false, message: `Unknown command: ${name}` }
+  if (!spec) return { ok: false, message: t('Unknown command: {name}', { name }) }
   switch (spec.name) {
     case 'inbox':
     case 'today':
@@ -88,14 +89,14 @@ export async function runCommand(input: string, ctx: CommandContext): Promise<Co
       ctx.navigate({ view: spec.name })
       return { ok: true }
     case 'project': {
-      if (!arg) return { ok: false, message: 'Usage: project <name>' }
+      if (!arg) return { ok: false, message: t('Usage: {usage}', { usage: 'project <name>' }) }
       const p = matchProjects(arg, ctx.projects)[0]
-      if (!p) return { ok: false, message: `No project starts with "${arg}"` }
+      if (!p) return { ok: false, message: t('No project starts with "{name}"', { name: arg }) }
       ctx.navigate({ view: 'project', id: p.id })
       return { ok: true }
     }
     case 'new': {
-      if (!arg) return { ok: false, message: 'Usage: new <title>' }
+      if (!arg) return { ok: false, message: t('Usage: {usage}', { usage: 'new <title>' }) }
       await createTask({ ...taskDefaults(ctx.route, ctx.today, ctx.userId), title: arg })
       return { ok: true }
     }
@@ -113,5 +114,5 @@ export async function runCommand(input: string, ctx: CommandContext): Promise<Co
       else ctx.help()
       return { ok: true }
   }
-  return { ok: false, message: `Unknown command: ${name}` }
+  return { ok: false, message: t('Unknown command: {name}', { name }) }
 }

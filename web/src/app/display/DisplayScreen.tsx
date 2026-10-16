@@ -30,6 +30,7 @@ import { Clock, useNow } from './Clock'
 import { DisplayColumn, type DisplayRowData } from './DisplayColumn'
 import { defaultDays, type DisplayTarget } from './displayOptions'
 import { useDisplayKeys, useRootPresentation, useWakeLock } from './displayHooks'
+import { t } from '../../lib/i18n'
 
 export type DisplayRoute = Extract<Route, { view: 'display' }>
 
@@ -63,11 +64,11 @@ export function normalRoute(target: DisplayTarget): Route {
 
 /** "Last synced 5 min ago", from the sync snapshot and the clock. */
 export function lastSyncedLabel(lastSyncedAt: number | null, now: number): string {
-  if (lastSyncedAt === null) return 'Not synced since this screen opened'
+  if (lastSyncedAt === null) return t('Not synced since this screen opened')
   const min = Math.floor(Math.max(0, now - lastSyncedAt) / 60_000)
-  if (min < 1) return 'Last synced just now'
-  if (min < 60) return `Last synced ${min} min ago`
-  return `Last synced ${Math.floor(min / 60)} h ago`
+  if (min < 1) return t('Last synced just now')
+  if (min < 60) return t('Last synced {m} min ago', { m: min })
+  return t('Last synced {h} h ago', { h: Math.floor(min / 60) })
 }
 
 export function DisplayScreen({ route }: { route: DisplayRoute }) {
@@ -89,7 +90,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
     () => (projectId ? db.sections.where('project_id').equals(projectId).toArray() : Promise.resolve([] as Section[])), [projectId], [] as Section[],
   )
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
-  const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks])
+  const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
 
   const content = useMemo<Content | null>(() => {
@@ -98,67 +99,67 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
     const all = withoutArchived(tasks, live, projectId ?? undefined)
 
     /** A due label without what the heading already says (today in Today, the column's day). */
-    const dueLabel = (t: Task, day?: string): string | null => {
-      if (!t.due) return null
-      const local = localDueOf(t.due)
+    const dueLabel = (tk: Task, day?: string): string | null => {
+      if (!tk.due) return null
+      const local = localDueOf(tk.due)
       if (local.date === (day ?? today)) return local.time ? formatTime(local.time, dt.resolved) : null
-      return describeDue(t.due, today, undefined, dt.resolved)?.label ?? null
+      return describeDue(tk.due, today, undefined, dt.resolved)?.label ?? null
     }
-    const toRow = (t: Task, group: string, o: { day?: string; depth?: number } = {}): DisplayRowData => {
-      const shared = !!t.project_id && memberMap.has(t.project_id)
-      const assignee = shared && t.assignee_id ? memberName(t.assignee_id, memberMap) : null
-      const parent = !o.depth && t.parent_id ? breadcrumbOf(t, taskMap) : null
-      const due = dueLabel(t, o.day)
+    const toRow = (tVar: Task, group: string, o: { day?: string; depth?: number } = {}): DisplayRowData => {
+      const shared = !!tVar.project_id && memberMap.has(tVar.project_id)
+      const assignee = shared && tVar.assignee_id ? memberName(tVar.assignee_id, memberMap) : null
+      const parent = !o.depth && tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null
+      const due = dueLabel(tVar, o.day)
       return {
-        key: `${group}:${t.id}`, id: t.id, title: t.title, done: t.completed_at !== null, priority: t.priority, due,
-        overdue: !!t.due && localDueOf(t.due).date < today, context: [parent, assignee].filter(Boolean).join(' · ') || null,
-        depth: o.depth, editable: canEditTask(t, memberMap),
+        key: `${group}:${tVar.id}`, id: tVar.id, title: tVar.title, done: tVar.completed_at !== null, priority: tVar.priority, due,
+        overdue: !!tVar.due && localDueOf(tVar.due).date < today, context: [parent, assignee].filter(Boolean).join(' · ') || null,
+        depth: o.depth, editable: canEditTask(tVar, memberMap),
       }
     }
     const columns = (days: number): Group[] => nextDays(all, today, days).map(({ date, tasks: list }) => ({
-      id: date, heading: dt.formatDate(date, 'heading'), rows: list.map((t) => toRow(t, date, { day: date })), empty: 'Nothing planned',
+      id: date, heading: dt.formatDate(date, 'heading'), rows: list.map((tVar) => toRow(tVar, date, { day: date })), empty: t('Nothing planned'),
     }))
 
     switch (target.kind) {
       case 'today': {
         const g = groupToday(todayList(all, today), today, blocked)
         const groups: Group[] = [
-          { id: 'overdue', heading: 'Overdue', rows: g.overdue.map((t) => toRow(t, 'overdue')) },
-          { id: 'today', heading: 'Today', rows: g.day.map((t) => toRow(t, 'today')), empty: g.overdue.length || g.evening.length ? undefined : 'Nothing left for today' },
-          { id: 'evening', heading: 'This Evening', rows: g.evening.map((t) => toRow(t, 'evening')) },
-          { id: 'blocked', heading: 'Blocked', rows: g.blocked.map((t) => toRow(t, 'blocked')) },
-          { id: 'done', heading: 'Done today', rows: completedOn(all, today).map((t) => toRow(t, 'done')) },
+          { id: 'overdue', heading: t('Overdue'), rows: g.overdue.map((tVar) => toRow(tVar, 'overdue')) },
+          { id: 'today', heading: t('Today'), rows: g.day.map((tVar) => toRow(tVar, 'today')), empty: g.overdue.length || g.evening.length ? undefined : t('Nothing left for today') },
+          { id: 'evening', heading: t('This Evening'), rows: g.evening.map((tVar) => toRow(tVar, 'evening')) },
+          { id: 'blocked', heading: t('Blocked'), rows: g.blocked.map((tVar) => toRow(tVar, 'blocked')) },
+          { id: 'done', heading: t('Done today'), rows: completedOn(all, today).map((tVar) => toRow(tVar, 'done')) },
         ]
-        return { title: 'Today', groups, columns: columns(options.days ?? defaultDays(target)) }
+        return { title: t('Today'), groups, columns: columns(options.days ?? defaultDays(target)) }
       }
       case 'upcoming':
-        return { title: 'Upcoming', groups: [], columns: columns(options.days ?? defaultDays(target)) }
+        return { title: t('Upcoming'), groups: [], columns: columns(options.days ?? defaultDays(target)) }
       case 'project': {
         const project = live.find((p) => p.id === target.id)
-        if (!project) return { title: 'Project', missing: { message: 'This project no longer exists.' }, groups: [], columns: [] }
+        if (!project) return { title: t('Project'), missing: { message: t('This project no longer exists.') }, groups: [], columns: [] }
         const open = projectOpenList(all, project.id)
-        const later = open.filter((t) => inLater(t, today))
-        const tree = buildTaskTree(later.length ? open.filter((t) => !inLater(t, today)) : open)
+        const later = open.filter((tVar) => inLater(tVar, today))
+        const tree = buildTaskTree(later.length ? open.filter((tVar) => !inLater(tVar, today)) : open)
         const byId = new Map(tree.roots.map((n) => [n.id, n]))
         const groups: Group[] = groupBySection(project.id, tree.roots.map((n) => n.item), sections)
           .filter((s) => s.tasks.length > 0)
           .map((s) => ({
             id: `section:${s.key}`, heading: s.section?.name ?? null,
-            rows: flattenTree(s.tasks.map((t) => byId.get(t.id) as TreeNode<Task>)).map((n) => toRow(n.item, `section:${s.key}`, { depth: n.depth })),
+            rows: flattenTree(s.tasks.map((tVar) => byId.get(tVar.id) as TreeNode<Task>)).map((n) => toRow(n.item, `section:${s.key}`, { depth: n.depth })),
           }))
-        if (later.length) groups.push({ id: 'later', heading: 'Later', rows: later.map((t) => toRow(t, 'later')) })
-        if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: 'Nothing left to do in this project' })
+        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: later.map((tVar) => toRow(tVar, 'later')) })
+        if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('Nothing left to do in this project') })
         return { title: project.name, groups, columns: [] }
       }
       case 'view': {
         if (!views) return null
         const view = views.find((v) => v.id === target.id && !v.deleted_at)
-        if (!view) return { title: 'View', missing: { message: 'This view no longer exists.' }, groups: [], columns: [] }
-        if (isDashboard(view)) return { title: view.name, missing: { message: 'A dashboard cannot be shown in display mode. Open one of its views instead.' }, groups: [], columns: [] }
+        if (!view) return { title: t('View'), missing: { message: t('This view no longer exists.') }, groups: [], columns: [] }
+        if (isDashboard(view)) return { title: view.name, missing: { message: t('A dashboard cannot be shown in display mode. Open one of its views instead.') }, groups: [], columns: [] }
         const result = runView(view, { today, labels, projects: live, tasks: all })
-        if (!result.ok) return { title: view.name, missing: { message: `This view's query has an error: ${result.error}` }, groups: [], columns: [] }
-        const groups: Group[] = result.groups.map((g) => ({ id: g.key, heading: g.heading || null, rows: g.tasks.map((t) => toRow(t, g.key)) }))
-        if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: 'No task matches this view' })
+        if (!result.ok) return { title: view.name, missing: { message: t('This view’s query has an error: {error}', { error: result.error }) }, groups: [], columns: [] }
+        const groups: Group[] = result.groups.map((g) => ({ id: g.key, heading: g.heading || null, rows: g.tasks.map((tVar) => toRow(tVar, g.key)) }))
+        if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('No task matches this view') })
         return { title: view.name, groups, columns: [] }
       }
     }
@@ -189,7 +190,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         {content?.missing ? (
           <div className="display-task space-y-3" role="alert" data-display-missing>
             <p>{content.missing.message}</p>
-            <button type="button" className="ui-btn ui-btn--secondary ui-btn--lg" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--lg" onClick={() => navigate({ view: 'inbox' })}>{t('Go to Inbox')}</button>
           </div>
         ) : content ? (
           <div className="display-board" data-split={content.groups.length > 0 && content.columns.length > 0 ? '' : undefined}>
@@ -212,16 +213,15 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
 
         <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
           <p role="status" className="display-meta" data-display-synced>
-            {online ? '' : 'Offline · '}{lastSyncedLabel(sync.lastSyncedAt, now)}
+            {online ? lastSyncedLabel(sync.lastSyncedAt, now) : `${t('Offline')} · ${lastSyncedLabel(sync.lastSyncedAt, now)}`}
           </p>
           <div className="flex items-center gap-1 text-faint">
-            <Menu kind="menu" label="Display options" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--md min-h-11 min-w-11 px-2" width="sm:w-72">
-              <MenuItem label="Make this the start view on this device" icon="house" checked={isStart} onSelect={() => void setStartView(`display:${path}`)} />
-              <MenuItem label="Exit display mode" icon="log-out" onSelect={exit} />
+            <Menu kind="menu" label={t('Display options')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--md min-h-11 min-w-11 px-2" width="sm:w-72">
+              <MenuItem label={t('Make this the start view on this device')} icon="house" checked={isStart} onSelect={() => void setStartView(`display:${path}`)} />
+              <MenuItem label={t('Exit display mode')} icon="log-out" onSelect={exit} />
             </Menu>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--md min-h-11 min-w-11 px-3" onClick={exit} data-display-exit>
-              <Icon name="log-out" size="md" />
-              Exit
+              <Icon name="log-out" size="md" />{t('Exit')}
             </button>
           </div>
         </footer>

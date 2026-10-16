@@ -17,6 +17,7 @@ import { listActions } from './actions'
 import { complete, runCommand } from './commands'
 import { createDispatcher, isTextField, type Mode } from './dispatch'
 import { VIM_HELP } from './help'
+import { t } from '../../lib/i18n'
 
 /** `i`: the panel renders on the next commit; focus its title once it is there. */
 function focusTitle(id: string, tries = 20): void {
@@ -73,17 +74,17 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
 
   useEffect(() => {
     // Insert mode follows focus, so it can never disagree with where keys go.
-    let t: ReturnType<typeof setTimeout> | undefined
+    let item: ReturnType<typeof setTimeout> | undefined
     const onFocus = () => {
-      clearTimeout(t)
-      t = setTimeout(() => setTyping(isTextField(document.activeElement)), 0)
+      clearTimeout(item)
+      item = setTimeout(() => setTyping(isTextField(document.activeElement)), 0)
     }
     document.addEventListener('focusin', onFocus)
     document.addEventListener('focusout', onFocus)
     return () => {
       document.removeEventListener('focusin', onFocus)
       document.removeEventListener('focusout', onFocus)
-      clearTimeout(t)
+      clearTimeout(item)
     }
   }, [])
 
@@ -116,7 +117,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           <input
             autoFocus
             data-vim-command
-            aria-label="Command"
+            aria-label={t('Command')}
             className="min-w-0 flex-1 bg-transparent focus:outline-none"
             value={text}
             spellCheck={false}
@@ -136,16 +137,16 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           />
           {message
             ? <span role="alert" className="text-danger">{message}</span>
-            : <span className="truncate text-faint" aria-label="Completions">{completions.slice(0, 6).join('  ')}</span>}
+            : <span className="truncate text-faint" aria-label={t('Completions')}>{completions.slice(0, 6).join('  ')}</span>}
         </form>
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">
-        <span role="status" aria-label="Vim mode" data-vim-mode={mode}
+        <span role="status" aria-label={t('Vim mode')} data-vim-mode={mode}
           className={`rounded-control px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-accent-soft text-on-accent-soft' : mode === 'command' ? 'bg-warning-soft text-on-warning-soft' : 'bg-sunken dark:bg-raised text-muted'}`}>
           {mode.toUpperCase()}
         </span>
         <span className="font-mono text-muted" data-vim-pending>{pending}</span>
-        <span className="ml-auto text-faint"><Kbd k=":" /> command · <Kbd k="?" /> help</span>
+        <span className="ml-auto text-faint">{t.rich('{kbd} command · {kbd2} help', { kbd: <Kbd k=":" />, kbd2: <Kbd k="?" /> })}</span>
       </div>
     </div>
   )

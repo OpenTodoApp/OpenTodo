@@ -84,8 +84,8 @@ export function armGPrefix(): void {
 
 /** A text entry control has focus: single-key shortcuts stay out of it. */
 export function isTypingTarget(target: EventTarget | null): boolean {
-  const t = target as HTMLElement | null
-  return !!t && typeof t.tagName === 'string' && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || !!t.isContentEditable)
+  const item = target as HTMLElement | null
+  return !!item && typeof item.tagName === 'string' && (item.tagName === 'INPUT' || item.tagName === 'TEXTAREA' || item.tagName === 'SELECT' || !!item.isContentEditable)
 }
 
 /**
@@ -93,8 +93,8 @@ export function isTypingTarget(target: EventTarget | null): boolean {
  * "open the selected item" shortcuts stand back for it, so the native click wins.
  */
 export function isActivationTarget(target: EventTarget | null): boolean {
-  const t = target as Element | null
-  return !!t && typeof t.matches === 'function' && t.matches('button, a[href], summary, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="checkbox"], [role="switch"], [role="treeitem"], input[type="checkbox"], input[type="radio"]')
+  const item = target as Element | null
+  return !!item && typeof item.matches === 'function' && item.matches('button, a[href], summary, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="checkbox"], [role="switch"], [role="treeitem"], input[type="checkbox"], input[type="radio"]')
 }
 
 function dialogOpen(): boolean {

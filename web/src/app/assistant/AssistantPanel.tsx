@@ -22,20 +22,19 @@ import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { requestSettingsFocus } from '../settingsIndex'
 import { navigate } from '../router'
+import { t, msg } from '../../lib/i18n'
 
-export const ENCRYPTED_MESSAGE = 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
+export const ENCRYPTED_MESSAGE = msg('The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.')
 
 /** What an encrypted account can do to use the assistant: a link to the encryption settings. */
 export function EncryptionOffHint() {
   return (
     <span data-assistant-encryption-hint>
-      To use the assistant, you can turn encryption off in{' '}
-      <a className="underline" href="/settings/account" onClick={(e) => { e.preventDefault(); requestSettingsFocus('encryption'); navigate({ view: 'settings', section: 'account' }) }}>Settings → Account → Encryption</a>;
-      your tasks are then stored on the server without end-to-end encryption.
+      {t.rich('To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.', { a: (chunks) => <a className="underline" href="/settings/account" onClick={(e) => { e.preventDefault(); requestSettingsFocus('encryption'); navigate({ view: 'settings', section: 'account' }) }}>{chunks}</a> })}
     </span>
   )
 }
-export const OFFLINE_MESSAGE = 'The assistant needs a connection.'
+export const OFFLINE_MESSAGE = msg('The assistant needs a connection.')
 
 // ------------------------------------------------------------------ frame
 
@@ -67,7 +66,7 @@ export function AssistantSheet({ title, onClose, onEscape, children, footer, hea
         <div className="flex items-center gap-1 border-b border-default pl-4 pr-1 pt-[env(safe-area-inset-top)]">
           <h2 id={titleId} className="min-w-0 flex-1 truncate py-2 text-body font-semibold">{title}</h2>
           {headerExtra}
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label="Close" data-overlay-close><Icon name="x" size="md" /></button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label={t('Close')} data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3" data-assistant-scroll>{children}</div>
         {footer && <div className="border-t border-default px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">{footer}</div>}
@@ -111,30 +110,30 @@ export interface PanelViewProps {
 export function AssistantPanelBody(p: PanelViewProps) {
   const dt = useDateTimeFormat()
   const s = p.status
-  if (!s) return <Skeleton shape="line" count={3} label="Loading the assistant" />
+  if (!s) return <Skeleton shape="line" count={3} label={t('Loading the assistant')} />
   if (s.reason === 'encryption_enabled') {
     return (
       <div className="space-y-2 text-body" data-assistant-encrypted>
-        <p className="font-medium">{ENCRYPTED_MESSAGE}</p>
-        <p className="text-muted">Your account uses end-to-end encryption, so the server holds no key to your tasks and cannot pass them to a model. The rest of the app works as usual.</p>
+        <p className="font-medium">{t(ENCRYPTED_MESSAGE)}</p>
+        <p className="text-muted">{t('Your account uses end-to-end encryption, so the server holds no key to your tasks and cannot pass them to a model. The rest of the app works as usual.')}</p>
         <p className="text-muted"><EncryptionOffHint /></p>
       </div>
     )
   }
-  if (s.reason === 'demo') return <p className="text-body">The assistant is not available on the demo instance.</p>
-  if (!s.enabled) return <p className="text-body">The server owner has not turned the assistant on.</p>
+  if (s.reason === 'demo') return <p className="text-body">{t('The assistant is not available on the demo instance.')}</p>
+  if (!s.enabled) return <p className="text-body">{t('The server owner has not turned the assistant on.')}</p>
   return (
     <div className="space-y-4">
       {p.threads && (
-        <nav aria-label="Earlier conversations" className="space-y-1">
-          <h3 className="text-body font-semibold">Earlier conversations on this device</h3>
-          {p.threads.length === 0 ? <p className="text-body text-muted">None yet.</p> : (
+        <nav aria-label={t('Earlier conversations')} className="space-y-1">
+          <h3 className="text-body font-semibold">{t('Earlier conversations on this device')}</h3>
+          {p.threads.length === 0 ? <p className="text-body text-muted">{t('None yet.')}</p> : (
             <ul className="space-y-1">
-              {p.threads.map((t) => (
-                <li key={t.id}>
-                  <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full justify-start text-left" onClick={() => p.onPickThread(t.id)}>
-                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    <span className="text-meta text-faint">{dt.formatInstant(t.updated_at, 'date')}</span>
+              {p.threads.map((item) => (
+                <li key={item.id}>
+                  <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full justify-start text-left" onClick={() => p.onPickThread(item.id)}>
+                    <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                    <span className="text-meta text-faint">{dt.formatInstant(item.updated_at, 'date')}</span>
                   </button>
                 </li>
               ))}
@@ -148,21 +147,21 @@ export function AssistantPanelBody(p: PanelViewProps) {
         <>
           {p.messages.length === 0 && !p.streaming && (
             <div className="space-y-1 text-body text-muted" data-assistant-empty>
-              <p>Ask about your tasks or ask for changes. For example:</p>
+              <p>{t('Ask about your tasks or ask for changes. For example:')}</p>
               <ul className="list-disc pl-5">
-                <li>What is due today?</li>
-                <li>Move everything overdue to Friday.</li>
-                <li>Break “Plan the team offsite” into steps.</li>
+                <li>{t('What is due today?')}</li>
+                <li>{t('Move everything overdue to Friday.')}</li>
+                <li>{t('Break “Plan the team offsite” into steps.')}</li>
               </ul>
-              <p>Changes are proposed for you to review; nothing changes until you apply them.</p>
+              <p>{t('Changes are proposed for you to review; nothing changes until you apply them.')}</p>
             </div>
           )}
-          <ol className="space-y-3" aria-label="Conversation">
+          <ol className="space-y-3" aria-label={t('Conversation')}>
             {p.messages.map((m, i) => <MessageItem key={i} m={m} />)}
             {p.streaming && (
               <li className="text-body" aria-busy="true">
                 {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
-                {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">Thinking…</p>}
+                {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">{t('Thinking…')}</p>}
               </li>
             )}
           </ol>
@@ -181,17 +180,17 @@ function MessageItem({ m }: { m: AssistantMessage }) {
     return (
       <li className="ml-8 rounded-control bg-sunken dark:bg-raised px-3 py-2 text-body">
         {(m.skill || m.pastedLines) && (
-          <p className="mb-1 text-meta text-muted">{[m.skill && `Skill: ${m.skill}`, m.pastedLines && `pasted text, ${m.pastedLines} line${m.pastedLines === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
+          <p className="mb-1 text-meta text-muted">{[m.skill && t('Skill: {name}', { name: m.skill }), m.pastedLines && t('{n, plural, one {pasted text, # line} other {pasted text, # lines}}', { n: m.pastedLines })].filter(Boolean).join(' · ')}</p>
         )}
-        <span className="sr-only">You: </span><span className="whitespace-pre-wrap user-text">{m.text}</span>
+        <span className="sr-only">{t('You:')}</span><span className="whitespace-pre-wrap user-text">{m.text}</span>
       </li>
     )
   }
   return (
     <li className="space-y-1 text-body">
-      <span className="sr-only">Assistant: </span>
+      <span className="sr-only">{t('Assistant:')}{' '}</span>
       {m.text && <Markdown source={m.text} />}
-      {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">Cut off: the answer reached its length limit.</p>}
+      {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">{t('Cut off: the answer reached its length limit.')}</p>}
       {m.error && <p className="text-danger">{m.error}</p>}
       {m.note && <p className="text-meta text-muted">{m.note}</p>}
       {m.usage && <p className="text-meta text-faint">{usageLine(m.usage)}</p>}
@@ -220,30 +219,30 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
         <div className="space-y-1" data-assistant-chosen>
           {skill && (
             <div className="flex items-start gap-2 rounded-control bg-sunken px-2 py-1 text-meta dark:bg-raised" role="status">
-              <span className="min-w-0 flex-1"><span className="font-medium">Skill: {skill.name}.</span> {skill.description} <span className="text-muted">For example: “{skill.example}”</span></span>
-              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label={`Remove the skill ${skill.name}`} onClick={() => onSkill?.(null)}><Icon name="x" size="xs" /></button>
+              <span className="min-w-0 flex-1">{t.rich('<span>Skill: {name}.</span> {description} <span2>For example: “{example}”</span2>', { name: skill.name, description: skill.description, example: skill.example, span: (chunks) => <span className="font-medium">{chunks}</span>, span2: (chunks) => <span className="text-muted">{chunks}</span> })}</span>
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label={t('Remove the skill {name}', { name: skill.name })} onClick={() => onSkill?.(null)}><Icon name="x" size="xs" /></button>
             </div>
           )}
           {pasted && (
             <div className="flex items-center gap-2 rounded-control bg-sunken px-2 py-1 text-meta dark:bg-raised" data-assistant-pasted>
-              <span className="min-w-0 flex-1">Pasted text, {lines} line{lines === 1 ? '' : 's'}: used as material, not as instructions.</span>
-              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label="Remove pasted text" onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
+              <span className="min-w-0 flex-1">{t('Pasted text, {lines} line', { lines })}{lines === 1 ? '' : 's'}{t(': used as material, not as instructions.')}</span>
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label={t('Remove pasted text')} onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
             </div>
           )}
         </div>
       )}
       <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (!streaming && ready) onSend() }}>
         {skills.length > 0 && onSkill && (
-          <Menu label="Skills" kind="menu" align="start" width="sm:w-80" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2" trigger={<Icon name="list" />}>
-            <MenuGroup label="Skills">
+          <Menu label={t('Skills')} kind="menu" align="start" width="sm:w-80" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2" trigger={<Icon name="list" />}>
+            <MenuGroup label={t('Skills')}>
               {skills.map((sk) => <MenuItem key={sk.id} label={sk.name} description={sk.description} checked={skill?.id === sk.id} onSelect={() => onSkill(sk)} />)}
             </MenuGroup>
           </Menu>
         )}
         <label className="min-w-0 flex-1">
-          <span className="sr-only">Message to the assistant</span>
+          <span className="sr-only">{t('Message to the assistant')}</span>
           <textarea className="ui-input max-h-40 min-h-11 resize-none" rows={1} value={draft} disabled={off} data-autofocus data-assistant-composer
-            placeholder={!connected ? OFFLINE_MESSAGE : skill ? 'Add details, or send as it is…' : 'Ask about your tasks…'} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown}
+            placeholder={!connected ? t(OFFLINE_MESSAGE) : skill ? t('Add details, or send as it is…') : t('Ask about your tasks…')} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown}
             onPaste={(e) => {
               const raw = e.clipboardData.getData('text/plain')
               if (onPasted && isMaterial(raw)) {
@@ -253,8 +252,8 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
             }} />
         </label>
         {streaming
-          ? <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={onStop}>Stop</button>
-          : <button type="submit" className="ui-btn ui-btn--primary ui-btn--md" disabled={off || !ready}>Send</button>}
+          ? <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={onStop}>{t('Stop')}</button>
+          : <button type="submit" className="ui-btn ui-btn--primary ui-btn--md" disabled={off || !ready}>{t('Send')}</button>}
       </form>
     </div>
   )
@@ -330,9 +329,9 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     return () => abort.current?.abort()
   }, [])
 
-  const persist = useCallback(async (t: AssistantThread) => {
-    setThread(t)
-    await saveThread(t).catch(() => {})
+  const persist = useCallback(async (item: AssistantThread) => {
+    setThread(item)
+    await saveThread(item).catch(() => {})
   }, [])
 
   const accept = async (ownKey?: string) => {
@@ -346,7 +345,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     } catch (err) {
       if (err instanceof ApiError && err.code === 'provider_changed') {
         setStatus(await refreshAssistantStatus())
-        setConsentError('The provider changed while you were reading. Read the updated text and accept again.')
+        setConsentError(t('The provider changed while you were reading. Read the updated text and accept again.'))
       } else setConsentError(describeTurnError(err))
     } finally {
       setConsentBusy(false)
@@ -358,7 +357,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   const send = async () => {
     const chosen = skill
     // A skill or pasted material can be sent without typed text.
-    const question = draft.trim() || (chosen ? chosen.example : pasted ? 'Use the pasted text.' : '')
+    const question = draft.trim() || (chosen ? chosen.example : pasted ? t('Use the pasted text.') : '')
     if (!question || streaming) return
     const material = pasted
     const selection = selectedFor.current
@@ -376,9 +375,9 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     const userMsg: AssistantMessage = { role: 'user', text: question, at: Date.now(),
       ...(chosen ? { skill: chosen.name } : {}), ...(material ? { pastedLines: material.split(/\r?\n/).length } : {}) }
     const history = thread.messages
-    let t: AssistantThread = { ...thread, messages: [...history, userMsg], updated_at: Date.now(), provider: status?.provider ?? '',
+    let entry: AssistantThread = { ...thread, messages: [...history, userMsg], updated_at: Date.now(), provider: status?.provider ?? '',
       title: thread.messages.length ? thread.title : question.slice(0, 60) }
-    await persist(t)
+    await persist(entry)
     const ctl = new AbortController()
     abort.current = ctl
     let text = ''
@@ -420,7 +419,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
         }
       }, ctl.signal)
     } catch (err) {
-      if (ctl.signal.aborted) answer.note = 'Stopped.'
+      if (ctl.signal.aborted) answer.note = t('Stopped.')
       else {
         answer.error = describeTurnError(err)
         if (err instanceof ApiError && (err.code === 'consent_required' || err.code === 'encryption_enabled')) setStatus(await refreshAssistantStatus())
@@ -432,9 +431,9 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     live.flush()
     if (answer.error) live.setAnnounce(answer.error)
     setStreaming(null)
-    t = { ...t, messages: [...t.messages, answer], updated_at: Date.now(),
-      usage: { input: t.usage.input + (answer.usage?.input ?? 0), output: t.usage.output + (answer.usage?.output ?? 0) } }
-    await persist(t)
+    entry = { ...entry, messages: [...entry.messages, answer], updated_at: Date.now(),
+      usage: { input: entry.usage.input + (answer.usage?.input ?? 0), output: entry.usage.output + (answer.usage?.output ?? 0) } }
+    await persist(entry)
     const items = answer.stop === 'end_turn' ? (proposal.current as ProposedChange[] | null) : null
     if (items && items.length) {
       const r = await reviewChangeSet(items)
@@ -442,21 +441,21 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
         const undo = await applyChanges(r.items.map((i) => i.change))
         const res: ReviewResult = { applied: r.items.length, total: r.items.length, undoId: undo?.id ?? null, auto: true }
         setResult(res)
-        await note(t, `${res.applied} change${res.applied === 1 ? '' : 's'} applied automatically.`)
-        if (undo) onApplied({ text: `Assistant: ${res.applied} change${res.applied === 1 ? '' : 's'} applied.`, undoId: undo.id })
-        setStatusAnnounce(`${res.applied} changes applied automatically. Undo is available.`)
+        await note(entry, t('{n, plural, one {# change applied automatically.} other {# changes applied automatically.}}', { n: res.applied }))
+        if (undo) onApplied({ text: t('{n, plural, one {Assistant: # change applied.} other {Assistant: # changes applied.}}', { n: res.applied }), undoId: undo.id })
+        setStatusAnnounce(t('{n, plural, one {# change applied automatically. Undo is available.} other {# changes applied automatically. Undo is available.}}', { n: res.applied }))
       } else {
         setReview(r)
-        setStatusAnnounce(`${r.items.length} proposed change${r.items.length === 1 ? '' : 's'} to review below.`)
+        setStatusAnnounce(t('{n, plural, one {# proposed change to review below.} other {# proposed changes to review below.}}', { n: r.items.length }))
       }
     }
   }
 
-  const note = async (t: AssistantThread, text: string) => {
-    const msgs = [...t.messages]
+  const note = async (x1: AssistantThread, text: string) => {
+    const msgs = [...x1.messages]
     const last = msgs[msgs.length - 1]
     if (last && last.role === 'assistant') msgs[msgs.length - 1] = { ...last, note: text }
-    await persist({ ...t, messages: msgs, updated_at: Date.now() })
+    await persist({ ...x1, messages: msgs, updated_at: Date.now() })
   }
 
   const apply = async () => {
@@ -468,7 +467,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
       const newlyStale = fresh.items.some((i) => i.state === 'stale' && review.items.find((o) => o.change.entityId === i.change.entityId)?.state === 'ok')
       if (newlyStale) {
         setReview(fresh)
-        setStatusAnnounce('Some items changed since they were proposed and were unchecked. Review and apply again.')
+        setStatusAnnounce(t('Some items changed since they were proposed and were unchecked. Review and apply again.'))
         return
       }
       const chosen = fresh.items.filter((i) => i.checked).map((i) => i.change)
@@ -476,10 +475,10 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
       const res: ReviewResult = { applied: chosen.length, total: fresh.items.length, undoId: undo?.id ?? null }
       setReview(null)
       setResult(res)
-      const summary = res.applied === res.total ? `${res.applied} change${res.applied === 1 ? '' : 's'} applied.` : `${res.applied} of ${res.total} changes applied.`
+      const summary = res.applied === res.total ? t('{n, plural, one {# change applied.} other {# changes applied.}}', { n: res.applied }) : t('{n} of {total} changes applied.', { n: res.applied, total: res.total })
       await note(thread, summary)
-      setStatusAnnounce(summary + ' Undo is available.')
-      if (undo) onApplied({ text: `Assistant: ${summary}`, undoId: undo.id })
+      setStatusAnnounce(`${summary} ${t('Undo is available.')}`)
+      if (undo) onApplied({ text: t('Assistant: {summary}', { summary }), undoId: undo.id })
     } finally {
       setReviewBusy(false)
     }
@@ -489,8 +488,8 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     if (!review || !thread) return
     setReview(null)
     setResult({ applied: 0, total: review.items.length, undoId: null, discarded: true })
-    await note(thread, 'Proposal discarded.')
-    setStatusAnnounce('Proposal discarded.')
+    await note(thread, t('Proposal discarded.'))
+    setStatusAnnounce(t('Proposal discarded.'))
   }
 
   const undo = async () => {
@@ -499,8 +498,8 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     try {
       const u = await undoChanges(result.undoId)
       setResult({ ...result, undone: u })
-      await note(thread, u.skipped.length ? `Undone, except: ${u.skipped.join(', ')}.` : 'Undone.')
-      setStatusAnnounce(`Undone: ${u.restored} restored.`)
+      await note(thread, u.skipped.length ? t('Undone, except: {items}.', { items: u.skipped.join(', ') }) : t('Undone.'))
+      setStatusAnnounce(t('Undone: {n} restored.', { n: u.restored }))
     } finally {
       setReviewBusy(false)
     }
@@ -563,19 +562,19 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   }, [ready, connected])
   const headerExtra = status?.enabled && status.reason !== 'encryption_enabled' ? (
     <>
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void toggleThreads()} aria-expanded={!!threads}>History</button>
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={startNew}>New</button>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void toggleThreads()} aria-expanded={!!threads}>{t('History')}</button>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={startNew}>{t('New')}</button>
     </>
   ) : null
   return (
-    <AssistantSheet title="Assistant" onClose={onClose} onEscape={onEscape} headerExtra={headerExtra}
+    <AssistantSheet title={t('Assistant')} onClose={onClose} onEscape={onEscape} headerExtra={headerExtra}
       footer={status?.reason === 'encryption_enabled' || !status?.enabled ? undefined : (
         <div className="space-y-1">
           <Composer draft={draft} onDraft={setDraft} onSend={() => void send()} onStop={() => abort.current?.abort()} streaming={!!streaming} connected={connected} disabled={!ready}
             skills={skills} skill={skill} onSkill={(sk) => { setPickedSkillId(sk?.id ?? null); setSkill(sk) }} pasted={pasted} onPasted={setPasted} />
           <div className="flex flex-wrap items-center justify-between gap-x-2 text-meta text-faint">
-            <span>{!connected ? OFFLINE_MESSAGE : status ? `${status.provider === 'compatible' ? 'Model server' : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
-            {threads && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void clearAll()}>Clear conversations</button>}
+            <span>{!connected ? t(OFFLINE_MESSAGE) : status ? `${status.provider === 'compatible' ? t('Model server') : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
+            {threads && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void clearAll()}>{t('Clear conversations')}</button>}
           </div>
         </div>
       )}>
@@ -585,7 +584,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
         onToggle={(i, c) => setReview((r) => r && { ...r, items: r.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) })}
         onApply={() => void apply()} onDiscard={() => void discard()} onUndo={() => void undo()} onDraft={setDraft} onSend={() => void send()}
         onStop={() => abort.current?.abort()} onAccept={(k) => void accept(k)}
-        onPickThread={(id) => { void listThreads().then((all) => { const t = all.find((x) => x.id === id); if (t) { setThread(t); setThreads(null); setReview(null); setResult(null) } }) }} />
+        onPickThread={(id) => { void listThreads().then((all) => { const tVar = all.find((x) => x.id === id); if (tVar) { setThread(tVar); setThreads(null); setReview(null); setResult(null) } }) }} />
     </AssistantSheet>
   )
 }

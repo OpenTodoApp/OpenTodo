@@ -123,6 +123,31 @@ export const t: TFunction = Object.assign(
  */
 export function msg<S extends string>(message: S): S { return message }
 
+/**
+ * A label table defined at module level, read through t() on every access, so it
+ * follows the active language: `const LABEL = translatedMap({ on: msg('On'), off: msg('Off') })`.
+ */
+export function translatedMap<K extends string>(source: Record<K, string>): Record<K, string> {
+  const out = {} as Record<K, string>
+  for (const k of Object.keys(source) as K[]) Object.defineProperty(out, k, { get: () => t(source[k]), enumerable: true })
+  return out
+}
+
+/**
+ * A list of options defined at module level whose named text fields are read
+ * through t() on every access: `translatedList([{ value: 'a', label: msg('All') }], 'label')`.
+ */
+export function translatedList<T extends object, K extends keyof T>(items: readonly T[], ...keys: K[]): T[] {
+  return items.map((item) => {
+    const out = { ...item }
+    for (const k of keys) {
+      const source = item[k]
+      if (typeof source === 'string') Object.defineProperty(out, k, { get: () => t(source), enumerable: true })
+    }
+    return out
+  })
+}
+
 /** A count or number with the active language's digit grouping. */
 export function formatNumber(n: number): string { return formatNumberIn(locale, n) }
 

@@ -16,6 +16,7 @@ import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '.
 import type { Passkey } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
+import { t } from '../lib/i18n'
 
 // Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -24,13 +25,13 @@ import { formatInstant } from '../lib/dates'
 const AVAILABLE_KEY = 'opentodo.passkeysAvailable'
 
 export function relativeTime(ts: number | null, now = Date.now()): string {
-  if (ts === null) return 'never'
+  if (ts === null) return t('never')
   const s = Math.max(0, Math.round((now - ts) / 1000))
-  if (s < 60) return 'just now'
+  if (s < 60) return t('just now')
   const m = Math.round(s / 60)
-  if (m < 60) return `${m} min ago`
+  if (m < 60) return t('{m} min ago', { m })
   const h = Math.round(m / 60)
-  if (h < 24) return `${h} h ago`
+  if (h < 24) return t('{h} h ago', { h })
   return formatInstant(ts, 'date')
 }
 
@@ -83,7 +84,7 @@ export function SecurityPanel() {
     } catch (err) {
       if (isCancellation(err)) return // user closed the browser prompt
       setError(err instanceof ApiError && err.code === 'passkey_challenge_invalid'
-        ? 'That took too long. Please try again.'
+        ? t('That took too long. Please try again.')
         : err instanceof Error ? err.message : String(err))
     } finally {
       setBusy(false)
@@ -110,8 +111,8 @@ export function SecurityPanel() {
       onDelete={(id) => setRemoving(passkeys?.find((k) => k.id === id) ?? null)}
     />
     {removing && (
-      <ConfirmDialog title={`Remove the passkey “${removing.name}”?`} confirmLabel="Remove passkey"
-        consequence="It will no longer sign you in. Your password and other passkeys keep working."
+      <ConfirmDialog title={t('Remove the passkey “{name}”?', { name: removing.name })} confirmLabel={t('Remove passkey')}
+        consequence={t('It will no longer sign you in. Your password and other passkeys keep working.')}
         onConfirm={() => run(() => api.deletePasskey(removing.id))} onCancel={() => setRemoving(null)} />
     )}
     </>
@@ -168,66 +169,64 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
   const addForm = (
     <form className="flex flex-wrap items-end gap-2 py-3" onSubmit={submitAdd}>
       <div className="min-w-0 flex-1 basis-56">
-        <Field label="Passkey name" description="So you can tell your devices apart.">
-          <Input autoFocus placeholder="Device name (e.g. Work laptop)" value={newName} onChange={(e) => setNewName(e.target.value)}
+        <Field label={t('Passkey name')} description={t('So you can tell your devices apart.')}>
+          <Input autoFocus placeholder={t('Device name (e.g. Work laptop)')} value={newName} onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => escapeTo(e, () => setAdding(false))} disabled={disabled} />
         </Field>
       </div>
       <div className="flex gap-2 pb-0.5">
-        <Button variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
-        <Button variant="primary" type="submit" disabled={disabled}>Continue</Button>
+        <Button variant="ghost" onClick={() => setAdding(false)}>{t('Cancel')}</Button>
+        <Button variant="primary" type="submit" disabled={disabled}>{t('Continue')}</Button>
       </div>
     </form>
   )
 
   return (
-    <SettingsSection title="Passkeys" headingId="security-heading" testId="security-panel"
-      description="Sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working; add a passkey on a second device so losing one is never a problem.">
+    <SettingsSection title={t('Passkeys')} headingId="security-heading" testId="security-panel"
+      description={t('Sign in with your device\'s fingerprint, face or PIN instead of your password. Your password keeps working; add a passkey on a second device so losing one is never a problem.')}>
       {p.domain && p.pageHost && !rpIdMatches(p.domain, p.pageHost) && (
         <Notice tone="danger">
-          This page is open at <span className="font-mono">{p.pageHost}</span>, so passkeys will not work here. Open the app at{' '}
-          <a className="underline" href={`https://${p.domain}`}>https://{p.domain}</a>, or set <span className="font-mono">OPENTODO_BASE_URL</span> to{' '}
-          <span className="font-mono">https://{p.pageHost}</span> and redeploy.
+          {t.rich('This page is open at {host}, so passkeys will not work here. Open the app at {link}, or set {variable} to {url} and redeploy.', { host: <span className="font-mono">{p.pageHost}</span>, link: <a className="underline" href={`https://${p.domain}`}>https://{p.domain}</a>, variable: <span className="font-mono">OPENTODO_BASE_URL</span>, url: <span className="font-mono">https://{p.pageHost}</span> })}
         </Notice>
       )}
-      {!p.online && <Notice>You are offline. Managing passkeys needs a connection to your server.</Notice>}
-      {p.online && !p.supported && <Notice>This browser does not support passkeys.</Notice>}
+      {!p.online && <Notice>{t('You are offline. Managing passkeys needs a connection to your server.')}</Notice>}
+      {p.online && !p.supported && <Notice>{t('This browser does not support passkeys.')}</Notice>}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {p.passkeys && count === 0 ? (
         adding ? addForm : (
-          <EmptyState icon="key-round" title="No passkeys yet"
-            body="A passkey is the fastest way to sign in: no password to type, and it cannot be phished."
-            action={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>Add passkey</Button>} />
+          <EmptyState icon="key-round" title={t('No passkeys yet')}
+            body={t('A passkey is the fastest way to sign in: no password to type, and it cannot be phished.')}
+            action={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
         )
       ) : (
         <>
-          <SettingRow label={count === 1 ? '1 passkey' : `${count} passkeys`}
-            description={p.domain ? <span data-passkey-domain>Tied to <span className="font-mono">{p.domain}</span>.</span> : undefined}
-            control={!adding && <Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>Add passkey</Button>} />
+          <SettingRow label={count === 1 ? t('1 passkey') : t('{count} passkeys', { count })}
+            description={p.domain ? <span data-passkey-domain>{t.rich('Tied to <span>{domain}</span>.', { domain: p.domain, span: (chunks) => <span className="font-mono">{chunks}</span> })}</span> : undefined}
+            control={!adding && <Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
           {adding && addForm}
           <div className="-mx-3 py-1">
             {p.passkeys?.map((k) => (editing === k.id ? (
               <form key={k.id} className="flex flex-wrap items-end gap-2 px-3 py-2" onSubmit={(e) => submitRename(e, k.id)}>
                 <div className="min-w-0 flex-1 basis-56">
-                  <Field label={`New name for ${k.name}`} hideLabel>
+                  <Field label={t('New name for {name}', { name: k.name })} hideLabel>
                     <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => escapeTo(e, () => setEditing(null))} />
                   </Field>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
-                <Button variant="primary" size="sm" type="submit" disabled={disabled}>Save</Button>
+                <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>{t('Cancel')}</Button>
+                <Button variant="primary" size="sm" type="submit" disabled={disabled}>{t('Save')}</Button>
               </form>
             ) : (
               <ListRow key={k.id} leading={<Icon name="key-round" size="md" />} label={k.name}
-                meta={`Created ${dt.formatInstant(k.createdAt, 'date')} · used ${relativeTime(k.lastUsedAt, p.now)}`}
+                meta={t('Created {instant} · used {relativeTime}', { instant: dt.formatInstant(k.createdAt, 'date'), relativeTime: relativeTime(k.lastUsedAt, p.now) })}
                 badges={k.suspiciousAt !== null ? (
-                  <Badge hue="red" title="A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.">Suspicious</Badge>
+                  <Badge hue="red" title={t('A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.')}>{t('Suspicious')}</Badge>
                 ) : undefined}
                 menu={(
-                  <Menu label={`Actions for ${k.name}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
-                    <MenuItem label="Rename" icon="pencil" disabled={disabled} onSelect={() => { setDraft(k.name); setEditing(k.id) }} />
+                  <Menu label={t('Actions for {name}', { name: k.name })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                    <MenuItem label={t('Rename')} icon="pencil" disabled={disabled} onSelect={() => { setDraft(k.name); setEditing(k.id) }} />
                     <MenuSeparator />
-                    <MenuItem label="Remove" icon="trash-2" danger disabled={disabled} onSelect={() => void p.onDelete(k.id)} />
+                    <MenuItem label={t('Remove')} icon="trash-2" danger disabled={disabled} onSelect={() => void p.onDelete(k.id)} />
                   </Menu>
                 )} />
             )))}
@@ -240,9 +239,9 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
 
 function defaultDeviceName(): string {
   const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent
-  if (/iPhone|iPad/.test(ua)) return 'iPhone or iPad'
-  if (/Android/.test(ua)) return 'Android device'
+  if (/iPhone|iPad/.test(ua)) return t('iPhone or iPad')
+  if (/Android/.test(ua)) return t('Android device')
   if (/Mac/.test(ua)) return 'Mac'
-  if (/Windows/.test(ua)) return 'Windows PC'
-  return 'Passkey'
+  if (/Windows/.test(ua)) return t('Windows PC')
+  return t('Passkey')
 }

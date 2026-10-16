@@ -8,6 +8,7 @@ import { formatTime as toHHMM, type EventBlock } from '../lib/calendar'
 import { formatShort, formatTime as formatWallTime, localDueOf } from '../lib/dates'
 import type { CalendarEvent, CalendarSubscription, CalendarWhen } from '../lib/types'
 import { Popover } from './overlay/Popover'
+import { t } from '../lib/i18n'
 
 /** Wall time of a timed point in the viewer's zone ("10:00"), or the date for all-day points. */
 function whenText(p: CalendarWhen, zone?: string): string {
@@ -18,18 +19,18 @@ function whenText(p: CalendarWhen, zone?: string): string {
 
 /** "10:00 to 11:00", or "All day" for all-day events. */
 export function eventTimeText(ev: CalendarEvent, zone?: string): string {
-  if (ev.allDay) return 'All day'
+  if (ev.allDay) return t('All day')
   return `${whenText(ev.start, zone)} to ${whenText(ev.end, zone)}`
 }
 
 export function eventLabel(ev: CalendarEvent, sub: CalendarSubscription | undefined, zone?: string): string {
-  return [ev.summary || 'Busy', eventTimeText(ev, zone), ev.location, sub?.name].filter(Boolean).join(', ')
+  return [ev.summary || t('Busy'), eventTimeText(ev, zone), ev.location, sub?.name].filter(Boolean).join(', ')
 }
 
 function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
   return (
     <div className="space-y-1 text-body" data-event-details>
-      <p className="font-medium text-strong">{ev.summary || 'Busy'}</p>
+      <p className="font-medium text-strong">{ev.summary || t('Busy')}</p>
       <p className="flex items-center gap-1.5 text-meta text-muted"><Icon name="clock" size="xs" />{eventTimeText(ev, zone)}</p>
       {ev.location && <p className="truncate pl-[18px] text-meta text-muted">{ev.location}</p>}
       {sub && (
@@ -37,8 +38,8 @@ function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubs
           <span className="h-2 w-2 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(sub.color)} aria-hidden />{sub.name}
         </p>
       )}
-      {ev.free && <p className="text-meta text-faint">Shown as free</p>}
-      <p className="text-meta text-faint">From a subscribed calendar. Edit it in its own app.</p>
+      {ev.free && <p className="text-meta text-faint">{t('Shown as free')}</p>}
+      <p className="text-meta text-faint">{t('From a subscribed calendar. Edit it in its own app.')}</p>
     </div>
   )
 }
@@ -80,11 +81,11 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
           width: `calc(${100 / lanes}% - 4px)`,
         }}
       >
-        <span className="block truncate font-medium">{ev.summary || 'Busy'}</span>
+        <span className="block truncate font-medium">{ev.summary || t('Busy')}</span>
         {height >= 30 && <span className="block truncate text-hint opacity-80">{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
       </button>
       </Tooltip>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || 'Event'} width="sm:w-72" className="p-3" align="start">
+      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
         <EventDetails ev={ev} sub={sub} zone={zone} />
       </Popover>
     </>
@@ -109,9 +110,9 @@ export function EventChip({ ev, sub, zone }: { ev: CalendarEvent; sub?: Calendar
         onClick={() => setOpen((o) => !o)}
         className={`block w-full truncate rounded-chip px-1.5 py-0.5 text-left text-hint text-hue ${ev.free ? 'border border-dashed border-hue-solid' : 'bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
-        {ev.summary || 'Busy'}
+        {ev.summary || t('Busy')}
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || 'Event'} width="sm:w-72" className="p-3" align="start">
+      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
         <EventDetails ev={ev} sub={sub} zone={zone} />
       </Popover>
     </>

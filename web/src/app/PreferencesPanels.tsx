@@ -8,6 +8,7 @@ import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
 import { Kbd } from './shortcuts/Kbd'
+import { t } from '../lib/i18n'
 
 export function StartViewSection() {
   const views = useViews()
@@ -21,27 +22,27 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
   // A display pinned from the display itself (a project, a saved view, other options) is listed while it is the start view.
   const pinnedDisplay = startView.startsWith('display:') && !DISPLAY_START_VIEWS.some((d) => d.value === startView) ? startView : null
   return (
-    <SettingsSection title="Start view" headingId="start-view-heading"
-      description="The view this device opens on launch. Each device keeps its own choice; it is not synced.">
-      <SettingRow label="Open on launch" htmlFor="start-view-select" control={
-        <Select id="start-view-select" className="sm:w-56" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
+    <SettingsSection title={t('Start view')} headingId="start-view-heading"
+      description={t('The view this device opens on launch. Each device keeps its own choice; it is not synced.')}>
+      <SettingRow label={t('Open on launch')} htmlFor="start-view-select" control={
+        <Select id="start-view-select" className="sm:w-56" aria-label={t('Start view on this device')} value={startIsKnown ? startView : 'inbox'}
           onChange={(e) => onChange(e.target.value as StartView)}>
-          <optgroup label="Built-in">
-            <option value="inbox">Inbox</option>
-            <option value="today">Today</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="filter">Filter</option>
+          <optgroup label={t('Built-in')}>
+            <option value="inbox">{t('Inbox')}</option>
+            <option value="today">{t('Today')}</option>
+            <option value="upcoming">{t('Upcoming')}</option>
+            <option value="completed">{t('Completed')}</option>
+            <option value="filter">{t('Filter')}</option>
           </optgroup>
           {views.length > 0 && (
-            <optgroup label="Saved views">
+            <optgroup label={t('Saved views')}>
               {views.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.name}</option>)}
             </optgroup>
           )}
           {/* Display mode (display-mode D6): opens full screen in large type. */}
-          <optgroup label="Display mode">
+          <optgroup label={t('Display mode')}>
             {DISPLAY_START_VIEWS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-            {pinnedDisplay && <option value={pinnedDisplay}>Display pinned on this device</option>}
+            {pinnedDisplay && <option value={pinnedDisplay}>{t('Display pinned on this device')}</option>}
           </optgroup>
         </Select>
       } />
@@ -58,13 +59,13 @@ export function KeyboardSection() {
 
 export function KeyboardView({ vim, onVim, hints = false, onHints = () => {} }: { vim: boolean; onVim: (on: boolean) => void; hints?: boolean; onHints?: (on: boolean) => void }) {
   return (
-    <SettingsSection title="Keyboard" headingId="keyboard-heading"
-      description="Every action has a shortcut; press ? anywhere to list them.">
-      <SettingRow label="Show shortcut hints" id="shortcut-hints" description="Print the keys in the app itself (next to quick add, in prompts and section headers) as well as in tooltips and menus. This device only."
-        control={<span data-hints-switch><Switch checked={hints} onChange={onHints} label="Show shortcut hints (this device)" hideLabel /></span>} />
-      <SettingRow label="Vim keybindings" description={
-        <>Normal, Insert and Command modes on top of the usual shortcuts: counts, <Kbd k="gg" />, <Kbd k="dd" />, <Kbd k=":" /> commands. This device only.</>
-      } control={<span data-vim-switch><Switch checked={vim} onChange={onVim} label="Vim keybindings (this device)" hideLabel /></span>} />
+    <SettingsSection title={t('Keyboard')} headingId="keyboard-heading"
+      description={t('Every action has a shortcut; press ? anywhere to list them.')}>
+      <SettingRow label={t('Show shortcut hints')} id="shortcut-hints" description={t('Print the keys in the app itself (next to quick add, in prompts and section headers) as well as in tooltips and menus. This device only.')}
+        control={<span data-hints-switch><Switch checked={hints} onChange={onHints} label={t('Show shortcut hints (this device)')} hideLabel /></span>} />
+      <SettingRow label={t('Vim keybindings')} description={
+        <>{t.rich('Normal, Insert and Command modes on top of the usual shortcuts: counts, {kbd}, {kbd2}, {kbd3} commands. This device only.', { kbd: <Kbd k="gg" />, kbd2: <Kbd k="dd" />, kbd3: <Kbd k=":" /> })}</>
+      } control={<span data-vim-switch><Switch checked={vim} onChange={onVim} label={t('Vim keybindings (this device)')} hideLabel /></span>} />
     </SettingsSection>
   )
 }

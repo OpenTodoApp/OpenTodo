@@ -5,6 +5,7 @@ import { formatInstant } from '../lib/dates'
 import { useOnline } from '../lib/online'
 import type { PendingSignup, User } from '../lib/types'
 import { navigate } from './router'
+import { t } from '../lib/i18n'
 
 // The anonymous screens of outgoing email (OpenSpec change outgoing-email,
 // account-access "Forgot password and verification screens"): /forgot asks for
@@ -18,7 +19,7 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
       <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <p className="text-h3 font-semibold">OpenTodo</p>
+          <p className="text-h3 font-semibold">{t('OpenTodo')}</p>
         </div>
         <h1 className="text-body font-medium text-strong">{title}</h1>
         {children}
@@ -50,7 +51,7 @@ export function ForgotScreen({ enabled, user }: { enabled: boolean; user: User |
       if (isNetworkError(err)) setState('offline')
       else if (err instanceof ApiError && err.code === 'rate_limited') setState('rate-limited')
       else if (err instanceof ApiError && err.code === 'smtp_disabled') setState('disabled')
-      else setError(err instanceof ApiError ? err.message : 'Something went wrong.')
+      else setError(err instanceof ApiError ? err.message : t('Something went wrong.'))
     } finally {
       setBusy(false)
     }
@@ -58,56 +59,56 @@ export function ForgotScreen({ enabled, user }: { enabled: boolean; user: User |
 
   if (user) {
     return (
-      <Card title="You are signed in">
-        <p className="text-meta text-muted">Change your password in Settings → Account → Password. To reset the password of another account, sign out first.</p>
-        <Button variant="secondary" onClick={() => navigate({ view: 'settings', section: 'account', anchor: 'security' })}>Open Account settings</Button>
+      <Card title={t('You are signed in')}>
+        <p className="text-meta text-muted">{t('Change your password in Settings → Account → Password. To reset the password of another account, sign out first.')}</p>
+        <Button variant="secondary" onClick={() => navigate({ view: 'settings', section: 'account', anchor: 'security' })}>{t('Open Account settings')}</Button>
       </Card>
     )
   }
   switch (state) {
     case 'disabled':
       return (
-        <Card title="Reset your password">
-          <p className="text-meta text-muted">This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.</p>
-          <Button variant="secondary" onClick={toSignIn}>Back to sign-in</Button>
+        <Card title={t('Reset your password')}>
+          <p className="text-meta text-muted">{t('This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.')}</p>
+          <Button variant="secondary" onClick={toSignIn}>{t('Back to sign-in')}</Button>
         </Card>
       )
     case 'sent':
       return (
-        <Card title="Check your email">
+        <Card title={t('Check your email')}>
           <p className="text-meta text-muted" role="status">
-            If an account exists for <strong className="text-default">{email.trim()}</strong>, a message with a reset link is on its way. The link works once, for 24 hours.
+            {t.rich('If an account exists for <strong>{trim}</strong>, a message with a reset link is on its way. The link works once, for 24 hours.', { trim: email.trim(), strong: (chunks) => <strong className="text-default">{chunks}</strong> })}
           </p>
-          <Button variant="secondary" onClick={toSignIn}>Back to sign-in</Button>
+          <Button variant="secondary" onClick={toSignIn}>{t('Back to sign-in')}</Button>
         </Card>
       )
     case 'offline':
       return (
-        <Card title="You seem to be offline">
-          <p className="text-meta text-muted">Requesting a reset link needs a connection to the server.</p>
-          <Button variant="primary" disabled={!online} onClick={() => setState('form')}>Try again</Button>
+        <Card title={t('You seem to be offline')}>
+          <p className="text-meta text-muted">{t('Requesting a reset link needs a connection to the server.')}</p>
+          <Button variant="primary" disabled={!online} onClick={() => setState('form')}>{t('Try again')}</Button>
         </Card>
       )
     case 'rate-limited':
       return (
-        <Card title="Too many requests">
-          <p className="text-meta text-muted">Wait a minute, then try again.</p>
-          <Button variant="primary" onClick={() => setState('form')}>Try again</Button>
+        <Card title={t('Too many requests')}>
+          <p className="text-meta text-muted">{t('Wait a minute, then try again.')}</p>
+          <Button variant="primary" onClick={() => setState('form')}>{t('Try again')}</Button>
         </Card>
       )
     case 'form':
       return (
-        <Card title="Reset your password">
+        <Card title={t('Reset your password')}>
           <form className="space-y-3" onSubmit={(e) => void submit(e)}>
-            <p className="text-meta text-muted">Enter the email address of your account. We will send you a link to choose a new password.</p>
-            <Field label="Email">
+            <p className="text-meta text-muted">{t('Enter the email address of your account. We will send you a link to choose a new password.')}</p>
+            <Field label={t('Email')}>
               <Input type="email" required autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
             </Field>
-            {!online && <Notice>Requesting a reset link needs a connection to the server.</Notice>}
+            {!online && <Notice>{t('Requesting a reset link needs a connection to the server.')}</Notice>}
             {error && <Notice tone="danger">{error}</Notice>}
-            <Button variant="primary" type="submit" className="w-full" busy={busy} disabled={!online}>Send reset link</Button>
+            <Button variant="primary" type="submit" className="w-full" busy={busy} disabled={!online}>{t('Send reset link')}</Button>
           </form>
-          <Button variant="ghost" className="w-full" onClick={toSignIn}>Back to sign-in</Button>
+          <Button variant="ghost" className="w-full" onClick={toSignIn}>{t('Back to sign-in')}</Button>
         </Card>
       )
   }
@@ -179,70 +180,70 @@ export function VerifyView({ state, user, busy, online, onCreate, onRetry, onLog
   onRetry: () => void
   onLogout: () => void
 }) {
-  const register = <Button variant="secondary" onClick={toSignIn}>Register again</Button>
+  const register = <Button variant="secondary" onClick={toSignIn}>{t('Register again')}</Button>
   if (user) {
     return (
-      <Card title="You are already signed in">
-        <p className="text-meta text-muted">This device is signed in as <strong className="text-default">{user.name || user.email}</strong>. Sign out first to confirm another account.</p>
+      <Card title={t('You are already signed in')}>
+        <p className="text-meta text-muted">{t('This device is signed in as')}{' '}<strong className="text-default">{user.name || user.email}</strong>{t('. Sign out first to confirm another account.')}</p>
         <div className="flex gap-2">
-          <Button variant="primary" onClick={onLogout}>Sign out and continue</Button>
-          <Button variant="secondary" onClick={() => navigate({ view: 'inbox' })}>Back to my tasks</Button>
+          <Button variant="primary" onClick={onLogout}>{t('Sign out and continue')}</Button>
+          <Button variant="secondary" onClick={() => navigate({ view: 'inbox' })}>{t('Back to my tasks')}</Button>
         </div>
       </Card>
     )
   }
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your link…"><p className="text-meta text-muted">One moment.</p></Card>
+      return <Card title={t('Checking your link…')}><p className="text-meta text-muted">{t('One moment.')}</p></Card>
     case 'offline':
       return (
-        <Card title="You seem to be offline">
-          <p className="text-meta text-muted">Creating your account needs a connection to the server. The page will retry when the network returns.</p>
-          <Button variant="primary" onClick={onRetry}>Retry now</Button>
+        <Card title={t('You seem to be offline')}>
+          <p className="text-meta text-muted">{t('Creating your account needs a connection to the server. The page will retry when the network returns.')}</p>
+          <Button variant="primary" onClick={onRetry}>{t('Retry now')}</Button>
         </Card>
       )
     case 'invalid':
       return (
-        <Card title="This link is no longer valid">
-          <p className="text-meta text-muted">It may have expired (links work for 24 hours), been replaced by a newer sign-up, or already been used.</p>
+        <Card title={t('This link is no longer valid')}>
+          <p className="text-meta text-muted">{t('It may have expired (links work for 24 hours), been replaced by a newer sign-up, or already been used.')}</p>
           {register}
         </Card>
       )
     case 'rate-limited':
       return (
-        <Card title="Too many attempts">
-          <p className="text-meta text-muted">Wait a minute, then try again.</p>
-          <Button variant="primary" onClick={onRetry}>Retry</Button>
+        <Card title={t('Too many attempts')}>
+          <p className="text-meta text-muted">{t('Wait a minute, then try again.')}</p>
+          <Button variant="primary" onClick={onRetry}>{t('Retry')}</Button>
         </Card>
       )
     case 'closed':
       return (
-        <Card title="Sign-up is closed">
-          <p className="text-meta text-muted">The server owner closed sign-up after you registered, so no account was created.</p>
-          <Button variant="secondary" onClick={toSignIn}>Go to sign-in</Button>
+        <Card title={t('Sign-up is closed')}>
+          <p className="text-meta text-muted">{t('The server owner closed sign-up after you registered, so no account was created.')}</p>
+          <Button variant="secondary" onClick={toSignIn}>{t('Go to sign-in')}</Button>
         </Card>
       )
     case 'taken':
       return (
-        <Card title="This address already has an account">
-          <p className="text-meta text-muted">Sign in with it, or reset its password if you forgot it.</p>
-          <Button variant="secondary" onClick={toSignIn}>Go to sign-in</Button>
+        <Card title={t('This address already has an account')}>
+          <p className="text-meta text-muted">{t('Sign in with it, or reset its password if you forgot it.')}</p>
+          <Button variant="secondary" onClick={toSignIn}>{t('Go to sign-in')}</Button>
         </Card>
       )
     case 'error':
       return (
-        <Card title="Something went wrong">
+        <Card title={t('Something went wrong')}>
           <Notice tone="danger">{state.message}</Notice>
-          <Button variant="primary" onClick={onRetry}>Retry</Button>
+          <Button variant="primary" onClick={onRetry}>{t('Retry')}</Button>
         </Card>
       )
     case 'ready':
       return (
-        <Card title="Confirm your account">
+        <Card title={t('Confirm your account')}>
           <p className="text-meta text-muted">
-            Create the account for <strong className="text-default">{state.pending.email}</strong> with the name and password you chose. This link works until {formatInstant(state.pending.expiresAt, 'datetime')}.
+            {t.rich('Create the account for <strong>{email}</strong> with the name and password you chose. This link works until {instant}.', { email: state.pending.email, instant: formatInstant(state.pending.expiresAt, 'datetime'), strong: (chunks) => <strong className="text-default">{chunks}</strong> })}
           </p>
-          <Button variant="primary" className="w-full" busy={busy} disabled={!online} onClick={onCreate} data-verify-create>Create my account</Button>
+          <Button variant="primary" className="w-full" busy={busy} disabled={!online} onClick={onCreate} data-verify-create>{t('Create my account')}</Button>
         </Card>
       )
   }

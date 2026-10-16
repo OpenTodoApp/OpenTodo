@@ -15,6 +15,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Popover } from '../overlay/Popover'
 import { useViewerZone } from '../useViews'
 import { useShortcutScope } from '../shortcuts'
+import { t } from '../../lib/i18n'
 
 /** `z` with the panel open (not typing) toggles the zone; listed in the shortcut help. */
 export const ZONE_TOGGLE_KEY = 'z'
@@ -46,7 +47,7 @@ export function zoneOffset(zone: string, at: number = Date.now()): string {
 
 /** Chip text: "Floating" or "City · UTC+2". */
 export function zoneChipText(due: Due | null | undefined): string {
-  if (!due?.tz) return 'Floating'
+  if (!due?.tz) return t('Floating')
   const offset = zoneOffset(due.tz, due.time ? dueToInstant(due, due.tz) : Date.now())
   const city = zoneCity(due.tz)
   return offset && offset !== city ? `${city} · ${offset}` : city
@@ -98,12 +99,12 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
     return allZones(zone, due?.tz ? [due.tz] : []).map((z) => {
       const region = z.includes('/') ? z.slice(0, z.indexOf('/')).replace(/_/g, ' ') : ''
       const offset = zoneOffset(z, now)
-      return { zone: z, city: zoneCity(z), secondary: [z === zone ? 'Your zone' : region, offset].filter(Boolean).join(' · ') }
+      return { zone: z, city: zoneCity(z), secondary: [z === zone ? t('Your zone') : region, offset].filter(Boolean).join(' · ') }
     })
   }, [open, zone, due?.tz])
 
   const close = () => { setOpen(false); setCandidate(null) }
-  const reason = 'Set a time to fix this due to a time zone'
+  const reason = t('Set a time to fix this due to a time zone')
   const text = zoneChipText(due)
 
   // "15:00 in New York = 21:00 your time (Berlin)" for a due fixed (or about to be fixed) to `z`.
@@ -112,20 +113,20 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
     const fixed = setDueZone(due, z)
     if (!fixed) return ''
     const local = localDueOf(fixed, zone)
-    const there = `${dt.formatTime(due.time)} in ${zoneCity(z)}`
-    if (z === zone) return `${there}, your zone`
+    const there = t('{time} in {city}', { time: dt.formatTime(due.time), city: zoneCity(z) })
+    if (z === zone) return t('{there}, your zone', { there })
     const day = local.date !== due.date ? ` (${dt.formatDate(local.date, 'compact')})` : ''
-    return `${there} = ${dt.formatTime(local.time!)}${day} your time (${zoneCity(zone)})`
+    return t('{there} = {time}{day} your time ({city})', { there, time: dt.formatTime(local.time!), day, city: zoneCity(zone) })
   }
 
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <Tooltip label={canFix ? 'Time zone' : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
+      <Tooltip label={canFix ? t('Time zone') : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
         <button
           ref={chip}
           type="button"
           className="ui-btn ui-btn--secondary ui-btn--sm"
-          aria-label={`Time zone: ${text}`}
+          aria-label={t('Time zone: {text}', { text })}
           aria-haspopup="dialog"
           aria-expanded={open}
           aria-keyshortcuts={readOnly ? undefined : ZONE_TOGGLE_KEY}
@@ -137,22 +138,22 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
         </button>
       </Tooltip>
       {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}
-      <Popover open={open} onClose={close} anchor={chip} label="Time zone" align="start" width="sm:w-80" className="space-y-3 p-3">
+      <Popover open={open} onClose={close} anchor={chip} label={t('Time zone')} align="start" width="sm:w-80" className="space-y-3 p-3">
         <div className="space-y-2 text-meta">
           <p className={zoned ? 'text-muted' : 'text-default'} data-testid="zone-mode-floating">
-            <strong className="font-semibold">Floating{!zoned && ' (now)'}:</strong> the same clock time wherever you are.
+            <strong className="font-semibold">{zoned ? t('Floating:') : t('Floating (now):')}</strong>{' '}{t('the same clock time wherever you are.')}
           </p>
           <p className={zoned ? 'text-default' : 'text-muted'} data-testid="zone-mode-fixed">
-            <strong className="font-semibold">Fixed to a time zone{zoned && ' (now)'}:</strong> one moment worldwide, shown in each viewer's own time.
+            <strong className="font-semibold">{zoned ? t('Fixed to a time zone (now):') : t('Fixed to a time zone:')}</strong>{' '}{t('one moment worldwide, shown in each viewer\'s own time.')}
           </p>
         </div>
         {zoned
-          ? <Button size="sm" icon="globe" onClick={() => { write(releaseDue(due!, zone)); close() }}>Make floating</Button>
-          : <Button size="sm" icon="globe" onClick={() => { write(fixDueToZone(due!, zone)); close() }}>Fix to my zone ({zoneCity(zone)})</Button>}
+          ? <Button size="sm" icon="globe" onClick={() => { write(releaseDue(due!, zone)); close() }}>{t('Make floating')}</Button>
+          : <Button size="sm" icon="globe" onClick={() => { write(fixDueToZone(due!, zone)); close() }}>{t('Fix to my zone ({zoneCity})', { zoneCity: zoneCity(zone) })}</Button>}
         {zoned && !candidate && <p className="text-meta text-muted" data-testid="zone-preview">{preview(due!.tz!)}</p>}
         <ComboboxPanel<ZoneItem>
-          label="Fix to another time zone"
-          placeholder="Search a city or zone"
+          label={t('Fix to another time zone')}
+          placeholder={t('Search a city or zone')}
           source={items}
           getKey={(i) => i.zone}
           getLabel={(i) => i.city}
@@ -161,14 +162,14 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
           selected={due?.tz ? [due.tz] : []}
           rankContext={ZONE_RANK_CONTEXT}
           onPick={(i) => setCandidate(i.zone)}
-          emptyText="No zone matches"
+          emptyText={t('No zone matches')}
         />
         {candidate && (
           <div className="space-y-2 rounded-control bg-sunken p-2 dark:bg-raised">
             <p className="text-meta text-default" role="status" data-testid="zone-preview">{preview(candidate)}</p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="primary" onClick={() => { write(setDueZone(due!, candidate)); close() }}>Fix to {zoneCity(candidate)}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setCandidate(null)}>Cancel</Button>
+              <Button size="sm" variant="primary" onClick={() => { write(setDueZone(due!, candidate)); close() }}>{t('Fix to {zoneCity}', { zoneCity: zoneCity(candidate) })}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setCandidate(null)}>{t('Cancel')}</Button>
             </div>
           </div>
         )}

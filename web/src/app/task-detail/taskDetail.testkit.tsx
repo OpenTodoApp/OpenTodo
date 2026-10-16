@@ -33,7 +33,7 @@ export function setupTaskDetailTests() {
 export const settle = () => flush(40)
 /** Live queries resolve in steps (task → project → sections); wait for the condition. */
 export async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
+  for (let item = 0; item < ms && !ok(); item += 20) await flush(20)
   expect(ok()).toBe(true)
 }
 

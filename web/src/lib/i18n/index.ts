@@ -7,7 +7,7 @@ import {
 import { intlLocale, resolveLanguage } from './locale'
 
 export {
-  t, msg, formatNumber, currentLanguage, currentLocale, currentPreference, languageVersion, onLanguageChange,
+  t, msg, formatNumber, translatedMap, translatedList, currentLanguage, currentLocale, currentPreference, languageVersion, onLanguageChange,
   mirroredPreference, SHIPPED, isShipped, type LanguageCode, type TFunction,
 } from './catalog'
 export { browserLanguages, intlLocale, preferredLanguages, resolveLanguage } from './locale'

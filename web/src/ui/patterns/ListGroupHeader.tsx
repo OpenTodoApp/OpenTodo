@@ -4,6 +4,7 @@
 // groups, project groups, "Later" and "Sub-projects" all render through it.
 import type { ReactNode } from 'react'
 import { Icon } from '../Icon'
+import { t } from '../../lib/i18n'
 
 export interface ListGroupHeaderProps {
   title: ReactNode
@@ -33,7 +34,7 @@ export function ListGroupHeader({ title, count, tone = 'default', collapsed, onT
   const text = (
     <>
       <span className={`min-w-0 truncate text-body font-semibold ${color}`}>{title}</span>
-      {count !== undefined && <span className="text-meta tabular-nums text-faint" data-group-count aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span>}
+      {count !== undefined && <span className="text-meta tabular-nums text-faint" data-group-count aria-label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</span>}
     </>
   )
   return (
@@ -41,7 +42,7 @@ export function ListGroupHeader({ title, count, tone = 'default', collapsed, onT
       <H className="flex min-w-0 flex-1 items-center">
         {collapsible ? (
           <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pr-1 text-left hover:bg-sunken dark:hover:bg-raised"
-            aria-expanded={!collapsed} aria-label={label ? `${collapsed ? 'Expand' : 'Collapse'} ${label}` : undefined} onClick={onToggle} data-group-toggle>
+            aria-expanded={!collapsed} aria-label={label ? (collapsed ? t('Expand {name}', { name: label }) : t('Collapse {name}', { name: label })) : undefined} onClick={onToggle} data-group-toggle>
             <Icon name="chevron-right" size="xs" className={`shrink-0 text-faint transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             {text}
           </button>

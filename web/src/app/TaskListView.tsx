@@ -60,12 +60,13 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
   inbox: 'inbox', today: 'today', upcoming: 'upcoming', anytime: 'anytime', someday: 'someday', completed: 'completed', assigned: 'assigned', label: 'label',
 }
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, msg, translatedMap } from '../lib/i18n'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'triage' } | { view: 'public' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' } | { view: 'forgot' } | { view: 'verify' } | { view: 'display' } | { view: 'review' } | { view: 'stats' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 /** The project layouts, in `v` order (month-and-timeline-views). */
-const LAYOUT_LABEL: Record<ProjectViewMode, string> = { list: 'List', board: 'Board', timeline: 'Timeline' }
+const LAYOUT_LABEL = translatedMap<ProjectViewMode>({ list: msg('List'), board: msg('Board'), timeline: msg('Timeline') })
 
 interface Row {
   task: Task
@@ -127,7 +128,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Cached memberships (project-sharing): viewers get a read-only project, also offline.
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
-  const isReadOnly = useCallback((t: Task | undefined) => !!t && roleOf(t.project_id, memberMap) === 'viewer', [memberMap])
+  const isReadOnly = useCallback((tk: Task | undefined) => !!tk && roleOf(tk.project_id, memberMap) === 'viewer', [memberMap])
   const projectReadOnly = route.view === 'project' && roleOf(route.id, memberMap) === 'viewer'
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const currentLabel = route.view === 'label' ? labelMap.get(route.id) : undefined
@@ -135,7 +136,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Every live task once; views, breadcrumbs and progress badges derive from this set,
   // so a remote op that lands in IndexedDB updates all of them without a reload.
   const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
-  const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
+  const taskMap = useMemo(() => new Map(allTasks.map((tVar) => [tVar.id, tVar])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
   // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
@@ -158,26 +159,26 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const all = withoutArchived(allTasks, projects, route.view === 'project' ? route.id : undefined)
     switch (route.view) {
       case 'inbox':
-        return all.filter((t) => !t.completed_at && t.project_id === null)
+        return all.filter((tVar) => !tVar.completed_at && tVar.project_id === null)
       case 'today':
         return todayList(all, today)
       case 'upcoming':
         return upcomingList(all, today)
       // Someday and Anytime (someday-and-evening D5), grouped by project below.
       case 'someday':
-        return all.filter((t) => !t.completed_at && isSomeday(t)).sort(byPosition)
+        return all.filter((tVar) => !tVar.completed_at && isSomeday(tVar)).sort(byPosition)
       case 'anytime':
-        return all.filter((t) => inAnytime(t, today)).sort(byPosition)
+        return all.filter((tVar) => inAnytime(tVar, today)).sort(byPosition)
       case 'completed':
         // The logbook pages through every completion (completed-date-filters D4);
         // a habit's skipped occurrence record is not a completion (habits D6).
-        return all.filter((t) => t.completed_at && !t.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
+        return all.filter((tVar) => tVar.completed_at && !tVar.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
       case 'project':
         return projectOpenList(all, route.id)
       case 'label':
-        return all.filter((t) => !t.completed_at && t.labels.includes(route.id)).sort(byPosition)
+        return all.filter((tVar) => !tVar.completed_at && tVar.labels.includes(route.id)).sort(byPosition)
       case 'assigned':
-        return all.filter((t) => !t.completed_at && !!userId && t.assignee_id === userId).sort(compareDueThenPriority)
+        return all.filter((tVar) => !tVar.completed_at && !!userId && tVar.assignee_id === userId).sort(compareDueThenPriority)
     }
   }, [allTasks, projects, route, today, zone, userId])
 
@@ -207,8 +208,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Project and Inbox lists keep deferred and parked tasks in a Later group at the
   // end (someday-and-evening D2); the board keeps every card in its column.
   const boardMode = useLiveQuery(() => (route.view === 'project' ? loadViewMode(route.id) : Promise.resolve('list' as const)), [route], 'list') === 'board'
-  const laterTasks = useMemo(() => (treeView && !boardMode ? tasks.filter((t) => inLater(t, today)) : []), [treeView, boardMode, tasks, today])
-  const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((t) => !inLater(t, today)) : tasks), [laterTasks, tasks, today])
+  const laterTasks = useMemo(() => (treeView && !boardMode ? tasks.filter((tVar) => inLater(tVar, today)) : []), [treeView, boardMode, tasks, today])
+  const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((tVar) => !inLater(tVar, today)) : tasks), [laterTasks, tasks, today])
   const tree = useMemo<Tree<Task> | null>(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
 
   // Sections and the board (OpenSpec `board-view`). View mode and collapsed sections
@@ -239,7 +240,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (!projectId || !tree) return null
     const byId = new Map(tree.roots.map((n) => [n.id, n]))
     return groupBySection(projectId, tree.roots.map((n) => n.item), sections).map((g) => ({
-      ...g, roots: g.tasks.map((t) => byId.get(t.id) as TreeNode<Task>),
+      ...g, roots: g.tasks.map((tVar) => byId.get(tVar.id) as TreeNode<Task>),
     }))
   }, [projectId, tree, sections])
   // "No section" is a column only while it has open tasks (sections-and-boards).
@@ -252,7 +253,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   const groups = useMemo<Group[]>(() => {
     const later: Group[] = laterTasks.length
-      ? [{ key: 'later', heading: 'Later', rows: laterTasks.map((t) => ({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null })) }]
+      ? [{ key: 'later', heading: t('Later'), rows: laterTasks.map((tVar) => ({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null })) }]
       : []
     const toRow = (n: TreeNode<Task>): Row => ({
       task: n.item,
@@ -266,7 +267,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (board) {
       // Board: cards are top-level tasks, column by column (keyboard order).
       return columns.map((c) => ({
-        key: c.key, heading: null, rows: c.cards.map((t) => ({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
+        key: c.key, heading: null, rows: c.cards.map((tVar) => ({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
       }))
     }
     if (sectionGroups && liveSections.length > 0) {
@@ -274,7 +275,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       const folded = new Set(collapsedSections)
       const bySection: Group[] = sectionGroups.filter((g) => g.section || g.roots.length > 0).map((g) => ({
         key: `section:${g.key}`,
-        heading: g.section ? g.section.name : 'No section',
+        heading: g.section ? g.section.name : t('No section'),
         section: g.section,
         sectionCollapsed: folded.has(g.key),
         count: flattenTree(g.roots).length,
@@ -287,20 +288,20 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       return [{ key: 'all', heading: null, rows: flattenTree(tree.roots, (id) => collapsed.has(id)).map(toRow) }, ...later]
     }
     // Cross-project and date views: flat, each matching task once, with its parent named.
-    const flatRow = (t: Task): Row => ({
-      task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null,
+    const flatRow = (tVar: Task): Row => ({
+      task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null,
     })
     if (route.view === 'today') {
       // Blocked tasks wait in their own group at the end (task-dependencies D7);
       // This Evening below the day's tasks (someday-and-evening).
       const { overdue, day, evening, blocked: waiting } = groupToday(tasks, today, blocked)
       const g: Group[] = []
-      if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
-      g.push({ key: 'today', heading: overdue.length || evening.length ? 'Today' : null, rows: day.map(flatRow) })
-      if (evening.length) g.push({ key: 'evening', heading: 'This Evening', rows: evening.map(flatRow) })
+      if (overdue.length) g.push({ key: 'overdue', heading: t('Overdue'), rows: overdue.map(flatRow) })
+      g.push({ key: 'today', heading: overdue.length || evening.length ? t('Today') : null, rows: day.map(flatRow) })
+      if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: evening.map(flatRow) })
       if (waiting.length) {
         const folded = !collapsed.has(BLOCKED_OPEN_KEY)
-        g.push({ key: 'blocked', heading: 'Blocked', count: waiting.length, folded, rows: folded ? [] : waiting.map(flatRow) })
+        g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, rows: folded ? [] : waiting.map(flatRow) })
       }
       return g
     }
@@ -316,10 +317,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (route.view === 'label' || route.view === 'assigned' || route.view === 'someday' || route.view === 'anytime') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
       const byProject = new Map<string, Task[]>()
-      for (const t of tasks) byProject.set(t.project_id ?? '', [...(byProject.get(t.project_id ?? '') ?? []), t])
+      for (const tVar of tasks) byProject.set(tVar.project_id ?? '', [...(byProject.get(tVar.project_id ?? '') ?? []), tVar])
       const order = ['', ...projects.slice().sort(compareByPosition).map((p) => p.id)]
       return order.filter((id) => byProject.has(id)).map((id) => ({
-        key: id || 'inbox', heading: id ? projectMap.get(id)?.name ?? 'Project' : 'Inbox', rows: byProject.get(id)!.map(flatRow),
+        key: id || 'inbox', heading: id ? projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: byProject.get(id)!.map(flatRow),
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
@@ -331,14 +332,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups"); date, project and Later groups collapse per device.
   const doneInProject = useLiveQuery(
-    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((t) => !!t.completed_at && !t.deleted_at && !t.skipped).toArray() : Promise.resolve([] as Task[])),
+    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((tVar) => !!tVar.completed_at && !tVar.deleted_at && !tVar.skipped).toArray() : Promise.resolve([] as Task[])),
     [projectId], [] as Task[],
   )
   const doneBySection = useMemo(() => {
     const m = new Map<string, Task[]>()
-    for (const t of doneInProject) {
-      const key = effectiveSection(t, sectionMap) ?? ''
-      m.set(key, [...(m.get(key) ?? []), t])
+    for (const tVar of doneInProject) {
+      const key = effectiveSection(tVar, sectionMap) ?? ''
+      m.set(key, [...(m.get(key) ?? []), tVar])
     }
     return m
   }, [doneInProject, sectionMap])
@@ -392,7 +393,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   /** Section key ('' = "No section") of each top-level row or card in a sectioned project. */
   const sectionOfRow = useMemo(() => {
     const m = new Map<string, string>()
-    if (board) for (const c of columns) for (const t of c.cards) m.set(t.id, c.key)
+    if (board) for (const c of columns) for (const tVar of c.cards) m.set(tVar.id, c.key)
     else for (const g of groups) if (g.section !== undefined) for (const r of g.rows) if (r.parent === null) m.set(r.task.id, g.section?.id ?? '')
     return m
   }, [board, columns, groups])
@@ -430,9 +431,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         if (target.startsWith('task:')) {
           const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
           if (!r || !current) return
-          const t = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
-          const section = t.parent_id === null ? secs.get(r.task.id) : undefined
-          void moveTask(task.id, { ...t, ...(section !== undefined ? { section_id: section } : {}) })
+          const entry = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
+          const section = entry.parent_id === null ? secs.get(r.task.id) : undefined
+          void moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })
         } else if (target.startsWith('section:')) {
           const key = target.slice('section:'.length)
           const row = rs.find((x) => x.task.id === task.id)
@@ -564,7 +565,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     setOpenId(row.task.id)
   }
   const extend = (dir: 1 | -1) => () => {
-    const order = board ? (columns.find((c) => c.cards.some((t) => t.id === selectedId))?.cards.map((t) => t.id) ?? tickRows) : tickRows
+    const order = board ? (columns.find((c) => c.cards.some((tVar) => tVar.id === selectedId))?.cards.map((tVar) => tVar.id) ?? tickRows) : tickRows
     const at = selectedId ? order.indexOf(selectedId) : -1
     const next = order[Math.max(0, Math.min(order.length - 1, at + dir))]
     if (!next) return false
@@ -677,8 +678,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     // Duplicate the task and its open subtasks right below it (project-templates D6).
     'list.duplicate': () => { if (!row || !writable) return false; void duplicateTask(row.task.id).then((id) => setSelectedId(id)) },
   })
-  const col = board ? columns.findIndex((c) => c.cards.some((t) => t.id === selectedId)) : -1
-  const pos = col >= 0 ? columns[col].cards.findIndex((t) => t.id === selectedId) : -1
+  const col = board ? columns.findIndex((c) => c.cards.some((tVar) => tVar.id === selectedId)) : -1
+  const pos = col >= 0 ? columns[col].cards.findIndex((tVar) => tVar.id === selectedId) : -1
   const firstCard = (from: number, dir: 1 | -1) => {
     for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
     return null
@@ -712,7 +713,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions })
   live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions }
   // Complete / reopen from the panel goes through this list, so the "complete parent too?" prompt and the archive offer follow.
-  useEffect(() => registerPanelHandlers({ toggleComplete: (t) => void live.current.toggleComplete(t.id, !t.completed_at) }), [])
+  useEffect(() => registerPanelHandlers({ toggleComplete: (tVar) => void live.current.toggleComplete(tVar.id, !tVar.completed_at) }), [])
   // Opening another task from the panel (a subtask, the parent) selects it here when it is listed.
   useEffect(() => {
     if (openId && live.current.rows.some((r) => r.task.id === openId)) setSelectedId(openId)
@@ -724,7 +725,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     select: setSelectedId,
     openId: () => live.current.openId,
     open: setOpenId,
-    readOnly: (t) => live.current.isReadOnly(t),
+    readOnly: (tVar) => live.current.isReadOnly(tVar),
     manual: () => live.current.manual,
     focusQuickAdd: (after) => {
       const input = quickAddRef.current
@@ -773,7 +774,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
         labels={resolveLabels(r.task.labels, labelMap)}
         assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
-          ? (r.task.assignee_id === userId ? 'You' : memberName(r.task.assignee_id, memberMap) ?? 'Former member') : null}
+          ? (r.task.assignee_id === userId ? t('You') : memberName(r.task.assignee_id, memberMap) ?? t('Former member')) : null}
         assignedToMe={!!userId && r.task.assignee_id === userId}
         showProject={route.view !== 'project' && route.view !== 'label' && route.view !== 'inbox'}
         selected={r.task.id === selectedId}
@@ -816,41 +817,41 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       {route.view === 'today' && <TodayAskAction role={userRole} />}
       {route.view === 'inbox' && rows.length > 0 && (
         // Process the Inbox one task at a time (inbox-triage); g then p.
-        <Tooltip label="Process the Inbox" shortcut="g p">
+        <Tooltip label={t('Process the Inbox')} shortcut="g p">
           <Button variant="secondary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start>
-            Process <span className="tabular-nums text-muted">{rows.filter((r) => r.depth === 0).length}</span>
+            {t.rich('Process {count}', { count: <span className="tabular-nums text-muted">{rows.filter((r) => r.depth === 0).length}</span> })}
           </Button>
         </Tooltip>
       )}
       {route.view !== 'completed' && rows.length > 0 && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm hidden px-2 py-1 text-body pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
-          {selectMode ? 'Done' : 'Select'}
+          {selectMode ? t('Done') : t('Select')}
         </button>
       )}
       {filterKey && <DurationFilterControl active={duration} onChange={chooseDuration} />}
       {(route.view === 'today' || route.view === 'upcoming') && (
         // Display mode (display-mode D6): this view in large type, for a tablet or an e-ink panel.
-        <IconButton size="sm" icon="monitor" label="Display mode" data-display-mode
+        <IconButton size="sm" icon="monitor" label={t('Display mode')} data-display-mode
           onClick={() => navigate({ view: 'display', target: { kind: route.view as 'today' | 'upcoming' }, options: { ...DEFAULT_DISPLAY_OPTIONS } })} />
       )}
     </>
   )
 
   const title = {
-    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', someday: 'Someday', anytime: 'Anytime', completed: 'Completed', assigned: 'Assigned to me', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
+    inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),
   }[route.view]
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
     return (
       <div className="p-6 text-body text-muted">
-        This project no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
+        {t('This project no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'inbox' })}>{t('Go to Inbox')}</button>
       </div>
     )
   }
   if (route.view === 'label' && labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) {
     return (
       <div className="p-6 text-body text-muted">
-        This label no longer exists. <button className="underline" onClick={() => navigate({ view: 'labels' })}>All labels</button>
+        {t('This label no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'labels' })}>{t('All labels')}</button>
       </div>
     )
   }
@@ -861,7 +862,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={(
-                <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
+                <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Project layout')}>
                   {(['list', 'board', 'timeline'] as const).map((m) => (
                     <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
                       <button type="button" aria-pressed={viewMode === m} onClick={() => chooseViewMode(m)}
@@ -884,8 +885,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <div className="mb-3 border-b border-default pb-2">
               {projectReadOnly ? (
                 <>
-                  <input className="ui-input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
-                  <p role="note" className="mt-1 text-meta text-muted">Read-only: you are a viewer of this shared project.</p>
+                  <input className="ui-input" disabled aria-label={t('Quick add (read-only)')} placeholder={t('You can view this project but not add tasks')} />
+                  <p role="note" className="mt-1 text-meta text-muted">{t('Read-only: you are a viewer of this shared project.')}</p>
                 </>
               ) : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
@@ -900,7 +901,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {actionsOpen && ticked.length === 0 && selectedId && (
             // `.` with nothing ticked: the same menu for the cursor task.
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={(v) => { setActionsOpen(v); if (!v) setActionsPicker(null) }} startPicker={actionsPicker}
-              trigger={<span className="sr-only">Actions</span>} triggerClassName="sr-only" />
+              trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
 
           {route.view === 'project' && currentProject && <ProjectNote project={currentProject} />}
@@ -911,13 +912,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               <Button variant="ghost" size="sm" icon="list" aria-pressed={!!columnsPref} data-columns-toggle
                 className={columnsPref ? 'bg-sunken text-default dark:bg-raised' : undefined}
                 onClick={() => projectId && saveListColumns(projectId, !columnsPref)}>
-                Columns
+                {t('Columns')}
               </Button>
             </div>
           )}
           {rows.length === 0 && !showFirstRun && !(board || liveSections.length > 0) && (duration ? (
-            <EmptyStatePattern icon="filter" title="No task matches this duration filter"
-              action={<Button size="sm" variant="secondary" onClick={() => chooseDuration(null)}>Clear the filter</Button>} />
+            <EmptyStatePattern icon="filter" title={t('No task matches this duration filter')}
+              action={<Button size="sm" variant="secondary" onClick={() => chooseDuration(null)}>{t('Clear the filter')}</Button>} />
           ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={projectReadOnly} onAdd={focusQuickAdd} />)}
 
           {board && currentProject ? (
@@ -929,7 +930,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               setAddingTo={setAddingTo}
               projects={projects}
               labels={labels}
-              renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
+              renderCard={(tVar) => renderRow({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
               onCurrentColumn={setCurrentColumn}
             />
           ) : timeline && currentProject ? (
@@ -953,11 +954,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
                 onReveal={() => setRevealed((s) => { const n = new Set(s); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); return n })}
               />
               {addingTo === (g.section?.id ?? '') && projectEditable && (
-                <SectionQuickAdd project={currentProject} sectionId={g.section?.id ?? null} sectionName={g.heading ?? 'No section'} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
+                <SectionQuickAdd project={currentProject} sectionId={g.section?.id ?? null} sectionName={g.heading ?? t('No section')} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
               )}
               {rowList(g.rows.map((r) => renderRow(r)))}
               {g.count === 0 && revealed.has(g.key) && rowList(
-                (doneBySection.get(g.section?.id ?? '') ?? []).map((t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
+                (doneBySection.get(g.section?.id ?? '') ?? []).map((tVar) => renderRow({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
                 { 'data-revealed-completed': '' },
               )}
             </section>
@@ -975,7 +976,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {logbook && logbook.total > logbookLimit && (
             <div className="mb-4 flex justify-center">
               <Button variant="secondary" size="sm" onClick={() => setLogbookLimit((n) => n + LOGBOOK_PAGE)} data-logbook-more>
-                Show more <span className="tabular-nums text-muted">{logbook.total - logbookLimit} older</span>
+                {t.rich('Show more {older}', { older: <span className="tabular-nums text-muted">{t('{n} older', { n: logbook.total - logbookLimit })}</span> })}
               </Button>
             </div>
           )}
@@ -984,22 +985,22 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
           <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
-            <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
+            <span className="user-text min-w-0">{t('All subtasks done. Complete')}{' '}<strong>{prompt.title || t('Untitled')}</strong>{' '}{t('too?')}</span>
+            <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={acceptPrompt}>{t('Complete')} <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setPrompt(null)}>{t('Keep open')} <Kbd k="Esc" only className="ml-1" /></button>
           </div>
         </div>
       )}
       {assignFor && userId && (
-        <Dialog title="Assign" label="Assign task" onClose={() => setAssignFor(null)}>
+        <Dialog title={t('Assign')} label={t('Assign task')} onClose={() => setAssignFor(null)}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
-          <p className="mt-2 px-1 text-hint text-faint">Type to filter · Enter assigns · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">{t('Type to filter · Enter assigns · Esc closes')}</p>
         </Dialog>
       )}
       {pickerFor && (
-        <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
+        <Dialog title={t('Labels')} label={t('Labels for task')} onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-hint text-faint">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">{t('Enter toggles or creates · Esc closes')}</p>
         </Dialog>
       )}
     </div>
@@ -1027,8 +1028,8 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
       <input
         ref={ref}
         className="ui-input py-1"
-        placeholder={`Add a subtask to ${parent.title || 'this task'}…`}
-        aria-label="Add a subtask"
+        placeholder={(parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…'))}
+        aria-label={t('Add a subtask')}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}
@@ -1063,17 +1064,17 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
       {current && (
         <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
           {current.label}
-          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" onClick={() => onChange(null)} data-clear-duration>
+          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label={t('Clear filter')} onClick={() => onChange(null)} data-clear-duration>
             <Icon name="x" size="xs" />
           </button>
         </span>
       )}
-      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
+      <Menu kind="menu" label={t('Filter')} title={t('Filter by duration')} trigger={<Icon name="filter" />} triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
         {DURATION_FILTERS.map((f) => (
           <MenuItem key={f.kind} label={f.label} description={f.title} checked={active === f.kind} onSelect={() => onChange(active === f.kind ? null : f.kind)} />
         ))}
         {active && <MenuSeparator />}
-        {active && <MenuItem label="Clear filter" icon="x" onSelect={() => onChange(null)} />}
+        {active && <MenuItem label={t('Clear filter')} icon="x" onSelect={() => onChange(null)} />}
       </Menu>
     </span>
   )
@@ -1082,36 +1083,36 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
 function placeholderFor(route: ListRoute, project?: Project, label?: Label): string {
   switch (route.view) {
     case 'today':
-      return 'Add a task for today…'
+      return t('Add a task for today…')
     case 'upcoming':
-      return 'Add a task for tomorrow…'
+      return t('Add a task for tomorrow…')
     case 'someday':
-      return 'Add a someday task…'
+      return t('Add a someday task…')
     case 'anytime':
-      return 'Add a task…'
+      return t('Add a task…')
     case 'project':
-      return `Add a task to ${project?.name ?? 'this project'}…`
+      return project?.name ? t('Add a task to {project}…', { project: project.name }) : t('Add a task to this project…')
     case 'label':
-      return `Add a task labelled ${label?.name ?? 'this'}…`
+      return label?.name ? t('Add a task labelled {label}…', { label: label.name }) : t('Add a task with this label…')
     case 'assigned':
-      return 'Add a task assigned to you…'
+      return t('Add a task assigned to you…')
     default:
-      return 'Add a task to your Inbox…'
+      return t('Add a task to your Inbox…')
   }
 }
 
 // Empty states name the action first (first-run spec): an icon, one sentence, one
 // button that does it, and the key hint on a second line only with a fine pointer.
 const EMPTY: Record<ListRoute['view'], { icon: IconName; title: string }> = {
-  inbox: { icon: 'inbox', title: 'Your Inbox is empty' },
-  today: { icon: 'sun', title: 'Nothing due today' },
-  upcoming: { icon: 'calendar-days', title: 'Nothing scheduled yet' },
-  someday: { icon: 'coffee', title: 'Nothing parked for later' },
-  anytime: { icon: 'layers', title: 'Nothing to do whenever' },
-  completed: { icon: 'circle-check-big', title: 'Nothing completed yet' },
-  project: { icon: 'folder', title: 'This project has no open tasks' },
-  label: { icon: 'tag', title: 'No open task carries this label' },
-  assigned: { icon: 'user-check', title: 'Nothing is assigned to you' },
+  inbox: { icon: 'inbox', get title() { return t('Your Inbox is empty') } },
+  today: { icon: 'sun', get title() { return t('Nothing due today') } },
+  upcoming: { icon: 'calendar-days', get title() { return t('Nothing scheduled yet') } },
+  someday: { icon: 'coffee', get title() { return t('Nothing parked for later') } },
+  anytime: { icon: 'layers', get title() { return t('Nothing to do whenever') } },
+  completed: { icon: 'circle-check-big', get title() { return t('Nothing completed yet') } },
+  project: { icon: 'folder', get title() { return t('This project has no open tasks') } },
+  label: { icon: 'tag', get title() { return t('No open task carries this label') } },
+  assigned: { icon: 'user-check', get title() { return t('Nothing is assigned to you') } },
 }
 
 function EmptyState({ view, waiting = 0, readOnly = false, onAdd }: { view: ListRoute['view']; waiting?: number; readOnly?: boolean; onAdd: () => void }) {
@@ -1119,16 +1120,16 @@ function EmptyState({ view, waiting = 0, readOnly = false, onAdd }: { view: List
   const { icon, title } = EMPTY[view]
   // Everything due today waits for other tasks (task-dependencies): say so.
   const body = view === 'today' && waiting > 0
-    ? `${waiting === 1 ? 'One task is' : `${waiting} tasks are`} waiting for other tasks below.`
+    ? t('{n, plural, one {One task is waiting for other tasks below.} other {# tasks are waiting for other tasks below.}}', { n: waiting })
     : undefined
   const action = view === 'completed'
-    ? { label: 'Open Today', run: () => navigate({ view: 'today' }), hint: <>Press <kbd className="ui-kbd">g</kbd> then <kbd className="ui-kbd">t</kbd> to open Today</> }
+    ? { label: t('Open Today'), run: () => navigate({ view: 'today' }), hint: <>{t.rich('Press {g} then {key} to open Today', { g: <kbd className="ui-kbd">g</kbd>, key: <kbd className="ui-kbd">t</kbd> })}</> }
     : readOnly
-      ? { label: 'Open Inbox', run: () => navigate({ view: 'inbox' }), hint: <>Press <kbd className="ui-kbd">g</kbd> then <kbd className="ui-kbd">i</kbd> to open the Inbox</> }
-      : { label: 'Add a task', run: onAdd, hint: <>Press <kbd className="ui-kbd">q</kbd> to add a task</> }
+      ? { label: t('Open Inbox'), run: () => navigate({ view: 'inbox' }), hint: <>{t.rich('Press {g} then {key} to open the Inbox', { g: <kbd className="ui-kbd">g</kbd>, key: <kbd className="ui-kbd">i</kbd> })}</> }
+      : { label: t('Add a task'), run: onAdd, hint: <>{t.rich('Press {key} to add a task', { key: <kbd className="ui-kbd">q</kbd> })}</> }
   return (
     <div data-empty-state={view}>
-      <EmptyStatePattern icon={icon} title={body ? 'Nothing is ready to start today' : title} body={body}
+      <EmptyStatePattern icon={icon} title={body ? t('Nothing is ready to start today') : title} body={body}
         action={(
           <>
             <Button size="sm" variant="secondary" data-empty-action onClick={action.run}>{action.label}</Button>

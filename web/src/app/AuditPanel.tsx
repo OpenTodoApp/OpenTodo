@@ -15,6 +15,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import { AUDIT_EVENT_NAMES, type AuditEvent, type AuditFilters, type AuditSettings } from '../lib/types'
 import { AUDIT_LABELS, EMPTY_FORM, eventAccount, eventSummary, type FilterForm, shortAgent, toFilters } from './auditFormat'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
 
 export type LogStatus = 'loading' | 'ready' | 'offline' | 'error'
 
@@ -24,7 +25,7 @@ const PAGE = 50
 export function NeedsConnection({ what }: { what: string }) {
   return (
     <Notice tone="warning">
-      You are offline. The {what} lives on the server and needs a connection; nothing is shown until you are back online.
+      {t('You are offline. The {what} lives on the server and needs a connection; nothing is shown until you are back online.', { what })}
     </Notice>
   )
 }
@@ -130,7 +131,7 @@ export function AuditPanel() {
       const s = await api.updateAuditSettings(patch)
       setSettings(s)
       setRetention(String(s.retentionDays))
-      setNotice('Saved.')
+      setNotice(t('Saved.'))
       await load(applied)
     } catch (err) {
       if (isNetworkError(err)) fail(err)
@@ -156,57 +157,57 @@ export function AuditPanel() {
 
   return (
     <SettingsSection
-      title="Audit log"
+      title={t('Audit log')}
       headingId="audit-heading"
       testId="audit-panel"
-      description="Sign-ins, tokens, invitations, exports and setting changes on this server. Task content is never recorded."
+      description={t('Sign-ins, tokens, invitations, exports and setting changes on this server. Task content is never recorded.')}
     >
       {offline ? (
-        <NeedsConnection what="audit log" />
+        <NeedsConnection what={t('audit log')} />
       ) : (
         <>
           <div className="space-y-3 pb-4">
-            <div className="flex flex-wrap items-end gap-3" role="group" aria-label="Audit log filters">
-              <Field label="Event">
+            <div className="flex flex-wrap items-end gap-3" role="group" aria-label={t('Audit log filters')}>
+              <Field label={t('Event')}>
                 <Select className="w-48" value={form.name} onChange={(e) => update({ name: e.target.value as FilterForm['name'] })}>
-                  <option value="">All events</option>
+                  <option value="">{t('All events')}</option>
                   {AUDIT_EVENT_NAMES.map((n) => <option key={n} value={n}>{AUDIT_LABELS[n]} ({n})</option>)}
                 </Select>
               </Field>
-              <Field label="Account">
-                <Input className="w-52" type="search" list="audit-accounts" placeholder="email" value={form.actor}
+              <Field label={t('Account')}>
+                <Input className="w-52" type="search" list="audit-accounts" placeholder={t('email')} value={form.actor}
                   onChange={(e) => (e.target.value === '' ? update({ actor: '' }) : setForm({ ...form, actor: e.target.value }))} onBlur={applyAccount}
                   onKeyDown={(e) => { if (e.key === 'Enter') applyAccount() }} autoComplete="off" />
               </Field>
               <datalist id="audit-accounts">{accounts.map((a) => <option key={a} value={a} />)}</datalist>
-              <Field label="Outcome">
+              <Field label={t('Outcome')}>
                 <Select className="w-32" value={form.outcome} onChange={(e) => update({ outcome: e.target.value as FilterForm['outcome'] })}>
-                  <option value="">Any</option>
-                  <option value="success">Success</option>
-                  <option value="failure">Failure</option>
+                  <option value="">{t('Any')}</option>
+                  <option value="success">{t('Success')}</option>
+                  <option value="failure">{t('Failure')}</option>
                 </Select>
               </Field>
-              <Field label="When">
+              <Field label={t('When')}>
                 <Select className="w-36" value={form.range} onChange={(e) => update({ range: e.target.value as FilterForm['range'] })}>
-                  <option value="any">Any time</option>
-                  <option value="1d">Last 24 hours</option>
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="custom">Custom…</option>
+                  <option value="any">{t('Any time')}</option>
+                  <option value="1d">{t('Last 24 hours')}</option>
+                  <option value="7d">{t('Last 7 days')}</option>
+                  <option value="30d">{t('Last 30 days')}</option>
+                  <option value="custom">{t('Custom…')}</option>
                 </Select>
               </Field>
               {form.range === 'custom' && (
                 <>
-                  <Field label="From">
+                  <Field label={t('From')}>
                     <Input className="w-40" type="date" value={form.fromDate} onChange={(e) => update({ fromDate: e.target.value })} />
                   </Field>
-                  <Field label="To">
+                  <Field label={t('To')}>
                     <Input className="w-40" type="date" value={form.toDate} onChange={(e) => update({ toDate: e.target.value })} />
                   </Field>
                 </>
               )}
               <a ref={exportLink} className="ui-btn ui-btn--secondary ui-btn--md" href={exportHref} download>
-                <Icon name="download" /> Export (NDJSON)
+                <Icon name="download" /> {t('Export (NDJSON)')}
               </a>
             </div>
 
@@ -214,18 +215,18 @@ export function AuditPanel() {
             <AuditTable status={status} events={events} onKeyDown={onTableKey} />
             {cursor && status === 'ready' && (
               <Button variant="secondary" size="sm" onClick={() => void loadMore()} busy={loadingMore}>
-                {loadingMore ? 'Fetching more…' : 'Load more'}
+                {loadingMore ? t('Fetching more…') : t('Load more')}
               </Button>
             )}
-            <p className="text-meta text-muted">Keyboard: export with the current filters by pressing <Kbd k="e" /> while the table has focus.</p>
+            <p className="text-meta text-muted">{t.rich('Keyboard: export with the current filters by pressing {kbd} while the table has focus.', { kbd: <Kbd k="e" /> })}</p>
           </div>
 
           {settings && (
             <div className="space-y-3 pt-4" data-testid="audit-settings">
-              <h3 className="text-body font-semibold text-default">Audit settings</h3>
+              <h3 className="text-body font-semibold text-default">{t('Audit settings')}</h3>
               <SettingRow
-                label="Keep events for"
-                description="Between 7 and 3650 days. Older events are deleted."
+                label={t('Keep events for')}
+                description={t('Between 7 and 3650 days. Older events are deleted.')}
                 control={
                   <form
                     className="flex items-end gap-2"
@@ -234,17 +235,17 @@ export function AuditPanel() {
                       void saveSettings({ retentionDays: Number(retention) })
                     }}
                   >
-                    <Field label="Days to keep audit events" hideLabel>
+                    <Field label={t('Days to keep audit events')} hideLabel>
                       <Input className="w-28" type="number" min={7} max={3650} step={1} required value={retention} onChange={(e) => setRetention(e.target.value)} />
                     </Field>
-                    <Button type="submit" variant="primary" size="md" disabled={retention === String(settings.retentionDays)}>Save retention</Button>
+                    <Button type="submit" variant="primary" size="md" disabled={retention === String(settings.retentionDays)}>{t('Save retention')}</Button>
                   </form>
                 }
               />
               <SettingRow
-                label="Record client addresses (IP)"
-                description={<>Off by default. Turning it off erases every stored address. Behind a reverse proxy the address comes from <code>X-Forwarded-For</code>.</>}
-                control={<Switch checked={settings.logIp} onChange={toggleAddresses} label="Record client addresses (IP)" hideLabel />}
+                label={t('Record client addresses (IP)')}
+                description={<>{t.rich('Off by default. Turning it off erases every stored address. Behind a reverse proxy the address comes from <code>X-Forwarded-For</code>.', { code: (chunks) => <code>{chunks}</code> })}</>}
+                control={<Switch checked={settings.logIp} onChange={toggleAddresses} label={t('Record client addresses (IP)')} hideLabel />}
               />
               {notice && <Notice tone="success">{notice}</Notice>}
             </div>
@@ -253,9 +254,9 @@ export function AuditPanel() {
       )}
       {confirmErase && (
         <ConfirmDialog
-          title="Turn off address logging?"
-          consequence="Every stored client address will be erased from the audit log. This cannot be undone."
-          confirmLabel="Turn off and erase"
+          title={t('Turn off address logging?')}
+          consequence={t('Every stored client address will be erased from the audit log. This cannot be undone.')}
+          confirmLabel={t('Turn off and erase')}
           onConfirm={() => { setConfirmErase(false); return saveSettings({ logIp: false }) }}
           onCancel={() => setConfirmErase(false)}
         />
@@ -267,18 +268,18 @@ export function AuditPanel() {
 /** The event table. Pure, so tests can render every state. */
 export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; events: AuditEvent[]; onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void }) {
   const dt = useDateTimeFormat()
-  if (status === 'offline') return <NeedsConnection what="audit log" />
+  if (status === 'offline') return <NeedsConnection what={t('audit log')} />
   return (
     <div className="overflow-x-auto rounded-control border border-default focus-visible:outline-2 focus-visible:outline-focus"
-      tabIndex={0} onKeyDown={onKeyDown} aria-label="Audit events (press e to export)" data-scroll-x>
+      tabIndex={0} onKeyDown={onKeyDown} aria-label={t('Audit events (press e to export)')} data-scroll-x>
       <table className="w-full text-left text-body">
         <thead className="bg-sunken text-meta text-muted dark:bg-raised">
           <tr>
-            <th className="px-2 py-1.5 font-medium">Time</th>
-            <th className="px-2 py-1.5 font-medium">Event</th>
-            <th className="px-2 py-1.5 font-medium">Account</th>
-            <th className="px-2 py-1.5 font-medium">Details</th>
-            <th className="px-2 py-1.5 font-medium">Client</th>
+            <th className="px-2 py-1.5 font-medium">{t('Time')}</th>
+            <th className="px-2 py-1.5 font-medium">{t('Event')}</th>
+            <th className="px-2 py-1.5 font-medium">{t('Account')}</th>
+            <th className="px-2 py-1.5 font-medium">{t('Details')}</th>
+            <th className="px-2 py-1.5 font-medium">{t('Client')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-(--ot-border)">
@@ -287,7 +288,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
               <td className="whitespace-nowrap px-2 py-1.5 text-meta text-muted">{dt.formatInstant(ev.ts, 'datetime')}</td>
               <td className="px-2 py-1.5">
                 <span className={ev.outcome === 'failure' ? 'text-danger' : ''}>{AUDIT_LABELS[ev.name] ?? ev.name}</span>
-                {ev.outcome === 'failure' && <> <Badge hue="red">failure</Badge></>}
+                {ev.outcome === 'failure' && <> <Badge hue="red">{t('failure')}</Badge></>}
               </td>
               <td className="px-2 py-1.5">{eventAccount(ev)}</td>
               <td className="px-2 py-1.5 text-muted">{eventSummary(ev)}</td>
@@ -300,10 +301,10 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
             </tr>
           ))}
           {status === 'ready' && events.length === 0 && (
-            <tr><td colSpan={5} className="px-2 py-3 text-muted">No events match these filters.</td></tr>
+            <tr><td colSpan={5} className="px-2 py-3 text-muted">{t('No events match these filters.')}</td></tr>
           )}
           {status === 'loading' && events.length === 0 && (
-            <tr><td colSpan={5} className="px-2 py-3"><Skeleton shape="line" count={4} label="Loading events" /></td></tr>
+            <tr><td colSpan={5} className="px-2 py-3"><Skeleton shape="line" count={4} label={t('Loading events')} /></td></tr>
           )}
         </tbody>
       </table>

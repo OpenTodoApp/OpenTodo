@@ -9,10 +9,11 @@
 // moving past the month's edge turns the month. One cell holds the tab stop.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Icon, IconButton, type IconName } from '../ui'
-import { addDaysISO, todayISO, weekday } from '../lib/dates'
+import { addDaysISO, todayISO, weekday, dateLocaleOf } from '../lib/dates'
 import { monthGrid, type DayState } from '../lib/habits'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, msg, translatedMap } from '../lib/i18n'
 
 const CELL: Record<DayState, string> = {
   // The check is drawn in the surface colour: white in light, near-black on the brighter dark-mode green.
@@ -24,9 +25,9 @@ const CELL: Record<DayState, string> = {
   blank: 'text-faint',
 }
 const GLYPH: Partial<Record<DayState, IconName>> = { done: 'check', skipped: 'minus', pending: 'circle' }
-const STATE_TEXT: Record<DayState, string> = {
-  done: 'done', skipped: 'skipped', missed: 'missed', pending: 'due, not done yet', upcoming: 'upcoming', blank: 'not scheduled',
-}
+const STATE_TEXT = translatedMap<DayState>({
+  done: msg('done'), skipped: msg('skipped'), missed: msg('missed'), pending: msg('due, not done yet'), upcoming: msg('upcoming'), blank: msg('not scheduled'),
+})
 
 function monthOf(iso: string): { year: number; month: number } {
   const [y, m] = iso.split('-').map(Number)
@@ -44,7 +45,7 @@ function shiftMonth(iso: string, n: number): string {
 }
 
 const monthName = (year: number, month: number, withYear: boolean) =>
-  new Intl.DateTimeFormat(undefined, { month: 'long', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, 1)))
+  new Intl.DateTimeFormat(dateLocaleOf(), { month: 'long', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, 1)))
 
 /** "6 October, skipped": the cell's accessible name. */
 export function dayLabel(iso: string, state: DayState): string {
@@ -101,9 +102,9 @@ export function HabitHistory({ series, records, today = todayISO() }: { series: 
   return (
     <div className="w-fit space-y-1" data-habit-history>
       <div className="flex items-center gap-1">
-        <IconButton icon="chevron-left" size="sm" label="Previous month" onClick={() => setFocus(shiftMonth(focus, -1))} />
+        <IconButton icon="chevron-left" size="sm" label={t('Previous month')} onClick={() => setFocus(shiftMonth(focus, -1))} />
         <p id={headingId} className="min-w-0 flex-1 text-center text-meta font-semibold text-default" aria-live="polite">{heading}</p>
-        <IconButton icon="chevron-right" size="sm" label="Next month" onClick={() => setFocus(shiftMonth(focus, 1))} />
+        <IconButton icon="chevron-right" size="sm" label={t('Next month')} onClick={() => setFocus(shiftMonth(focus, 1))} />
       </div>
       <div ref={grid} role="grid" aria-labelledby={headingId} className="flex w-fit flex-col gap-1" onKeyDown={onKey}>
         <div role="row" className="flex gap-1">

@@ -20,6 +20,6 @@ export async function openPanel(comments: number) {
   const id = await createTask({ title: 'Long thread' })
   for (let i = 0; i < comments; i++) await createComment({ taskId: id, body: `Comment ${i + 1}` })
   const r = await render(<TaskDetail taskId={id} userId="me" projects={[]} labelMap={new Map()} onClose={() => {}} />)
-  for (let t = 0; t < 2000 && r.container.querySelectorAll('[data-thread]').length < comments; t += 20) await flush(20)
+  for (let item = 0; item < 2000 && r.container.querySelectorAll('[data-thread]').length < comments; item += 20) await flush(20)
   return r
 }

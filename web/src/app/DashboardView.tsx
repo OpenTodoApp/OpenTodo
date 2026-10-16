@@ -15,6 +15,7 @@ import { navigate } from './router'
 import { ViewMenu } from './ViewsView'
 import type { ViewData } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
+import { t } from '../lib/i18n'
 
 export function DashboardView({ dashboard, data }: { dashboard: View; data: ViewData }) {
   const { views, projects, labels, ctx } = data
@@ -25,7 +26,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const blocked = useMemo(() => blockedMap(ctx.tasks), [ctx.tasks])
-  const nameOf = (id: string) => views.find((v) => v.id === id)?.name ?? 'View removed'
+  const nameOf = (id: string) => views.find((v) => v.id === id)?.name ?? t('View removed')
 
   const [editing, setEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -81,32 +82,32 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
     <PageBody width="full">
         <PageHeader title={dashboard.name} icon="kanban" meta={`${panels.length}/${MAX_PANELS}`} help="dashboard"
           actions={<>
-            <select className="ui-input w-auto py-1 text-meta" aria-label="Add panel" value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
+            <select className="ui-input w-auto py-1 text-meta" aria-label={t('Add panel')} value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
               onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
-              <option value="">{panels.length >= MAX_PANELS ? 'Six panels at most' : candidates.length === 0 ? 'No filter to add' : '+ Add panel…'}</option>
+              <option value="">{panels.length >= MAX_PANELS ? t('Six panels at most') : candidates.length === 0 ? t('No filter to add') : t('+ Add panel…')}</option>
               {candidates.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
             </select>
-            <Button variant="ghost" size="sm" aria-expanded={editing} onClick={() => setEditing((x) => !x)}>{editing ? 'Done' : 'Arrange'}</Button>
+            <Button variant="ghost" size="sm" aria-expanded={editing} onClick={() => setEditing((x) => !x)}>{editing ? t('Done') : t('Arrange')}</Button>
           </>}
           menu={<ViewMenu view={dashboard} />} />
         {error && <p role="alert" className="mb-3 text-meta text-danger">{error}</p>}
         {editing && (
-          <ol className="mb-4 space-y-1 rounded-control border border-default p-2 text-body" aria-label="Arrange panels">
+          <ol className="mb-4 space-y-1 rounded-control border border-default p-2 text-body" aria-label={t('Arrange panels')}>
             {dashboard.panels.map((id, i) => (
               <li key={id} className="flex items-center gap-2">
                 <span className="w-5 text-right text-meta text-faint">{i + 1}</span>
                 <span className="flex-1 truncate">{nameOf(id)}</span>
-                <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === 0} aria-label={`Move ${nameOf(id)} earlier`} onClick={() => run(() => movePanel(dashboard.id, id, -1))}><Icon name="arrow-up" /></button>
-                <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === dashboard.panels.length - 1} aria-label={`Move ${nameOf(id)} later`} onClick={() => run(() => movePanel(dashboard.id, id, 1))}><Icon name="arrow-down" /></button>
-                <button className="ui-btn ui-btn--danger ui-btn--sm px-2 py-0.5 text-meta" aria-label={`Remove ${nameOf(id)} from the dashboard`} onClick={() => run(() => removePanel(dashboard.id, id))}>Remove</button>
+                <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === 0} aria-label={t('Move {nameOf} earlier', { nameOf: nameOf(id) })} onClick={() => run(() => movePanel(dashboard.id, id, -1))}><Icon name="arrow-up" /></button>
+                <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === dashboard.panels.length - 1} aria-label={t('Move {nameOf} later', { nameOf: nameOf(id) })} onClick={() => run(() => movePanel(dashboard.id, id, 1))}><Icon name="arrow-down" /></button>
+                <button className="ui-btn ui-btn--danger ui-btn--sm px-2 py-0.5 text-meta" aria-label={t('Remove {nameOf} from the dashboard', { nameOf: nameOf(id) })} onClick={() => run(() => removePanel(dashboard.id, id))}>{t('Remove')}</button>
               </li>
             ))}
-            {dashboard.panels.length === 0 && <li className="text-meta text-faint">No panels yet.</li>}
+            {dashboard.panels.length === 0 && <li className="text-meta text-faint">{t('No panels yet.')}</li>}
           </ol>
         )}
         {panels.length === 0 ? (
           <p className="rounded-control border border-dashed border-input p-6 text-center text-body text-muted">
-            Add up to six saved filters with “Add panel”.
+            {t('Add up to six saved filters with “Add panel”.')}
           </p>
         ) : (
           <div ref={gridRef} className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
@@ -137,10 +138,10 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFo
   const ring = 'rounded-card border border-default p-3 outline-none focus-within:ring-2 focus-within:ring-focus/60'
   if (panel.kind === 'removed') {
     return (
-      <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label="Removed view" className={`${ring} border-dashed`}>
-        <p className="text-body font-medium text-muted">View removed</p>
-        <p className="mt-1 text-meta text-faint">The saved view shown here was deleted.</p>
-        <button className="ui-btn ui-btn--ghost ui-btn--sm mt-2 border border-input text-meta" tabIndex={-1} onClick={onRemove}>Remove panel</button>
+      <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label={t('Removed view')} className={`${ring} border-dashed`}>
+        <p className="text-body font-medium text-muted">{t('View removed')}</p>
+        <p className="mt-1 text-meta text-faint">{t('The saved view shown here was deleted.')}</p>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm mt-2 border border-input text-meta" tabIndex={-1} onClick={onRemove}>{t('Remove panel')}</button>
       </section>
     )
   }
@@ -150,19 +151,19 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFo
       <div className="mb-2 flex items-center gap-2">
         <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
         <h2 className="truncate text-body font-semibold">{view.name}</h2>
-        {summary.ok && <span className="text-body text-faint" aria-label={`${summary.count} open tasks`}>{summary.count}</span>}
+        {summary.ok && <span className="text-body text-faint" aria-label={t('{count} open tasks', { count: summary.count })}>{summary.count}</span>}
         <span className="flex-1" />
-        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>Open view</button>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>{t('Open view')}</button>
       </div>
       {!summary.ok ? (
         <p role="alert" className="text-meta text-danger">{summary.error}</p>
       ) : summary.tasks.length === 0 ? (
-        <p className="px-2 py-3 text-meta text-faint">Nothing here.</p>
+        <p className="px-2 py-3 text-meta text-faint">{t('Nothing here.')}</p>
       ) : (
         <ul>
-          {summary.tasks.map((t, i) => (
-            <TaskRow key={t.id} task={t} project={t.project_id ? projectMap.get(t.project_id) : undefined} labels={resolveLabels(t.labels, labelMap)}
-              showProject selected={i === selectedTask} blockedBy={blocked.get(t.id)} onToggle={() => void setTaskCompleted(t.id, !t.completed_at)} onOpen={() => onOpenTask(t.id)} />
+          {summary.tasks.map((tk, i) => (
+            <TaskRow key={tk.id} task={tk} project={tk.project_id ? projectMap.get(tk.project_id) : undefined} labels={resolveLabels(tk.labels, labelMap)}
+              showProject selected={i === selectedTask} blockedBy={blocked.get(tk.id)} onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)} onOpen={() => onOpenTask(tk.id)} />
           ))}
         </ul>
       )}

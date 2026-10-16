@@ -4,6 +4,7 @@ import { ESTIMATE_PRESETS, formatMinutes, parseDuration } from '../lib/duration'
 import { updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { estimateFocus } from './signals'
+import { t } from '../lib/i18n'
 
 /**
  * Estimate control of the detail panel (OpenSpec `time-blocking`): shorthand input
@@ -47,7 +48,7 @@ export function EstimateField({ task }: { task: Task }) {
     }
     const minutes = parseDuration(text)
     if (minutes === null) {
-      setError('Use minutes or hours, for example 20, 45m, 1h30 (up to one week).')
+      setError(t('Use minutes or hours, for example 20, 45m, 1h30 (up to one week).'))
       return false
     }
     set(minutes)
@@ -60,7 +61,7 @@ export function EstimateField({ task }: { task: Task }) {
         <input
           ref={ref}
           className="ui-input w-32"
-          aria-label="Estimate"
+          aria-label={t('Estimate')}
           placeholder="e.g. 45m, 1h30"
           value={draft}
           onChange={(e) => { setDraft(e.target.value); setError(null) }}
@@ -81,7 +82,7 @@ export function EstimateField({ task }: { task: Task }) {
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `estimate-error-${task.id}` : undefined}
         />
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Estimate presets">
+        <div className="flex flex-wrap gap-1" role="group" aria-label={t('Estimate presets')}>
           {ESTIMATE_PRESETS.map((m) => (
             <button
               key={m}
@@ -94,7 +95,7 @@ export function EstimateField({ task }: { task: Task }) {
             </button>
           ))}
           {task.estimate_minutes !== null && (
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => set(null)} aria-label="Clear estimate"><Icon name="x" /></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => set(null)} aria-label={t('Clear estimate')}><Icon name="x" /></button>
           )}
         </div>
       </div>

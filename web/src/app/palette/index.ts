@@ -10,6 +10,7 @@ import { SETTINGS_SECTIONS, visibleSections } from '../settingsSections'
 import { requestSettingsFocus, visibleEntries } from '../settingsIndex'
 import { openTaskInList } from '../signals'
 import type { Entry } from './entries'
+import { t } from '../../lib/i18n'
 
 export interface IndexSource {
   tasks: readonly Task[]
@@ -31,19 +32,19 @@ function projectPath(p: Project, byId: Map<string, Project>): string[] {
 }
 
 /** A task's entry: title and notes text, project and due date as secondary text. */
-export function makeTaskEntry(projects: readonly Project[], today?: string): (t: Task) => Entry {
+export function makeTaskEntry(projects: readonly Project[], today?: string): (task: Task) => Entry {
   const byId = new Map(projects.map((p) => [p.id, p]))
-  return (t) => {
-    const undecryptable = !!t._e2ee?.raw?.title
-    const project = t.project_id ? byId.get(t.project_id)?.name ?? 'Project' : 'Inbox'
-    const due = describeDue(t.due, today)?.label
+  return (tk) => {
+    const undecryptable = !!tk._e2ee?.raw?.title
+    const project = tk.project_id ? byId.get(tk.project_id)?.name ?? t('Project') : t('Inbox')
+    const due = describeDue(tk.due, today)?.label
     return {
-      kind: 'task', key: `task:${t.id}`,
+      kind: 'task', key: `task:${tk.id}`,
       // Undecryptable rows are indexed by what the app shows, never by ciphertext.
-      label: undecryptable ? UNDECRYPTABLE : t.title || 'Untitled',
-      secondary: [project, due, undecryptable ? '' : t.description.replace(/\s+/g, ' ').slice(0, 2000)].filter(Boolean).join(' · '),
-      marker: t.completed_at ? 'completed' : undefined,
-      run: () => openTaskInList(t),
+      label: undecryptable ? t(UNDECRYPTABLE) : tk.title || t('Untitled'),
+      secondary: [project, due, undecryptable ? '' : tk.description.replace(/\s+/g, ' ').slice(0, 2000)].filter(Boolean).join(' · '),
+      marker: tk.completed_at ? 'completed' : undefined,
+      run: () => openTaskInList(tk),
     }
   }
 }
@@ -51,7 +52,7 @@ export function makeTaskEntry(projects: readonly Project[], today?: string): (t:
 /** Entries in kind order (tasks, projects, labels, views, settings); open before completed, live before archived. */
 export function buildEntries(src: IndexSource): Entry[] {
   const byId = new Map(src.projects.map((p) => [p.id, p]))
-  const live = (t: Task) => !t.deleted_at
+  const live = (task: Task) => !task.deleted_at
   const taskEntry = makeTaskEntry(src.projects, src.today)
   const tasks = src.tasks.filter(live)
   const projectEntry = (p: Project): Entry => {
@@ -63,16 +64,16 @@ export function buildEntries(src: IndexSource): Entry[] {
   }
   const projects = src.projects.filter((p) => !p.deleted_at)
   return [
-    ...tasks.filter((t) => !t.completed_at).map(taskEntry),
-    ...tasks.filter((t) => t.completed_at).map(taskEntry),
+    ...tasks.filter((tk) => !tk.completed_at).map(taskEntry),
+    ...tasks.filter((item) => item.completed_at).map(taskEntry),
     ...projects.filter((p) => !p.archived).map(projectEntry),
     ...projects.filter((p) => p.archived).map(projectEntry),
     ...src.labels.filter((l) => !l.deleted_at).map((l): Entry => ({ kind: 'label', key: `label:${l.id}`, label: `@${l.name}`, run: () => navigate({ view: 'label', id: l.id }) })),
     ...src.views.filter((v) => !v.deleted_at).map((v): Entry => ({
-      kind: 'view', key: `view:${v.id}`, label: v.name, secondary: v.kind === 'dashboard' ? 'Dashboard' : 'Saved view', run: () => navigate({ view: 'view', id: v.id }),
+      kind: 'view', key: `view:${v.id}`, label: v.name, secondary: v.kind === 'dashboard' ? t('Dashboard') : t('Saved view'), run: () => navigate({ view: 'view', id: v.id }),
     })),
     ...(src.user ? visibleSections(src.user) : []).map((s): Entry => ({
-      kind: 'settings', key: `settings:${s.id}`, label: `Settings: ${s.label}`, secondary: s.description(src.user!), icon: s.icon,
+      kind: 'settings', key: `settings:${s.id}`, label: t('Settings: {section}', { section: s.label }), secondary: s.description(src.user!), icon: s.icon,
       run: () => navigate({ view: 'settings', section: s.id }),
     })),
     // Individual settings (settings-navigation "Settings search"): the same index as the settings list's search.

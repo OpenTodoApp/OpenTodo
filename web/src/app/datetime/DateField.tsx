@@ -5,7 +5,7 @@
 // move by day and week, Page Up/Down by month, Home/End to the week's edges, Enter
 // picks and Escape closes.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { addDaysISO, formatDate, todayISO, weekStartOf, type ResolvedDateTime } from '../../lib/dates'
+import { addDaysISO, formatDate, todayISO, weekStartOf, type ResolvedDateTime, dateLocaleOf } from '../../lib/dates'
 import { addMonths } from '../../lib/nlp/dates'
 import { loadQuickAddSettings, resolveLanguages } from '../../lib/nlp/settings'
 import { IconButton } from '../../ui'
@@ -13,6 +13,7 @@ import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Popover } from '../overlay/Popover'
 import { parseDateInput } from './parse'
+import { t } from '../../lib/i18n'
 
 export interface DateFieldProps {
   /** `YYYY-MM-DD`, or null when empty. */
@@ -56,7 +57,7 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
     }
     const iso = parseDateInput(text, { today: todayISO(), prefs: resolved, languages: inputLanguages() })
     if (!iso) {
-      setError(`Not a valid date. Try ${formatDate(todayISO(), 'numeric', resolved)}, ${todayISO()} or “tomorrow”.`)
+      setError(t('Not a valid date. Try {example}, {iso} or “tomorrow”.', { example: formatDate(todayISO(), 'numeric', resolved), iso: todayISO() }))
       return
     }
     const refused = validate?.(iso)
@@ -88,11 +89,11 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
           <Input className={inputClassName} value={draft} disabled={disabled} autoComplete="off" spellCheck={false} autoFocus={autoFocus}
             placeholder={formatDate(todayISO(), 'numeric', resolved)} aria-keyshortcuts="Alt+ArrowDown"
             onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={onKey} />
-          <IconButton ref={button} icon="calendar-days" label="Open calendar" disabled={disabled}
+          <IconButton ref={button} icon="calendar-days" label={t('Open calendar')} disabled={disabled}
             aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
         </div>
       </Field>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={button} label="Choose a date" width="sm:w-72" className="p-3">
+      <Popover open={open} onClose={() => setOpen(false)} anchor={button} label={t('Choose a date')} width="sm:w-72" className="p-3">
         <CalendarGrid value={value} prefs={resolved} onPick={(iso) => { setOpen(false); const refused = validate?.(iso); setError(refused ?? null); if (!refused && iso !== value) onChange(iso) }} />
       </Popover>
     </div>
@@ -101,9 +102,9 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
 
 const firstOfMonth = (iso: string) => `${iso.slice(0, 7)}-01`
 const dateOf = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d) }
-const monthName = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
-const fullDate = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-const shortDay = new Intl.DateTimeFormat(undefined, { weekday: 'short' })
+const monthName = () => new Intl.DateTimeFormat(dateLocaleOf(), { month: 'long', year: 'numeric' })
+const fullDate = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+const shortDay = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' })
 
 /** The month grid: six weeks starting on the preferred first day, one focusable day at a time. */
 export function CalendarGrid({ value, prefs, onPick, today = todayISO() }: {
@@ -157,16 +158,16 @@ export function CalendarGrid({ value, prefs, onPick, today = todayISO() }: {
   return (
     <div>
       <div className="mb-2 flex items-center gap-1">
-        <IconButton icon="chevron-left" label="Previous month" size="sm" onClick={() => shiftMonth(-1)} />
-        <h3 id={headingId} className="flex-1 text-center text-body font-semibold text-default" aria-live="polite">{monthName.format(dateOf(month))}</h3>
-        <IconButton icon="chevron-right" label="Next month" size="sm" onClick={() => shiftMonth(1)} />
+        <IconButton icon="chevron-left" label={t('Previous month')} size="sm" onClick={() => shiftMonth(-1)} />
+        <h3 id={headingId} className="flex-1 text-center text-body font-semibold text-default" aria-live="polite">{monthName().format(dateOf(month))}</h3>
+        <IconButton icon="chevron-right" label={t('Next month')} size="sm" onClick={() => shiftMonth(1)} />
       </div>
       <table ref={grid} role="grid" aria-labelledby={headingId} className="w-full border-collapse text-center text-body" onKeyDown={onKey}>
         <thead>
           <tr>
             {days.slice(0, 7).map((d) => (
-              <th key={d} scope="col" className="pb-1 text-meta font-medium text-muted" abbr={new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(dateOf(d))}>
-                {shortDay.format(dateOf(d))}
+              <th key={d} scope="col" className="pb-1 text-meta font-medium text-muted" abbr={new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long' }).format(dateOf(d))}>
+                {shortDay().format(dateOf(d))}
               </th>
             ))}
           </tr>
@@ -181,7 +182,7 @@ export function CalendarGrid({ value, prefs, onPick, today = todayISO() }: {
                 return (
                   <td key={d} role="gridcell" aria-selected={selected} className="p-0.5">
                     <button type="button" data-date={d} tabIndex={d === cursor ? 0 : -1} data-autofocus={d === cursor ? '' : undefined}
-                      aria-label={fullDate.format(dateOf(d))} aria-current={isToday ? 'date' : undefined}
+                      aria-label={fullDate().format(dateOf(d))} aria-current={isToday ? 'date' : undefined}
                       onClick={() => onPick(d)}
                       className={[
                         'touch-target flex h-9 w-full items-center justify-center rounded-control tabular-nums transition duration-(--duration-ui)',
@@ -198,7 +199,7 @@ export function CalendarGrid({ value, prefs, onPick, today = todayISO() }: {
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-meta text-muted">Arrows move by day and week, Page Up and Page Down by month.</p>
+      <p className="mt-2 text-meta text-muted">{t('Arrows move by day and week, Page Up and Page Down by month.')}</p>
     </div>
   )
 }

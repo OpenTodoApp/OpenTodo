@@ -33,7 +33,7 @@ export function extendTo(sel: Selection, rows: readonly string[], id: string, re
   if (b < 0) return sel
   const [from, to] = a <= b ? [a, b] : [b, a]
   // Rows ticked individually stay ticked; only the previous extension is replaced.
-  const base = new Set([...sel.ticked].filter((t) => !sel.range.has(t)))
+  const base = new Set([...sel.ticked].filter((item) => !sel.range.has(item)))
   const added = rows.slice(from, to + 1).filter((r) => !readOnly(r) && !base.has(r))
   return { ticked: new Set([...base, ...added]), anchor, range: new Set(added) }
 }
@@ -46,11 +46,11 @@ export function selectAll(sel: Selection, rows: readonly string[], readOnly: IsR
 /** Drop ids that are no longer listed (completed, moved, deleted). */
 export function retain(sel: Selection, rows: readonly string[]): Selection {
   const keep = new Set(rows)
-  if ([...sel.ticked].every((t) => keep.has(t)) && (!sel.anchor || keep.has(sel.anchor))) return sel
+  if ([...sel.ticked].every((item) => keep.has(item)) && (!sel.anchor || keep.has(sel.anchor))) return sel
   return {
-    ticked: new Set([...sel.ticked].filter((t) => keep.has(t))),
+    ticked: new Set([...sel.ticked].filter((entry) => keep.has(entry))),
     anchor: sel.anchor && keep.has(sel.anchor) ? sel.anchor : null,
-    range: new Set([...sel.range].filter((t) => keep.has(t))),
+    range: new Set([...sel.range].filter((x1) => keep.has(x1))),
   }
 }
 

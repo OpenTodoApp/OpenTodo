@@ -38,6 +38,7 @@ import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from './help/store'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
+import { t } from '../lib/i18n'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
@@ -80,7 +81,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     if (taskParam) {
       if (location.pathname === '/') {
         history.replaceState(null, '', location.pathname)
-        void db.tasks.get(taskParam).then((t) => t && openTaskInList(t))
+        void db.tasks.get(taskParam).then((task) => task && openTaskInList(task))
       } else openTaskPanel(taskParam)
       return
     }
@@ -93,7 +94,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
-        if (start.removed) setNotice('Your start view was deleted, so the Inbox opened instead.')
+        if (start.removed) setNotice(t('Your start view was deleted, so the Inbox opened instead.'))
       }
     })
     return () => {
@@ -190,18 +191,18 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {notice && (
           <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
             <p className="flex-1">{notice}</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>Dismiss</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>{t('Dismiss')}</button>
           </div>
         )}
         {rejected && (
           <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
-            <p className="flex-1">{describeRejected(rejected)}. The server's values are shown again.</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>Dismiss</button>
+            <p className="flex-1">{t('{rejected}. The server\'s values are shown again.', { rejected: describeRejected(rejected) })}</p>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>{t('Dismiss')}</button>
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'help' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} section={route.section} anchor={route.anchor} />
           ) : route.view === 'import' ? (
@@ -219,9 +220,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} />
           ) : route.view === 'review' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading the review…</p>}><ReviewView userId={user.id} /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}><ReviewView userId={user.id} /></Suspense>
           ) : route.view === 'stats' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading statistics…</p>}><StatsView /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
@@ -265,7 +266,7 @@ function SidebarResizer({ width }: { width: number }) {
   const dragging = useRef<{ startX: number; startWidth: number } | null>(null)
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
   return (
-    <div role="separator" aria-orientation="vertical" aria-label="Resize sidebar" aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
+    <div role="separator" aria-orientation="vertical" aria-label={t('Resize sidebar')} aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
       tabIndex={0} data-sidebar-resizer
       className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-none lg:block"
       onPointerDown={(e) => {
@@ -292,7 +293,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   if (desktop) return null
   return (
     <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
-      <IconButton icon="menu" label="Open menu" onClick={onMenu} className="touch-target" />
+      <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
       <div className="min-w-0 flex-1">
         <PageBarTitle>{bar?.title}</PageBarTitle>

@@ -24,6 +24,7 @@ import { navigate } from './router'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { selectTask } from './signals'
 import { completeWithUndo, deleteWithUndo, moveWithUndo, parkWithUndo, setDueWithUndo } from './undoable'
+import { t } from '../lib/i18n'
 
 /** Someday (`y`) needs the `start` field of someday-and-evening, which has landed. */
 export const HAS_SOMEDAY = true
@@ -62,6 +63,8 @@ export function TriageView() {
   const [state, setState] = useState<TriageState | null>(null)
   const [picker, setPicker] = useState<Picker>(null)
   const [announce, setAnnounce] = useState('')
+  // The last decision, said before the next task's position ("Completed: X. 2 of 5: Y").
+  const outcome = useRef('')
   const [notice, setNotice] = useState<string | null>(null)
   const card = useRef<HTMLElement>(null)
   const stateRef = useRef(state)
@@ -73,13 +76,13 @@ export function TriageView() {
     setState((s) => {
       if (!s) return startTriage(tasks)
       const { state: next, left } = advanceQueue(s, tasks)
-      if (left) setNotice('That task left the Inbox on another device, so the next one is shown.')
+      if (left) setNotice(t('That task left the Inbox on another device, so the next one is shown.'))
       return next
     })
   }, [tasks])
 
   // Open and completed live tasks; a task trashed this session is not in it.
-  const byId = useMemo(() => new Map((tasks ?? []).map((t) => [t.id, t])), [tasks])
+  const byId = useMemo(() => new Map((tasks ?? []).map((tk) => [tk.id, tk])), [tasks])
   const curId = state ? current(state) : null
   const task = curId ? byId.get(curId) : undefined
   const p = state ? progress(state) : { n: 0, total: 0, done: true }
@@ -102,12 +105,13 @@ export function TriageView() {
   // Focus the card and announce the task on every advance.
   useEffect(() => {
     if (!state || !task) return
-    setAnnounce((a) => `${a && !a.includes(' of ') ? `${a} ` : ''}${positionText(state, task.title || 'Untitled')}`)
+    setAnnounce(`${outcome.current ? `${outcome.current} ` : ''}${positionText(state, task.title || t('Untitled'))}`)
+    outcome.current = ''
     card.current?.focus()
   }, [curId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const next = useCallback((outcome?: string) => {
-    if (outcome) setAnnounce(outcome)
+  const next = useCallback((said?: string) => {
+    if (said) { setAnnounce(said); outcome.current = said }
     setNotice(null)
     setPicker(null)
     dir.current = 1
@@ -122,40 +126,40 @@ export function TriageView() {
   }, [])
 
   const decide = useCallback(async (kind: 'today' | 'complete' | 'trash' | 'someday' | 'skip') => {
-    const t = task
-    if (!t) return
+    const item = task
+    if (!item) return
     switch (kind) {
-      case 'today': await setDueWithUndo(t.id, { ...(t.due ?? {}), date: todayISO() }); next(`Due today: ${t.title || 'Untitled'}.`); break
-      case 'complete': await completeWithUndo(t.id, true); next(`Completed: ${t.title || 'Untitled'}.`); break
-      case 'trash': await deleteWithUndo(t.id); next(`Moved to the Trash: ${t.title || 'Untitled'}.`); break
-      case 'someday': if (HAS_SOMEDAY) { await parkWithUndo(t.id); next(`Parked in Someday: ${t.title || 'Untitled'}.`) } break
-      case 'skip': next(`Skipped: ${t.title || 'Untitled'}.`); break
+      case 'today': await setDueWithUndo(item.id, { ...(item.due ?? {}), date: todayISO() }); next(t('Due today: {title}.', { title: item.title || t('Untitled') })); break
+      case 'complete': await completeWithUndo(item.id, true); next(t('Completed: {title}.', { title: item.title || t('Untitled') })); break
+      case 'trash': await deleteWithUndo(item.id); next(t('Moved to the Trash: {title}.', { title: item.title || t('Untitled') })); break
+      case 'someday': if (HAS_SOMEDAY) { await parkWithUndo(item.id); next(t('Parked in Someday: {title}.', { title: item.title || t('Untitled') })) } break
+      case 'skip': next(t('Skipped: {title}.', { title: item.title || t('Untitled') })); break
     }
   }, [task, next])
 
   const schedule = useCallback(async (iso: string | null) => {
     if (!task || !iso) return
     await setDueWithUndo(task.id, { ...(task.due ?? {}), date: iso })
-    next(`Scheduled for ${formatDate(iso, 'long')}: ${task.title || 'Untitled'}.`)
+    next(t('Scheduled for {date}: {title}.', { date: formatDate(iso, 'long'), title: task.title || t('Untitled') }))
   }, [task, next])
 
   const moveTo = useCallback(async (projectId: string | null) => {
     if (!task || projectId === null) return
-    const name = projects.find((x) => x.id === projectId)?.name ?? 'the project'
+    const name = projects.find((x) => x.id === projectId)?.name ?? t('the project')
     await moveWithUndo(task.id, projectId, name)
-    next(`Moved to ${name}: ${task.title || 'Untitled'}.`)
+    next(t('Moved to {project}: {title}.', { project: name, title: task.title || t('Untitled') }))
   }, [task, projects, next])
 
   const delegate = useCallback(async (d: DelegateEntry) => {
     if (!task) return
     // Into the project and assigned, in one operation set (a cross-scope move carries the assignee).
     await moveTaskAcrossScopes(task.id, { project_id: d.projectId, assignee_id: d.userId })
-    next(`Delegated to ${d.label}: ${task.title || 'Untitled'}.`)
+    next(t('Delegated to {name}: {title}.', { name: d.label, title: task.title || t('Untitled') }))
   }, [task, next])
 
   // The Vim layer acts through the list state (vim-keybindings): j / k move, x completes, dd trashes, :q leaves.
   useEffect(() => registerListState({
-    rows: () => { const s = stateRef.current; return s ? s.ids.map((id) => byId.get(id)).filter((t): t is Task => !!t) : [] },
+    rows: () => { const s = stateRef.current; return s ? s.ids.map((id) => byId.get(id)).filter((tVar): tVar is Task => !!tVar) : [] },
     columns: () => null,
     selected: () => (stateRef.current ? current(stateRef.current) : null),
     select: (id) => {
@@ -200,73 +204,73 @@ export function TriageView() {
 
   const label = (id: string) => labels.find((l) => l.id === id)?.name ?? 'label'
   const bar: { key: string; hint: string; label: string; run: () => void; disabled?: boolean }[] = task ? [
-    { key: 'today', hint: 't', label: 'Today', run: () => void decide('today') },
-    { key: 'schedule', hint: 's', label: 'Schedule', run: () => setPicker('schedule') },
-    { key: 'move', hint: 'm', label: 'Move', run: () => setPicker('move') },
-    { key: 'delegate', hint: 'a', label: 'Delegate', run: () => setPicker('delegate'), disabled: delegates.length === 0 },
-    { key: 'labels', hint: 'l', label: 'Labels', run: () => setPicker('labels') },
-    ...(HAS_SOMEDAY ? [{ key: 'someday', hint: 'y', label: 'Someday', run: () => void decide('someday') }] : []),
-    { key: 'complete', hint: 'c', label: 'Complete', run: () => void decide('complete') },
-    { key: 'trash', hint: 'Del', label: 'Trash', run: () => void decide('trash') },
-    { key: 'skip', hint: 'j', label: 'Skip', run: () => void decide('skip') },
-    { key: 'back', hint: 'k', label: 'Back', run: () => setState((s) => (s ? back(s) : s)), disabled: !state || state.index === 0 },
+    { key: 'today', hint: 't', label: t('Today'), run: () => void decide('today') },
+    { key: 'schedule', hint: 's', label: t('Schedule'), run: () => setPicker('schedule') },
+    { key: 'move', hint: 'm', label: t('Move'), run: () => setPicker('move') },
+    { key: 'delegate', hint: 'a', label: t('Delegate'), run: () => setPicker('delegate'), disabled: delegates.length === 0 },
+    { key: 'labels', hint: 'l', label: t('Labels'), run: () => setPicker('labels') },
+    ...(HAS_SOMEDAY ? [{ key: 'someday', hint: 'y', label: t('Someday'), run: () => void decide('someday') }] : []),
+    { key: 'complete', hint: 'c', label: t('Complete'), run: () => void decide('complete') },
+    { key: 'trash', hint: 'Del', label: t('Trash'), run: () => void decide('trash') },
+    { key: 'skip', hint: 'j', label: t('Skip'), run: () => void decide('skip') },
+    { key: 'back', hint: 'k', label: t('Back'), run: () => setState((s) => (s ? back(s) : s)), disabled: !state || state.index === 0 },
   ] : []
 
   return (
     <PageBody data-triage>
-      <PageHeader title="Process the Inbox" help="inbox/triage" back={{ label: 'Inbox', onClick: leave }}
-        meta={p.total > 0 && !p.done ? <span data-triage-progress className="tabular-nums text-muted">{p.n} of {p.total}</span> : undefined} />
+      <PageHeader title={t('Process the Inbox')} help="inbox/triage" back={{ label: t('Inbox'), onClick: leave }}
+        meta={p.total > 0 && !p.done ? <span data-triage-progress className="tabular-nums text-muted">{t('{n} of {total}', { n: p.n, total: p.total })}</span> : undefined} />
       <p className="sr-only" role="status" aria-live="polite" data-triage-live>{announce}</p>
       {notice && <div className="mb-3"><Notice>{notice}</Notice></div>}
       {!state ? null : !task ? (
-        <EmptyState icon="inbox" title="Inbox zero" body={p.total ? 'Every task in the Inbox has a place. Nice work.' : 'The Inbox is empty.'}
-          action={<Button variant="primary" onClick={() => navigate({ view: 'inbox' })}>Back to the Inbox</Button>} />
+        <EmptyState icon="inbox" title={t('Inbox zero')} body={p.total ? t('Every task in the Inbox has a place. Nice work.') : t('The Inbox is empty.')}
+          action={<Button variant="primary" onClick={() => navigate({ view: 'inbox' })}>{t('Back to the Inbox')}</Button>} />
       ) : (
         <>
-          <section ref={card} tabIndex={-1} aria-label={`Task ${p.n} of ${p.total}`} data-triage-card={task.id}
+          <section ref={card} tabIndex={-1} aria-label={t('Task {n} of {total}', { n: p.n, total: p.total })} data-triage-card={task.id}
             className="rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-focus">
-            <h2 className="user-text text-h2 font-semibold text-strong">{task.title || 'Untitled'}</h2>
+            <h2 className="user-text text-h2 font-semibold text-strong">{task.title || t('Untitled')}</h2>
             {(task.due || task.labels.length > 0 || reminders.some((r) => !r.deleted_at)) && (
               <p className="mt-2 flex flex-wrap gap-2 text-meta text-muted">
-                {task.due && <span>Due {formatDate(task.due.date, 'long')}{task.due.time ? ` ${task.due.time}` : ''}</span>}
+                {task.due && <span>{t('Due {date}', { date: formatDate(task.due.date, 'long') })}{task.due.time ? ` ${task.due.time}` : ''}</span>}
                 {task.labels.map((l) => <span key={l} className="rounded-chip bg-sunken px-1.5">@{label(l)}</span>)}
-                {reminders.filter((r) => !r.deleted_at).length > 0 && <span>{reminders.filter((r) => !r.deleted_at).length} reminder(s)</span>}
+                {reminders.filter((r) => !r.deleted_at).length > 0 && <span>{t('{count} reminder(s)', { count: reminders.filter((r) => !r.deleted_at).length })}</span>}
               </p>
             )}
             {task.description?.trim() && <div className="mt-3 text-body"><Markdown source={task.description} /></div>}
           </section>
-          <div role="toolbar" aria-label="Decisions" className="mt-4 flex flex-wrap gap-2" data-triage-bar>
+          <div role="toolbar" aria-label={t('Decisions')} className="mt-4 flex flex-wrap gap-2" data-triage-bar>
             {bar.map((b) => (
               <Button key={b.key} size="sm" variant={b.key === 'today' ? 'primary' : 'secondary'} disabled={b.disabled} onClick={b.run}
                 aria-keyshortcuts={b.hint === 'Del' ? 'Delete' : b.hint} data-decision={b.key}>
                 {b.label} <span className="ui-kbd ml-1">{b.hint}</span>
               </Button>
             ))}
-            <Button size="sm" variant="ghost" onClick={() => setPanelTaskId(task.id)} data-decision="open">Open <span className="ui-kbd ml-1">Enter</span></Button>
+            <Button size="sm" variant="ghost" onClick={() => setPanelTaskId(task.id)} data-decision="open">{t('Open')} <span className="ui-kbd ml-1">Enter</span></Button>
           </div>
-          {delegates.length === 0 && <p className="mt-2 text-meta text-faint">Delegating needs a project you share with someone.</p>}
+          {delegates.length === 0 && <p className="mt-2 text-meta text-faint">{t('Delegating needs a project you share with someone.')}</p>}
         </>
       )}
 
       {task && picker === 'schedule' && (
-        <Dialog title="Schedule" onClose={() => setPicker(null)} size="sm">
-          <DateField label="Due date" value={task.due?.date ?? null} autoFocus onChange={(iso) => void schedule(iso)} />
-          <p className="mt-2 text-meta text-faint">Type a date such as fri or 3/11 and press Enter. Esc cancels.</p>
+        <Dialog title={t('Schedule')} onClose={() => setPicker(null)} size="sm">
+          <DateField label={t('Due date')} value={task.due?.date ?? null} autoFocus onChange={(iso) => void schedule(iso)} />
+          <p className="mt-2 text-meta text-faint">{t('Type a date such as fri or 3/11 and press Enter. Esc cancels.')}</p>
         </Dialog>
       )}
       {task && picker === 'move' && (
-        <Dialog title="Move to a project" onClose={() => setPicker(null)} size="sm">
-          <ProjectPickerField label="Project" projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={(id) => void moveTo(id)} />
+        <Dialog title={t('Move to a project')} onClose={() => setPicker(null)} size="sm">
+          <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={(id) => void moveTo(id)} />
         </Dialog>
       )}
       {task && picker === 'delegate' && (
-        <Dialog title="Delegate" onClose={() => setPicker(null)} size="sm">
-          <ComboboxPanel<DelegateEntry> label="Delegate to" placeholder="Find a person…" emptyText="Nobody matches." source={delegates}
+        <Dialog title={t('Delegate')} onClose={() => setPicker(null)} size="sm">
+          <ComboboxPanel<DelegateEntry> label={t('Delegate to')} placeholder={t('Find a person…')} emptyText={t('Nobody matches.')} source={delegates}
             getKey={(d) => d.key} getLabel={(d) => d.label} rankContext="triage.delegate" onPick={(d) => void delegate(d)} onClose={() => setPicker(null)} />
         </Dialog>
       )}
       {task && picker === 'labels' && (
-        <Dialog title="Labels" label="Labels for task" onClose={() => setPicker(null)}>
+        <Dialog title={t('Labels')} label={t('Labels for task')} onClose={() => setPicker(null)}>
           <LabelPicker taskId={task.id} onClose={() => setPicker(null)} />
         </Dialog>
       )}

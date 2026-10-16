@@ -11,6 +11,7 @@ import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
 import { openTask } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useFieldDefs } from './useFields'
+import { t } from '../lib/i18n'
 
 /**
  * A project's activity (OpenSpec `comments-and-activity`; ux-overhaul): every
@@ -59,10 +60,10 @@ function ActivityList({ project }: { project: Project }) {
     for (const e of older) if (e.actorName) m.set(e.actor, e.actorName)
     return m
   }, [older])
-  const name = useCallback((id: string) => (id && id === me ? 'You' : memberName(id, memberships) ?? names.get(id) ?? 'Someone'), [me, memberships, names])
-  const projectName = useCallback((id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? 'another project' : 'Inbox'), [projects])
+  const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? names.get(id) ?? t('Someone')), [me, memberships, names])
+  const projectName = useCallback((id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? t('another project') : t('Inbox')), [projects])
   const titles = useMemo(() => {
-    const m = new Map(tasks.map((t) => [t.id, t.title]))
+    const m = new Map(tasks.map((task) => [task.id, task.title]))
     for (const e of older) if (e.taskId && e.taskTitle && !m.has(e.taskId)) m.set(e.taskId, e.taskTitle)
     return m
   }, [tasks, older])
@@ -88,37 +89,37 @@ function ActivityList({ project }: { project: Project }) {
     <div className="space-y-2 text-body" data-project-activity>
       <div className="flex flex-wrap gap-2">
         <label className="flex items-center gap-1 text-meta text-muted">
-          Person
-          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter activity by person">
-            <option value="">Everyone</option>
+          {t('Person')}
+          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label={t('Filter activity by person')}>
+            <option value="">{t('Everyone')}</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-1 text-meta text-muted">
-          Kind
-          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Filter activity by kind">
-            <option value="">All changes</option>
+          {t('Kind')}
+          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value)} aria-label={t('Filter activity by kind')}>
+            <option value="">{t('All changes')}</option>
             {KIND_FILTERS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
       </div>
-      {shown.length === 0 && <p className="text-meta text-faint">No activity{actor || kind ? ' matches these filters' : ' on this device yet'}.</p>}
-      <ol className="space-y-1" aria-label="Activity">
+      {shown.length === 0 && <p className="text-meta text-faint">{actor || kind ? t('No activity matches these filters.') : t('No activity on this device yet.')}</p>}
+      <ol className="space-y-1" aria-label={t('Activity')}>
         {shown.map((e) => {
-          const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
+          const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || t('a task') : null
           return (
             <li key={e.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={e.kind} data-actor={e.actor}>
               <span className="min-w-0 flex-1">
                 <strong className="font-medium text-muted">{isPublicEvent(e) ? PUBLIC_ACTOR_LABEL : name(e.actor)}</strong>{' '}
                 {describeEvent(e, name, projectName)}
                 {title && e.entity !== 'project' && (
-                  <> {e.entity === 'comment' ? 'on' : '·'}{' '}
+                  <> {e.entity === 'comment' ? t('on') : '·'}{' '}
                     <button type="button" className="text-muted underline decoration-dotted" onClick={() => e.taskId && openTask.request(e.taskId)}>
                       {title}
                     </button>
                   </>
                 )}
-                {isPending(e, pending) && <Tooltip label="Not yet synced"><span className="ml-1 rounded-chip italic text-warning" tabIndex={0}>(pending)</span></Tooltip>}
+                {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
               </span>
               <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{dt.formatInstant(e.ts, 'datetime')}</time>
             </li>
@@ -127,10 +128,10 @@ function ActivityList({ project }: { project: Project }) {
       </ol>
       {more && online && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" disabled={state === 'loading'} onClick={() => void loadOlder()}>
-          {state === 'loading' ? 'Fetching older activity…' : 'Load older activity'}
+          {state === 'loading' ? t('Fetching older activity…') : t('Load older activity')}
         </button>
       )}
-      {state === 'error' && <p className="text-meta text-danger">Older activity could not be loaded.</p>}
+      {state === 'error' && <p className="text-meta text-danger">{t('Older activity could not be loaded.')}</p>}
     </div>
   )
 }

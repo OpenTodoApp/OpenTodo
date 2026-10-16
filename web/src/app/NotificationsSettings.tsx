@@ -13,6 +13,7 @@ import {
   type ChecklistStep, type PushState, type StepAction, type TestOutcome,
 } from '../lib/push'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, msg, translatedMap } from '../lib/i18n'
 
 /**
  * Settings → Notifications (OpenSpec change `reminders`): per device, enable or
@@ -60,7 +61,7 @@ export function NotificationsSettings() {
       if (ok) setMessage({ kind: 'info', text: ok })
     } catch (err) {
       const text = err instanceof PushPermissionError
-        ? 'Notifications are blocked for this site in your browser settings, so this device cannot receive pushes. Reminders still appear inside the app while it is open.'
+        ? t('Notifications are blocked for this site in your browser settings, so this device cannot receive pushes. Reminders still appear inside the app while it is open.')
         : err instanceof Error ? err.message : String(err)
       setMessage({ kind: 'error', text })
       setState(await loadPushState())
@@ -72,9 +73,9 @@ export function NotificationsSettings() {
   const s = state
   return (
     <NotificationsView state={s} busy={busy} message={message}
-      onEnable={(on) => void run(on && s ? () => enablePush(s.includeContent) : () => disablePush(), on ? 'Notifications enabled on this device.' : undefined)}
+      onEnable={(on) => void run(on && s ? () => enablePush(s.includeContent) : () => disablePush(), on ? t('Notifications enabled on this device.') : undefined)}
       onIncludeContent={(on) => void run(() => setIncludeContent(on))}
-      onRenew={() => s && void run(() => enablePush(s.includeContent), 'Notifications re-enabled.')}
+      onRenew={() => s && void run(() => enablePush(s.includeContent), t('Notifications re-enabled.'))}
       delivery={s && (
         <PushDelivery
           state={s}
@@ -84,20 +85,20 @@ export function NotificationsSettings() {
           busy={busy}
           phase={phase}
           onTest={() => void sendTest()}
-          onLocalTest={() => void run(() => localTestNotification(), 'Local notification shown. It came from this page, not from the server, so it does not prove that reminders reach this device.')}
+          onLocalTest={() => void run(() => localTestNotification(), t('Local notification shown. It came from this page, not from the server, so it does not prove that reminders reach this device.'))}
           onAction={(action) => action === 'reload'
             ? location.reload()
-            : void run(() => enablePush(s.includeContent), action === 'reenable' ? 'Notifications re-enabled.' : 'Notifications enabled on this device.')}
+            : void run(() => enablePush(s.includeContent), action === 'reenable' ? t('Notifications re-enabled.') : t('Notifications enabled on this device.'))}
         />
       )} />
   )
 }
 
 const PERMISSION: Record<PushState['permission'], { label: string; hue: HueName }> = {
-  granted: { label: 'Allowed', hue: 'green' },
-  denied: { label: 'Blocked', hue: 'red' },
-  default: { label: 'Not asked yet', hue: 'slate' },
-  unsupported: { label: 'Not supported', hue: 'slate' },
+  granted: { get label() { return t('Allowed') }, hue: 'green' },
+  denied: { get label() { return t('Blocked') }, hue: 'red' },
+  default: { get label() { return t('Not asked yet') }, hue: 'slate' },
+  unsupported: { get label() { return t('Not supported') }, hue: 'slate' },
 }
 
 /** Presentational part of Settings → Notifications, rendered without effects for tests and stories. */
@@ -113,36 +114,36 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 }) {
   const sub = s?.subscription ?? null
   return (
-    <SettingsSection title="Notifications" headingId="notifications-heading"
-      description="Reminders always appear inside the app while it is open. Turn on notifications to get them while the app is closed. Each device decides for itself.">
+    <SettingsSection title={t('Notifications')} headingId="notifications-heading"
+      description={t('Reminders always appear inside the app while it is open. Turn on notifications to get them while the app is closed. Each device decides for itself.')}>
       {!s ? (
-        <p className="py-2 text-meta text-faint">Checking…</p>
+        <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : !s.available ? (
-        <Notice>Push notifications are turned off on this server. Reminders are shown in the app.</Notice>
+        <Notice>{t('Push notifications are turned off on this server. Reminders are shown in the app.')}</Notice>
       ) : !s.supported ? (
-        <Notice>This browser does not support push notifications. Installing the app, or opening it over https, may help.</Notice>
+        <Notice>{t('This browser does not support push notifications. Installing the app, or opening it over https, may help.')}</Notice>
       ) : (
         <>
-          <SettingRow label="This device" status={
+          <SettingRow label={t('This device')} status={
             <span className="flex flex-wrap items-center gap-2" data-testid="push-summary">
-              <Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? 'On' : 'Off'}</Badge>
-              <Badge hue={PERMISSION[s.permission].hue} tone="solid">Permission: {PERMISSION[s.permission].label}</Badge>
+              <Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? t('On') : t('Off')}</Badge>
+              <Badge hue={PERMISSION[s.permission].hue} tone="solid">{t('Permission: {label}', { label: PERMISSION[s.permission].label })}</Badge>
               {sub && (
                 <span className="text-muted">
-                  {sub.lastOkAt ? `Last delivered ${relativeTime(sub.lastOkAt, now)}` : 'Nothing delivered yet'}
-                  {sub.failures > 0 ? ` · ${sub.failures} failed (${sub.lastError})` : ''}
+                  {sub.lastOkAt ? t('Last delivered {ago}', { ago: relativeTime(sub.lastOkAt, now) }) : t('Nothing delivered yet')}
+                  {sub.failures > 0 ? ` · ${t('{n} failed ({error})', { n: sub.failures, error: sub.lastError })}` : ''}
                 </span>
               )}
             </span>
-          } control={<Switch checked={s.enabled} disabled={busy} onChange={onEnable} label="Enable notifications on this device" hideLabel />} />
-          {s.permission === 'denied' && <Notice tone="warning">Notifications are blocked for this site in your browser settings. Reminders still appear inside the app.</Notice>}
+          } control={<Switch checked={s.enabled} disabled={busy} onChange={onEnable} label={t('Enable notifications on this device')} hideLabel />} />
+          {s.permission === 'denied' && <Notice tone="warning">{t('Notifications are blocked for this site in your browser settings. Reminders still appear inside the app.')}</Notice>}
           {s.needsRenewal && (
-            <Notice tone="warning" action={<Button size="sm" variant="primary" disabled={busy} onClick={onRenew}>Re-enable</Button>}>
-              The push service stopped accepting notifications for this device.
+            <Notice tone="warning" action={<Button size="sm" variant="primary" disabled={busy} onClick={onRenew}>{t('Re-enable')}</Button>}>
+              {t('The push service stopped accepting notifications for this device.')}
             </Notice>
           )}
-          <SettingRow label="Include task titles" description="Without titles a push carries only ids, encrypted; this device shows the title from its own copy of the task. With titles the notification is complete even before this device has synced. Descriptions are never sent."
-            control={<Switch checked={s.includeContent} disabled={busy} onChange={onIncludeContent} label="Include task titles" hideLabel />} />
+          <SettingRow label={t('Include task titles')} description={t('Without titles a push carries only ids, encrypted; this device shows the title from its own copy of the task. With titles the notification is complete even before this device has synced. Descriptions are never sent.')}
+            control={<Switch checked={s.includeContent} disabled={busy} onChange={onIncludeContent} label={t('Include task titles')} hideLabel />} />
           {delivery && <div className="py-3">{delivery}</div>}
         </>
       )}
@@ -154,28 +155,28 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 export type TestPhase = 'idle' | 'sending' | 'waiting'
 
 const STATUS_MARK: Record<ChecklistStep['status'], { icon: IconName; label: string; className: string }> = {
-  ok: { icon: 'check', label: 'OK', className: 'text-success' },
-  fail: { icon: 'x', label: 'Problem', className: 'text-danger' },
-  pending: { icon: 'clock', label: 'Pending', className: 'text-warning' },
-  not_checked: { icon: 'circle', label: 'Not checked', className: 'text-faint' },
-  unknown: { icon: 'circle-help', label: 'Unknown', className: 'text-faint' },
+  ok: { icon: 'check', get label() { return t('OK') }, className: 'text-success' },
+  fail: { icon: 'x', get label() { return t('Problem') }, className: 'text-danger' },
+  pending: { icon: 'clock', get label() { return t('Pending') }, className: 'text-warning' },
+  not_checked: { icon: 'circle', get label() { return t('Not checked') }, className: 'text-faint' },
+  unknown: { icon: 'circle-help', get label() { return t('Unknown') }, className: 'text-faint' },
 }
-const ACTION_LABEL: Record<StepAction, string> = { enable: 'Enable', reenable: 'Re-enable', reload: 'Reload' }
+const ACTION_LABEL = translatedMap<StepAction>({ enable: msg('Enable'), reenable: msg('Re-enable'), reload: msg('Reload') })
 
 /** One line saying what the last test proved, never more than the device can back up. */
-export function testSummary(t: TestOutcome | null, phase: TestPhase): string | null {
-  if (phase === 'sending') return 'Sending a test push through the server…'
-  if (phase === 'waiting') return 'The push service accepted the test. Waiting for this device to receive it…'
-  if (!t) return null
-  switch (t.kind) {
-    case 'received': return 'Received on this device. Reminders will reach it while the app is closed.'
-    case 'accepted_not_seen': return 'The push service accepted the test, but this device has not reported receiving it. See the checklist for likely causes.'
-    case 'no_subscription': return 'This device is not subscribed on the server, so no test was sent. Enable notifications first.'
-    case 'gone': return 'The push service said this subscription expired, and the server removed it. Enable notifications again.'
-    case 'failed': return `The push service rejected the test${t.status ? ` (status ${t.status})` : ''}: ${t.error}`
-    case 'rate_limited': return 'Too many tests in a short time. Try again in a few minutes.'
-    case 'offline': return "You're offline. The test needs the server."
-    case 'server_too_old': return 'This server does not support push tests yet. You can still show a local notification.'
+export function testSummary(item: TestOutcome | null, phase: TestPhase): string | null {
+  if (phase === 'sending') return t('Sending a test push through the server…')
+  if (phase === 'waiting') return t('The push service accepted the test. Waiting for this device to receive it…')
+  if (!item) return null
+  switch (item.kind) {
+    case 'received': return t('Received on this device. Reminders will reach it while the app is closed.')
+    case 'accepted_not_seen': return t('The push service accepted the test, but this device has not reported receiving it. See the checklist for likely causes.')
+    case 'no_subscription': return t('This device is not subscribed on the server, so no test was sent. Enable notifications first.')
+    case 'gone': return t('The push service said this subscription expired, and the server removed it. Enable notifications again.')
+    case 'failed': return item.status ? t('The push service rejected the test (status {status}): {error}', { status: item.status, error: item.error }) : t('The push service rejected the test: {error}', { error: item.error })
+    case 'rate_limited': return t('Too many tests in a short time. Try again in a few minutes.')
+    case 'offline': return t("You're offline. The test needs the server.")
+    case 'server_too_old': return t('This server does not support push tests yet. You can still show a local notification.')
   }
 }
 
@@ -196,13 +197,13 @@ export function PushDelivery(props: {
   const steps = pushChecklist(s, lastTest, online, { dev })
   const summary = testSummary(lastTest, phase)
   const canTest = online && !s.serverUnreachable && s.permission === 'granted' && s.serviceWorker && !!s.subscription
-  const whyNot = !online || s.serverUnreachable ? "You're offline; the test needs the server."
-    : s.permission !== 'granted' ? 'Allow notifications first.'
-    : !s.serviceWorker ? 'Push needs the offline service worker (see above).'
-    : !s.subscription ? 'Enable notifications on this device first.' : null
+  const whyNot = !online || s.serverUnreachable ? t("You're offline; the test needs the server.")
+    : s.permission !== 'granted' ? t('Allow notifications first.')
+    : !s.serviceWorker ? t('Push needs the offline service worker (see above).')
+    : !s.subscription ? t('Enable notifications on this device first.') : null
   return (
     <div className="space-y-2" data-testid="push-delivery">
-      <h3 className="text-body font-medium text-default">Delivery check</h3>
+      <h3 className="text-body font-medium text-default">{t('Delivery check')}</h3>
       <ul className="divide-y divide-(--ot-border) overflow-hidden rounded-control border border-default">
         {steps.map((step) => {
           const m = STATUS_MARK[step.status]
@@ -222,10 +223,10 @@ export function PushDelivery(props: {
       </ul>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" disabled={!canTest || busy || phase !== 'idle'} onClick={props.onTest}>
-          {phase === 'idle' ? 'Send test notification' : 'Testing…'}
+          {phase === 'idle' ? t('Send test notification') : t('Testing…')}
         </Button>
         {(!s.subscription || lastTest?.kind === 'server_too_old') && s.permission === 'granted' && (
-          <Button variant="ghost" size="sm" disabled={busy} onClick={props.onLocalTest}>Show a local notification</Button>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={props.onLocalTest}>{t('Show a local notification')}</Button>
         )}
         {!canTest && whyNot && <span className="text-meta text-faint">{whyNot}</span>}
       </div>

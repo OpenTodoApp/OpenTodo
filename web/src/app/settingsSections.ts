@@ -5,16 +5,17 @@ import { isAdministrator } from '../lib/roles'
 import type { User } from '../lib/types'
 import type { IconName } from '../ui'
 import type { SettingsSectionId } from './router'
+import { t, msg, translatedList, currentLanguage, currentLocale } from '../lib/i18n'
 
 export type SettingsGroupId = 'you' | 'app' | 'data' | 'server'
 
 /** The list's groups, in order. */
-export const SETTINGS_GROUPS: readonly { id: SettingsGroupId; label: string }[] = [
-  { id: 'you', label: 'You' },
-  { id: 'app', label: 'App' },
-  { id: 'data', label: 'Data' },
-  { id: 'server', label: 'Server' },
-]
+export const SETTINGS_GROUPS: readonly { id: SettingsGroupId; label: string }[] = translatedList([
+  { id: 'you' as const, label: msg('You') },
+  { id: 'app' as const, label: msg('App') },
+  { id: 'data' as const, label: msg('Data') },
+  { id: 'server' as const, label: msg('Server') },
+], 'label')
 
 export interface SettingsSection {
   id: SettingsSectionId
@@ -31,43 +32,43 @@ export interface SettingsSection {
 
 const owner = (u: User) => u.role === 'owner'
 
-export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
+export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<SettingsSection, 'label'>([
   {
-    id: 'account', label: 'Account', group: 'you', icon: 'user-check',
-    description: () => 'Profile, sessions, password, two-factor, passkeys, linked accounts and encryption',
-    demo: () => ['password and two-factor authentication', 'passkeys', 'linked accounts', 'end-to-end encryption'],
+    id: 'account', label: msg('Account'), group: 'you', icon: 'user-check',
+    description: () => t('Profile, sessions, password, two-factor, passkeys, linked accounts and encryption'),
+    demo: () => [msg('password and two-factor authentication'), msg('passkeys'), msg('linked accounts'), msg('end-to-end encryption')],
   },
-  { id: 'appearance', label: 'Appearance', group: 'you', icon: 'palette', description: () => 'Light or dark, colour theme, density and the sidebar' },
-  { id: 'general', label: 'General', group: 'app', icon: 'settings', description: () => 'Start view, date and time, calendar and keyboard' },
+  { id: 'appearance', label: msg('Appearance'), group: 'you', icon: 'palette', description: () => t('Light or dark, colour theme, density and the sidebar') },
+  { id: 'general', label: msg('General'), group: 'app', icon: 'settings', description: () => t('Language, start view, date and time, calendar and keyboard') },
   {
-    id: 'notifications', label: 'Notifications', group: 'app', icon: 'bell',
-    description: () => 'Push notifications for reminders on this device, and the weekly digest by email',
-    demo: () => ['push notifications', 'the weekly digest'],
-  },
-  {
-    id: 'capture', label: 'Capture', group: 'app', icon: 'send',
-    description: () => 'Quick add, voice, the bookmarklet and extension, and email to task',
-    demo: () => ['email to task'],
+    id: 'notifications', label: msg('Notifications'), group: 'app', icon: 'bell',
+    description: () => t('Push notifications for reminders on this device, and the weekly digest by email'),
+    demo: () => [msg('push notifications'), msg('the weekly digest')],
   },
   {
-    id: 'integrations', label: 'Integrations', group: 'data', icon: 'link',
-    description: () => 'Calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP)',
-    demo: () => ['calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'API tokens', 'the assistant', 'AI assistants (MCP)'],
+    id: 'capture', label: msg('Capture'), group: 'app', icon: 'send',
+    description: () => t('Quick add, voice, the bookmarklet and extension, and email to task'),
+    demo: () => [msg('email to task')],
   },
-  { id: 'data', label: 'Data', group: 'data', icon: 'download', description: () => 'Export, import, sync status and archived projects' },
   {
-    id: 'people', label: 'People', group: 'server', icon: 'users',
-    description: (u) => (owner(u) ? 'Users, invitations, members, access policies and single sign-on' : 'Users, invitations and members'),
+    id: 'integrations', label: msg('Integrations'), group: 'data', icon: 'link',
+    description: () => t('Calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP)'),
+    demo: () => [msg('calendar apps (CalDAV)'), msg('calendar feeds'), msg('webhooks'), msg('API tokens'), msg('the assistant'), msg('AI assistants (MCP)')],
+  },
+  { id: 'data', label: msg('Data'), group: 'data', icon: 'download', description: () => t('Export, import, sync status and archived projects') },
+  {
+    id: 'people', label: msg('People'), group: 'server', icon: 'users',
+    description: (u) => (owner(u) ? t('Users, invitations, members, access policies and single sign-on') : t('Users, invitations and members')),
     visible: (u) => isAdministrator(u),
-    demo: (u) => (owner(u) ? ['users and invitations', 'the two-factor policy', 'single sign-on', 'project invite links'] : ['users and invitations']),
+    demo: (u) => (owner(u) ? [msg('users and invitations'), msg('the two-factor policy'), msg('single sign-on'), msg('project invite links')] : [msg('users and invitations')]),
   },
   {
-    id: 'server', label: 'Server', group: 'server', icon: 'upload',
-    description: () => 'Backups, attachments, outgoing email and the audit log',
+    id: 'server', label: msg('Server'), group: 'server', icon: 'upload',
+    description: () => t('Backups, attachments, outgoing email and the audit log'),
     visible: owner,
-    demo: () => ['backups', 'outgoing email'],
+    demo: () => [msg('backups'), msg('outgoing email')],
   },
-]
+], 'label')
 
 /** The sections this user may see, in list order. */
 export function visibleSections(user: User): SettingsSection[] {
@@ -91,8 +92,9 @@ export function firstSection(user: User): SettingsSection {
   return visibleSections(user)[0]
 }
 
-/** "a, b and c" for the demo note. */
+/** "a, b and c" for the demo note; other languages use their own list pattern. */
 export function joinList(items: string[]): string {
   if (items.length <= 1) return items.join('')
+  if (currentLanguage() !== 'en' && typeof Intl.ListFormat === 'function') return new Intl.ListFormat(currentLocale(), { type: 'conjunction' }).format(items)
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }

@@ -4,6 +4,7 @@
 // colour never carries meaning alone. The SVG is one image with a summary, and a
 // visually hidden table after it carries the same values for screen readers.
 import { useId } from 'react'
+import { t } from '../../lib/i18n'
 
 export interface Bar {
   /** Short axis label ("Mon", "12 Oct", "Work"). */
@@ -18,12 +19,12 @@ const HEIGHT = 100
 const AXIS = 16 // room for the labels under the axis
 const TOP = 14 // room for the value over the tallest bar
 
-export function Bars({ title, bars, unit = 'completed' }: { title: string; bars: readonly Bar[]; unit?: string }) {
+export function Bars({ title, bars, unit = t('completed') }: { title: string; bars: readonly Bar[]; unit?: string }) {
   const id = useId()
   const max = Math.max(1, ...bars.map((b) => b.value))
   const slot = 100 / Math.max(1, bars.length)
   const total = bars.reduce((n, b) => n + b.value, 0)
-  const summary = `${title}: ${total} ${unit} in total; ${bars.map((b) => `${b.name ?? b.label} ${b.value}`).join(', ')}`
+  const summary = t('{title}: {total} {unit} in total; {values}', { title, total, unit, values: bars.map((b) => `${b.name ?? b.label} ${b.value}`).join(', ') })
   const room = HEIGHT - AXIS - TOP
   const heightOf = (v: number) => (v / max) * room
   return (

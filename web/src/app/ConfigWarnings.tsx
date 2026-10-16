@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { ConfigWarning, User } from '../lib/types'
 import { Icon } from '../ui'
+import { t } from '../lib/i18n'
 
 /** The owner's configuration warnings from /api/v1/me; empty for everyone else, offline or on older servers. */
 export async function loadConfigWarnings(user: User): Promise<ConfigWarning[]> {
@@ -34,7 +35,7 @@ export function ConfigWarningList({ warnings }: { warnings: ConfigWarning[] }) {
       className="space-y-2 rounded-card border border-default bg-warning-soft p-4 text-body text-on-warning-soft shadow-1">
       <h2 id="config-warnings-heading" className="flex items-center gap-2 font-semibold">
         <Icon name="alarm-clock" />
-        {warnings.length === 1 ? 'Server configuration warning' : 'Server configuration warnings'}
+        {warnings.length === 1 ? t('Server configuration warning') : t('Server configuration warnings')}
       </h2>
       <ul className="space-y-1.5">
         {warnings.map((w) => (
@@ -43,7 +44,7 @@ export function ConfigWarningList({ warnings }: { warnings: ConfigWarning[] }) {
           </li>
         ))}
       </ul>
-      <p className="text-meta">Only you, the owner, see this. It goes away after the server restarts with a corrected value.</p>
+      <p className="text-meta">{t('Only you, the owner, see this. It goes away after the server restarts with a corrected value.')}</p>
     </section>
   )
 }

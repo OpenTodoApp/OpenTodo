@@ -27,7 +27,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   const taskId = occupant?.kind === 'task' ? occupant.id : null
   const { projects, labelMap, readOnly } = useTaskDetailData()
   // undefined while loading, null when the task does not exist.
-  const task = useLiveQuery<Task | null | undefined>(() => (taskId ? db.tasks.get(taskId).then((t) => t ?? null) : Promise.resolve(undefined)), [taskId])
+  const task = useLiveQuery<Task | null | undefined>(() => (taskId ? db.tasks.get(taskId).then((tk) => tk ?? null) : Promise.resolve(undefined)), [taskId])
 
   // A task that is gone (deleted here or elsewhere) leaves the slot.
   useEffect(() => {

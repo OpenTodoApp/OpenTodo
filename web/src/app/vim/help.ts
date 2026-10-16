@@ -4,10 +4,11 @@
 // commands from commands.ts, which are commands, not keys.
 import type { HelpSection } from '../ShortcutHelp'
 import { COMMANDS } from './commands'
+import { t } from '../../lib/i18n'
 
 export const VIM_HELP: HelpSection = {
-  title: 'Vim command line',
-  note: 'Vim keybindings are on for this device (turn them off in Settings → General → Keyboard). The mode, NORMAL, INSERT or COMMAND, is shown at the bottom; a focused text field is Insert mode. All the usual shortcuts still work in Normal mode.',
+  get title() { return t('Vim command line') },
+  get note() { return t('Vim keybindings are on for this device (turn them off in Settings → General → Keyboard). The mode, NORMAL, INSERT or COMMAND, is shown at the bottom; a focused text field is Insert mode. All the usual shortcuts still work in Normal mode.') },
   mono: true,
-  rows: COMMANDS.map((c): [string, string] => [`:${c.name}${c.arg ? ` ${c.arg}` : ''}`, c.desc]),
+  get rows() { return COMMANDS.map((c): [string, string] => [`:${c.name}${c.arg ? ` ${c.arg}` : ''}`, t(c.desc, { arg: c.arg ?? '' })]) },
 }

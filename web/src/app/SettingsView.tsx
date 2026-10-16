@@ -35,7 +35,9 @@ import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
-import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
+import { useDemo } from '../lib/demo'
+import { t } from '../lib/i18n'
+import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
@@ -103,7 +105,7 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
   if (!page) {
     return (
       <PageBody width="form" className="space-y-6" data-settings-overview>
-        <PageHeader title="Settings" titleRef={headingRef} titleTabIndex={-1} help="settings" sticky={false} />
+        <PageHeader title={t('Settings')} titleRef={headingRef} titleTabIndex={-1} help="settings" sticky={false} />
         <SettingsList user={user} />
       </PageBody>
     )
@@ -111,13 +113,13 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
   return (
     <div ref={pageRef} className="mx-auto max-w-6xl px-4 py-6 outline-none md:px-8 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10" data-settings-section={page.id}>
       {twoColumn && (
-        <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:pr-1" aria-label="Settings">
+        <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:pr-1" aria-label={t('Settings')}>
           <SettingsList user={user} current={page.id} compact />
         </aside>
       )}
       <div className="min-w-0 space-y-6 lg:max-w-2xl">
         <PageHeader title={page.label} titleRef={headingRef} titleTabIndex={-1} help={PAGE_HELP_SCREENS[page.id]} sticky={false}
-          back={{ label: 'Settings', href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
+          back={{ label: t('Settings'), href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
         <SectionContent section={page} user={user} onLogout={onLogout} />
       </div>
     </div>
@@ -135,7 +137,7 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
       <ProfileCard user={user} compact={compact} />
       <SettingsSearch user={user} />
       {!compact && <ConfigWarningsNotice user={user} />}
-      <nav aria-label="Settings sections" className={compact ? 'space-y-4' : 'space-y-6'}>
+      <nav aria-label={t('Settings sections')} className={compact ? 'space-y-4' : 'space-y-6'}>
         {groupedSections(user).map(({ group, sections }) => (
           <section key={group.id} aria-labelledby={`group-${group.id}`}>
             <h2 id={`group-${group.id}`} className={`${compact ? 'px-2.5 pb-1' : 'mb-2 px-1'} text-hint font-semibold uppercase tracking-wide text-faint`}>{group.label}</h2>
@@ -166,8 +168,7 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
         ))}
       </nav>
       <p className={`text-meta text-faint ${compact ? 'px-2.5' : ''}`}>
-        OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.
-        <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
+        {t('OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.')}<a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">{t('Source code')}</a>
       </p>
     </div>
   )
@@ -196,10 +197,10 @@ function SettingsSearch({ user }: { user: User }) {
   return (
     <form role="search" onSubmit={submit} className="space-y-2" data-settings-search>
       <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
-        placeholder="Search settings" aria-label="Search settings" autoComplete="off" />
+        placeholder={t('Search settings')} aria-label={t('Search settings')} autoComplete="off" />
       {query.trim() && (
-        <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label="Matching settings" data-settings-results>
-          {hits.length === 0 && <li className="px-2 py-2 text-meta text-muted">No setting matches “{query.trim()}”.</li>}
+        <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label={t('Matching settings')} data-settings-results>
+          {hits.length === 0 && <li className="px-2 py-2 text-meta text-muted">{t('No setting matches “{trim}”.', { trim: query.trim() })}</li>}
           {hits.map((h: SettingsHit) => (
             <li key={h.section.id}>
               <ResultLink section={h.section} onOpen={() => open(h.section.id)} />
@@ -229,7 +230,6 @@ function ResultLink({ section, onOpen }: { section: SettingsSection; onOpen: () 
   )
 }
 
-const ROLE_LABEL: Record<User['role'], string> = { owner: 'Owner', admin: 'Admin', member: 'Member' }
 
 /** Who is signed in: avatar initials, name, email and role (the list and Account). */
 export function ProfileCard({ user, compact = false }: { user: User; compact?: boolean }) {
@@ -240,7 +240,7 @@ export function ProfileCard({ user, compact = false }: { user: User; compact?: b
         <p className="user-text truncate text-body font-semibold text-default">{user.name || user.email}</p>
         <p className="user-text truncate text-meta text-muted">{user.email}</p>
       </div>
-      <Badge hue={user.role === 'owner' ? 'green' : user.role === 'admin' ? 'indigo' : 'slate'}>{ROLE_LABEL[user.role]}</Badge>
+      <Badge hue={user.role === 'owner' ? 'green' : user.role === 'admin' ? 'indigo' : 'slate'}>{ACCOUNT_ROLE_LABEL[user.role]}</Badge>
     </div>
   )
 }
@@ -376,12 +376,10 @@ export const DEMO_RESTRICTED_FEATURES = [
 
 /** The demo note once at the top of a page, naming the rows whose controls are disabled. */
 function DemoRestrictedNote({ features }: { features: string[] }) {
-  const many = features.length > 1
   return (
     <div data-testid="demo-restricted">
       <Notice tone="info">
-        <span className="font-medium">Demo instance.</span> Here, {joinList(features)} {many ? 'are' : 'is'} {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}; the rows are shown with their controls disabled.
-        This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use {many ? 'them' : 'it'}; it takes one container.
+        {t.rich('{n, plural, one {<b>Demo instance.</b> Here, {features} is disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use it; it takes one container.} other {<b>Demo instance.</b> Here, {features} are disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use them; it takes one container.}}', { n: features.length, features: joinList(features.map((x) => t(x))), b: (chunks) => <span className="font-medium">{chunks}</span> })}
       </Notice>
     </div>
   )

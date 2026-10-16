@@ -10,6 +10,7 @@ import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Popover } from '../overlay/Popover'
 import { parseTimeInput } from './parse'
+import { t } from '../../lib/i18n'
 
 export interface TimeFieldProps {
   /** `HH:MM`, or null when empty. */
@@ -42,7 +43,7 @@ export function TimeField({ value, onChange, label, hideLabel, disabled, classNa
   const anchor = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLUListElement>(null)
   const listId = useId()
-  const options = useMemo(() => QUARTER_HOURS.map((t) => ({ value: t, label: formatTime(t, { ...resolved, time: resolved.hour12 ? '12h' : '24h' }) })), [resolved])
+  const options = useMemo(() => QUARTER_HOURS.map((item) => ({ value: item, label: formatTime(item, { ...resolved, time: resolved.hour12 ? '12h' : '24h' }) })), [resolved])
 
   useEffect(() => { setDraft(shown); setError(null) }, [shown])
   useEffect(() => {
@@ -62,7 +63,7 @@ export function TimeField({ value, onChange, label, hideLabel, disabled, classNa
     if (!text) return pick(null)
     const hhmm = parseTimeInput(text)
     if (!hhmm) {
-      setError('Not a valid time. Try 15:30, 3:30 pm or 1530.')
+      setError(t('Not a valid time. Try 15:30, 3:30 pm or 1530.'))
       return
     }
     pick(hhmm)
@@ -112,12 +113,12 @@ export function TimeField({ value, onChange, label, hideLabel, disabled, classNa
             role="combobox" aria-expanded={open} aria-controls={open ? listId : undefined} aria-autocomplete="none"
             aria-activedescendant={open ? `${listId}-${active}` : undefined}
             onChange={(e) => setDraft(e.target.value)} onBlur={() => { if (!open) commit() }} onKeyDown={onKey} />
-          <IconButton icon="clock" label="Show times" disabled={disabled} tabIndex={-1}
+          <IconButton icon="clock" label={t('Show times')} disabled={disabled} tabIndex={-1}
             aria-expanded={open} onMouseDown={(e) => e.preventDefault()} onClick={() => (open ? setOpen(false) : openList())} />
         </div>
       </Field>
-      <Popover open={open} onClose={() => { setOpen(false); commit() }} anchor={anchor} label="Times" modal={false} role={undefined} width="sm:w-40" className="p-1">
-        <ul ref={list} id={listId} role="listbox" aria-label="Times" className="max-h-60 overflow-y-auto">
+      <Popover open={open} onClose={() => { setOpen(false); commit() }} anchor={anchor} label={t('Times')} modal={false} role={undefined} width="sm:w-40" className="p-1">
+        <ul ref={list} id={listId} role="listbox" aria-label={t('Times')} className="max-h-60 overflow-y-auto">
           {options.map((o, i) => (
             <li key={o.value} id={`${listId}-${i}`} role="option" aria-selected={i === active} data-index={i}
               onMouseDown={(e) => e.preventDefault()} onClick={() => pick(o.value)}

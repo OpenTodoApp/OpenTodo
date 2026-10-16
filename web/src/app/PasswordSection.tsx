@@ -5,6 +5,7 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
+import { t } from '../lib/i18n'
 
 /**
  * Settings section for every user (OpenSpec `user-management`): change the own
@@ -25,7 +26,7 @@ export function PasswordSection() {
     setError(null)
     setDone(false)
     if (next.length < 10) {
-      setError('The new password needs at least 10 characters.')
+      setError(t('The new password needs at least 10 characters.'))
       return
     }
     setBusy(true)
@@ -68,31 +69,31 @@ export function PasswordView(p: {
     wasOpen.current = !!p.open
   }, [p.open])
   return (
-    <SettingsSection title="Password" headingId="password-heading"
-      description="Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.">
-      {!p.online && <Notice>You are offline. Changing your password needs a connection to your server.</Notice>}
-      {p.done && !p.open && <Notice tone="success">Password changed. Your other sessions were signed out.</Notice>}
+    <SettingsSection title={t('Password')} headingId="password-heading"
+      description={t('Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.')}>
+      {!p.online && <Notice>{t('You are offline. Changing your password needs a connection to your server.')}</Notice>}
+      {p.done && !p.open && <Notice tone="success">{t('Password changed. Your other sessions were signed out.')}</Notice>}
       {p.open ? (
         <form onSubmit={p.onSubmit} className="space-y-3 py-1" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); p.onCancel?.() } }}>
           {/* Lets password managers attach the new password to the right account. */}
           <input type="text" name="username" autoComplete="username" hidden readOnly />
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Current password">
+            <Field label={t('Current password')}>
               <Input ref={first} type="password" autoComplete="current-password" value={p.current} onChange={(e) => p.onCurrent(e.target.value)} disabled={disabled} required />
             </Field>
-            <Field label="New password" description="At least 10 characters.">
+            <Field label={t('New password')} description={t('At least 10 characters.')}>
               <Input type="password" autoComplete="new-password" minLength={10} value={p.next} onChange={(e) => p.onNext(e.target.value)} disabled={disabled} required />
             </Field>
           </div>
           {p.error && <Notice tone="danger">{p.error}</Notice>}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="ghost" onClick={p.onCancel}>Cancel</Button>
-            <Button variant="primary" type="submit" disabled={disabled} busy={p.busy}>Change password</Button>
+            <Button variant="ghost" onClick={p.onCancel}>{t('Cancel')}</Button>
+            <Button variant="primary" type="submit" disabled={disabled} busy={p.busy}>{t('Change password')}</Button>
           </div>
         </form>
       ) : (
-        <SettingRow label="Password" description="Used to sign in on new devices." control={
-          <Button ref={opener} variant="secondary" disabled={!p.online} onClick={p.onOpen} aria-expanded={false}>Change password</Button>
+        <SettingRow label={t('Password')} description={t('Used to sign in on new devices.')} control={
+          <Button ref={opener} variant="secondary" disabled={!p.online} onClick={p.onOpen} aria-expanded={false}>{t('Change password')}</Button>
         } />
       )}
     </SettingsSection>
@@ -100,8 +101,8 @@ export function PasswordView(p: {
 }
 
 export function describePasswordError(err: unknown): string {
-  if (!(err instanceof ApiError)) return 'The server is unreachable. Changing your password needs a connection.'
-  if (err.code === 'invalid_credentials') return 'Your current password is not correct.'
-  if (err.code === 'rate_limited') return 'Too many attempts. Try again later.'
+  if (!(err instanceof ApiError)) return t('The server is unreachable. Changing your password needs a connection.')
+  if (err.code === 'invalid_credentials') return t('Your current password is not correct.')
+  if (err.code === 'rate_limited') return t('Too many attempts. Try again later.')
   return err.message
 }

@@ -23,6 +23,7 @@ import { completionDelay, prefersReducedMotion } from './motion'
 import { dragFeedback } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useFieldDefs } from './useFields'
+import { t } from '../lib/i18n'
 
 /** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
 export const MAX_FIELD_BADGES = 3
@@ -45,7 +46,7 @@ export const MAX_INDENT = 3
 /** The date phrase of a row: the due text with evening and repeat as suffixes ("Today · evening · repeats"). */
 export function dateText(dueLabel: string | null, evening: boolean, recurring: boolean, occurrence = false): string | null {
   if (!dueLabel) return null
-  return [dueLabel, evening ? 'evening' : null, recurring ? 'repeats' : occurrence ? 'occurrence' : null].filter(Boolean).join(' · ')
+  return [dueLabel, evening ? t('evening') : null, recurring ? t('repeats') : occurrence ? t('occurrence') : null].filter(Boolean).join(' · ')
 }
 
 export interface TaskRowProps {
@@ -104,8 +105,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // task is in Later, or in Today without a date.
   const start = task.start ?? null
   const startText = done || !start ? null
-    : start === 'someday' ? 'Someday'
-    : `${start > todayISO() ? 'Starts' : 'Started'} ${formatDate(start, 'compact', dt.resolved)}`
+    : start === 'someday' ? t('Someday')
+    : start > todayISO() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
   const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
@@ -117,7 +118,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   const undecryptable = !!task._e2ee?.raw?.title
   // Evening and repeat are suffixes of the date text, never separate glyphs; with no
   // date they stand on their own in the date tone.
-  const date = dateText(due?.label ?? (task.evening && !done ? 'This evening' : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
+  const date = dateText(due?.label ?? (task.evening && !done ? t('This evening') : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
   const streak = habit && !done ? habit : null
   // Custom field values of the task's project (custom-fields): three badges, then "+n".
   const fieldDefs = useFieldDefs()
@@ -146,43 +147,43 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
 
   const meta = hasMeta && (
     <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-2 gap-y-0.5`} data-row-meta>
-      {breadcrumb && <NeutralChip icon="corner-down-right" label={`In ${breadcrumb}`} data-breadcrumb="">{breadcrumb}</NeutralChip>}
+      {breadcrumb && <NeutralChip icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb })} data-breadcrumb="">{breadcrumb}</NeutralChip>}
       {date && (
         <ToneText tone={due ? DUE_TONE[due.tone] : 'indigo'} data-date="" data-evening={task.evening && !done ? '' : undefined} data-recurring={task.recurrence ? '' : undefined}
-          label={[date, hint ? `fixed to ${task.due?.tz}` : null].filter(Boolean).join(', ')}>
+          label={[date, hint ? t('fixed to {zone}', { zone: task.due?.tz ?? '' }) : null].filter(Boolean).join(', ')}>
           {date}{hint && <span className="text-faint"> ({hint})</span>}
         </ToneText>
       )}
       {!date && (task.recurrence || task.series_id) && (
-        <ToneText tone="muted" data-recurring={task.recurrence ? '' : undefined}>{task.recurrence ? 'repeats' : 'occurrence'}</ToneText>
+        <ToneText tone="muted" data-recurring={task.recurrence ? '' : undefined}>{task.recurrence ? t('repeats') : t('occurrence')}</ToneText>
       )}
       {streak && (
         <NeutralChip icon="flame" data-streak="" data-at-risk={streak.atRisk ? '' : undefined} label={streakLabel(streak)}>{streak.current}</NeutralChip>
       )}
       {blockedBy > 0 && !done && (
-        <NeutralChip icon="lock" data-blocked="" label={`Blocked by ${blockedBy}`}>{blockedBy}</NeutralChip>
+        <NeutralChip icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy })}>{blockedBy}</NeutralChip>
       )}
       {deadline && (
-        <ToneText tone={DEADLINE_TONE[deadline.tone]} icon="hourglass" data-deadline="" label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>
+        <ToneText tone={DEADLINE_TONE[deadline.tone]} icon="hourglass" data-deadline="" label={t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label })}>
           {deadline.label}
         </ToneText>
       )}
       {startText && <ToneText tone="muted" icon={start === 'someday' ? 'archive' : 'calendar-days'} data-start="">{startText}</ToneText>}
-      {task.estimate_minutes ? <NeutralChip data-estimate="" label={`Estimate ${formatMinutes(task.estimate_minutes)}`}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
+      {task.estimate_minutes ? <NeutralChip data-estimate="" label={t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) })}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
       {badges.slice(0, MAX_FIELD_BADGES).map((b) => <NeutralChip key={b.def.id} data-field-badge={b.def.id}>{b.text}</NeutralChip>)}
       {moreBadges.length > 0 && (
-        <NeutralChip data-field-more="" label={`${moreBadges.length} more fields: ${moreBadges.map((b) => b.text).join(', ')}`}>
+        <NeutralChip data-field-more="" label={t('{count} more fields: {join}', { count: moreBadges.length, join: moreBadges.map((b) => b.text).join(', ') })}>
           +{moreBadges.length}
         </NeutralChip>
       )}
-      {progress && progress.total > 0 && <NeutralChip data-progress="" label={`${progress.done} of ${progress.total} subtasks completed`}>{progress.done}/{progress.total}</NeutralChip>}
+      {progress && progress.total > 0 && <NeutralChip data-progress="" label={t('{done} of {total} subtasks completed', { done: progress.done, total: progress.total })}>{progress.done}/{progress.total}</NeutralChip>}
       {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
-      {task.description && <NeutralChip icon="list" label="Has notes" data-notes="" />}
-      {comments > 0 && <NeutralChip icon="message-circle" data-comments="" label={`${comments} comment${comments === 1 ? '' : 's'}`}>{comments}</NeutralChip>}
-      {attachments > 0 && <NeutralChip icon="paperclip" data-attachments="" label={`${attachments} attachment${attachments === 1 ? '' : 's'}`}>{attachments}</NeutralChip>}
+      {task.description && <NeutralChip icon="list" label={t('Has notes')} data-notes="" />}
+      {comments > 0 && <NeutralChip icon="message-circle" data-comments="" label={t('{n, plural, one {# comment} other {# comments}}', { n: comments })}>{comments}</NeutralChip>}
+      {attachments > 0 && <NeutralChip icon="paperclip" data-attachments="" label={t('{n, plural, one {# attachment} other {# attachments}}', { n: attachments })}>{attachments}</NeutralChip>}
       {labels.map((l) => <LabelChip key={l.id} name={l.name} color={l.color} />)}
       {showProject && project && <NeutralChip dot={project.color} data-project="">{project.name}</NeutralChip>}
-      {showProject && !project && !task.project_id && <NeutralChip data-project="">Inbox</NeutralChip>}
+      {showProject && !project && !task.project_id && <NeutralChip data-project="">{t('Inbox')}</NeutralChip>}
     </div>
   )
 
@@ -211,7 +212,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {onToggleCollapse && hasChildren && (
             <button
               type="button"
-              aria-label={collapsed ? 'Expand subtasks' : 'Collapse subtasks'}
+              aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
               className="flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
@@ -227,7 +228,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
         <button
           type="button"
-          aria-label={done ? 'Reopen task' : 'Complete task'}
+          aria-label={done ? t('Reopen task') : t('Complete task')}
           onClick={toggle}
           disabled={readOnly}
           className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly ? `${showCheckbox || ticked ? 'invisible' : 'group-hover:invisible group-focus-within:invisible'}` : ''}`}
@@ -238,7 +239,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </button>
         {onTick && !readOnly && (
           <label className={`absolute inset-0 inline-flex cursor-pointer items-center justify-center ${showCheckbox || ticked ? '' : 'invisible group-hover:visible group-focus-within:visible pointer-coarse:hidden'}`}>
-            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={`Select ${task.title || 'Untitled'}`} data-tick
+            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: task.title || t('Untitled') })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>
         )}
@@ -250,11 +251,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           onOpen(e)
         }}>
         <div className={`user-text text-body ${card ? '' : 'truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
-          {undecryptable ? <span className="italic text-faint" aria-label="This title could not be decrypted with this device's key">{task.title}</span>
-            : task.title || <span className="italic text-faint">Untitled</span>}
+          {undecryptable ? <span className="italic text-faint" aria-label={t('This title could not be decrypted with this device\'s key')}>{task.title}</span>
+            : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (
-            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft" aria-label="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
-              not yet encrypted
+            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft" aria-label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>
+              {t('not yet encrypted')}
             </span>
           )}
         </div>

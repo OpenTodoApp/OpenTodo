@@ -1,8 +1,9 @@
 import { type FormEvent, useState } from 'react'
 import { Dialog } from './overlay'
+import { t } from '../lib/i18n'
 
 /** A small dialog asking for a name: Enter confirms, Esc cancels. Errors from onSubmit are shown inline. */
-export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint, onSubmit, onCancel }: {
+export function NamePrompt({ title, label, initial = '', confirm = t('Save'), hint, onSubmit, onCancel }: {
   title: string
   label: string
   initial?: string
@@ -15,7 +16,7 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
   const [error, setError] = useState<string | null>(null)
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (!name.trim()) return setError('Please enter a name')
+    if (!name.trim()) return setError(t('Please enter a name'))
     try {
       await onSubmit(name.trim())
     } catch (err) {
@@ -30,7 +31,7 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
         {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
         {hint && <p className="mt-1 text-meta text-faint">{hint}</p>}
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md text-body" onClick={onCancel}>Cancel</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md text-body" onClick={onCancel}>{t('Cancel')}</button>
           <button type="submit" className="ui-btn ui-btn--primary ui-btn--md text-body">{confirm}</button>
         </div>
       </form>

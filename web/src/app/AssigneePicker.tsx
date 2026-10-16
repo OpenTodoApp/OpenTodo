@@ -7,16 +7,17 @@ import { Avatar } from '../ui'
 import { Tooltip } from '../ui'
 import { Combobox, ComboboxPanel } from '../ui'
 import { Icon } from '../ui'
+import { t, useLanguageVersion } from '../lib/i18n'
 
 export { initials } from '../ui'
 
 /** Compact assignee chip (task rows in shared projects); the avatar colour follows the account id. */
 export function AssigneeChip({ id, name, me }: { id: string; name: string; me?: boolean }) {
   return (
-    <Tooltip label={`Assigned to ${name}`}>
+    <Tooltip label={t('Assigned to {name}', { name })}>
       <span className="inline-flex items-center gap-1 text-muted" data-assignee>
         <Avatar id={id} name={name} size="xs" />
-        <span className="max-w-24 truncate">{me ? 'You' : name}</span>
+        <span className="max-w-24 truncate">{me ? t('You') : name}</span>
       </span>
     </Tooltip>
   )
@@ -38,18 +39,19 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const memberships = useLiveQuery(() => membershipMap(), [], new Map())
 
+  const lang = useLanguageVersion()
   const people = useMemo<Person[]>(() => [
-    { id: NONE, name: 'Unassigned', email: '' },
-    ...assigneeOptions(task?.project_id, memberships, { id: userId, name: 'You', email: '' })
-      .map((p) => ({ id: p.userId, name: p.userId === userId ? 'You' : p.name || p.email, email: p.userId === userId ? '' : p.email })),
-  ], [task?.project_id, memberships, userId])
+    { id: NONE, name: t('Unassigned'), email: '' },
+    ...assigneeOptions(task?.project_id, memberships, { id: userId, name: t('You'), email: '' })
+      .map((p) => ({ id: p.userId, name: p.userId === userId ? t('You') : p.name || p.email, email: p.userId === userId ? '' : p.email })),
+  ], [task?.project_id, memberships, userId, lang])
 
   if (!task) return null
   const current = task.assignee_id ?? null
-  const currentName = current ? (current === userId ? 'You' : memberName(current, memberships) ?? 'Former member') : 'Unassigned'
+  const currentName = current ? (current === userId ? t('You') : memberName(current, memberships) ?? t('Former member')) : t('Unassigned')
 
   const props = {
-    label: 'Assignee',
+    label: t('Assignee'),
     source: people,
     getKey: (p: Person) => p.id,
     getLabel: (p: Person) => p.name,
@@ -57,7 +59,7 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
     pinned: [NONE, userId],
     selected: [current ?? NONE],
     rankContext: `assignee:${task.project_id ?? 'personal'}`,
-    emptyText: 'No member matches.',
+    emptyText: t('No member matches.'),
     renderLeading: (p: Person) => (p.id === NONE ? <span className="flex h-6 w-6 items-center justify-center text-faint"><Icon name="circle" /></span> : <Avatar id={p.id} name={p.name} size="sm" />),
     onPick: async (p: Person) => {
       const id = p.id === NONE ? null : p.id
@@ -65,7 +67,7 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
     },
     onClose,
   }
-  return inline ? <Combobox {...props} placeholder={currentName} /> : <ComboboxPanel {...props} placeholder="Assign to…" />
+  return inline ? <Combobox {...props} placeholder={currentName} /> : <ComboboxPanel {...props} placeholder={t('Assign to…')} />
 }
 
 const NONE = '__unassigned'

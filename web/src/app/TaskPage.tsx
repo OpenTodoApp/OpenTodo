@@ -11,21 +11,22 @@ import { openTaskInList } from './signals'
 import { useTaskDetailData } from './PanelHost'
 import { navigate } from './router'
 import { TaskDetail } from './task-detail/TaskDetail'
+import { t } from '../lib/i18n'
 
 export function TaskPage({ id, user }: { id: string; user?: Pick<User, 'id'> }) {
   const data = useTaskDetailData()
-  const task = useLiveQuery<Task | null | undefined>(() => db.tasks.get(id).then((t) => t ?? null), [id])
+  const task = useLiveQuery<Task | null | undefined>(() => db.tasks.get(id).then((tk) => tk ?? null), [id])
   // The page replaces the panel; nothing stays open in the slot behind it.
   useEffect(() => closePanel(), [id])
 
   // Back: the task's list with the panel open (the list takes the pending request on mount).
   const back = () => openTaskInList({ id, project_id: task?.project_id ?? null })
 
-  if (task === undefined) return <PageBody width="list"><div className="py-6"><Skeleton shape="line" count={4} label="Loading task" /></div></PageBody>
+  if (task === undefined) return <PageBody width="list"><div className="py-6"><Skeleton shape="line" count={4} label={t('Loading task')} /></div></PageBody>
   if (task === null || task.deleted_at) {
     return (
       <PageBody width="list">
-        <p className="py-6 text-body text-muted">This task no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button></p>
+        <p className="py-6 text-body text-muted">{t('This task no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'inbox' })}>{t('Go to Inbox')}</button></p>
       </PageBody>
     )
   }

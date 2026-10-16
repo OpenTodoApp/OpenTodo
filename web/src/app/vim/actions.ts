@@ -9,21 +9,21 @@ import { runBulk } from '../bulk/BulkActions'
 export function makeListActions(s: ListState): ListActions {
   const selectedRow = () => {
     const rows = s.rows()
-    const idx = rows.findIndex((t) => t.id === s.selected())
+    const idx = rows.findIndex((tk) => tk.id === s.selected())
     return { rows, idx, task: idx >= 0 ? rows[idx] : undefined }
   }
-  const writable = (t: Task | undefined): t is Task => !!t && !s.readOnly(t)
+  const writable = (item: Task | undefined): item is Task => !!item && !s.readOnly(item)
   const a: ListActions = {
     moveSelection(n) {
       const cols = s.columns()
       if (cols) {
-        const col = cols.findIndex((c) => c.some((t) => t.id === s.selected()))
+        const col = cols.findIndex((c) => c.some((tVar) => tVar.id === s.selected()))
         if (col < 0) {
           s.select(cols.find((c) => c.length)?.[0]?.id ?? null)
           return
         }
         const cards = cols[col]
-        const pos = cards.findIndex((t) => t.id === s.selected())
+        const pos = cards.findIndex((tVar) => tVar.id === s.selected())
         s.select(cards[Math.max(0, Math.min(cards.length - 1, pos + n))].id)
         return
       }

@@ -26,6 +26,7 @@ import { isActivationTarget, useShortcutScope } from '../shortcuts'
 import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
 import { useToday } from '../useViews'
+import { t } from '../../lib/i18n'
 
 export function ReviewView({ userId }: { userId?: string }) {
   const today = useToday()
@@ -66,7 +67,7 @@ export function ReviewView({ userId }: { userId?: string }) {
 
   const current = step ?? 'clear'
   const taskRows = !steps ? [] : current === 'clear' ? steps.inbox : current === 'back' ? steps.overdue : current === 'ahead' ? steps.ahead : []
-  const keyRows = useMemo(() => taskRows.map((t) => ({ key: t.id, task: t })), [taskRows])
+  const keyRows = useMemo(() => taskRows.map((tk) => ({ key: tk.id, task: tk })), [taskRows])
   useListKeys({
     rows: keyRows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor,
     paused: current === 'next' || !!addTo,
@@ -93,41 +94,41 @@ export function ReviewView({ userId }: { userId?: string }) {
 
   const archive = async (p: Project) => {
     await archiveProject(p.id)
-    setNotice({ text: `Archived ${p.name}.`, undo: () => void unarchiveProject(p.id).then(() => setNotice(null)) })
+    setNotice({ text: t('Archived {name}.', { name: p.name }), undo: () => void unarchiveProject(p.id).then(() => setNotice(null)) })
   }
   const add = async ({ labels: typed, ...rest }: QuickAddInput) => {
     if (!addTo) return
     await createTask({ ...rest, project_id: addTo.id, labels: typed ?? [] })
-    setNotice({ text: `Added a next action to ${addTo.name}.` })
+    setNotice({ text: t('Added a next action to {name}.', { name: addTo.name }) })
     setAddTo(null)
   }
 
   return (
     <PageBody width="list">
-      <PageHeader title="Weekly review" icon="clipboard-check"
-        subtitle={last ? `Last review ${formatInstant(last, 'long')}` : 'No review finished yet'}
+      <PageHeader title={t('Weekly review')} icon="clipboard-check"
+        subtitle={last ? t('Last review {instant}', { instant: formatInstant(last, 'long') }) : t('No review finished yet')}
         actions={<Button size="sm" variant={allDone ? 'primary' : 'secondary'} onClick={() => void (async () => {
           const now = Date.now()
           await finishReview(now)
           setFinished(now)
           focusTab()
-        })()}>Finish review</Button>} />
+        })()}>{t('Finish review')}</Button>} />
       {!steps || !step ? <Skeleton shape="row" count={4} /> : (
         <>
-          {allDone && <div className="mb-3"><Notice tone="success">Every step is done. Finish the review to record it on all your devices.</Notice></div>}
-          {finished && <p role="status" className="mb-3 text-meta text-muted" data-testid="review-finished">Review finished {formatInstant(finished, 'long')}.</p>}
+          {allDone && <div className="mb-3"><Notice tone="success">{t('Every step is done. Finish the review to record it on all your devices.')}</Notice></div>}
+          {finished && <p role="status" className="mb-3 text-meta text-muted" data-testid="review-finished">{t('Review finished {instant}.', { instant: formatInstant(finished, 'long') })}</p>}
           {notice && (
-            <div className="mb-3"><Notice tone="info" action={notice.undo && <Button size="sm" onClick={notice.undo}>Undo</Button>}>{notice.text}</Notice></div>
+            <div className="mb-3"><Notice tone="info" action={notice.undo && <Button size="sm" onClick={notice.undo}>{t('Undo')}</Button>}>{notice.text}</Notice></div>
           )}
           <div ref={tabs}>
-            <Tabs label="Review steps" value={step} onChange={(s) => { chosen.current = true; setStep(s as StepId) }}
+            <Tabs label={t('Review steps')} value={step} onChange={(s) => { chosen.current = true; setStep(s as StepId) }}
               tabs={STEP_IDS.map((s) => ({
                 id: s,
                 label: (
                   <span className="inline-flex items-center gap-1.5" data-step={s}>
                     {steps.done[s] && <Icon name="check" size="sm" />}
-                    {STEP_TITLES[s]}
-                    <span className="sr-only">{steps.done[s] ? ', done' : `, ${steps.left[s]} left`}</span>
+                    {t(STEP_TITLES[s])}
+                    <span className="sr-only">{steps.done[s] ? `, ${t('done')}` : `, ${t('{n} left', { n: steps.left[s] })}`}</span>
                   </span>
                 ),
                 count: steps.done[s] || s === 'ahead' ? undefined : steps.left[s],
@@ -137,11 +138,11 @@ export function ReviewView({ userId }: { userId?: string }) {
                 <ProjectRows rows={projectRows} selected={selected} onAdd={setAddTo} onArchive={(p) => void archive(p)} onSelect={setSelected} />
               ) : (
                 <ul data-testid={`review-${step}`}>
-                  {taskRows.map((t) => (
-                    <TaskRow key={t.id} task={t} project={t.project_id ? projectMap.get(t.project_id) : undefined} labels={resolveLabels(t.labels, labelMap)}
-                      showProject={step !== 'clear'} selected={t.id === selected}
-                      onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
-                      onOpen={() => { setSelected(t.id); setPanelTaskId(t.id) }} />
+                  {taskRows.map((item) => (
+                    <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
+                      showProject={step !== 'clear'} selected={item.id === selected}
+                      onToggle={() => void setTaskCompleted(item.id, !item.completed_at)}
+                      onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
                   ))}
                 </ul>
               )}
@@ -150,13 +151,13 @@ export function ReviewView({ userId }: { userId?: string }) {
         </>
       )}
       {addTo && (
-        <Dialog title={`Add a next action to ${addTo.name}`} onClose={() => setAddTo(null)}>
-          <QuickAdd autoFocus hideHint placeholder="What is the next step?" label={`Next action for ${addTo.name}`}
+        <Dialog title={t('Add a next action to {name}', { name: addTo.name })} onClose={() => setAddTo(null)}>
+          <QuickAdd autoFocus hideHint placeholder={t('What is the next step?')} label={t('Next action for {name}', { name: addTo.name })}
             projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels} onAdd={add} />
         </Dialog>
       )}
       {pickerFor && (
-        <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
+        <Dialog title={t('Labels')} label={t('Labels for task')} onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
         </Dialog>
       )}
@@ -169,22 +170,22 @@ function StepIntro({ step, steps }: { step: StepId; steps: NonNullable<ReturnTyp
     case 'clear':
       return (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-body text-muted">{steps.inbox.length ? `${steps.inbox.length} to process: move, schedule, complete or trash each Inbox task.` : 'The Inbox is empty.'}</p>
-          {steps.inbox.length > 0 && <Button size="sm" onClick={() => navigate({ view: 'triage' })}>Process the Inbox</Button>}
+          <p className="text-body text-muted">{steps.inbox.length ? t('{count} to process: move, schedule, complete or trash each Inbox task.', { count: steps.inbox.length }) : t('The Inbox is empty.')}</p>
+          {steps.inbox.length > 0 && <Button size="sm" onClick={() => navigate({ view: 'triage' })}>{t('Process the Inbox')}</Button>}
         </div>
       )
     case 'back':
       return (
         <p className="mb-2 text-body text-muted">
-          You completed {steps.completedThisWeek} {steps.completedThisWeek === 1 ? 'task' : 'tasks'} this week.{' '}
-          {steps.overdue.length ? `${steps.overdue.length} overdue: complete them with c, or open one to give it a new date.` : 'Nothing is overdue.'}{' '}
-          <button type="button" className="text-accent underline" onClick={() => navigate({ view: 'stats' })}>See statistics</button>
+          {t('You completed {completedThisWeek}', { completedThisWeek: steps.completedThisWeek })} {steps.completedThisWeek === 1 ? t('task') : t('tasks')}{' '}{t('this week.')}{' '}
+          {steps.overdue.length ? t('{count} overdue: complete them with c, or open one to give it a new date.', { count: steps.overdue.length }) : t('Nothing is overdue.')}{' '}
+          <button type="button" className="text-accent underline" onClick={() => navigate({ view: 'stats' })}>{t('See statistics')}</button>
         </p>
       )
     case 'next':
-      return <p className="mb-2 text-body text-muted">{steps.nextActions.length ? 'These projects have no open task. Add the next step, or archive the project if it is finished.' : 'Every project has a next action.'} <HelpLink screen="review" topic="Weekly review" /></p>
+      return <p className="mb-2 text-body text-muted">{steps.nextActions.length ? t('These projects have no open task. Add the next step, or archive the project if it is finished.') : t('Every project has a next action.')} <HelpLink screen="review" topic={t('Weekly review')} /></p>
     default:
-      return <p className="mb-2 text-body text-muted">{steps.ahead.length ? 'Due today and in the next six days. Set priorities with 1 to 4.' : 'Nothing is due in the next seven days.'}</p>
+      return <p className="mb-2 text-body text-muted">{steps.ahead.length ? t('Due today and in the next six days. Set priorities with 1 to 4.') : t('Nothing is due in the next seven days.')}</p>
   }
 }
 
@@ -205,8 +206,8 @@ function ProjectRows({ rows, selected, onAdd, onArchive, onSelect }: {
             <span className="truncate">{p.name}</span>
           </span>
           <span className="flex gap-2">
-            <Button size="sm" icon="plus" onClick={() => onAdd(p)}>Add a next action</Button>
-            {canArchive && <Button size="sm" variant="ghost" icon="archive" onClick={() => onArchive(p)}>Archive</Button>}
+            <Button size="sm" icon="plus" onClick={() => onAdd(p)}>{t('Add a next action')}</Button>
+            {canArchive && <Button size="sm" variant="ghost" icon="archive" onClick={() => onArchive(p)}>{t('Archive')}</Button>}
           </span>
         </li>
       ))}

@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { api, ApiError, setReauthHandler } from '../lib/api'
 import { Dialog } from './overlay'
+import { t } from '../lib/i18n'
 
 // Step-up re-authentication (OpenSpec `mfa-totp`). Sensitive actions answer
 // `reauth_required` when the session has not proved its identity in the last
@@ -26,24 +27,24 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
     p.onSubmit()
   }
   return (
-    <Dialog title="Confirm it's you" onClose={p.onCancel} testId="reauth-dialog">
+    <Dialog title={t('Confirm it\'s you')} onClose={p.onCancel} testId="reauth-dialog">
         <p className="text-body text-muted">
-          This change needs a recent sign-in. Enter your {p.mode === 'password' ? 'password' : 'current code from your authenticator app'} to continue.
+          {t('This change needs a recent sign-in. Enter your')}{' '}{p.mode === 'password' ? t('password') : t('current code from your authenticator app')}{' '}{t('to continue.')}
         </p>
         <form className="mt-3 space-y-3" onSubmit={submit}>
           {p.mode === 'password' ? (
-            <input className="ui-input" type="password" autoComplete="current-password" aria-label="Password" required autoFocus
+            <input className="ui-input" type="password" autoComplete="current-password" aria-label={t('Password')} required autoFocus
               value={p.value} onChange={(e) => p.onValue(e.target.value)} />
           ) : (
-            <input className="ui-input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" aria-label="Code from your authenticator app"
+            <input className="ui-input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" aria-label={t('Code from your authenticator app')}
               required autoFocus maxLength={7} value={p.value} onChange={(e) => p.onValue(e.target.value)} />
           )}
           {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
           <div className="flex flex-wrap items-center gap-2">
-            <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.busy}>{p.busy ? 'Checking…' : 'Continue'}</button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>Cancel</button>
+            <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.busy}>{p.busy ? t('Checking…') : t('Continue')}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>{t('Cancel')}</button>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm ml-auto text-meta" onClick={() => p.onMode(p.mode === 'password' ? 'code' : 'password')}>
-              {p.mode === 'password' ? 'Use an app code instead' : 'Use my password instead'}
+              {p.mode === 'password' ? t('Use an app code instead') : t('Use my password instead')}
             </button>
           </div>
         </form>
@@ -52,14 +53,14 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
 }
 
 export function reauthMessage(err: unknown): string {
-  if (!(err instanceof ApiError)) return 'Your server cannot be reached. Try again when you are online.'
+  if (!(err instanceof ApiError)) return t('Your server cannot be reached. Try again when you are online.')
   switch (err.code) {
     case 'invalid_credentials':
-      return 'That password is not correct.'
+      return t('That password is not correct.')
     case 'mfa_code_invalid':
-      return 'That code is not valid. Type the newest code from your app.'
+      return t('That code is not valid. Type the newest code from your app.')
     case 'rate_limited':
-      return 'Too many attempts. Wait a minute and try again.'
+      return t('Too many attempts. Wait a minute and try again.')
     default:
       return err.message
   }

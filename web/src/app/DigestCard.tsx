@@ -11,6 +11,7 @@ import { formatDate, formatHour, formatInstant } from '../lib/dates'
 import { useDemo } from '../lib/demo'
 import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, currentLocale } from '../lib/i18n'
 
 /** The digest's languages, as the server's message templates (internal/mail). */
 export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português' }
@@ -35,12 +36,12 @@ export function browserTimeZone(): string {
 
 /** Weekday names, 0 = Sunday (2026-10-11 is a Sunday). */
 export function weekdayName(wd: number, style: 'long' | 'short' = 'long'): string {
-  return new Intl.DateTimeFormat('en', { weekday: style, timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + wd)))
+  return new Intl.DateTimeFormat(currentLocale(), { weekday: style, timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + wd)))
 }
 
 /** The state line: "On, Fridays at 07:00 (Europe/Zurich)" or "Off". */
 export function digestSummary(d: Pick<EmailDigest, 'enabled' | 'weekday' | 'hour' | 'timeZone'>, hour = formatHour(d.hour)): string {
-  return d.enabled ? `On, ${weekdayName(d.weekday)}s at ${hour} (${d.timeZone})` : 'Off'
+  return d.enabled ? t('On, {weekday}s at {hour} ({zone})', { weekday: weekdayName(d.weekday), hour, zone: d.timeZone }) : t('Off')
 }
 
 /** The last send's outcome in words, or null before the first. */
@@ -48,11 +49,11 @@ export function digestOutcome(d: Pick<EmailDigest, 'lastOutcome' | 'lastSentFor'
   const day = d.lastSentFor ? formatDate(d.lastSentFor, 'long') : ''
   switch (d.lastOutcome) {
     case undefined: case '': return null
-    case 'sent': return { text: `Last sent ${day}`, tone: 'ok' }
-    case 'skipped': return { text: `Skipped ${day}: the mail server could not be reached for six hours`, tone: 'warn' }
-    case 'encrypted_account': return { text: 'Not sent: the account uses end-to-end encryption', tone: 'warn' }
-    case 'rate_limited': return { text: 'The last attempt hit the sending limit; it is retried', tone: 'warn' }
-    default: return { text: `The last attempt failed (${d.lastOutcome}); it is retried for six hours`, tone: 'warn' }
+    case 'sent': return { text: t('Last sent {day}', { day }), tone: 'ok' }
+    case 'skipped': return { text: t('Skipped {day}: the mail server could not be reached for six hours', { day }), tone: 'warn' }
+    case 'encrypted_account': return { text: t('Not sent: the account uses end-to-end encryption'), tone: 'warn' }
+    case 'rate_limited': return { text: t('The last attempt hit the sending limit; it is retried'), tone: 'warn' }
+    default: return { text: t('The last attempt failed ({outcome}); it is retried for six hours', { outcome: d.lastOutcome }), tone: 'warn' }
   }
 }
 
@@ -86,61 +87,61 @@ export function DigestView(p: DigestViewProps) {
   const d = s.kind === 'ready' ? s.digest : null
   const outcome = d ? digestOutcome(d) : null
   return (
-    <SettingsSection title="Weekly digest" headingId="email-digest-heading"
-      description="An email on your review day with last week's numbers, what is overdue and due soon, projects without a next action, and a link to your weekly review.">
+    <SettingsSection title={t('Weekly digest')} headingId="email-digest-heading"
+      description={t('An email on your review day with last week\'s numbers, what is overdue and due soon, projects without a next action, and a link to your weekly review.')}>
       {s.kind === 'loading' ? (
-        <p className="py-2 text-meta text-faint">Checking…</p>
+        <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : s.kind === 'offline' ? (
-        <Notice>The weekly digest is set on the server, so changing it needs a connection.</Notice>
+        <Notice>{t('The weekly digest is set on the server, so changing it needs a connection.')}</Notice>
       ) : s.kind === 'error' ? (
         <Notice tone="danger">{s.message}</Notice>
       ) : p.demo ? (
-        <Notice>The weekly digest is not available on this demo instance: it would send email.</Notice>
+        <Notice>{t('The weekly digest is not available on this demo instance: it would send email.')}</Notice>
       ) : !d!.available ? (
-        <Notice>The weekly digest needs outgoing email, which the server owner has to configure first (Settings → Server → Outgoing email).</Notice>
+        <Notice>{t('The weekly digest needs outgoing email, which the server owner has to configure first (Settings → Server → Outgoing email).')}</Notice>
       ) : d!.encryption ? (
-        <Notice>The weekly digest is not available for accounts with end-to-end encryption, because the message would contain your task titles.</Notice>
+        <Notice>{t('The weekly digest is not available for accounts with end-to-end encryption, because the message would contain your task titles.')}</Notice>
       ) : (
         <>
-          <SettingRow label="Email me a weekly digest" status={
+          <SettingRow label={t('Email me a weekly digest')} status={
             <span className="flex flex-wrap items-center gap-2" data-testid="digest-summary">
               <Badge hue={d!.enabled ? 'green' : 'slate'}>{digestSummary(d!)}</Badge>
-              {d!.enabled && d!.nextSendAt !== null && <span className="text-muted">Next: {formatInstant(d!.nextSendAt, 'long')}</span>}
+              {d!.enabled && d!.nextSendAt !== null && <span className="text-muted">{t('Next: {instant}', { instant: formatInstant(d!.nextSendAt, 'long') })}</span>}
               {outcome && <span className={outcome.tone === 'warn' ? 'text-warning' : 'text-muted'} data-testid="digest-outcome">{outcome.text}</span>}
             </span>
-          } description="The message contains task and project names and goes to your account's email address."
+          } description={t('The message contains task and project names and goes to your account\'s email address.')}
             control={
               <>
-                <Button size="sm" aria-expanded={p.editing} aria-disabled={p.busy} onClick={() => { if (!p.busy) p.onEdit() }}>Change</Button>
-                <Switch checked={d!.enabled} disabled={p.busy} onChange={p.onToggle} label="Email me a weekly digest" hideLabel />
+                <Button size="sm" aria-expanded={p.editing} aria-disabled={p.busy} onClick={() => { if (!p.busy) p.onEdit() }}>{t('Change')}</Button>
+                <Switch checked={d!.enabled} disabled={p.busy} onChange={p.onToggle} label={t('Email me a weekly digest')} hideLabel />
               </>
             } />
           {p.editing && (
             <div className="space-y-3 py-3" data-testid="digest-editor">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Day">
+                <Field label={t('Day')}>
                   <Select value={p.draft.weekday} onChange={(e) => p.onDraft({ ...p.draft, weekday: Number(e.target.value) })}>
                     {[1, 2, 3, 4, 5, 6, 0].map((wd) => <option key={wd} value={wd}>{weekdayName(wd)}</option>)}
                   </Select>
                 </Field>
-                <Field label="Time">
+                <Field label={t('Time')}>
                   <Select value={p.draft.hour} onChange={(e) => p.onDraft({ ...p.draft, hour: Number(e.target.value) })}>
                     {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{formatHour(h)}</option>)}
                   </Select>
                 </Field>
               </div>
               <p className="text-meta text-muted">
-                Time zone {p.capture.timeZone} and language {DIGEST_LANGUAGES[p.capture.language] ?? p.capture.language}, from this browser.
+                {t('Time zone {zone} and language {language}, from this browser.', { zone: p.capture.timeZone, language: DIGEST_LANGUAGES[p.capture.language] ?? p.capture.language })}
               </p>
               <div className="flex justify-end gap-2">
-                <Button size="sm" variant="ghost" onClick={p.onCancel}>Cancel</Button>
-                <Button size="sm" variant="primary" aria-disabled={p.busy} onClick={() => { if (!p.busy) p.onSave() }}>Save</Button>
+                <Button size="sm" variant="ghost" onClick={p.onCancel}>{t('Cancel')}</Button>
+                <Button size="sm" variant="primary" aria-disabled={p.busy} onClick={() => { if (!p.busy) p.onSave() }}>{t('Save')}</Button>
               </div>
             </div>
           )}
           {!p.editing && d!.enabled && (
             <p className="py-2 text-meta text-muted">
-              Time zone {d!.timeZone} · Language {DIGEST_LANGUAGES[d!.language] ?? d!.language}
+              {t('Time zone {timeZone} · Language', { timeZone: d!.timeZone })}{' '}{DIGEST_LANGUAGES[d!.language] ?? d!.language}
             </p>
           )}
         </>
@@ -150,7 +151,7 @@ export function DigestView(p: DigestViewProps) {
   )
 }
 
-const failure = (err: unknown) => (isNetworkError(err) ? 'You are offline: the weekly digest is set on the server. Try again when connected.' : (err as ApiError).message)
+const failure = (err: unknown) => (isNetworkError(err) ? t('You are offline: the weekly digest is set on the server. Try again when connected.') : (err as ApiError).message)
 
 export function DigestCard() {
   useDateTimeFormat() // re-render on a time format change

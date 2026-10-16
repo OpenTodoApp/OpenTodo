@@ -12,14 +12,16 @@ import type { ThemeModePref, UserPrefs } from '../lib/types'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { SettingRow, SettingsSection, Switch } from '../ui'
 import { ACCENTS, type AccentId } from '../ui'
+import { t, msg, translatedMap } from '../lib/i18n'
+import { accentName } from '../lib/colourNames'
 
-const MODE_LABEL: Record<ThemeModePref, string> = { system: 'System', light: 'Light', dark: 'Dark' }
-const DENSITY_LABEL: Record<Density, string> = { comfortable: 'Comfortable', compact: 'Compact' }
+const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
+const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
 
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
-export const PROMOTABLE_LABEL: Record<Promotable, string> = {
-  anytime: 'Anytime', someday: 'Someday', assigned: 'Assigned to me', completed: 'Completed', feed: 'Updates', trash: 'Trash', filter: 'Filter',
-}
+export const PROMOTABLE_LABEL = translatedMap<Promotable>({
+  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('Filter'),
+})
 
 export interface AppearanceViewProps {
   value: Appearance
@@ -64,12 +66,12 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
-    <SettingsSection title="Appearance" headingId="appearance-heading"
-      description="Light or dark, the colour of buttons, links and selection, and how tight the rows are. Saved to your account, so all your devices follow.">
-      <SettingRow id="appearance-mode" label="Mode" description="System follows your device's light or dark setting."
-        control={<span data-appearance-mode><Segmented label="Mode" items={THEME_MODES} labels={MODE_LABEL} value={value.mode} onChange={onMode} testId="appearance-mode" /></span>} />
+    <SettingsSection title={t('Appearance')} headingId="appearance-heading"
+      description={t('Light or dark, the colour of buttons, links and selection, and how tight the rows are. Saved to your account, so all your devices follow.')}>
+      <SettingRow id="appearance-mode" label={t('Mode')} description={t('System follows your device\'s light or dark setting.')}
+        control={<span data-appearance-mode><Segmented label={t('Mode')} items={THEME_MODES} labels={MODE_LABEL} value={value.mode} onChange={onMode} testId="appearance-mode" /></span>} />
       <div className="py-3" id="appearance-theme" tabIndex={-1} data-setting-row="appearance-theme">
-        <p id="appearance-theme-label" className="mb-2 text-body font-medium text-default">Theme</p>
+        <p id="appearance-theme-label" className="mb-2 text-body font-medium text-default">{t('Theme')}</p>
         <div role="radiogroup" aria-labelledby="appearance-theme-label" data-appearance-themes data-scroll-x
           className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
           {ACCENTS.map((a, i) => {
@@ -90,15 +92,15 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
                     <span className="h-3 w-1/2 rounded-full bg-accent" />
                   </span>
                 </span>
-                <span className="text-meta font-medium text-default">{a.label}</span>
+                <span className="text-meta font-medium text-default">{accentName(a.label)}</span>
               </button>
             )
           })}
         </div>
       </div>
       {onDensity && (
-        <SettingRow id="appearance-density" label="Density" description="Compact makes task rows, group headers and the sidebar tighter. Touch targets stay full size on touch screens."
-          control={<Segmented label="Density" items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
+        <SettingRow id="appearance-density" label={t('Density')} description={t('Compact makes task rows, group headers and the sidebar tighter. Touch targets stay full size on touch screens.')}
+          control={<Segmented label={t('Density')} items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
       )}
     </SettingsSection>
   )
@@ -107,11 +109,11 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
 /** The sidebar destinations (app-shell "Sidebar structure"): one switch per destination of the More group. */
 export function SidebarView({ promoted, onPromote }: { promoted: readonly Promotable[]; onPromote: (id: Promotable, on: boolean) => void }) {
   return (
-    <SettingsSection title="Sidebar" headingId="sidebar-heading"
-      description="Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group's destinations sit next to them, on every device.">
+    <SettingsSection title={t('Sidebar')} headingId="sidebar-heading"
+      description={t('Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group\'s destinations sit next to them, on every device.')}>
       {PROMOTABLE.map((id) => (
         <SettingRow key={id} id={`sidebar-${id}`} label={PROMOTABLE_LABEL[id]} htmlFor={`sidebar-switch-${id}`}
-          control={<Switch id={`sidebar-switch-${id}`} checked={promoted.includes(id)} onChange={(on) => onPromote(id, on)} label={`Show ${PROMOTABLE_LABEL[id]} among the primary items`} hideLabel />} />
+          control={<Switch id={`sidebar-switch-${id}`} checked={promoted.includes(id)} onChange={(on) => onPromote(id, on)} label={t('Show {name} among the primary items', { name: PROMOTABLE_LABEL[id] })} hideLabel />} />
       ))}
     </SettingsSection>
   )

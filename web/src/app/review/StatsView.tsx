@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { PageBody, PageHeader } from '../../ui'
 import { db } from '../../lib/db'
-import { formatDate } from '../../lib/dates'
+import { formatDate, dateLocaleOf } from '../../lib/dates'
 import { currentUserId } from '../../lib/sharing'
 import { compute, periodFor, PERIOD_KINDS, PERIOD_LABELS, sharedIds, type PeriodKind, type Stats } from '../../lib/stats'
 import type { Membership, Project, Task } from '../../lib/types'
@@ -14,6 +14,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { HelpLink } from '../help/HelpLink'
 import { useToday } from '../useViews'
 import { Bars } from './Bars'
+import { t } from '../../lib/i18n'
 
 const PERIOD_KEY = 'ot.stats.period'
 function readPeriod(): PeriodKind {
@@ -43,7 +44,7 @@ export function PeriodChooser({ value, onChange, chooserRef }: { value: PeriodKi
     refs.current[PERIOD_KINDS[next]]?.focus()
   }
   return (
-    <div ref={chooserRef} role="radiogroup" aria-label="Period" onKeyDown={move} className="inline-flex flex-wrap gap-1 rounded-control border border-default bg-sunken p-1" data-period-chooser>
+    <div ref={chooserRef} role="radiogroup" aria-label={t('Period')} onKeyDown={move} className="inline-flex flex-wrap gap-1 rounded-control border border-default bg-sunken p-1" data-period-chooser>
       {PERIOD_KINDS.map((p) => {
         const on = p === value
         return (
@@ -59,11 +60,11 @@ export function PeriodChooser({ value, onChange, chooserRef }: { value: PeriodKi
 }
 
 const NUMBERS: { key: keyof Pick<Stats, 'completed' | 'created' | 'late' | 'slipped' | 'overdue'>; label: string; hint: string }[] = [
-  { key: 'completed', label: 'Completed', hint: 'including each day of a recurring task' },
-  { key: 'created', label: 'Created', hint: 'new tasks' },
-  { key: 'late', label: 'Completed late', hint: 'after their due day' },
-  { key: 'slipped', label: 'Slipped', hint: 'due in the period, not done by its end' },
-  { key: 'overdue', label: 'Overdue now', hint: 'open and due before today' },
+  { key: 'completed', get label() { return t('Completed') }, get hint() { return t('including each day of a recurring task') } },
+  { key: 'created', get label() { return t('Created') }, get hint() { return t('new tasks') } },
+  { key: 'late', get label() { return t('Completed late') }, get hint() { return t('after their due day') } },
+  { key: 'slipped', get label() { return t('Slipped') }, get hint() { return t('due in the period, not done by its end') } },
+  { key: 'overdue', get label() { return t('Overdue now') }, get hint() { return t('open and due before today') } },
 ]
 
 /** The screen's content for given rows; the view below feeds it live rows. */
@@ -83,21 +84,21 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
     [tasks, projects, memberships, me, today, range.start, range.end, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps
   const names = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects])
   const empty = stats.completed === 0 && stats.created === 0
-  const wd = (iso: string) => new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`))
+  const wd = (iso: string) => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`))
   const perDay = stats.perDay.map((d, i) => ({
     label: range.weeks === 1 ? wd(d.date) : i % 7 === 0 ? formatDate(d.date, 'compact') : '',
     name: formatDate(d.date, 'heading'), value: d.count,
   }))
-  const weekdayLabel = (n: number) => new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + n)))
-  const weekdayName = (n: number) => new Intl.DateTimeFormat(undefined, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + n)))
-  const projectOf = (t: Task) => (t.project_id ? names.get(t.project_id) ?? 'Project' : 'Inbox')
+  const weekdayLabel = (n: number) => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + n)))
+  const weekdayName = (n: number) => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + n)))
+  const projectOf = (task: Task) => (task.project_id ? names.get(task.project_id) ?? t('Project') : t('Inbox'))
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <PeriodChooser value={period} onChange={onPeriod} chooserRef={chooserRef} />
         <p className="flex flex-wrap items-center gap-2 text-meta text-muted" data-testid="stats-local">
-          {formatDate(range.start, 'long')} – {formatDate(range.end, 'long')}. Computed on this device from your tasks; nothing is sent anywhere.
-          <HelpLink screen="stats" topic="Statistics" />
+          {t('{date} – {date2}. Computed on this device from your tasks; nothing is sent anywhere.', { date: formatDate(range.start, 'long'), date2: formatDate(range.end, 'long') })}
+          <HelpLink screen="stats" topic={t('Statistics')} />
         </p>
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5" data-testid="stats-numbers">
@@ -111,32 +112,32 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
       </dl>
       {empty ? (
         <p className="rounded-card border border-dashed border-input p-4 text-body text-muted" data-testid="stats-empty">
-          Nothing completed or created in this period yet. Tasks you complete, including each day of a recurring task, are counted here.
+          {t('Nothing completed or created in this period yet. Tasks you complete, including each day of a recurring task, are counted here.')}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2" data-testid="stats-charts">
-          {range.weeks < 12 && <Bars title="Completed per day" bars={perDay} />}
-          {range.weeks > 1 && <Bars title="Completed per week" bars={stats.perWeek.map((w) => ({ label: formatDate(w.start, 'compact'), name: `Week of ${formatDate(w.start, 'long')}`, value: w.count }))} />}
-          {range.weeks > 1 && <Bars title="Completed per weekday" bars={stats.perWeekday.map((w) => ({ label: weekdayLabel(w.weekday), name: weekdayName(w.weekday), value: w.count }))} />}
-          {stats.perProject.length > 0 && <Bars title="Completed per project" bars={stats.perProject.map((p) => ({ label: p.name, value: p.count }))} />}
+          {range.weeks < 12 && <Bars title={t('Completed per day')} bars={perDay} />}
+          {range.weeks > 1 && <Bars title={t('Completed per week')} bars={stats.perWeek.map((w) => ({ label: formatDate(w.start, 'compact'), name: t('Week of {date}', { date: formatDate(w.start, 'long') }), value: w.count }))} />}
+          {range.weeks > 1 && <Bars title={t('Completed per weekday')} bars={stats.perWeekday.map((w) => ({ label: weekdayLabel(w.weekday), name: weekdayName(w.weekday), value: w.count }))} />}
+          {stats.perProject.length > 0 && <Bars title={t('Completed per project')} bars={stats.perProject.map((p) => ({ label: p.name, value: p.count }))} />}
         </div>
       )}
-      <TaskList title="Completed late" empty="Nothing was completed late." tasks={stats.lateTasks} projectOf={projectOf} />
-      <TaskList title="Slipped" empty="Nothing slipped." tasks={stats.slippedTasks} projectOf={projectOf} />
+      <TaskList title={t('Completed late')} empty={t('Nothing was completed late.')} tasks={stats.lateTasks} projectOf={projectOf} />
+      <TaskList title={t('Slipped')} empty={t('Nothing slipped.')} tasks={stats.slippedTasks} projectOf={projectOf} />
     </div>
   )
 }
 
-function TaskList({ title, empty, tasks, projectOf }: { title: string; empty: string; tasks: readonly Task[]; projectOf: (t: Task) => string }) {
+function TaskList({ title, empty, tasks, projectOf }: { title: string; empty: string; tasks: readonly Task[]; projectOf: (task: Task) => string }) {
   return (
     <section aria-label={title}>
       <h2 className="mb-1 text-meta font-semibold uppercase tracking-wide text-faint">{title}</h2>
       {tasks.length === 0 ? <p className="text-meta text-muted">{empty}</p> : (
         <ul className="divide-y divide-(--ot-border) rounded-card border border-default bg-surface">
-          {tasks.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-baseline justify-between gap-x-3 px-3 py-2 text-body">
-              <span className="min-w-0 truncate text-default">{t.title}</span>
-              <span className="text-meta text-muted">{projectOf(t)} · due {t.due ? formatDate(t.due.date, 'compact') : ''}</span>
+          {tasks.map((tk) => (
+            <li key={tk.id} className="flex flex-wrap items-baseline justify-between gap-x-3 px-3 py-2 text-body">
+              <span className="min-w-0 truncate text-default">{tk.title}</span>
+              <span className="text-meta text-muted">{t('{projectOf} · due', { projectOf: projectOf(tk) })}{' '}{tk.due ? formatDate(tk.due.date, 'compact') : ''}</span>
             </li>
           ))}
         </ul>
@@ -159,7 +160,7 @@ export function StatsView() {
   useEffect(() => { title.current?.focus() }, [])
   return (
     <PageBody width="full" className="max-w-5xl">
-      <PageHeader title="Statistics" icon="chart-column" titleRef={title} titleTabIndex={-1} />
+      <PageHeader title={t('Statistics')} icon="chart-column" titleRef={title} titleTabIndex={-1} />
       <StatsContent tasks={tasks} projects={projects} memberships={memberships} me={me} today={today} weekStart={weekStart}
         period={period} onPeriod={(p) => { setPeriod(p); writePeriod(p) }} />
     </PageBody>

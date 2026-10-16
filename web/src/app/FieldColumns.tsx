@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { formatValue, matchesType, taskFields } from '../lib/fields'
 import type { FieldDef, Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
 
 /** The grid columns: the task, then one column per field. */
 export function columnsTemplate(n: number): string {
@@ -14,10 +15,10 @@ export function columnsTemplate(n: number): string {
 
 export function FieldColumnsTable({ defs, children }: { defs: readonly FieldDef[]; children: ReactNode }) {
   return (
-    <div role="table" aria-label="Tasks and fields" className="mb-4 overflow-x-auto" data-field-columns data-scroll-x>
+    <div role="table" aria-label={t('Tasks and fields')} className="mb-4 overflow-x-auto" data-field-columns data-scroll-x>
       <div role="rowgroup" className="sticky top-0 z-10 bg-canvas">
         <div role="row" className="grid items-end gap-2 border-b border-default pb-1 text-meta font-semibold text-muted" style={{ gridTemplateColumns: columnsTemplate(defs.length) }}>
-          <span role="columnheader" className="pl-15">Task</span>
+          <span role="columnheader" className="pl-15">{t('Task')}</span>
           {defs.map((d) => <span key={d.id} role="columnheader" className="user-text truncate" data-column={d.id}>{d.name}</span>)}
         </div>
       </div>
@@ -40,7 +41,7 @@ export function FieldColumnsRow({ task, defs, row }: { task: Task; defs: readonl
         return (
           <div key={d.id} role="cell" className={`user-text truncate pt-2 text-meta ${ok ? 'text-default' : 'text-faint italic'} ${d.type === 'number' ? 'tabular-nums' : ''}`}
             data-cell={d.id}>
-            {text}{!ok && <span className="sr-only"> (does not match the field type)</span>}
+            {text}{!ok && <span className="sr-only">{' '}{t('(does not match the field type)')}</span>}
           </div>
         )
       })}

@@ -10,6 +10,7 @@ import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
 import { ToastRegion } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
@@ -71,7 +72,7 @@ export function ReminderToasts() {
         <div
           key={d.reminder.id}
           role="alertdialog"
-          aria-label={`Reminder: ${d.task.title || 'Untitled'}`}
+          aria-label={t('Reminder: {title}', { title: d.task.title || t('Untitled') })}
           className="pointer-events-auto rounded-control border border-warning bg-surface p-3 shadow-2"
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -83,20 +84,20 @@ export function ReminderToasts() {
           <div className="flex items-start gap-2">
             <span className="pt-0.5 text-muted"><Icon name="alarm-clock" /></span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)}>
-              <p className="line-clamp-2 user-text text-body font-medium">{d.task.title || 'Untitled'}</p>
-              <p className="text-meta text-muted">Reminder · {dt.formatInstant(d.reminder.fire_at as number, 'datetime')}</p>
+              <p className="line-clamp-2 user-text text-body font-medium">{d.task.title || t('Untitled')}</p>
+              <p className="text-meta text-muted">{t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
-            <button ref={i === 0 ? firstButton : undefined} type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '10m')}>Snooze 10 min</button>
-            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '1h')}>1 hour</button>
-            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'tomorrow')}>Tomorrow 09:00</button>
+            <button ref={i === 0 ? firstButton : undefined} type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '10m')}>{t('Snooze 10 min')}</button>
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '1h')}>{t('1 hour')}</button>
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'tomorrow')}>{t('Tomorrow 09:00')}</button>
             <div className="flex-1" />
-            <button type="button" className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'dismiss')}>Dismiss</button>
+            <button type="button" className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'dismiss')}>{t('Dismiss')}</button>
           </div>
         </div>
       ))}
-      {due.length > 4 && <p className="pointer-events-auto text-right text-meta text-muted">+{due.length - 4} more reminders</p>}
+      {due.length > 4 && <p className="pointer-events-auto text-right text-meta text-muted">{t('{n, plural, one {+# more reminder} other {+# more reminders}}', { n: due.length - 4 })}</p>}
     </ToastRegion>
   )
 }
@@ -112,12 +113,12 @@ async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promi
     if (notified.has(key)) continue
     notified.add(key)
     const options: NotificationOptions = {
-      body: 'Reminder', tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
+      body: t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
       data: { reminderId: d.reminder.id, taskId: d.task.id, fireAt: d.reminder.fire_at },
     }
     try {
-      if (reg) await reg.showNotification(d.task.title || 'Reminder', options)
-      else new Notification(d.task.title || 'Reminder', options)
+      if (reg) await reg.showNotification(d.task.title || t('Reminder'), options)
+      else new Notification(d.task.title || t('Reminder'), options)
     } catch {
       // Notifications can be blocked at any time; the toast is still there.
     }
@@ -152,8 +153,8 @@ async function handleWorkerMessage(data: WorkerMessage, w: Watcher): Promise<voi
     }
     case 'reminders:open': {
       if (!data.taskId) return
-      const t = await db.tasks.get(data.taskId)
-      if (t) openTaskInList(t)
+      const task = await db.tasks.get(data.taskId)
+      if (task) openTaskInList(task)
       return
     }
   }

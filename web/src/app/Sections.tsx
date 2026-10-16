@@ -9,23 +9,22 @@ import { createTask } from '../lib/ops'
 import { createSection, deleteSection, renameSection, reorderSection } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
+import { t } from '../lib/i18n'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
   a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown }): ActionGroup[] {
-  const before = o.layout === 'board' ? 'left' : 'up'
-  const after = o.layout === 'board' ? 'right' : 'down'
-  const moves = o.count === 1 ? 'Its open task moves' : `Its ${o.count} open tasks move`
+  const board = o.layout === 'board'
   return [
-    { items: [{ kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', shortcut: 'F2', onSelect: a.rename }] },
+    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }] },
     { items: [
-      { kind: 'action', id: 'before', label: `Move ${before}`, icon: 'arrow-up', disabled: o.first, reason: 'Already first', onSelect: () => a.move(-1) },
-      { kind: 'action', id: 'after', label: `Move ${after}`, icon: 'arrow-down', disabled: o.last, reason: 'Already last', onSelect: () => a.move(1) },
+      { kind: 'action', id: 'before', label: board ? t('Move left') : t('Move up'), icon: 'arrow-up', disabled: o.first, reason: t('Already first'), onSelect: () => a.move(-1) },
+      { kind: 'action', id: 'after', label: board ? t('Move right') : t('Move down'), icon: 'arrow-down', disabled: o.last, reason: t('Already last'), onSelect: () => a.move(1) },
     ] },
-    { items: [{ kind: 'confirm', id: 'delete', label: 'Delete section', icon: 'trash-2', tone: 'danger', confirm: {
-      title: `Delete section “${title}”?`,
-      body: o.count ? `${moves} to “No section” in this project.` : 'It has no open tasks.',
-      confirmLabel: 'Delete section',
+    { items: [{ kind: 'confirm', id: 'delete', label: t('Delete section'), icon: 'trash-2', tone: 'danger', confirm: {
+      title: t('Delete section “{name}”?', { name: title }),
+      body: o.count ? t('{n, plural, one {Its open task moves to “No section” in this project.} other {Its # open tasks move to “No section” in this project.}}', { n: o.count }) : t('It has no open tasks.'),
+      confirmLabel: t('Delete section'),
       onConfirm: a.remove,
     } }] },
   ]
@@ -50,7 +49,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
 }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section?.name ?? '')
-  const title = section ? section.name || 'Untitled section' : 'No section'
+  const title = section ? section.name || t('Untitled section') : t('No section')
 
   async function commit() {
     setRenaming(false)
@@ -71,7 +70,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   })
 
   const titleNode = renaming && section ? (
-    <input className="ui-input max-w-xs py-0.5 text-body font-semibold" autoFocus aria-label="Section name" value={name}
+    <input className="ui-input max-w-xs py-0.5 text-body font-semibold" autoFocus aria-label={t('Section name')} value={name}
       onChange={(e) => setName(e.target.value)} onBlur={() => void commit()}
       onKeyDown={(e) => {
         if (e.key === 'Enter') void commit()
@@ -87,19 +86,19 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
         collapsed={collapsed} onToggle={onToggleCollapse}
         note={count === 0 && completed > 0 ? (
           <span className="flex items-center gap-1">
-            {completed} completed
+            {t('{completed} completed', { completed })}
             <button type="button" className="rounded-chip px-1.5 py-0.5 text-meta text-accent hover:bg-sunken dark:hover:bg-raised" aria-expanded={revealed} onClick={onReveal} data-reveal-completed>
-              {revealed ? 'Hide' : 'Show'}
+              {revealed ? t('Hide') : t('Show')}
             </button>
           </span>
         ) : undefined}
         actions={(editable && (onAdd || section)) ? (
           <>
             {editable && onAdd && (
-              <IconButton icon="plus" size="sm" label={`Add a task to ${title}`} onClick={onAdd} />
+              <IconButton icon="plus" size="sm" label={t('Add a task to {title}', { title })} onClick={onAdd} />
             )}
             {editable && section && (
-              <ActionMenu label={`Section menu for ${title}`} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
+              <ActionMenu label={t('Section menu for {title}', { title })} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
                 triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-meta" />
             )}
           </>
@@ -128,7 +127,7 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
     <div className="px-1 py-1" onKeyDown={onKeyDown} onBlur={(e) => {
       if (!e.currentTarget.contains(e.relatedTarget as Node | null) && !(e.target as HTMLInputElement).value) onClose()
     }}>
-      <QuickAdd onAdd={onAdd} projects={projects} labels={labels} hideHint autoFocus placeholder={`Add a task to ${sectionName}…`} label={`Add a task to ${sectionName}`} />
+      <QuickAdd onAdd={onAdd} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />
     </div>
   )
 }
@@ -146,13 +145,13 @@ export function AddSection({ projectId, layout }: { projectId: string; layout: '
   if (!open) {
     return (
       <button type="button" className={`ui-btn ui-btn--ghost ui-btn--sm text-meta text-muted ${layout === 'board' ? 'w-72 shrink-0 justify-start self-start' : ''}`} onClick={() => setOpen(true)}>
-        + Add section
+        {t('+ Add section')}
       </button>
     )
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={layout === 'board' ? 'w-72 shrink-0 self-start' : 'max-w-xs'}>
-      <input className="ui-input py-1 text-body" autoFocus placeholder="Section name, Enter to add" aria-label="New section name" value={name}
+      <input className="ui-input py-1 text-body" autoFocus placeholder={t('Section name, Enter to add')} aria-label={t('New section name')} value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setName('') } }}
         onBlur={() => { if (!name.trim()) setOpen(false) }} />

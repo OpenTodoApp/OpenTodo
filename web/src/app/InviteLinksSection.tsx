@@ -8,6 +8,8 @@ import { grantableRoles } from '../lib/sharing'
 import type { ProjectInvite, ProjectRole } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
+import { t } from '../lib/i18n'
+import { roleName } from '../lib/roleNames'
 
 // "Invite with a link" in the share dialog (OpenSpec `project-invite-links`):
 // the project's owner and admins create single-use links that add whoever
@@ -70,32 +72,32 @@ export function InviteLinksView(p: InviteLinksViewProps) {
   return (
     <section aria-labelledby="invite-links-heading" className="mb-4 rounded-control border border-default p-3" data-testid="invite-links">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 id="invite-links-heading" className="text-body font-medium">Invite with a link</h3>
+        <h3 id="invite-links-heading" className="text-body font-medium">{t('Invite with a link')}</h3>
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" aria-expanded={p.open} aria-controls="invite-links-form" onClick={p.onToggle}>
-          {p.open ? 'Hide' : 'Create a link…'}
+          {p.open ? t('Hide') : t('Create a link…')}
         </button>
       </div>
-      <p className="mt-1 text-meta text-muted">One link for one person: whoever opens it joins this project with the role you pick. It works once.</p>
+      <p className="mt-1 text-meta text-muted">{t('One link for one person: whoever opens it joins this project with the role you pick. It works once.')}</p>
       {p.offline && (
         <p role="status" className="mt-2 rounded-control bg-warning-soft p-2 text-meta text-on-warning-soft">
-          You are offline. Invite links live on the server, so creating and revoking them needs a connection.
+          {t('You are offline. Invite links live on the server, so creating and revoking them needs a connection.')}
         </p>
       )}
       {p.open && (
         <form id="invite-links-form" onSubmit={submit} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_auto_auto]">
           <label className="col-span-2 block text-meta sm:col-span-1">
-            <span className="mb-1 block text-muted">Email <span className="text-faint">(optional, only they can use it)</span></span>
-            <input className="ui-input" type="email" autoComplete="off" placeholder="friend@example.com" value={p.email}
+            <span className="mb-1 block text-muted">{t.rich('Email <span>(optional, only they can use it)</span>', { span: (chunks) => <span className="text-faint">{chunks}</span> })}</span>
+            <input className="ui-input" type="email" autoComplete="off" placeholder={t('friend@example.com')} value={p.email}
               onChange={(e) => p.onEmail(e.target.value)} disabled={disabled} />
           </label>
           <label className="block text-meta">
-            <span className="mb-1 block text-muted">Role</span>
+            <span className="mb-1 block text-muted">{t('Role')}</span>
             <Select value={p.role} onChange={(e) => p.onRole(e.target.value as ProjectRole)} disabled={disabled}>
               {p.roles.map((r) => <option key={r} value={r}>{r}</option>)}
             </Select>
           </label>
           <label className="block text-meta">
-            <span className="mb-1 block text-muted">Expires in</span>
+            <span className="mb-1 block text-muted">{t('Expires in')}</span>
             <Select value={p.hours} onChange={(e) => p.onHours(Number(e.target.value))} disabled={disabled}>
               {LINK_EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
             </Select>
@@ -103,44 +105,44 @@ export function InviteLinksView(p: InviteLinksViewProps) {
           {p.mail && p.email.trim() !== '' && (
             <label className="col-span-2 flex items-center gap-2 text-meta sm:col-span-3">
               <input type="checkbox" checked={p.send ?? true} onChange={(e) => p.onSend?.(e.target.checked)} disabled={disabled} data-send-by-email />
-              Send by email
+              {t('Send by email')}
             </label>
           )}
-          <button className="ui-btn ui-btn--primary ui-btn--md col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? 'Creating…' : 'Create link'}</button>
+          <button className="ui-btn ui-btn--primary ui-btn--md col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? t('Creating…') : t('Create link')}</button>
         </form>
       )}
       {p.created && (
         <div role="status" className="mt-2 rounded-control border border-success/40 bg-success-soft p-2 text-meta" data-testid="invite-link-created">
-          {p.created.sentTo && <p className="mb-1 font-medium" data-invite-sent>The link was sent to {p.created.sentTo}.</p>}
-          <p className="mb-1 font-medium">Copy this link now. It is shown only once.</p>
+          {p.created.sentTo && <p className="mb-1 font-medium" data-invite-sent>{t('The link was sent to {sentTo}.', { sentTo: p.created.sentTo })}</p>}
+          <p className="mb-1 font-medium">{t('Copy this link now. It is shown only once.')}</p>
           <div className="flex flex-wrap items-center gap-2">
-            <input className="ui-input min-w-0 flex-1 font-mono text-meta" readOnly value={p.created.link} aria-label="Invite link"
+            <input className="ui-input min-w-0 flex-1 font-mono text-meta" readOnly value={p.created.link} aria-label={t('Invite link')}
               onFocus={(e) => e.currentTarget.select()} />
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm border border-success/40 text-meta" onClick={p.onCopy}>
-              {p.copied ? 'Copied' : 'Copy link'}
+              {p.copied ? t('Copied') : t('Copy link')}
             </button>
           </div>
           <p className="mt-1 text-muted">
             {p.created.newAccounts
-              ? 'People without an account can create one with this link.'
-              : 'Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → People.'}
+              ? t('People without an account can create one with this link.')
+              : t('Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → People.')}
           </p>
         </div>
       )}
       {p.error && <p role="alert" className="mt-2 text-meta text-danger">{p.error}</p>}
       {p.invites && p.invites.length > 0 && (
-        <ul aria-label="Pending invite links" className="mt-2 space-y-1">
+        <ul aria-label={t('Pending invite links')} className="mt-2 space-y-1">
           {p.invites.map((inv) => (
             <li key={inv.id} className="text-meta">
               <div className="flex items-center gap-2">
-                <span className="rounded-control bg-warning-soft px-1.5 py-0.5 font-medium text-on-warning-soft">{inv.role}</span>
+                <span className="rounded-control bg-warning-soft px-1.5 py-0.5 font-medium text-on-warning-soft">{roleName(inv.role)}</span>
                 {inv.email
                   ? <Tooltip label={inv.email}><span className="min-w-0 flex-1 truncate">{inv.email}</span></Tooltip>
-                  : <span className="min-w-0 flex-1 truncate"><span className="text-faint">Anyone with the link</span></span>}
+                  : <span className="min-w-0 flex-1 truncate"><span className="text-faint">{t('Anyone with the link')}</span></span>}
                 <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={disabled}
-                  aria-label={`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}`} onClick={() => p.onRevoke(inv)}>Revoke</button>
+                  aria-label={(inv.email ? t('Revoke the {role} link for {email}', { role: roleName(inv.role), email: inv.email }) : t('Revoke the {role} link', { role: roleName(inv.role) }))} onClick={() => p.onRevoke(inv)}>{t('Revoke')}</button>
               </div>
-              <p className="text-faint">Expires {when(inv.expiresAt)} · created by {inv.createdByName || 'a member'}</p>
+              <p className="text-faint">{t('Expires {when} · created by', { when: when(inv.expiresAt) })}{' '}{inv.createdByName || t('a member')}</p>
             </li>
           ))}
         </ul>
@@ -204,12 +206,12 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
       await navigator.clipboard.writeText(created.link)
       setCopied(true)
     } catch {
-      setError('Could not access the clipboard; select the link and copy it manually.')
+      setError(t('Could not access the clipboard; select the link and copy it manually.'))
     }
   }
 
   async function revoke(inv: ProjectInvite) {
-    if (!window.confirm(`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}? It will stop working.`)) return
+    if (!window.confirm(inv.email ? t('Revoke the {role} link for {email}? It will stop working.', { role: roleName(inv.role), email: inv.email }) : t('Revoke the {role} link? It will stop working.', { role: roleName(inv.role) }))) return
     setError(null)
     try {
       await api.revokeProjectInvite(projectId, inv.id)
@@ -233,12 +235,12 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
 
 export function describeLinkError(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.code === 'rate_limited') return 'Too many links created recently. Try again later.'
-    if (err.code === 'invitation_spent') return 'This link was already used and cannot be revoked.'
-    if (err.code === 'reauth_required') return 'Confirm your password, then create the link again.'
-    if (err.code === 'email_failed') return `The email could not be sent, so no link was created (${err.message}). Turn off “Send by email” to create a link to share yourself.`
-    if (err.code === 'smtp_disabled') return 'This server no longer sends email. Turn off “Send by email” to create a link to share yourself.'
+    if (err.code === 'rate_limited') return t('Too many links created recently. Try again later.')
+    if (err.code === 'invitation_spent') return t('This link was already used and cannot be revoked.')
+    if (err.code === 'reauth_required') return t('Confirm your password, then create the link again.')
+    if (err.code === 'email_failed') return t('The email could not be sent, so no link was created ({reason}). Turn off “Send by email” to create a link to share yourself.', { reason: err.message })
+    if (err.code === 'smtp_disabled') return t('This server no longer sends email. Turn off “Send by email” to create a link to share yourself.')
     return err.message
   }
-  return 'The server could not be reached; invite links need a connection.'
+  return t('The server could not be reached; invite links need a connection.')
 }

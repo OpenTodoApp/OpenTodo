@@ -17,11 +17,11 @@ export function useNow(seconds: boolean): number {
     }
     let timer: ReturnType<typeof setTimeout>
     const schedule = () => {
-      const t = Date.now()
+      const item = Date.now()
       timer = setTimeout(() => {
         setNow(Date.now())
         schedule()
-      }, 60_000 - (t % 60_000) + 5)
+      }, 60_000 - (item % 60_000) + 5)
     }
     schedule()
     return () => clearTimeout(timer)

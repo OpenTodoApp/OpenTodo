@@ -11,8 +11,9 @@ import type { FieldDef, FieldValue, Task } from '../../lib/types'
 import { ComboboxPanel, Icon, Input, Switch } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { Popover } from '../overlay/Popover'
+import { t, msg, translatedMap } from '../../lib/i18n'
 
-const NOT_A: Record<string, string> = { number: 'not a number', date: 'not a date', checkbox: 'not on or off', text: 'not text', link: 'not a link', choice: 'not an option' }
+const NOT_A = translatedMap<string>({ number: msg('not a number'), date: msg('not a date'), checkbox: msg('not on or off'), text: msg('not text'), link: msg('not a link'), choice: msg('not an option') })
 
 export function FieldsGroup({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const projectId = task.project_id
@@ -24,9 +25,9 @@ export function FieldsGroup({ task, readOnly }: { task: Task; readOnly: boolean 
   if (live.length === 0) return null
   const values = taskFields(task)
   return (
-    <section aria-label="Fields" data-fields-group className="space-y-1.5">
+    <section aria-label={t('Fields')} data-fields-group className="space-y-1.5">
       <h3 className="flex items-center gap-2 text-meta font-semibold text-muted">
-        <Icon name="list" className="text-faint" />Fields
+        <Icon name="list" className="text-faint" />{t('Fields')}
       </h3>
       <div className="space-y-1.5">
         {live.map((def) => <FieldRow key={def.id} task={task} def={def} value={values[def.id]} readOnly={readOnly} />)}
@@ -75,7 +76,7 @@ function FieldRow({ task, def, value, readOnly }: { task: Task; def: FieldDef; v
       <label htmlFor={id} className="truncate pt-1.5 text-meta text-muted">{def.name}</label>
       <div className="min-w-0 space-y-0.5">
         {editor}
-        {mismatch && <p id={noteId} className="text-meta text-faint">({NOT_A[def.type] ?? 'does not match the field'})</p>}
+        {mismatch && <p id={noteId} className="text-meta text-faint">({NOT_A[def.type] ?? t('does not match the field')})</p>}
         {error && <p id={errId} role="alert" className="text-meta text-danger">{error}</p>}
       </div>
     </div>
@@ -115,12 +116,12 @@ function TextEditor({ id, def, value, readOnly, describedBy, invalid, onCommit, 
     <div className="flex items-center gap-1">
       <Input id={id} value={draft} readOnly={readOnly} aria-describedby={describedBy} aria-invalid={invalid || undefined}
         inputMode={def.type === 'number' ? 'decimal' : undefined} type={def.type === 'link' ? 'url' : 'text'}
-        placeholder={readOnly ? '' : 'Empty'} className="min-w-0 flex-1 py-1.5"
+        placeholder={readOnly ? '' : t('Empty')} className="min-w-0 flex-1 py-1.5"
         onFocus={() => { editing.current = true }}
         onChange={(e) => { editing.current = true; setDraft(e.target.value) }}
         onBlur={() => void commit()} onKeyDown={onKeyDown} />
       {link && (
-        <a href={value} target="_blank" rel="noopener noreferrer" aria-label={`Open ${def.name} link`}
+        <a href={value} target="_blank" rel="noopener noreferrer" aria-label={t('Open {name} link', { name: def.name })}
           className="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon shrink-0" data-field-open>
           <Icon name="external-link" />
         </a>
@@ -152,13 +153,13 @@ function ChoiceEditor({ id, def, value, readOnly, onPick }: { id: string; def: F
       <button ref={anchor} id={id} type="button" disabled={readOnly} aria-haspopup="dialog" aria-expanded={open}
         className="ui-input flex min-w-0 py-1.5 items-center justify-between gap-2 text-left disabled:cursor-default"
         onClick={() => setOpen(true)} onKeyDown={onKeyDown}>
-        <span className={`truncate ${value ? 'text-default' : 'text-faint'}`}>{value ?? (readOnly ? '' : 'Empty')}</span>
+        <span className={`truncate ${value ? 'text-default' : 'text-faint'}`}>{value ?? (readOnly ? '' : t('Empty'))}</span>
         {!readOnly && <Icon name="chevron-down" size="xs" className="shrink-0 text-faint" />}
       </button>
       <Popover open={open} onClose={close} anchor={anchor} label={def.name} align="start" width="sm:w-72" className="p-2">
-        <ComboboxPanel<string> label={def.name} placeholder="Find an option…" source={items}
-          getKey={(o) => o} getLabel={(o) => (o === CLEAR ? 'Clear' : o)} pinned={value ? [CLEAR] : []} selected={value ? [value] : []}
-          emptyText="No option matches." onPick={(o) => { onPick(o === CLEAR ? null : o); close() }} onClose={close} />
+        <ComboboxPanel<string> label={def.name} placeholder={t('Find an option…')} source={items}
+          getKey={(o) => o} getLabel={(o) => (o === CLEAR ? t('Clear') : o)} pinned={value ? [CLEAR] : []} selected={value ? [value] : []}
+          emptyText={t('No option matches.')} onPick={(o) => { onPick(o === CLEAR ? null : o); close() }} onClose={close} />
       </Popover>
     </>
   )

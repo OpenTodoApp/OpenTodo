@@ -3,6 +3,7 @@ import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { AuthStatus, InvitationPreview, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
+import { t } from '../lib/i18n'
 
 export type InviteState =
   | { kind: 'loading' }
@@ -75,47 +76,47 @@ export function InviteView({ state, user, form, onRetry, onLogout }: {
 }) {
   if (user) {
     return (
-      <Card title="You are already signed in">
+      <Card title={t('You are already signed in')}>
         <p className="text-body text-muted">
-          This device is signed in as <strong>{user.name || user.email}</strong>. An invitation creates a new account; it cannot be added to an existing one.
+          {t('This device is signed in as')}{' '}<strong>{user.name || user.email}</strong>{t('. An invitation creates a new account; it cannot be added to an existing one.')}
         </p>
-        <p className="text-body text-muted">Sign out first to accept it, or keep using your current account.</p>
+        <p className="text-body text-muted">{t('Sign out first to accept it, or keep using your current account.')}</p>
         <div className="flex gap-2">
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>Sign out and continue</button>
-          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Back to my tasks</a>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>{t('Sign out and continue')}</button>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Back to my tasks')}</a>
         </div>
       </Card>
     )
   }
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your invitation…"><p className="text-body text-muted">One moment.</p></Card>
+      return <Card title={t('Checking your invitation…')}><p className="text-body text-muted">{t('One moment.')}</p></Card>
     case 'offline':
       return (
-        <Card title="You seem to be offline">
-          <p className="text-body text-muted">Accepting an invitation needs a connection to the server. The page will retry when the network returns.</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry now</button>
+        <Card title={t('You seem to be offline')}>
+          <p className="text-body text-muted">{t('Accepting an invitation needs a connection to the server. The page will retry when the network returns.')}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry now')}</button>
         </Card>
       )
     case 'invalid':
       return (
-        <Card title="This invitation link is no longer valid">
-          <p className="text-body text-muted">It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.</p>
-          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Go to sign-in</a>
+        <Card title={t('This invitation link is no longer valid')}>
+          <p className="text-body text-muted">{t('It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.')}</p>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Go to sign-in')}</a>
         </Card>
       )
     case 'rate-limited':
       return (
-        <Card title="Too many attempts">
-          <p className="text-body text-muted">Wait a minute, then try again.</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
+        <Card title={t('Too many attempts')}>
+          <p className="text-body text-muted">{t('Wait a minute, then try again.')}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
         </Card>
       )
     case 'error':
       return (
-        <Card title="Something went wrong">
+        <Card title={t('Something went wrong')}>
           <p className="text-body text-danger">{state.message}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
         </Card>
       )
     case 'ready':
@@ -129,7 +130,7 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
       <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <h1 className="text-h3 font-semibold">OpenTodo</h1>
+          <h1 className="text-h3 font-semibold">{t('OpenTodo')}</h1>
         </div>
         <h2 className="font-medium">{title}</h2>
         {children}

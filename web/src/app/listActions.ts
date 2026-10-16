@@ -37,7 +37,7 @@ export interface ListState {
   select(id: string | null): void
   openId(): string | null
   open(id: string | null): void
-  readOnly(t: Task): boolean
+  readOnly(task: Task): boolean
   /** Whether the view is manually ordered (manual-ordering). */
   manual(): boolean
   /** Focus the quick-add line, remembering the task to insert after; false when there is none. */
