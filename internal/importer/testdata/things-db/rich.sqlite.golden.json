@@ -1,0 +1,202 @@
+{
+  "format": "things-db",
+  "notes": [],
+  "totals": {
+    "rows": 19,
+    "create": 19,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 1,
+    "newProjects": 3,
+    "newLabels": 3,
+    "newSections": 1,
+    "recurring": 2,
+    "reminders": 1,
+    "deadlines": 1,
+    "attachments": 0,
+    "entities": 23,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "things:Uuid000000000000000001",
+      "kind": "project",
+      "title": "Area 1",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "things:Uuid000000000000000011",
+      "kind": "section",
+      "title": "Heading 1",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "things:Uuid000000000000000010",
+      "kind": "project",
+      "title": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "things:Uuid000000000000000012",
+      "kind": "project",
+      "title": "Completed project",
+      "outcome": "create",
+      "warnings": [
+        "completed project imported as an open project"
+      ]
+    },
+    {
+      "row": 5,
+      "sourceId": "things:Uuid000000000000000020",
+      "kind": "task",
+      "title": "Inbox to-do",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "things:Uuid000000000000000021",
+      "kind": "task",
+      "title": "Area to-do",
+      "project": "Area 1",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "things:Uuid000000000000000022",
+      "kind": "task",
+      "title": "Project to-do with deadline",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "things:Uuid000000000000000023",
+      "kind": "task",
+      "title": "Heading to-do with checklist",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "things:Uuid000000000000000040",
+      "kind": "task",
+      "title": "Checklist item done",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "things:Uuid000000000000000041",
+      "kind": "task",
+      "title": "Checklist item open",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "things:Uuid000000000000000042",
+      "kind": "task",
+      "title": "Checklist item canceled",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "things:Uuid000000000000000024",
+      "kind": "task",
+      "title": "Scheduled to-do with reminder",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "things:Uuid000000000000000025",
+      "kind": "task",
+      "title": "Evening to-do",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "things:Uuid000000000000000026",
+      "kind": "task",
+      "title": "Someday to-do",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "sourceId": "things:Uuid000000000000000027",
+      "kind": "task",
+      "title": "Repeating to-do",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "things:Uuid000000000000000028",
+      "kind": "task",
+      "title": "Repeating after completion",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 17,
+      "sourceId": "things:Uuid000000000000000029",
+      "kind": "task",
+      "title": "Completed to-do",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 18,
+      "sourceId": "things:Uuid000000000000000030",
+      "kind": "task",
+      "title": "Canceled to-do",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 19,
+      "sourceId": "things:Uuid000000000000000033",
+      "kind": "task",
+      "title": "Tagged to-do",
+      "project": "Project 1",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0020: name=\"canceled\" created_at=1791979200000",
+    "label id-0022: name=\"Tag 1/Tag 2\" created_at=1791979200000",
+    "label id-0023: name=\"Tag 1\" created_at=1791979200000",
+    "project id-0001: name=\"Area 1\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Project 1\" archived=false created_at=1791979200000 parent_id=\"id-0001\"",
+    "project id-0003: name=\"Completed project\" archived=false created_at=1791979200000 parent_id=\"id-0001\"",
+    "section id-0004: name=\"Heading 1\" project_id=\"id-0002\" created_at=1791979200000",
+    "task id-0005: title=\"Inbox to-do\" description=\"Plain notes\" priority=4 created_at=1791990530000 labels=[]",
+    "task id-0006: title=\"Area to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0001\" labels=[]",
+    "task id-0007: title=\"Project to-do with deadline\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" deadline=\"2026-10-30\" labels=[]",
+    "task id-0008: title=\"Heading to-do with checklist\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" labels=[] section_id=\"id-0004\"",
+    "task id-0009: title=\"Checklist item done\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0008\" completed_at=1791990530000 labels=[] section_id=\"id-0004\"",
+    "task id-0010: title=\"Checklist item open\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0008\" labels=[] section_id=\"id-0004\"",
+    "task id-0011: title=\"Checklist item canceled\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0008\" completed_at=1791990530000 labels=[] section_id=\"id-0004\"",
+    "task id-0012: title=\"Scheduled to-do with reminder\" description=\"XML \\u0026 wrapped notes\" priority=4 created_at=1791990530000 project_id=\"id-0002\" due={\"date\":\"2026-10-21\"} labels=[]",
+    "task id-0014: title=\"Evening to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" due={\"date\":\"2026-10-14\"} evening=true labels=[]",
+    "task id-0015: title=\"Someday to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" start=\"someday\" labels=[]",
+    "task id-0016: title=\"Repeating to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" due={\"date\":\"2026-10-19\"} recurrence=\"every monday\" labels=[]",
+    "task id-0017: title=\"Repeating after completion\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" due={\"date\":\"2026-10-17\"} recurrence=\"every 3 days after completion\" labels=[]",
+    "task id-0018: title=\"Completed to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" completed_at=1791904130000 labels=[]",
+    "task id-0019: title=\"Canceled to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" completed_at=1791986930000 labels=[\"id-0020\"]",
+    "task id-0021: title=\"Tagged to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0002\" labels=[\"id-0022\",\"id-0023\"]",
+    "reminder id-0013: task_id=\"id-0012\" kind=\"absolute\" offset_minutes=null fire_at=1792575000000 created_at=1791979200000 delivered_at=null dismissed_at=null"
+  ]
+}

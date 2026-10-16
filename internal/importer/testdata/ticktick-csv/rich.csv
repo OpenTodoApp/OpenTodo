@@ -1,0 +1,25 @@
+﻿Date: 2026-10-14+0000
+Version: 7.2
+"Status: 
+0 Normal
+-1 Abandoned 
+2 Completed"
+Folder Name,List Name,Title,Kind,Tags,Content,Is Check list,Start Date,Due Date,Reminder,Repeat,Priority,Status,Created Time,Completed Time,Order,Timezone,Is All Day,Is Floating,Column Name,Column Order,View Mode,taskId,parentId,projectKind
+,Inbox,Inbox task,TEXT,,,N,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100001,,TASK
+Folder 1,List 1,High priority task,TEXT,"tag1,tag2",Description 1,N,,,,,5,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100002,,TASK
+Folder 1,List 1,Medium priority task,TEXT,,,N,,,,,3,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100003,,TASK
+Folder 1,List 1,Low priority task,TEXT,,,N,,,,,1,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100004,,TASK
+Folder 1,List 1,Timed task with reminder,TEXT,,,N,,2026-10-21T13:30:00+0000,-PT15M,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,false,false,,0,list,t100005,,TASK
+Folder 1,List 1,All-day task,TEXT,,,N,2026-10-20T22:00:00+0000,2026-10-20T22:00:00+0000,PT9H,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,true,false,,0,list,t100006,,TASK
+Folder 1,List 1,Floating timed task,TEXT,,,N,,2026-10-22T09:00:00+0000,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,false,true,,0,list,t100007,,TASK
+Folder 1,List 1,Repeating task,TEXT,,,N,,2026-10-18T22:00:00+0000,,RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,true,false,,0,list,t100008,,TASK
+Folder 1,List 1,Checklist task,CHECKLIST,,"▪Checked item
+▫Open item
+▫Another open item",Y,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100009,,TASK
+Folder 1,List 1,Parent task,TEXT,,,N,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100010,,TASK
+Folder 1,List 1,Subtask,TEXT,,,N,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,,0,list,t100011,t100010,TASK
+Folder 1,List 1,Completed task,TEXT,,,N,,,,,0,2,2026-10-14T08:00:00+0000,2026-10-13T17:45:00+0000,-1099511627776,Europe/Berlin,,false,,0,list,t100012,,TASK
+Folder 1,List 1,Abandoned task,TEXT,,,N,,,,,0,-1,2026-10-14T08:00:00+0000,2026-10-12T10:00:00+0000,-1099511627776,Europe/Berlin,,false,,0,list,t100013,,TASK
+,List 2,Kanban task 1,TEXT,,,N,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,Column 1,0,kanban,t100014,,TASK
+,List 2,Kanban task 2,TEXT,,,N,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,Column 2,-1099511627776,kanban,t100015,,TASK
+,List 2,Kanban task 3,TEXT,,,N,,,,,0,0,2026-10-14T08:00:00+0000,,-1099511627776,Europe/Berlin,,false,Column 2,-1099511627776,kanban,t100016,,TASK

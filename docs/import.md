@@ -72,7 +72,7 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `DESCRIPTION` | the description |
 | `DATE` with `DATE_LANG` | the due date (and time); recurring dates become a rule, see below |
 | `DURATION` in minutes | the estimate |
-| `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder |
+| `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder (an absolute one in the row's `TIMEZONE`) |
 | `note` row | appended to the task's description under "Comments" (with a warning) |
 | `DEADLINE` | the task's [deadline](tasks-and-projects.md#deadlines), read with `DEADLINE_LANG` like `DATE`; a value that cannot be read is kept as a "Deadline: …" line in the description (with a warning) |
 | `RESPONSIBLE` | dropped with a warning |
@@ -95,7 +95,7 @@ TickTick's backup is one CSV, created from its settings (Backup). It starts with
 | `Content` | the description |
 | `Priority` 5 / 3 / 1 / 0 | p1 / p2 / p3 / p4 |
 | `Due Date`, `Is All Day`, `Is Floating`, `Timezone` | the due date (and time) as you saw it in TickTick |
-| `Reminder` | reminders (for example `-PT15M`) |
+| `Reminder` | reminders (for example `-PT15M`); on an all-day task the trigger counts from midnight, so `PT9H` fires at 09:00 on the day |
 | `Repeat` (RRULE) | a recurrence rule, when the grammar can express it |
 | `Status` 2 / -1 | completed / completed with the label `canceled` (abandoned) |
 
