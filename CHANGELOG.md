@@ -4,6 +4,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Filter by completion date.** `completed = last week`, `completed >= 7 days ago` or `##Work & completed >= this month` list what you finished; a completion date implies completed tasks. Every date term also takes periods: `this week`, `last week`, `next week`, `this month`, `last month`, `next month`, `2 weeks ago`, `3 months ago`, where `=` means within the period and weeks start on your first day of the week. Saved views keep the period, so "last week" moves with the calendar. Closes #86. ([Filter queries](docs/filters.md#periods))
+- **Completed is a logbook.** Completions are grouped by the day you finished them (Today, Yesterday, then the date) and **Show more** reaches older days instead of stopping at the latest 100. ([Views](docs/built-in-views.md))
+- **Completion ranges for scripts and assistants.** `GET /api/v1/tasks?completed_after=…&completed_before=…`, the same arguments on the MCP `list_tasks` tool, and `ot list --completed-after … --completed-before …` take a date, an RFC 3339 time or Unix milliseconds. ([API](docs/api.md#tasks-completed-in-a-range), [MCP](docs/mcp.md), [Command-line client](docs/cli.md))
+- **Who completed a task.** Tasks gain an additive `completed_by` field (the account id, written with every completion and cleared on reopen, null for public link ticks and older completions); the API and exports return it. Older clients keep syncing. ([Sync protocol](docs/sync.md))
+
 ## [0.5.0] - 2026-10-16
 
 OpenTodo 0.5.0 is a new interface on the same data. The task panel is part of the frame and reads like a summary, the sidebar is shorter, Settings has nine sections with a search field, every keyboard shortcut comes from one registry and <kbd>?</kbd> lists the ones for where you are, and on a phone there is a tab bar, a **+** button and full-screen tasks. Around it: **Process the Inbox** one task at a time, a rich-text **note** at the top of every project, **public links** that share a project's list with anyone, optional **outgoing email** for password resets, verified sign-up and invitations, a **Month** calendar and a project **Timeline**, calendar feeds in both directions, attachments, tasks that wait for other tasks, bulk changes, duplicates and templates, and search and commands on <kbd>Ctrl</kbd>+<kbd>K</kbd>. Every help page is now short and opens with a screenshot.

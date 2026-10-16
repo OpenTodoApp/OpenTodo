@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Date terms
-`due` and `created` SHALL accept `<`, `<=`, `=`, `>=`, `>`, `before` and `after` against a date expression: `today`, `tomorrow`, `yesterday`, a weekday name (next occurrence including today), an ISO date, `N days` / `N days ago`, or a period: `this week`, `last week`, `next week`, `this month`, `last month`, `next month`, `N weeks ago` or `N months ago`. A week SHALL start on the user's first day of the week preference and a month SHALL be a calendar month. A day expression SHALL denote a range of one day; against a range, `=` SHALL match days within it, `<` and `before` days before its first day, `<=` days up to its last day, `>` and `after` days after its last day, and `>=` days from its first day. Comparisons SHALL use the viewer's local calendar date; a task without a due date SHALL never match a `due` comparison. Period expressions SHALL be accepted by every date field (`due`, `created`, `deadline`, `start`, `completed`). A stored query SHALL keep the period, not the dates it resolved to. `no date`, `overdue`, `today` and `tomorrow` SHALL be keywords. Evaluation SHALL stay on the device from local data, and every device of the user SHALL resolve the same periods because the week start preference syncs.
+`due` and `created` SHALL accept `<`, `<=`, `=`, `>=`, `>`, `before` and `after` against a date expression: `today`, `tomorrow`, `yesterday`, a weekday name (next occurrence including today), an ISO date, `N days` / `N days ago`, or a period (see "Period date expressions"). Comparisons SHALL use the viewer's local calendar date; a task without a due date SHALL never match a `due` comparison. `no date`, `overdue`, `today` and `tomorrow` SHALL be keywords.
 
 #### Scenario: Due by tomorrow
 - **WHEN** today is 2026-10-10 and the user enters `due <= tomorrow`
@@ -16,6 +16,26 @@
 #### Scenario: Relative creation date
 - **WHEN** the user enters `created > 7 days ago & no date`
 - **THEN** tasks created within the last seven days that have no due date are listed
+
+### Requirement: Priority, state and search terms
+`p1` to `p4` SHALL match the task priority. `completed` SHALL include completed tasks and `open` only open ones; a query without either, and without a `completed` date term, SHALL match open tasks only. `subtask` SHALL match tasks that have a parent. `search: text` SHALL match tasks whose title or description contains the text ignoring case, with quotes allowed for several words. Deleted tasks SHALL never match any query.
+
+#### Scenario: Default to open tasks
+- **WHEN** the user enters `p1`
+- **THEN** only open priority-1 tasks are listed, and `p1 & completed` lists only completed ones
+
+#### Scenario: Text search
+- **WHEN** the user enters `search: "oat milk"`
+- **THEN** tasks whose title or description contains "oat milk" in any letter case are listed
+
+#### Scenario: A completion date term includes completed tasks
+- **WHEN** the user enters `#Work & completed >= this week`
+- **THEN** the tasks of "Work" completed this week are listed, although the query has no `completed` or `open` keyword
+
+## ADDED Requirements
+
+### Requirement: Period date expressions
+`this|last|next week`, `this|last|next month`, `N weeks ago` and `N months ago` SHALL be ranges of days in every date term; weeks SHALL start on the user's first day of the week, months SHALL be calendar months, and a day SHALL be a one-day range. Against a range, `=` SHALL match days within it, `<` days before it, `<=` up to its end, `>` after it and `>=` from its start. Stored queries SHALL keep the period; evaluation SHALL stay on the device and agree across the user's devices.
 
 #### Scenario: This week with a Monday start
 - **WHEN** the first day of the week is Monday, today is Friday 2026-10-16 and the user enters `due = this week`
@@ -36,23 +56,6 @@
 #### Scenario: Saved period view offline
 - **WHEN** a view with the query `deadline = next week` is saved on one device and another device opens it while offline a week later
 - **THEN** the second device lists tasks whose deadline falls in the week after its current week, from local data
-
-### Requirement: Priority, state and search terms
-`p1` to `p4` SHALL match the task priority. `completed` SHALL include completed tasks and `open` only open ones; a query without either, and without a `completed` date term, SHALL match open tasks only. `subtask` SHALL match tasks that have a parent. `search: text` SHALL match tasks whose title or description contains the text ignoring case, with quotes allowed for several words. Deleted tasks SHALL never match any query.
-
-#### Scenario: Default to open tasks
-- **WHEN** the user enters `p1`
-- **THEN** only open priority-1 tasks are listed, and `p1 & completed` lists only completed ones
-
-#### Scenario: Text search
-- **WHEN** the user enters `search: "oat milk"`
-- **THEN** tasks whose title or description contains "oat milk" in any letter case are listed
-
-#### Scenario: A completion date term includes completed tasks
-- **WHEN** the user enters `#Work & completed >= this week`
-- **THEN** the tasks of "Work" completed this week are listed, although the query has no `completed` or `open` keyword
-
-## ADDED Requirements
 
 ### Requirement: Completion date terms
 `completed` followed by a comparison and a date expression SHALL compare the viewer's local calendar day of the task's completion time, with the same expressions and range rules as the other date terms; without a comparison `completed` SHALL remain the state keyword. An open task SHALL never match it; completed occurrences of recurring tasks SHALL match. Evaluation SHALL stay on the device from local data and follow synced completions and reopenings.
