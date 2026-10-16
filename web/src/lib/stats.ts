@@ -6,12 +6,13 @@
 import { resolveRange, shiftISO, weekdayOf } from './filter/parse'
 import { todayISO } from './dates'
 import type { Membership, Project, Task } from './types'
+import { t, msg, translatedMap } from './i18n'
 
 export type PeriodKind = 'this-week' | 'last-week' | '4-weeks' | '12-weeks'
 export const PERIOD_KINDS: readonly PeriodKind[] = ['this-week', 'last-week', '4-weeks', '12-weeks']
-export const PERIOD_LABELS: Record<PeriodKind, string> = {
-  'this-week': 'This week', 'last-week': 'Last week', '4-weeks': 'Last 4 weeks', '12-weeks': 'Last 12 weeks',
-}
+export const PERIOD_LABELS = translatedMap<PeriodKind>({
+  'this-week': msg('This week'), 'last-week': msg('Last week'), '4-weeks': msg('Last 4 weeks'), '12-weeks': msg('Last 12 weeks'),
+})
 
 /** An inclusive range of local days; `weeks` is the number of weeks it spans (1, 4 or 12). */
 export interface Period {
@@ -105,23 +106,23 @@ const deviceDay = (ms: number) => todayISO(new Date(ms))
  * projects; in a shared project the account that completed it when recorded
  * (`completed_by`), otherwise the assignee, or the user when unassigned.
  */
-export function isMine(t: StatTask, shared: ReadonlySet<string>, me: string | null): boolean {
-  if (!t.project_id || !shared.has(t.project_id)) return true
-  if (t.completed_at !== null && t.completed_by) return t.completed_by === me
-  return !t.assignee_id || t.assignee_id === me
+export function isMine(item: StatTask, shared: ReadonlySet<string>, me: string | null): boolean {
+  if (!item.project_id || !shared.has(item.project_id)) return true
+  if (item.completed_at !== null && item.completed_by) return item.completed_by === me
+  return !item.assignee_id || item.assignee_id === me
 }
 
 /** The rows statistics see: live (not in the Trash, nor in a trashed project), not a skipped habit occurrence, and the user's. */
 export function countedTasks<T extends StatTask>(input: Pick<StatsInput<T>, 'tasks' | 'projects' | 'shared' | 'me'>): T[] {
   const trashed = new Set(input.projects.filter((p) => p.deleted_at).map((p) => p.id))
-  return input.tasks.filter((t) => !t.deleted_at && !(t.project_id && trashed.has(t.project_id)) && !t.skipped && isMine(t, input.shared, input.me))
+  return input.tasks.filter((item) => !item.deleted_at && !(item.project_id && trashed.has(item.project_id)) && !item.skipped && isMine(item, input.shared, input.me))
 }
 
 /** Open tasks due before today, outside archived projects, oldest due first. */
 export function overdueOf<T extends StatTask>(counted: readonly T[], projects: readonly StatProject[], today: string): T[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   return counted
-    .filter((t) => t.completed_at === null && t.due && t.due.date < today && !(t.project_id && archived.has(t.project_id)))
+    .filter((item) => item.completed_at === null && item.due && item.due.date < today && !(item.project_id && archived.has(item.project_id)))
     .sort((a, b) => (a.due!.date < b.due!.date ? -1 : a.due!.date > b.due!.date ? 1 : a.id < b.id ? -1 : 1))
 }
 
@@ -140,8 +141,8 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
   let created = 0
   const lateTasks: T[] = []
   const slippedTasks: T[] = []
-  for (const t of counted) {
-    const doneDay = t.completed_at !== null ? dayOf(t.completed_at) : null
+  for (const item of counted) {
+    const doneDay = item.completed_at !== null ? dayOf(item.completed_at) : null
     if (doneDay !== null && inPeriod(doneDay)) {
       completed++
       perDay.set(doneDay, (perDay.get(doneDay) ?? 0) + 1)
@@ -149,16 +150,16 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
       perWeekday.set(wd, (perWeekday.get(wd) ?? 0) + 1)
       const weekKey = days[Math.floor(days.indexOf(doneDay) / 7) * 7]
       perWeek.set(weekKey, (perWeek.get(weekKey) ?? 0) + 1)
-      const pk = t.project_id ?? ''
+      const pk = item.project_id ?? ''
       projectCounts.set(pk, (projectCounts.get(pk) ?? 0) + 1)
-      if (t.due && doneDay > t.due.date) lateTasks.push(t)
+      if (item.due && doneDay > item.due.date) lateTasks.push(item)
     }
-    if (t.series_id === null && inPeriod(dayOf(t.created_at))) created++
-    if (t.due && inPeriod(t.due.date) && t.due.date < today && (doneDay === null || doneDay > period.end)) slippedTasks.push(t)
+    if (item.series_id === null && inPeriod(dayOf(item.created_at))) created++
+    if (item.due && inPeriod(item.due.date) && item.due.date < today && (doneDay === null || doneDay > period.end)) slippedTasks.push(item)
   }
   const names = new Map(input.projects.map((p) => [p.id, p.name]))
   const ranked = [...projectCounts.entries()]
-    .map(([id, count]) => ({ id, name: id ? names.get(id) ?? 'Project' : 'Inbox', count }))
+    .map(([id, count]) => ({ id, name: id ? names.get(id) ?? t('Project') : t('Inbox'), count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
   const perProject = ranked.slice(0, 5)
   const rest = ranked.slice(5).reduce((n, p) => n + p.count, 0)

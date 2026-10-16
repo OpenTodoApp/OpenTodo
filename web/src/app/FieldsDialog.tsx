@@ -14,8 +14,9 @@ import type { FieldDef, FieldType, Project, Task } from '../lib/types'
 import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea } from '../ui'
 import { Dialog } from './overlay'
 import { HelpLink } from './help/HelpLink'
+import { t } from '../lib/i18n'
 
-const typeLabel = (t: string) => FIELD_TYPES.find((x) => x.type === t)?.label ?? t
+const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.label ?? item
 
 export function FieldsDialog({ project, onClose }: { project: Project; onClose: () => void }) {
   const defs = useLiveQuery(() => db.fields.where('project_id').equals(project.id).toArray(), [project.id], [] as FieldDef[])
@@ -46,15 +47,15 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
   }
 
   return (
-    <Dialog title={`Fields of ${project.name}`} onClose={onClose} size="md" testId="fields-dialog">
+    <Dialog title={t('Fields of {name}', { name: project.name })} onClose={onClose} size="md" testId="fields-dialog">
       <div className="space-y-4">
         <p className="text-meta text-muted">
-          Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {MAX_FIELDS} fields. <HelpLink screen="project-fields" topic="Custom fields" />
+          {t('Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {max} fields.', { max: MAX_FIELDS })}{' '}<HelpLink screen="project-fields" topic={t('Custom fields')} />
         </p>
         {live.length === 0 ? (
-          <p className="text-body text-faint">No fields yet.</p>
+          <p className="text-body text-faint">{t('No fields yet.')}</p>
         ) : (
-          <ul ref={listRef} className="divide-y divide-default rounded-card border border-default" aria-label="Fields">
+          <ul ref={listRef} className="divide-y divide-default rounded-card border border-default" aria-label={t('Fields')}>
             {live.map((d, i) => (
               <FieldItem key={d.id} def={d} first={i === 0} last={i === live.length - 1} dragging={dragId === d.id}
                 onMove={(delta) => void move(d.id, delta)} onHandleKey={(e) => onHandleKey(e, d.id)}
@@ -66,7 +67,7 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
         <AddField projectId={project.id} disabled={live.length >= MAX_FIELDS} />
       </div>
       {removing && (
-        <ConfirmDialog title={`Delete the field “${removing.name}”?`} confirmLabel="Delete field"
+        <ConfirmDialog title={t('Delete the field “{name}”?', { name: removing.name })} confirmLabel={t('Delete field')}
           consequence={valuesText(countValues(removing.id, tasks))}
           onConfirm={() => deleteField(removing.id)} onCancel={() => setRemoving(null)} />
       )}
@@ -76,8 +77,8 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
 
 /** The delete confirmation (spec: it states how many tasks hold a value). */
 export function valuesText(n: number): string {
-  if (n === 0) return 'No task holds a value for it.'
-  return `Values on ${n} ${n === 1 ? 'task are' : 'tasks are'} kept but hidden.`
+  if (n === 0) return t('No task holds a value for it.')
+  return t('{n, plural, one {Values on # task are kept but hidden.} other {Values on # tasks are kept but hidden.}}', { n })
 }
 
 function FieldItem({ def, first, last, dragging, tasks, onMove, onHandleKey, onDragStart, onDrop, onDelete }: {
@@ -104,26 +105,26 @@ function FieldItem({ def, first, last, dragging, tasks, onMove, onHandleKey, onD
     <li data-field-def={def.id} className={`space-y-2 px-3 py-2 ${dragging ? 'opacity-50' : ''}`}
       draggable={!renaming && !editingOptions} onDragStart={onDragStart} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
       <div className="flex items-center gap-2">
-        <button type="button" data-field-handle aria-label={`Move ${def.name} (Alt+Up or Alt+Down)`} onKeyDown={onHandleKey}
+        <button type="button" data-field-handle aria-label={t('Move {name} (Alt+Up or Alt+Down)', { name: def.name })} onKeyDown={onHandleKey}
           className="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon shrink-0 cursor-grab">
           <Icon name="grip-vertical" />
         </button>
         {renaming ? (
           <form className="flex min-w-0 flex-1 items-center gap-2" onSubmit={(e: FormEvent) => { e.preventDefault(); void saveName() }}>
-            <Input ref={nameRef} autoFocus value={name} aria-label={`Rename ${def.name}`} aria-invalid={!!error || undefined} className="py-1.5"
+            <Input ref={nameRef} autoFocus value={name} aria-label={t('Rename {name}', { name: def.name })} aria-invalid={!!error || undefined} className="py-1.5"
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setName(def.name); setError(null); setRenaming(false) } }} />
-            <Button type="submit" size="sm" variant="primary">Save</Button>
+            <Button type="submit" size="sm" variant="primary">{t('Save')}</Button>
           </form>
         ) : (
           <span className="user-text min-w-0 flex-1 truncate text-body text-default">{def.name}</span>
         )}
         <span className="shrink-0 text-meta text-faint" data-field-type>{typeLabel(def.type)}</span>
-        {!renaming && <IconButton icon="pencil" size="sm" label={`Rename ${def.name}`} onClick={() => { setName(def.name); setRenaming(true) }} />}
-        {def.type === 'choice' && <IconButton icon="list" size="sm" label={`Edit the options of ${def.name}`} aria-expanded={editingOptions} onClick={() => setEditingOptions((v) => !v)} />}
-        <IconButton icon="arrow-up" size="sm" label={`Move ${def.name} up`} disabled={first} onClick={() => onMove(-1)} />
-        <IconButton icon="arrow-down" size="sm" label={`Move ${def.name} down`} disabled={last} onClick={() => onMove(1)} />
-        <IconButton icon="trash-2" size="sm" label={`Delete ${def.name}`} onClick={onDelete} />
+        {!renaming && <IconButton icon="pencil" size="sm" label={t('Rename {name}', { name: def.name })} onClick={() => { setName(def.name); setRenaming(true) }} />}
+        {def.type === 'choice' && <IconButton icon="list" size="sm" label={t('Edit the options of {name}', { name: def.name })} aria-expanded={editingOptions} onClick={() => setEditingOptions((v) => !v)} />}
+        <IconButton icon="arrow-up" size="sm" label={t('Move {name} up', { name: def.name })} disabled={first} onClick={() => onMove(-1)} />
+        <IconButton icon="arrow-down" size="sm" label={t('Move {name} down', { name: def.name })} disabled={last} onClick={() => onMove(1)} />
+        <IconButton icon="trash-2" size="sm" label={t('Delete {name}', { name: def.name })} onClick={onDelete} />
       </div>
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
       {editingOptions && <OptionsEditor def={def} tasks={tasks} onDone={() => setEditingOptions(false)} />}
@@ -140,7 +141,7 @@ function OptionsEditor({ def, tasks, onDone }: { def: FieldDef; tasks: Task[]; o
   const [text, setText] = useState(parseOptions(def.options).join('\n'))
   const [error, setError] = useState<string | null>(null)
   const renames = useMemo(() => renamedOptions(def.options, text), [def.options, text])
-  const affected = tasks.filter((t) => !t.deleted_at && typeof t.fields?.[def.id] === 'string' && (t.fields[def.id] as string) in renames).length
+  const affected = tasks.filter((task) => !task.deleted_at && typeof task.fields?.[def.id] === 'string' && (task.fields[def.id] as string) in renames).length
   const save = async () => {
     try {
       await setFieldOptions(def.id, text, renames)
@@ -151,13 +152,13 @@ function OptionsEditor({ def, tasks, onDone }: { def: FieldDef; tasks: Task[]; o
   }
   return (
     <div className="space-y-2">
-      <Field label="Options, one per line" error={error ?? undefined}
-        description={affected > 0 ? `${affected} ${affected === 1 ? 'task' : 'tasks'} will be updated.` : undefined}>
+      <Field label={t('Options, one per line')} error={error ?? undefined}
+        description={affected > 0 ? t('{n, plural, one {# task will be updated.} other {# tasks will be updated.}}', { n: affected }) : undefined}>
         <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} />
       </Field>
       <div className="flex justify-end gap-2">
-        <Button size="sm" variant="secondary" onClick={onDone}>Cancel</Button>
-        <Button size="sm" variant="primary" onClick={save}>Save options</Button>
+        <Button size="sm" variant="secondary" onClick={onDone}>{t('Cancel')}</Button>
+        <Button size="sm" variant="primary" onClick={save}>{t('Save options')}</Button>
       </div>
     </div>
   )
@@ -196,25 +197,25 @@ function AddField({ projectId, disabled }: { projectId: string; disabled: boolea
     }
   }
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-card border border-dashed border-input p-3" aria-label="Add a field">
+    <form onSubmit={submit} className="space-y-3 rounded-card border border-dashed border-input p-3" aria-label={t('Add a field')}>
       <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
-        <Field label="Name" error={error?.field === 'name' ? error.message : undefined}>
-          <Input ref={nameRef} value={name} disabled={disabled} onChange={(e) => setName(e.target.value)} placeholder="Cost" />
+        <Field label={t('Name')} error={error?.field === 'name' ? error.message : undefined}>
+          <Input ref={nameRef} value={name} disabled={disabled} onChange={(e) => setName(e.target.value)} placeholder={t('Cost')} />
         </Field>
-        <Field label="Type">
+        <Field label={t('Type')}>
           <Select value={type} disabled={disabled} onChange={(e) => setType(e.target.value as FieldType)}>
-            {FIELD_TYPES.map((t) => <option key={t.type} value={t.type}>{t.label}</option>)}
+            {FIELD_TYPES.map((item) => <option key={item.type} value={item.type}>{item.label}</option>)}
           </Select>
         </Field>
       </div>
       {type === 'choice' && (
-        <Field label="Options, one per line" error={error?.field === 'options' ? error.message : undefined}>
-          <Textarea ref={optionsRef} value={options} rows={3} onChange={(e) => setOptions(e.target.value)} placeholder={'Quote\nOrdered\nDone'} />
+        <Field label={t('Options, one per line')} error={error?.field === 'options' ? error.message : undefined}>
+          <Textarea ref={optionsRef} value={options} rows={3} onChange={(e) => setOptions(e.target.value)} placeholder={t('Quote\nOrdered\nDone')} />
         </Field>
       )}
       {error && error.field === 'type' && <p role="alert" className="text-meta text-danger">{error.message}</p>}
       <div className="flex justify-end">
-        <Button type="submit" variant="primary" size="sm" icon="plus" disabled={disabled}>{disabled ? `At most ${MAX_FIELDS} fields` : 'Add field'}</Button>
+        <Button type="submit" variant="primary" size="sm" icon="plus" disabled={disabled}>{disabled ? t('At most {MAX_FIELDS} fields', { MAX_FIELDS }) : t('Add field')}</Button>
       </div>
     </form>
   )

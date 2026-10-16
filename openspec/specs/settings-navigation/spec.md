@@ -104,19 +104,23 @@ On a demo instance every section SHALL be listed and every row shown; rows the d
 - **THEN** the page starts with the demo note naming password and two-factor authentication, passkeys, linked accounts and encryption, and those rows are visible with disabled controls while profile and sessions work
 
 ### Requirement: Help links name the same screens
-Each Settings page SHALL have one Help action in its page header that opens the contextual help at the page's screen id (`settings/<id>`); the former per-panel screen ids SHALL resolve to anchors inside that page's guide, so old links keep working. The user guide SHALL describe Settings by section, and UI text naming a place in Settings SHALL use the section path, for example "Settings → Account → Two-factor authentication".
+Every Settings panel SHALL keep its Help link and screen id (`settings/...`) wherever it now lives, so contextual help opens the same guide section. Screen ids SHALL NOT depend on the interface language. The user guide SHALL describe Settings by section, and UI text naming a place in Settings SHALL use the section path in the active language (OpenSpec `localization`), for example "Settings → Security → Two-factor authentication".
 
 #### Scenario: Help from a section
-- **WHEN** a user opens Help on the Integrations page
-- **THEN** the integrations guide opens beside the page, which stays as it was
+- **WHEN** a user opens Help on the Webhooks panel in the Integrations section
+- **THEN** the webhooks guide opens beside the section, which stays as it was
 
 #### Scenario: Moved panel keeps its screen id
-- **WHEN** something opens contextual help for screen `settings/two-factor`
-- **THEN** the Account guide opens at its two-factor section
+- **WHEN** a user opens Help on the Two-factor authentication panel in the Security section
+- **THEN** the guide section for screen `settings/two-factor` opens, as it did from Account
 
 #### Scenario: Outgoing email help
 - **WHEN** something opens contextual help for screen `settings/outgoing-email`
 - **THEN** the Server guide opens at its Server section, which describes the Outgoing email card
+
+#### Scenario: Section path in German
+- **WHEN** the language is German and a message points the user to the two-factor settings
+- **THEN** it reads `Einstellungen → Sicherheit → Zwei-Faktor-Authentifizierung`, and the Help link on that panel still opens the section for `settings/two-factor`
 
 ### Requirement: Settings groups
 The section list SHALL show sections in this order and in these groups. You: Account, Appearance. App: General, Notifications, Capture. Data: Integrations, Data. Server: People, Server. Groups SHALL be labelled headings, a group with no visible section SHALL be omitted, and each group's list SHALL be exposed to assistive technology under its heading.

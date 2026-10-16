@@ -21,7 +21,7 @@ describe('YourDataView', () => {
     expect(render()).toMatch(/data-hue="green"[^>]*><span[^>]*>Up to date<\/span>/)
     const waiting = render({ sync: { ...idle, state: 'offline', pending: 3 } })
     expect(waiting).toContain('Offline')
-    expect(waiting).toContain('3 change(s) waiting to upload.')
+    expect(waiting).toContain('3 changes waiting to upload.')
     const failed = render({ sync: { ...idle, state: 'error', error: 'The server answered 500.' } })
     expect(failed).toContain('role="alert"')
     expect(failed).toContain('The server answered 500.')

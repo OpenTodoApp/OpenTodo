@@ -5,6 +5,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { Task } from '../../lib/types'
 import { useSelection, type SelectionApi } from '../selection'
 import { BulkActionsMenu, SelectionBar } from './BulkActions'
+import { t } from '../../lib/i18n'
 
 export interface BulkList {
   selection: SelectionApi
@@ -19,7 +20,7 @@ export interface BulkList {
 }
 
 export function useBulkList(tasks: readonly Task[]): BulkList {
-  const order = useMemo(() => [...new Set(tasks.map((t) => t.id))], [tasks])
+  const order = useMemo(() => [...new Set(tasks.map((task) => task.id))], [tasks])
   const selection = useSelection(order, () => false)
   const ticked = useMemo(() => order.filter((id) => selection.ticked.has(id)), [order, selection.ticked])
   const [open, setOpen] = useState(false)
@@ -32,7 +33,7 @@ export function useBulkList(tasks: readonly Task[]): BulkList {
       <>
         <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={open && ticked.length > 0} onMenuOpenChange={onOpenChange} startPicker={picker} />
         {open && ticked.length === 0 && cursor && (
-          <BulkActionsMenu ids={[cursor]} open onOpenChange={onOpenChange} startPicker={picker} trigger={<span className="sr-only">Actions</span>} triggerClassName="sr-only" />
+          <BulkActionsMenu ids={[cursor]} open onOpenChange={onOpenChange} startPicker={picker} trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
         )}
       </>
     ),

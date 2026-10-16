@@ -8,6 +8,7 @@ import { canEditProject, canEditTasks, roleOf } from './sharing'
 import { countedTasks, overdueOf, type StatsInput } from './stats'
 import { qualifies } from './triage'
 import type { Membership, Project, Task } from './types'
+import { t, msg, translatedMap } from './i18n'
 
 export const REVIEW_ID = 'me'
 /** A review is due when the last one is more than seven days old, or there was none. */
@@ -15,7 +16,7 @@ export const REVIEW_INTERVAL_MS = 7 * 86_400_000
 
 export type StepId = 'clear' | 'back' | 'next' | 'ahead'
 export const STEP_IDS: readonly StepId[] = ['clear', 'back', 'next', 'ahead']
-export const STEP_TITLES: Record<StepId, string> = { clear: 'Get clear', back: 'Look back', next: 'Next actions', ahead: 'Look ahead' }
+export const STEP_TITLES = translatedMap<StepId>({ clear: msg('Get clear'), back: msg('Look back'), next: msg('Next actions'), ahead: msg('Look ahead') })
 
 export interface NextActionProject {
   project: Project
@@ -55,10 +56,10 @@ export function reviewSteps(input: ReviewInput): ReviewSteps {
   const until = addDaysISO(input.today, 6)
   const archived = new Set(input.projects.filter((p) => p.archived).map((p) => p.id))
   const ahead = counted
-    .filter((t) => t.completed_at === null && t.due && t.due.date >= input.today && t.due.date <= until && !(t.project_id && archived.has(t.project_id)))
+    .filter((task) => task.completed_at === null && task.due && task.due.date >= input.today && task.due.date <= until && !(task.project_id && archived.has(task.project_id)))
     .sort((a, b) => (a.due!.date < b.due!.date ? -1 : a.due!.date > b.due!.date ? 1 : a.priority - b.priority))
   // "No open task" looks at every live task of the project, whoever it is assigned to.
-  const withOpen = new Set(input.tasks.filter((t) => !t.deleted_at && t.completed_at === null && t.project_id).map((t) => t.project_id!))
+  const withOpen = new Set(input.tasks.filter((tk) => !tk.deleted_at && tk.completed_at === null && tk.project_id).map((item) => item.project_id!))
   const memberships = input.memberships as Map<string, Membership>
   const nextActions = input.projects
     .filter((p) => !p.deleted_at && !p.archived && !withOpen.has(p.id) && canEditTasks(roleOf(p.id, memberships)))
@@ -81,10 +82,10 @@ export function reviewDue(completedAt: number | null | undefined, now = Date.now
 
 /** When the last review was, in words: "today", "yesterday", "9 days ago" or "never". */
 export function reviewAgo(completedAt: number | null | undefined, now = Date.now()): string {
-  if (!completedAt) return 'never'
+  if (!completedAt) return t('never')
   const day = (ms: number) => { const d = new Date(ms); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) }
   const days = Math.max(0, Math.round((day(now) - day(completedAt)) / 86_400_000))
-  return days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
+  return days === 0 ? t('today') : days === 1 ? t('yesterday') : t('{n} days ago', { n: days })
 }
 
 /** Records a finished review through the op log (offline-safe; the latest finish wins on every device). */

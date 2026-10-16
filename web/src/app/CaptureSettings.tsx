@@ -7,6 +7,7 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { bookmarklet } from '../lib/share'
 import { navigate } from './router'
+import { t } from '../lib/i18n'
 
 /**
  * Bookmarklet for this server. The href is set through the DOM because React refuses
@@ -38,31 +39,30 @@ export function CaptureView({ code, linkRef, copied, onCopy }: {
   code: string; linkRef?: React.Ref<HTMLAnchorElement>; copied: 'yes' | 'failed' | null; onCopy: () => void
 }) {
   return (
-    <SettingsSection title="Capture" headingId="capture-heading"
-      description="Save pages and selected text from your browser as tasks.">
-      <SettingRow label="Bookmarklet" description={
-        <>Drag <strong>Add to OpenTodo</strong> to your bookmarks bar. On any page, click it to add the page, its title and the selected text in a small window.
-          It holds no password or token; it uses your sign-in on this server.</>
+    <SettingsSection title={t('Capture')} headingId="capture-heading"
+      description={t('Save pages and selected text from your browser as tasks.')}>
+      <SettingRow label={t('Bookmarklet')} description={
+        <>{t.rich('Drag <strong>Add to OpenTodo</strong> to your bookmarks bar. On any page, click it to add the page, its title and the selected text in a small window. It holds no password or token; it uses your sign-in on this server.', { strong: (chunks) => <strong>{chunks}</strong> })}</>
       } control={
         <>
-          <Tooltip label="Drag to your bookmarks bar">
+          <Tooltip label={t('Drag to your bookmarks bar')}>
             <a ref={linkRef} draggable className="ui-btn ui-btn--primary ui-btn--md cursor-grab" onClick={(e) => e.preventDefault()}>
-              <Icon name="plus" />Add to OpenTodo
+              <Icon name="plus" />{t('Add to OpenTodo')}
             </a>
           </Tooltip>
-          <Button icon="copy" onClick={onCopy}>Copy bookmarklet</Button>
+          <Button icon="copy" onClick={onCopy}>{t('Copy bookmarklet')}</Button>
         </>
       } />
-      {copied === 'yes' && <Notice tone="success">Copied. Create a bookmark and paste it as the address.</Notice>}
+      {copied === 'yes' && <Notice tone="success">{t('Copied. Create a bookmark and paste it as the address.')}</Notice>}
       {copied === 'failed' && (
         <label className="block py-2 text-meta text-muted">
-          Copy this code and paste it as a bookmark's address:
+          {t('Copy this code and paste it as a bookmark\'s address:')}
           <textarea className="ui-input mt-1 font-mono text-meta" readOnly rows={3} value={code} onFocus={(e) => e.currentTarget.select()} />
         </label>
       )}
-      <SettingRow label="Browser extension" description={<>For Chromium and Firefox, in the repository under <code>extension/</code>.</>}
-        control={<a className="ui-btn ui-btn--secondary ui-btn--md" href="/help/capture" onClick={(e) => { e.preventDefault(); navigate({ view: 'help', page: 'capture' }) }}><Icon name="circle-help" />How to install</a>} />
-      <SettingRow label="On a phone" description="Install the app and use your phone's share menu." />
+      <SettingRow label={t('Browser extension')} description={<>{t.rich('For Chromium and Firefox, in the repository under {path}.', { path: <code>extension/</code> })}</>}
+        control={<a className="ui-btn ui-btn--secondary ui-btn--md" href="/help/capture" onClick={(e) => { e.preventDefault(); navigate({ view: 'help', page: 'capture' }) }}><Icon name="circle-help" />{t('How to install')}</a>} />
+      <SettingRow label={t('On a phone')} description={t('Install the app and use your phone\'s share menu.')} />
     </SettingsSection>
   )
 }

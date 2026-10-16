@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode, useMemo } from 'react'
 import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdown'
+import { t } from '../lib/i18n'
 
 /**
  * Renders a comment body (lib/markdown.ts) as React elements. Nothing is ever
@@ -38,7 +39,7 @@ function renderBlock(b: Block, i: number): ReactNode {
           <ul key={i} className="space-y-1 pl-1">
             {b.items.map((item, j) => (
               <li key={j} className="flex items-start gap-2" data-checked={b.checks![j] ?? undefined}>
-                {b.checks![j] !== null && <input type="checkbox" disabled checked={!!b.checks![j]} className="mt-1 h-4 w-4 shrink-0" aria-label={b.checks![j] ? 'Done' : 'Not done'} />}
+                {b.checks![j] !== null && <input type="checkbox" disabled checked={!!b.checks![j]} className="mt-1 h-4 w-4 shrink-0" aria-label={b.checks![j] ? t('Done') : t('Not done')} />}
                 <div className={`min-w-0 flex-1 space-y-2 ${b.checks![j] ? 'text-muted line-through' : ''}`}>{item.map(renderBlock)}</div>
               </li>
             ))}

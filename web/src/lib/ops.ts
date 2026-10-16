@@ -16,6 +16,7 @@ import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHAR
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
+import { t } from './i18n'
 
 let devicePromise: Promise<string> | null = null
 
@@ -96,7 +97,7 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '' }
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '', language: 'system' }
 /** review (stats-and-review D4): 0 means "never finished". */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0 }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
@@ -206,7 +207,7 @@ export async function applyOps(
     }
     const missing = [...new Set(recorded.map((r) => r.taskId).filter((id): id is string => !!id && !rows.has(`task:${id}`)))]
     const loaded = missing.length ? await db.tasks.bulkGet(missing) : []
-    for (const t of loaded) if (t) rows.set(`task:${t.id}`, t as unknown as Record<string, unknown>)
+    for (const task of loaded) if (task) rows.set(`task:${task.id}`, task as unknown as Record<string, unknown>)
     for (const r of recorded) {
       if (r.op.entity === 'project') r.projectKey = r.op.entityId
       else r.projectKey = ((r.taskId && (rows.get(`task:${r.taskId}`) as Task | undefined)?.project_id) || 'inbox')
@@ -495,7 +496,7 @@ async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
 /** A content value too long to fit the server's value limit once encrypted (OpenSpec e2ee, design D3). */
 export class PlaintextTooLongError extends Error {
   constructor(public entity: Entity, public entityId: string, public field: string) {
-    super(`This ${field === 'title' || field === 'name' ? field : 'text'} is too long to encrypt (at most ${MAX_PLAINTEXT_BYTES.toLocaleString('en')} bytes). Shorten it and try again.`)
+    super(t('{field, select, title {This title} name {This name} other {This text}} is too long to encrypt (at most {max, number} bytes). Shorten it and try again.', { field, max: MAX_PLAINTEXT_BYTES }))
   }
 }
 
@@ -562,10 +563,10 @@ export async function moveProject(id: string, parentId: string | null): Promise<
   if (parentId === project.parent_id) return
   const all = await liveProjects()
   if (parentId !== null) {
-    if (parentId === id) throw new Error('a project cannot be its own parent')
+    if (parentId === id) throw new Error(t('a project cannot be its own parent'))
     const parent = all.find((p) => p.id === parentId)
     if (!parent || parent.archived) throw new Error('parent project not found')
-    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the project')
+    if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
   await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId) })
 }
@@ -670,7 +671,7 @@ export async function createSubtask(parentId: string, title: string): Promise<st
 
 /** Every non-deleted task; the tree helpers take the whole set so cycles are handled. */
 async function liveTasks(): Promise<Task[]> {
-  return db.tasks.filter((t) => !t.deleted_at).toArray()
+  return db.tasks.filter((task) => !task.deleted_at).toArray()
 }
 
 /**
@@ -684,15 +685,15 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
   if (parentId === task.parent_id) return
   const all = await liveTasks()
   if (parentId !== null) {
-    if (parentId === id) throw new Error('a task cannot be its own parent')
-    const parent = all.find((t) => t.id === parentId)
+    if (parentId === id) throw new Error(t('a task cannot be its own parent'))
+    const parent = all.find((tk) => tk.id === parentId)
     if (!parent) throw new Error('parent task not found')
-    if (parent.project_id !== task.project_id) throw new Error('parent must be in the same project')
-    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the task')
+    if (parent.project_id !== task.project_id) throw new Error(t('parent must be in the same project'))
+    if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the task'))
   }
   let position = Date.now()
-  for (const t of all) {
-    if (t.id !== id && t.parent_id === parentId && t.project_id === task.project_id && t.position >= position) position = t.position + 1
+  for (const item of all) {
+    if (item.id !== id && item.parent_id === parentId && item.project_id === task.project_id && item.position >= position) position = item.position + 1
   }
   await mutate('task', id, { parent_id: parentId, position })
 }
@@ -713,12 +714,12 @@ const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'la
 function copyTasks(
   tasks: Task[], projectId: string | null, assignable: Set<string>, overrides: Record<string, Partial<Task>> = {},
 ): { changes: Change[]; ids: Map<string, string> } {
-  const ids = new Map(tasks.map((t) => [t.id, crypto.randomUUID()]))
+  const ids = new Map(tasks.map((task) => [task.id, crypto.randomUUID()]))
   const changes: Change[] = []
-  for (const t of tasks) {
+  for (const tk of tasks) {
     const patch: Record<string, unknown> = {}
-    for (const f of COPY_FIELDS) patch[f] = t[f]
-    Object.assign(patch, overrides[t.id] ?? {})
+    for (const f of COPY_FIELDS) patch[f] = tk[f]
+    Object.assign(patch, overrides[tk.id] ?? {})
     // task-assignment: the copy keeps its assignee only when that person may be
     // assigned in the destination; the server would refuse it otherwise.
     // An unassigned copy needs no op (null is the default; rows synced before the
@@ -726,16 +727,16 @@ function copyTasks(
     // A copy carries the note's document only when there is one (collaborative-rich-text).
     if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
     // Custom field values travel with the copy (custom-fields), one op each.
-    if (t.fields && Object.keys(t.fields).length) patch.fields = { ...t.fields }
+    if (tk.fields && Object.keys(tk.fields).length) patch.fields = { ...tk.fields }
     // The copy keeps who completed it (completed-date-filters D5); unknown stays null.
     if (patch.completed_at === null || patch.completed_at === undefined) delete patch.completed_by
     else patch.completed_by = patch.completed_by ?? null
     if (typeof patch.assignee_id !== 'string') delete patch.assignee_id
     else if (!assignable.has(patch.assignee_id)) patch.assignee_id = null
     patch.project_id = projectId
-    patch.parent_id = (t.parent_id && ids.get(t.parent_id)) ?? null
+    patch.parent_id = (tk.parent_id && ids.get(tk.parent_id)) ?? null
     patch.deleted_at = null
-    changes.push({ entity: 'task', entityId: ids.get(t.id) as string, patch })
+    changes.push({ entity: 'task', entityId: ids.get(tk.id) as string, patch })
   }
   return { changes, ids }
 }
@@ -766,15 +767,15 @@ export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task,
 export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<Task, 'id' | '_clock'>>, cross?: { assignable: Set<string> }, now = Date.now()): { changes: Change[]; id: string } {
   const id = task.id
   if (cross) {
-    const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t)]
+    const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((tk) => tk.id === d)).filter((item): item is Task => !!item)]
     const { project_id: projectId = null, parent_id: _parent, ...rest } = patch
     const { changes, ids } = copyTasks(subtree, projectId, cross.assignable, { [id]: { ...rest, position: now } })
-    for (const t of subtree) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
+    for (const tVar of subtree) changes.push({ entity: 'task', entityId: tVar.id, patch: { deleted_at: now } })
     return { changes, id: ids.get(id) as string }
   }
   const next = { ...patch }
   if (task.parent_id) {
-    const parent = all.find((t) => t.id === task.parent_id)
+    const parent = all.find((tVar) => tVar.id === task.parent_id)
     if (!parent || parent.project_id !== patch.project_id) next.parent_id = null
   }
   // A section belongs to one project: a project change clears it in the same
@@ -782,9 +783,9 @@ export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<T
   if (!('section_id' in patch) && task.section_id) next.section_id = null
   const changes: Change[] = [{ entity: 'task', entityId: id, patch: next }]
   for (const d of descendants(id, all)) {
-    const t = all.find((x) => x.id === d)
-    if (t && t.project_id !== patch.project_id) {
-      changes.push({ entity: 'task', entityId: d, patch: t.section_id ? { project_id: patch.project_id, section_id: null } : { project_id: patch.project_id } })
+    const tVar = all.find((x) => x.id === d)
+    if (tVar && tVar.project_id !== patch.project_id) {
+      changes.push({ entity: 'task', entityId: d, patch: tVar.section_id ? { project_id: patch.project_id, section_id: null } : { project_id: patch.project_id } })
     }
   }
   return { changes, id }
@@ -861,8 +862,8 @@ async function completePlain(id: string, now: number): Promise<void> {
 export function planCompletePlain(id: string, all: Task[], now: number): Change[] {
   const changes: Change[] = [{ entity: 'task', entityId: id, patch: { completed_at: now } }]
   for (const d of descendants(id, all)) {
-    const t = all.find((x) => x.id === d)
-    if (t && !t.completed_at) changes.push({ entity: 'task', entityId: d, patch: { completed_at: now } })
+    const task = all.find((x) => x.id === d)
+    if (task && !task.completed_at) changes.push({ entity: 'task', entityId: d, patch: { completed_at: now } })
   }
   return changes
 }
@@ -991,14 +992,14 @@ export async function deleteProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
   const memberships = await membershipMap()
   const shared = memberships.has(id)
-  if (shared && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can delete a shared project')
+  if (shared && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can delete a shared project'))
   const changes: Change[] = []
   const now = Date.now()
   if (shared) {
     const tasks = await db.tasks.where('project_id').equals(id).toArray()
-    const live = tasks.filter((t) => !t.deleted_at)
-    changes.push(...copyTasks(live.filter((t) => !t.completed_at), null, assignableIn(null, memberships, await currentUserId())).changes)
-    for (const t of live) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
+    const live = tasks.filter((task) => !task.deleted_at)
+    changes.push(...copyTasks(live.filter((tk) => !tk.completed_at), null, assignableIn(null, memberships, await currentUserId())).changes)
+    for (const item of live) changes.push({ entity: 'task', entityId: item.id, patch: { deleted_at: now } })
   }
   const parentId = project?.parent_id ?? null
   for (const p of await liveProjects()) {
@@ -1021,7 +1022,7 @@ export async function restoreTask(id: string): Promise<string> {
   if (!task) throw new Error('task not found')
   if (!task.deleted_at) return id
   const all = await db.tasks.toArray()
-  const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t && t.deleted_at === task.deleted_at)]
+  const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((tk) => tk.id === d)).filter((item): item is Task => !!item && item.deleted_at === task.deleted_at)]
   const project = task.project_id ? await db.projects.get(task.project_id) : undefined
   const projectGone = !!project?.deleted_at
   if (projectGone) {
@@ -1032,11 +1033,11 @@ export async function restoreTask(id: string): Promise<string> {
       return ids.get(id) as string
     }
   }
-  const changes: Change[] = subtree.map((t) => ({
-    entity: 'task' as const, entityId: t.id, patch: projectGone ? { deleted_at: null, project_id: null } : { deleted_at: null },
+  const changes: Change[] = subtree.map((tVar) => ({
+    entity: 'task' as const, entityId: tVar.id, patch: projectGone ? { deleted_at: null, project_id: null } : { deleted_at: null },
   }))
   // A task whose parent stays in the Trash is restored at the top level.
-  const parent = task.parent_id ? all.find((t) => t.id === task.parent_id) : undefined
+  const parent = task.parent_id ? all.find((tVar) => tVar.id === task.parent_id) : undefined
   if (projectGone || (parent && parent.deleted_at)) changes[0].patch.parent_id = null
   await mutateMany(changes)
   return id
@@ -1051,7 +1052,7 @@ export async function restoreProject(id: string): Promise<void> {
   if (!project) throw new Error('project not found')
   if (!project.deleted_at) return
   const memberships = await membershipMap()
-  if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can restore a shared project')
+  if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can restore a shared project'))
   await mutate('project', id, { deleted_at: null })
 }
 

@@ -7,6 +7,7 @@ import { mutate } from './ops'
 import { commitFiles, planFiles } from './attachments'
 import { currentUserId } from './sharing'
 import type { Comment, Membership, ProjectMember, ProjectRole } from './types'
+import { t } from './i18n'
 
 /**
  * Create a comment on a task (optionally replying to another). Returns its id.
@@ -16,9 +17,9 @@ import type { Comment, Membership, ProjectMember, ProjectRole } from './types'
 export async function createComment(input: { taskId: string; body: string; parentId?: string | null; mentions?: string[]; files?: File[] }): Promise<string> {
   const body = input.body.trim()
   const files = input.files ?? []
-  if (!body && files.length === 0) throw new Error('a comment needs some text')
+  if (!body && files.length === 0) throw new Error(t('a comment needs some text'))
   const author = await currentUserId()
-  if (!author) throw new Error('sign in to comment')
+  if (!author) throw new Error(t('sign in to comment'))
   const id = crypto.randomUUID()
   // task_id and author_id first: they place and authorize the comment.
   const patch = {
@@ -38,7 +39,7 @@ export async function createComment(input: { taskId: string; body: string; paren
 /** Replace a comment's body (author only) and mark it edited. */
 export async function editComment(id: string, body: string, mentions?: string[]): Promise<void> {
   const text = body.trim()
-  if (!text) throw new Error('a comment needs some text')
+  if (!text) throw new Error(t('a comment needs some text'))
   const patch: Record<string, unknown> = { body: text, edited_at: Date.now() }
   if (mentions) patch.mentions = [...new Set(mentions)]
   await mutate('comment', id, patch)
@@ -95,12 +96,12 @@ export function threadOrder(comments: Comment[]): Thread[] {
   }
   for (const r of replies) threads.get(rootOf(r))?.replies.push(r)
   const out = [...threads.values()].sort((a, b) => byCreation(a.root, b.root))
-  for (const t of out) t.replies.sort(byCreation)
+  for (const item of out) item.replies.sort(byCreation)
   return out
 }
 
 /** A thread is shown unless every comment in it is deleted. */
-export const threadVisible = (t: Thread) => !t.root.deleted_at || t.replies.some((r) => !r.deleted_at)
+export const threadVisible = (item: Thread) => !item.root.deleted_at || item.replies.some((r) => !r.deleted_at)
 
 /** Number of live comments per task id (the indicator on task rows). */
 export async function commentCounts(): Promise<Map<string, number>> {

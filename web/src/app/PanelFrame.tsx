@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { IconButton } from '../ui'
 import { closePanel } from './panel'
 import { useShortcutScope } from './shortcuts'
+import { t } from '../lib/i18n'
 
 export function PanelFrame({ title, children, actions, testId }: { title: string; children: ReactNode; actions?: ReactNode; testId?: string }) {
   // Escape empties the slot (the `panel` scope); an overlay above it keeps its own Escape.
@@ -21,7 +22,7 @@ export function PanelFrame({ title, children, actions, testId }: { title: string
       <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <h2 className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong">{title}</h2>
         {actions}
-        <IconButton icon="x" label="Close" onClick={closePanel} data-overlay-close className="touch-target" />
+        <IconButton icon="x" label={t('Close')} onClick={closePanel} data-overlay-close className="touch-target" />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
     </aside>

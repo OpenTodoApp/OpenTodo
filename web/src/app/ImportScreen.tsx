@@ -14,6 +14,7 @@ import {
 } from '../lib/types'
 import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, msg, translatedMap } from '../lib/i18n'
 
 /** Last fetched job list, kept per device so past summaries stay readable offline. */
 const JOBS_CACHE_KEY = 'opentodo.importJobs'
@@ -21,18 +22,18 @@ const POLL_MS = 800
 /** Rows rendered in the preview table; the totals always count every row. */
 const TABLE_LIMIT = 500
 
-const FORMAT_LABELS: Record<ImportFormat, string> = {
-  opentodo: 'OpenTodo export (JSON)',
-  'todoist-backup': 'Todoist backup (ZIP)',
-  'todoist-csv': 'Todoist project (CSV)',
-  'things-db': 'Things 3 database',
-  'ticktick-csv': 'TickTick backup (CSV)',
-  'linear-csv': 'Linear export (CSV)',
-  'json-items': 'JSON: projects / sections / items',
-  'json-lists': 'JSON: lists of tasks',
-  'json-generic': 'JSON: task list',
+const FORMAT_LABELS = translatedMap<ImportFormat>({
+  opentodo: msg('OpenTodo export (JSON)'),
+  'todoist-backup': msg('Todoist backup (ZIP)'),
+  'todoist-csv': msg('Todoist project (CSV)'),
+  'things-db': msg('Things 3 database'),
+  'ticktick-csv': msg('TickTick backup (CSV)'),
+  'linear-csv': msg('Linear export (CSV)'),
+  'json-items': msg('JSON: projects / sections / items'),
+  'json-lists': msg('JSON: lists of tasks'),
+  'json-generic': msg('JSON: task list'),
   csv: 'CSV',
-}
+})
 
 const OUTCOME_STYLE: Record<ImportRow['outcome'], string> = {
   create: 'text-success',
@@ -99,22 +100,22 @@ export interface ImportViewProps {
   onUndo: (job: ImportJob) => void
 }
 
-function Totals({ t }: { t: ImportPreview['totals'] }) {
+function Totals({ t: item }: { t: ImportPreview['totals'] }) {
   const parts = [
-    `${t.create} to create`, t.update ? `${t.update} to update` : '', `${t.skip} skipped`, `${t.error} with errors`,
-    t.possibleDuplicates ? `${t.possibleDuplicates} possible duplicates` : '',
-    t.newProjects ? `${t.newProjects} new projects` : '', t.newLabels ? `${t.newLabels} new labels` : '',
-    t.newSections ? `${t.newSections} new sections` : '', t.recurring ? `${t.recurring} recurring` : '',
-    t.reminders ? `${t.reminders} reminders` : '', t.deadlines ? `${t.deadlines} with deadlines` : '',
+    t('{n} to create', { n: item.create }), item.update ? t('{n} to update', { n: item.update }) : '', t('{n} skipped', { n: item.skip }), t('{n} with errors', { n: item.error }),
+    item.possibleDuplicates ? t('{n, plural, one {# possible duplicate} other {# possible duplicates}}', { n: item.possibleDuplicates }) : '',
+    item.newProjects ? t('{n, plural, one {# new project} other {# new projects}}', { n: item.newProjects }) : '', item.newLabels ? t('{n, plural, one {# new label} other {# new labels}}', { n: item.newLabels }) : '',
+    item.newSections ? t('{n, plural, one {# new section} other {# new sections}}', { n: item.newSections }) : '', item.recurring ? t('{n} recurring', { n: item.recurring }) : '',
+    item.reminders ? t('{n, plural, one {# reminder} other {# reminders}}', { n: item.reminders }) : '', item.deadlines ? t('{n} with deadlines', { n: item.deadlines }) : '',
   ].filter(Boolean)
-  return <p className="text-body text-muted">{t.rows} rows: {parts.join(' · ')}</p>
+  return <p className="text-body text-muted">{t('{n, plural, one {# row} other {# rows}}: {summary}', { n: item.rows, summary: parts.join(' · ') })}</p>
 }
 
 function jobSummary(j: ImportJob): string {
-  const t = j.totals
+  const item = j.totals
   const base = j.status === 'running'
-    ? `writing ${t.written}/${t.entities}`
-    : `${t.create} created${t.update ? `, ${t.update} updated` : ''}, ${t.skip} skipped, ${t.error} errors`
+    ? `writing ${item.written}/${item.entities}`
+    : `${item.create} created${item.update ? `, ${item.update} updated` : ''}, ${item.skip} skipped, ${item.error} errors`
   return `${FORMAT_LABELS[j.format] ?? j.format} · ${base}`
 }
 
@@ -127,73 +128,71 @@ export function ImportView(p: ImportViewProps) {
   const actionable = p.preview ? p.preview.totals.create + p.preview.totals.update : 0
   return (
     <PageBody width="list" className="space-y-6">
-      <PageHeader title="Import data" help="import" back={{ label: 'Data', href: '/settings/data', onClick: () => navigate({ view: 'settings', section: 'data' }) }} />
+      <PageHeader title={t('Import data')} help="import" back={{ label: t('Data'), href: '/settings/data', onClick: () => navigate({ view: 'settings', section: 'data' }) }} />
       <section>
         <p className="text-body text-muted">
-          Bring in tasks from an OpenTodo export, a CSV file or another task manager's JSON export. You see a preview first;
-          nothing is written until you confirm, and every import can be undone. Import runs on your server, so it needs a connection.
-          Help explains the formats and options.
+          {t('Bring in tasks from an OpenTodo export, a CSV file or another task manager\'s JSON export. You see a preview first; nothing is written until you confirm, and every import can be undone. Import runs on your server, so it needs a connection. Help explains the formats and options.')}
         </p>
       </section>
 
       {p.offline && (
         <p role="status" className="rounded-control border border-warning bg-warning-soft p-3 text-body text-on-warning-soft">
-          You are offline. Import needs a connection to your server; the file picker is disabled until you are back online.
+          {t('You are offline. Import needs a connection to your server; the file picker is disabled until you are back online.')}
         </p>
       )}
 
       <section className="space-y-3">
-        <label className="block text-body font-medium" htmlFor="import-file">File</label>
+        <label className="block text-body font-medium" htmlFor="import-file">{t('File')}</label>
         <input id="import-file" type="file" accept=".json,.csv,.txt,application/json,text/csv" disabled={disabled}
           className="block w-full text-body file:mr-3 file:rounded-control file:border-0 file:bg-sunken file:px-3 file:py-1.5 file:text-body"
           onChange={(e) => p.onPickFile(e.target.files?.[0] ?? null)} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-body">
-            <span className="mb-1 block text-muted">Format</span>
+            <span className="mb-1 block text-muted">{t('Format')}</span>
             <select className="ui-input" value={p.format} disabled={disabled} onChange={(e) => p.onFormat(e.target.value as ImportFormat | '')}>
-              <option value="">Detect automatically{p.preview && !p.format ? ` (${FORMAT_LABELS[p.preview.format]})` : ''}</option>
+              <option value="">{t('Detect automatically')}{p.preview && !p.format ? ` (${FORMAT_LABELS[p.preview.format]})` : ''}</option>
               {IMPORT_FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABELS[f]}</option>)}
             </select>
           </label>
           <div className="text-body">
-            <span className="mb-1 block text-muted" aria-hidden>Tasks without a project go to</span>
-            <ProjectPickerField label="Tasks without a project go to" projects={p.projects} value={o.targetProject || null} disabled={disabled}
+            <span className="mb-1 block text-muted" aria-hidden>{t('Tasks without a project go to')}</span>
+            <ProjectPickerField label={t('Tasks without a project go to')} projects={p.projects} value={o.targetProject || null} disabled={disabled}
               onChange={(id) => p.onOption('targetProject', id ?? '')} rankContext="import.target" />
           </div>
           <label className="text-body">
-            <span className="mb-1 block text-muted">Time zone for date-times with a zone</span>
+            <span className="mb-1 block text-muted">{t('Time zone for date-times with a zone')}</span>
             <input className="ui-input" list="import-zones" value={o.timeZone} disabled={disabled} onChange={(e) => p.onOption('timeZone', e.target.value)} />
             <datalist id="import-zones">{p.zones.map((z) => <option key={z} value={z} />)}</datalist>
           </label>
           <label className="text-body">
-            <span className="mb-1 block text-muted">Sections</span>
+            <span className="mb-1 block text-muted">{t('Sections')}</span>
             <select className="ui-input" value={o.sections} disabled={disabled} onChange={(e) => p.onOption('sections', e.target.value as 'section' | 'label' | 'ignore')}>
-              <option value="section">Keep as sections</option>
-              <option value="label">Turn into labels</option>
-              <option value="ignore">Ignore</option>
+              <option value="section">{t('Keep as sections')}</option>
+              <option value="label">{t('Turn into labels')}</option>
+              <option value="ignore">{t('Ignore')}</option>
             </select>
           </label>
           <label className="text-body">
-            <span className="mb-1 block text-muted">Possible duplicates</span>
+            <span className="mb-1 block text-muted">{t('Possible duplicates')}</span>
             <select className="ui-input" value={o.duplicates} disabled={disabled} onChange={(e) => p.onOption('duplicates', e.target.value as 'skip' | 'import')}>
-              <option value="skip">Skip them</option>
-              <option value="import">Import them anyway</option>
+              <option value="skip">{t('Skip them')}</option>
+              <option value="import">{t('Import them anyway')}</option>
             </select>
           </label>
           <label className="text-body">
-            <span className="mb-1 block text-muted">Rows with errors</span>
+            <span className="mb-1 block text-muted">{t('Rows with errors')}</span>
             <select className="ui-input" value={o.errors} disabled={disabled} onChange={(e) => p.onOption('errors', e.target.value as 'skip_rows' | 'abort')}>
-              <option value="skip_rows">Skip those rows</option>
-              <option value="abort">Abort the whole import</option>
+              <option value="skip_rows">{t('Skip those rows')}</option>
+              <option value="abort">{t('Abort the whole import')}</option>
             </select>
           </label>
           {isOwn && (
             <label className="text-body">
-              <span className="mb-1 block text-muted">Items that already exist</span>
+              <span className="mb-1 block text-muted">{t('Items that already exist')}</span>
               <select className="ui-input" value={o.existing} disabled={disabled} onChange={(e) => p.onOption('existing', e.target.value as 'skip' | 'overwrite')}>
-                <option value="skip">Keep mine (skip)</option>
-                <option value="overwrite">Overwrite changed fields</option>
+                <option value="skip">{t('Keep mine (skip)')}</option>
+                <option value="overwrite">{t('Overwrite changed fields')}</option>
               </select>
             </label>
           )}
@@ -201,12 +200,12 @@ export function ImportView(p: ImportViewProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           <button className="ui-btn ui-btn--secondary ui-btn--md" disabled={disabled || !p.fileName} onClick={p.onPreview}>
-            {p.preview ? 'Refresh preview' : 'Preview'}
+            {p.preview ? t('Refresh preview') : t('Preview')}
           </button>
           <button className="ui-btn ui-btn--primary ui-btn--md" disabled={disabled || !p.preview || actionable === 0 || p.job?.status === 'running'} onClick={p.onStart}>
-            Import {actionable} item{actionable === 1 ? '' : 's'}
+            {t('Import {actionable, plural, one {# item} other {# items}}', { actionable })}
           </button>
-          {p.busy && <span className="text-meta text-faint">Working…</span>}
+          {p.busy && <span className="text-meta text-faint">{t('Working…')}</span>}
         </div>
         {p.error && <p role="alert" className="text-body text-danger">{p.error}</p>}
       </section>
@@ -214,7 +213,7 @@ export function ImportView(p: ImportViewProps) {
       {p.job && (
         <section aria-live="polite" className="rounded-control border border-default p-3 text-body">
           <p className="font-medium">
-            {p.job.status === 'running' ? 'Importing…' : p.job.status === 'done' ? 'Import finished' : p.job.status === 'failed' ? 'Import failed' : 'Import undone'}
+            {p.job.status === 'running' ? t('Importing…') : p.job.status === 'done' ? t('Import finished') : p.job.status === 'failed' ? t('Import failed') : t('Import undone')}
           </p>
           <p className="text-muted">{jobSummary(p.job)}</p>
           {p.job.status === 'running' && p.job.totals.entities > 0 && (
@@ -227,32 +226,32 @@ export function ImportView(p: ImportViewProps) {
       {p.preview && (
         <section className="space-y-2">
           <h2 className="font-semibold">
-            Preview · {FORMAT_LABELS[p.preview.format]}{p.preview.version ? ` v${p.preview.version}` : ''}
+            {t('Preview · {format}', { format: FORMAT_LABELS[p.preview.format] })}{p.preview.version ? ` v${p.preview.version}` : ''}
           </h2>
           <Totals t={p.preview.totals} />
           {p.preview.template && (
             <p className="text-body text-muted" data-template-hint>
-              This file is a template. Importing it creates it once, with the ids and dates in the file. To start a fresh copy with dates moved to a start day, use{' '}
-              <button type="button" className="text-accent underline" onClick={requestTemplateDialog}>From a template…</button>
+              {t('This file is a template. Importing it creates it once, with the ids and dates in the file. To start a fresh copy with dates moved to a start day, use')}{' '}
+              <button type="button" className="text-accent underline" onClick={requestTemplateDialog}>{t('From a template…')}</button>
             </p>
           )}
           {p.preview.notes?.filter((n) => !(p.preview?.template && n.startsWith('This file is a template'))).map((n) => <p key={n} className="text-body text-warning">{n}</p>)}
           {p.preview.columns && (
             <p className="text-meta text-muted">
-              Columns used: {p.preview.columns.recognised.join(', ') || 'none'}
-              {p.preview.columns.ignored.length > 0 && <> · ignored: {p.preview.columns.ignored.join(', ')}</>}
+              {t('Columns used:')}{' '}{p.preview.columns.recognised.join(', ') || t('none')}
+              {p.preview.columns.ignored.length > 0 && <>{' '}{t('· ignored: {columns}', { columns: p.preview.columns.ignored.join(', ') })}</>}
             </p>
           )}
           <div className="max-h-[50dvh] overflow-auto rounded-control border border-default" data-scroll-x>
             <table className="w-full text-left text-body">
               <thead className="sticky top-0 bg-canvas text-meta text-muted">
-                <tr><th className="px-2 py-1">Row</th><th className="px-2 py-1">Title</th><th className="px-2 py-1">Project</th><th className="px-2 py-1">Outcome</th><th className="px-2 py-1">Details</th></tr>
+                <tr><th className="px-2 py-1">{t('Row')}</th><th className="px-2 py-1">{t('Title')}</th><th className="px-2 py-1">{t('Project')}</th><th className="px-2 py-1">{t('Outcome')}</th><th className="px-2 py-1">{t('Details')}</th></tr>
               </thead>
               <tbody>
                 {p.preview.rows.slice(0, TABLE_LIMIT).map((r, i) => (
                   <tr key={`${r.sourceId ?? ''}-${i}`} className="border-t border-default align-top">
                     <td className="px-2 py-1 text-meta text-faint">{r.file ? `${r.file}:${r.row ?? ''}` : r.row ?? r.sourceId}</td>
-                    <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-meta text-faint">{r.kind}</span>}{r.title || <em className="text-faint">untitled</em>}</td>
+                    <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-meta text-faint">{r.kind}</span>}{r.title || <em className="text-faint">{t('untitled')}</em>}</td>
                     <td className="px-2 py-1 text-muted">{r.project}</td>
                     <td className={`px-2 py-1 font-medium ${OUTCOME_STYLE[r.outcome]}`}>{r.outcome}</td>
                     <td className="px-2 py-1 text-meta text-muted">
@@ -265,15 +264,15 @@ export function ImportView(p: ImportViewProps) {
             </table>
           </div>
           {(p.preview.truncated || p.preview.rows.length > TABLE_LIMIT) && (
-            <p className="text-meta text-faint">Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.</p>
+            <p className="text-meta text-faint">{t('Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.')}</p>
           )}
         </section>
       )}
 
       <section className="space-y-2">
-        <h2 className="font-semibold">Past imports</h2>
-        {p.jobs === null && (p.offline ? <p className="text-body text-faint">No imports loaded yet.</p> : <Skeleton shape="line" count={3} label="Loading past imports" />)}
-        {p.jobs && p.jobs.length === 0 && <p className="text-body text-faint">No imports yet.</p>}
+        <h2 className="font-semibold">{t('Past imports')}</h2>
+        {p.jobs === null && (p.offline ? <p className="text-body text-faint">{t('No imports loaded yet.')}</p> : <Skeleton shape="line" count={3} label={t('Loading past imports')} />)}
+        {p.jobs && p.jobs.length === 0 && <p className="text-body text-faint">{t('No imports yet.')}</p>}
         <ul className="divide-y divide-(--ot-border)">
           {p.jobs?.map((j) => (
             <li key={j.id} className="flex items-center gap-3 py-2 text-body">
@@ -285,7 +284,7 @@ export function ImportView(p: ImportViewProps) {
                 <p className="truncate text-meta text-muted">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>
               </div>
               {(j.status === 'done' || j.status === 'failed') && (
-                <button className="ui-btn ui-btn--danger ui-btn--sm text-meta" disabled={disabled} onClick={() => p.onUndo(j)}>Undo</button>
+                <button className="ui-btn ui-btn--danger ui-btn--sm text-meta" disabled={disabled} onClick={() => p.onUndo(j)}>{t('Undo')}</button>
               )}
             </li>
           ))}
@@ -340,7 +339,7 @@ export function ImportScreen() {
   }
 
   function describe(err: unknown): string {
-    if (isNetworkError(err)) return 'The server could not be reached. Import needs a connection.'
+    if (isNetworkError(err)) return t('The server could not be reached. Import needs a connection.')
     return (err as ApiError).message
   }
 
@@ -397,7 +396,7 @@ export function ImportScreen() {
 
   async function undo(j: ImportJob) {
     const created = j.totals.create + j.totals.newProjects + j.totals.newLabels
-    if (!window.confirm(`Undo this import? The ${created} item(s) it created will be deleted on every device. Items it updated are kept.`)) return
+    if (!window.confirm(t('{n, plural, one {Undo this import? The # item it created will be deleted on every device. Items it updated are kept.} other {Undo this import? The # items it created will be deleted on every device. Items it updated are kept.}}', { n: created }))) return
     setBusy(true)
     setError(null)
     try {

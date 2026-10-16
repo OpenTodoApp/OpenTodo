@@ -9,6 +9,7 @@
 import { occurrenceId } from './ids'
 import { parseRule, type Rule } from './recurrence'
 import type { Task } from './types'
+import { t } from './i18n'
 
 export type DayState = 'blank' | 'done' | 'skipped' | 'missed' | 'pending' | 'upcoming'
 
@@ -116,10 +117,10 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
 /** The occurrence records of a series by date: done or skipped. Detached copies and reopened records are not records. */
 export function recordsByDate(seriesId: string, tasks: Iterable<Task>): Map<string, 'done' | 'skipped'> {
   const out = new Map<string, 'done' | 'skipped'>()
-  for (const t of tasks) {
-    if (t.series_id !== seriesId || !t.completed_at || t.deleted_at || !t.due) continue
-    if (t.id !== occurrenceId(seriesId, t.due.date)) continue
-    out.set(t.due.date, t.skipped ? 'skipped' : 'done')
+  for (const task of tasks) {
+    if (task.series_id !== seriesId || !task.completed_at || task.deleted_at || !task.due) continue
+    if (task.id !== occurrenceId(seriesId, task.due.date)) continue
+    out.set(task.due.date, task.skipped ? 'skipped' : 'done')
   }
   return out
 }
@@ -201,24 +202,24 @@ export function habitStats(series: Task, tasks: Iterable<Task>, today: string): 
  */
 export function habitStatsMap(tasks: readonly Task[], today: string): Map<string, HabitStats> {
   const bySeries = new Map<string, Task[]>()
-  for (const t of tasks) {
-    if (!t.series_id) continue
-    const list = bySeries.get(t.series_id)
-    if (list) list.push(t)
-    else bySeries.set(t.series_id, [t])
+  for (const task of tasks) {
+    if (!task.series_id) continue
+    const list = bySeries.get(task.series_id)
+    if (list) list.push(task)
+    else bySeries.set(task.series_id, [task])
   }
   const out = new Map<string, HabitStats>()
-  for (const t of tasks) {
-    if (!t.habit || t.completed_at || t.deleted_at) continue
-    const stats = habitStats(t, bySeries.get(t.id) ?? [], today)
-    if (stats) out.set(t.id, stats)
+  for (const tk of tasks) {
+    if (!tk.habit || tk.completed_at || tk.deleted_at) continue
+    const stats = habitStats(tk, bySeries.get(tk.id) ?? [], today)
+    if (stats) out.set(tk.id, stats)
   }
   return out
 }
 
 /** The streak chip's accessible name: "12-day streak", with "at risk" when the day has passed. */
 export function streakLabel(stats: HabitStats): string {
-  return `${stats.current}-day streak${stats.atRisk ? ', at risk' : ''}`
+  return stats.atRisk ? t('{n}-day streak, at risk', { n: stats.current }) : t('{n}-day streak', { n: stats.current })
 }
 
 /**

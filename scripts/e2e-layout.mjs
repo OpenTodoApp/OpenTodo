@@ -22,7 +22,9 @@
 // ENGINES (default chromium,webkit), WIDTHS (default 360,390,768), THEMES
 // (default light,dark), ONLY (comma-separated screen names), CONCURRENCY
 // (default 3), SHOTS=all (also save a screenshot of every screen and overlay),
-// CHROMIUM_PATH / WEBKIT_PATH (optional executables).
+// CHROMIUM_PATH / WEBKIT_PATH (optional executables), OPENTODO_LANG (an interface
+// language such as de: the synced preference is written before capturing, and
+// signed-out screens start in it too; OpenSpec change app-localization 11.1).
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -58,6 +60,7 @@ const THEMES = (process.env.THEMES ?? 'light,dark').split(',')
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
+const LANG = process.env.OPENTODO_LANG ?? ''
 const PASSWORD = 'correct horse battery staple'
 const MIN_TARGET = 44
 mkdirSync(outDir, { recursive: true })
@@ -159,6 +162,11 @@ async function seed() {
     providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
   await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
   await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(Date.now() - 2 * 86400e3).toISOString().slice(0, 10) } })
+  if (LANG) {
+    // The interface language is a synced preference (user_prefs.language); written
+    // like any device would, so every screen of the run opens in it.
+    await A('POST', '/api/v1/sync', { device: 'layout-check', cursor: 0, ops: [{ id: `lang-${Date.now()}`, entity: 'user_prefs', entityId: 'me', field: 'language', value: LANG, ts: Date.now(), device: 'layout-check' }] })
+  }
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
@@ -746,6 +754,8 @@ async function runCombo(engine, width, theme, ids) {
   try {
     const anonCtx = await browser.newContext(ctxOpts)
     const ctx = await browser.newContext({ ...ctxOpts, storageState: ids.storageState })
+    // First paint in the chosen language (the device mirror the app keeps), also signed out.
+    if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
     const pageErrors = []

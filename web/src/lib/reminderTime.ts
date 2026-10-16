@@ -3,6 +3,7 @@
 // can use it without a cycle (dates.ts is pure).
 import { isZoned, zonedInstant } from './dates'
 import type { Due, Reminder, Task } from './types'
+import { t, msg, translatedList } from './i18n'
 
 /** Due time assumed for a task that has a date but no time (local wall clock). */
 export const DEFAULT_REMINDER_TIME = '09:00'
@@ -71,32 +72,32 @@ export function snoozeUntil(choice: SnoozeChoice, now: number): number {
 }
 
 /** Presets offered in the detail panel, in minutes relative to the due time. */
-export const RELATIVE_PRESETS: { minutes: number; label: string }[] = [
-  { minutes: 0, label: 'At due time' },
-  { minutes: -10, label: '10 minutes before' },
-  { minutes: -30, label: '30 minutes before' },
-  { minutes: -60, label: '1 hour before' },
-  { minutes: -1440, label: '1 day before' },
-]
+export const RELATIVE_PRESETS: { minutes: number; label: string }[] = translatedList([
+  { minutes: 0, label: msg('At due time') },
+  { minutes: -10, label: msg('10 minutes before') },
+  { minutes: -30, label: msg('30 minutes before') },
+  { minutes: -60, label: msg('1 hour before') },
+  { minutes: -1440, label: msg('1 day before') },
+], 'label')
 
 /** Deadline reminder presets (OpenSpec change `deadlines`): offsets from 09:00 on the deadline. */
-export const DEADLINE_PRESETS: { minutes: number; label: string }[] = [
-  { minutes: 0, label: 'On the deadline' },
-  { minutes: -1440, label: '1 day before the deadline' },
-]
+export const DEADLINE_PRESETS: { minutes: number; label: string }[] = translatedList([
+  { minutes: 0, label: msg('On the deadline') },
+  { minutes: -1440, label: msg('1 day before the deadline') },
+], 'label')
 
 /** Human label of a deadline reminder offset ("On the deadline", "1 day before the deadline"). */
 export function deadlineOffsetLabel(minutes: number | null): string {
-  if ((minutes ?? 0) === 0) return 'On the deadline'
-  return `${offsetLabel(minutes)} the deadline`
+  if ((minutes ?? 0) === 0) return t('On the deadline')
+  return t('{offset} the deadline', { offset: offsetLabel(minutes) })
 }
 
 /** Human label of a relative offset ("30 minutes before", "2 hours after"). */
 export function offsetLabel(minutes: number | null): string {
   const m = minutes ?? 0
-  if (m === 0) return 'At due time'
+  if (m === 0) return t('At due time')
   const abs = Math.abs(m)
   const unit = abs % 1440 === 0 ? [abs / 1440, 'day'] : abs % 60 === 0 ? [abs / 60, 'hour'] : [abs, 'minute']
   const [n, u] = unit as [number, string]
-  return `${n} ${u}${n === 1 ? '' : 's'} ${m < 0 ? 'before' : 'after'}`
+  return t('{unit, select, day {{n, plural, one {# day} other {# days}}} hour {{n, plural, one {# hour} other {# hours}}} other {{n, plural, one {# minute} other {# minutes}}}} {when, select, before {before} other {after}}', { n, unit: u, when: m < 0 ? 'before' : 'after' })
 }

@@ -15,6 +15,7 @@ import {
 } from './crypto'
 import { db, getMeta, setMeta } from './db'
 import type { Entity, EncryptionStatus } from './types'
+import { t, msg } from './i18n'
 
 /** The client's ciphertext-awareness level; the server's minClientVersion is compared with it (design D9). */
 export const CLIENT_VERSION = 1
@@ -54,7 +55,7 @@ export function isContentField(entity: Entity, field: string): boolean {
 }
 
 /** What a field shows when its ciphertext cannot be decrypted with this device's key. */
-export const UNDECRYPTABLE = '[Cannot decrypt]'
+export const UNDECRYPTABLE = msg('[Cannot decrypt]')
 
 const K_ENABLED = 'e2ee.enabled'
 const K_RECORD = 'e2ee.record'
@@ -71,14 +72,14 @@ export const FAILURE_WINDOW_MS = 60_000
 
 export class UnlockThrottledError extends Error {
   constructor(public retryAt: number) {
-    super(`Too many attempts. Try again in ${Math.max(1, Math.ceil((retryAt - Date.now()) / 1000))} seconds.`)
+    super(t('Too many attempts. Try again in {n, plural, one {# second} other {# seconds}}.', { n: Math.max(1, Math.ceil((retryAt - Date.now()) / 1000)) }))
   }
 }
 
 /** Another device created or changed the key record first (409 encryption_conflict). */
 export class EncryptionConflictError extends Error {
   constructor() {
-    super('Encryption was already set up on another device. Unlock with that passphrase instead.')
+    super(t('Encryption was already set up on another device. Unlock with that passphrase instead.'))
   }
 }
 
@@ -214,7 +215,7 @@ export async function adoptProfile(status: EncryptionStatus | undefined, minClie
 // ---- unlock throttling ----
 
 async function checkThrottle(now: number): Promise<number[]> {
-  const recent = (await getMeta<number[]>(K_FAILURES, [])).filter((t) => now - t < FAILURE_WINDOW_MS)
+  const recent = (await getMeta<number[]>(K_FAILURES, [])).filter((item) => now - item < FAILURE_WINDOW_MS)
   if (recent.length >= MAX_FAILURES) throw new UnlockThrottledError(recent[0] + FAILURE_WINDOW_MS)
   return recent
 }
@@ -241,7 +242,7 @@ async function recordForUnlock(): Promise<KeyRecord> {
     // Offline: fall back to the cached record (offline unlock).
   }
   const cached = await cachedRecord()
-  if (!cached) throw new Error('Encryption is not enabled for this account, or the key record is not available offline.')
+  if (!cached) throw new Error(t('Encryption is not enabled for this account, or the key record is not available offline.'))
   return cached
 }
 
@@ -310,7 +311,7 @@ export async function commitEnable({ record, key }: PreparedEnable): Promise<{ d
 /** Change the passphrase: re-wrap only, no content op (design D1). Needs the current passphrase. */
 export async function changePassphrase(current: string, next: string, opts: { iterations?: number } = {}): Promise<void> {
   const record = await refreshFromServer()
-  if (!record) throw new Error('Encryption is not enabled for this account.')
+  if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const rewrapped = await attempt(() => rewrapWithPassphrase(record, current, next, opts))
   const stored = (await putOrConflict(rewrapped)).keys
   await setEnabled(true, stored)
@@ -319,7 +320,7 @@ export async function changePassphrase(current: string, next: string, opts: { it
 /** Reset a forgotten passphrase with the recovery key; returns the new recovery key (the old one stops working). */
 export async function resetPassphrase(recoveryKey: string, next: string, opts: { iterations?: number } = {}): Promise<{ recoveryKey: string }> {
   const record = await refreshFromServer()
-  if (!record) throw new Error('Encryption is not enabled for this account.')
+  if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const reset = await attempt(() => resetWithRecoveryKey(record, recoveryKey, next, opts))
   const stored = (await putOrConflict(reset.record)).keys
   await storeKey(reset.key, stored)
@@ -343,7 +344,7 @@ async function putOrConflict(record: KeyRecord): Promise<{ keys: KeyRecord }> {
  * and re-written; lock() forgets it.
  */
 export async function disableEncryption(): Promise<void> {
-  if (!(await currentKey())) throw new Error('Unlock this device first: content can only be decrypted with the key.')
+  if (!(await currentKey())) throw new Error(t('Unlock this device first: content can only be decrypted with the key.'))
   await api.deleteEncryptionKeys().catch((err) => {
     if (!(err instanceof ApiError && err.status === 404)) throw err
   })

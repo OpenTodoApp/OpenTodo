@@ -4,6 +4,7 @@
 // change: the op is held here, the row stays as edited and unsynced, the rest
 // of the outbox keeps syncing, and held ops are sent again later.
 import { db, getMeta, setMeta } from './db'
+import { t } from './i18n/catalog'
 import type { Op, Rejection } from './types'
 
 const HELD_KEY = 'heldOps'
@@ -19,13 +20,13 @@ export function isLimitReason(reason: string): boolean {
 export function limitMessage(reason: string): string {
   switch (reason) {
     case 'limit_storage':
-      return 'This server is full. Your latest changes stay on this device until there is room: empty the Trash or ask your provider for more space.'
+      return t('This server is full. Your latest changes stay on this device until there is room: empty the Trash or ask your provider for more space.')
     case 'limit_ops_hour':
-      return 'This server reached its limit of changes per hour. Your latest changes stay on this device and upload later.'
+      return t('This server reached its limit of changes per hour. Your latest changes stay on this device and upload later.')
     case 'limit_ops_total':
-      return 'This server reached its limit of stored changes. Your latest changes stay on this device; ask your provider for a larger plan.'
+      return t('This server reached its limit of stored changes. Your latest changes stay on this device; ask your provider for a larger plan.')
   }
-  return 'This server reached a limit. Your latest changes stay on this device and upload later.'
+  return t('This server reached a limit. Your latest changes stay on this device and upload later.')
 }
 
 /** Splits a response's refusals into limit refusals and the rest. */

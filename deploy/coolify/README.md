@@ -7,7 +7,7 @@
 - **Use it now:** in Coolify choose **+ New → Docker Compose** (without a Git repository; "Docker Compose Empty" in older versions), paste `opentodo.yaml`, set the `opentodo` service's domain and click **Deploy**. Then open the domain right away: the first visitor becomes the owner. Details are in [docs/self-hosting/coolify.md](../../docs/self-hosting/coolify.md#one-click-template-pending-in-coolifys-service-list).
 - Or deploy from the repository with `docker-compose.yml` (Option A in the same guide).
 
-What the template does: it pulls the `0.5` image line (patch releases arrive on **Deploy**), routes the domain to port 8080 (`SERVICE_URL_OPENTODO_8080`) and passes it as `OPENTODO_BASE_URL` (secure cookies, passkeys, web push). It keeps sign-up closed, stores everything in one named volume, checks health with `/opentodo healthcheck`, and lists the useful optional variables, with their defaults, in Coolify's Environment Variables tab. No variable is required.
+What the template does: it pulls the `0.6` image line (patch releases arrive on **Deploy**), routes the domain to port 8080 (`SERVICE_URL_OPENTODO_8080`) and passes it as `OPENTODO_BASE_URL` (secure cookies, passkeys, web push). It keeps sign-up closed, stores everything in one named volume, checks health with `/opentodo healthcheck`, and lists the useful optional variables, with their defaults, in Coolify's Environment Variables tab. No variable is required.
 
 ## Files
 

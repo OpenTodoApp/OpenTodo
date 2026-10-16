@@ -7,6 +7,7 @@ import { ListGroupHeader } from '../ui'
 import { navigate } from './router'
 import { ProjectMark } from './Sidebar'
 import { visibleTasks } from '../lib/trash'
+import { t } from '../lib/i18n'
 
 const KEY = 'ot.subprojects.collapsed'
 function readCollapsed(): Set<string> {
@@ -25,7 +26,7 @@ function writeCollapsed(set: Set<string>): void {
  */
 export function SubProjects({ projectId }: { projectId: string }) {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const open = useLiveQuery(() => visibleTasks().then((l) => l.filter((t) => !t.completed_at)), [], [] as Task[])
+  const open = useLiveQuery(() => visibleTasks().then((l) => l.filter((task) => !task.completed_at)), [], [] as Task[])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const children = tree.nodes.get(projectId)?.children ?? []
   const counts = useMemo(() => subtreeOpenCounts(open, tree), [open, tree])
@@ -40,8 +41,8 @@ export function SubProjects({ projectId }: { projectId: string }) {
   }
   if (children.length === 0) return null
   return (
-    <section className="mb-3" aria-label="Sub-projects" data-sub-projects>
-      <ListGroupHeader title="Sub-projects" count={children.length} collapsed={collapsed} onToggle={toggle} />
+    <section className="mb-3" aria-label={t('Sub-projects')} data-sub-projects>
+      <ListGroupHeader title={t('Sub-projects')} count={children.length} collapsed={collapsed} onToggle={toggle} />
       {!collapsed && (
         <ul>
           {children.map((n) => (
@@ -50,7 +51,7 @@ export function SubProjects({ projectId }: { projectId: string }) {
                 className="flex min-h-9 w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised">
                 <span className="flex w-5 shrink-0 items-center justify-center"><ProjectMark project={n.item} /></span>
                 <span className="min-w-0 flex-1 truncate">{n.item.name}</span>
-                <span className="text-meta tabular-nums text-faint" aria-label="Open tasks including sub-projects">{counts.get(n.id) ?? 0}</span>
+                <span className="text-meta tabular-nums text-faint" aria-label={t('Open tasks including sub-projects')}>{counts.get(n.id) ?? 0}</span>
               </button>
             </li>
           ))}

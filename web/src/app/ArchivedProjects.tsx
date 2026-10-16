@@ -8,6 +8,7 @@ import { db } from '../lib/db'
 import { Button } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
+import { t } from '../lib/i18n'
 
 export function ArchivedProjectsSection() {
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])
@@ -44,9 +45,9 @@ export interface ArchivedProjectsListProps {
 export function ArchivedProjectsList({ rows, onRestore, listRef, headingRef }: ArchivedProjectsListProps) {
   return (
     <div className="space-y-2" data-testid="archived-projects">
-      <h3 id="archived-projects" ref={headingRef} tabIndex={-1} className="text-body font-medium text-default outline-none">Archived projects</h3>
+      <h3 id="archived-projects" ref={headingRef} tabIndex={-1} className="text-body font-medium text-default outline-none">{t('Archived projects')}</h3>
       {rows.length === 0 ? (
-        <EmptyState icon="folder" title="No archived projects" body="Archive one from its Project menu; it comes back here with one click." />
+        <EmptyState icon="folder" title={t('No archived projects')} body={t('Archive one from its Project menu; it comes back here with one click.')} />
       ) : (
         <ul ref={listRef} className="-mx-3">
           {rows.map((r, i) => (
@@ -54,9 +55,9 @@ export function ArchivedProjectsList({ rows, onRestore, listRef, headingRef }: A
               <ListRow
                 leading={<span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.project.color }} />}
                 label={r.project.name}
-                meta={<>{r.parentName ? `In ${r.parentName} · ` : ''}{r.open === 1 ? '1 open task' : `${r.open} open tasks`}{!r.canRestore && ' · Only the owner or an admin can restore it'}</>}
+                meta={[r.parentName ? t('In {name}', { name: r.parentName }) : '', t('{n, plural, one {# open task} other {# open tasks}}', { n: r.open }), r.canRestore ? '' : t('Only the owner or an admin can restore it')].filter(Boolean).join(' · ')}
                 menu={(
-                  <Button size="sm" icon="rotate-ccw" data-restore aria-label={`Restore ${r.project.name}`} disabled={!r.canRestore} onClick={() => onRestore(r.project.id, i)}>Restore</Button>
+                  <Button size="sm" icon="rotate-ccw" data-restore aria-label={t('Restore {name}', { name: r.project.name })} disabled={!r.canRestore} onClick={() => onRestore(r.project.id, i)}>{t('Restore')}</Button>
                 )}
               />
             </li>

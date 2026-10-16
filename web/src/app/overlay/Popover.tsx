@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { place } from './position'
 import { trapTab, useWide } from './stack'
 import { isolate, useOverlay } from './useOverlay'
+import { t } from '../../lib/i18n'
 
 export interface PopoverProps {
   open: boolean
@@ -68,8 +69,8 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     if (ro && panel.current) ro.observe(panel.current)
     // Tap outside closes; the trigger toggles on its own.
     const onDown = (e: PointerEvent) => {
-      const t = e.target as Node
-      if (panel.current?.contains(t) || anchor.current?.contains(t)) return
+      const item = e.target as Node
+      if (panel.current?.contains(item) || anchor.current?.contains(item)) return
       onCloseRef.current()
     }
     document.addEventListener('pointerdown', onDown, true)
@@ -102,7 +103,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
           <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2">
             <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
             <h2 className="min-w-0 flex-1 truncate text-body font-semibold">{label}</h2>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-h3 leading-none" aria-label="Close" data-overlay-close
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-h3 leading-none" aria-label={t('Close')} data-overlay-close
               onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}><Icon name="x" size="md" /></button>
           </div>
           <div role={ariaRole === 'menu' ? 'menu' : undefined} aria-label={ariaRole === 'menu' ? label : undefined}

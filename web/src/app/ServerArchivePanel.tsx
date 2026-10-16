@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { Button, Notice, SettingRow, SettingsSection } from '../ui'
+import { t } from '../lib/i18n'
 
 export function ServerArchiveView({ online, busy, error, onDownload }: {
   online: boolean
@@ -14,19 +15,19 @@ export function ServerArchiveView({ online, busy, error, onDownload }: {
   onDownload: () => void
 }) {
   return (
-    <SettingsSection title="Download your data" headingId="server-archive-heading" testId="server-archive"
-      description="Everything on this server — every account, project, task, comment, file and setting — as one backup archive. Restore it into your own OpenTodo server with opentodo restore; devices then sync with the new address.">
-      {!online && <div className="pb-3"><Notice>You are offline. The download needs a connection to the server.</Notice></div>}
-      <SettingRow label="Server archive" description="A compressed archive of the whole server. Keep it private: it contains every account's sign-in data."
-        control={<Button size="sm" disabled={!online} busy={busy} onClick={onDownload}>Download archive</Button>} />
+    <SettingsSection title={t('Download your data')} headingId="server-archive-heading" testId="server-archive"
+      description={t('Everything on this server — every account, project, task, comment, file and setting — as one backup archive. Restore it into your own OpenTodo server with {command}; devices then sync with the new address.', { command: 'opentodo restore' })}>
+      {!online && <div className="pb-3"><Notice>{t('You are offline. The download needs a connection to the server.')}</Notice></div>}
+      <SettingRow label={t('Server archive')} description={t('A compressed archive of the whole server. Keep it private: it contains every account’s sign-in data.')}
+        control={<Button size="sm" disabled={!online} busy={busy} onClick={onDownload}>{t('Download archive')}</Button>} />
       {error && <p className="pt-2 text-meta text-danger" role="alert">{error}</p>}
     </SettingsSection>
   )
 }
 
 export function archiveErrorMessage(err: unknown): string {
-  if (isNetworkError(err)) return 'Your server cannot be reached. Try again when you are online.'
-  if (err instanceof ApiError && err.code === 'reauth_required') return 'Confirm your password, then download again.'
+  if (isNetworkError(err)) return t('Your server cannot be reached. Try again when you are online.')
+  if (err instanceof ApiError && err.code === 'reauth_required') return t('Confirm your password, then download again.')
   return err instanceof Error ? err.message : String(err)
 }
 

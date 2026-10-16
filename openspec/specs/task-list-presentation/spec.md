@@ -74,11 +74,15 @@ Deleting a task, moving it to another project, changing its date or parking it S
 - **THEN** the task returns to its place with its subtasks and no tombstone remains after sync
 
 ### Requirement: Bulk selection does not shift rows
-The selection checkbox SHALL take the place of the task checkbox while hovering, focusing or ticking a row, so the row does not change width or alignment. On touch devices Select mode SHALL show it in the same place.
+The selection checkbox SHALL take the place of the task checkbox only while a selection is in progress (a row is ticked, or touch Select mode is on), so the row does not change width or alignment. Hover and keyboard focus SHALL NOT replace the task checkbox: clicking it always completes or reopens the task.
 
 #### Scenario: Hover a row
-- **WHEN** the pointer enters a row in a project list
-- **THEN** the selection checkbox appears where the task checkbox was and the title does not move
+- **WHEN** nothing is ticked and the pointer enters a row in a project list
+- **THEN** the task checkbox stays in place and the title does not move
+
+#### Scenario: Selection in progress
+- **WHEN** one row is ticked
+- **THEN** every row shows the selection checkbox where the task checkbox was and no title moves
 
 ### Requirement: Drag feedback
 A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change.

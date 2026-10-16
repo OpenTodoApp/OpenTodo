@@ -3,6 +3,7 @@
 // followed by an offset ("30 min before", "1 hour after") or a moment (a time
 // phrase, optionally with a date phrase: "at 9", "tomorrow at 9", "20 Oct at 9").
 // The result is zone free; createTask resolves it against the final due date.
+import { t } from '../i18n/catalog'
 import { matchDuration } from './attributes'
 import { countAt, matchDateAt, matchTimeAt, phraseAt, type DateContext } from './dates'
 import type { Token } from './tokenize'
@@ -57,14 +58,14 @@ function offsetAt(tokens: readonly Token[], k: number, ctx: DateContext): { n: n
 function momentAt(tokens: readonly Token[], k: number, ctx: DateContext): { n: number; date: string | null; time: string } | null {
   const dateFirst = matchDateAt(tokens, k, ctx)
   if (dateFirst) {
-    const t = matchTimeAt(tokens, dateFirst.to, ctx)
-    if (t) return { n: t.to - k, date: dateFirst.date, time: t.time }
+    const item = matchTimeAt(tokens, dateFirst.to, ctx)
+    if (item) return { n: item.to - k, date: dateFirst.date, time: item.time }
   }
-  const t = matchTimeAt(tokens, k, ctx)
-  if (!t) return null
-  const d = matchDateAt(tokens, t.to, ctx)
-  if (d) return { n: d.to - k, date: d.date, time: t.time }
-  return { n: t.to - k, date: t.date ?? null, time: t.time }
+  const entry = matchTimeAt(tokens, k, ctx)
+  if (!entry) return null
+  const d = matchDateAt(tokens, entry.to, ctx)
+  if (d) return { n: d.to - k, date: d.date, time: entry.time }
+  return { n: entry.to - k, date: entry.date ?? null, time: entry.time }
 }
 
 /** The longest reminder phrase at token i; a reminder word alone does not match. */
@@ -121,10 +122,10 @@ export function resolveReminder(r: ReminderPhrase, due: { date: string; time?: s
 
 /** "30 min before", "1 hour after", "2 days before", "at due time" for an offset in minutes. */
 export function describeOffset(minutes: number): string {
-  if (minutes === 0) return 'at due time'
+  if (minutes === 0) return t('at due time')
   const a = Math.abs(minutes)
-  const amount = a % 1440 === 0 ? `${a / 1440} ${a === 1440 ? 'day' : 'days'}`
-    : a % 60 === 0 ? `${a / 60} ${a === 60 ? 'hour' : 'hours'}`
-      : `${a} min`
-  return `${amount} ${minutes < 0 ? 'before' : 'after'}`
+  const before = minutes < 0
+  if (a % 1440 === 0) return before ? t('{n, plural, one {# day before} other {# days before}}', { n: a / 1440 }) : t('{n, plural, one {# day after} other {# days after}}', { n: a / 1440 })
+  if (a % 60 === 0) return before ? t('{n, plural, one {# hour before} other {# hours before}}', { n: a / 60 }) : t('{n, plural, one {# hour after} other {# hours after}}', { n: a / 60 })
+  return before ? t('{n} min before', { n: a }) : t('{n} min after', { n: a })
 }

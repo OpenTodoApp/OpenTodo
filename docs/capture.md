@@ -74,6 +74,8 @@ If nothing happens, the browser blocked the popup: allow pop-ups for the site yo
 
 Each opens your server's capture screen in a popup window with the current tab's address, title and selection.
 
+The extension's own texts (its name in the browser, the menu entries and the options page) follow the browser's interface language in English, German, French, Spanish, Italian and Portuguese, and English otherwise. The capture popup is part of the app and follows your [interface language](language.md).
+
 **Install** (it is not published in the browser stores yet):
 
 - *Chromium*: download `opentodo-browser-extension.zip` from a release (or run `make extension`), unzip it, open `chrome://extensions`, turn on **Developer mode**, **Load unpacked**, pick the unzipped folder.

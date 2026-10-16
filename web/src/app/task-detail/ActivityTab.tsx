@@ -19,6 +19,7 @@ import { EmptyState } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { useFieldDefs } from '../useFields'
 import { RelativeTime } from './RelativeTime'
+import { t } from '../../lib/i18n'
 
 const KIND_ICON: Record<ActivityKind, IconName> = {
   created: 'plus', completed: 'circle-check-big', reopened: 'undo-2', deleted: 'trash-2', restored: 'rotate-ccw', rescheduled: 'calendar-days',
@@ -47,7 +48,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
   const [open, setOpen] = useState(false)
   const first = run.events[0]
   const actor = name(run.actor, first)
-  const pending = run.pending && <Tooltip label="Not yet synced"><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>pending</span></Tooltip>
+  const pending = run.pending && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('pending')}</span></Tooltip>
   if (run.type === 'comment') {
     return (
       <div className="flex items-center gap-3 text-meta text-muted" data-run="comment">
@@ -83,7 +84,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
         <RelativeTime ts={run.ts} now={now} className="shrink-0" />
       </div>
       {many && open && (
-        <ol className="ml-[3.25rem] mt-1.5 space-y-1 border-l-2 border-default pl-3" aria-label="Changes in this group">
+        <ol className="ml-[3.25rem] mt-1.5 space-y-1 border-l-2 border-default pl-3" aria-label={t('Changes in this group')}>
           {run.events.map((ev) => (
             <li key={ev.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={ev.kind}>
               <Icon name={KIND_ICON[ev.kind] ?? 'pencil'} size="xs" className="shrink-0 text-faint" />
@@ -103,21 +104,21 @@ export function ActivityView({ runs, name, project, task, onOpenComment, canLoad
     <div className="space-y-3">
       {times && (
         <p className="text-meta text-faint" data-activity-times>
-          Created {dt.formatInstant(times.created, 'datetime')}
-          {times.completed && <> · Completed {dt.formatInstant(times.completed, 'datetime')}</>}
+          {t('Created {instant}', { instant: dt.formatInstant(times.created, 'datetime') })}
+          {times.completed && ` · ${t('Completed {instant}', { instant: dt.formatInstant(times.completed, 'datetime') })}`}
         </p>
       )}
       {runs.length === 0 ? (
-        <EmptyState icon="history" title="No activity yet" body="Changes to this task show up here, also while offline." />
+        <EmptyState icon="history" title={t('No activity yet')} body={t('Changes to this task show up here, also while offline.')} />
       ) : (
-        <ol className="space-y-3" aria-label="Activity">
+        <ol className="space-y-3" aria-label={t('Activity')}>
           {runs.map((r) => <li key={r.id}><RunItem run={r} name={name} project={project} task={task} onOpenComment={onOpenComment} now={now} /></li>)}
         </ol>
       )}
       {canLoadOlder && (
-        <Button variant="ghost" size="sm" busy={loadState === 'loading'} onClick={onLoadOlder}>Load older activity</Button>
+        <Button variant="ghost" size="sm" busy={loadState === 'loading'} onClick={onLoadOlder}>{t('Load older activity')}</Button>
       )}
-      {loadState === 'error' && <p role="alert" className="text-meta text-danger">Older activity could not be loaded.</p>}
+      {loadState === 'error' && <p role="alert" className="text-meta text-danger">{t('Older activity could not be loaded.')}</p>}
     </div>
   )
 }
@@ -145,15 +146,15 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   }, [task.id])
 
   const name = useCallback((id: string, ev?: ActivityEvent) => {
-    if (isPublicEvent(ev)) return PUBLIC_ACTOR_LABEL
-    if (id && id === me) return 'You'
-    return memberName(id, memberships) ?? (ev?.actorName || older.find((e) => e.actor === id && e.actorName)?.actorName) ?? 'Someone'
+    if (isPublicEvent(ev)) return t(PUBLIC_ACTOR_LABEL)
+    if (id && id === me) return t('You')
+    return memberName(id, memberships) ?? (ev?.actorName || older.find((e) => e.actor === id && e.actorName)?.actorName) ?? t('Someone')
   }, [me, memberships, older])
-  const project = useCallback((id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? 'another project' : 'Inbox'), [projects])
+  const project = useCallback((id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? t('another project') : t('Inbox')), [projects])
   const runs = useMemo(() => groupRuns(mergeOlder(local, older), { pending }), [local, older, pending])
   // Titles for the tasks a dependencies event names (task-dependencies D8).
   const named = useMemo(() => [...new Set([...local, ...older].flatMap((e) => e.changes.filter((c) => c.field === 'blocked_by').flatMap((c) => (Array.isArray(c.to) ? c.to as string[] : []))))], [local, older])
-  const titles = useLiveQuery(async () => new Map((await db.tasks.bulkGet(named)).filter((t): t is Task => !!t).map((t) => [t.id, t.title])), [named], new Map<string, string>())
+  const titles = useLiveQuery(async () => new Map((await db.tasks.bulkGet(named)).filter((tk): tk is Task => !!tk).map((item) => [item.id, item.title])), [named], new Map<string, string>())
   const taskTitle = useCallback((id: string) => titles.get(id), [titles])
 
   async function loadOlder() {

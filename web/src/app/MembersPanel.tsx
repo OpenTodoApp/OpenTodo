@@ -19,6 +19,7 @@ import type { HueName } from '../ui'
 import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
 
 const EXPIRY_OPTIONS: [number, string][] = [
   [1, '1 hour'],
@@ -29,10 +30,10 @@ const EXPIRY_OPTIONS: [number, string][] = [
 ]
 
 const STATUS: Record<InvitationStatus, { label: string; hue: HueName }> = {
-  pending: { label: 'Pending', hue: 'yellow' },
-  accepted: { label: 'Accepted', hue: 'green' },
-  expired: { label: 'Expired', hue: 'slate' },
-  revoked: { label: 'Revoked', hue: 'red' },
+  pending: { get label() { return t('Pending') }, hue: 'yellow' },
+  accepted: { get label() { return t('Accepted') }, hue: 'green' },
+  expired: { get label() { return t('Expired') }, hue: 'slate' },
+  revoked: { get label() { return t('Revoked') }, hue: 'red' },
 }
 
 /**
@@ -96,7 +97,7 @@ export function MembersPanel() {
       setCopied(id)
       setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500)
     } catch {
-      setError('Could not access the clipboard; select the link and copy it manually.')
+      setError(t('Could not access the clipboard; select the link and copy it manually.'))
     }
   }
 
@@ -121,8 +122,8 @@ export function MembersPanel() {
           onCreate={(input) => void create(input)} onCopy={() => { if (creating.id) void copy(creating.id) }} onClose={() => { setCreating(null); setSentTo(null) }} />
       )}
       {revoking && (
-        <ConfirmDialog title={`Revoke the invitation${revoking.email ? ` for ${revoking.email}` : ''}?`} confirmLabel="Revoke"
-          consequence="The link stops working. Nobody can create an account with it." onConfirm={() => revoke(revoking)} onCancel={() => setRevoking(null)} />
+        <ConfirmDialog title={(revoking.email ? t('Revoke the invitation for {email}?', { email: revoking.email }) : t('Revoke the invitation?'))} confirmLabel={t('Revoke')}
+          consequence={t('The link stops working. Nobody can create an account with it.')} onConfirm={() => revoke(revoking)} onCancel={() => setRevoking(null)} />
       )}
     </>
   )
@@ -161,33 +162,33 @@ export function MembersView(p: MembersViewProps) {
   }
 
   return (
-    <SettingsSection title="Members" headingId="members-heading"
-      description="Invite someone with a single-use link. Sign-up stays closed for everyone else.">
-      {p.offline && <Notice>You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.</Notice>}
-      <SettingRow label="Invitations" status={p.invitations ? <span data-testid="invitations-summary">{pending} pending</span> : undefined}
-        description="Optionally bind a link to someone's email so only they can use it."
-        control={<Button variant="primary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
+    <SettingsSection title={t('Members')} headingId="members-heading"
+      description={t('Invite someone with a single-use link. Sign-up stays closed for everyone else.')}>
+      {p.offline && <Notice>{t('You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.')}</Notice>}
+      <SettingRow label={t('Invitations')} status={p.invitations ? <span data-testid="invitations-summary">{t('{pending} pending', { pending })}</span> : undefined}
+        description={t('Optionally bind a link to someone\'s email so only they can use it.')}
+        control={<Button variant="primary" icon="plus" disabled={disabled} onClick={p.onNew}>{t('New invitation')}</Button>} />
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {p.invitations && p.invitations.length > 0 && (
-        <ul className="-mx-3 py-2" aria-label="Invitations">
+        <ul className="-mx-3 py-2" aria-label={t('Invitations')}>
           {p.invitations.map((inv) => {
-            const who = inv.email ?? 'Anyone with the link'
+            const who = inv.email ?? t('Anyone with the link')
             const canCopy = !!p.links[inv.id] && inv.status === 'pending'
             return (
               <li key={inv.id} data-invitation={inv.id}>
                 <ListRow
                   leading={<Icon name={inv.status === 'accepted' ? 'user-check' : 'link'} size="md" />}
-                  label={<>{who}{inv.acceptedBy && <span className="text-muted"> · joined as {inv.acceptedBy.name || inv.acceptedBy.email}</span>}</>}
-                  ariaLabel={`Invitation ${inv.email ?? 'open'}, ${inv.status}`}
-                  meta={`${inv.status === 'pending' ? `Expires ${dt.formatInstant(inv.expiresAt, 'datetime')}` : `Created ${dt.formatInstant(inv.createdAt, 'date')}`}${inv.createdByName ? ` · by ${inv.createdByName}` : ''}`}
+                  label={<>{who}{inv.acceptedBy && <span className="text-muted">{' '}{t('· joined as {name}', { name: inv.acceptedBy.name || inv.acceptedBy.email })}</span>}</>}
+                  ariaLabel={t('Invitation {who}, {status}', { who: inv.email ?? t('open'), status: STATUS[inv.status].label })}
+                  meta={[inv.status === 'pending' ? t('Expires {instant}', { instant: dt.formatInstant(inv.expiresAt, 'datetime') }) : t('Created {instant}', { instant: dt.formatInstant(inv.createdAt, 'date') }), inv.createdByName ? t('by {name}', { name: inv.createdByName }) : ''].filter(Boolean).join(' · ')}
                   badges={<Badge hue={STATUS[inv.status].hue}>{STATUS[inv.status].label}</Badge>}
                   onKeyDown={(e) => onRowKey(e, inv)}
                   menu={inv.status === 'pending' && (
-                    <Menu label={`Actions for the invitation ${who}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
-                      {canCopy && <MenuItem label={p.copied === inv.id ? 'Copied' : 'Copy link'} icon="copy" shortcut="Enter" onSelect={() => p.onCopy(inv.id)} />}
+                    <Menu label={t('Actions for the invitation {who}', { who })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                      {canCopy && <MenuItem label={p.copied === inv.id ? t('Copied') : t('Copy link')} icon="copy" shortcut="Enter" onSelect={() => p.onCopy(inv.id)} />}
                       {canCopy && <MenuSeparator />}
-                      <MenuItem label="Revoke" icon="x" shortcut="Del" danger disabled={disabled} onSelect={() => p.onRevoke(inv)} />
+                      <MenuItem label={t('Revoke')} icon="x" shortcut="Del" danger disabled={disabled} onSelect={() => p.onRevoke(inv)} />
                     </Menu>
                   )}
                 />
@@ -197,11 +198,11 @@ export function MembersView(p: MembersViewProps) {
         </ul>
       )}
       {p.invitations && p.invitations.length === 0 && (
-        <EmptyState icon="link" title="No invitations yet" body="An invitation is a single-use link that lets one person create an account here."
-          action={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
+        <EmptyState icon="link" title={t('No invitations yet')} body={t('An invitation is a single-use link that lets one person create an account here.')}
+          action={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>{t('New invitation')}</Button>} />
       )}
-      {p.invitations === null && (p.offline ? <p className="py-2 text-meta text-faint">Nothing fetched yet.</p> : <Skeleton shape="line" count={3} label="Loading invitations" />)}
-      <p className="pt-2 text-meta text-faint">Keyboard, with a row focused: copy a link created in this session with <Kbd k="Enter" />, revoke a pending invitation with <Kbd k="Delete" />.</p>
+      {p.invitations === null && (p.offline ? <p className="py-2 text-meta text-faint">{t('Nothing fetched yet.')}</p> : <Skeleton shape="line" count={3} label={t('Loading invitations')} />)}
+      <p className="pt-2 text-meta text-faint">{t.rich('Keyboard, with a row focused: copy a link created in this session with {kbd}, revoke a pending invitation with {kbd2}.', { kbd: <Kbd k="Enter" />, kbd2: <Kbd k="Delete" /> })}</p>
     </SettingsSection>
   )
 }
@@ -231,38 +232,38 @@ export function NewInvitationDialog({ busy, offline, error, mail = false, sentTo
     onCreate({ email, hours, send: canSend && send })
   }
   return (
-    <Dialog title={link ? 'Invitation created' : 'New invitation'} onClose={onClose} size="md" dismissable={!link}>
+    <Dialog title={link ? t('Invitation created') : t('New invitation')} onClose={onClose} size="md" dismissable={!link}>
       {link ? (
         <div className="space-y-4">
-          {sentTo && <Notice tone="success">The invitation was sent to {sentTo}.</Notice>}
-          <Notice tone="success">Copy this link now. It will not be shown again.</Notice>
+          {sentTo && <Notice tone="success">{t('The invitation was sent to {sentTo}.', { sentTo })}</Notice>}
+          <Notice tone="success">{t('Copy this link now. It will not be shown again.')}</Notice>
           <code className="block break-all rounded-control bg-sunken p-3 text-meta text-default" tabIndex={0}
             onFocus={(e) => window.getSelection()?.selectAllChildren(e.currentTarget)}>{link}</code>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" icon="copy" onClick={onCopy}>{copied ? 'Copied' : 'Copy link'}</Button>
-            <Button variant="primary" onClick={onClose}>Done</Button>
+            <Button variant="secondary" icon="copy" onClick={onCopy}>{copied ? t('Copied') : t('Copy link')}</Button>
+            <Button variant="primary" onClick={onClose}>{t('Done')}</Button>
           </div>
         </div>
       ) : (
         <form onSubmit={submit} className="space-y-4">
-          <Field label="Email (optional)" description="Only this person can use the link. Leave empty for anyone with the link.">
-            <Input type="email" placeholder="friend@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={offline || busy} autoComplete="off" data-autofocus />
+          <Field label={t('Email (optional)')} description={t('Only this person can use the link. Leave empty for anyone with the link.')}>
+            <Input type="email" placeholder={t('friend@example.com')} value={email} onChange={(e) => setEmail(e.target.value)} disabled={offline || busy} autoComplete="off" data-autofocus />
           </Field>
           {canSend && (
             <label className="flex items-center gap-2 text-body text-default">
               <input type="checkbox" checked={send} onChange={(e) => setSend(e.target.checked)} disabled={offline || busy} data-send-by-email />
-              Send by email
+              {t('Send by email')}
             </label>
           )}
-          <Field label="Expires in">
+          <Field label={t('Expires in')}>
             <Select value={hours} onChange={(e) => setHours(Number(e.target.value))} disabled={offline || busy}>
               {EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
             </Select>
           </Field>
           {error && <Notice tone="danger">{error}</Notice>}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={offline} busy={busy}>Create invitation</Button>
+            <Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button>
+            <Button type="submit" variant="primary" disabled={offline} busy={busy}>{t('Create invitation')}</Button>
           </div>
         </form>
       )}
@@ -272,11 +273,11 @@ export function NewInvitationDialog({ busy, offline, error, mail = false, sentTo
 
 function describe(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.code === 'rate_limited') return 'Too many invitations created recently. Try again later.'
-    if (err.code === 'invitation_spent') return 'This invitation was already accepted and cannot be revoked.'
-    if (err.code === 'email_failed') return `The email could not be sent, so no invitation was created (${err.message}). Turn off “Send by email” to create a link to share yourself.`
-    if (err.code === 'smtp_disabled') return 'This server no longer sends email. Turn off “Send by email” to create a link to share yourself.'
+    if (err.code === 'rate_limited') return t('Too many invitations created recently. Try again later.')
+    if (err.code === 'invitation_spent') return t('This invitation was already accepted and cannot be revoked.')
+    if (err.code === 'email_failed') return t('The email could not be sent, so no invitation was created ({reason}). Turn off “Send by email” to create a link to share yourself.', { reason: err.message })
+    if (err.code === 'smtp_disabled') return t('This server no longer sends email. Turn off “Send by email” to create a link to share yourself.')
     return err.message
   }
-  return 'The server is unreachable. Invitations need a connection.'
+  return t('The server is unreachable. Invitations need a connection.')
 }

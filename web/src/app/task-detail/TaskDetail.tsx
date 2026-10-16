@@ -24,6 +24,7 @@ import { AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
 import { FieldsGroup } from './FieldsGroup'
 import { Properties } from './Properties'
+import { t } from '../../lib/i18n'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
 // note is first opened (collaborative-rich-text, task 3.1).
@@ -56,7 +57,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const [copied, setCopied] = useState(false)
 
   const children = useLiveQuery(
-    () => db.tasks.where('parent_id').equals(taskId).filter((t) => !t.deleted_at).sortBy('position'),
+    () => db.tasks.where('parent_id').equals(taskId).filter((tk) => !tk.deleted_at).sortBy('position'),
     [taskId], [] as Task[],
   )
   const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
@@ -92,24 +93,24 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 
   const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
   const swipe = useRef<{ x: number; y: number } | null>(null)
-  const onSwipeStart = (e: TouchEvent<HTMLElement>) => { const t = e.touches[0]; swipe.current = t ? { x: t.clientX, y: t.clientY } : null }
+  const onSwipeStart = (e: TouchEvent<HTMLElement>) => { const item = e.touches[0]; swipe.current = item ? { x: item.clientX, y: item.clientY } : null }
   const onSwipeEnd = (e: TouchEvent<HTMLElement>) => {
-    const s = swipe.current, t = e.changedTouches[0]
+    const s = swipe.current, entry = e.changedTouches[0]
     swipe.current = null
-    if (s && t && t.clientY - s.y > 80 && Math.abs(t.clientX - s.x) < 60) onClose()
+    if (s && entry && entry.clientY - s.y > 80 && Math.abs(entry.clientX - s.x) < 60) onClose()
   }
 
   if (!task) return null
 
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
-  const breakDown = () => openAssistantWith({ skill: 'break-down', text: `Break down “${task.title}”`, selected: [task.id] })
+  const breakDown = () => openAssistantWith({ skill: 'break-down', text: t('Break down “{title}”', { title: task.title }), selected: [task.id] })
 
   const commitTitle = () => {
-    const t = title.trim()
-    if (t && t !== task.title) void updateTask(task.id, { title: t })
+    const x1 = title.trim()
+    if (x1 && x1 !== task.title) void updateTask(task.id, { title: x1 })
     else setTitle(task.title)
   }
-  const toggle = (t: Task) => (onToggleComplete ? onToggleComplete(t) : void completeWithUndo(t.id, !t.completed_at))
+  const toggle = (task: Task) => (onToggleComplete ? onToggleComplete(task) : void completeWithUndo(task.id, !task.completed_at))
   const remove = () => { void deleteWithUndo(task.id); onClose() }
   const copyLink = () => {
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
@@ -126,8 +127,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
       <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
         onTouchStart={page ? undefined : onSwipeStart} onTouchEnd={page ? undefined : onSwipeEnd}>
         {/* Below 768 px the panel is a full-screen sheet (app-shell "Panel width and expansion"): Back, or a swipe down on the header, closes it. */}
-        {(page || phone) && <IconButton icon="arrow-left" label="Back to the list" onClick={onClose} data-task-back className="touch-target" />}
-        <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
+        {(page || phone) && <IconButton icon="arrow-left" label={t('Back to the list')} onClick={onClose} data-task-back className="touch-target" />}
+        <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
           className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
           <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${ring} ${done ? 'bg-faint border-input text-on-accent' : 'hover:bg-success-soft'}`}>
             {done && <Icon name="check" size="xs" />}
@@ -140,43 +141,43 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commitTitle}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-          aria-label="Title"
-          placeholder="Untitled"
+          aria-label={t('Title')}
+          placeholder={t('Untitled')}
         />
-        {progress.total > 0 && <Badge hue="slate" title="Completed subtasks">{progress.done}/{progress.total}</Badge>}
-        {copied && <span role="status" className="text-meta text-muted">Link copied</span>}
-        <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
-          <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
-          <MenuItem label="Help" icon="circle-help" description="The guide to the task panel" onSelect={() => openHelp('task-panel')} />
-          {!page && <MenuItem label="Expand" icon="external-link" description="Open the task as a page" onSelect={() => navigate({ view: 'task', id: task.id })} />}
-          {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
-          {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
-          {!readOnly && <MenuItem label="Duplicate" icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
-          {!readOnly && assistant?.available && <MenuItem label="Break this down" icon="list" onSelect={breakDown} />}
+        {progress.total > 0 && <Badge hue="slate" title={t('Completed subtasks')}>{progress.done}/{progress.total}</Badge>}
+        {copied && <span role="status" className="text-meta text-muted">{t('Link copied')}</span>}
+        <Menu kind="menu" label={t('Task actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
+          <MenuItem label={t('Copy link')} icon="link" onSelect={copyLink} />
+          <MenuItem label={t('Help')} icon="circle-help" description={t('The guide to the task panel')} onSelect={() => openHelp('task-panel')} />
+          {!page && <MenuItem label={t('Expand')} icon="external-link" description={t('Open the task as a page')} onSelect={() => navigate({ view: 'task', id: task.id })} />}
+          {parent && <MenuItem label={t('Open parent task')} icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
+          {series && <MenuItem label={t('Open recurring task')} icon="repeat" onSelect={() => onOpen?.(series.id)} />}
+          {!readOnly && <MenuItem label={t('Duplicate')} icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
+          {!readOnly && assistant?.available && <MenuItem label={t('Break this down')} icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
-          {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}
+          {!readOnly && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={remove} />}
         </Menu>
-        {!page && <IconButton icon="x" label="Close" onClick={onClose} data-overlay-close className="touch-target" />}
+        {!page && <IconButton icon="x" label={t('Close')} onClick={onClose} data-overlay-close className="touch-target" />}
       </div>
       {readOnly && (
         <p role="note" className="border-b border-default bg-sunken px-4 py-2 text-meta text-muted">
-          Read-only: you are a viewer of this shared project. You can still comment.
+          {t('Read-only: you are a viewer of this shared project. You can still comment.')}
         </p>
       )}
       <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'}>
         <div className="min-w-0 space-y-4 p-4">
           {parent && (
-            <Tooltip label="Open parent task">
+            <Tooltip label={t('Open parent task')}>
               <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)}>
-                <Icon name="corner-down-right" />{parent.title || 'Untitled'}
-                {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
+                <Icon name="corner-down-right" />{parent.title || t('Untitled')}
+                {parent.deleted_at ? ` ${t('(deleted)')}` : parent.completed_at && !task.completed_at ? ` ${t('(completed)')}` : ''}
               </button>
             </Tooltip>
           )}
           {series && (
-            <Tooltip label="Open the recurring task">
+            <Tooltip label={t('Open the recurring task')}>
               <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(series.id)}>
-                <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
+                <Icon name="repeat" />{task.completed_at ? t('Completed occurrence of {title}', { title: series.title || t('Untitled') }) : t('Single occurrence of {title}', { title: series.title || t('Untitled') })}{series.deleted_at ? ` ${t('(deleted)')}` : ''}
               </button>
             </Tooltip>
           )}
@@ -193,18 +194,18 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           <FieldsGroup task={task} readOnly={readOnly} />
 
           {/* Subtasks as a checklist with a quiet add line (ux-overhaul, "Task panel layout"). */}
-          <section aria-label="Subtasks" data-subtasks>
+          <section aria-label={t('Subtasks')} data-subtasks>
             {children.length > 0 && (
               <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
-                <Icon name="list" className="text-faint" />Subtasks<span className="font-normal text-faint">{progress.done}/{progress.total}</span>
+                <Icon name="list" className="text-faint" />{t('Subtasks')}<span className="font-normal text-faint">{progress.done}/{progress.total}</span>
               </h3>
             )}
-            <ul className="space-y-0.5 empty:hidden" aria-label="Subtasks">
+            <ul className="space-y-0.5 empty:hidden" aria-label={t('Subtasks')}>
               {children.map((c) => (
                 <li key={c.id} className="flex items-center gap-2 rounded-control px-1 py-1 hover:bg-sunken dark:hover:bg-raised">
                   <button
                     type="button"
-                    aria-label={c.completed_at ? `Reopen ${c.title}` : `Complete ${c.title}`}
+                    aria-label={c.completed_at ? t('Reopen {title}', { title: c.title }) : t('Complete {title}', { title: c.title })}
                     aria-pressed={!!c.completed_at}
                     onClick={() => toggle(c)}
                     disabled={readOnly}
@@ -213,7 +214,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
                     {c.completed_at && <Icon name="check" size={10} />}
                   </button>
                   <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
-                    {c.title || <span className="italic text-faint">Untitled</span>}
+                    {c.title || <span className="italic text-faint">{t('Untitled')}</span>}
                   </button>
                 </li>
               ))}
@@ -248,8 +249,8 @@ function AddSubtask({ parent }: { parent: Task }) {
       <input
         ref={ref}
         className="min-w-0 flex-1 bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none"
-        placeholder="Add subtask…"
-        aria-label="Add subtask"
+        placeholder={t('Add subtask…')}
+        aria-label={t('Add subtask')}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
@@ -262,7 +263,7 @@ function AddSubtask({ parent }: { parent: Task }) {
 function NotesPreview({ text }: { text: string }) {
   return (
     <div className="notes-host" aria-busy="true">
-      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-faint">Add notes…</p>}</div>
+      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-faint">{t('Add notes…')}</p>}</div>
     </div>
   )
 }
@@ -274,14 +275,14 @@ function PlainNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
   return (
     <textarea
       className="notes-plain"
-      placeholder="Add notes…"
+      placeholder={t('Add notes…')}
       value={text}
       disabled={readOnly}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => {
         if (text !== task.description) void updateTask(task.id, { description: text })
       }}
-      aria-label="Notes"
+      aria-label={t('Notes')}
     />
   )
 }

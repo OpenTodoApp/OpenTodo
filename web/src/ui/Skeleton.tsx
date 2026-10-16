@@ -2,6 +2,7 @@
 // shape of what is loading, shown wherever local data is awaited, never a spinner
 // or a "Loading…" sentence. The shimmer is still under reduced motion.
 import type { HTMLAttributes } from 'react'
+import { t } from '../lib/i18n'
 
 export type SkeletonShape = 'row' | 'line' | 'card'
 
@@ -38,7 +39,7 @@ function Shape({ shape, i }: { shape: SkeletonShape; i: number }) {
   )
 }
 
-export function Skeleton({ shape = 'row', count = 3, label = 'Loading', className, ...rest }: SkeletonProps) {
+export function Skeleton({ shape = 'row', count = 3, label = t('Loading'), className, ...rest }: SkeletonProps) {
   return (
     <div role="status" aria-label={label} aria-busy="true" data-skeleton={shape} {...rest}
       className={`${shape === 'line' ? 'space-y-2' : shape === 'card' ? 'space-y-3' : ''}${className ? ` ${className}` : ''}`}>

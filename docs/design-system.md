@@ -156,7 +156,7 @@ Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `
 
 Storybook is a development tool only: it adds nothing to `internal/web/dist`, the Go binary or the container image, and a unit test fails if the production build contains Storybook code.
 
-- `make storybook` (or `npm run storybook` in `web/`) opens it on http://localhost:6006. The toolbar switches the theme (light, dark, side by side) and the frame width (375 or 1280 px).
+- `make storybook` (or `npm run storybook` in `web/`) opens it on http://localhost:6006. The toolbar switches the theme (light, dark, side by side) and the frame width (375 or 1280 px). A third switch picks the interface language: a story then renders with that language's catalog (loaded the way the app loads it) and `lang` set on the frame, which shows where a longer German or French label wraps. The accessibility gate and the visual baselines always run in English.
 - `npm run build-storybook` writes the static build to `web/storybook-static/` (not committed).
 - **Foundations** shows the colour tokens with their live contrast ratios, the palette, type, spacing, radius, elevation, motion and the component classes.
 

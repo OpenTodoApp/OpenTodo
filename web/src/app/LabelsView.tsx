@@ -22,8 +22,8 @@ import { ActionMenu, useConfirm, type ActionGroup, type ConfirmSpec } from './me
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { Popover } from './overlay'
 import { navigate, type Route } from './router'
+import { t } from '../lib/i18n'
 
-const tasksText = (n: number) => `${n} ${n === 1 ? 'task' : 'tasks'}`
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
 export function useLabelData() {
@@ -31,7 +31,7 @@ export function useLabelData() {
   const counts = useLiveQuery(async () => {
     // Same rule as TaskListView: tasks of archived projects and of trashed projects are hidden.
     const hidden = new Set((await db.projects.filter((p) => !p.deleted_at && p.archived).toArray()).map((p) => p.id))
-    const open = (await visibleTasks()).filter((t) => !t.completed_at && (!t.project_id || !hidden.has(t.project_id)))
+    const open = (await visibleTasks()).filter((task) => !task.completed_at && (!task.project_id || !hidden.has(task.project_id)))
     return countOpenByLabel(open)
   }, [], new Map<string, number>())
   return { labels, counts, duplicates: duplicateLabelIds(labels) }
@@ -55,12 +55,12 @@ export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; c
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={className}>
-      <input className="ui-input" autoFocus placeholder="Label name" aria-label="New label name" value={name}
+      <input className="ui-input" autoFocus placeholder={t('Label name')} aria-label={t('New label name')} value={name}
         onChange={(e) => { setName(e.target.value); setError(null) }}
         onKeyDown={(e) => e.key === 'Escape' && onDone()} onBlur={() => !name && onDone()} />
       {error && (
         <p className="mt-1 text-meta text-danger">
-          {error.message}{error.id && <>. <button type="button" className="underline" onMouseDown={(e) => e.preventDefault()} onClick={() => navigate({ view: 'label', id: error.id! })}>Open it</button></>}
+          {error.message}{error.id && <>. <button type="button" className="underline" onMouseDown={(e) => e.preventDefault()} onClick={() => navigate({ view: 'label', id: error.id! })}>{t('Open it')}</button></>}
         </p>
       )}
     </form>
@@ -70,12 +70,12 @@ export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; c
 /** The confirmation for merging `source` into `target`, naming both and the tasks that change. */
 export function mergeConfirm(source: Label, target: Label): ConfirmSpec {
   return {
-    title: `Merge “${source.name}” into “${target.name}”?`,
+    title: t('Merge “{source}” into “{target}”?', { source: source.name, target: target.name }),
     body: async () => {
       const n = await labelUsage(source.id)
-      return `${tasksText(n)} carrying “${source.name}” will carry “${target.name}” instead, and “${source.name}” is deleted on all your devices.`
+      return t('{n, plural, one {# task carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.} other {# tasks carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.}}', { n, source: source.name, target: target.name })
     },
-    confirmLabel: 'Merge',
+    confirmLabel: t('Merge'),
     onConfirm: async () => {
       await mergeLabels(source.id, target.id)
       navigate({ view: 'label', id: target.id })
@@ -86,12 +86,12 @@ export function mergeConfirm(source: Label, target: Label): ConfirmSpec {
 /** The delete confirmation, with the number of tasks that lose the label. */
 export function deleteConfirm(label: Label): ConfirmSpec {
   return {
-    title: `Delete label “${label.name}”?`,
+    title: t('Delete label “{name}”?', { name: label.name }),
     body: async () => {
       const n = await labelUsage(label.id)
-      return n ? `It is removed from ${tasksText(n)}. The tasks themselves stay.` : 'No task carries it.'
+      return n ? t('{n, plural, one {It is removed from # task. The tasks themselves stay.} other {It is removed from # tasks. The tasks themselves stay.}}', { n }) : t('No task carries it.')
     },
-    confirmLabel: 'Delete label',
+    confirmLabel: t('Delete label'),
     onConfirm: () => deleteLabel(label.id),
   }
 }
@@ -102,20 +102,20 @@ export function labelMenuGroups(label: Label, labels: Label[], a: { edit: () => 
   const others = labels.filter((l) => l.id !== label.id)
   return [
     { items: [
-      { kind: 'action', id: 'edit', label: 'Edit…', icon: 'palette', onSelect: a.edit },
-      { kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', shortcut: 'F2', onSelect: a.rename },
+      { kind: 'action', id: 'edit', label: t('Edit…'), icon: 'palette', onSelect: a.edit },
+      { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename },
     ] },
     { items: [
-      { kind: 'action', id: 'up', label: 'Move up', icon: 'arrow-up', shortcut: 'Alt+↑', disabled: i <= 0, reason: 'Already first', onSelect: () => a.move(-1) },
-      { kind: 'action', id: 'down', label: 'Move down', icon: 'arrow-down', shortcut: 'Alt+↓', disabled: i < 0 || i === labels.length - 1, reason: 'Already last', onSelect: () => a.move(1) },
+      { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', shortcut: 'Alt+↑', disabled: i <= 0, reason: t('Already first'), onSelect: () => a.move(-1) },
+      { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', shortcut: 'Alt+↓', disabled: i < 0 || i === labels.length - 1, reason: t('Already last'), onSelect: () => a.move(1) },
     ] },
     { items: [
-      { kind: 'picker', id: 'merge', label: 'Merge into', icon: 'merge', tone: 'danger', disabled: others.length === 0, reason: 'There is no other label', picker: {
-        title: 'Merge into', placeholder: 'Find a label…', source: others, getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
+      { kind: 'picker', id: 'merge', label: t('Merge into'), icon: 'merge', tone: 'danger', disabled: others.length === 0, reason: t('There is no other label'), picker: {
+        title: t('Merge into'), placeholder: t('Find a label…'), source: others, getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
         rankContext: 'label-merge', renderLeading: (l: Label) => <span data-hue={hueFor(l.color)} className="inline-block h-2.5 w-2.5 rounded-full bg-hue-solid" />,
         onPick: (target: Label) => mergeConfirm(label, target),
       } },
-      { kind: 'confirm', id: 'delete', label: 'Delete label', icon: 'trash-2', tone: 'danger', confirm: deleteConfirm(label) },
+      { kind: 'confirm', id: 'delete', label: t('Delete label'), icon: 'trash-2', tone: 'danger', confirm: deleteConfirm(label) },
     ] },
   ]
 }
@@ -131,9 +131,9 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
   const swatches = useRef<HTMLDivElement>(null)
 
   const nameError = (n: string): string | null => {
-    if (!n.trim()) return 'A label needs a name'
+    if (!n.trim()) return t('A label needs a name')
     const other = labels.find((l) => l.id !== label.id && labelKey(l.name) === labelKey(n))
-    return other ? `A label named “${other.name}” already exists` : null
+    return other ? t('A label named “{name}” already exists', { name: other.name }) : null
   }
   async function saveName() {
     const err = nameError(name)
@@ -155,18 +155,18 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
     swatches.current?.querySelector<HTMLButtonElement>(`[data-hue-option="${next.name}"]`)?.focus()
   }
   return (
-    <Popover open onClose={onClose} anchor={anchor} label={`Edit label ${label.name}`} width="sm:w-80" className="p-3" align="start">
+    <Popover open onClose={onClose} anchor={anchor} label={t('Edit label {name}', { name: label.name })} width="sm:w-80" className="p-3" align="start">
       <div className="space-y-4" data-testid="label-edit">
         <section className="space-y-2">
-          <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">Appearance</h3>
+          <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">{t('Appearance')}</h3>
           <label className="block text-meta">
-            <span className="mb-1 block text-muted">Name</span>
+            <span className="mb-1 block text-muted">{t('Name')}</span>
             <input className="ui-input" value={name} aria-invalid={!!error} aria-describedby={error ? `label-name-error-${label.id}` : undefined}
               onChange={(e) => { setName(e.target.value); setError(null) }}
               onBlur={() => void saveName()} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void saveName() } }} />
-            {error && <span id={`label-name-error-${label.id}`} role="alert" className="mt-1 block text-meta text-danger">{error}. The name stays “{label.name}”.</span>}
+            {error && <span id={`label-name-error-${label.id}`} role="alert" className="mt-1 block text-meta text-danger">{t('{error}. The name stays “{name}”.', { error, name: label.name })}</span>}
           </label>
-          <div ref={swatches} role="radiogroup" aria-label="Colour" className="flex flex-wrap gap-1" onKeyDown={onSwatchKey}>
+          <div ref={swatches} role="radiogroup" aria-label={t('Colour')} className="flex flex-wrap gap-1" onKeyDown={onSwatchKey}>
             {HUES.map((h) => (
               <button key={h.name} type="button" role="radio" aria-checked={h.name === current} aria-label={h.name} data-hue-option={h.name}
                 tabIndex={h.name === current ? 0 : -1}
@@ -177,30 +177,30 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
             ))}
           </div>
           {!HUES.some((h) => h.hex === label.color.toLowerCase()) && (
-            <p className="text-meta text-muted">Shown as {current}, the nearest palette colour. Pick one to store it.</p>
+            <p className="text-meta text-muted">{t('Shown as {current}, the nearest palette colour. Pick one to store it.', { current })}</p>
           )}
         </section>
         <section className="space-y-1">
-          <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">Organize</h3>
+          <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">{t('Organize')}</h3>
           <div className="grid grid-cols-2 gap-1">
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, -1)}>Move up <kbd className="ui-kbd">Alt+↑</kbd></button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 1)}>Move down <kbd className="ui-kbd">Alt+↓</kbd></button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'top')}>To the top</button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'bottom')}>To the bottom</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, -1)}>{t('Move up')} <kbd className="ui-kbd">Alt+↑</kbd></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 1)}>{t('Move down')} <kbd className="ui-kbd">Alt+↓</kbd></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'top')}>{t('To the top')}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'bottom')}>{t('To the bottom')}</button>
           </div>
         </section>
         <section className="space-y-1 border-t border-default pt-3">
-          <h3 className="text-hint font-semibold uppercase tracking-wide text-danger">Danger zone</h3>
+          <h3 className="text-hint font-semibold uppercase tracking-wide text-danger">{t('Danger zone')}</h3>
           {merging ? (
             <div className="space-y-1">
-              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setMerging(false)}><Icon name="arrow-left" /> Back</button>
-              <ComboboxPanel label="Merge into" placeholder="Find a label…" source={others} getKey={(l) => l.id} getLabel={(l) => l.name} rankContext="label-merge"
-                onPick={(t) => { setMerging(false); onClose(); confirm.ask(mergeConfirm(label, t)) }} />
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setMerging(false)}><Icon name="arrow-left" /> {t('Back')}</button>
+              <ComboboxPanel label={t('Merge into')} placeholder={t('Find a label…')} source={others} getKey={(l) => l.id} getLabel={(l) => l.name} rankContext="label-merge"
+                onPick={(item) => { setMerging(false); onClose(); confirm.ask(mergeConfirm(label, item)) }} />
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm text-meta" disabled={others.length === 0} onClick={() => setMerging(true)}><Icon name="merge" /> Merge into…</button>
-              <button type="button" className="ui-btn ui-btn--danger ui-btn--sm text-meta" onClick={() => { onClose(); confirm.ask(deleteConfirm(label)) }}><Icon name="trash-2" /> Delete label…</button>
+              <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm text-meta" disabled={others.length === 0} onClick={() => setMerging(true)}><Icon name="merge" /> {t('Merge into…')}</button>
+              <button type="button" className="ui-btn ui-btn--danger ui-btn--sm text-meta" onClick={() => { onClose(); confirm.ask(deleteConfirm(label)) }}><Icon name="trash-2" /> {t('Delete label…')}</button>
             </div>
           )}
         </section>
@@ -276,7 +276,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
     if (!refocus.current) return
     refocus.current = false
     row.current?.querySelector<HTMLButtonElement>('[data-label-open]')?.focus()
-    setAnnounce(`${label.name} moved to position ${index + 1} of ${labels.length}`)
+    setAnnounce(t('{name} moved to position {n} of {count}', { name: label.name, n: index + 1, count: labels.length }))
   }, [index, labels.length, label.name])
 
   async function save() {
@@ -307,18 +307,18 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
           </span>
         )}
         {editing ? (
-          <input className="ui-input my-0.5 ml-1 py-0.5" autoFocus aria-label="Label name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
+          <input className="ui-input my-0.5 ml-1 py-0.5" autoFocus aria-label={t('Label name')} value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
             onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { e.stopPropagation(); setName(label.name); setEditing(false) } }} />
         ) : (
           <button data-label-open onClick={() => navigate({ view: 'label', id: label.id })} onDoubleClick={startRename} onKeyDown={onKeyDown}
             className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-body ${active ? 'font-medium text-on-accent-soft' : 'text-muted'}`}>
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
-            {duplicate && <Badge hue="yellow" title="Another label has this name. Merge them from the menu or the banner on the labels page.">duplicate</Badge>}
-            {count ? <span className="text-meta text-faint" aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span> : null}
+            {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}
+            {count ? <span className="text-meta text-faint" aria-label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</span> : null}
           </button>
         )}
-        <ActionMenu label={`Menu for label ${label.name}`} title={label.name} groups={groups} open={menuOpen} onOpenChange={setMenuOpen}
+        <ActionMenu label={t('Menu for label {name}', { name: label.name })} title={label.name} groups={groups} open={menuOpen} onOpenChange={setMenuOpen}
           triggerClassName="hover-reveal touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised" />
       </div>
       {error && <p className="px-2 pb-1 text-meta text-danger">{error}</p>}
@@ -351,24 +351,24 @@ export function LabelsView({ route }: { route: Route }) {
   const [source, target] = pair ? (swapped ? [pair[1], pair[0]] : pair) : [null, null]
   return (
     <PageBody width="form">
-      <PageHeader title="Labels" meta={labels.length} help="labels"
-        actions={<Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>New label</Button>} />
+      <PageHeader title={t('Labels')} meta={labels.length} help="labels"
+        actions={<Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>{t('New label')}</Button>} />
       {adding && <NewLabelForm onDone={() => setAdding(false)} className="mb-3 max-w-xs" />}
       {source && target && (
         <div role="note" className="mb-3 flex flex-wrap items-center gap-2 rounded-control bg-warning-soft px-3 py-2 text-meta text-on-warning-soft" data-testid="duplicate-banner">
           <span className="flex-1">
-            {duplicates.size} labels share a name. Merge “{source.name}” into “{target.name}”?
+            {t('{size} labels share a name. Merge “{name}” into “{name2}”?', { size: duplicates.size, name: source.name, name2: target.name })}
           </span>
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setSwapped((v) => !v)} aria-label="Swap which label is kept">Swap</button>
-          <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm text-meta" onClick={() => confirm.ask(mergeConfirm(source, target))}><Icon name="merge" /> Merge…</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setSwapped((v) => !v)} aria-label={t('Swap which label is kept')}>{t('Swap')}</button>
+          <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm text-meta" onClick={() => confirm.ask(mergeConfirm(source, target))}><Icon name="merge" /> {t('Merge…')}</button>
         </div>
       )}
       <div className="space-y-0.5">
         {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={counts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={drop} onDragStart={start} />)}
       </div>
       {labels.length === 0 && !adding && (
-        <EmptyState icon="tag" title="No labels yet" body={<>Labels group tasks across projects. Add one to a selected task with <Kbd k={keysOf('list.labels')} />, or create one here.</>}
-          action={<button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={() => setAdding(true)}><Icon name="plus" /> New label</button>} />
+        <EmptyState icon="tag" title={t('No labels yet')} body={<>{t.rich('Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.', { kbd: <Kbd k={keysOf('list.labels')} /> })}</>}
+          action={<button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={() => setAdding(true)}><Icon name="plus" /> {t('New label')}</button>} />
       )}
       {confirm.element}
     </PageBody>

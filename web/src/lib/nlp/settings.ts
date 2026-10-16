@@ -54,9 +54,14 @@ export function onQuickAddSettingsChange(fn: () => void): () => void {
   }
 }
 
-/** The language tags handed to the parser: the explicit list, or the browser's. */
-export function resolveLanguages(s: QuickAddSettings, browser: readonly string[]): string[] {
-  return activeLanguages(s.languages !== null ? s.languages : browser)
+/**
+ * The language tags handed to the parser: the device's explicit list, else the
+ * interface language (app-localization D5; omitted or 'system' when none is
+ * chosen) followed by the browser's languages. English is always active.
+ */
+export function resolveLanguages(s: QuickAddSettings, browser: readonly string[], language?: string | null): string[] {
+  if (s.languages !== null) return activeLanguages(s.languages)
+  return activeLanguages(language && language !== 'system' ? [language, ...browser] : browser)
 }
 
 /** Where the numeric date order came from, for the quick-add settings panel. */

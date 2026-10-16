@@ -39,7 +39,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 - **On your machine or server:**
 
   ```bash
-  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.5
+  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.6
   ```
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
@@ -79,13 +79,14 @@ OpenTodo is at **0.4**: every feature on the roadmap is in, covered by automated
 
 ## Features
 
-The highlights: quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
+The highlights: the app in six languages, quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
 
 <details>
 <summary><strong>Full feature list</strong></summary>
 
 ### Capture
 
+- **The app in your language**: English, German, French, Spanish, Italian or Portuguese, picked once and synced to every device; dates, notifications and quick add follow it. The guide stays in English. [Language](docs/language.md) · [Translating](docs/translating.md)
 - **Quick add from anywhere** (`q`), with the view's context as defaults: today in Today, the current project in a project.
 - **Natural language in six languages, offline**: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips. English, German, French, Italian, Spanish and Portuguese. [Syntax](docs/quick-add.md)
 - **Voice capture** (opt-in per device): dictate into quick add with the microphone button or `Shift+V`; "hashtag home priority two" becomes `#home p2`. Uses the browser's own speech recognition; the server never receives audio. [Voice](docs/quick-add.md#voice)
@@ -162,10 +163,10 @@ No environment variable is required. Open the app, create the owner account, and
 
 ```bash
 docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
-  ghcr.io/pixari/opentodo:0.5
+  ghcr.io/pixari/opentodo:0.6
 ```
 
-Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.4` follows the 0.4 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
+Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.6` follows the 0.6 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
 
 ### Docker Compose
 

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { Dialog } from '../../app/overlay/Dialog'
 import { Button } from '../Button'
+import { t } from '../../lib/i18n'
 
 export interface ConfirmDialogProps {
   title: string
@@ -16,7 +17,7 @@ export interface ConfirmDialogProps {
   onCancel: () => void
 }
 
-export function ConfirmDialog({ title, consequence, confirmLabel, cancelLabel = 'Cancel', tone = 'danger', onConfirm, onCancel }: ConfirmDialogProps) {
+export function ConfirmDialog({ title, consequence, confirmLabel, cancelLabel = t('Cancel'), tone = 'danger', onConfirm, onCancel }: ConfirmDialogProps) {
   const [error, setError] = useState<string | null>(null)
   const confirm = async () => {
     setError(null)

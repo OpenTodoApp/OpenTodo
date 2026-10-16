@@ -4,6 +4,7 @@ import { db } from '../lib/db'
 import { activeLabels, addLabel, createLabel, toggleLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
 import { Combobox, ComboboxPanel, LabelChip as UiLabelChip } from '../ui'
+import { t } from '../lib/i18n'
 
 /** A label as a chip (the design-system LabelChip), with a remove control when `onRemove` is given. */
 export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => void }) {
@@ -31,14 +32,14 @@ export function LabelPicker({ taskId, onClose, inline = false }: { taskId: strin
     }
   }
   const props = {
-    label: 'Label',
+    label: t('Label'),
     source: labels,
     getKey: (l: Label) => l.id,
     getLabel: (l: Label) => l.name,
     multiple: true,
     selected: task?.labels ?? [],
     rankContext: 'label',
-    emptyText: 'No labels yet. Type a name and press Enter.',
+    emptyText: t('No labels yet. Type a name and press Enter.'),
     renderLeading: (l: Label) => <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />,
     onPick: (l: Label) => run(() => toggleLabel(taskId, l.id)),
     onCreate: (name: string) => run(async () => addLabel(taskId, await createLabel({ name }))),
@@ -46,7 +47,7 @@ export function LabelPicker({ taskId, onClose, inline = false }: { taskId: strin
   }
   return (
     <div>
-      {inline ? <Combobox {...props} placeholder="Add label…" /> : <ComboboxPanel {...props} placeholder="Type to find or create a label…" />}
+      {inline ? <Combobox {...props} placeholder={t('Add label…')} /> : <ComboboxPanel {...props} placeholder={t('Type to find or create a label…')} />}
       {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
     </div>
   )

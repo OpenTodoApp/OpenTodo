@@ -51,7 +51,7 @@ While the device's numeric date order is automatic, numeric dates SHALL be read 
 - **THEN** the task is due Sunday `2026-10-18`
 
 ### Requirement: Multi-language vocabulary
-Date, time, recurrence and reminder vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese and SHALL be available with no network. The active set SHALL be the browser's preferred languages that are bundled, with English always active, and SHALL be overridable in Settings. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent. The stored rule SHALL always be the canonical English form, whatever language the phrase was typed in.
+Date, time, recurrence and reminder vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese, available with no network. The active set SHALL be the interface language (OpenSpec `localization`) when not `system`, then the browser's bundled preferred languages, with English always active, overridable in Settings on the device. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent. The stored rule SHALL always be the canonical English form.
 
 #### Scenario: German phrase
 - **WHEN** the browser language is `de` and the user enters `Zahnarzt nächsten Mittwoch um 15 Uhr`
@@ -64,6 +64,14 @@ Date, time, recurrence and reminder vocabulary SHALL be bundled for English, Ger
 #### Scenario: Unsupported language falls back
 - **WHEN** the browser language is one with no bundled vocabulary
 - **THEN** English vocabulary is active, attribute tokens still work, and no error is shown
+
+#### Scenario: Interface language comes first
+- **WHEN** the browser language is `en-US`, the interface language is Spanish and the device has no language override
+- **THEN** the active languages are Spanish then English, `Pagar alquiler mañana` is due tomorrow, numeric dates read day-month while the date format is `system`, and dictation listens in Spanish
+
+#### Scenario: Device override still wins
+- **WHEN** the interface language is Spanish and the device's quick-add languages are set to German only
+- **THEN** the active languages are German then English
 
 #### Scenario: Recurrence in each language
 - **WHEN** the user enters `jeden Montag`, `tous les lundis`, `ogni lunedì`, `cada lunes` or `toda segunda-feira` after a title, with that language active

@@ -16,6 +16,7 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 
 ## General
 
+- **Language**: the language of the app on all your devices. See [The app in your language](language.md).
 - **Start view**: the view this device opens on, including **Display: Today** and **Display: Upcoming** for a tablet or a wall panel; a project or saved view display is pinned from the display's own menu. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md).
 - **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
@@ -25,7 +26,7 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 
 Three choices that follow your account to every device, also when you change them offline:
 
-- **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names stay in your browser's language.
+- **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names are written in the [interface language](language.md).
 - **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).
 - **First day of the week**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start, and which days `this week` and `last week` cover in [filters](filters.md#periods).
 

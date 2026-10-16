@@ -43,7 +43,7 @@ How the app behaves: [Settings: App](settings-app.md).
 
 ### General
 
-[General](settings-app.md#general): the start view, date and time, the calendar grid and the keyboard options.
+[General](settings-app.md#general): the [language](language.md), start view, date and time, calendar grid and keyboard.
 
 #### Date and time
 

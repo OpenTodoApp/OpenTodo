@@ -4,6 +4,7 @@ import { archiveProject } from '../lib/ops'
 import type { Project } from '../lib/types'
 import { useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
+import { t } from '../lib/i18n'
 
 // Automatic archive of finished projects (OpenSpec `trash-and-history`): a one-key
 // prompt after the last open task of a project is completed, and a notice with
@@ -50,10 +51,10 @@ export function ArchivePrompt() {
     let alive = true
     const run = () => void runAutoArchive().then((list) => alive && list.length > 0 && setArchived((prev) => [...prev, ...list]), () => undefined)
     run()
-    const t = setInterval(run, CHECK_MS)
+    const item = setInterval(run, CHECK_MS)
     return () => {
       alive = false
-      clearInterval(t)
+      clearInterval(item)
     }
   }, [])
 
@@ -63,16 +64,16 @@ export function ArchivePrompt() {
       style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
       {project && (
         <div role="alert" className="flex items-center gap-2 rounded-control border border-accent/40 bg-surface px-3 py-2 text-body shadow-2">
-          <span className="user-text min-w-0 flex-1">Archive <strong>{project.name}</strong>? <Kbd k="Enter" only /></span>
-          <button className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { setOffered(null); void archiveProject(project.id) }}>Archive</button>
-          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setOffered(null)}>Not now</button>
+          <span className="user-text min-w-0 flex-1">{t.rich('Archive <strong>{name}</strong>? {kbd}', { name: project.name, kbd: <Kbd k="Enter" only />, strong: (chunks) => <strong>{chunks}</strong> })}</span>
+          <button className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { setOffered(null); void archiveProject(project.id) }}>{t('Archive')}</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setOffered(null)}>{t('Not now')}</button>
         </div>
       )}
       {archived.length > 0 && (
         <div role="status" className="flex items-center gap-2 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2">
-          <span className="flex-1">Archived {archived.map((p) => p.name).join(', ')}: no open tasks for 30 days.</span>
-          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { const list = archived; setArchived([]); for (const p of list) void undoAutoArchive(p.id) }}>Undo</button>
-          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setArchived([])}>Dismiss</button>
+          <span className="flex-1">{t('Archived {join}: no open tasks for 30 days.', { join: archived.map((p) => p.name).join(', ') })}</span>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { const list = archived; setArchived([]); for (const p of list) void undoAutoArchive(p.id) }}>{t('Undo')}</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setArchived([])}>{t('Dismiss')}</button>
         </div>
       )}
     </div>

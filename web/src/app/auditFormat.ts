@@ -1,133 +1,135 @@
+import { roleName } from '../lib/roleNames'
 import type { AuditEvent, AuditEventName, AuditFilters } from '../lib/types'
+import { t, msg, translatedMap } from '../lib/i18n'
 
-export const AUDIT_LABELS: Record<AuditEventName, string> = {
-  'login.succeeded': 'Signed in',
-  'login.failed': 'Sign-in failed',
-  logout: 'Signed out',
-  'mfa.enrolled': 'Second factor enabled',
-  'mfa.disabled': 'Second factor disabled',
-  'mfa.reset': 'Second factor reset',
-  'mfa.challenge_failed': 'Second-factor code rejected',
-  'passkey.registered': 'Passkey added',
-  'passkey.deleted': 'Passkey removed',
-  'token.created': 'API token created',
-  'token.revoked': 'API token revoked',
-  'app_password.created': 'Calendar app password created',
-  'app_password.revoked': 'Calendar app password revoked',
-  'calendar_feed.created': 'Calendar feed URL created',
-  'calendar_feed.rotated': 'Calendar feed URL replaced',
-  'calendar_feed.revoked': 'Calendar feed URL revoked',
-  'email_inbox.created': 'Email-to-task address created',
-  'email_inbox.rotated': 'Email-to-task address rotated',
-  'email_inbox.updated': 'Email-to-task setting changed',
-  'invitation.created': 'Invitation created',
-  'invitation.accepted': 'Invitation accepted',
-  'invitation.revoked': 'Invitation revoked',
-  'project_invite.created': 'Project invite link created',
-  'project_invite.revoked': 'Project invite link revoked',
-  'project_invite.accepted': 'Joined a project with a link',
-  'public_link.created': 'Public link created',
-  'public_link.revoked': 'Public link revoked',
-  'role.changed': 'Role changed',
-  'settings.changed': 'Setting changed',
-  'identity.linked': 'Sign-in provider linked',
-  'identity.unlinked': 'Sign-in provider unlinked',
-  'export.requested': 'Data exported',
-  'audit.exported': 'Audit log exported',
-  'backup.created': 'Backup created',
-  'backup.restored': 'Backup restored',
-  'backup.restore_requested': 'Restore requested',
-  'backup.restore_failed': 'Restore failed',
-  'backup.safety_copy_deleted': 'Safety copy deleted',
-  'user.deactivated': 'Account deactivated',
-  'user.reactivated': 'Account reactivated',
-  'user.deleted': 'Account deleted',
-  'password.reset_issued': 'Password reset link issued',
-  'password.reset_completed': 'Password reset through a link',
-  'password.changed': 'Password changed',
-  'owner.transferred': 'Ownership transferred',
-  'agent.write': 'AI assistant made changes',
-  'email.sent': 'Email sent',
-  'email.failed': 'Email not sent',
-}
+export const AUDIT_LABELS = translatedMap<AuditEventName>({
+  'login.succeeded': msg('Signed in'),
+  'login.failed': msg('Sign-in failed'),
+  logout: msg('Signed out'),
+  'mfa.enrolled': msg('Second factor enabled'),
+  'mfa.disabled': msg('Second factor disabled'),
+  'mfa.reset': msg('Second factor reset'),
+  'mfa.challenge_failed': msg('Second-factor code rejected'),
+  'passkey.registered': msg('Passkey added'),
+  'passkey.deleted': msg('Passkey removed'),
+  'token.created': msg('API token created'),
+  'token.revoked': msg('API token revoked'),
+  'app_password.created': msg('Calendar app password created'),
+  'app_password.revoked': msg('Calendar app password revoked'),
+  'calendar_feed.created': msg('Calendar feed URL created'),
+  'calendar_feed.rotated': msg('Calendar feed URL replaced'),
+  'calendar_feed.revoked': msg('Calendar feed URL revoked'),
+  'email_inbox.created': msg('Email-to-task address created'),
+  'email_inbox.rotated': msg('Email-to-task address rotated'),
+  'email_inbox.updated': msg('Email-to-task setting changed'),
+  'invitation.created': msg('Invitation created'),
+  'invitation.accepted': msg('Invitation accepted'),
+  'invitation.revoked': msg('Invitation revoked'),
+  'project_invite.created': msg('Project invite link created'),
+  'project_invite.revoked': msg('Project invite link revoked'),
+  'project_invite.accepted': msg('Joined a project with a link'),
+  'public_link.created': msg('Public link created'),
+  'public_link.revoked': msg('Public link revoked'),
+  'role.changed': msg('Role changed'),
+  'settings.changed': msg('Setting changed'),
+  'identity.linked': msg('Sign-in provider linked'),
+  'identity.unlinked': msg('Sign-in provider unlinked'),
+  'export.requested': msg('Data exported'),
+  'audit.exported': msg('Audit log exported'),
+  'backup.created': msg('Backup created'),
+  'backup.restored': msg('Backup restored'),
+  'backup.restore_requested': msg('Restore requested'),
+  'backup.restore_failed': msg('Restore failed'),
+  'backup.safety_copy_deleted': msg('Safety copy deleted'),
+  'user.deactivated': msg('Account deactivated'),
+  'user.reactivated': msg('Account reactivated'),
+  'user.deleted': msg('Account deleted'),
+  'password.reset_issued': msg('Password reset link issued'),
+  'password.reset_completed': msg('Password reset through a link'),
+  'password.changed': msg('Password changed'),
+  'owner.transferred': msg('Ownership transferred'),
+  'agent.write': msg('AI assistant made changes'),
+  'email.sent': msg('Email sent'),
+  'email.failed': msg('Email not sent'),
+})
 
-const REASONS: Record<string, string> = {
-  wrong_password: 'wrong password',
-  unknown_account: 'unknown account',
-  rate_limited: 'too many attempts',
-  connect: 'mail server unreachable',
-  tls: 'secure connection failed',
-  auth: 'mail server refused the sign-in',
-  send: 'mail server refused the message',
-  encrypted_account: 'encrypted account',
-  deactivated: 'account deactivated',
-  unknown_passkey: 'unknown passkey',
-  passkey_rejected: 'passkey rejected',
-  passkey_counter_regression: 'possible cloned passkey',
-  writes_disabled_by_owner: 'assistant changes are off on this server',
-  writes_disabled_by_user: 'assistant changes are off for this account',
-  encryption_enabled: 'end-to-end encryption is on',
-  not_permitted: 'not created by this assistant',
-}
+const REASONS = translatedMap<string>({
+  wrong_password: msg('wrong password'),
+  unknown_account: msg('unknown account'),
+  rate_limited: msg('too many attempts'),
+  connect: msg('mail server unreachable'),
+  tls: msg('secure connection failed'),
+  auth: msg('mail server refused the sign-in'),
+  send: msg('mail server refused the message'),
+  encrypted_account: msg('encrypted account'),
+  deactivated: msg('account deactivated'),
+  unknown_passkey: msg('unknown passkey'),
+  passkey_rejected: msg('passkey rejected'),
+  passkey_counter_regression: msg('possible cloned passkey'),
+  writes_disabled_by_owner: msg('assistant changes are off on this server'),
+  writes_disabled_by_user: msg('assistant changes are off for this account'),
+  encryption_enabled: msg('end-to-end encryption is on'),
+  not_permitted: msg('not created by this assistant'),
+})
 
-const EMAIL_KINDS: Record<string, string> = {
-  verify_signup: 'Sign-up confirmation',
-  password_reset: 'Password reset',
-  invitation: 'Invitation',
-  project_invite: 'Project invite',
-  test: 'Test message',
-}
+const EMAIL_KINDS = translatedMap<string>({
+  verify_signup: msg('Sign-up confirmation'),
+  password_reset: msg('Password reset'),
+  invitation: msg('Invitation'),
+  project_invite: msg('Project invite'),
+  test: msg('Test message'),
+})
 
-const SETTINGS: Record<string, string> = {
-  'audit.retention_days': 'Audit retention (days)',
-  'audit.log_ip': 'Address logging',
-  webhooks_allow_private: 'Private webhook targets',
-  'mcp.enabled': 'AI assistants (MCP)',
-  'mcp.writes': 'AI assistants may make changes',
-  'agent.writes': 'Allow AI assistants to make changes',
-  'project_invites.members_create_accounts': 'Members can invite new people with project links',
-  'smtp.host': 'Outgoing email server',
-  'smtp.port': 'Outgoing email port',
-  'smtp.security': 'Outgoing email security',
-  'smtp.user': 'Outgoing email username',
-  'smtp.password': 'Outgoing email password',
-  'smtp.from': 'Outgoing email From address',
-}
+const SETTINGS = translatedMap<string>({
+  'audit.retention_days': msg('Audit retention (days)'),
+  'audit.log_ip': msg('Address logging'),
+  webhooks_allow_private: msg('Private webhook targets'),
+  'mcp.enabled': msg('AI assistants (MCP)'),
+  'mcp.writes': msg('AI assistants may make changes'),
+  'agent.writes': msg('Allow AI assistants to make changes'),
+  'project_invites.members_create_accounts': msg('Members can invite new people with project links'),
+  'smtp.host': msg('Outgoing email server'),
+  'smtp.port': msg('Outgoing email port'),
+  'smtp.security': msg('Outgoing email security'),
+  'smtp.user': msg('Outgoing email username'),
+  'smtp.password': msg('Outgoing email password'),
+  'smtp.from': msg('Outgoing email From address'),
+})
 
 /** One-line summary of an event's allow-listed details. */
 export function eventSummary(ev: AuditEvent): string {
   const d = ev.details
   const parts: string[] = []
   if (d.reason) parts.push(REASONS[d.reason] ?? d.reason.replace(/_/g, ' '))
-  if (d.email_kind) parts.push(`${EMAIL_KINDS[d.email_kind] ?? d.email_kind.replace(/_/g, ' ')} to ${d.email ?? '?'}`)
-  if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? 'new account' : `via ${d.method}`)
+  if (d.email_kind) parts.push(t('{kind} to {email}', { kind: EMAIL_KINDS[d.email_kind] ?? d.email_kind.replace(/_/g, ' '), email: d.email ?? '?' }))
+  if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? t('new account') : t('via {method}', { method: d.method }))
   if (d.tool) parts.push(d.tool)
-  if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : d.token_scope === 'agent' ? ' (assistant, can make changes)' : ''}`)
+  if (d.token_name) parts.push(d.token_scope === 'read' ? t('“{name}” (read-only)', { name: d.token_name }) : d.token_scope === 'agent' ? t('“{name}” (assistant, can make changes)', { name: d.token_name }) : `“${d.token_name}”`)
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
-  if (d.project_role) parts.push(`as ${d.project_role}`)
-  if (d.link_rights) parts.push(d.link_rights === 'tick' ? 'can tick off tasks' : 'view only')
-  if (d.invited_email) parts.push(`for ${d.invited_email}`)
+  if (d.project_role) parts.push(t('as {role}', { role: roleName(d.project_role) }))
+  if (d.link_rights) parts.push(d.link_rights === 'tick' ? t('can tick off tasks') : t('view only'))
+  if (d.invited_email) parts.push(t('for {email}', { email: d.invited_email }))
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)
   else if (d.from || d.to) parts.push(`${d.from ?? '?'} → ${d.to ?? '?'}`)
   if (d.provider) parts.push(d.provider)
   if (d.count) {
-    const noun = ev.name === 'agent.write' ? ['item changed', 'items changed'] : ['event', 'events']
-    parts.push(`${d.count} ${d.count === '1' ? noun[0] : noun[1]}`)
+    const n = Number(d.count)
+    parts.push(ev.name === 'agent.write' ? t('{n, plural, one {# item changed} other {# items changed}}', { n }) : t('{n, plural, one {# event} other {# events}}', { n }))
   }
   return parts.join(' · ')
 }
 
 /** The account an event is about, for display: actor first, then target. */
 export function eventAccount(ev: AuditEvent): string {
-  return ev.actorEmail ?? ev.targetEmail ?? ev.details.email ?? (ev.actorId || ev.targetId ? 'deleted account' : '—')
+  return ev.actorEmail ?? ev.targetEmail ?? ev.details.email ?? (ev.actorId || ev.targetId ? t('deleted account') : '—')
 }
 
 /** Shortens a user agent to its most telling part for list display. */
 export function shortAgent(ua: string): string {
-  if (!ua) return 'unknown client'
+  if (!ua) return t('unknown client')
   const m = ua.match(/(Firefox|Edg|Chrome|Safari)\/[\d.]+/)
   const os = ua.match(/\((?:[^;)]*; )?([^;)]+)/)
-  if (m) return `${m[1] === 'Edg' ? 'Edge' : m[1]}${os ? ` on ${os[1]}` : ''}`
+  if (m) return os ? t('{browser} on {os}', { browser: m[1] === 'Edg' ? 'Edge' : m[1], os: os[1] }) : m[1] === 'Edg' ? 'Edge' : m[1]
   return ua.length > 40 ? `${ua.slice(0, 40)}…` : ua
 }
 

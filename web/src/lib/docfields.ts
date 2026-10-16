@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // Mergeable document fields (OpenSpec change `collaborative-rich-text`) and the
 // lazy loader for the code that understands them. This module stays tiny and
 // dependency-free so the initial bundle does not carry Yjs: lib/richtext.ts (and
@@ -29,7 +30,7 @@ export function isDocField(entity: string, field: string): boolean {
 /** Thrown by mutate() when a document would exceed MAX_DOC_CHARS; nothing is written. */
 export class DocTooLargeError extends Error {
   constructor(public size: number, public limit = MAX_DOC_CHARS) {
-    super(`This note is too large to save (${Math.ceil(size / 1024)} KB of ${Math.floor(limit / 1024)} KB). Remove some text.`)
+    super(t('This note is too large to save ({size} KB of {limit} KB). Remove some text.', { size: Math.ceil(size / 1024), limit: Math.floor(limit / 1024) }))
     this.name = 'DocTooLargeError'
   }
 }

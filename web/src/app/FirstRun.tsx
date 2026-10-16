@@ -17,13 +17,14 @@ import type { ThemeModePref } from '../lib/types'
 import { firstRunDone, setFirstRunDone, USER_PREFS_ID } from '../lib/userPrefs'
 import { installPrompt, useInstallPrompt } from './installPrompt'
 import { navigate } from './router'
+import { t, msg } from '../lib/i18n'
 
-export const SAMPLE_PROJECT_NAME = 'Show me around'
+export const SAMPLE_PROJECT_NAME = msg('Show me around')
 
 /** Whether the first-run card belongs on screen: a fresh account (no row, or not marked done) with nothing in it yet. */
 export function useFirstRun(): boolean {
   const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
-  const taskCount = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at).count(), [], undefined)
+  const taskCount = useLiveQuery(() => db.tasks.filter((task) => !task.deleted_at).count(), [], undefined)
   // Once shown, the card stays through the first task (step one adds it) until it is marked done.
   const shown = useRef(false)
   if (row === undefined || taskCount === undefined) return false
@@ -43,22 +44,22 @@ export async function createSampleProject(today = todayISO()): Promise<string> {
   const nextWeek = new Date(`${today}T12:00:00`)
   nextWeek.setDate(nextWeek.getDate() + 7)
   const iso = (d: Date) => d.toISOString().slice(0, 10)
-  const project = await createProject({ name: SAMPLE_PROJECT_NAME })
-  await createTask({ title: 'A task due today: press c to complete it', project_id: project, due: { date: today } })
-  await createTask({ title: 'A task with a deadline: it turns red when late', project_id: project, due: { date: iso(tomorrow) }, deadline: iso(nextWeek) })
+  const project = await createProject({ name: t(SAMPLE_PROJECT_NAME) })
+  await createTask({ title: t('A task due today: press c to complete it'), project_id: project, due: { date: today } })
+  await createTask({ title: t('A task with a deadline: it turns red when late'), project_id: project, due: { date: iso(tomorrow) }, deadline: iso(nextWeek) })
   const label = (await findLabelByName('errand'))?.id ?? await createLabel({ name: 'errand' })
-  await createTask({ title: 'Labels group tasks across projects: press L to add one', project_id: project, labels: [label] })
-  const parent = await createTask({ title: 'A task with a subtask: press a to add another', project_id: project })
-  await createSubtask(parent, 'The subtask: complete it and the parent asks to follow')
-  await createTask({ title: 'A repeating task: complete it and the next one appears', project_id: project, due: { date: today }, recurrence: 'every week' })
-  await createTask({ title: 'A task with notes: open it and write below the title', project_id: project, description: 'Notes take markdown: **bold**, lists, links. Press Esc to leave them.' })
+  await createTask({ title: t('Labels group tasks across projects: press L to add one'), project_id: project, labels: [label] })
+  const parent = await createTask({ title: t('A task with a subtask: press a to add another'), project_id: project })
+  await createSubtask(parent, t('The subtask: complete it and the parent asks to follow'))
+  await createTask({ title: t('A repeating task: complete it and the next one appears'), project_id: project, due: { date: today }, recurrence: 'every week' })
+  await createTask({ title: t('A task with notes: open it and write below the title'), project_id: project, description: t('Notes take markdown: **bold**, lists, links. Press Esc to leave them.') })
   return project
 }
 
 const STEPS: { id: 'task' | 'appearance' | 'install'; title: string; icon: IconName }[] = [
-  { id: 'task', title: 'Add your first task', icon: 'plus' },
-  { id: 'appearance', title: 'Choose light or dark', icon: 'palette' },
-  { id: 'install', title: 'Install the app', icon: 'download' },
+  { id: 'task', get title() { return t('Add your first task') }, icon: 'plus' },
+  { id: 'appearance', get title() { return t('Choose light or dark') }, icon: 'palette' },
+  { id: 'install', get title() { return t('Install the app') }, icon: 'download' },
 ]
 
 export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void }) {
@@ -67,7 +68,7 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
   const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
   const mode = readAppearance(row ?? null).mode
   const canInstall = useInstallPrompt()
-  const taskCount = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at && !t.parent_id).count(), [], 0)
+  const taskCount = useLiveQuery(() => db.tasks.filter((task) => !task.deleted_at && !task.parent_id).count(), [], 0)
   // The first step keeps quick add focused, with one example; the first task added moves on.
   useEffect(() => { if (step === 0) onFocusQuickAdd() }, [step, onFocusQuickAdd])
   useEffect(() => { if (step === 0 && taskCount > 0) setStep(1) }, [step, taskCount])
@@ -82,13 +83,13 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-on-accent-soft"><Icon name={current.icon} size="md" /></span>
         <div className="min-w-0 flex-1">
-          <p className="text-meta text-muted">Step {step + 1} of {STEPS.length}</p>
+          <p className="text-meta text-muted">{t('Step {n} of {count}', { n: step + 1, count: STEPS.length })}</p>
           <h2 id="first-run-title" className="text-h3 font-semibold text-strong">{current.title}</h2>
           {current.id === 'task' && (
-            <p className="mt-1 text-body text-muted">Type a line in the box above and press Enter. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.</p>
+            <p className="mt-1 text-body text-muted">{t.rich('Type a line in the box above and press Enter. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.', { em: (chunks) => <em>{chunks}</em> })}</p>
           )}
           {current.id === 'appearance' && (
-            <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Appearance">
+            <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={t('Appearance')}>
               {THEME_MODES.map((m) => (
                 <Button key={m} size="sm" variant={mode === m ? 'primary' : 'secondary'} role="radio" aria-checked={mode === m} data-first-run-mode={m}
                   onClick={() => void setAppearance('theme_mode', m)}>{label(m)}</Button>
@@ -96,25 +97,25 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
             </div>
           )}
           {current.id === 'install' && (
-            <p className="mt-1 text-body text-muted">Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.</p>
+            <p className="mt-1 text-body text-muted">{t('Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.')}</p>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {current.id === 'install' && (
               <Button size="sm" variant="primary" data-first-run-install onClick={() => {
                 if (canInstall) void installPrompt().then(next)
                 else { navigate({ view: 'help', page: 'install-app' }); next() }
-              }}>{canInstall ? 'Install' : 'How to install'}</Button>
+              }}>{canInstall ? t('Install') : t('How to install')}</Button>
             )}
             <Button size="sm" variant={current.id === 'install' ? 'ghost' : 'secondary'} data-first-run-next onClick={next}>
-              {step === STEPS.length - 1 ? 'Skip' : current.id === 'appearance' ? 'Next' : 'Skip this step'}
+              {step === STEPS.length - 1 ? t('Skip') : current.id === 'appearance' ? t('Next') : t('Skip this step')}
             </Button>
             {sampleOffered && (
               <Button size="sm" variant="ghost" icon="rocket" data-first-run-sample onClick={() => {
                 setSampleOffered(false)
                 void createSampleProject().then((id) => navigate({ view: 'project', id }))
-              }}>Show me around</Button>
+              }}>{t('Show me around')}</Button>
             )}
-            <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={() => void setFirstRunDone()}>Skip all</Button>
+            <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={() => void setFirstRunDone()}>{t('Skip all')}</Button>
           </div>
         </div>
       </div>
@@ -123,5 +124,5 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
 }
 
 function label(m: ThemeModePref): string {
-  return m === 'system' ? 'System' : m === 'light' ? 'Light' : 'Dark'
+  return m === 'system' ? t('System') : m === 'light' ? t('Light') : t('Dark')
 }

@@ -4,6 +4,7 @@
 // TaskRow, which carries drag handles, menus and hover controls a display must
 // not show. Shared by the signed-in display and the public link display.
 import { Icon } from '../../ui'
+import { t } from '../../lib/i18n'
 
 export interface DisplayRowData {
   /** Unique on the screen (a task can sit in two groups of a saved view). */
@@ -39,7 +40,7 @@ export function DisplayColumn({ id, heading, rows, empty, focusKey, onFocusRow, 
   if (rows.length === 0 && !empty) return null
   const headingId = `display-group-${id}`
   return (
-    <section aria-labelledby={heading ? headingId : undefined} aria-label={heading ? undefined : 'Tasks'} data-display-group={id} className="min-w-0">
+    <section aria-labelledby={heading ? headingId : undefined} aria-label={heading ? undefined : t('Tasks')} data-display-group={id} className="min-w-0">
       {heading && <h2 id={headingId} className="display-heading mb-1 border-b-2 border-default pb-1">{heading}</h2>}
       {rows.length === 0 ? (
         <p className="display-meta py-2">{empty}</p>
@@ -55,7 +56,7 @@ export function DisplayColumn({ id, heading, rows, empty, focusKey, onFocusRow, 
 }
 
 function DisplayRow({ row, focused, onFocus, onToggle }: { row: DisplayRowData; focused: boolean; onFocus: () => void; onToggle: () => void }) {
-  const title = row.title || 'Untitled'
+  const title = row.title || t('Untitled')
   const state = row.done ? 'done' : row.overdue ? 'overdue' : 'open'
   const label = [title, row.due ? `due ${row.due}` : null, row.priority < 4 ? `priority ${row.priority}` : null, state].filter(Boolean).join(', ')
   return (
@@ -63,7 +64,7 @@ function DisplayRow({ row, focused, onFocus, onToggle }: { row: DisplayRowData; 
       data-done={row.done || undefined} data-editable={row.editable || undefined} onFocus={onFocus}
       style={row.depth ? { paddingInlineStart: `${row.depth * 1.25}em` } : undefined}>
       {row.editable ? (
-        <button type="button" role="checkbox" aria-checked={row.done} tabIndex={-1} aria-label={`${row.done ? 'Reopen' : 'Complete'} ${title}`}
+        <button type="button" role="checkbox" aria-checked={row.done} tabIndex={-1} aria-label={row.done ? t('Reopen {title}', { title }) : t('Complete {title}', { title })}
           className="display-check" data-display-check onClick={(e) => { e.stopPropagation(); onToggle() }}>
           <span className={`display-check-mark ${row.done ? 'border-input bg-faint text-on-accent' : 'border-input'}`}>
             {row.done && <Icon name="check" style={EM} />}

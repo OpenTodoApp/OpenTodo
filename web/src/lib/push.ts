@@ -6,6 +6,7 @@ import { getMeta, setMeta } from './db'
 import { getDeviceId } from './ops'
 import type { PushSubscriptionStatus } from './types'
 import { formatInstant } from './dates'
+import { t, msg, translatedMap } from './i18n'
 
 const META_ENABLED = 'push:enabled'
 const META_INCLUDE = 'push:includeContent'
@@ -82,11 +83,11 @@ export class PushPermissionError extends Error {}
  * server's key and register the subscription. Re-running it renews a dropped one.
  */
 export async function enablePush(includeContent: boolean): Promise<PushState> {
-  if (!pushSupported()) throw new Error('This browser does not support push notifications.')
+  if (!pushSupported()) throw new Error(t('This browser does not support push notifications.'))
   const perm = await Notification.requestPermission()
-  if (perm !== 'granted') throw new PushPermissionError('Notifications are blocked for this site.')
+  if (perm !== 'granted') throw new PushPermissionError(t('Notifications are blocked for this site.'))
   const reg = await swRegistration()
-  if (!reg) throw new Error('The offline service worker is not active yet; reload the page and try again.')
+  if (!reg) throw new Error(t('The offline service worker is not active yet; reload the page and try again.'))
   const { publicKey } = await api.pushKey()
   let sub = await reg.pushManager.getSubscription()
   // A subscription made for another server key (key rotated or restored elsewhere) must be replaced.
@@ -101,7 +102,7 @@ export async function enablePush(includeContent: boolean): Promise<PushState> {
       sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want })
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err)
-      throw new Error(`This browser refused the push subscription (${detail}). Private windows and some browsers cannot receive push; reminders still appear inside the app.`)
+      throw new Error(t('This browser refused the push subscription ({detail}). Private windows and some browsers cannot receive push; reminders still appear inside the app.', { detail }))
     }
   }
   const json = sub.toJSON()
@@ -210,7 +211,7 @@ export async function sendTestPush(deviceId: string, opts: TestOptions = {}): Pr
     stop()
     if (res.outcome === 'no_subscription') return { kind: 'no_subscription' }
     if (res.outcome === 'gone') return { kind: 'gone' }
-    return { kind: 'failed', status: res.status, error: res.error ?? 'The push service rejected the test.' }
+    return { kind: 'failed', status: res.status, error: res.error ?? t('The push service rejected the test.') }
   }
   const testId = res.testId
   opts.onSent?.(testId)
@@ -242,9 +243,9 @@ export async function sendTestPush(deviceId: string, opts: TestOptions = {}): Pr
  * service (design D7): proves only the permission and the OS display settings.
  */
 export async function localTestNotification(): Promise<void> {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') throw new PushPermissionError('Notifications are not allowed.')
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') throw new PushPermissionError(t('Notifications are not allowed.'))
   const reg = await swRegistration(1000)
-  const options = { body: 'Local notification: this browser may show notifications.', tag: `opentodo-local-test:${Date.now()}`, icon: '/pwa-192.png' }
+  const options = { body: t('Local notification: this browser may show notifications.'), tag: `opentodo-local-test:${Date.now()}`, icon: '/pwa-192.png' }
   if (reg) await reg.showNotification('OpenTodo', options)
   else new Notification('OpenTodo', options)
 }
@@ -269,83 +270,83 @@ export interface ChecklistStep {
 
 /** Where to turn notifications back on, by platform (best effort from the user agent). */
 export function osNotificationHint(ua: string): string {
-  if (/iPhone|iPad|iPod/.test(ua)) return 'On iPhone and iPad, push works only in the app installed to the Home Screen: check Settings → Notifications → OpenTodo, and Focus.'
-  if (/Android/.test(ua)) return 'On Android, check Settings → Apps → your browser → Notifications, and Do Not Disturb.'
-  if (/Mac OS X|Macintosh/.test(ua)) return 'On macOS, check System Settings → Notifications → your browser (allow notifications, banners or alerts), and Focus.'
-  if (/Windows/.test(ua)) return 'On Windows, check Settings → System → Notifications → your browser, and Do Not Disturb.'
-  return "Check your operating system's notification settings for this browser, and any do-not-disturb mode."
+  if (/iPhone|iPad|iPod/.test(ua)) return t('On iPhone and iPad, push works only in the app installed to the Home Screen: check Settings → Notifications → OpenTodo, and Focus.')
+  if (/Android/.test(ua)) return t('On Android, check Settings → Apps → your browser → Notifications, and Do Not Disturb.')
+  if (/Mac OS X|Macintosh/.test(ua)) return t('On macOS, check System Settings → Notifications → your browser (allow notifications, banners or alerts), and Focus.')
+  if (/Windows/.test(ua)) return t('On Windows, check Settings → System → Notifications → your browser, and Do Not Disturb.')
+  return t("Check your operating system's notification settings for this browser, and any do-not-disturb mode.")
 }
 
-const TEST_DETAIL: Record<Exclude<TestOutcome['kind'], 'received' | 'accepted_not_seen'>, string> = {
-  no_subscription: 'This device is not subscribed, so nothing was sent.',
-  gone: 'The push service said this subscription expired; the server removed it.',
-  failed: 'The push service rejected the test.',
-  rate_limited: 'Too many tests in a short time; try again in a few minutes.',
-  offline: "You're offline; the test needs the server.",
-  server_too_old: 'This server does not support push tests yet; only a local notification can be shown.',
-}
+const TEST_DETAIL = translatedMap<Exclude<TestOutcome['kind'], 'received' | 'accepted_not_seen'>>({
+  no_subscription: msg('This device is not subscribed, so nothing was sent.'),
+  gone: msg('The push service said this subscription expired; the server removed it.'),
+  failed: msg('The push service rejected the test.'),
+  rate_limited: msg('Too many tests in a short time; try again in a few minutes.'),
+  offline: msg("You're offline; the test needs the server."),
+  server_too_old: msg('This server does not support push tests yet; only a local notification can be shown.'),
+})
 
 export function pushChecklist(
   state: PushState, lastTest: TestOutcome | null, online: boolean, opts: { dev?: boolean; ua?: string } = {},
 ): ChecklistStep[] {
   const steps: ChecklistStep[] = []
   let blocked = false
-  const add = (step: ChecklistStep) => steps.push(blocked && step.status !== 'unknown' ? { ...step, status: 'not_checked', detail: 'Not checked until the step above works.', action: undefined } : step)
+  const add = (step: ChecklistStep) => steps.push(blocked && step.status !== 'unknown' ? { ...step, status: 'not_checked', detail: t('Not checked until the step above works.'), action: undefined } : step)
 
   add(state.supported
-    ? { id: 'support', label: 'Browser supports push', status: 'ok', detail: 'This browser can receive push notifications.' }
-    : { id: 'support', label: 'Browser supports push', status: 'fail', detail: 'This browser cannot receive push notifications (private windows and some browsers cannot). Reminders still appear inside the app.' })
+    ? { id: 'support', label: t('Browser supports push'), status: 'ok', detail: t('This browser can receive push notifications.') }
+    : { id: 'support', label: t('Browser supports push'), status: 'fail', detail: t('This browser cannot receive push notifications (private windows and some browsers cannot). Reminders still appear inside the app.') })
   blocked ||= !state.supported
 
   const perm = state.permission
   add(perm === 'granted'
-    ? { id: 'permission', label: 'Notifications allowed', status: 'ok', detail: 'This site may show notifications.' }
+    ? { id: 'permission', label: t('Notifications allowed'), status: 'ok', detail: t('This site may show notifications.') }
     : perm === 'denied'
-      ? { id: 'permission', label: 'Notifications allowed', status: 'fail', detail: "Notifications are blocked for this site. Allow them in the browser's site settings (the icon next to the address), then reload." }
-      : { id: 'permission', label: 'Notifications allowed', status: 'pending', detail: 'The browser has not been asked yet.', action: 'enable' })
+      ? { id: 'permission', label: t('Notifications allowed'), status: 'fail', detail: t("Notifications are blocked for this site. Allow them in the browser's site settings (the icon next to the address), then reload.") }
+      : { id: 'permission', label: t('Notifications allowed'), status: 'pending', detail: t('The browser has not been asked yet.'), action: 'enable' })
   blocked ||= perm === 'denied' || perm === 'unsupported'
 
   add(state.serviceWorker
-    ? { id: 'serviceWorker', label: 'Offline service worker active', status: 'ok', detail: 'The background worker that receives pushes is running.' }
+    ? { id: 'serviceWorker', label: t('Offline service worker active'), status: 'ok', detail: t('The background worker that receives pushes is running.') }
     : opts.dev
-      ? { id: 'serviceWorker', label: 'Offline service worker active', status: 'fail', detail: 'Development builds have no service worker, so push cannot work here. Use the production build (make run, http://localhost:8080) or the installed app. In-app reminders still work.' }
-      : { id: 'serviceWorker', label: 'Offline service worker active', status: 'fail', detail: 'The offline service worker is not active yet. Reload the page; on iPhone and iPad, install the app to the Home Screen first.', action: 'reload' })
+      ? { id: 'serviceWorker', label: t('Offline service worker active'), status: 'fail', detail: t('Development builds have no service worker, so push cannot work here. Use the production build (make run, http://localhost:8080) or the installed app. In-app reminders still work.') }
+      : { id: 'serviceWorker', label: t('Offline service worker active'), status: 'fail', detail: t('The offline service worker is not active yet. Reload the page; on iPhone and iPad, install the app to the Home Screen first.'), action: 'reload' })
   const noWorker = !state.serviceWorker
 
   const serverUnknown = !online || state.serverUnreachable
   const sub = state.subscription
   if (serverUnknown) {
-    add({ id: 'subscription', label: 'Subscribed on the server', status: 'unknown', detail: "Can't check while offline." })
+    add({ id: 'subscription', label: t('Subscribed on the server'), status: 'unknown', detail: t("Can't check while offline.") })
   } else if (!state.available) {
-    add({ id: 'subscription', label: 'Subscribed on the server', status: 'fail', detail: 'The server has push notifications turned off (OPENTODO_PUSH=off). Reminders still appear inside the app.' })
+    add({ id: 'subscription', label: t('Subscribed on the server'), status: 'fail', detail: t('The server has push notifications turned off (OPENTODO_PUSH=off). Reminders still appear inside the app.') })
     blocked = true
   } else if (!sub) {
-    add({ id: 'subscription', label: 'Subscribed on the server', status: 'fail', detail: 'This device has no subscription on the server.', action: noWorker || perm === 'denied' ? undefined : 'enable' })
+    add({ id: 'subscription', label: t('Subscribed on the server'), status: 'fail', detail: t('This device has no subscription on the server.'), action: noWorker || perm === 'denied' ? undefined : 'enable' })
   } else {
-    add({ id: 'subscription', label: 'Subscribed on the server', status: 'ok', detail: 'The server can push to this device.' })
+    add({ id: 'subscription', label: t('Subscribed on the server'), status: 'ok', detail: t('The server can push to this device.') })
   }
 
   if (serverUnknown) {
-    add({ id: 'delivery', label: 'Server reaches the push service', status: 'unknown', detail: "Can't check while offline." })
+    add({ id: 'delivery', label: t('Server reaches the push service'), status: 'unknown', detail: t("Can't check while offline.") })
   } else if (!sub) {
-    add({ id: 'delivery', label: 'Server reaches the push service', status: 'not_checked', detail: 'Needs a subscription first.' })
+    add({ id: 'delivery', label: t('Server reaches the push service'), status: 'not_checked', detail: t('Needs a subscription first.') })
   } else if (sub.failures > 0) {
-    add({ id: 'delivery', label: 'Server reaches the push service', status: 'fail', detail: `The last ${sub.failures === 1 ? 'send' : `${sub.failures} sends`} failed: ${sub.lastError || 'unknown error'}.`, action: 'reenable' })
+    add({ id: 'delivery', label: t('Server reaches the push service'), status: 'fail', detail: t('{n, plural, one {The last send failed: {error}.} other {The last # sends failed: {error}.}}', { n: sub.failures, error: sub.lastError || t('unknown error') }), action: 'reenable' })
   } else if (sub.lastOkAt) {
-    add({ id: 'delivery', label: 'Server reaches the push service', status: 'ok', detail: `Last delivered ${formatInstant(sub.lastOkAt, 'datetime')}.` })
+    add({ id: 'delivery', label: t('Server reaches the push service'), status: 'ok', detail: t('Last delivered {instant}.', { instant: formatInstant(sub.lastOkAt, 'datetime') }) })
   } else {
-    add({ id: 'delivery', label: 'Server reaches the push service', status: 'pending', detail: 'Nothing delivered yet; send a test.' })
+    add({ id: 'delivery', label: t('Server reaches the push service'), status: 'pending', detail: t('Nothing delivered yet; send a test.') })
   }
 
   const hint = osNotificationHint(opts.ua ?? (typeof navigator !== 'undefined' ? navigator.userAgent : ''))
   if (!lastTest) {
-    add({ id: 'test', label: 'Test notification received', status: serverUnknown ? 'unknown' : 'pending', detail: serverUnknown ? 'The test needs the server; go online to run it.' : 'Not run yet.' })
+    add({ id: 'test', label: t('Test notification received'), status: serverUnknown ? 'unknown' : 'pending', detail: serverUnknown ? t('The test needs the server; go online to run it.') : t('Not run yet.') })
   } else if (lastTest.kind === 'received') {
-    add({ id: 'test', label: 'Test notification received', status: 'ok', detail: `Received on this device at ${formatInstant(lastTest.receivedAt, 'time')}. If no banner appeared, the operating system hid it. ${hint}` })
+    add({ id: 'test', label: t('Test notification received'), status: 'ok', detail: `${t('Received on this device at {time}. If no banner appeared, the operating system hid it.', { time: formatInstant(lastTest.receivedAt, 'time') })} ${hint}` })
   } else if (lastTest.kind === 'accepted_not_seen') {
-    add({ id: 'test', label: 'Test notification received', status: 'fail', detail: `The push service accepted the test, but this device has not reported it. ${hint}` })
+    add({ id: 'test', label: t('Test notification received'), status: 'fail', detail: `${t('The push service accepted the test, but this device has not reported it.')} ${hint}` })
   } else {
-    const step: ChecklistStep = { id: 'test', label: 'Test notification received', status: 'fail', detail: lastTest.kind === 'failed' ? `${TEST_DETAIL.failed} ${lastTest.status ? `(status ${lastTest.status})` : '(the push service could not be reached)'}` : TEST_DETAIL[lastTest.kind] }
+    const step: ChecklistStep = { id: 'test', label: t('Test notification received'), status: 'fail', detail: lastTest.kind === 'failed' ? `${TEST_DETAIL.failed} ${lastTest.status ? t('(status {status})', { status: lastTest.status }) : t('(the push service could not be reached)')}` : TEST_DETAIL[lastTest.kind] }
     if (lastTest.kind === 'gone' || lastTest.kind === 'no_subscription') step.action = noWorker ? undefined : lastTest.kind === 'gone' ? 'reenable' : 'enable'
     add(step)
   }

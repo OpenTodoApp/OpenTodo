@@ -8,16 +8,17 @@ import { formatDate, type ResolvedDateTime, currentDateTime } from './dates'
 import { mutate, mutateMany, type Change } from './ops'
 import { byPosition, planStep, positionAtEnd } from './ordering'
 import type { FieldDef, FieldType, FieldValue, Task } from './types'
+import { t, msg, translatedList } from './i18n'
 
 /** The types a definition may have, in the order the dialog offers them. */
-export const FIELD_TYPES: readonly { type: FieldType; label: string }[] = [
-  { type: 'text', label: 'Text' },
-  { type: 'number', label: 'Number' },
-  { type: 'date', label: 'Date' },
-  { type: 'choice', label: 'Choice' },
-  { type: 'link', label: 'Link' },
-  { type: 'checkbox', label: 'Checkbox' },
-]
+export const FIELD_TYPES: readonly { type: FieldType; label: string }[] = translatedList<{ type: FieldType; label: string }, 'label'>([
+  { type: 'text', label: msg('Text') },
+  { type: 'number', label: msg('Number') },
+  { type: 'date', label: msg('Date') },
+  { type: 'choice', label: msg('Choice') },
+  { type: 'link', label: msg('Link') },
+  { type: 'checkbox', label: msg('Checkbox') },
+], 'label')
 
 /** Limits shared with the REST API (internal/httpapi/fields.go). */
 export const MAX_FIELDS = 30
@@ -115,36 +116,36 @@ export function validateValue(def: Pick<FieldDef, 'type' | 'options'>, raw: stri
   if (raw === null) return { ok: true, value: null }
   if (def.type === 'checkbox') {
     if (typeof raw === 'boolean') return { ok: true, value: raw }
-    return { ok: false, message: 'Choose on or off.' }
+    return { ok: false, message: t('Choose on or off.') }
   }
   if (typeof raw === 'number') {
     if (def.type === 'number' && Number.isFinite(raw)) return { ok: true, value: raw }
     raw = String(raw)
   }
-  if (typeof raw !== 'string') return { ok: false, message: 'Not a valid value.' }
+  if (typeof raw !== 'string') return { ok: false, message: t('Not a valid value.') }
   const s = def.type === 'text' ? raw : raw.trim()
   if (s.trim() === '') return { ok: true, value: null }
   switch (def.type) {
     case 'number': {
       const n = parseLocaleNumber(s, locale)
-      return n === null ? { ok: false, message: 'Enter a number.' } : { ok: true, value: n }
+      return n === null ? { ok: false, message: t('Enter a number.') } : { ok: true, value: n }
     }
     case 'date':
-      return validDate(s) ? { ok: true, value: s } : { ok: false, message: 'Enter a date.' }
+      return validDate(s) ? { ok: true, value: s } : { ok: false, message: t('Enter a date.') }
     case 'choice':
-      return parseOptions(def.options).includes(s) ? { ok: true, value: s } : { ok: false, message: 'Pick one of the options.' }
+      return parseOptions(def.options).includes(s) ? { ok: true, value: s } : { ok: false, message: t('Pick one of the options.') }
     case 'link': {
-      if (s.length > MAX_FIELD_TEXT) return { ok: false, message: `At most ${MAX_FIELD_TEXT} characters.` }
+      if (s.length > MAX_FIELD_TEXT) return { ok: false, message: t('At most {n} characters.', { n: MAX_FIELD_TEXT }) }
       try {
         const u = new URL(s)
         if ((u.protocol === 'http:' || u.protocol === 'https:') && u.host) return { ok: true, value: s }
       } catch {
         // fall through
       }
-      return { ok: false, message: 'Enter a link starting with http:// or https://.' }
+      return { ok: false, message: t('Enter a link starting with http:// or https://.') }
     }
     default:
-      if ([...s].length > MAX_FIELD_TEXT) return { ok: false, message: `At most ${MAX_FIELD_TEXT} characters.` }
+      if ([...s].length > MAX_FIELD_TEXT) return { ok: false, message: t('At most {n} characters.', { n: MAX_FIELD_TEXT }) }
       return { ok: true, value: s }
   }
 }
@@ -154,7 +155,7 @@ export function formatValue(def: Pick<FieldDef, 'type'>, value: FieldValue | und
   if (value === null || value === undefined || value === '') return ''
   if (def.type === 'number' && typeof value === 'number') return new Intl.NumberFormat(undefined, { maximumFractionDigits: 20 }).format(value)
   if (def.type === 'date' && typeof value === 'string' && validDate(value)) return formatDate(value, 'compact', p)
-  if (def.type === 'checkbox' && typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (def.type === 'checkbox' && typeof value === 'boolean') return value ? t('Yes') : t('No')
   return String(value)
 }
 
@@ -177,9 +178,9 @@ export function fieldBadges(task: Pick<Task, 'project_id' | 'fields'>, defs: rea
 /** How many live tasks hold a value for a definition (the delete confirmation). */
 export function countValues(defId: string, tasks: readonly Task[]): number {
   let n = 0
-  for (const t of tasks) {
-    const v = t.fields?.[defId]
-    if (!t.deleted_at && v !== null && v !== undefined && v !== '') n++
+  for (const task of tasks) {
+    const v = task.fields?.[defId]
+    if (!task.deleted_at && v !== null && v !== undefined && v !== '') n++
   }
   return n
 }
@@ -193,31 +194,31 @@ export async function projectFields(projectId: string): Promise<FieldDef[]> {
 
 function checkName(name: string, siblings: readonly FieldDef[], exceptId?: string): string {
   const trimmed = name.trim()
-  if (!trimmed) throw new FieldError('A field needs a name.')
-  if ([...trimmed].length > MAX_FIELD_NAME) throw new FieldError(`A name has at most ${MAX_FIELD_NAME} characters.`)
+  if (!trimmed) throw new FieldError(t('A field needs a name.'))
+  if ([...trimmed].length > MAX_FIELD_NAME) throw new FieldError(t('A name has at most {n} characters.', { n: MAX_FIELD_NAME }))
   const key = trimmed.toLocaleLowerCase()
   if (siblings.some((d) => d.id !== exceptId && d.name.trim().toLocaleLowerCase() === key)) {
-    throw new FieldError(`This project already has a field named “${trimmed}”.`)
+    throw new FieldError(t('This project already has a field named “{name}”.', { name: trimmed }))
   }
   return trimmed
 }
 
 function checkOptions(options: string): string {
   const list = parseOptions(options)
-  if (list.length > MAX_OPTIONS) throw new FieldError(`At most ${MAX_OPTIONS} options.`, 'options')
-  if (list.some((o) => [...o].length > MAX_OPTION_LEN)) throw new FieldError(`An option has at most ${MAX_OPTION_LEN} characters.`, 'options')
-  if (new Set(list).size !== list.length) throw new FieldError('Each option may appear once.', 'options')
+  if (list.length > MAX_OPTIONS) throw new FieldError(t('At most {n} options.', { n: MAX_OPTIONS }), 'options')
+  if (list.some((o) => [...o].length > MAX_OPTION_LEN)) throw new FieldError(t('An option has at most {n} characters.', { n: MAX_OPTION_LEN }), 'options')
+  if (new Set(list).size !== list.length) throw new FieldError(t('Each option may appear once.'), 'options')
   return list.join('\n')
 }
 
 /** Add a definition at the end of the project's fields. Returns its id. */
 export async function createField(projectId: string, input: { name: string; type: FieldType; options?: string }): Promise<string> {
   const siblings = await projectFields(projectId)
-  if (siblings.length >= MAX_FIELDS) throw new FieldError(`A project can have at most ${MAX_FIELDS} fields.`)
+  if (siblings.length >= MAX_FIELDS) throw new FieldError(t('A project can have at most {n} fields.', { n: MAX_FIELDS }))
   const name = checkName(input.name, siblings)
-  if (!FIELD_TYPES.some((t) => t.type === input.type)) throw new FieldError('Choose a type.', 'type')
+  if (!FIELD_TYPES.some((item) => item.type === input.type)) throw new FieldError(t('Choose a type.'), 'type')
   const options = input.type === 'choice' ? checkOptions(input.options ?? '') : ''
-  if (input.type === 'choice' && !options) throw new FieldError('A choice field needs at least one option.', 'options')
+  if (input.type === 'choice' && !options) throw new FieldError(t('A choice field needs at least one option.'), 'options')
   const id = crypto.randomUUID()
   await mutate('field', id, {
     name, project_id: projectId, type: input.type, options, position: positionAtEnd(siblings), created_at: Date.now(), deleted_at: null,
@@ -242,15 +243,15 @@ export async function setFieldOptions(id: string, options: string, renamed: Reco
   const def = await db.fields.get(id)
   if (!def || def.deleted_at || def.type !== 'choice') return 0
   const next = checkOptions(options)
-  if (!next) throw new FieldError('A choice field needs at least one option.', 'options')
+  if (!next) throw new FieldError(t('A choice field needs at least one option.'), 'options')
   const changes: Change[] = []
   if (next !== def.options) changes.push({ entity: 'field', entityId: id, patch: { options: next } })
   const rename = new Map(Object.entries(renamed).filter(([from, to]) => from !== to && to.trim()))
   if (rename.size) {
-    const tasks = await db.tasks.where('project_id').equals(def.project_id).filter((t) => !t.deleted_at).toArray()
-    for (const t of tasks) {
-      const v = t.fields?.[id]
-      if (typeof v === 'string' && rename.has(v)) changes.push({ entity: 'task', entityId: t.id, patch: { fields: { [id]: rename.get(v)!.trim() } } })
+    const tasks = await db.tasks.where('project_id').equals(def.project_id).filter((task) => !task.deleted_at).toArray()
+    for (const tk of tasks) {
+      const v = tk.fields?.[id]
+      if (typeof v === 'string' && rename.has(v)) changes.push({ entity: 'task', entityId: tk.id, patch: { fields: { [id]: rename.get(v)!.trim() } } })
     }
   }
   if (changes.length) await mutateMany(changes)

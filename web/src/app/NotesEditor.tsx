@@ -12,6 +12,7 @@ import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHA
 import { applyBody, createState, markdownSlice, pmToModel, remoteKey, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import type { Clock } from '../lib/types'
 import { Markdown } from './Markdown'
+import { t } from '../lib/i18n'
 
 /** Debounce between the last keystroke and saving the note (design D3). */
 const SAVE_MS = 400
@@ -87,7 +88,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     const value = encodeDoc(ydoc.current)
     mutate(entity, taskId, { notes_doc: value }).then(
       () => setError(null),
-      (err) => setError(err instanceof DocTooLargeError ? err.message : `Could not save the note: ${err instanceof Error ? err.message : String(err)}`),
+      (err) => setError(err instanceof DocTooLargeError ? err.message : t('Could not save the note: {reason}', { reason: err instanceof Error ? err.message : String(err) })),
     )
   }
 
@@ -103,15 +104,15 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     bodyName.current = activeBodyName(doc)
     size.current = 0
     const hooks: EditorHooks = {
-      askLink: (current) => window.prompt('Link address (empty to remove)', current || 'https://'),
+      askLink: (current) => window.prompt(t('Link address (empty to remove)'), current || 'https://'),
       onEscape: () => { view.current?.dom.blur(); onEscapeRef.current?.() },
       size: () => size.current,
-      placeholder: readOnly ? '' : 'Add notes…',
+      placeholder: readOnly ? '' : t('Add notes…'),
     }
     const v = new EditorView(host.current as HTMLDivElement, {
       state: createState(toModel(activeBody(doc)), hooks),
       editable: () => !readOnly,
-      attributes: { 'aria-label': 'Notes', 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
+      attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
       clipboardTextParser: (text) => markdownSlice(text),
       handleClickOn: (_view, _pos, node, nodePos, event) => {
         // A click on a check item's box (left of its text) toggles it.
@@ -148,7 +149,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         const d = ydoc.current
         d.transact(() => writeBody(activeBody(d), next.doc), LOCAL)
         size.current = usage(d, next.doc)
-        setSizeNote(size.current >= WARN_DOC_CHARS ? `This note is ${Math.round((size.current / MAX_DOC_CHARS) * 100)}% of the size limit.` : null)
+        setSizeNote(size.current >= WARN_DOC_CHARS ? t('This note is {percent}% of the size limit.', { percent: Math.round((size.current / MAX_DOC_CHARS) * 100) }) : null)
         dirty.current = true
         if (timer.current) clearTimeout(timer.current)
         timer.current = setTimeout(() => flush.current(), SAVE_MS)
@@ -210,7 +211,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     return (
       <div className="space-y-1">
         <p role="note" className="text-meta text-warning">
-          This note's formatting could not be read on this device; its text is shown instead.
+          {t('This note\'s formatting could not be read on this device; its text is shown instead.')}
         </p>
         <div className="rounded-control border border-default p-3 text-body">
           <Markdown source={task.description ?? ''} />

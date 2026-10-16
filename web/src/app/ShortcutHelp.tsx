@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { displayKeys, listedShortcuts, QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
 import { Dialog } from './overlay'
 import { navigate } from './router'
+import { t } from '../lib/i18n'
 
 /** An extra block of the sheet that is not made of keys (the Vim command line). */
 export interface HelpSection {
@@ -49,7 +50,8 @@ export function orderedSections(ctx: HelpContext | undefined): { id: ShortcutSec
     if (seen.has(id)) continue
     seen.add(id)
     const sec = SHORTCUT_SECTIONS.find((s) => s.id === id)
-    if (sec) out.push(sec)
+    // The registry keeps English source text (the keyboard guide is generated from it); shown translated.
+    if (sec) out.push({ id: sec.id, title: t(sec.title) })
   }
   return out
 }
@@ -75,9 +77,9 @@ function Rows({ rows, mono = false }: { rows: [string, string][]; mono?: boolean
   )
 }
 
-/** The sheet's rows for a registry entry: the keys as shown and the description. */
+/** The sheet's rows for a registry entry: the keys as shown and the description, in the interface language. */
 export function sheetRow(s: Shortcut): [string, string] {
-  return [displayKeys(s), s.description]
+  return [s.when ? displayKeys({ keys: s.keys, when: t(s.when) }) : displayKeys(s), t(s.description)]
 }
 
 export function ShortcutHelp({ onClose, extraSections = [], context, vim = extraSections.length > 0 }: {
@@ -97,26 +99,26 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
       .filter((g) => g.rows.length > 0)
   }, [context, q, vim])
   const extras = extraSections.map((sec) => ({ ...sec, rows: sec.rows.filter(([k, d]) => matches(q, k, d)) })).filter((s) => s.rows.length > 0)
-  const quickAdd = QUICK_ADD_SYNTAX.filter(([k, d]) => matches(q, k, d))
+  const quickAdd = QUICK_ADD_SYNTAX.map(([k, d]): [string, string] => [k, t(d)]).filter(([k, d]) => matches(q, k, d))
   const contextCount = contextSections(context).length
   const empty = groups.length === 0 && extras.length === 0 && quickAdd.length === 0
 
   return (
     // The shared Dialog: full screen on phones, a card from 640 px up with the
     // header pinned; from 640 px the sheet itself is capped and scrolls inside.
-    <Dialog title="Keyboard shortcuts" onClose={onClose} size="lg" className="!pt-2" testId="shortcut-help">
+    <Dialog title={t('Keyboard shortcuts')} onClose={onClose} size="lg" className="!pt-2" testId="shortcut-help">
       <div role="search" className="mb-2">
-        <label className="sr-only" htmlFor="shortcut-search">Search shortcuts</label>
-        <input id="shortcut-search" type="search" className="ui-input w-full" placeholder="Search by key or action" value={query} autoFocus
+        <label className="sr-only" htmlFor="shortcut-search">{t('Search shortcuts')}</label>
+        <input id="shortcut-search" type="search" className="ui-input w-full" placeholder={t('Search by key or action')} value={query} autoFocus
           onChange={(e) => setQuery(e.target.value)} data-shortcut-search />
       </div>
-      <p className="sr-only" aria-live="polite">{q ? `${groups.reduce((n, g) => n + g.rows.length, 0) + extras.reduce((n, s) => n + s.rows.length, 0) + quickAdd.length} shortcuts` : ''}</p>
-      <div className="sm:max-h-[calc(80dvh-9rem)] sm:overflow-y-auto sm:overscroll-contain" data-shortcut-sheet tabIndex={0} role="region" aria-label="Shortcuts">
-        {empty && <p className="py-6 text-center text-body text-muted">No shortcut matches “{q}”.</p>}
+      <p className="sr-only" aria-live="polite">{q ? t('{n, plural, one {# shortcut} other {# shortcuts}}', { n: groups.reduce((n, g) => n + g.rows.length, 0) + extras.reduce((n, s) => n + s.rows.length, 0) + quickAdd.length }) : ''}</p>
+      <div className="sm:max-h-[calc(80dvh-9rem)] sm:overflow-y-auto sm:overscroll-contain" data-shortcut-sheet tabIndex={0} role="region" aria-label={t('Shortcuts')}>
+        {empty && <p className="py-6 text-center text-body text-muted">{t('No shortcut matches “{q}”.', { q })}</p>}
         <div className="grid gap-x-6 md:grid-cols-2">
           {groups.map((g, i) => (
             <section key={g.id} data-help-section={g.title} data-context-section={i < contextCount && !q ? '' : undefined} className="mb-2 break-inside-avoid">
-              <h3 className="mb-1 mt-3 text-body font-semibold">{g.title}{i < contextCount && !q ? <span className="ml-2 text-meta font-normal text-faint">here</span> : null}</h3>
+              <h3 className="mb-1 mt-3 text-body font-semibold">{g.title}{i < contextCount && !q ? <span className="ml-2 text-meta font-normal text-faint">{t('here')}</span> : null}</h3>
               <Rows rows={g.rows} />
             </section>
           ))}
@@ -129,22 +131,22 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
           ))}
           {quickAdd.length > 0 && (
             <section data-help-section="Quick add syntax" className="mb-2">
-              <h3 className="mb-1 mt-3 text-body font-semibold">Quick add syntax</h3>
+              <h3 className="mb-1 mt-3 text-body font-semibold">{t('Quick add syntax')}</h3>
               <Rows rows={quickAdd} mono />
             </section>
           )}
         </div>
       </div>
       {!vim && (
-        <p className="mt-3 text-meta text-muted" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.</p>
+        <p className="mt-3 text-meta text-muted" data-vim-hint>{t('Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.')}</p>
       )}
       <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-meta">
         <a className="touch-target inline-flex items-center text-muted underline" href="/help/quick-add"
-          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'quick-add' }) }}>Full quick add syntax</a>
+          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'quick-add' }) }}>{t('Full quick add syntax')}</a>
         <a className="touch-target inline-flex items-center text-muted underline" href="/help/keyboard"
-          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'keyboard' }) }}>Keyboard guide</a>
+          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'keyboard' }) }}>{t('Keyboard guide')}</a>
         <a className="touch-target inline-flex items-center text-muted underline" href="/help"
-          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>Open Help (<span className="ui-kbd mx-0.5">g</span> <span className="ui-kbd mx-0.5">?</span>)</a>
+          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>{t.rich('Open Help ({keys})', { keys: <><span className="ui-kbd mx-0.5">g</span> <span className="ui-kbd mx-0.5">?</span></> })}</a>
       </p>
     </Dialog>
   )

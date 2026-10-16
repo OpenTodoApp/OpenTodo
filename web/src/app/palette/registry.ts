@@ -25,6 +25,8 @@ import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
 import { keysOf } from '../../lib/shortcuts'
+import { hueName } from '../../lib/colourNames'
+import { t, msg, translatedList } from '../../lib/i18n'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -63,35 +65,36 @@ interface Command {
 }
 
 // The "Go to" commands; their shortcut column is the registry's `go.*` rows (keyboard-shortcuts "Registry drives the guide and the palette").
-const ROUTES: { label: string; route: Route; icon: IconName; shortcut?: string; keywords?: string }[] = [
-  { label: 'Go to Inbox', route: { view: 'inbox' }, icon: 'inbox', shortcut: keysOf('go.inbox') },
-  { label: 'Go to Today', route: { view: 'today' }, icon: 'calendar-check', shortcut: keysOf('go.today') },
-  { label: 'Go to Upcoming', route: { view: 'upcoming' }, icon: 'calendar-days', shortcut: keysOf('go.upcoming') },
-  { label: 'Go to Anytime', route: { view: 'anytime' }, icon: 'layers', shortcut: keysOf('go.anytime') },
-  { label: 'Go to Someday', route: { view: 'someday' }, icon: 'archive', shortcut: keysOf('go.someday') },
-  { label: 'Go to Assigned to me', route: { view: 'assigned' }, icon: 'user-check', shortcut: keysOf('go.assigned') },
-  { label: 'Go to Calendar (Day)', route: { view: 'day' }, icon: 'clock', shortcut: keysOf('go.day'), keywords: 'day calendar' },
-  { label: 'Go to Calendar (Week)', route: { view: 'week' }, icon: 'calendar-range', shortcut: keysOf('go.week'), keywords: 'week calendar' },
-  { label: 'Go to Completed', route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
-  { label: 'Go to Labels', route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
-  { label: 'Go to Filter', route: { view: 'filter' }, icon: 'filter', shortcut: keysOf('go.filter') },
-  { label: 'Go to Filters', route: { view: 'views' }, icon: 'list', shortcut: keysOf('go.views'), keywords: 'views saved filters boards dashboards' },
-  { label: 'Go to Trash', route: { view: 'trash' }, icon: 'trash-2', shortcut: keysOf('go.trash') },
-  { label: 'Go to Updates', route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
-  { label: 'Go to Ask', route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
-  { label: 'Open Help', route: { view: 'help' }, icon: 'list', shortcut: keysOf('go.help') },
-  { label: 'Go to Review', route: { view: 'review' }, icon: 'clipboard-check', shortcut: keysOf('go.review'), keywords: 'weekly review' },
-  { label: 'Go to Statistics', route: { view: 'stats' }, icon: 'chart-column', shortcut: keysOf('go.stats'), keywords: 'stats productivity completed' },
-  { label: 'Import data', route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
-  { label: 'Go to Settings', route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },
-]
+type RouteCommand = { label: string; route: Route; icon: IconName; shortcut?: string; keywords?: string }
+const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
+  { label: msg('Go to Inbox'), route: { view: 'inbox' }, icon: 'inbox', shortcut: keysOf('go.inbox') },
+  { label: msg('Go to Today'), route: { view: 'today' }, icon: 'calendar-check', shortcut: keysOf('go.today') },
+  { label: msg('Go to Upcoming'), route: { view: 'upcoming' }, icon: 'calendar-days', shortcut: keysOf('go.upcoming') },
+  { label: msg('Go to Anytime'), route: { view: 'anytime' }, icon: 'layers', shortcut: keysOf('go.anytime') },
+  { label: msg('Go to Someday'), route: { view: 'someday' }, icon: 'archive', shortcut: keysOf('go.someday') },
+  { label: msg('Go to Assigned to me'), route: { view: 'assigned' }, icon: 'user-check', shortcut: keysOf('go.assigned') },
+  { label: msg('Go to Calendar (Day)'), route: { view: 'day' }, icon: 'clock', shortcut: keysOf('go.day'), keywords: 'day calendar' },
+  { label: msg('Go to Calendar (Week)'), route: { view: 'week' }, icon: 'calendar-range', shortcut: keysOf('go.week'), keywords: 'week calendar' },
+  { label: msg('Go to Completed'), route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
+  { label: msg('Go to Labels'), route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
+  { label: msg('Go to Filter'), route: { view: 'filter' }, icon: 'filter', shortcut: keysOf('go.filter') },
+  { label: msg('Go to Filters'), route: { view: 'views' }, icon: 'list', shortcut: keysOf('go.views'), keywords: 'views saved filters boards dashboards' },
+  { label: msg('Go to Trash'), route: { view: 'trash' }, icon: 'trash-2', shortcut: keysOf('go.trash') },
+  { label: msg('Go to Updates'), route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
+  { label: msg('Go to Ask'), route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
+  { label: msg('Open Help'), route: { view: 'help' }, icon: 'list', shortcut: keysOf('go.help') },
+  { label: msg('Go to Review'), route: { view: 'review' }, icon: 'clipboard-check', shortcut: keysOf('go.review'), keywords: 'weekly review' },
+  { label: msg('Go to Statistics'), route: { view: 'stats' }, icon: 'chart-column', shortcut: keysOf('go.stats'), keywords: 'stats productivity completed' },
+  { label: msg('Import data'), route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
+  { label: msg('Go to Settings'), route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },
+], 'label')
 
 const prompt = (title: string, label: string, initial: string, onSubmit: (v: string) => unknown): Step => ({ kind: 'prompt', title, label, initial, onSubmit })
 
 /** Commands from an object menu: every enabled item, run as the menu runs it. */
 function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Command[] {
   return groups.flatMap((g) => g.items).filter((i) => !i.disabled).map((i: ActionItem): Command => ({
-    id: `${idPrefix}:${i.id}`, label: `${prefix}: ${i.label.replace(/…$/, '')}`, icon: i.icon, shortcut: i.shortcut, menuLabel: i.label,
+    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.label,
     run: () => (i.kind === 'picker' ? { kind: 'picker', picker: i.picker } as Step : i.kind === 'confirm' ? { kind: 'confirm', confirm: i.confirm } as Step : i.onSelect()),
   }))
 }
@@ -103,68 +106,68 @@ export function commands(ctx: PaletteContext): Command[] {
   const ticked = ctx.list?.ticked?.() ?? []
   if (ticked.length > 0 && ctx.list) {
     const list = ctx.list
-    const n = `${ticked.length} ${ticked.length === 1 ? 'task' : 'tasks'}`
+    const n = t('{n, plural, one {# task} other {# tasks}}', { n: ticked.length })
     out.push(
-      { id: 'sel:complete', label: `Complete ${n}`, icon: 'check', shortcut: keysOf('list.complete'), run: () => runBulk(ticked, { kind: 'complete' }) },
-      ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `sel:p${p}`, label: `Set priority ${p} on ${n}`, icon: 'flag', shortcut: String(p), run: () => runBulk(ticked, { kind: 'priority', priority: p }) })),
-      { id: 'sel:today', label: `Reschedule ${n} to today`, icon: 'calendar-check', run: () => runBulk(ticked, { kind: 'due', pick: 'today' }) },
-      { id: 'sel:tomorrow', label: `Reschedule ${n} to tomorrow`, icon: 'calendar-days', run: () => runBulk(ticked, { kind: 'due', pick: 'tomorrow' }) },
-      { id: 'sel:next-week', label: `Reschedule ${n} to next week`, icon: 'calendar-range', run: () => runBulk(ticked, { kind: 'due', pick: 'next-week' }) },
-      { id: 'sel:no-date', label: `Remove the date from ${n}`, icon: 'x', run: () => runBulk(ticked, { kind: 'due', pick: null }) },
+      { id: 'sel:complete', label: t('Complete {tasks}', { tasks: n }), icon: 'check', shortcut: keysOf('list.complete'), run: () => runBulk(ticked, { kind: 'complete' }) },
+      ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `sel:p${p}`, label: t('Set priority {p} on {tasks}', { p, tasks: n }), icon: 'flag', shortcut: String(p), run: () => runBulk(ticked, { kind: 'priority', priority: p }) })),
+      { id: 'sel:today', label: t('Reschedule {tasks} to today', { tasks: n }), icon: 'calendar-check', run: () => runBulk(ticked, { kind: 'due', pick: 'today' }) },
+      { id: 'sel:tomorrow', label: t('Reschedule {tasks} to tomorrow', { tasks: n }), icon: 'calendar-days', run: () => runBulk(ticked, { kind: 'due', pick: 'tomorrow' }) },
+      { id: 'sel:next-week', label: t('Reschedule {tasks} to next week', { tasks: n }), icon: 'calendar-range', run: () => runBulk(ticked, { kind: 'due', pick: 'next-week' }) },
+      { id: 'sel:no-date', label: t('Remove the date from {tasks}', { tasks: n }), icon: 'x', run: () => runBulk(ticked, { kind: 'due', pick: null }) },
       ...(list.openActions ? [
-        { id: 'sel:labels', label: `Labels for ${n}`, icon: 'tag' as const, shortcut: keysOf('list.labels'), run: () => list.openActions!('labels') },
-        { id: 'sel:move', label: `Move ${n} to a project`, icon: 'folder-input' as const, run: () => list.openActions!('move') },
-        { id: 'sel:assign', label: `Assign ${n}`, icon: 'user-check' as const, shortcut: keysOf('list.assign'), run: () => list.openActions!('assign') },
+        { id: 'sel:labels', label: t('Labels for {tasks}', { tasks: n }), icon: 'tag' as const, shortcut: keysOf('list.labels'), run: () => list.openActions!('labels') },
+        { id: 'sel:move', label: t('Move {tasks} to a project', { tasks: n }), icon: 'folder-input' as const, run: () => list.openActions!('move') },
+        { id: 'sel:assign', label: t('Assign {tasks}', { tasks: n }), icon: 'user-check' as const, shortcut: keysOf('list.assign'), run: () => list.openActions!('assign') },
       ] : []),
-      { id: 'sel:trash', label: `Move ${n} to the Trash`, icon: 'trash-2', shortcut: keysOf('list.delete'), run: () => runBulk(ticked, { kind: 'trash' }) },
+      { id: 'sel:trash', label: t('Move {tasks} to the Trash', { tasks: n }), icon: 'trash-2', shortcut: keysOf('list.delete'), run: () => runBulk(ticked, { kind: 'trash' }) },
     )
   }
-  const t = ticked.length > 0 ? undefined : ctx.task
-  const writable = !!t && !!ctx.list && !ctx.list.readOnly(t)
-  if (t && ctx.list) {
-    const title = `“${t.title || 'Untitled'}”`
+  const tk = ticked.length > 0 ? undefined : ctx.task
+  const writable = !!tk && !!ctx.list && !ctx.list.readOnly(tk)
+  if (tk && ctx.list) {
+    const title = `“${tk.title || t('Untitled')}”`
     const list = ctx.list
-    out.push({ id: 'task:open', label: `Open ${title}`, icon: 'chevron-right', shortcut: keysOf('list.open'), run: () => list.open(t.id) })
+    out.push({ id: 'task:open', label: t('Open {title}', { title }), icon: 'chevron-right', shortcut: keysOf('list.open'), run: () => list.open(tk.id) })
     if (writable) {
       out.push(
-        { id: 'task:complete', label: `${t.completed_at ? 'Reopen' : 'Complete'} ${title}`, icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(t.id, !t.completed_at) },
-        ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: `Set priority ${p} on ${title}`, icon: 'flag', shortcut: String(p), run: () => updateTask(t.id, { priority: p }) })),
-        { id: 'task:estimate', label: `Edit the estimate of ${title}`, icon: 'clock', shortcut: keysOf('list.estimate'), run: () => { estimateFocus.request(t.id); list.open(t.id) } },
-        { id: 'task:deadline', label: `Set the deadline of ${title}`, icon: 'hourglass', shortcut: keysOf('list.deadline'), run: () => { deadlineFocus.request(t.id); list.open(t.id) } },
-        { id: 'task:blocked-by', label: `Choose what ${title} waits for`, icon: 'lock', shortcut: keysOf('list.blocked-by'), keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(t.id); list.open(t.id) } },
-        { id: 'task:defer', label: `Defer ${title}`, icon: 'calendar-days', shortcut: keysOf('list.defer'), keywords: 'start later', run: () => { deferFocus.request(t.id); list.open(t.id) } },
-        t.start === 'someday'
-          ? { id: 'task:unpark', label: `Bring back ${title} from Someday`, icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(t.id) }
-          : { id: 'task:park', label: `Park ${title} in Someday`, icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(t.id) },
-        { id: 'task:evening', label: `${t.evening ? 'Remove' : 'Mark'} ${title} ${t.evening ? 'from' : 'for'} This Evening`, icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(t.id, { evening: !t.evening }) },
-        { id: 'task:schedule', label: `Schedule ${title} in the Day view`, icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(t, ctx.today) },
+        { id: 'task:complete', label: tk.completed_at ? t('Reopen {title}', { title }) : t('Complete {title}', { title }), icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(tk.id, !tk.completed_at) },
+        ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: t('Set priority {p} on {title}', { p, title }), icon: 'flag', shortcut: String(p), run: () => updateTask(tk.id, { priority: p }) })),
+        { id: 'task:estimate', label: t('Edit the estimate of {title}', { title }), icon: 'clock', shortcut: keysOf('list.estimate'), run: () => { estimateFocus.request(tk.id); list.open(tk.id) } },
+        { id: 'task:deadline', label: t('Set the deadline of {title}', { title }), icon: 'hourglass', shortcut: keysOf('list.deadline'), run: () => { deadlineFocus.request(tk.id); list.open(tk.id) } },
+        { id: 'task:blocked-by', label: t('Choose what {title} waits for', { title }), icon: 'lock', shortcut: keysOf('list.blocked-by'), keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(tk.id); list.open(tk.id) } },
+        { id: 'task:defer', label: t('Defer {title}', { title }), icon: 'calendar-days', shortcut: keysOf('list.defer'), keywords: 'start later', run: () => { deferFocus.request(tk.id); list.open(tk.id) } },
+        tk.start === 'someday'
+          ? { id: 'task:unpark', label: t('Bring back {title} from Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(tk.id) }
+          : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(tk.id) },
+        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, { evening: !tk.evening }) },
+        { id: 'task:schedule', label: t('Schedule {title} in the Day view', { title }), icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(tk, ctx.today) },
       )
-      if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: `Add labels to ${title}`, icon: 'tag', shortcut: keysOf('list.labels'), run: () => open(t.id) }) }
-      if (list.openAssignee) { const open = list.openAssignee; out.push({ id: 'task:assign', label: `Assign ${title}`, icon: 'user-check', shortcut: keysOf('list.assign'), run: () => open(t.id) }) }
-      if (t.recurrence) {
+      if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: t('Add labels to {title}', { title }), icon: 'tag', shortcut: keysOf('list.labels'), run: () => open(tk.id) }) }
+      if (list.openAssignee) { const open = list.openAssignee; out.push({ id: 'task:assign', label: t('Assign {title}', { title }), icon: 'user-check', shortcut: keysOf('list.assign'), run: () => open(tk.id) }) }
+      if (tk.recurrence) {
         out.push(
-          { id: 'task:skip', label: `Skip this occurrence of ${title}`, icon: 'repeat', shortcut: keysOf('list.skip'), run: () => skipOccurrence(t.id) },
-          { id: 'task:detach', label: `This occurrence only: ${title}`, icon: 'repeat', shortcut: keysOf('list.detach'), run: () => detachOccurrence(t.id) },
+          { id: 'task:skip', label: t('Skip this occurrence of {title}', { title }), icon: 'repeat', shortcut: keysOf('list.skip'), run: () => skipOccurrence(tk.id) },
+          { id: 'task:detach', label: t('This occurrence only: {title}', { title }), icon: 'repeat', shortcut: keysOf('list.detach'), run: () => detachOccurrence(tk.id) },
         )
       }
-      out.push({ id: 'task:trash', label: `Move ${title} to the Trash`, icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(t.id) })
+      out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(tk.id) })
     }
   }
 
   if (ctx.project) {
     const p = ctx.project
     const name = p.row.name
-    out.push(...fromMenu(`Project “${name}”`, projectMenuGroups(p.row, p, {
-      rename: () => prompt('Rename project', 'Project name', name, (v) => updateProject(p.row.id, { name: v.trim() })),
+    out.push(...fromMenu(t('Project “{name}”', { name }), projectMenuGroups(p.row, p, {
+      rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => updateProject(p.row.id, { name: v.trim() })),
     }), 'project'))
     if (p.role !== 'viewer') {
-      out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: `Project “${name}”: Colour ${h.name}`, icon: 'palette', menuLabel: `Colour ${h.name}`, run: () => updateProject(p.row.id, { color: h.hex }) })))
+      out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
     }
   }
   if (ctx.view) {
     const v = ctx.view
-    out.push(...fromMenu(`View “${v.row.name}”`, viewMenuGroups(v.row, v.peers, v.isStart, {
-      rename: () => prompt('Rename view', 'View name', v.row.name, (n) => updateView(v.row.id, { name: n })),
+    out.push(...fromMenu(t('View “{name}”', { name: v.row.name }), viewMenuGroups(v.row, v.peers, v.isStart, {
+      rename: () => prompt(t('Rename view'), t('View name'), v.row.name, (n) => updateView(v.row.id, { name: n })),
       move: (d) => reorderView(v.row.id, d),
       pin: (pinned) => setPinned(v.row.id, pinned),
       startView: () => setStartView(`view:${v.row.id}`),
@@ -173,16 +176,16 @@ export function commands(ctx: PaletteContext): Command[] {
   }
   if (ctx.label) {
     const l = ctx.label
-    out.push(...fromMenu(`Label “${l.row.name}”`, labelMenuGroups(l.row, l.labels, {
+    out.push(...fromMenu(t('Label “{name}”', { name: l.row.name }), labelMenuGroups(l.row, l.labels, {
       edit: () => navigate({ view: 'labels' }),
-      rename: () => prompt('Rename label', 'Label name', l.row.name, (n) => updateLabel(l.row.id, { name: n })),
+      rename: () => prompt(t('Rename label'), t('Label name'), l.row.name, (n) => updateLabel(l.row.id, { name: n })),
       move: (to) => reorderLabel(l.row.id, to),
     }), 'label'))
   }
   if (ctx.section) {
     const s = ctx.section
-    out.push(...fromMenu(`Section “${s.row.name}”`, sectionMenuGroups(s.row.name, s, {
-      rename: () => prompt('Rename section', 'Section name', s.row.name, (n) => renameSection(s.row.id, n)),
+    out.push(...fromMenu(t('Section “{name}”', { name: s.row.name }), sectionMenuGroups(s.row.name, s, {
+      rename: () => prompt(t('Rename section'), t('Section name'), s.row.name, (n) => renameSection(s.row.id, n)),
       move: (d) => reorderSection(s.row.id, d),
       remove: () => deleteSection(s.row.id),
     }), 'section'))
@@ -190,26 +193,26 @@ export function commands(ctx: PaletteContext): Command[] {
 
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery
-    out.push({ id: 'filter:save', label: 'Save filter as view', icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt('Save view', 'View name', '', async (name) => {
+    out.push({ id: 'filter:save', label: t('Save filter as view'), icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt(t('Save view'), t('View name'), '', async (name) => {
       const id = await createView({ name, query: q })
       navigate({ view: 'view', id })
     }) })
   }
 
   out.push(
-    { id: 'new:task', label: 'Quick add a task', icon: 'plus', shortcut: keysOf('list.quick-add'), keywords: 'new task add create', run: () => { if (!ctx.focusQuickAdd()) navigate({ view: 'inbox' }) } },
-    { id: 'new:project', label: 'New project', icon: 'plus', keywords: 'add create', run: () => prompt('New project', 'Project name', '', async (name) => navigate({ view: 'project', id: await createProject({ name }) })) },
-    { id: 'new:label', label: 'New label', icon: 'tag', keywords: 'add create', run: () => prompt('New label', 'Label name', '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
-    { id: 'new:dashboard', label: 'New dashboard', icon: 'list', keywords: 'add create', run: () => prompt('New dashboard', 'Dashboard name', '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
+    { id: 'new:task', label: t('Quick add a task'), icon: 'plus', shortcut: keysOf('list.quick-add'), keywords: 'new task add create', run: () => { if (!ctx.focusQuickAdd()) navigate({ view: 'inbox' }) } },
+    { id: 'new:project', label: t('New project'), icon: 'plus', keywords: 'add create', run: () => prompt(t('New project'), t('Project name'), '', async (name) => navigate({ view: 'project', id: await createProject({ name }) })) },
+    { id: 'new:label', label: t('New label'), icon: 'tag', keywords: 'add create', run: () => prompt(t('New label'), t('Label name'), '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
+    { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
-    ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: `Open Settings: ${s.label}`, icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
-    { id: 'app:sync', label: 'Sync now', icon: 'rotate-ccw', run: () => syncNow() },
-    { id: 'app:shortcuts', label: 'Keyboard shortcuts', icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
-    { id: 'app:vim', label: `${ctx.vimEnabled ? 'Turn off' : 'Turn on'} Vim keybindings`, icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
+    ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
+    { id: 'app:sync', label: t('Sync now'), icon: 'rotate-ccw', run: () => syncNow() },
+    { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
+    { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
   )
   if (ctx.query.trim()) {
     const q = ctx.query.trim()
-    out.push({ id: 'app:help-search', label: `Search Help for “${q}”`, icon: 'search', run: () => navigate({ view: 'help', q }) })
+    out.push({ id: 'app:help-search', label: t('Search Help for “{query}”', { query: q }), icon: 'search', run: () => navigate({ view: 'help', q }) })
   }
   return out
 }

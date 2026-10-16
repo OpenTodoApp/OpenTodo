@@ -4,11 +4,8 @@ import type { Dictation, DictationView } from '../lib/voice/dictation'
 import { loadVoiceSettings, onVoiceSettingsChange, recognitionLanguage, recognitionTag } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
 import { useShortcutScope } from './shortcuts'
+import { preferredLanguages } from '../lib/i18n'
 
-function browserLanguages(): readonly string[] {
-  if (typeof navigator === 'undefined') return ['en']
-  return navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
-}
 
 function languageName(tag: string): string {
   try {
@@ -67,12 +64,12 @@ export function useDictation(opts: {
         },
         normalize: (text) => {
           const o = latest.current
-          const langs = resolveLanguages(o.settings, browserLanguages())
+          const langs = resolveLanguages(o.settings, preferredLanguages())
           return normalizeSpoken(text, [recognitionLanguage(voiceRef.current, langs), ...langs], { projects: o.projects, labels: o.labels })
         },
         lang: () => {
-          const langs = resolveLanguages(latest.current.settings, browserLanguages())
-          return recognitionTag(recognitionLanguage(voiceRef.current, langs), browserLanguages())
+          const langs = resolveLanguages(latest.current.settings, preferredLanguages())
+          return recognitionTag(recognitionLanguage(voiceRef.current, langs), preferredLanguages())
         },
         languageName,
         update: setView,

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { openHelp } from './store'
+import { t } from '../../lib/i18n'
 
 /**
  * A small "Help" button that opens the guide section for `screen` in a side panel
@@ -11,9 +12,9 @@ export function HelpLink({ screen, topic, className = '' }: { screen: string; to
   return (
     <button type="button" data-help-screen={screen}
       className={`ui-btn ui-btn--ghost ui-btn--sm touch-target shrink-0 px-1.5 py-0.5 text-meta font-normal text-muted hover:text-default ${className}`}
-      aria-label={topic ? `Help: ${topic}` : 'Help'} aria-haspopup="dialog"
+      aria-label={topic ? t('Help: {topic}', { topic }) : t('Help')} aria-haspopup="dialog"
       onClick={(e) => openHelp(screen, e.currentTarget)}>
-      <span aria-hidden="true" className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-hint leading-none">?</span>Help
+      {t.rich('<span>?</span>Help', { span: (chunks) => <span aria-hidden="true" className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-hint leading-none">{chunks}</span> })}
     </button>
   )
 }

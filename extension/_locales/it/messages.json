@@ -1,0 +1,74 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture"
+  },
+  "extDescription": {
+    "message": "Invia la pagina corrente, il suo titolo, il testo selezionato o uno screenshot alla schermata di acquisizione del tuo server OpenTodo. Nessun tracciamento, nessuna richiesta di rete."
+  },
+  "actionTitle": {
+    "message": "Aggiungi a OpenTodo"
+  },
+  "commandDescription": {
+    "message": "Aggiungi la pagina corrente a OpenTodo"
+  },
+  "menuScreenshot": {
+    "message": "Aggiungi screenshot a OpenTodo"
+  },
+  "optionsTitle": {
+    "message": "Impostazioni di OpenTodo Capture"
+  },
+  "optionsIntro": {
+    "message": "Inserisci l’indirizzo del tuo server OpenTodo. L’estensione apre la schermata di acquisizione di quel server per la pagina corrente. Salva solo questo indirizzo, non conserva password né token e non contatta mai il server da sola."
+  },
+  "pendingNote": {
+    "message": "Imposta il tuo server per continuare ad aggiungere «$TITLE$».",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example page"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "questa pagina"
+  },
+  "serverLabel": {
+    "message": "URL del server"
+  },
+  "save": {
+    "message": "Salva"
+  },
+  "screenshotsHeading": {
+    "message": "Screenshot"
+  },
+  "screenshotsIntro": {
+    "message": "«Aggiungi screenshot a OpenTodo» acquisisce la parte visibile di una pagina e passa l’immagine alla finestra di acquisizione del tuo server, dove non viene salvato nulla finché non premi Salva. Per passarla serve l’accesso all’indirizzo del tuo server, e solo a quello; il browser lo chiede quando lo salvi."
+  },
+  "screenshotsAllowed": {
+    "message": "Screenshot: consentiti per $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Screenshot: non ancora consentiti. L’estensione ha bisogno di accedere al tuo server solo per passare uno screenshot alla finestra di acquisizione."
+  },
+  "allowScreenshots": {
+    "message": "Consenti gli screenshot"
+  },
+  "invalidAddress": {
+    "message": "Inserisci un indirizzo http:// o https://, ad esempio https://todo.example.com"
+  },
+  "saved": {
+    "message": "Salvato. Le acquisizioni vanno a $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}

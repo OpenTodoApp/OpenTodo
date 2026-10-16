@@ -3,6 +3,7 @@
 // arrive meanwhile, minus tasks that leave it. Pure; the view feeds it the live
 // tasks and renders the current one.
 import type { Task } from './types'
+import { t } from './i18n'
 
 export interface TriageState {
   /** The queue in order: the Inbox order when the mode opened, arrivals appended. */
@@ -16,15 +17,15 @@ export interface TriageState {
 type QueueTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'completed_at' | 'deleted_at' | 'position'>
 
 /** Whether a task belongs in the queue: an open, live, top-level Inbox task. */
-export function qualifies(t: QueueTask): boolean {
-  return t.project_id === null && t.parent_id === null && t.completed_at === null && !t.deleted_at
+export function qualifies(item: QueueTask): boolean {
+  return item.project_id === null && item.parent_id === null && item.completed_at === null && !item.deleted_at
 }
 
 const byInboxOrder = (a: QueueTask, b: QueueTask) => a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 
 /** The queue for a set of tasks, in the Inbox's manual order (or a given comparator). */
 export function buildQueue(tasks: readonly QueueTask[], order: (a: QueueTask, b: QueueTask) => number = byInboxOrder): string[] {
-  return tasks.filter(qualifies).sort(order).map((t) => t.id)
+  return tasks.filter(qualifies).sort(order).map((item) => item.id)
 }
 
 export function startTriage(tasks: readonly QueueTask[]): TriageState {
@@ -56,7 +57,7 @@ export function back(state: TriageState): TriageState {
  * (the view announces it was moved elsewhere).
  */
 export function advanceQueue(state: TriageState, live: readonly QueueTask[]): { state: TriageState; left: boolean } {
-  const ok = new Set(live.filter(qualifies).map((t) => t.id))
+  const ok = new Set(live.filter(qualifies).map((item) => item.id))
   const cur = current(state)
   // Tasks decided this session keep their place (the count stays stable after a
   // complete, trash or move); only undecided tasks that stop qualifying leave.
@@ -79,7 +80,7 @@ export function progress(state: TriageState): { n: number; total: number; done: 
 /** What the live region says for the task on screen: "4 of 17: Call the plumber". */
 export function positionText(state: TriageState, title: string): string {
   const p = progress(state)
-  return `${p.n} of ${p.total}: ${title}`
+  return t('{n} of {total}: {title}', { n: p.n, total: p.total, title })
 }
 
 export type Outcome =
@@ -95,13 +96,13 @@ export type Outcome =
 /** The words announced for a decision, before the next task is announced. */
 export function outcomeText(o: Outcome): string {
   switch (o.kind) {
-    case 'completed': return 'Completed.'
-    case 'trashed': return 'Moved to the Trash.'
-    case 'scheduled': return `Scheduled for ${o.date}.`
-    case 'moved': return `Moved to ${o.project}.`
-    case 'delegated': return `Assigned to ${o.person}.`
-    case 'someday': return 'Parked for someday.'
-    case 'skipped': return 'Skipped.'
-    case 'left': return 'This task was moved elsewhere.'
+    case 'completed': return t('Completed.')
+    case 'trashed': return t('Moved to the Trash.')
+    case 'scheduled': return t('Scheduled for {date}.', { date: o.date })
+    case 'moved': return t('Moved to {project}.', { project: o.project })
+    case 'delegated': return t('Assigned to {name}.', { name: o.person })
+    case 'someday': return t('Parked for someday.')
+    case 'skipped': return t('Skipped.')
+    case 'left': return t('This task was moved elsewhere.')
   }
 }

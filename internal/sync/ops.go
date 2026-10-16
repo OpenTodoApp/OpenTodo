@@ -423,6 +423,11 @@ var Schema = map[string]map[string]kind{
 		// The first-run card (ux-overhaul, first-run): "done" once the account has
 		// finished or skipped it, so a second device does not show it again after sync.
 		"first_run": kString,
+		// Interface language (OpenSpec change app-localization, design D1):
+		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
+		// restricted here; clients read an unknown code as "system" and keep the
+		// stored value, so a catalog added later stays additive.
+		"language": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

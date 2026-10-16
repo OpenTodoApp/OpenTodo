@@ -119,7 +119,7 @@ The legacy button, input and keyboard-hint classes SHALL take their colours, rad
 - **THEN** the token lint fails naming the file and line
 
 ### Requirement: Design workbench
-The repository SHALL include a design workbench that runs locally with one command. It SHALL show the foundations (colours with their contrast, type scale, spacing, radii, elevation, motion) and SHALL have a story for every shared UI primitive and pattern, in light and dark. The workbench SHALL be a development tool only and SHALL add nothing to the shipped app or server.
+The repository SHALL include a design workbench that runs locally with one command. It SHALL show the foundations (colours with their contrast, type scale, spacing, radii, elevation, motion) and SHALL have a story for every shared UI primitive and pattern, in light and dark. It SHALL offer a switch over the shipped interface languages (OpenSpec `localization`). The workbench SHALL be a development tool only and SHALL add nothing to the shipped app or server.
 
 #### Scenario: Contributor opens the workbench
 - **WHEN** a contributor runs the workbench command in `web/`
@@ -128,6 +128,10 @@ The repository SHALL include a design workbench that runs locally with one comma
 #### Scenario: Production build untouched
 - **WHEN** the production web app is built
 - **THEN** no workbench code or dependency is included in the output
+
+#### Scenario: Story in German
+- **WHEN** a contributor switches the workbench language to German on the settings-section story at phone width
+- **THEN** the story renders with the German catalog and its layout is unchanged except for text length
 
 ### Requirement: Accessibility gate on stories
 CI SHALL run an automated accessibility audit on every workbench story in light and dark. It SHALL fail on any serious or critical violation.

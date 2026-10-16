@@ -11,6 +11,7 @@ import { ComboboxPanel } from '../../ui'
 import type { ComboboxConfig } from '../../ui'
 import { ConfirmDialog } from '../../ui'
 import { Menu } from '../overlay'
+import { t } from '../../lib/i18n'
 
 interface ItemBase {
   id: string
@@ -113,8 +114,8 @@ function PickerStep({ picker, onBack, onDone, onConfirm }: { picker: PickerSpec<
   return (
     <div className="space-y-1 p-1" data-picker-step>
       <div className="flex items-center gap-1">
-        <Tooltip label="Back" shortcut="Esc">
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-1" aria-label="Back" onClick={onBack}>
+        <Tooltip label={t('Back')} shortcut="Esc">
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-1" aria-label={t('Back')} onClick={onBack}>
             <Icon name="arrow-left" />
           </button>
         </Tooltip>

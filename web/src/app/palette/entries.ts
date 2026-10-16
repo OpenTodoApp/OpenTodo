@@ -4,6 +4,7 @@
 // the local tables, never persisted and never sent anywhere.
 import type { ConfirmSpec, PickerSpec } from '../menus/ActionMenu'
 import type { IconName } from '../../ui'
+import { msg, translatedMap } from '../../lib/i18n'
 
 export type EntryKind = 'command' | 'task' | 'project' | 'label' | 'view' | 'settings' | 'filter'
 
@@ -39,9 +40,9 @@ export function secondaryOf(e: Entry): string | undefined {
 }
 
 /** Section headings of the palette (keyboard-shortcuts / search-and-command-palette: Recent, Tasks, Projects, Labels, Filters, Commands, Settings). */
-export const KIND_GROUP: Record<EntryKind, string> = {
-  command: 'Commands', task: 'Tasks', project: 'Projects', label: 'Labels', view: 'Filters', settings: 'Settings', filter: 'Filters',
-}
+export const KIND_GROUP = translatedMap<EntryKind>({
+  command: msg('Commands'), task: msg('Tasks'), project: msg('Projects'), label: msg('Labels'), view: msg('Filters'), settings: msg('Settings'), filter: msg('Filters'),
+})
 
 export function groupOf(e: Entry): string {
   return e.group ?? KIND_GROUP[e.kind]

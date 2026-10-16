@@ -10,13 +10,15 @@ import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 import { Dialog } from './overlay'
 import { InviteLinksSection } from './InviteLinksSection'
 import { PublicLinksSection } from './PublicLinksSection'
+import { t, msg, translatedMap } from '../lib/i18n'
+import { roleName } from '../lib/roleNames'
 
-const ROLE_HINT: Record<ProjectRole, string> = {
-  owner: 'Owner',
-  admin: 'Admin: edits tasks and the project, manages viewers and editors',
-  editor: 'Editor: adds, edits, completes and deletes tasks',
-  viewer: 'Viewer: reads only',
-}
+const ROLE_HINT = translatedMap<ProjectRole>({
+  owner: msg('Owner'),
+  admin: msg('Admin: edits tasks and the project, manages viewers and editors'),
+  editor: msg('Editor: adds, edits, completes and deletes tasks'),
+  viewer: msg('Viewer: reads only'),
+})
 
 /**
  * Share dialog (OpenSpec `project-sharing`): add a member by exact email with a
@@ -63,7 +65,7 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
       after?.()
       requestSync(0)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'The server could not be reached; sharing needs a connection.')
+      setError(err instanceof ApiError ? err.message : t('The server could not be reached; sharing needs a connection.'))
     } finally {
       setBusy(false)
     }
@@ -80,22 +82,22 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
 
   const members = membership?.members ?? []
   return (
-    <Dialog title={<span className="user-text">Share “{project.name}”</span>} label={`Share ${project.name}`} onClose={onClose} size="md">
+    <Dialog title={<span className="user-text">{t('Share “{name}”', { name: project.name })}</span>} label={t('Share {name}', { name: project.name })} onClose={onClose} size="md">
         {roles.length > 0 && (
           <form onSubmit={share} className="mb-4 flex flex-wrap gap-2">
-            <input ref={emailRef} autoFocus type="email" className="ui-input min-w-0 flex-1" placeholder="Email of an account on this server"
-              aria-label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <select className="ui-input w-auto" aria-label="Role" value={role} onChange={(e) => setRole(e.target.value as ProjectRole)}>
+            <input ref={emailRef} autoFocus type="email" className="ui-input min-w-0 flex-1" placeholder={t('Email of an account on this server')}
+              aria-label={t('Email')} value={email} onChange={(e) => setEmail(e.target.value)} />
+            <select className="ui-input w-auto" aria-label={t('Role')} value={role} onChange={(e) => setRole(e.target.value as ProjectRole)}>
               {roles.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
-            <button className="ui-btn ui-btn--primary ui-btn--md" disabled={busy || !email.trim()}>Share</button>
+            <button className="ui-btn ui-btn--primary ui-btn--md" disabled={busy || !email.trim()}>{t('Share')}</button>
           </form>
         )}
         {roles.length > 0 && <InviteLinksSection projectId={project.id} myRole={myRole} />}
         {!locked && (myRole === 'owner' || myRole === 'admin') && <PublicLinksSection projectId={project.id} focus={section === 'public'} onChange={onPublicLinks} />}
-        {locked && <p className="mb-3 text-body text-muted" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
+        {locked && <p className="mb-3 text-body text-muted" data-testid="demo-share-note">{t('Sharing changes: {note}', { note: t(DEMO_RESTRICTED_NOTE) })}</p>}
         {error && <p role="alert" className="mb-3 text-body text-danger">{error}</p>}
-        <ul aria-label="Members" className="space-y-1">
+        <ul aria-label={t('Members')} className="space-y-1">
           {members.map((m) => {
             const self = m.userId === userId
             const manage = !locked && !self && canManage(myRole, m.role)
@@ -103,32 +105,32 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
               <li key={m.userId} className="flex items-center gap-2 rounded-control px-1 py-1 text-body">
                 <Tooltip label={m.email}>
                   <span className="min-w-0 flex-1 truncate">
-                    {m.name || m.email}{self ? ' (you)' : ''}
+                    {self ? t('{name} (you)', { name: m.name || m.email }) : m.name || m.email}
                     <span className="block truncate text-meta text-faint">{m.email}</span>
                   </span>
                 </Tooltip>
                 {manage ? (
-                  <select className="ui-input w-auto py-1 text-meta" aria-label={`Role of ${m.name || m.email}`} value={m.role} disabled={busy}
+                  <select className="ui-input w-auto py-1 text-meta" aria-label={t('Role of {name}', { name: m.name || m.email })} value={m.role} disabled={busy}
                     onChange={(e) => void run(() => api.setMemberRole(project.id, m.userId, e.target.value as ProjectRole))}>
                     {[...new Set([...grantableRoles(myRole), m.role])].map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 ) : (
-                  <Tooltip label={ROLE_HINT[m.role]}><span className="rounded-chip text-meta text-muted" tabIndex={0}>{m.role}</span></Tooltip>
+                  <Tooltip label={ROLE_HINT[m.role]}><span className="rounded-chip text-meta text-muted" tabIndex={0}>{roleName(m.role)}</span></Tooltip>
                 )}
                 {manage && (
-                  <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={`Remove ${m.name || m.email}`}
-                    onClick={() => void run(async () => { await api.removeMember(project.id, m.userId); return api.listMembers(project.id) })}>Remove</button>
+                  <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={t('Remove {name}', { name: m.name || m.email })}
+                    onClick={() => void run(async () => { await api.removeMember(project.id, m.userId); return api.listMembers(project.id) })}>{t('Remove')}</button>
                 )}
                 {!locked && myRole === 'owner' && !self && (
-                  <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={`Make ${m.name || m.email} the owner`}
-                    onClick={() => { if (confirm(`Make ${m.name || m.email} the owner of "${project.name}"? You become an admin.`)) void run(() => api.transferProject(project.id, m.userId)) }}>
-                    Make owner
+                  <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={t('Make {name} the owner', { name: m.name || m.email })}
+                    onClick={() => { if (confirm(t('Make {name} the owner of “{project}”? You become an admin.', { name: m.name || m.email, project: project.name }))) void run(() => api.transferProject(project.id, m.userId)) }}>
+                    {t('Make owner')}
                   </button>
                 )}
                 {!locked && self && m.role !== 'owner' && (
                   <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy}
-                    onClick={() => { if (confirm(`Leave "${project.name}"? It disappears from your devices.`)) void run(() => api.removeMember(project.id, 'me'), onClose) }}>
-                    Leave
+                    onClick={() => { if (confirm(t('Leave “{project}”? It disappears from your devices.', { project: project.name }))) void run(() => api.removeMember(project.id, 'me'), onClose) }}>
+                    {t('Leave')}
                   </button>
                 )}
               </li>
@@ -136,10 +138,10 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
           })}
         </ul>
         <p className="mt-3 flex flex-wrap items-center justify-between gap-2 text-meta text-faint">
-          <span>Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.</span>
-          <HelpLink screen="share-dialog" topic="Sharing projects" />
+          <span>{t('Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.')}</span>
+          <HelpLink screen="share-dialog" topic={t('Sharing projects')} />
         </p>
-        <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={onClose}>Close <Kbd k="Esc" only className="ml-1" /></button>
+        <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={onClose}>{t('Close')} <Kbd k="Esc" only className="ml-1" /></button>
     </Dialog>
   )
 }

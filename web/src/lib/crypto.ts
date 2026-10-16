@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // End-to-end encryption primitives (OpenSpec change `e2ee`, design D1 and D3).
 // Only the browser's built-in Web Crypto API is used: no dependency, no
 // home-grown primitive. Everything here is pure (no storage, no network) so it
@@ -36,21 +37,21 @@ const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 
 /** A value failed to decrypt: wrong key, tampered ciphertext, or moved to another field. */
 export class DecryptError extends Error {
-  constructor(message = 'cannot decrypt this value') {
+  constructor(message = t('cannot decrypt this value')) {
     super(message)
   }
 }
 
 /** The passphrase or recovery key did not unwrap the account key. */
 export class WrongSecretError extends Error {
-  constructor(message = 'the passphrase or recovery key is not correct') {
+  constructor(message = t('the passphrase or recovery key is not correct')) {
     super(message)
   }
 }
 
 /** A recovery key was mistyped (bad length, characters or checksum). */
 export class RecoveryKeyFormatError extends Error {
-  constructor(message = 'this is not a valid recovery key; check for typos') {
+  constructor(message = t('this is not a valid recovery key; check for typos')) {
     super(message)
   }
 }
@@ -239,7 +240,7 @@ async function nonExtractable(dek: CryptoKey): Promise<CryptoKey> {
  * non-extractable key and the recovery key text to show once.
  */
 export async function createKeyRecord(passphrase: string, opts: { iterations?: number } = {}): Promise<{ record: KeyRecord; key: CryptoKey; recoveryKey: string }> {
-  if (passphrase.length < MIN_PASSPHRASE_LENGTH) throw new Error(`the passphrase must have at least ${MIN_PASSPHRASE_LENGTH} characters`)
+  if (passphrase.length < MIN_PASSPHRASE_LENGTH) throw new Error(t('the passphrase must have at least {n} characters', { n: MIN_PASSPHRASE_LENGTH }))
   const iterations = opts.iterations ?? PBKDF2_ITERATIONS
   const dek = await generateAccountKey()
   const salt = randomSalt()
@@ -255,7 +256,7 @@ export async function createKeyRecord(passphrase: string, opts: { iterations?: n
 }
 
 export async function unlockWithPassphrase(record: KeyRecord, passphrase: string, extractable = false): Promise<CryptoKey> {
-  if (record.kdf !== KDF_PBKDF2_SHA256) throw new Error(`unsupported key derivation ${record.kdf}; update the app`)
+  if (record.kdf !== KDF_PBKDF2_SHA256) throw new Error(t('unsupported key derivation {kdf}; update the app', { kdf: record.kdf }))
   const kek = await derivePassphraseKey(passphrase, fromB64url(record.salt), record.iterations)
   return unwrapAccountKey(record.wrappedByPassphrase, kek, extractable)
 }
@@ -270,7 +271,7 @@ export async function unlockWithRecoveryKey(record: KeyRecord, recoveryKey: stri
  * new salt; content is not re-encrypted and the recovery wrap is kept.
  */
 export async function rewrapWithPassphrase(record: KeyRecord, currentPassphrase: string, newPassphrase: string, opts: { iterations?: number } = {}): Promise<KeyRecord> {
-  if (newPassphrase.length < MIN_PASSPHRASE_LENGTH) throw new Error(`the passphrase must have at least ${MIN_PASSPHRASE_LENGTH} characters`)
+  if (newPassphrase.length < MIN_PASSPHRASE_LENGTH) throw new Error(t('the passphrase must have at least {n} characters', { n: MIN_PASSPHRASE_LENGTH }))
   const dek = await unlockWithPassphrase(record, currentPassphrase, true)
   const iterations = opts.iterations ?? PBKDF2_ITERATIONS
   const salt = randomSalt()
@@ -287,7 +288,7 @@ export async function rewrapWithPassphrase(record: KeyRecord, currentPassphrase:
  * working). Returns the new record, the device key and the new recovery key text.
  */
 export async function resetWithRecoveryKey(record: KeyRecord, recoveryKey: string, newPassphrase: string, opts: { iterations?: number } = {}): Promise<{ record: KeyRecord; key: CryptoKey; recoveryKey: string }> {
-  if (newPassphrase.length < MIN_PASSPHRASE_LENGTH) throw new Error(`the passphrase must have at least ${MIN_PASSPHRASE_LENGTH} characters`)
+  if (newPassphrase.length < MIN_PASSPHRASE_LENGTH) throw new Error(t('the passphrase must have at least {n} characters', { n: MIN_PASSPHRASE_LENGTH }))
   const dek = await unlockWithRecoveryKey(record, recoveryKey, true)
   const iterations = opts.iterations ?? PBKDF2_ITERATIONS
   const salt = randomSalt()
@@ -325,7 +326,7 @@ export async function encryptValue(key: CryptoKey, entity: string, entityId: str
 
 /** Decrypt one content value; throws DecryptError when it is not authentic for this key and location. */
 export async function decryptValue(key: CryptoKey, entity: string, entityId: string, field: string, value: string): Promise<string> {
-  if (!value.startsWith(PREFIX_V1)) throw new DecryptError('unknown ciphertext format; update the app')
+  if (!value.startsWith(PREFIX_V1)) throw new DecryptError(t('unknown ciphertext format; update the app'))
   let raw: Uint8Array
   try {
     raw = fromB64url(value.slice(PREFIX_V1.length))
@@ -409,7 +410,7 @@ export async function encryptFile(key: CryptoKey, id: string, file: Blob, opts: 
 export async function decryptFile(key: CryptoKey, id: string, envelope: Blob, type = 'application/octet-stream'): Promise<Blob> {
   if (envelope.size < FILE_HEADER + TAG_BYTES) throw new DecryptError()
   const header = new Uint8Array(await envelope.slice(0, FILE_HEADER).arrayBuffer())
-  if (dec.decode(header.slice(0, 5)) !== FILE_MAGIC) throw new DecryptError('unknown file format; update the app')
+  if (dec.decode(header.slice(0, 5)) !== FILE_MAGIC) throw new DecryptError(t('unknown file format; update the app'))
   const chunkSize = new DataView(header.buffer).getUint32(5)
   if (chunkSize === 0) throw new DecryptError()
   const prefix = header.slice(9, FILE_HEADER)

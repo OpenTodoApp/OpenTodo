@@ -16,6 +16,7 @@ import { qrMatrix, qrPath } from '../lib/qr'
 import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
 import { relativeTime } from './SecurityPanel'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
 
 // Settings → Two-factor authentication and the enrolment wizard (OpenSpec
 // `mfa-totp`). The server is authoritative; the last known status is cached
@@ -57,7 +58,7 @@ export function QrCode({ text, size = 192 }: { text: string; size?: number }) {
   const quiet = 4
   return (
     <svg
-      role="img" aria-label="QR code to scan with your authenticator app" width={size} height={size}
+      role="img" aria-label={t('QR code to scan with your authenticator app')} width={size} height={size}
       viewBox={`${-quiet} ${-quiet} ${n + 2 * quiet} ${n + 2 * quiet}`} shapeRendering="crispEdges" className="rounded-control"
     >
       {/* A QR code stays black on white in every theme so authenticator apps can scan it. */}
@@ -68,15 +69,15 @@ export function QrCode({ text, size = 192 }: { text: string; size?: number }) {
 }
 
 export function mfaMessage(err: unknown): string {
-  if (isNetworkError(err)) return 'You are offline. Two-factor settings need a connection to your server.'
+  if (isNetworkError(err)) return t('You are offline. Two-factor settings need a connection to your server.')
   const e = err as ApiError
   switch (e.code) {
     case 'mfa_code_invalid':
-      return 'That code does not match. Check that your phone sets its clock automatically and type the newest code. If more than ten minutes passed, start again.'
+      return t('That code does not match. Check that your phone sets its clock automatically and type the newest code. If more than ten minutes passed, start again.')
     case 'mfa_required_by_policy':
-      return 'The server owner requires two-factor authentication for your account, so it cannot be turned off.'
+      return t('The server owner requires two-factor authentication for your account, so it cannot be turned off.')
     case 'reauth_required':
-      return 'Confirm your password to continue.'
+      return t('Confirm your password to continue.')
     default:
       return e.message
   }
@@ -98,22 +99,22 @@ export interface RecoveryCodesViewProps {
 export function RecoveryCodesView(p: RecoveryCodesViewProps) {
   return (
     <div className="space-y-3 rounded-control border border-success/40 bg-success-soft p-3 text-body" data-testid="recovery-codes">
-      <p className="font-medium">Save these recovery codes now. They will not be shown again.</p>
+      <p className="font-medium">{t('Save these recovery codes now. They will not be shown again.')}</p>
       <p className="text-muted">
-        Each code signs you in once if you lose your phone. Keep them somewhere safe, away from this device.
+        {t('Each code signs you in once if you lose your phone. Keep them somewhere safe, away from this device.')}
       </p>
       <ol className="grid grid-cols-2 gap-x-6 gap-y-1 font-mono">
         {p.codes.map((c) => <li key={c}>{c}</li>)}
       </ol>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy codes'}</button>
-        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onDownload}>Download as text</button>
+        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onCopy}>{p.copied ? t('Copied') : t('Copy codes')}</button>
+        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onDownload}>{t('Download as text')}</button>
       </div>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={p.acknowledged} onChange={(e) => p.onAcknowledge(e.target.checked)} />
-        I have saved my recovery codes
+        {t('I have saved my recovery codes')}
       </label>
-      <button type="button" className="ui-btn ui-btn--primary ui-btn--md" disabled={!p.acknowledged} onClick={p.onDone}>Done</button>
+      <button type="button" className="ui-btn ui-btn--primary ui-btn--md" disabled={!p.acknowledged} onClick={p.onDone}>{t('Done')}</button>
     </div>
   )
 }
@@ -121,7 +122,7 @@ export function RecoveryCodesView(p: RecoveryCodesViewProps) {
 function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
   const [acknowledged, setAcknowledged] = useState(false)
   const [copied, setCopied] = useState(false)
-  const text = `OpenTodo recovery codes (${location.host})\nEach code works once.\n\n${codes.join('\n')}\n`
+  const text = `${t('OpenTodo recovery codes ({host})', { host: location.host })}\n${t('Each code works once.')}\n\n${codes.join('\n')}\n`
   return (
     <RecoveryCodesView
       codes={codes} acknowledged={acknowledged} copied={copied} onAcknowledge={setAcknowledged} onDone={onDone}
@@ -162,27 +163,27 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
   return (
     <div className="space-y-3" data-testid="enrolment-wizard">
       <ol className="list-decimal space-y-1 pl-5 text-body text-muted">
-        <li>Open an authenticator app on your phone (any app that supports time-based codes).</li>
-        <li>Scan this QR code, or enter the key by hand.</li>
-        <li>Type the six-digit code the app shows.</li>
+        <li>{t('Open an authenticator app on your phone (any app that supports time-based codes).')}</li>
+        <li>{t('Scan this QR code, or enter the key by hand.')}</li>
+        <li>{t('Type the six-digit code the app shows.')}</li>
       </ol>
       <div className="flex flex-wrap items-center gap-4">
         <QrCode text={p.enrollment.uri} />
         <div className="text-body">
-          <p className="text-muted">Key for manual entry (time-based, 6 digits, 30 s):</p>
+          <p className="text-muted">{t('Key for manual entry (time-based, 6 digits, 30 s):')}</p>
           <code className="mt-1 block select-all break-all font-mono text-body" data-testid="manual-key">{groupKey(p.enrollment.secret)}</code>
         </div>
       </div>
       <form className="flex flex-wrap items-end gap-2" onSubmit={submit}>
         <label className="text-body">
-          <span className="mb-1 block text-muted">Code from the app</span>
+          <span className="mb-1 block text-muted">{t('Code from the app')}</span>
           <input
             className="ui-input w-36 font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
-            required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} disabled={p.disabled} aria-label="Code from the app"
+            required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} disabled={p.disabled} aria-label={t('Code from the app')}
           />
         </label>
-        <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.disabled || p.busy}>{p.busy ? 'Checking…' : 'Turn on'}</button>
-        {p.onCancel && <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>Cancel</button>}
+        <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.disabled || p.busy}>{p.busy ? t('Checking…') : t('Turn on')}</button>
+        {p.onCancel && <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>{t('Cancel')}</button>}
       </form>
       {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
     </div>
@@ -231,10 +232,10 @@ export function EnrolmentWizard({ online, onEnrolled, onCancel }: { online: bool
   if (!enrollment) {
     return (
       <div className="space-y-2 text-body">
-        {error ? <p className="text-danger" role="alert">{error}</p> : <p className="text-muted">{online ? 'Preparing…' : 'Setting up two-factor authentication needs a connection.'}</p>}
+        {error ? <p className="text-danger" role="alert">{error}</p> : <p className="text-muted">{online ? t('Preparing…') : t('Setting up two-factor authentication needs a connection.')}</p>}
         <div className="flex gap-2">
-          {error && <button type="button" className="ui-btn ui-btn--primary ui-btn--md" disabled={!online} onClick={() => void start()}>Try again</button>}
-          {onCancel && <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>Cancel</button>}
+          {error && <button type="button" className="ui-btn ui-btn--primary ui-btn--md" disabled={!online} onClick={() => void start()}>{t('Try again')}</button>}
+          {onCancel && <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>{t('Cancel')}</button>}
         </div>
       </div>
     )
@@ -265,11 +266,14 @@ export interface TwoFactorPanelViewProps {
   now?: number
 }
 
-export const POLICY_LABEL: Record<MfaPolicy, string> = {
-  none: 'Optional for everyone',
-  owner: 'Required for the owner',
-  all: 'Required for every account',
-}
+/** A label inside a sentence: lower case in English ("required for every account"); other languages keep their own case. */
+const sentenceCase = (s: string) => (currentLanguage() === 'en' ? s.toLowerCase() : s)
+
+export const POLICY_LABEL = translatedMap<MfaPolicy>({
+  none: msg('Optional for everyone'),
+  owner: msg('Required for the owner'),
+  all: msg('Required for every account'),
+})
 
 /** Presentational part of the Settings section, rendered without effects for tests. */
 export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
@@ -278,56 +282,55 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   const st = p.online ? p.status : null
   const few = !!st?.enrolled && st.recoveryCodesRemaining <= 3
   return (
-    <SettingsSection title="Two-factor authentication" headingId="mfa-heading" testId="mfa-panel"
-      description="After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.">
-      {!p.online && <Notice>You are offline. Two-factor authentication needs a connection to your server.</Notice>}
+    <SettingsSection title={t('Two-factor authentication')} headingId="mfa-heading" testId="mfa-panel"
+      description={t('After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.')}>
+      {!p.online && <Notice>{t('You are offline. Two-factor authentication needs a connection to your server.')}</Notice>}
       {st && (
-        <SettingRow label="Status" status={
+        <SettingRow label={t('Status')} status={
           <span className="flex flex-wrap items-center gap-2" data-testid="mfa-status">
-            <Badge hue={st.enrolled ? (few ? 'orange' : 'green') : 'slate'}>{st.enrolled ? 'On' : 'Off'}</Badge>
-            {st.enrolled && <span>{st.recoveryCodesRemaining} of 10 recovery codes left</span>}
-            {st.required && <span className="text-muted">Required by the server owner</span>}
+            <Badge hue={st.enrolled ? (few ? 'orange' : 'green') : 'slate'}>{st.enrolled ? t('On') : t('Off')}</Badge>
+            {st.enrolled && <span>{t('{recoveryCodesRemaining} of 10 recovery codes left', { recoveryCodesRemaining: st.recoveryCodesRemaining })}</span>}
+            {st.required && <span className="text-muted">{t('Required by the server owner')}</span>}
           </span>
-        } control={!st.enrolled && <Button variant="primary" disabled={disabled} onClick={p.onStart}>Set up two-factor authentication</Button>} />
+        } control={!st.enrolled && <Button variant="primary" disabled={disabled} onClick={p.onStart}>{t('Set up two-factor authentication')}</Button>} />
       )}
-      {few && <Notice tone="warning">Few recovery codes left. Generate a new set and store it safely.</Notice>}
+      {few && <Notice tone="warning">{t('Few recovery codes left. Generate a new set and store it safely.')}</Notice>}
       {st?.enrolled && (
-        <SettingRow label="Recovery codes" description="Use one to sign in if you lose your phone. Each works once."
-          control={<Button variant={few ? 'primary' : 'secondary'} disabled={disabled} onClick={p.onRegenerate}>New recovery codes</Button>} />
+        <SettingRow label={t('Recovery codes')} description={t('Use one to sign in if you lose your phone. Each works once.')}
+          control={<Button variant={few ? 'primary' : 'secondary'} disabled={disabled} onClick={p.onRegenerate}>{t('New recovery codes')}</Button>} />
       )}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {st?.enrolled && (
         <div className="space-y-1 py-3">
-          <h3 className="text-body font-medium text-default">Remembered browsers</h3>
-          <p className="text-meta text-muted">These browsers skip the code for 30 days after you chose "Remember this device".</p>
-          {p.devices && p.devices.length === 0 && <p className="py-2 text-meta text-faint">No remembered browsers.</p>}
+          <h3 className="text-body font-medium text-default">{t('Remembered browsers')}</h3>
+          <p className="text-meta text-muted">{t('These browsers skip the code for 30 days after you chose "Remember this device".')}</p>
+          {p.devices && p.devices.length === 0 && <p className="py-2 text-meta text-faint">{t('No remembered browsers.')}</p>}
           <div className="-mx-3">
             {p.devices?.map((d) => (
               <ListRow key={d.id} leading={<Icon name="globe" size="md" />} label={browserName(d.userAgent)}
-                meta={`Used ${relativeTime(d.lastUsedAt ?? d.createdAt, p.now)} · until ${dt.formatInstant(d.expiresAt, 'date')}`}
+                meta={t('Used {relativeTime} · until {instant}', { relativeTime: relativeTime(d.lastUsedAt ?? d.createdAt, p.now), instant: dt.formatInstant(d.expiresAt, 'date') })}
                 menu={(
-                  <Menu label={`Actions for ${browserName(d.userAgent)}`} trigger={<Icon name="ellipsis" />} kind="menu"
+                  <Menu label={t('Actions for {browserName}', { browserName: browserName(d.userAgent) })} trigger={<Icon name="ellipsis" />} kind="menu"
                     triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
-                    <MenuItem label="Forget this browser" icon="x" danger disabled={disabled} onSelect={() => p.onForgetDevice(d.id)} />
+                    <MenuItem label={t('Forget this browser')} icon="x" danger disabled={disabled} onSelect={() => p.onForgetDevice(d.id)} />
                   </Menu>
                 )} />
             ))}
           </div>
           {p.devices && p.devices.length > 0 && (
-            <Button variant="secondary" size="sm" disabled={disabled} onClick={p.onForgetAll}>Forget all browsers</Button>
+            <Button variant="secondary" size="sm" disabled={disabled} onClick={p.onForgetAll}>{t('Forget all browsers')}</Button>
           )}
         </div>
       )}
 
       {st?.enrolled && (
-        <SettingRow label="Turn off" description={st.required ? 'The server owner requires two-factor authentication for your account, so it cannot be turned off.' : 'Sign-in will need only your password, and remembered browsers are forgotten.'}
-          control={<Button variant="danger" disabled={disabled || st.required} onClick={p.onDisable}>Turn off</Button>} />
+        <SettingRow label={t('Turn off')} description={st.required ? t('The server owner requires two-factor authentication for your account, so it cannot be turned off.') : t('Sign-in will need only your password, and remembered browsers are forgotten.')}
+          control={<Button variant="danger" disabled={disabled || st.required} onClick={p.onDisable}>{t('Turn off')}</Button>} />
       )}
       {p.isOwner && (
         <p className="pt-3 text-meta text-muted" data-testid="mfa-policy-link">
-          Server policy: {POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none'].toLowerCase()}.{' '}
-          <a className="text-accent underline" href="/settings/people" onClick={(e) => { e.preventDefault(); requestSettingsFocus('access-policies'); navigate({ view: 'settings', section: 'people' }) }}>People → Access policies</a>
+          {t.rich('Server policy: {policy}. <a>People → Access policies</a>', { policy: sentenceCase(POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none']), a: (chunks) => <a className="text-accent underline" href="/settings/people" onClick={(e) => { e.preventDefault(); requestSettingsFocus('access-policies'); navigate({ view: 'settings', section: 'people' }) }}>{chunks}</a> })}
         </p>
       )}
     </SettingsSection>
@@ -345,14 +348,13 @@ export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEn
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-lg space-y-4 rounded-card border border-default bg-surface p-6 shadow-1" data-testid="enrolment-gate">
         <div>
-          <h1 className="text-h3 font-semibold">Set up two-factor authentication</h1>
+          <h1 className="text-h3 font-semibold">{t('Set up two-factor authentication')}</h1>
           <p className="mt-1 text-body text-muted">
-            The owner of this server requires a second sign-in step for {user.email}. Set it up to continue; your tasks and any changes
-            waiting on this device are kept and sync as soon as you are done.
+            {t('The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.', { email: user.email })}
           </p>
         </div>
         <EnrolmentWizard online={online} onEnrolled={onEnrolled} />
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={onLogout}>Sign out</button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={onLogout}>{t('Sign out')}</button>
       </div>
     </div>
   )
@@ -360,7 +362,7 @@ export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEn
 
 /** A short, human name for a stored user agent. */
 export function browserName(ua: string): string {
-  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Browser'
+  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : t('Browser')
   const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : ''
   return os ? `${browser} on ${os}` : browser
 }
@@ -417,23 +419,23 @@ export function TwoFactorPanel({ user }: { user: User }) {
         onForgetAll={() => void run(() => api.forgetTrustedDevices())}
       />
       {mode === 'enrol' && (
-        <Dialog title="Set up two-factor authentication" onClose={() => setMode('idle')} size="md" dismissable={false}>
+        <Dialog title={t('Set up two-factor authentication')} onClose={() => setMode('idle')} size="md" dismissable={false}>
           <EnrolmentWizard online={online} onCancel={() => setMode('idle')} onEnrolled={() => { setMode('idle'); void load() }} />
         </Dialog>
       )}
       {typeof mode === 'object' && (
-        <Dialog title="Your new recovery codes" onClose={() => setMode('idle')} size="md" dismissable={false}>
+        <Dialog title={t('Your new recovery codes')} onClose={() => setMode('idle')} size="md" dismissable={false}>
           <RecoveryCodes codes={mode.codes} onDone={() => setMode('idle')} />
         </Dialog>
       )}
       {confirming === 'disable' && (
-        <ConfirmDialog title="Turn off two-factor authentication?" confirmLabel="Turn off"
-          consequence="Sign-in will need only your password, and remembered browsers are forgotten."
+        <ConfirmDialog title={t('Turn off two-factor authentication?')} confirmLabel={t('Turn off')}
+          consequence={t('Sign-in will need only your password, and remembered browsers are forgotten.')}
           onConfirm={() => run(() => api.disableTotp())} onCancel={() => setConfirming(null)} />
       )}
       {confirming === 'regenerate' && (
-        <ConfirmDialog title="Create new recovery codes?" confirmLabel="Create new codes"
-          consequence="Your current recovery codes stop working. Store the new set somewhere safe."
+        <ConfirmDialog title={t('Create new recovery codes?')} confirmLabel={t('Create new codes')}
+          consequence={t('Your current recovery codes stop working. Store the new set somewhere safe.')}
           onConfirm={() => run(async () => setMode({ codes: (await api.regenerateRecoveryCodes()).recoveryCodes }))} onCancel={() => setConfirming(null)} />
       )}
     </>
@@ -449,13 +451,13 @@ export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   onPolicy: (p: MfaPolicy) => void
 }) {
   return (
-    <SettingsSection title="Two-factor policy" headingId="mfa-policy-heading" testId="mfa-policy-panel"
-      description="Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until they do. API tokens are never affected.">
-      <SettingRow label="Policy for this server" htmlFor="mfa-policy-select"
+    <SettingsSection title={t('Two-factor policy')} headingId="mfa-policy-heading" testId="mfa-policy-panel"
+      description={t('Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until they do. API tokens are never affected.')}>
+      <SettingRow label={t('Policy for this server')} htmlFor="mfa-policy-select"
         status={policy ? <Badge hue={policy === 'none' ? 'slate' : 'green'}>{POLICY_LABEL[policy]}</Badge> : undefined}
         control={
           <Select id="mfa-policy-select" className="max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
-            onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
+            onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label={t('Two-factor policy for this server')}>
             {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
           </Select>
         } />
@@ -486,7 +488,7 @@ export function MfaPolicyPanel() {
     <MfaPolicyPanelView policy={policy} online={online} busy={busy} error={error}
       onPolicy={(p) => {
         if (p !== 'none' && enrolled === false &&
-          !window.confirm('You have not set up two-factor authentication yourself. After this change you must set it up before you can continue. Continue?')) return
+          !window.confirm(t('You have not set up two-factor authentication yourself. After this change you must set it up before you can continue. Continue?'))) return
         setBusy(true)
         setError(null)
         void api.setMfaPolicy(p).then((r) => setPolicy(r.required), (err) => {

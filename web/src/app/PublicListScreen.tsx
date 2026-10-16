@@ -11,6 +11,7 @@ import { hueFor, Notice } from '../ui'
 import { ApiError, isNetworkError, publicApi } from '../lib/api'
 import { formatShort, formatTime } from '../lib/dates'
 import type { PublicList } from '../lib/types'
+import { t, msg, translatedMap } from '../lib/i18n'
 
 /** Refresh interval while the page is visible. */
 export const PUBLIC_REFRESH_MS = 30_000
@@ -26,19 +27,19 @@ type State =
 /** Sections in order, each with its top-level tasks and their subtasks under them. */
 export function publicGroups(list: PublicList): { id: string | null; name: string | null; rows: { task: Task; depth: number }[] }[] {
   const byPos = (a: Task, b: Task) => a.position - b.position
-  const ids = new Set(list.tasks.map((t) => t.id))
+  const ids = new Set(list.tasks.map((item) => item.id))
   const children = new Map<string, Task[]>()
-  for (const t of list.tasks) if (t.parent_id && ids.has(t.parent_id)) children.set(t.parent_id, [...(children.get(t.parent_id) ?? []), t])
-  const walk = (t: Task, depth: number, out: { task: Task; depth: number }[]) => {
-    out.push({ task: t, depth })
-    for (const c of (children.get(t.id) ?? []).sort(byPos)) walk(c, depth + 1, out)
+  for (const entry of list.tasks) if (entry.parent_id && ids.has(entry.parent_id)) children.set(entry.parent_id, [...(children.get(entry.parent_id) ?? []), entry])
+  const walk = (x1: Task, depth: number, out: { task: Task; depth: number }[]) => {
+    out.push({ task: x1, depth })
+    for (const c of (children.get(x1.id) ?? []).sort(byPos)) walk(c, depth + 1, out)
   }
-  const top = list.tasks.filter((t) => !t.parent_id || !ids.has(t.parent_id))
+  const top = list.tasks.filter((item) => !item.parent_id || !ids.has(item.parent_id))
   const sections = [{ id: null as string | null, name: null as string | null }, ...[...list.sections].sort((a, b) => a.position - b.position)]
   const known = new Set(list.sections.map((s) => s.id))
   return sections.map((s) => {
     const rows: { task: Task; depth: number }[] = []
-    for (const t of top.filter((x) => (s.id === null ? !x.section_id || !known.has(x.section_id) : x.section_id === s.id)).sort(byPos)) walk(t, 0, rows)
+    for (const item of top.filter((x) => (s.id === null ? !x.section_id || !known.has(x.section_id) : x.section_id === s.id)).sort(byPos)) walk(item, 0, rows)
     return { id: s.id, name: s.name, rows }
   }).filter((g) => g.rows.length > 0)
 }
@@ -82,21 +83,21 @@ export function PublicListScreen({ token }: { token: string }) {
     }
   }, [load])
 
-  async function toggle(t: Task, completed: boolean) {
+  async function toggle(item: Task, completed: boolean) {
     setError(null)
-    setPending((p) => ({ ...p, [t.id]: completed }))
+    setPending((p) => ({ ...p, [item.id]: completed }))
     busy.current++
     try {
-      await publicApi.tick(token, t.id, completed)
+      await publicApi.tick(token, item.id, completed)
       await load()
     } catch (err) {
       if (err instanceof ApiError && err.code === 'link_invalid') setState({ kind: 'invalid' })
-      else setError(isNetworkError(err) ? 'The server could not be reached, so the change was not saved. Try again when you are online.'
-        : err instanceof ApiError && err.code === 'rate_limited' ? 'Too many changes at once. Wait a moment and try again.'
-          : 'This change could not be saved.')
+      else setError(isNetworkError(err) ? t('The server could not be reached, so the change was not saved. Try again when you are online.')
+        : err instanceof ApiError && err.code === 'rate_limited' ? t('Too many changes at once. Wait a moment and try again.')
+          : t('This change could not be saved.'))
     } finally {
       busy.current--
-      setPending((p) => { const n = { ...p }; delete n[t.id]; return n })
+      setPending((p) => { const n = { ...p }; delete n[item.id]; return n })
     }
   }
 
@@ -104,24 +105,24 @@ export function PublicListScreen({ token }: { token: string }) {
   const groups = useMemo(() => (list ? publicGroups(list) : []), [list])
   // Display mode (display-mode "Public link display"): `display=1` with the presentation options.
   const [display] = useState(() => publicDisplayOptions(typeof location === 'undefined' ? '' : location.search))
-  const updatedLine = stale ? 'Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.' : updatedAt ? `Updated ${formatTime(`${String(new Date(updatedAt).getHours()).padStart(2, '0')}:${String(new Date(updatedAt).getMinutes()).padStart(2, '0')}`)}` : ''
+  const updatedLine = stale ? t('Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.') : updatedAt ? t('Updated {time}', { time: formatTime(`${String(new Date(updatedAt).getHours()).padStart(2, '0')}:${String(new Date(updatedAt).getMinutes()).padStart(2, '0')}`) }) : ''
 
   if (display) {
-    return <PublicDisplay options={display} state={state} groups={groups} pending={pending} error={error} updatedLine={updatedLine} onToggle={(t, done) => void toggle(t, done)} />
+    return <PublicDisplay options={display} state={state} groups={groups} pending={pending} error={error} updatedLine={updatedLine} onToggle={(entry, done) => void toggle(entry, done)} />
   }
 
   return (
     <main className="min-h-full bg-canvas" data-screen="public/list">
       <div className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8">
-        {state.kind === 'loading' && <p className="text-meta text-muted">Loading the list…</p>}
+        {state.kind === 'loading' && <p className="text-meta text-muted">{t('Loading the list…')}</p>}
         {state.kind === 'invalid' && (
           <div className="space-y-2 rounded-card border border-default bg-surface p-6" data-public-invalid>
-            <h1 className="text-h2 font-semibold text-strong">This link no longer works</h1>
-            <p className="text-body text-muted">It may have been revoked or have expired. Ask whoever shared it for a new one.</p>
+            <h1 className="text-h2 font-semibold text-strong">{t('This link no longer works')}</h1>
+            <p className="text-body text-muted">{t('It may have been revoked or have expired. Ask whoever shared it for a new one.')}</p>
           </div>
         )}
-        {state.kind === 'rate-limited' && <Notice tone="warning">Too many requests from this network. Wait a minute, then reload the page.</Notice>}
-        {state.kind === 'unreachable' && <Notice tone="warning">The server could not be reached. The list appears when the connection returns.</Notice>}
+        {state.kind === 'rate-limited' && <Notice tone="warning">{t('Too many requests from this network. Wait a minute, then reload the page.')}</Notice>}
+        {state.kind === 'unreachable' && <Notice tone="warning">{t('The server could not be reached. The list appears when the connection returns.')}</Notice>}
         {list && (
           <>
             <header className="mb-4 flex items-center gap-2">
@@ -130,34 +131,34 @@ export function PublicListScreen({ token }: { token: string }) {
             </header>
             <Notice tone={list.rights === 'tick' ? 'warning' : 'info'}>
               {list.rights === 'tick'
-                ? 'This list is public: anyone with the link can see it and tick items.'
-                : 'This list is public and read-only: anyone with the link can see it.'}
+                ? t('This list is public: anyone with the link can see it and tick items.')
+                : t('This list is public and read-only: anyone with the link can see it.')}
             </Notice>
             {error && <div className="mt-2"><Notice tone="danger">{error}</Notice></div>}
             <div className="mt-4 space-y-5">
-              {groups.length === 0 && <p className="text-body text-muted">Nothing left to do on this list.</p>}
+              {groups.length === 0 && <p className="text-body text-muted">{t('Nothing left to do on this list.')}</p>}
               {groups.map((g) => (
-                <section key={g.id ?? 'none'} aria-label={g.name ?? 'Tasks'}>
+                <section key={g.id ?? 'none'} aria-label={g.name ?? t('Tasks')}>
                   {g.name && <h2 className="user-text mb-1 text-hint font-semibold uppercase tracking-wide text-muted">{g.name}</h2>}
                   <ul className="divide-y divide-default rounded-card border border-default bg-surface">
-                    {g.rows.map(({ task: t, depth }) => {
-                      const done = t.id in pending ? pending[t.id] : t.completed_at !== null
-                      const due = t.due ? `${formatShort(t.due.date)}${t.due.time ? ` ${formatTime(t.due.time)}` : ''}` : null
+                    {g.rows.map(({ task: x1, depth }) => {
+                      const done = x1.id in pending ? pending[x1.id] : x1.completed_at !== null
+                      const due = x1.due ? `${formatShort(x1.due.date)}${x1.due.time ? ` ${formatTime(x1.due.time)}` : ''}` : null
                       const body = (
                         <>
-                          <span className={`user-text min-w-0 flex-1 break-words text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{t.title || 'Untitled'}</span>
+                          <span className={`user-text min-w-0 flex-1 break-words text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{x1.title || t('Untitled')}</span>
                           {due && <span className="shrink-0 text-meta tabular-nums text-muted">{due}</span>}
-                          {t.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" aria-label={`Priority ${t.priority}`}>P{t.priority}</span>}
+                          {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" aria-label={t('Priority {priority}', { priority: x1.priority })}>P{x1.priority}</span>}
                         </>
                       )
                       return (
-                        <li key={t.id} data-public-task={t.id} data-done={done || undefined} style={{ paddingLeft: depth * 20 }}>
+                        <li key={x1.id} data-public-task={x1.id} data-done={done || undefined} style={{ paddingLeft: depth * 20 }}>
                           {list.rights === 'tick' ? (
                             <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-1">
                               <span className="flex h-11 w-11 shrink-0 items-center justify-center">
                                 <input type="checkbox" className="h-5 w-5 accent-(--ot-accent)" checked={done}
-                                  aria-label={`${done ? 'Reopen' : 'Tick'} ${t.title || 'Untitled'}`}
-                                  onChange={(e) => void toggle(t, e.target.checked)} />
+                                  aria-label={done ? t('Reopen {title}', { title: x1.title || t('Untitled') }) : t('Tick {title}', { title: x1.title || t('Untitled') })}
+                                  onChange={(e) => void toggle(x1, e.target.checked)} />
                               </span>
                               {body}
                             </label>
@@ -172,7 +173,7 @@ export function PublicListScreen({ token }: { token: string }) {
               ))}
             </div>
             <p className="mt-4 text-meta text-faint" role="status" data-public-updated>{updatedLine}</p>
-            <p className="mt-6 text-hint text-faint">Shared with OpenTodo. Notes, labels and names of the people on this project are not shown.</p>
+            <p className="mt-6 text-hint text-faint">{t('Shared with OpenTodo. Notes, labels and names of the people on this project are not shown.')}</p>
           </>
         )}
       </div>
@@ -186,10 +187,10 @@ export function publicDisplayOptions(search: string): DisplayOptions | null {
   return q.get('display') === '1' ? parseDisplayOptions(q) : null
 }
 
-const PUBLIC_NOTICE = {
-  tick: 'This list is public: anyone with the link can see it and tick items.',
-  read: 'This list is public and read-only: anyone with the link can see it.',
-}
+const PUBLIC_NOTICE = translatedMap({
+  tick: msg('This list is public: anyone with the link can see it and tick items.'),
+  read: msg('This list is public and read-only: anyone with the link can see it.'),
+})
 
 /**
  * The public page on a display (display-mode D7): the display's type scale, clock
@@ -203,27 +204,27 @@ function PublicDisplay({ options, state, groups, pending, error, updatedLine, on
   pending: Record<string, boolean>
   error: string | null
   updatedLine: string
-  onToggle: (t: Task, completed: boolean) => void
+  onToggle: (item: Task, completed: boolean) => void
 }) {
   const now = useNow(options.seconds)
   useRootPresentation(options)
   useWakeLock()
   const list = state.kind === 'ready' ? state.list : null
-  const byId = useMemo(() => new Map((list?.tasks ?? []).map((t) => [t.id, t])), [list])
+  const byId = useMemo(() => new Map((list?.tasks ?? []).map((entry) => [entry.id, entry])), [list])
   const columns = useMemo(() => groups.map((g) => ({
     id: g.id ?? 'none',
     heading: g.name,
-    rows: g.rows.map(({ task: t, depth }): DisplayRowData => ({
-      key: `${g.id ?? 'none'}:${t.id}`, id: t.id, title: t.title, priority: t.priority, depth,
-      done: t.id in pending ? pending[t.id] : t.completed_at !== null,
-      due: t.due ? `${formatShort(t.due.date)}${t.due.time ? ` ${formatTime(t.due.time)}` : ''}` : null,
+    rows: g.rows.map(({ task: x1, depth }): DisplayRowData => ({
+      key: `${g.id ?? 'none'}:${x1.id}`, id: x1.id, title: x1.title, priority: x1.priority, depth,
+      done: x1.id in pending ? pending[x1.id] : x1.completed_at !== null,
+      due: x1.due ? `${formatShort(x1.due.date)}${x1.due.time ? ` ${formatTime(x1.due.time)}` : ''}` : null,
       editable: list?.rights === 'tick',
     })),
   })), [groups, pending, list])
   const rows = useMemo(() => columns.flatMap((c) => c.rows), [columns])
   const toggle = useCallback((r: DisplayRowData) => {
-    const t = byId.get(r.id)
-    if (t && r.editable) onToggle(t, !r.done)
+    const item = byId.get(r.id)
+    if (item && r.editable) onToggle(item, !r.done)
   }, [byId, onToggle])
   const { focusKey, setFocusKey } = useDisplayKeys(rows, toggle)
 
@@ -234,16 +235,16 @@ function PublicDisplay({ options, state, groups, pending, error, updatedLine, on
           <Clock now={now} seconds={options.seconds} />
           {list && <h1 className="display-title user-text min-w-0">{list.projectName}</h1>}
         </header>
-        {state.kind === 'loading' && <p className="display-meta">Loading the list…</p>}
-        {state.kind === 'invalid' && <p className="display-task" data-public-invalid>This link no longer works. Ask whoever shared it for a new one.</p>}
-        {state.kind === 'rate-limited' && <Notice tone="warning">Too many requests from this network. Wait a minute, then reload the page.</Notice>}
-        {state.kind === 'unreachable' && <Notice tone="warning">The server could not be reached. The list appears when the connection returns.</Notice>}
+        {state.kind === 'loading' && <p className="display-meta">{t('Loading the list…')}</p>}
+        {state.kind === 'invalid' && <p className="display-task" data-public-invalid>{t('This link no longer works. Ask whoever shared it for a new one.')}</p>}
+        {state.kind === 'rate-limited' && <Notice tone="warning">{t('Too many requests from this network. Wait a minute, then reload the page.')}</Notice>}
+        {state.kind === 'unreachable' && <Notice tone="warning">{t('The server could not be reached. The list appears when the connection returns.')}</Notice>}
         {list && (
           <>
             <Notice tone={list.rights === 'tick' ? 'warning' : 'info'}>{PUBLIC_NOTICE[list.rights === 'tick' ? 'tick' : 'read']}</Notice>
             {error && <Notice tone="danger">{error}</Notice>}
             {columns.length === 0 ? (
-              <p className="display-task">Nothing left to do on this list.</p>
+              <p className="display-task">{t('Nothing left to do on this list.')}</p>
             ) : (
               <div className="space-y-6">
                 {columns.map((c) => (

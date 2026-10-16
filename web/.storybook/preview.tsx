@@ -1,5 +1,7 @@
 import type { Decorator, Preview } from '@storybook/react-vite'
 import '../src/index.css'
+import { applyLanguagePreference, currentLanguage } from '../src/lib/i18n'
+import { SHIPPED } from '../src/locales'
 
 // Theme: light and dark set data-theme on the story root; side-by-side renders the
 // story twice, one per theme (tokens also apply to [data-theme] subtrees).
@@ -24,8 +26,18 @@ const withTheme: Decorator = (Story, ctx) => {
   return frame(theme as 'light' | 'dark')
 }
 
+// Language (app-localization D11): loads the catalog through the app's own loader
+// before the story renders and sets lang on the document. English is the default,
+// so the a11y gate and the visual baselines are unchanged.
+const withLanguage = async ({ globals }: { globals: Record<string, unknown> }) => {
+  const code = String(globals.locale ?? 'en')
+  if (code === currentLanguage()) return
+  await applyLanguagePreference(code === 'en' ? 'system' : code).catch(() => undefined)
+}
+
 const preview: Preview = {
   decorators: [withTheme],
+  loaders: [withLanguage],
   globalTypes: {
     theme: {
       description: 'Colour theme',
@@ -37,6 +49,15 @@ const preview: Preview = {
           { value: 'dark', title: 'Dark' },
           { value: 'side-by-side', title: 'Side by side' },
         ],
+        dynamicTitle: true,
+      },
+    },
+    locale: {
+      description: 'Interface language',
+      toolbar: {
+        title: 'Language',
+        icon: 'globe',
+        items: SHIPPED.map((l) => ({ value: l.code, title: l.name })),
         dynamicTitle: true,
       },
     },
@@ -53,7 +74,7 @@ const preview: Preview = {
       },
     },
   },
-  initialGlobals: { theme: 'light', width: '1280' },
+  initialGlobals: { theme: 'light', width: '1280', locale: 'en' },
   parameters: {
     layout: 'fullscreen',
     a11y: { test: 'error' },

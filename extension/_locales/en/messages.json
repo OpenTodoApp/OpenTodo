@@ -1,0 +1,92 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture",
+    "description": "The extension name in the browser’s extension list."
+  },
+  "extDescription": {
+    "message": "Send the current page, its title, the selected text or a screenshot to the capture screen of your own OpenTodo server. No tracking, no network requests.",
+    "description": "The description in the browser’s extension list."
+  },
+  "actionTitle": {
+    "message": "Add to OpenTodo",
+    "description": "Toolbar button tooltip and the page context-menu entry."
+  },
+  "commandDescription": {
+    "message": "Add the current page to OpenTodo",
+    "description": "Keyboard shortcut description in the browser’s shortcut settings."
+  },
+  "menuScreenshot": {
+    "message": "Add screenshot to OpenTodo",
+    "description": "Context-menu entry that captures a screenshot."
+  },
+  "optionsTitle": {
+    "message": "OpenTodo Capture settings",
+    "description": "Options page title."
+  },
+  "optionsIntro": {
+    "message": "Enter the address of your OpenTodo server. The extension opens that server's capture screen for the current page. It stores only this address, holds no password or token and never contacts the server itself.",
+    "description": "Options page introduction."
+  },
+  "pendingNote": {
+    "message": "Set your server to continue adding \"$TITLE$\".",
+    "description": "Shown on first run; $TITLE$ is the page being captured.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example page"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "this page",
+    "description": "Fallback for a page without title or address."
+  },
+  "serverLabel": {
+    "message": "Server URL",
+    "description": "Label of the server address field."
+  },
+  "save": {
+    "message": "Save",
+    "description": "Save button."
+  },
+  "screenshotsHeading": {
+    "message": "Screenshots",
+    "description": "Heading of the screenshots part."
+  },
+  "screenshotsIntro": {
+    "message": "\"Add screenshot to OpenTodo\" captures the visible part of a page and hands the image to your server's capture popup, where nothing is saved until you press Save. Handing it over needs access to your server's address, and only that address; the browser asks when you save it.",
+    "description": "Explains screenshot capture."
+  },
+  "screenshotsAllowed": {
+    "message": "Screenshots: allowed for $ORIGIN$.",
+    "description": "$ORIGIN$ is the server address.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Screenshots: not allowed yet. The extension needs access to your server only to hand a screenshot to the capture popup.",
+    "description": "Screenshot access not granted yet."
+  },
+  "allowScreenshots": {
+    "message": "Allow screenshots",
+    "description": "Button that asks for access to the server address."
+  },
+  "invalidAddress": {
+    "message": "Enter an http:// or https:// address, for example https://todo.example.com",
+    "description": "Error for an address that is not http(s)."
+  },
+  "saved": {
+    "message": "Saved. Captures go to $ORIGIN$.",
+    "description": "$ORIGIN$ is the server address.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}

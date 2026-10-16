@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import type { AuthStatus, DemoInfo, User } from './types'
+import { t, msg } from './i18n'
 
 /**
  * Demo instance state (OpenSpec `demo-mode`, `demo-sandboxes`): set from
@@ -10,13 +11,13 @@ import type { AuthStatus, DemoInfo, User } from './types'
  */
 
 /** The banner text the design fixes (demo-sandboxes D6). */
-export const DEMO_BANNER = "Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don't store anything personal."
+export const DEMO_BANNER = msg("Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don't store anything personal.")
 
 /** The note shown in place of a control the demo instance refuses. */
-export const DEMO_RESTRICTED_NOTE = 'Disabled on this demo instance.'
+export const DEMO_RESTRICTED_NOTE = msg('Disabled on this demo instance.')
 
 /** Shown when the sandbox's write budget is used up (429 demo_limit). */
-export const DEMO_LIMIT_NOTICE = 'This demo sandbox reached its limit of changes. Your latest edits stay on this device and are saved when the limit allows.'
+export const DEMO_LIMIT_NOTICE = msg('This demo sandbox reached its limit of changes. Your latest edits stay on this device and are saved when the limit allows.')
 
 const KEY = 'opentodo.demo'
 const listeners = new Set<() => void>()
@@ -86,16 +87,16 @@ export function sandboxErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     switch (err.code) {
       case 'demo_busy':
-        return 'The demo is busy, try again in a few minutes.'
+        return t('The demo is busy, try again in a few minutes.')
       case 'rate_limited':
-        return 'Too many new sandboxes from your network. Try again in an hour.'
+        return t('Too many new sandboxes from your network. Try again in an hour.')
       case 'demo_token':
       case 'bad_origin':
-        return 'This page expired. Reload it and try again.'
+        return t('This page expired. Reload it and try again.')
     }
     return err.message
   }
-  return 'The demo could not be reached. Check your connection and try again.'
+  return t('The demo could not be reached. Check your connection and try again.')
 }
 
 /**

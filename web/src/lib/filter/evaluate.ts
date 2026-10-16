@@ -7,6 +7,7 @@ import { currentDateTime, localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
+import { t } from '../i18n'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -37,7 +38,7 @@ export type FilterResult =
   | { ok: true; empty: boolean; tasks: Task[]; warnings: string[] }
   | { ok: false; error: string; position: number; offset: number }
 
-type Pred = (t: Task) => boolean
+type Pred = (task: Task) => boolean
 
 const NEVER: Pred = () => false
 
@@ -86,7 +87,7 @@ function startOfDay(iso: string): number {
  * `created <op> date` and `completed <op> date` as a millisecond range check on an
  * instant in the viewer's zone; a null instant never matches.
  */
-function instantPred(at: (t: Task) => number | null, op: Cmp, r: DateRange): Pred {
+function instantPred(at: (task: Task) => number | null, op: Cmp, r: DateRange): Pred {
   const start = startOfDay(r.start)
   const next = startOfDay(shiftISO(r.end, 1))
   const test = (ms: number): boolean => {
@@ -98,13 +99,12 @@ function instantPred(at: (t: Task) => number | null, op: Cmp, r: DateRange): Pre
       case '>': return ms >= next
     }
   }
-  return (t) => {
-    const ms = at(t)
+  return (tk) => {
+    const ms = at(tk)
     return ms !== null && ms !== undefined && test(ms)
   }
 }
 
-const TYPE_WORDS: Record<string, string> = { text: 'Text', link: 'Link', choice: 'Choice' }
 
 function isEmptyValue(v: FieldValue | undefined): boolean {
   return v === null || v === undefined || v === ''
@@ -119,15 +119,15 @@ function isEmptyValue(v: FieldValue | undefined): boolean {
  */
 function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: string, weekStart: number): Pred {
   const at = n.opPos
-  const value = (t: Task): FieldValue | undefined => (t.project_id === def.project_id ? t.fields?.[def.id] : undefined)
+  const value = (task: Task): FieldValue | undefined => (task.project_id === def.project_id ? task.fields?.[def.id] : undefined)
   const label = `"${n.name}"`
   switch (def.type) {
     case 'number': {
-      if (n.value.type !== 'number') throw new FilterSyntaxError(`Field ${label} holds numbers: compare it with a number at position ${at + 1}`, at, ['number'])
+      if (n.value.type !== 'number') throw new FilterSyntaxError(t('Field {name} holds numbers: compare it with a number at position {pos}', { name: label, pos: at + 1 }), at, ['number'])
       const want = n.value.value
       const op = n.op
-      return (t) => {
-        const v = value(t)
+      return (tk) => {
+        const v = value(tk)
         if (typeof v !== 'number') return false
         switch (op) {
           case '<': return v < want
@@ -139,29 +139,29 @@ function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: st
       }
     }
     case 'date': {
-      if (n.value.type !== 'date') throw new FilterSyntaxError(`Field ${label} holds dates: compare it with a date at position ${at + 1}`, at, ['date'])
+      if (n.value.type !== 'date') throw new FilterSyntaxError(t('Field {name} holds dates: compare it with a date at position {pos}', { name: label, pos: at + 1 }), at, ['date'])
       const range = resolveRange(n.value.date, today, weekStart)
       const op = n.op
-      return (t) => {
-        const v = value(t)
+      return (item) => {
+        const v = value(item)
         return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && compareISO(v, op, range)
       }
     }
     case 'checkbox': {
-      if (n.op !== '=' || n.value.type !== 'bool') throw new FilterSyntaxError(`Checkbox fields support "= true" or "= false" only, at position ${at + 1}`, at, ['"= true"', '"= false"'])
+      if (n.op !== '=' || n.value.type !== 'bool') throw new FilterSyntaxError(t('Checkbox fields support "= true" or "= false" only, at position {pos}', { pos: at + 1 }), at, ['"= true"', '"= false"'])
       const want = n.value.value
       // An unset checkbox reads as unchecked.
-      return (t) => {
-        const v = value(t)
-        return t.project_id === def.project_id && (want ? v === true : v !== true)
+      return (task) => {
+        const v = value(task)
+        return task.project_id === def.project_id && (want ? v === true : v !== true)
       }
     }
     default: {
-      if (n.op !== '=') throw new FilterSyntaxError(`${TYPE_WORDS[def.type] ?? 'Text'} fields support "=" only, at position ${at + 1}`, at, ['"="'])
+      if (n.op !== '=') throw new FilterSyntaxError(t('{type, select, link {Link} choice {Choice} other {Text}} fields support "=" only, at position {pos}', { type: def.type, pos: at + 1 }), at, ['"="'])
       // A bare word that reads as a date (`client = today`) still compares as its text.
       const want = fieldValueText(n.value).toLocaleLowerCase()
-      return (t) => {
-        const v = value(t)
+      return (task) => {
+        const v = value(task)
         return typeof v === 'string' && v.toLocaleLowerCase() === want
       }
     }
@@ -192,7 +192,7 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   let blocked: Map<string, number> | null = null
   const blockedSet = () => {
     if (!blocked) {
-      if (!ctx.tasks) warn('Blocked tasks cannot be told apart here')
+      if (!ctx.tasks) warn(t('Blocked tasks cannot be told apart here'))
       blocked = blockedMap(ctx.tasks ?? [])
     }
     return blocked
@@ -202,60 +202,60 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
     switch (n.kind) {
       case 'or': {
         const ps = n.items.map(build)
-        return (t) => ps.some((p) => p(t))
+        return (task) => ps.some((p) => p(task))
       }
       case 'and': {
         const ps = n.items.map(build)
-        return (t) => ps.every((p) => p(t))
+        return (tk) => ps.every((p) => p(tk))
       }
       case 'not': {
         const p = build(n.item)
-        return (t) => !p(t)
+        return (task) => !p(task)
       }
       case 'label': {
         const ids = labelsByName.get(nameKey(n.name))
         if (!ids) {
-          warn(`No label named "${n.name}"`)
+          warn(t('No label named "{name}"', { name: n.name }))
           return NEVER
         }
         // Several labels may share a name after concurrent creation: any of them matches.
         if (ids.length === 1) {
           const id = ids[0]
-          return (t) => t.labels.includes(id)
+          return (task) => task.labels.includes(id)
         }
         const set = new Set(ids)
-        return (t) => t.labels.some((id) => set.has(id))
+        return (task) => task.labels.some((id) => set.has(id))
       }
       case 'project': {
         const ids = projectsByName.get(nameKey(n.name))
         if (!ids) {
-          warn(`No project named "${n.name}"`)
+          warn(t('No project named "{name}"', { name: n.name }))
           return NEVER
         }
         const set = new Set(ids)
         if (n.descendants) for (const id of ids) for (const d of descendants(id, liveProjects as Project[])) set.add(d)
-        return (t) => t.project_id !== null && set.has(t.project_id)
+        return (task) => task.project_id !== null && set.has(task.project_id)
       }
       case 'priority': {
         const v = n.value
-        return (t) => t.priority === v
+        return (task) => task.priority === v
       }
       case 'date': {
         const date = resolveRange(n.date, today, weekStart)
-        if (n.field === 'created') return instantPred((t) => t.created_at, n.op, date)
-        if (n.field === 'completed') return instantPred((t) => t.completed_at, n.op, date)
+        if (n.field === 'created') return instantPred((task) => task.created_at, n.op, date)
+        if (n.field === 'completed') return instantPred((task) => task.completed_at, n.op, date)
         const op = n.op
         // A task without a deadline never matches a `deadline` comparison (deadlines D4).
-        if (n.field === 'deadline') return (t) => !!t.deadline && compareISO(t.deadline, op, date)
+        if (n.field === 'deadline') return (task) => !!task.deadline && compareISO(task.deadline, op, date)
         // Only a start date compares; null and Someday never match (someday-and-evening).
-        if (n.field === 'start') return (t) => !!t.start && t.start !== 'someday' && compareISO(t.start, op, date)
+        if (n.field === 'start') return (task) => !!task.start && task.start !== 'someday' && compareISO(task.start, op, date)
         // A task without a due date never matches a `due` comparison.
-        return (t) => t.due !== null && compareISO(localDueOf(t.due).date, op, date)
+        return (task) => task.due !== null && compareISO(localDueOf(task.due).date, op, date)
       }
       case 'field': {
         const defs = fieldsByName.get(nameKey(n.name))
         if (!defs) {
-          warn(`No field named "${n.name}"`)
+          warn(t('No field named "{name}"', { name: n.name }))
           return NEVER
         }
         // Several projects may define the name, with different types: the term
@@ -270,41 +270,41 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           }
         }
         if (ps.length === 0) throw first
-        return (t) => ps.some((p) => p(t))
+        return (task) => ps.some((p) => p(task))
       }
       case 'nofield': {
         const defs = fieldsByName.get(nameKey(n.name))
         if (!defs) {
-          warn(`No field named "${n.name}"`)
+          warn(t('No field named "{name}"', { name: n.name }))
           return NEVER
         }
-        return (t) => defs.some((d) => t.project_id === d.project_id && isEmptyValue(t.fields?.[d.id]))
+        return (task) => defs.some((d) => task.project_id === d.project_id && isEmptyValue(task.fields?.[d.id]))
       }
       case 'search': {
         const needle = n.text.toLocaleLowerCase()
-        return (t) => t.title.toLocaleLowerCase().includes(needle) || t.description.toLocaleLowerCase().includes(needle)
+        return (task) => task.title.toLocaleLowerCase().includes(needle) || task.description.toLocaleLowerCase().includes(needle)
       }
       case 'keyword':
         switch (n.keyword) {
-          case 'overdue': return (t) => t.due !== null && localDueOf(t.due).date < today
-          case 'today': return (t) => t.due !== null && localDueOf(t.due).date === today
-          case 'tomorrow': return (t) => t.due !== null && localDueOf(t.due).date === tomorrow
-          case 'no date': return (t) => t.due === null
-          case 'no time': return (t) => t.due !== null && !t.due.time
-          case 'no project': return (t) => t.project_id === null
-          case 'no labels': return (t) => t.labels.length === 0
-          case 'no deadline': return (t) => !t.deadline
-          case 'no start': return (t) => !t.start
-          case 'someday': return (t) => t.start === 'someday'
-          case 'deferred': return (t) => !!t.start && t.start !== 'someday' && t.start > today
-          case 'evening': return (t) => !!t.evening
+          case 'overdue': return (task) => task.due !== null && localDueOf(task.due).date < today
+          case 'today': return (task) => task.due !== null && localDueOf(task.due).date === today
+          case 'tomorrow': return (task) => task.due !== null && localDueOf(task.due).date === tomorrow
+          case 'no date': return (task) => task.due === null
+          case 'no time': return (task) => task.due !== null && !task.due.time
+          case 'no project': return (task) => task.project_id === null
+          case 'no labels': return (task) => task.labels.length === 0
+          case 'no deadline': return (task) => !task.deadline
+          case 'no start': return (task) => !task.start
+          case 'someday': return (task) => task.start === 'someday'
+          case 'deferred': return (task) => !!task.start && task.start !== 'someday' && task.start > today
+          case 'evening': return (task) => !!task.evening
           // A habit's skipped occurrence record is not a completion (OpenSpec habits, D6).
-          case 'completed': return (t) => t.completed_at !== null && !t.skipped
-          case 'open': return (t) => t.completed_at === null
-          case 'subtask': return (t) => t.parent_id !== null
-          case 'habit': return (t) => t.habit === true
-          case 'blocked': { const b = blockedSet(); return (t) => b.has(t.id) }
-          case 'unblocked': { const b = blockedSet(); return (t) => !b.has(t.id) }
+          case 'completed': return (task) => task.completed_at !== null && !task.skipped
+          case 'open': return (task) => task.completed_at === null
+          case 'subtask': return (task) => task.parent_id !== null
+          case 'habit': return (task) => task.habit === true
+          case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
+          case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
         }
     }
   }
@@ -313,8 +313,8 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   const openOnly = !mentionsState(ast)
   // Skipped habit records match no query, whatever its terms (habits D6).
   const test: Pred = openOnly
-    ? (t) => !t.deleted_at && t.completed_at === null && pred(t)
-    : (t) => !t.deleted_at && !t.skipped && pred(t)
+    ? (task) => !task.deleted_at && task.completed_at === null && pred(task)
+    : (task) => !task.deleted_at && !task.skipped && pred(task)
   return { test, warnings }
 }
 

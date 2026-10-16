@@ -5,6 +5,7 @@
 // flex item), so pickers stay inside the property's own element.
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { Icon, type IconName } from '../../ui'
+import { t } from '../../lib/i18n'
 
 const FOCUSABLE = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -89,7 +90,7 @@ export function PropertyChip({ id, icon, label, value, empty, placeholder, readO
           </button>
         )}
         {onClear && !empty && !readOnly && (
-          <button type="button" className="touch-target flex h-6 w-6 items-center justify-center rounded-full text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised" aria-label={`Clear ${label.toLowerCase()}`} onClick={onClear}>
+          <button type="button" className="touch-target flex h-6 w-6 items-center justify-center rounded-full text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised" aria-label={t('Clear {lowerCase}', { lowerCase: label.toLowerCase() })} onClick={onClear}>
             <Icon name="x" size="xs" />
           </button>
         )}

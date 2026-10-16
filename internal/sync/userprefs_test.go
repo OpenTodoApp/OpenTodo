@@ -77,4 +77,17 @@ func TestUserPrefsArePersonalAndConverge(t *testing.T) {
 	if got := f.field("bob", "user_prefs", "me", "theme_accent"); got != "" {
 		t.Fatalf("bob sees alice's accent: %s", got)
 	}
+
+	// Interface language (app-localization D1): personal like the date fields and
+	// converging by (ts, device).
+	de := f.op("user_prefs", "me", "language", `"de"`)
+	es := f.op("user_prefs", "me", "language", `"es"`)
+	f.apply("alice", "A", es)
+	f.apply("alice", "A2", de)
+	if got := f.field("alice", "user_prefs", "me", "language"); got != `"es"` {
+		t.Fatalf("language: alice reads %s, want the later \"es\"", got)
+	}
+	if got := f.field("bob", "user_prefs", "me", "language"); got != "" {
+		t.Fatalf("bob sees alice's language: %s", got)
+	}
 }
