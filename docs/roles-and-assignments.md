@@ -18,7 +18,7 @@ Every member of a shared project has a role that says what they can do, and ever
 | Role | Can |
 | --- | --- |
 | **viewer** | see the project and its tasks, and comment |
-| **editor** | also add, edit, complete and delete tasks, and assign them |
+| **editor** | also add, edit, complete and delete tasks, assign them, and edit the project's [note](project-notes.md) |
 | **admin** | also rename, recolor and archive the project, and manage members |
 | **owner** | everything, including deleting the project and handing it over |
 

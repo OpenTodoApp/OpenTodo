@@ -77,3 +77,16 @@ describe('markdown', () => {
     expect(() => html(deep)).not.toThrow()
   })
 })
+
+describe('rich mode (project notes)', () => {
+  it('reads headings and check items only when asked', async () => {
+    const { parseMarkdown } = await import('./markdown')
+    const src = '## Packing\n\n- [x] Passport\n- [ ] Charger'
+    expect(parseMarkdown(src, 0, true)).toEqual([
+      { t: 'h', level: 2, c: [{ t: 'text', v: 'Packing' }] },
+      { t: 'list', ordered: false, start: 1, checks: [true, false], items: [[{ t: 'p', c: [{ t: 'text', v: 'Passport' }] }], [{ t: 'p', c: [{ t: 'text', v: 'Charger' }] }]] },
+    ])
+    // Comments keep their subset.
+    expect(parseMarkdown(src)[0]).toEqual({ t: 'p', c: [{ t: 'text', v: '## Packing' }] })
+  })
+})

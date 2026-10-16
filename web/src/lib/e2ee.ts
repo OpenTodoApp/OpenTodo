@@ -27,7 +27,7 @@ export const CLIENT_VERSION = 1
  */
 export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   task: ['title', 'description', 'ical_extra', 'notes_doc'],
-  project: ['name'],
+  project: ['name', 'description', 'notes_doc'],
   label: ['name'],
   section: ['name'],
   view: ['name', 'query'],

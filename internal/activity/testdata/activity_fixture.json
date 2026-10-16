@@ -608,6 +608,16 @@
       "events": []
     },
     {
+      "name": "a project note edit is one edited event naming description only (project-notes)",
+      "ops": [
+        {"id":"pn1","seq":1,"actor":"alice","entity":"project","entityId":"p1","field":"description","value":"# Trip plan","ts":500000,"device":"da"},
+        {"id":"pn2","seq":2,"actor":"alice","entity":"project","entityId":"p1","field":"notes_doc","value":"ydoc:v1:AAEC","ts":500000,"device":"da"}
+      ],
+      "events": [
+        {"id":"pn1","kind":"edited","actor":"alice","entity":"project","entityId":"p1","ts":500000,"opIds":["pn1"],"changes":[{"field":"description","from":null,"to":"# Trip plan"}]}
+      ]
+    },
+    {
       "name": "a public tick next to the creator's edit stays its own event (public-links)",
       "ops": [
         {"id":"pl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Milk (2 l)","ts":400000,"device":"da"},

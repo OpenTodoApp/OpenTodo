@@ -127,3 +127,50 @@ func TestDocFieldsMatchActivityOpaque(t *testing.T) {
 		}
 	}
 }
+
+// TestProjectNotesDocValidation: the project's note uses the same kDoc rules (project-notes 1.1).
+func TestProjectNotesDocValidation(t *testing.T) {
+	op := func(v json.RawMessage) Op {
+		return Op{ID: "p1", Entity: "project", EntityID: "p1", Field: "notes_doc", Value: v, TS: 1, Device: "A"}
+	}
+	if err := Validate(op(jsonString("ydoc:v1:AAEC"))); err != nil {
+		t.Fatalf("valid project doc: %v", err)
+	}
+	if err := Validate(op(jsonString("not a doc"))); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("invalid project doc: %v", err)
+	}
+	if err := Validate(Op{ID: "p2", Entity: "project", EntityID: "p1", Field: "description", Value: jsonString("# Plan"), TS: 1, Device: "A"}); err != nil {
+		t.Fatalf("description: %v", err)
+	}
+	if !IsDocField("project", "notes_doc") || IsDocField("project", "description") {
+		t.Fatal("DocFields")
+	}
+}
+
+
+// TestProjectNoteHistory (project-notes 1.5): a project's note change set lists
+// description and never notes_doc.
+func TestProjectNoteHistory(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	if _, err := s.Apply(ctx, "u1", []Op{
+		op("p1", "project", "pr", "name", `"Trip"`, 10, "A"),
+		op("p2", "project", "pr", "description", `"# Plan"`, 20, "A"),
+		{ID: "p3", Entity: "project", EntityID: "pr", Field: "notes_doc", Value: jsonString("ydoc:v1:AAEC"), TS: 20, Device: "A"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	h, err := s.History(ctx, "u1", "project", "pr", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, set := range h.ChangeSets {
+		for _, c := range set.Changes {
+			seen[c.Field] = true
+		}
+	}
+	if seen["notes_doc"] || !seen["description"] {
+		t.Fatalf("history fields = %v", seen)
+	}
+}

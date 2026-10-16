@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -402,5 +403,21 @@ func TestResetSchedule(t *testing.T) {
 	}
 	if !Stale(time.Time{}, now) {
 		t.Error("never reset must be stale")
+	}
+}
+
+// TestProjectNoteCap (project-notes 1.4): a project's note gets the notes cap,
+// not the 4 KB field cap.
+func TestProjectNoteCap(t *testing.T) {
+	g := guard{}
+	val := func(n int) []byte { return []byte(`"` + strings.Repeat("x", n) + `"`) }
+	if err := g.CheckOp(opsync.Op{Entity: "project", Field: "description", Value: val(20 * 1024)}); err != nil {
+		t.Fatalf("20 KB note: %v", err)
+	}
+	if err := g.CheckOp(opsync.Op{Entity: "project", Field: "description", Value: val(40 * 1024)}); err == nil {
+		t.Fatal("40 KB note accepted")
+	}
+	if err := g.CheckOp(opsync.Op{Entity: "project", Field: "name", Value: val(20 * 1024)}); err == nil {
+		t.Fatal("20 KB project name accepted")
 	}
 }

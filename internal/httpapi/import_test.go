@@ -268,7 +268,8 @@ func TestRoundTripExportImportExport(t *testing.T) {
 	}
 	errand := mk("/api/v1/labels", map[string]any{"name": "errand"})
 	old := mk("/api/v1/labels", map[string]any{"name": "old"})
-	home := mk("/api/v1/projects", map[string]any{"name": "Home"})
+	// project-notes 5.3: a project note round-trips with both fields.
+	home := mk("/api/v1/projects", map[string]any{"name": "Home", "description": "# House\n- [ ] gutters", "notes_doc": "ydoc:v1:AQID"})
 	garden := mk("/api/v1/projects", map[string]any{"name": "Garden", "parent_id": home})
 	trip := mk("/api/v1/tasks", map[string]any{"title": "Plan trip", "project_id": garden, "labels": []string{errand}, "priority": 1, "due": map[string]any{"date": "2026-10-11", "time": "09:00"}})
 	hotel := mk("/api/v1/tasks", map[string]any{"title": "Hotel", "project_id": garden, "parent_id": trip})
@@ -297,6 +298,15 @@ func TestRoundTripExportImportExport(t *testing.T) {
 	resp0, out0 = a.do("POST", "/api/v1/tasks/"+water+"/comments", map[string]any{"body": "Use rain water"})
 	a.mustStatus(resp0, 201, out0)
 	exportA := exportEntities(a)
+	noted := false
+	for _, p := range exportA["projects"].([]any) {
+		if m := p.(map[string]any); m["id"] == home && m["description"] == "# House\n- [ ] gutters" && m["notes_doc"] == "ydoc:v1:AQID" {
+			noted = true
+		}
+	}
+	if !noted {
+		t.Fatal("the export lacks the project note")
+	}
 	fileA, _ := json.Marshal(exportA)
 
 	b := newEnv(t, false)

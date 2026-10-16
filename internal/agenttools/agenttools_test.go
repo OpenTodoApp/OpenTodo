@@ -824,3 +824,35 @@ func TestCallAllOneBatch(t *testing.T) {
 		t.Fatalf("gate: %v", err)
 	}
 }
+
+// TestProjectNoteInListProjects (project-notes 5.1): list_projects shows the
+// project's note as untrusted text; an encrypted note reads as the placeholder.
+func TestProjectNoteInListProjects(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	f.put("u1", "project", "p1", map[string]any{"name": "Trip", "color": "#64748b", "archived": false, "description": "# Plan\n- [ ] ferry"})
+	f.put("u1", "project", "p2", map[string]any{"name": "enc:v1:QUJD", "color": "#64748b", "archived": false, "description": "enc:v1:REVG"})
+	out := f.mustCall(c, "list_projects", map[string]any{})
+	raw, _ := json.Marshal(out["projects"])
+	var ps []struct {
+		ID        string `json:"id"`
+		Encrypted bool   `json:"encrypted"`
+		Untrusted struct{ Name, Description string } `json:"untrusted_text"`
+	}
+	_ = json.Unmarshal(raw, &ps)
+	got := map[string]int{}
+	for i, p := range ps {
+		got[p.ID] = i
+	}
+	plain, enc := ps[got["p1"]], ps[got["p2"]]
+	if plain.Untrusted.Description != "# Plan\n- [ ] ferry" || plain.Encrypted {
+		t.Fatalf("plain = %+v", plain)
+	}
+	if !enc.Encrypted || strings.HasPrefix(enc.Untrusted.Description, "enc:") || strings.HasPrefix(enc.Untrusted.Name, "enc:") {
+		t.Fatalf("encrypted = %+v", enc)
+	}
+	// update_project still only renames and recolours.
+	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","description":"x"}`), nil); !isArgErr(err) {
+		t.Fatalf("update_project with description = %v", err)
+	}
+}

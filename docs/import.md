@@ -181,7 +181,7 @@ id,title,project,section,parent,priority,due_date,due_time,labels,recurrence,rem
 
 ### `json-generic`
 
-A top-level array of task objects, or an object with a `tasks` array and an optional `projects` array (`{id, name, parent_id}`; `parent_id` makes sub-projects). Key names are matched leniently:
+A top-level array of task objects, or an object with a `tasks` array and an optional `projects` array (`{id, name, parent_id, description}`; `parent_id` makes sub-projects, and `description`, `notes` or `note` becomes the project's note when the project is created; an existing project with that name keeps its own note). Key names are matched leniently:
 
 | Task attribute | Keys read |
 | --- | --- |
@@ -207,6 +207,7 @@ An object with `projects`, `sections`, `items` and optionally `labels`, `notes` 
 | Source | Becomes |
 | --- | --- |
 | `projects[].name`, `parent_id` | project and sub-project; the source inbox (`inbox_project: true`) maps to the target project |
+| `projects[].description` (or `notes`, `note`) | the project's note, for created projects only |
 | `items[].content`, `description` | title, description |
 | `items[].project_id`, `section_id` | project, section |
 | `sections[]` | sections of their project, created even when empty, in file order (with `sections: section`; deleted ones are skipped) |

@@ -181,7 +181,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           )}
           <NotesBoundary task={task} readOnly={readOnly}>
             <Suspense fallback={<NotesPreview text={task.description} />}>
-              <NotesEditor key={task.id} task={task} readOnly={readOnly} />
+              <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
             </Suspense>
           </NotesBoundary>
 

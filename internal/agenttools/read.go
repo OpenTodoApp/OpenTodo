@@ -3,6 +3,7 @@ package agenttools
 import (
 	"context"
 	"errors"
+	"github.com/pixari/opentodo/internal/e2ee"
 	"sort"
 	"strings"
 	"time"
@@ -111,15 +112,25 @@ type nameText struct {
 	Name string `json:"name"`
 }
 
+// projectText is a project's user-written content: its name and its note
+// (OpenSpec project-notes), both untrusted data for an assistant.
+type projectText struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type projectOut struct {
-	ID        string   `json:"id"`
-	Untrusted nameText `json:"untrusted_text"`
-	Color     string   `json:"color,omitempty"`
-	Archived  bool     `json:"archived"`
-	ParentID  *string  `json:"parent_id,omitempty"`
-	Shared    bool     `json:"shared"`
-	Role      string   `json:"role,omitempty"`
-	OpenCount int      `json:"open_count"`
+	ID        string      `json:"id"`
+	Untrusted projectText `json:"untrusted_text"`
+	// Encrypted marks a project whose name or note is end-to-end encrypted:
+	// the server shows the placeholder instead.
+	Encrypted bool    `json:"encrypted"`
+	Color     string  `json:"color,omitempty"`
+	Archived  bool    `json:"archived"`
+	ParentID  *string `json:"parent_id,omitempty"`
+	Shared    bool    `json:"shared"`
+	Role      string  `json:"role,omitempty"`
+	OpenCount int     `json:"open_count"`
 }
 
 func (snap *snapshot) openCounts() map[string]int {
@@ -134,8 +145,9 @@ func (snap *snapshot) openCounts() map[string]int {
 
 func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) projectOut {
 	id := str(p, "id")
-	out := projectOut{ID: id, Untrusted: nameText{Name: str(p, "name")}, Color: str(p, "color"), Archived: boolean(p, "archived"),
-		ParentID: strPtr(p, "parent_id"), OpenCount: counts[id]}
+	out := projectOut{ID: id, Untrusted: projectText{Name: str(p, "name"), Description: str(p, "description")}, Color: str(p, "color"),
+		Archived: boolean(p, "archived"), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id],
+		Encrypted: e2ee.IsCiphertext(rawStr(p, "name")) || e2ee.IsCiphertext(rawStr(p, "description"))}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role
 	}
