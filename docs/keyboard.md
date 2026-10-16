@@ -76,6 +76,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>w</kbd> | Go to the Calendar as Week |
 | <kbd>g</kbd> then <kbd>m</kbd> | Go to the Calendar as Month |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
+| <kbd>g</kbd> then <kbd>p</kbd> | Process the Inbox one task at a time |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects |
 | <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
 | <kbd>g</kbd> then <kbd>s</kbd> | Go to Settings |
@@ -189,6 +190,23 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>j</kbd> / <kbd>↓</kbd> | In Updates: select the next change |
 | <kbd>k</kbd> / <kbd>↑</kbd> | In Updates: select the previous change |
 | <kbd>Enter</kbd> | In Updates: open the task of the selected change (Tab reaches the filters) |
+
+### Process the Inbox
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>t</kbd> | Due today, then the next task |
+| <kbd>s</kbd> | Schedule: type a date (fri, 3/11) and press Enter, then the next task |
+| <kbd>m</kbd> | Move to a project, then the next task |
+| <kbd>a</kbd> | Delegate: move into a shared project and assign it to someone there, then the next task |
+| <kbd>l</kbd> | Labels (does not move on, so you can add a label and then decide) |
+| <kbd>y</kbd> | Park in Someday, then the next task |
+| <kbd>c</kbd> | Complete, then the next task |
+| <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Move to the Trash, then the next task |
+| <kbd>j</kbd> / <kbd>Space</kbd> | Skip to the next task |
+| <kbd>k</kbd> | Back to the previous task |
+| <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
+| <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
 
 ### Comments and notes
 

@@ -171,6 +171,7 @@ function screens(ids) {
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
     { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
+    { name: 'triage', path: '/triage', ready: (p) => p.locator('[data-triage-card]').waitFor() },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
     { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },

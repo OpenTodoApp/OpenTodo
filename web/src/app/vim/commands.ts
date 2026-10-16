@@ -22,7 +22,8 @@ export const COMMANDS: CommandSpec[] = [
   { name: 'settings', desc: 'Go to Settings' },
   { name: 'project', arg: '<name>', desc: 'Go to the first project whose name starts with <name>' },
   { name: 'new', arg: '<title>', desc: 'Create a task with the current view’s defaults (project, date, label)' },
-  { name: 'q', desc: 'Close the task panel, else clear the selection' },
+  { name: 'triage', desc: 'Process the Inbox one task at a time' },
+  { name: 'q', desc: 'Close the task panel, else clear the selection; in triage, leave it' },
   { name: 'sync', desc: 'Sync now' },
   { name: 'help', arg: '[topic]', desc: 'Show the keyboard shortcuts; with a topic, open Help on it (:help board)' },
 ]
@@ -98,6 +99,9 @@ export async function runCommand(input: string, ctx: CommandContext): Promise<Co
       await createTask({ ...taskDefaults(ctx.route, ctx.today, ctx.userId), title: arg })
       return { ok: true }
     }
+    case 'triage':
+      ctx.navigate({ view: 'triage' })
+      return { ok: true }
     case 'q':
       ctx.closePanel()
       return { ok: true }

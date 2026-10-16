@@ -42,6 +42,7 @@ import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, u
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
 const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
@@ -143,7 +144,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
     'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
-    'go.trash': go({ view: 'trash' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
+    'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     'global.help': () => setShowHelp((v) => !v),
     // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
     'global.sidebar': () => {
@@ -210,6 +211,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TrashView />
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} />
+          ) : route.view === 'triage' ? (
+            <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
             <FeedView />
           ) : route.view === 'ask' ? (

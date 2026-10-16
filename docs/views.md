@@ -18,6 +18,10 @@ A view is a way of looking at your tasks. OpenTodo comes with a handful, and you
 
 Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates are at the top of the sidebar, the less frequent ones under **More**. Each has a shortcut: press <kbd>g</kbd>, then a letter, for example <kbd>g</kbd> <kbd>i</kbd> for the Inbox. A project can also be shown as a list, a board or a timeline. [The built-in views](built-in-views.md) says what each one shows, with its shortcut.
 
+## Process the Inbox
+
+When the Inbox has piled up, **Process** in its header (or <kbd>g</kbd> <kbd>p</kbd>) shows one task at a time with a key for each decision: today, schedule, move, delegate, label, Someday, complete or trash, each with Undo. See [Process the Inbox](process-the-inbox.md).
+
 ## Plan your day with Today
 
 Today lists overdue tasks first, in red, then today's tasks by time, with **This Evening** and **Blocked** groups below. A task whose deadline or start date has come shows up here too. Anything you add here is due today. See [Today and Upcoming](today-and-upcoming.md#plan-your-day-with-today).

@@ -28,6 +28,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
+| &nbsp;&nbsp;↳ [Process the Inbox](process-the-inbox.md) | Walk the Inbox one task at a time and decide each with a single key: today, schedule, move, delegate, label, Someday, complete or trash, with Undo. |
 | &nbsp;&nbsp;↳ [Today and Upcoming](today-and-upcoming.md) | How Today orders overdue, started, evening and blocked tasks, how deadlines and start dates bring tasks in, and how Upcoming lays out the days ahead. |
 | &nbsp;&nbsp;↳ [Saved views](saved-views.md) | Turn a filter query into a view pinned to the sidebar, group and sort it, manage it from its menu, and put up to six views on one dashboard. |
 | [Search and commands](search.md) | One box on Ctrl+K finds any task, project, label, view or setting, runs any command by name, and understands filter queries. |

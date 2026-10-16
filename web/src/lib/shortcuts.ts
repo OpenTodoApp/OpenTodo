@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -61,6 +61,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'calendar', title: 'Day, Week and Month calendar' },
   { id: 'filter', title: 'Filter, saved filters and boards' },
   { id: 'trash', title: 'Trash and projects' },
+  { id: 'triage', title: 'Process the Inbox' },
   { id: 'comments', title: 'Comments and notes' },
   { id: 'settings', title: 'Settings' },
   { id: 'vim', title: 'Vim keybindings' },
@@ -76,6 +77,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   project: ['list', 'board', 'timeline'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
   // The Month view keys are its own `view` entries (month-and-timeline-views): it hosts no lane-and-blocks calendar.
   dashboard: [], day: ['calendar'], week: ['calendar'], month: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
+  // Process the Inbox (inbox-triage): one card, no task list; its keys are `view` entries.
+  triage: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -122,6 +125,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.week', keys: ['g w'], description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
   { id: 'go.month', keys: ['g m'], description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
   { id: 'go.trash', keys: ['g x'], description: 'Go to the Trash', section: 'go', scope: 'global' },
+  { id: 'go.triage', keys: ['g p'], description: 'Process the Inbox one task at a time', section: 'go', scope: 'global' },
   { id: 'go.feed', keys: ['g h'], description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
   { id: 'go.ask', keys: ['g k'], description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go', scope: 'global' },
   { id: 'go.settings', keys: ['g s'], description: 'Go to Settings', section: 'go', scope: 'global' },
@@ -243,6 +247,20 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'feed.open', keys: ['Enter'], description: 'In Updates: open the task of the selected change (Tab reaches the filters)', section: 'trash', scope: 'view', views: ['feed'] },
   { id: 'share.escape', keys: ['Esc'], description: 'Leave the shared page without saving it as a task', section: 'trash', scope: 'view', views: ['share'], hidden: true, typing: true },
 
+  // ---- Process the Inbox (inbox-triage): one Inbox task at a time, a key per decision; every decision but Labels moves on to the next task.
+  { id: 'triage.today', keys: ['t'], description: 'Due today, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.schedule', keys: ['s'], description: 'Schedule: type a date (fri, 3/11) and press Enter, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.move', keys: ['m'], description: 'Move to a project, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.delegate', keys: ['a'], description: 'Delegate: move into a shared project and assign it to someone there, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.labels', keys: ['l'], description: 'Labels (does not move on, so you can add a label and then decide)', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.someday', keys: ['y'], description: 'Park in Someday, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.complete', keys: ['c'], description: 'Complete, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.trash', keys: ['Delete', 'Backspace'], description: 'Move to the Trash, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.skip', keys: ['j', 'Space'], description: 'Skip to the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.back', keys: ['k'], description: 'Back to the previous task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.open', keys: ['Enter'], description: 'Open the task’s panel to edit anything else', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
+
   // ---- settings
   { id: 'settings.invite-copy', keys: ['Enter'], description: 'Settings → People → Members: copy the invite link created in this session', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
   { id: 'settings.invite-revoke', keys: ['Delete'], description: 'Settings → People → Members: revoke the focused pending invitation', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
@@ -272,7 +290,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 
