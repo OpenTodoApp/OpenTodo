@@ -8,6 +8,7 @@ import { commitFiles, planFiles } from './attachments'
 import { currentUserId } from './sharing'
 import type { Comment, Membership, ProjectMember, ProjectRole } from './types'
 import { t } from './i18n'
+import { uuid } from './ids'
 
 /**
  * Create a comment on a task (optionally replying to another). Returns its id.
@@ -20,7 +21,7 @@ export async function createComment(input: { taskId: string; body: string; paren
   if (!body && files.length === 0) throw new Error(t('a comment needs some text'))
   const author = await currentUserId()
   if (!author) throw new Error(t('sign in to comment'))
-  const id = crypto.randomUUID()
+  const id = uuid()
   // task_id and author_id first: they place and authorize the comment.
   const patch = {
     task_id: input.taskId, author_id: author, body, parent_id: input.parentId ?? null,

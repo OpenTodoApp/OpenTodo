@@ -8,6 +8,7 @@ import { db, type AssistantUndo } from './db'
 import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
+import { uuid } from './ids'
 
 export const UNDO_KEEP = 20
 
@@ -66,7 +67,7 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
       if (ck) clocks.push({ entity: c.entity, entityId: c.entityId, field: f, ts: ck.ts, device: ck.device })
     }
   }
-  const entry: AssistantUndo = { id: crypto.randomUUID(), created_at: Date.now(), count: changes.length, inverse, clocks, source: opts.source, ...(opts.label ? { label: opts.label } : {}) }
+  const entry: AssistantUndo = { id: uuid(), created_at: Date.now(), count: changes.length, inverse, clocks, source: opts.source, ...(opts.label ? { label: opts.label } : {}) }
   await db.assistantUndo.put(entry)
   const all = await db.assistantUndo.orderBy('created_at').reverse().primaryKeys()
   if (all.length > UNDO_KEEP) await db.assistantUndo.bulkDelete(all.slice(UNDO_KEEP))

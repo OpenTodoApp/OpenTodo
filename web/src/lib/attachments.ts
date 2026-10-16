@@ -14,6 +14,7 @@ import { currentUserId, membershipMap } from './sharing'
 import { applyBatch } from './undo'
 import type { Attachment, AttachmentLimits } from './types'
 import { t } from './i18n'
+import { sha256, uuid } from './ids'
 
 /** The longest attachment name the server accepts. */
 export const MAX_NAME = 255
@@ -77,8 +78,11 @@ export function cleanName(name: string): string {
 }
 
 async function sha256Hex(blob: Blob): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer())
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  // crypto.subtle exists only in secure contexts; plain-http LAN installs use
+  // the same SHA-256 in plain JavaScript (issue #4).
+  const digest = crypto.subtle ? new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)) : sha256(bytes)
+  return [...digest].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 /** One planned file: its ops and the bytes to keep for upload. */
@@ -110,7 +114,7 @@ export async function planFiles(taskId: string, files: File[], opts: { commentId
     }
     if (file.size > room) throw new AttachmentError('quota', t('“{name}” would go over your {quota} of attachments.', { name: file.name, quota: formatBytes(l?.quota_bytes ?? 0) }))
     room -= file.size
-    const id = crypto.randomUUID()
+    const id = uuid()
     const name = cleanName(file.name)
     const stored = key ? await encryptFile(key, id, file) : file
     if (l && stored.size > l.max_file_bytes) {
@@ -176,7 +180,7 @@ export async function queueLink(taskId: string, url: string, name?: string, comm
   if (!u) throw new AttachmentError('invalid', t('Links start with http:// or https://.'))
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add links.'))
-  const id = crypto.randomUUID()
+  const id = uuid()
   await mutateMany([{ entity: 'attachment', entityId: id, patch: {
     task_id: taskId, author_id: author, comment_id: commentId ?? null, name: cleanName(name?.trim() || u.hostname),
     mime: 'text/uri-list', size: 0, sha256: '', url: u.href, encrypted: false, created_at: Date.now(), uploaded_at: null, deleted_at: null,
@@ -478,7 +482,7 @@ async function migrateFiles(mode: FileMigrationMode): Promise<void> {
   try {
     for (const a of list) {
       const bytes = await storedBytes(a)
-      const id = crypto.randomUUID()
+      const id = uuid()
       const plain = a.encrypted ? (bytes.size ? await decryptFile(key, a.id, bytes, a.mime) : bytes) : bytes
       const stored = mode === 'encrypt' ? await encryptFile(key, id, plain) : plain
       await db.attachmentBlobs.put({ id, blob: stored, name: a.name, size: stored.size })

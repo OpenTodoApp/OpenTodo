@@ -8,6 +8,7 @@ import { compareByPosition, planMove, planStep, type Placement, type PositionCha
 import type { Label, Task } from './types'
 import { HUES } from '../ui/tokens/palette'
 import { t } from './i18n'
+import { uuid } from './ids'
 
 // The canonical hexes of the design-system palette (src/ui/tokens/palette.ts). The
 // original nine keep their order so older clients and stored colours stay valid;
@@ -43,7 +44,7 @@ export async function createLabel(input: { name: string; color?: string }): Prom
   if (!name) throw new Error(t('Label name must not be empty'))
   const existing = await findLabelByName(name)
   if (existing) throw new LabelExistsError(existing)
-  const id = crypto.randomUUID()
+  const id = uuid()
   const now = Date.now()
   const used = new Set((await db.labels.filter((l) => !l.deleted_at).toArray()).map((l) => l.color))
   const color = input.color ?? LABEL_PALETTE.find((c) => !used.has(c)) ?? LABEL_PALETTE[now % LABEL_PALETTE.length]

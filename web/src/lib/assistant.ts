@@ -13,6 +13,7 @@ import { fieldValueId, readField } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
 import { applyBatch, tableOf, undoBatch, type UndoResult } from './undo'
 import { t } from './i18n'
+import { uuid } from './ids'
 export { UNDO_KEEP } from './undo'
 
 // ------------------------------------------------------------------ stream
@@ -406,7 +407,7 @@ export async function clearThreads(): Promise<void> {
 
 export function newThread(provider: string): AssistantThread {
   const now = Date.now()
-  return { id: crypto.randomUUID(), title: t('New conversation'), messages: [], created_at: now, updated_at: now, provider, usage: { input: 0, output: 0 } }
+  return { id: uuid(), title: t('New conversation'), messages: [], created_at: now, updated_at: now, provider, usage: { input: 0, output: 0 } }
 }
 
 // ------------------------------------------------------------------ messages

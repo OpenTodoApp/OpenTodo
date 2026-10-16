@@ -71,3 +71,19 @@ export function occurrenceId(seriesId: string, date: string): string {
 export function detachedId(seriesId: string, date: string): string {
   return nameId('occurrence', `${seriesId}:detach:${date}`)
 }
+
+/**
+ * A random RFC 9562 version 4 UUID. crypto.randomUUID exists only in secure
+ * contexts (https, or localhost): on a plain-http LAN install such as
+ * http://192.168.1.10:8080 it is undefined, and calling it broke every write
+ * and the device id itself (issue #4). crypto.getRandomValues is available in
+ * every context. Use this instead of crypto.randomUUID everywhere in the app.
+ */
+export function uuid(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  const b = crypto.getRandomValues(new Uint8Array(16))
+  b[6] = (b[6] & 0x0f) | 0x40
+  b[8] = (b[8] & 0x3f) | 0x80
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
+}
