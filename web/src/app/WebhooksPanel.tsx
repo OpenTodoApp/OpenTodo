@@ -74,9 +74,8 @@ export function WebhooksView(p: WebhooksViewProps) {
   const close = () => (p.secret ? p.onDismissSecret() : p.onDraftChange(null))
   const add = <Button variant="primary" size="sm" icon="plus" disabled={disabled} onClick={() => p.onDraftChange(emptyDraft())}>Add webhook</Button>
   return (
-    <SettingsSection title="Webhooks" helpId="settings/webhooks" headingId="webhooks-heading" testId="webhooks-panel"
-      description="Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook's secret."
-      actions={add}>
+    <SettingsSection title="Webhooks" headingId="webhooks-heading" testId="webhooks-panel"
+      description="Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook's secret.">
       {!p.connected && (
         <Notice>You are offline. Webhooks are delivered by the server, so changing or testing them requires a connection. The list below is the last one fetched.</Notice>
       )}
@@ -200,6 +199,7 @@ export function WebhooksView(p: WebhooksViewProps) {
           )}
         </Dialog>
       )}
+      <SettingRow label="Add a webhook" description="Posts a signed request to your endpoint when tasks or projects change." control={add} />
     </SettingsSection>
   )
 }

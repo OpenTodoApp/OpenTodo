@@ -462,6 +462,17 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
 @layer components {
+/* Row density (OpenSpec change ux-overhaul, appearance-preferences "Density
+   preference"): comfortable rows by default, 36 px rows under compact. Touch
+   targets keep 44 px on coarse pointers through the rules further down. */
+.row-pad { padding-block: 0.5rem; }
+:root[data-density="compact"] .row-pad { padding-block: 0.25rem; }
+:root[data-density="compact"] [data-sidebar-item] { min-height: 2rem; padding-block: 0.25rem; }
+:root[data-density="compact"] [data-group-header] { min-height: 2rem; }
+@media (pointer: coarse) {
+  :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
+  :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
+}
 /* User-written text wraps instead of pushing the page sideways. */
 .user-text { overflow-wrap: anywhere; }
 }

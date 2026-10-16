@@ -49,7 +49,7 @@ New accounts are created through a project link only when one of these is true:
 
 - the link was created by the **owner or an admin of the server**;
 - open sign-up is on for the server;
-- the server owner switched on **Members can invite new people with project links** in **Settings → Access policies → Project invite links**. It is off by default.
+- the server owner switched on **Members can invite new people with project links** in **Settings → People → Project invite links**. It is off by default.
 
 When none applies, the Share dialog says so under the new link: it then works only for people who already have an account. The switch is checked when a link is used, so turning it on or off also affects links that were already sent.
 
@@ -68,7 +68,7 @@ For viewers, the project is read-only: the add box and edit controls are switche
 
 ## Invite someone new
 
-Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, if you're the owner or an admin of the server, go to **Settings → Administration → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
+Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, if you're the owner or an admin of the server, go to **Settings → People → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
 
 <picture><source srcset="images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation."></picture>
 

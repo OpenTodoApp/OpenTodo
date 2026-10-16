@@ -29,7 +29,7 @@ Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills
 | Skill | What it does |
 |---|---|
 | **Turn an idea into a project** | Turns an idea or pasted notes into one new project: a few phases, each with tasks and estimates. |
-| **Plan my week** | Proposes due dates and times for your open work over the next 7 days, within your working day (Settings → Preferences → Calendar: day start, day end and planned hours). It never plans more than a day holds, and counts tasks without an estimate as 30 minutes. |
+| **Plan my week** | Proposes due dates and times for your open work over the next 7 days, within your working day (Settings → General → Calendar: day start, day end and planned hours). It never plans more than a day holds, and counts tasks without an estimate as 30 minutes. |
 | **Weekly review** | Looks at the Inbox, overdue tasks and the coming week, and proposes what to reschedule, move or complete, with a short summary. It never proposes trashing your tasks. |
 | **Triage my inbox** | Proposes a project, and a priority, labels and a date where the task gives a reason, for each Inbox task. |
 | **Break this down** | Turns the selected task into subtasks with estimates. Also in a task's **⋯** menu. |
@@ -47,11 +47,11 @@ The panel first shows what will be sent and to whom:
 - the provider and model the owner chose, or the provider you chose with your own key,
 - what may be sent: task titles and descriptions; project, section and label names; due dates, priorities and completion; comments; the names, types and links of attachments (never the files); names of members of shared projects; your display name, today's date and your time zone; and the messages you type.
 
-In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the provider changes later (the owner switches, you choose your own, or the owner stops allowing members' own keys), the assistant asks you again. You can withdraw consent in **Settings → AI → Assistant**.
+In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the provider changes later (the owner switches, you choose your own, or the owner stops allowing members' own keys), the assistant asks you again. You can withdraw consent in **Settings → Integrations → Assistant**.
 
 ## Use your own provider and key
 
-When the server owner turns on **Let members bring their own key**, **Settings → AI → Assistant** shows **Which assistant you use**:
+When the server owner turns on **Let members bring their own key**, **Settings → Integrations → Assistant** shows **Which assistant you use**:
 
 - **The server's assistant**: the provider and model the owner set up. This is the default.
 - **My own provider and key**: choose **Anthropic (Claude)**, **OpenAI** or **Google Gemini**, a model, and paste an API key from your own account, then select **Save my provider**. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, `.`, `_`, `:` and `-`, for example `gpt-4.1-mini` or `gemini-2.5-flash`). **Test connection** sends one tiny request with the provider, model and key on screen to check them, before or after you save (up to 5 tests in 10 minutes). Testing never saves anything.
@@ -91,17 +91,17 @@ After applying, **Undo** appears in the panel and in a short notice at the botto
 
 ## Apply small changes without review
 
-The switch **Settings → AI → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
+The switch **Settings → Integrations → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
 
 ## Conversations stay on this device
 
-Conversations are stored only in this browser: never synced, never sent to other people, not in exports or backups. The panel keeps the last 50 conversations for up to 30 days. **History** lists them (also offline), **New** starts another, and **Clear conversations** deletes them (also **Settings → AI → Assistant → Clear conversations on this device**, which asks you to confirm). Signing out deletes them too. The server keeps nothing of a conversation after it has answered.
+Conversations are stored only in this browser: never synced, never sent to other people, not in exports or backups. The panel keeps the last 50 conversations for up to 30 days. **History** lists them (also offline), **New** starts another, and **Clear conversations** deletes them (also **Settings → Integrations → Assistant → Clear conversations on this device**, which asks you to confirm). Signing out deletes them too. The server keeps nothing of a conversation after it has answered.
 
 Offline you can read earlier conversations and apply or undo a proposal that already arrived; asking needs a connection.
 
 ## Costs and limits
 
-Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → AI → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). When you reach it, the assistant says when it resets (the first day of the next month, UTC). One answer at a time per person.
+Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → Integrations → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). When you reach it, the assistant says when it resets (the first day of the next month, UTC). One answer at a time per person.
 
 Answers on your own key are paid by you, so they do not count toward the allowance and are never stopped by it ("1,240 tokens · your key"); Settings shows them separately. The owner can choose to count them as well.
 
@@ -114,7 +114,7 @@ Answers on your own key are paid by you, so they do not count toward the allowan
 
 ## End-to-end encrypted accounts
 
-If your account uses [end-to-end encryption](e2ee.md), the assistant is not available: the server holds no key to your tasks, so it cannot pass them to a model, and relaying them in plain text would break what encryption promises. The panel explains this, offers no consent step, and links to **Settings → Encryption**, where you can turn encryption off if you want to use the assistant (your tasks are then stored without end-to-end encryption).
+If your account uses [end-to-end encryption](e2ee.md), the assistant is not available: the server holds no key to your tasks, so it cannot pass them to a model, and relaying them in plain text would break what encryption promises. The panel explains this, offers no consent step, and links to **Settings → Account → Encryption**, where you can turn encryption off if you want to use the assistant (your tasks are then stored without end-to-end encryption).
 
 ## Demo instance
 
@@ -124,7 +124,7 @@ The assistant is switched off on the public demo.
 
 ### Turn it on
 
-**Settings → AI → Assistant** shows the owner whether the assistant is on, the provider and model everyone uses, the providers allowed (flagging one without a key), the monthly limit and whether members may bring their own key. Select **Configure** (owner only) to change them:
+**Settings → Integrations → Assistant** shows the owner whether the assistant is on, the provider and model everyone uses, the providers allowed (flagging one without a key), the monthly limit and whether members may bring their own key. Select **Configure** (owner only) to change them:
 
 1. Tick **Allow this provider** for one or more providers and enter the model and key.
 2. Choose the **Provider everyone uses**.
@@ -144,7 +144,7 @@ The model must support tool use. **Test connection** reports an endpoint that re
 
 ### Other settings
 
-- **Let members bring their own key**: each person may then choose Anthropic, OpenAI or Google Gemini with their own model and key in **Settings → AI → Assistant**; their turns use it instead of yours. Members are never offered the compatible endpoint, so they cannot make your server connect to an address of their choosing. Turning this off makes everyone use your provider again (each person accepts its disclosure again); their choices are kept for when you turn it back on. Settings shows how many people use their own provider and key.
+- **Let members bring their own key**: each person may then choose Anthropic, OpenAI or Google Gemini with their own model and key in **Settings → Integrations → Assistant**; their turns use it instead of yours. Members are never offered the compatible endpoint, so they cannot make your server connect to an address of their choosing. Turning this off makes everyone use your provider again (each person accepts its disclosure again); their choices are kept for when you turn it back on. Settings shows how many people use their own provider and key.
 - **Count members' own keys toward the monthly limit**: off by default, so a member who pays with their own key is not held to your allowance. Turn it on to apply one limit to every answer. One answer at a time per person and 8 at a time on the server apply either way.
 - **Monthly tokens per person**: 500,000 by default; `0` means unlimited.
 - Changing the provider asks everyone to accept the disclosure again.

@@ -80,7 +80,7 @@ The notes field formats as you type. Start a line with `- ` for a bullet list, `
 
 A due date is just a calendar day, and a time is the time on the clock where you are. A task due Tuesday at 09:00 shows Tuesday at 09:00 on every device, even when you travel.
 
-Type the date and time in the **Due** fields, or pick them. Dates and times are shown in the format you chose in **Settings → Preferences → Date and time**, and you can type them the same way:
+Type the date and time in the **Due** fields, or pick them. Dates and times are shown in the format you chose in **Settings → General → Date and time**, and you can type them the same way:
 
 - **Date:** a date in your format (`14/10` or `10/14`, with or without a year), an ISO date (`2026-10-14`), or a word: `today`, `tomorrow`, a weekday such as `fri`, `next week` or `3 Nov`. A date without a year that has already passed this year means next year. Press <kbd>Enter</kbd> or leave the field to save it. If the date doesn't exist (`31/02`), the field says so and the task keeps its date.
 - **Calendar:** the calendar button next to the date, or <kbd>Alt</kbd>+<kbd>↓</kbd> in the field, opens a month whose weeks start on your first day of the week. Arrow keys move by day and week, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> by month, <kbd>Home</kbd> and <kbd>End</kbd> to the start and end of the week, <kbd>Enter</kbd> picks the day and <kbd>Esc</kbd> closes it.
@@ -193,7 +193,7 @@ To duplicate one task with its open subtasks, select it and press <kbd>Shift</kb
 
 ### When a project is done
 
-When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Projects** (each device has its own setting). To bring an archived project back, open **Settings → Projects** and select **Restore** next to it under **Archived projects**; see [Trash and history](trash-and-history.md#bring-back-an-archived-project).
+When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Data** (each device has its own setting). To bring an archived project back, open **Settings → Data** and select **Restore** next to it under **Archived projects**; see [Trash and history](trash-and-history.md#bring-back-an-archived-project).
 
 ## Put things in order
 

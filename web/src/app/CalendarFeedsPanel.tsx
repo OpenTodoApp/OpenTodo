@@ -77,7 +77,7 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
   const on = p.enabled === true
   const subs = p.subscriptions ?? []
   return (
-    <SettingsSection title="Calendar feeds" helpId="settings/calendar-feeds" headingId="calendar-feeds-heading" testId="calendar-feeds-panel"
+    <SettingsSection title="Calendar feeds" headingId="calendar-feeds-heading" testId="calendar-feeds-panel"
       description="Show your other calendars in Day and Week, and subscribe to your tasks from Google Calendar, Outlook or Apple Calendar.">
       {!p.connected && <Notice>A connection is required to change calendar feeds. You are seeing the last loaded state.</Notice>}
       {p.enabled !== null && (

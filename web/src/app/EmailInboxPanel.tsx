@@ -37,7 +37,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
   const inbox = p.inbox
   const dirty = inbox !== null && parseAllowlist(p.draft).join('\n') !== inbox.allowlist.join('\n')
   return (
-    <SettingsSection title="Email to task" helpId="settings/email" headingId="email-inbox-heading"
+    <SettingsSection title="Email to task" headingId="email-inbox-heading"
       description="Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title, the text is the description, and attachment names are listed.">
       {inbox === null ? (
         !p.error && <Notice>Email to task settings are available when you are online.</Notice>

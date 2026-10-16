@@ -111,7 +111,7 @@ export function EncryptionView(p: EncryptionViewProps) {
   const idle = () => p.onMode({ kind: 'idle' })
   const status = state.enabled ? (state.unlocked ? 'on' : 'locked') : 'off'
   return (
-    <SettingsSection title="End-to-end encryption" helpId="settings/encryption" headingId="e2ee-heading"
+    <SettingsSection title="End-to-end encryption" headingId="e2ee-heading"
       description={`Encrypts ${ENCRYPTED_FIELDS} on your devices before they are synced, so your server, its backups and integrations only see ciphertext.`}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}

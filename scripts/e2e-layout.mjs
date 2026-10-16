@@ -193,11 +193,13 @@ function screens(ids) {
     // the section that holds its control (the owner sees all of them).
     { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
     ...[
-      ['account', 'Account'], ['security', 'Security'], ['encryption', 'Encryption'], ['activity', 'Sessions and audit log'],
-      ['preferences', 'Preferences'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']], ['projects', 'Projects'],
-      ['data', 'Data'], ['integrations', 'Integrations'], ['ai', 'AI'],
-      ['admin', 'Administration', ['delete-user']], ['backups', 'Backups'], ['access', 'Access policies'],
+      ['account', 'Account'], ['appearance', 'Appearance'],
+      ['general', 'General'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']],
+      ['integrations', 'Integrations'], ['data', 'Data'],
+      ['people', 'People', ['delete-user']], ['server', 'Server'],
     ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
+    // A legacy address opens its section in place (settings-navigation "Legacy settings addresses").
+    { name: 'settings-legacy', path: '/settings/security', ready: heading('Account') },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // The capture screen with shared files (attachments D9): the service worker's
     // hand-over store is filled in the page, then /share?inbox=<id> opens. Chromium

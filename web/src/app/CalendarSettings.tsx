@@ -18,7 +18,7 @@ export function CalendarSettingsSection() {
 export function CalendarSettingsView({ prefs, onSave }: { prefs: GridPrefs; onSave: (patch: Partial<GridPrefs>) => void }) {
   const lengths = DAY_LENGTHS.includes(prefs.dayLength) ? DAY_LENGTHS : [...DAY_LENGTHS, prefs.dayLength].sort((a, b) => a - b)
   return (
-    <SettingsSection title="Calendar" helpId="settings/calendar" headingId="calendar-heading" description={
+    <SettingsSection title="Calendar" headingId="calendar-heading" description={
       <>Working hours and day length for the Day and Week views (<span className="kbd">g</span> <span className="kbd">d</span>,{' '}
         <span className="kbd">g</span> <span className="kbd">w</span>). Each device keeps its own; they are not synced.</>
     }>

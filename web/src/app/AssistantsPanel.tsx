@@ -37,7 +37,7 @@ export interface AssistantsViewProps {
   onDismissSecret: () => void
 }
 
-/** Pure rendering of Settings → AI assistants; state lives in AssistantsPanel. */
+/** Pure rendering of Settings → Integrations → AI assistants; state lives in AssistantsPanel. */
 export function AssistantsView(p: AssistantsViewProps) {
   // Offline disables the controls; a request in flight only ignores input, so
   // keyboard focus stays on the control instead of falling back to the page.
@@ -49,7 +49,7 @@ export function AssistantsView(p: AssistantsViewProps) {
   const canOfferAgent = writesAllowed(p.status, p.access)
   const guard = (fn: (v: boolean) => void) => (v: boolean) => { if (!p.busy) fn(v) }
   return (
-    <SettingsSection title="AI assistants" helpId="settings/assistants" headingId="assistants-heading" testId="assistants-panel"
+    <SettingsSection title="AI assistants" headingId="assistants-heading" testId="assistants-panel"
       description="Let an assistant that supports the Model Context Protocol (MCP) read your projects and tasks with a token you create. Read-only by default; the server itself contacts no one.">
       {!p.connected && (
         <Notice>You are offline. These settings live on the server; what you see is the last state fetched, and changing them needs a connection.</Notice>
@@ -147,7 +147,7 @@ export function AssistantsView(p: AssistantsViewProps) {
   )
 }
 
-/** Settings → AI assistants: the owner's switches, the user's switch, the endpoint and token shortcuts. */
+/** Settings → Integrations → AI assistants: the owner's switches, the user's switch, the endpoint and token shortcuts. */
 export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean; onTokenCreated?: () => void }) {
   const online = useOnline()
   const [status, setStatus] = useState<McpStatus | null>(null)

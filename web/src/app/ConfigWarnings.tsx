@@ -1,6 +1,6 @@
 // Server configuration warnings for the owner (OpenSpec `trusted-proxies-lenient`):
 // problems the server started despite, such as an invalid OPENTODO_TRUSTED_PROXIES
-// entry. Shown at the top of the Settings overview and of Settings → Administration.
+// entry. Shown at the top of the Settings overview and of Settings → People.
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { ConfigWarning, User } from '../lib/types'

@@ -154,7 +154,7 @@ export function MembersView(p: MembersViewProps) {
   }
 
   return (
-    <SettingsSection title="Members" helpId="settings/members" headingId="members-heading"
+    <SettingsSection title="Members" headingId="members-heading"
       description="Invite someone with a single-use link. Sign-up stays closed for everyone else.">
       {p.offline && <Notice>You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.</Notice>}
       <SettingRow label="Invitations" status={p.invitations ? <span data-testid="invitations-summary">{pending} pending</span> : undefined}

@@ -41,7 +41,7 @@ describe('UsersView', () => {
     expect(html).toContain('>Active<')
     expect(html).toContain('tabindex="0"')
     expect(html).toContain('3 accounts · 1 admin')
-    expect(html).toContain('data-help-screen="settings/users"')
+    expect(html).not.toContain('data-help-screen')
   })
 
   it('offers no action menu on rows the viewer may not act on', () => {

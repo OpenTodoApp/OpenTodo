@@ -39,7 +39,7 @@ describe('DateTimeView', () => {
   it('labels each option with today in that format, has a Help link and the three selects', () => {
     const html = renderToStaticMarkup(<DateTimeView prefs={SYSTEM} resolved={resolveDateTime(SYSTEM, sys)} onChange={() => {}} today="2026-10-14" />)
     expect(html).toContain('Date and time')
-    expect(html).toContain('data-help-screen="settings/date-time"')
+    expect(html).not.toContain('data-help-screen')
     expect(html).toContain('Day-month (14/10/2026)')
     expect(html).toContain('Month-day (10/14/2026)')
     expect(html).toContain('ISO (2026-10-14)')

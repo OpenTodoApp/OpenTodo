@@ -107,7 +107,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       data-ticked={ticked || undefined}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-md px-2 py-2 ${dropIndicator === 'inside' ? 'ring-2 ring-accent' : ''} ${card ? `border border-default shadow-sm ${selected ? '' : 'bg-surface'}` : ''} ${ticked ? 'bg-accent-soft' : selected ? 'bg-sunken dark:bg-raised' : 'hover:bg-canvas dark:hover:bg-raised'} ${selected ? 'ring-1 ring-accent/50' : ''}`}
+      className={`group relative flex items-start gap-2 rounded-md px-2 row-pad ${dropIndicator === 'inside' ? 'ring-2 ring-accent' : ''} ${card ? `border border-default shadow-sm ${selected ? '' : 'bg-surface'}` : ''} ${ticked ? 'bg-accent-soft' : selected ? 'bg-sunken dark:bg-raised' : 'hover:bg-canvas dark:hover:bg-raised'} ${selected ? 'ring-1 ring-accent/50' : ''}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // 2 px drop indicator between rows (manual-ordering design D5).

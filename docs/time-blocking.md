@@ -31,7 +31,7 @@ Choose **Calendar** in the sidebar, then **Day**, **Week** or **Month** in its h
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
-The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Preferences → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
+The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → General → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
 
 ## See the month
 
@@ -84,7 +84,7 @@ Events are read-only. You can't drag, resize or complete them, but you can tab o
 
 ## Adjust the grid
 
-In **Settings → Preferences → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
+In **Settings → General → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
 
 ## Tips
 

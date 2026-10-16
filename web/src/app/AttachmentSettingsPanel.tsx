@@ -1,4 +1,4 @@
-// Settings → Administration → Attachments (OpenSpec change attachments, design D5):
+// Settings → Server → Attachments (OpenSpec change attachments, design D5):
 // the owner turns attachments on or off and sets the per-file limit and the
 // total per account. Read live from the server; offline shows the last values.
 import { useEffect, useState } from 'react'
@@ -37,7 +37,7 @@ export function AttachmentSettingsView({ value, online, busy, error, saved, onSa
   const dirty = !!draft && !!value && (draft.enabled !== value.enabled || draft.max_file_mb !== value.max_file_mb || draft.quota_mb !== value.quota_mb)
   const num = (v: string) => (v.trim() === '' ? Number.NaN : Number(v))
   return (
-    <SettingsSection title="Attachments" helpId="settings/attachments" headingId="attachments-settings-heading" testId="attachment-settings"
+    <SettingsSection title="Attachments" headingId="attachments-settings-heading" testId="attachment-settings"
       description="Files people add to tasks and comments are stored on this server, under the data directory, and included in backups.">
       {!online && <div className="pb-3"><Notice>You are offline. These settings need a connection to the server.</Notice></div>}
       <SettingRow label="Allow attachments" description="When off, nobody can add files or links; existing ones stay and can still be opened."

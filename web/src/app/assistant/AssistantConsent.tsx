@@ -26,7 +26,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
       {own ? (
         <p data-consent-own>
           To answer, the assistant sends what you type and the task data it needs from this server to <strong>{status.provider_label}</strong>
-          {status.model ? <> (model <code className="rounded bg-sunken dark:bg-raised px-1">{status.model}</code>)</> : null}, with your own API key. You chose it in Settings → AI → Assistant.
+          {status.model ? <> (model <code className="rounded bg-sunken dark:bg-raised px-1">{status.model}</code>)</> : null}, with your own API key. You chose it in Settings → Integrations → Assistant.
           Nothing is sent before you accept.
         </p>
       ) : (
@@ -44,7 +44,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
       </div>
       <p className="text-muted">
         In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them.
-        Conversations stay on this device. You can withdraw consent in Settings → AI → Assistant.
+        Conversations stay on this device. You can withdraw consent in Settings → Integrations → Assistant.
       </p>
       {status.allow_member_keys && !own && (
         <label className="block">

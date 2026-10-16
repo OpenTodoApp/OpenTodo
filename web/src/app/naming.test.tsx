@@ -55,7 +55,7 @@ describe('addresses', () => {
     expect(canonicalPath('/calendar')).toBe('/week')
 
     // Earlier settings ids keep working too.
-    expect(canonicalPath('/settings/general')).toBe('/settings/preferences')
+    expect(canonicalPath('/settings/preferences')).toBe('/settings/general')
   })
 
   it('the shell replaces an old address in place when it starts', async () => {
@@ -98,7 +98,8 @@ describe('old words', () => {
     expect(r.container.querySelector('nav[aria-label="Views"]')).toBeNull()
     expect(r.container.textContent).not.toMatch(/\bViews\b/)
     await r.unmount()
-    expect(SETTINGS_SECTIONS.find((s) => s.id === 'activity')?.label).toBe('Sessions and audit log')
+    expect(SETTINGS_SECTIONS.find((s) => s.id === 'account')?.description(user)).toContain('sessions')
+    expect(SETTINGS_SECTIONS.find((s) => s.id === 'server')?.description(user)).toContain('audit log')
     expect(SHORTCUTS.find((s) => s.keys === 'g then h')?.description).toMatch(/Updates/)
     expect(SHORTCUTS.find((s) => s.keys.startsWith('g then i'))?.description).toMatch(/Filters/)
     expect(SHORTCUTS.some((s) => /Activity feed/.test(s.description))).toBe(false)

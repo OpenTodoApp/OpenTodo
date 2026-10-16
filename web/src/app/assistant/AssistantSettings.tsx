@@ -397,7 +397,7 @@ function LegacyOwnKey(p: UserViewProps & { status: AssistantStatus }) {
   )
 }
 
-/** Settings → AI → Assistant for everyone: consent, which assistant you use, usage, auto-apply, conversations. */
+/** Settings → Integrations → Assistant for everyone: consent, which assistant you use, usage, auto-apply, conversations. */
 export function UserAssistantSettings(p: UserViewProps) {
   useDateTimeFormat()
   const s = p.status
@@ -550,7 +550,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
   }
 
   return (
-    <SettingsSection title="Assistant" helpId="settings/assistant" headingId="assistant-settings-heading" testId="assistant-settings"
+    <SettingsSection title="Assistant" headingId="assistant-settings-heading" testId="assistant-settings"
       description="Plan and change your tasks by talking, with a model provider your server owner chooses (including a model on your own network), or with your own provider and key when the owner allows it. Every change is proposed for you to review and can be undone. Conversations stay on this device.">
       {!connected && <div className="pb-3"><Notice>You are offline. These settings live on the server and need a connection.</Notice></div>}
       {error && !configuring && <div className="py-3"><Notice tone="danger">{error}</Notice></div>}

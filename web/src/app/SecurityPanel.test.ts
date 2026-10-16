@@ -30,7 +30,7 @@ describe('SecurityPanelView', () => {
   it('leads with the count, then a row per passkey with created, last use, a suspicious badge and a menu', () => {
     const html = render({})
     expect(html).toContain('>Passkeys</h2>')
-    expect(html).toContain('data-help-screen="settings/security"')
+    expect(html).not.toContain('data-help-screen')
     expect(html).toContain('2 passkeys')
     expect(html).toContain('Phone')
     expect(html).toContain('used just now')

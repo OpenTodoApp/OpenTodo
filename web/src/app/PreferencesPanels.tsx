@@ -1,4 +1,4 @@
-// Settings → Preferences panels (OpenSpec settings-navigation, settings-redesign D3).
+// Settings → General panels (OpenSpec settings-navigation, settings-redesign D3).
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
@@ -17,7 +17,7 @@ export function StartViewSection() {
 export function StartViewView({ views, startView, onChange }: { views: View[]; startView: StartView; onChange: (v: StartView) => void }) {
   const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
   return (
-    <SettingsSection title="Start view" helpId="settings/start-view" headingId="start-view-heading"
+    <SettingsSection title="Start view" headingId="start-view-heading"
       description="The view this device opens on launch. Each device keeps its own choice; it is not synced.">
       <SettingRow label="Open on launch" htmlFor="start-view-select" control={
         <Select id="start-view-select" className="sm:w-56" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
@@ -48,7 +48,7 @@ export function KeyboardSection() {
 
 export function KeyboardView({ vim, onVim }: { vim: boolean; onVim: (on: boolean) => void }) {
   return (
-    <SettingsSection title="Keyboard" helpId="settings/keyboard" headingId="keyboard-heading"
+    <SettingsSection title="Keyboard" headingId="keyboard-heading"
       description="Every action has a shortcut; press ? anywhere to list them.">
       <SettingRow label="Vim keybindings" description={
         <>Normal, Insert and Command modes on top of the usual shortcuts: counts, <span className="kbd">gg</span>, <span className="kbd">dd</span>, <span className="kbd">:</span> commands. This device only.</>

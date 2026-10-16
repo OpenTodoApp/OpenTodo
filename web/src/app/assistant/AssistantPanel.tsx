@@ -19,6 +19,7 @@ import { isolate, useOverlay } from '../overlay/useOverlay'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { requestSettingsFocus } from '../settingsIndex'
 import { navigate } from '../router'
 
 export const ENCRYPTED_MESSAGE = 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
@@ -28,7 +29,7 @@ export function EncryptionOffHint() {
   return (
     <span data-assistant-encryption-hint>
       To use the assistant, you can turn encryption off in{' '}
-      <a className="underline" href="/settings/encryption" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'encryption' }) }}>Settings → Encryption</a>;
+      <a className="underline" href="/settings/account" onClick={(e) => { e.preventDefault(); requestSettingsFocus('encryption'); navigate({ view: 'settings', section: 'account' }) }}>Settings → Account → Encryption</a>;
       your tasks are then stored on the server without end-to-end encryption.
     </span>
   )
