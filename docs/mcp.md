@@ -114,7 +114,7 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `list_projects` | `include_archived` (default false) | `{projects:[{id,untrusted_text:{name,description},encrypted,color,archived,parent_id?,shared,role?,open_count}], inbox_open_count, server_time, _notice}`; `description` is the project's note in Markdown (the placeholder for an encrypted account, with `encrypted: true`) |
-| `list_tasks` | `view` (`all` default, `inbox`, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
+| `list_tasks` | `view` (`all` default, `inbox`, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `completed_after`, `completed_before` (YYYY-MM-DD at the start of that day in `timezone`, RFC 3339 or Unix ms; completed tasks in `[after, before)` only), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
 | `get_task` | `id` (required), `timezone` | `{task, subtasks:[…], comments:[{id,parent_id?,author_id,author_is_you,untrusted_text:{body,author},created_at,edited_at?}], attachments:[{id,untrusted_text:{name,mime?,url?},size?,uploaded,comment_id?,created_at}], timezone, today, server_time, _notice}` |
 | `search_tasks` | `query` (required), `include_completed`, `timezone`, `limit`, `cursor` | like `list_tasks`; matches title or description, case-insensitive |
 | `today_summary` | `timezone` | `{overdue:[…], due_today:[…], counts:{overdue,due_today,inbox,per_project:[{id,untrusted_text:{name},open}]}, timezone, today, server_time, _notice}` |
@@ -138,7 +138,7 @@ A task in a result looks like this (`description`, the note as Markdown text, on
 }
 ```
 
-`local_date` and `local_time` appear for due dates pinned to a time zone and give the wall time in the requested `timezone`. Optional fields are left out when empty; `project` is `"Inbox"` for tasks without a project. (Before the write tools, these strings sat directly on the task; they moved into `untrusted_text` with the same names.)
+`local_date` and `local_time` appear for due dates pinned to a time zone and give the wall time in the requested `timezone`. A completed task also carries `completed_at` and, when known, `completed_by` (the account id of whoever completed it). Optional fields are left out when empty; `project` is `"Inbox"` for tasks without a project. (Before the write tools, these strings sat directly on the task; they moved into `untrusted_text` with the same names.)
 
 `attachments` lists the files and links on the task and on the comments shown, without their content: no tool reads a file or adds an attachment. `uploaded` is false for a file that hasn't reached the server yet; a link has a `url` and no `size`.
 

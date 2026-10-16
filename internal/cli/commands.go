@@ -95,6 +95,8 @@ var cmdSpecs = []cmdSpec{
 		{Name: "completed", Type: "bool", Description: "completed tasks, most recent first"},
 		{Name: "all", Type: "bool", Description: "open and completed tasks"},
 		{Name: "project", Type: "string", Description: "tasks of one project (name or id)"},
+		{Name: "completed-after", Type: "string", Description: "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
+		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		limitFlag,
 	}, Output: arrayOf("task")},
 	{Name: "today", Summary: "alias for `ot list --today`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},

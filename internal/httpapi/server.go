@@ -1134,10 +1134,32 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown collection")
 		return
 	}
+	after, before, msg := completionRange(r, entity)
+	if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
 	list, err := s.sync.List(r.Context(), userFrom(r.Context()).ID, entity, r.URL.Query().Get("include_deleted") == "true")
 	if err != nil {
 		s.internal(w, err)
 		return
+	}
+	if after != 0 || before != 0 {
+		kept := list[:0]
+		for _, e := range list {
+			var at float64
+			if raw, ok := e["completed_at"]; ok {
+				_ = json.Unmarshal(raw, &at)
+			}
+			// A habit's skipped occurrence record is not a completion (habits D6).
+			if string(e["skipped"]) == "true" {
+				continue
+			}
+			if agenttools.InCompletionRange(int64(at), after, before) {
+				kept = append(kept, e)
+			}
+		}
+		list = kept
 	}
 	if err := s.annotateProjects(r.Context(), entity, list...); err != nil {
 		s.internal(w, err)

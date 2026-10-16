@@ -46,6 +46,8 @@ export function toVersions(sets: readonly ChangeSet[], opts: { windowMs?: number
     v.ts = set.ts
     v.device_label ??= set.device_label
     for (const c of set.changes) {
+      // Bookkeeping that rides with completed_at (completed-date-filters D5): not a change of its own.
+      if (c.field === 'completed_by') continue
       const lost = !!c.lost
       const same = lost ? undefined : v.changes.find((x) => x.field === c.field && !x.lost)
       if (same) {

@@ -27,12 +27,14 @@ not      := "!" not | "(" or ")" | term
 term     := "@" name                       label
           | "##" name | "#" name           project with / without sub-projects
           | "p1" | "p2" | "p3" | "p4"      priority
-          | ("due" | "created" | "deadline" | "start") cmp date
+          | ("due" | "created" | "deadline" | "start" | "completed") cmp date
           | keyword
           | "search:" text
 cmp      := "<" | "<=" | "=" | ">=" | ">" | "before" | "after"
 date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
-          | INT "days" | INT "days ago"
+          | INT "days" | INT "days ago" | period
+period   := ("this" | "last" | "next") ("week" | "month")
+          | INT ("week" | "weeks" | "month" | "months") "ago"
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
@@ -66,6 +68,7 @@ text     := word | '"' chars '"'
 | `created <cmp> <date>` | tasks whose creation day, in your time zone, compares as asked |
 | `deadline <cmp> <date>` | tasks whose [deadline](tasks-and-projects.md#deadlines) compares as asked; a task without a deadline never matches. `deadline <= 3 days` includes deadlines that have passed |
 | `start <cmp> <date>` | tasks whose [start date](tasks-and-projects.md#when-a-task-starts) compares as asked; parked tasks and tasks without a start never match |
+| `completed <cmp> <date>` | completed tasks whose completion day, in your time zone, compares as asked; open tasks never match. `completed = last week` is what you finished last week |
 | `overdue` | due before today |
 | `today` | due today |
 | `tomorrow` | due tomorrow |
@@ -88,7 +91,7 @@ text     := word | '"' chars '"'
 
 ### Open, completed and deleted tasks
 
-A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it. `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
 
 ### Dates
 
@@ -101,6 +104,19 @@ Dates compare **calendar days** in your local time zone, the same way Today and 
 | `2026-12-01` | that date |
 | `3 days` | three days from today: 2026-10-13 |
 | `7 days ago` | seven days before today: 2026-10-03 |
+
+### Periods
+
+A period stands for several days. Weeks start on the first day of the week you chose in **Settings → General → Date and time** (the browser's choice until you pick one), the same on all your devices; months are calendar months.
+
+| Expression | Days (when today is Friday 2026-10-16 and weeks start on Monday) |
+| --- | --- |
+| `this week`, `last week`, `next week` | 2026-10-12 to 10-18, 2026-10-05 to 10-11, 2026-10-19 to 10-25 |
+| `2 weeks ago` | 2026-09-28 to 10-04 (`1 week ago` is last week) |
+| `this month`, `last month`, `next month` | October, September, November 2026 |
+| `3 months ago` | July 2026 |
+
+Against a period, `=` means *within it*, `<` (`before`) *before its first day*, `<=` *up to its last day*, `>` (`after`) *after its last day* and `>=` *from its first day*. A single day works the same way, so `due = this week` lists everything due this week, `completed >= last month` everything completed since the first of last month, and `due < this month` everything due before the first of this month. Every date term takes periods: `due`, `created`, `deadline`, `start` and `completed`. A saved view keeps the period itself, so a view of `completed = last week` always shows the previous week. People sharing a project may start their weeks on different days; each sees their own week.
 
 `before` is the same as `<` and `after` the same as `>`. `today` on its own is the keyword (due today); `due = today` is the same comparison written out, and `due <= today` also includes overdue tasks. Only English weekday names are accepted.
 
@@ -120,7 +136,9 @@ A query that does not follow the grammar shows a message under the input, and th
 | `p1 & urgent` | `Unknown term "urgent" at position 6` |
 | `p5` | `Priority must be p1, p2, p3 or p4 at position 1` |
 | `due today` | `Expected a comparison (<, <=, =, >=, >, before or after) after "due" at position 1` |
-| `due > 7` | `Expected "days" after "7" at position 7` |
+| `due > 7` | `Expected "days", "weeks" or "months" after "7" at position 7` |
+| `due = last year` | `Expected "week" or "month" after "last" at position 7` |
+| `completed > 2 weeks` | `Expected "ago" after "weeks" at position 15` |
 | `no idea` | `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1` |
 
 An empty query shows a short usage hint and no results.
@@ -237,4 +255,16 @@ unblocked & today
 
 ```filter
 habit & due <= today
+```
+
+### 16. What I finished last week
+
+```filter
+completed = last week
+```
+
+### 17. Work done this month, high priority
+
+```filter
+##Work & completed >= this month & (p1 | p2)
 ```

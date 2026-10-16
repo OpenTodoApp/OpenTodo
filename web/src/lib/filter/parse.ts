@@ -7,7 +7,8 @@
 //   and     := not ( "&" not )*
 //   not     := "!" not | "(" or ")" | term
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
-//            | ("due" | "created" | "deadline" | "start") cmp date | keyword | "search:" text
+//            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
+//   date    := day | period   (a day is a period of one day; see resolveRange)
 //
 // Positions in messages are 1-based character columns; `FilterSyntaxError.offset`
 // is the matching 0-based offset for editors.
@@ -142,11 +143,18 @@ export function tokenize(src: string): Token[] {
 
 export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit'
 
-/** today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N. */
+/**
+ * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
+ * A period (OpenSpec change `completed-date-filters`, design D1) is a calendar week
+ * or month relative to the current one: this = 0, last = -1, next = 1, `N weeks ago` = -N.
+ */
 export type DateExpr =
   | { type: 'relative'; days: number }
   | { type: 'weekday'; day: number }
   | { type: 'iso'; date: string }
+  | { type: 'period'; unit: 'week' | 'month'; offset: number }
+
+export type DateField = 'due' | 'created' | 'deadline' | 'start' | 'completed'
 
 export type Node =
   | { kind: 'or'; items: Node[] }
@@ -155,7 +163,7 @@ export type Node =
   | { kind: 'label'; name: string; pos: number }
   | { kind: 'project'; name: string; descendants: boolean; pos: number }
   | { kind: 'priority'; value: Priority }
-  | { kind: 'date'; field: 'due' | 'created' | 'deadline' | 'start'; op: Cmp; date: DateExpr }
+  | { kind: 'date'; field: DateField; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
 
@@ -250,7 +258,9 @@ export function parse(src: string): Node | null {
   function parseWordTerm(t: Extract<Token, { type: 'word' }>): Node {
     const w = t.value.toLowerCase()
     i++
-    if (w === 'due' || w === 'created' || w === 'deadline' || w === 'start') {
+    // `completed` is the state keyword unless a comparison follows (completed-date-filters D3).
+    const dated = w === 'completed' && (peek()?.type === 'cmp' || lower(peek()) === 'before' || lower(peek()) === 'after')
+    if (w === 'due' || w === 'created' || w === 'deadline' || w === 'start' || dated) {
       const c = peek()
       let op: Cmp | null = null
       if (c?.type === 'cmp') op = c.op
@@ -289,17 +299,35 @@ export function parse(src: string): Node | null {
       if (!validISO(w)) return fail(`Invalid date "${t.raw}" at position ${t.pos + 1}`, t.pos, ['date'])
       return { type: 'iso', date: w }
     }
-    if (/^\d+$/.test(w)) {
-      const days = Number(w)
-      if (lower(peek()) !== 'days') {
-        return fail(`Expected "days" after "${t.raw}" at position ${t.pos + 1}`, t.pos, ['"days"'])
+    if (w === 'this' || w === 'last' || w === 'next') {
+      const unit = lower(peek())
+      if (unit !== 'week' && unit !== 'month') {
+        return fail(`Expected "week" or "month" after "${t.raw}" at position ${t.pos + 1}`, t.pos, ['"week"', '"month"'])
       }
       i++
-      if (lower(peek()) === 'ago') {
+      return { type: 'period', unit, offset: w === 'this' ? 0 : w === 'last' ? -1 : 1 }
+    }
+    if (/^\d+$/.test(w)) {
+      const n = Number(w)
+      const unitTok = peek()
+      const unit = lower(unitTok)
+      if (unit === 'days') {
         i++
-        return { type: 'relative', days: -days }
+        if (lower(peek()) === 'ago') {
+          i++
+          return { type: 'relative', days: -n }
+        }
+        return { type: 'relative', days: n }
       }
-      return { type: 'relative', days }
+      if (unit === 'week' || unit === 'weeks' || unit === 'month' || unit === 'months') {
+        i++
+        if (lower(peek()) !== 'ago') {
+          return fail(`Expected "ago" after "${unitTok!.raw}" at position ${unitTok!.pos + 1}`, unitTok!.pos, ['"ago"'])
+        }
+        i++
+        return { type: 'period', unit: unit.startsWith('week') ? 'week' : 'month', offset: n === 0 ? 0 : -n }
+      }
+      return fail(`Expected "days", "weeks" or "months" after "${t.raw}" at position ${t.pos + 1}`, t.pos, ['"days"', '"weeks"', '"months"'])
     }
     return fail(`Invalid date "${t.raw}" at position ${t.pos + 1}`, t.pos, ['date'])
   }
@@ -334,8 +362,39 @@ export function weekdayOf(iso: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
 }
 
-/** Resolve a date expression against the viewer's local calendar date `today` (YYYY-MM-DD). */
-export function resolveDate(expr: DateExpr, today: string): string {
+/** First day of the calendar month `months` away from the month of `iso`. */
+function monthStart(iso: string, months: number): string {
+  const [y, m] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1 + months, 1))
+  return dt.toISOString().slice(0, 10)
+}
+
+/** An inclusive range of floating dates. */
+export interface DateRange {
+  start: string
+  end: string
+}
+
+/**
+ * Resolve a date expression to the days it denotes, against the viewer's local
+ * calendar date `today` and first day of the week (0 = Sunday). A day expression
+ * is a range of one day; `this week` starts on `weekStart` (completed-date-filters D1).
+ */
+export function resolveRange(expr: DateExpr, today: string, weekStart = 1): DateRange {
+  if (expr.type !== 'period') {
+    const d = resolveDate(expr, today)
+    return { start: d, end: d }
+  }
+  if (expr.unit === 'week') {
+    const start = shiftISO(today, -((weekdayOf(today) - weekStart + 7) % 7) + 7 * expr.offset)
+    return { start, end: shiftISO(start, 6) }
+  }
+  const start = monthStart(today, expr.offset)
+  return { start, end: shiftISO(monthStart(today, expr.offset + 1), -1) }
+}
+
+/** Resolve a date expression against the viewer's local calendar date `today` (YYYY-MM-DD); a period resolves to its first day. */
+export function resolveDate(expr: DateExpr, today: string, weekStart = 1): string {
   switch (expr.type) {
     case 'iso':
       return expr.date
@@ -344,6 +403,8 @@ export function resolveDate(expr: DateExpr, today: string): string {
     case 'weekday':
       // Next occurrence, today included.
       return shiftISO(today, (expr.day - weekdayOf(today) + 7) % 7)
+    case 'period':
+      return resolveRange(expr, today, weekStart).start
   }
 }
 
@@ -356,6 +417,12 @@ function quote(name: string): string {
 function printDate(d: DateExpr): string {
   if (d.type === 'iso') return d.date
   if (d.type === 'weekday') return WEEKDAYS[d.day]
+  if (d.type === 'period') {
+    if (d.offset === 0) return `this ${d.unit}`
+    if (d.offset === -1) return `last ${d.unit}`
+    if (d.offset === 1) return `next ${d.unit}`
+    return `${-d.offset} ${d.unit}s ago`
+  }
   if (d.days === 0) return 'today'
   if (d.days === 1) return 'tomorrow'
   if (d.days === -1) return 'yesterday'

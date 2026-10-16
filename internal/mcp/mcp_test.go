@@ -335,6 +335,7 @@ func TestListTasksInvalidPriority32602(t *testing.T) {
 	for _, a := range []map[string]any{
 		{"priority": 7}, {"priority": 0}, {"priority": 1.5}, {"priority": "high"},
 		{"view": "someday"}, {"due_from": "10/03/2026"}, {"limit": 0}, {"cursor": "!!"}, {"project_id": "nope"},
+		{"completed_after": "yesterday"}, {"completed_before": "2026-02-30"},
 	} {
 		r := f.call("u1", "tools/call", map[string]any{"name": "list_tasks", "arguments": a})
 		if errCode(r) != CodeInvalidParams {
@@ -714,5 +715,41 @@ func TestMcpWritesPresetSeedsOnce(t *testing.T) {
 	again := NewSettings(db)
 	if seeded, err := again.SeedWrites(ctx, &on); err != nil || seeded || again.WritesEnabled(ctx) {
 		t.Fatalf("second seed: %v %v", seeded, err)
+	}
+}
+
+// OpenSpec change completed-date-filters (task 4.2): a completion range on list_tasks.
+func TestListTasksCompletionRange(t *testing.T) {
+	f := newFixture(t)
+	ny, _ := time.LoadLocation("America/New_York")
+	at := func(day string, hour int) int64 {
+		d, _ := time.ParseInLocation("2006-01-02", day, ny)
+		return d.Add(time.Duration(hour) * time.Hour).UnixMilli()
+	}
+	f.task("u1", "open", "Still open", nil)
+	f.task("u1", "before", "Sunday night", map[string]any{"completed_at": at("2026-03-01", 23)})
+	f.task("u1", "mon", "Monday", map[string]any{"completed_at": at("2026-03-02", 0)})
+	f.task("u1", "sun", "Sunday", map[string]any{"completed_at": at("2026-03-08", 22)})
+	f.task("u1", "next", "Next Monday", map[string]any{"completed_at": at("2026-03-09", 1)})
+
+	week := f.tool("u1", "list_tasks", map[string]any{"completed_after": "2026-03-02", "completed_before": "2026-03-09", "timezone": "America/New_York"})
+	if got := strings.Join(titles(week["tasks"]), ","); got != "Monday,Sunday" {
+		t.Fatalf("week in New York = %s", got)
+	}
+	first := week["tasks"].([]any)[0].(map[string]any)
+	if first["completed_by"] != "u1" || first["completed_at"] == nil || first["completed"] != true {
+		t.Fatalf("completed task = %v", first)
+	}
+	since := f.tool("u1", "list_tasks", map[string]any{"completed_after": "2026-03-09T00:00:00-05:00"})
+	if got := strings.Join(titles(since["tasks"]), ","); got != "Next Monday" {
+		t.Fatalf("since an RFC 3339 time = %s", got)
+	}
+	upTo := f.tool("u1", "list_tasks", map[string]any{"completed_before": fmt.Sprint(at("2026-03-02", 0))})
+	if got := strings.Join(titles(upTo["tasks"]), ","); got != "Sunday night" {
+		t.Fatalf("before Unix ms = %s", got)
+	}
+	open := f.tool("u1", "list_tasks", map[string]any{})
+	if got := strings.Join(titles(open["tasks"]), ","); got != "Still open" {
+		t.Fatalf("default = %s", got)
 	}
 }

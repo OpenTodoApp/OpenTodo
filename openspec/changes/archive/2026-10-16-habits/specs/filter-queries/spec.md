@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Priority, state and search terms
-`p1` to `p4` SHALL match the task priority. `completed` SHALL include completed tasks and `open` only open ones; a query without either SHALL match open tasks only. A skipped occurrence record of a habit (OpenSpec `habits`) SHALL match neither. `habit` SHALL match tasks flagged as habits. `subtask` SHALL match tasks that have a parent. `search: text` SHALL match tasks whose title or description contains the text ignoring case, with quotes allowed for several words. Deleted tasks SHALL never match any query.
+`p1` to `p4` SHALL match the task priority. `completed` SHALL include completed tasks and `open` only open ones; a query without either, and without a `completed` date term, SHALL match open tasks only. A skipped occurrence record of a habit (OpenSpec `habits`) SHALL match neither. `habit` SHALL match tasks flagged as habits. `subtask` SHALL match tasks that have a parent. `search: text` SHALL match tasks whose title or description contains the text ignoring case, with quotes allowed for several words. Deleted tasks SHALL never match any query.
 
 #### Scenario: Default to open tasks
 - **WHEN** the user enters `p1`
@@ -12,6 +12,10 @@
 #### Scenario: Text search
 - **WHEN** the user enters `search: "oat milk"`
 - **THEN** tasks whose title or description contains "oat milk" in any letter case are listed
+
+#### Scenario: A completion date term includes completed tasks
+- **WHEN** the user enters `#Work & completed >= this week`
+- **THEN** the tasks of "Work" completed this week are listed, although the query has no `completed` or `open` keyword
 
 #### Scenario: Habits
 - **WHEN** the user enters `habit & due <= today`
