@@ -43,7 +43,7 @@ When a member leaves or is removed from a project, every task in that project as
 - **THEN** the assignment is rejected with reason `not_a_member` and Alice's device shows the task unassigned
 
 ### Requirement: Assigned to me view
-The client SHALL offer an "Assigned to me" view listing the user's open assigned tasks across all projects, grouped by project, reachable from the sidebar and a `g`-prefixed keyboard shortcut, with a live count in the sidebar. The view SHALL be rendered from local storage so it works offline and updates as soon as synced assignments arrive.
+The client SHALL offer an "Assigned to me" view listing the user's open assigned tasks across all projects, grouped by project, reachable from the sidebar's More group and a `g`-prefixed keyboard shortcut, with a live count. The sidebar entry SHALL be shown only when the user is a member of at least one shared project or has at least one assigned task; the view SHALL stay reachable by address and shortcut. The view SHALL be rendered from local storage so it works offline and updates as soon as synced assignments arrive.
 
 #### Scenario: Open the view offline
 - **WHEN** the user opens the app without a network and navigates to Assigned to me
@@ -52,6 +52,10 @@ The client SHALL offer an "Assigned to me" view listing the user's open assigned
 #### Scenario: Completing from the view
 - **WHEN** the user completes a task from Assigned to me
 - **THEN** the task leaves the view and the sidebar count decreases without a reload
+
+#### Scenario: Solo install
+- **WHEN** a user has no shared project and no assigned task
+- **THEN** the sidebar shows no Assigned to me entry, and `g a` still opens the view with its empty state
 
 ### Requirement: Assignee on task rows and detail
 Task rows in shared projects SHALL show the assignee compactly. The detail panel SHALL offer an assignee picker limited to the project's current members from the local membership cache, so it works offline; clearing it SHALL unassign. When the user is the only assignable account (the Inbox, an unshared project, or a shared project with no other member), the panel SHALL show the assignee as "You" with a "Show in Assigned to me" switch, which writes no operation by itself.
@@ -95,15 +99,15 @@ The assignee picker SHALL follow the design-system picker rules. With an empty q
 - **THEN** the assignee is written as one operation applied locally, and on reconnect the server re-checks membership and the field converges on all devices under last-writer-wins
 
 ### Requirement: Show in Assigned to me
-In a scope where the user is the only assignable account, turning on "Show in Assigned to me" SHALL assign the task to the user and turning it off SHALL unassign it, each as one ordinary assignee operation applied locally first, working offline and converging by last-writer-wins. The Assigned to me view SHALL keep listing only explicitly assigned tasks.
+In a scope where the user is the only assignable account, the Assignee property SHALL not be shown in the task panel by default; the panel's Add menu SHALL offer "Show in Assigned to me", which assigns the task to the user, and the resulting Assignee chip SHALL offer to remove it, each as one ordinary assignee operation applied locally first, working offline and converging by last-writer-wins. The Assigned to me view SHALL keep listing only explicitly assigned tasks.
 
 #### Scenario: Pin a personal task to Assigned to me
-- **WHEN** the user turns on "Show in Assigned to me" for an Inbox task while offline
+- **WHEN** the user picks "Show in Assigned to me" from the Add menu of an Inbox task while offline
 - **THEN** the task appears in Assigned to me at once, and on the user's other devices after sync
 
 #### Scenario: Implicit You is not listed
 - **WHEN** the user has ten unassigned tasks in an unshared project
-- **THEN** Assigned to me does not list them, although each panel reads "You"
+- **THEN** Assigned to me does not list them and their panels show no Assignee chip
 
 ### Requirement: Implicit You ends when a project gains members
 When a project the user owned alone gains a member, its unassigned tasks SHALL read "Unassigned" from then on, and tasks the user had explicitly assigned to themselves SHALL stay assigned to them; no operation SHALL be written for this transition.

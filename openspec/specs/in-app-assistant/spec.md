@@ -311,10 +311,10 @@ While the owner allows member keys, a user MAY choose their own provider (Anthro
 - **THEN** the response is 429 `rate_limited` with `Retry-After` and no provider request is made
 
 ### Requirement: Ask composer
-When the assistant is available to the user, the Today view and the Ask screen SHALL show a composer with a text field, a Skills menu and up to three example cards. Sending from the composer, choosing a skill or choosing a card SHALL open the assistant panel with that text or skill filled in. When the assistant is not available, members SHALL see no composer, and the owner SHALL see one line pointing to the assistant settings that can be dismissed for good on that device.
+When the assistant is available to the user, the Ask screen SHALL show a composer with a text field, a Skills menu and up to three example cards, and the Today view SHALL offer an "Ask" action in its page header that opens the assistant panel; no composer or cards SHALL be rendered inside Today's list. Sending from the composer, choosing a skill or choosing a card SHALL open the assistant panel with that text or skill filled in. When the assistant is not available, no composer, card or hint SHALL be shown to anyone in task views; the owner finds the assistant under Settings → Integrations.
 
 #### Scenario: Start from Today
-- **WHEN** a user types "what is overdue in Work?" in the Today composer and presses Enter
+- **WHEN** a user with the assistant available activates Ask in Today's page header, types "what is overdue in Work?" and presses Enter
 - **THEN** the assistant panel opens and sends that message as a turn
 
 #### Scenario: Assistant off for a member
@@ -322,8 +322,8 @@ When the assistant is available to the user, the Today view and the Ask screen S
 - **THEN** no composer and no assistant hint are shown
 
 #### Scenario: Owner dismisses the hint
-- **WHEN** the owner dismisses the "Set up the assistant" line
-- **THEN** it does not return on that device
+- **WHEN** the owner has not enabled the assistant and opens Today
+- **THEN** there is no hint above the list to dismiss, and the Integrations section offers the assistant setup
 
 ### Requirement: Skills menu in the panel
 The assistant panel SHALL offer the same Skills menu as the composer. Choosing a skill SHALL show its description and example and let the user add their own text before sending. The menu SHALL be fully operable by keyboard and announce the chosen skill.

@@ -3,7 +3,7 @@ title: Keyboard shortcuts
 summary: Every shortcut in OpenTodo, from quick add to the calendar, plus the optional Vim keybindings.
 audience: user
 section: Guides
-specs: [web-app]
+specs: [web-app, keyboard-shortcuts]
 screens: [settings/keyboard#vim-keybindings]
 order: 100
 card: shortcuts

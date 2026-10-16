@@ -40,11 +40,11 @@ Setting, moving or clearing the due date SHALL NOT change the deadline, and sett
 - **THEN** the change is accepted and the row shows the deadline countdown in the danger tone
 
 ### Requirement: Deadline entry
-The detail panel SHALL show a **Deadline** row next to **Due** that reads the date in the user's date format and is edited with the same date field and calendar as the due date, including typed dates and relative words, and SHALL be clearable. Pressing `d` on a selected task in a list SHALL open the same date field inline, so the deadline can be set without opening the panel. Every change SHALL apply locally at once.
+The detail panel SHALL set the deadline inside the unified When control opened from the Do on chip, in a Deadline segment that reads the date in the user's date format and is edited with the same date field and calendar as the due date, including typed dates and relative words, and SHALL be clearable. A task with a deadline SHALL show a Deadline chip with its countdown beside the Do on chip. Pressing `d` on a selected task in a list SHALL open the same date field inline, so the deadline can be set without opening the panel. Every change SHALL apply locally at once.
 
 #### Scenario: Set from the panel
-- **WHEN** the user opens a task, activates the Deadline row, types `fri` and confirms
-- **THEN** the deadline is the next Friday, shown in the user's date format with its countdown, and the due date is unchanged
+- **WHEN** the user opens a task, opens the When control, switches to Deadline, types `fri` and confirms
+- **THEN** the deadline is the next Friday, a Deadline chip shows it in the user's date format with its countdown, and the due date is unchanged
 
 #### Scenario: Set from the list
 - **WHEN** a task is selected in a list, focus is not in a text field, and the user presses `d`, types `2026-11-06` and presses Enter
@@ -52,7 +52,11 @@ The detail panel SHALL show a **Deadline** row next to **Due** that reads the da
 
 #### Scenario: Viewer of a shared project
 - **WHEN** a viewer of a shared project opens one of its tasks
-- **THEN** the Deadline row reads as text and cannot be changed
+- **THEN** the Deadline chip reads as text and cannot be changed
+
+#### Scenario: No deadline, no chip
+- **WHEN** a task has no deadline
+- **THEN** the panel shows no Deadline chip, and Deadline is offered in the Add menu and inside the When control
 
 ### Requirement: Deadline countdown
 A task with a deadline SHALL show, on its row in every list and in the detail panel, a countdown computed on the device from the deadline and the viewer's local calendar date: the days remaining (`3d`), `Today` on the deadline day, or the days elapsed (`2d over`). The chip SHALL use a neutral tone beyond seven days, a warning tone within seven days, and the danger tone on the day and after. The panel SHALL also show the full date.

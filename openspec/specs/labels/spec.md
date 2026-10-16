@@ -36,7 +36,7 @@ A task's `labels` array SHALL hold label ids. The user SHALL add and remove labe
 - **THEN** no chip is shown for it, the id stays in the task's array, and the chip appears once the label arrives
 
 ### Requirement: Label views and counts
-The sidebar SHALL show a collapsible "Labels" group listing non-deleted labels by position with their open-task counts, each opening a view of that label's open tasks across all projects grouped by project. `g l` SHALL open the labels overview. Views and counts SHALL be computed from local data and update live.
+The sidebar SHALL show a collapsible "Labels" group at the same level as Projects, inside the sidebar's single scroller, listing non-deleted labels by position with their open-task counts, each opening a view of that label's open tasks across all projects grouped by project. `g l` and the group's "All" action SHALL open the labels overview. Views and counts SHALL be computed from local data and update live.
 
 #### Scenario: Open a label view
 - **WHEN** the user selects "errand" in the sidebar
@@ -45,6 +45,10 @@ The sidebar SHALL show a collapsible "Labels" group listing non-deleted labels b
 #### Scenario: Count updates live
 - **WHEN** a task carrying "errand" is completed on another device and this device syncs
 - **THEN** the "errand" count in the sidebar decreases without a reload
+
+#### Scenario: Reachable under a long tree
+- **WHEN** the user has forty projects
+- **THEN** scrolling the sidebar's middle part reaches the Labels group, which does not scroll on its own
 
 ### Requirement: Rename, recolour and reorder
 Renaming or recolouring a label SHALL be a single operation on the label and SHALL not modify any task, because tasks reference labels by id. The new name and colour SHALL appear on every chip, view and count immediately on this device and on other devices after sync. Labels SHALL be reorderable in the sidebar. These actions work offline; concurrent renames resolve to the newer one.

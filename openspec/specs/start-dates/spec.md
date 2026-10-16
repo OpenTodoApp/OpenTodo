@@ -115,7 +115,7 @@ In Today, tasks of today's group with `evening` set SHALL be listed under a **Th
 - **THEN** the task moves between the groups at once and the change uploads on the next sync
 
 ### Requirement: Setting when from the panel and the keyboard
-The detail panel SHALL show a **When** row next to Due offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, plus an Evening switch; viewers SHALL see them as text. In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the inline start date field and `Shift+E` SHALL toggle This Evening. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
+The detail panel SHALL set the start inside the unified When control opened from the Do on chip: a Start segment offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, plus an Evening toggle; a task with a start or Someday SHALL show it as part of the Do on chip's text ("Starts 21 Oct", "Someday"). Viewers SHALL see the values as text. In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the inline start date field and `Shift+E` SHALL toggle This Evening. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
 
 #### Scenario: Defer from the list
 - **WHEN** a task is selected, focus is not in a text field, and the user presses `Shift+N`, types `21/10` (with a day-month date format) and Enter
@@ -128,3 +128,7 @@ The detail panel SHALL show a **When** row next to Due offering Anytime (no star
 #### Scenario: Park with the keyboard
 - **WHEN** a task is selected in a project view and the user presses `n`
 - **THEN** the task moves to the Later group as parked, and pressing `n` again returns it to the active list with no due date
+
+#### Scenario: Start from the When control
+- **WHEN** the user opens the Do on chip of a task, switches to Start and picks a date
+- **THEN** the control closes on confirm, the chip reads the due date and "Starts" with the start date, and no separate When row exists in the panel

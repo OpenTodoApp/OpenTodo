@@ -191,7 +191,8 @@ function screens(ids) {
     { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
-    { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
+    // From 1024 px /settings opens the first section (settings-navigation), so the page title reads Account there.
+    { name: 'settings', path: '/settings', ready: (p) => p.getByRole('heading', { name: /^(Settings|Account)$/, level: 1 }).first().waitFor(), overlays: ['notifications'] },
     ...[
       ['account', 'Account'], ['appearance', 'Appearance'],
       ['general', 'General'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']],

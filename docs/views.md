@@ -3,7 +3,7 @@ title: Views
 summary: Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on.
 audience: user
 section: Guides
-specs: [web-app, custom-views]
+specs: [web-app, custom-views, app-shell]
 screens: [settings/start-view#choose-where-the-app-opens]
 order: 20
 card: upcoming
