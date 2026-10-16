@@ -94,6 +94,14 @@ func (s *Service) Limited(ctx context.Context, m Message) bool {
 	return true
 }
 
+// RecordFailure audits a message that will not be sent for a reason decided by
+// its caller (the digest scheduler's `skipped` after its retry window closed).
+func (s *Service) RecordFailure(ctx context.Context, m Message, reason string) {
+	if s != nil {
+		s.record(ctx, audit.EmailFailed(m.ActorID, m.UserID, string(m.Kind), m.To, reason))
+	}
+}
+
 // SendTest sends the test message, bypassing the sending limits (the route has
 // its own), and returns the delivery error.
 func (s *Service) SendTest(ctx context.Context, m Message) error {

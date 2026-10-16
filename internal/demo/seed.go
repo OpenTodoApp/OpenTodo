@@ -112,7 +112,8 @@ var tasks = []taskSpec{
 	// Side project
 	{title: "Sketch the landing page", priority: 2, due: "2", project: "side"},
 	{title: "Plan the weekend hike", due: "6", project: "side"},
-	{title: "Read the sync protocol doc", project: "side", labels: []string{"deep"}},
+	{key: "syncDoc", title: "Read the sync protocol doc", project: "side", labels: []string{"deep"}},
+	{key: "readme", title: "Write the README", project: "side"},
 
 	// Garage sale (the project itself goes to the Trash)
 	{title: "Price the old bike", project: "garage"},
@@ -279,6 +280,30 @@ func (b *seeder) run(me, sam string) error {
 			f["deleted_at"] = b.ago(t.deletedAgo)
 		}
 		if _, err := b.create(me, "task", t.key, f); err != nil {
+			return err
+		}
+	}
+	// Custom fields on the Side project (custom-fields), with values on its
+	// undated tasks so the everyday screens keep their look.
+	for i, f := range []struct{ key, name, typ, options string }{
+		{"effort", "Effort", "number", ""}, {"stage", "Stage", "choice", "Idea\nDraft\nReview\nDone"}, {"link", "Link", "link", ""},
+	} {
+		if _, err := b.create(me, "field", "field:"+f.key, map[string]any{"name": f.name, "project_id": b.ref["side"], "type": f.typ, "options": f.options, "position": i + 1}); err != nil {
+			return err
+		}
+	}
+	for _, v := range []struct {
+		task   string
+		values map[string]any
+	}{
+		{"syncDoc", map[string]any{"effort": 2, "stage": "Draft", "link": "https://example.com/docs/sync"}},
+		{"readme", map[string]any{"effort": 3, "stage": "Idea"}},
+	} {
+		f := map[string]any{}
+		for k, val := range v.values {
+			f[opsync.FieldValuePrefix+b.ref["field:"+k]] = val
+		}
+		if err := b.write(me, "task", b.ref[v.task], f); err != nil {
 			return err
 		}
 	}

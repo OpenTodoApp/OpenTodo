@@ -8,6 +8,7 @@ import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
 import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
 import { formatDate, formatInstant } from './dates'
+import { fieldValueLabel } from './fieldNames'
 
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
@@ -54,7 +55,8 @@ export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
 }
 
 export function canRestoreField(entity: 'task' | 'project', field: string): boolean {
-  return RESTORABLE[entity].includes(field)
+  // A custom field value (custom-fields) is put back like any field: one `fields.<id>` op.
+  return RESTORABLE[entity].includes(field) || (entity === 'task' && fieldValueLabel(field) !== null)
 }
 
 /**
@@ -76,7 +78,7 @@ const FIELD_LABELS: Record<string, string> = { blocked_by: 'waiting for', descri
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {
-  return REF_LABELS[field] ?? FIELD_LABELS[field] ?? field.replace(/_/g, ' ')
+  return REF_LABELS[field] ?? FIELD_LABELS[field] ?? fieldValueLabel(field) ?? field.replace(/_/g, ' ')
 }
 
 /**

@@ -74,6 +74,8 @@ Every delivery is a `POST` with a JSON body:
 | `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). `ping` carries `data: {}` |
 | `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before. `notes_doc` is never listed, and a change that only touched it (a merged note republished with the same text) sends no event |
 
+A task's [custom field](custom-fields.md) values are in `data.task.fields`, an object keyed by field definition id like the REST API's; a changed value is listed in `changes` as `fields.<id>` (for example `"fields.f1": {"from": 120, "to": 150}`), with the `task.updated` event.
+
 ### Encrypted accounts
 
 For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.

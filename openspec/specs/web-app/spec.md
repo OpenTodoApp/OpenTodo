@@ -57,6 +57,13 @@ Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k
 - **WHEN** the user presses `?` in a project list
 - **THEN** the cheat sheet opens with the list shortcuts first, as specified in `keyboard-shortcuts`
 
+### Requirement: Keyboard navigation to the review and statistics
+Outside text fields, `g` then `r` SHALL open the weekly Review and `g` then `Shift+S` SHALL open Statistics, like the other `g` navigation keys (OpenSpec change `stats-and-review`).
+
+#### Scenario: Navigate to the review and the statistics
+- **WHEN** focus is not in a text field and the user presses `g` then `r`, and later `g` then `Shift+S`
+- **THEN** the Review screen opens, and then the Statistics screen
+
 ### Requirement: Shortcuts come from the registry
 Every shortcut SHALL come from the registry in `keyboard-shortcuts`.
 

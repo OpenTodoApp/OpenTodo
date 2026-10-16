@@ -21,6 +21,11 @@ import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { completionDelay, prefersReducedMotion } from './motion'
 import { dragFeedback } from './listDrop'
+import { fieldBadges } from '../lib/fields'
+import { useFieldDefs } from './useFields'
+
+/** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
+export const MAX_FIELD_BADGES = 3
 
 // Priority tokens (design-system): ring in the priority colour, soft fill behind it.
 const PRIORITY_RING: Record<number, string> = {
@@ -85,9 +90,11 @@ export interface TaskRowProps {
   dropIndicator?: 'before' | 'after' | 'inside' | null
   /** This row is the one being dragged: it lifts (an opacity change under reduced motion). */
   dragging?: boolean
+  /** The columns layout shows field values in cells, so the row leaves out their badges (custom-fields). */
+  hideFieldBadges?: boolean
 }
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick }: TaskRowProps) {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false }: TaskRowProps) {
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -112,7 +119,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // date they stand on their own in the date tone.
   const date = dateText(due?.label ?? (task.evening && !done ? 'This evening' : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
   const streak = habit && !done ? habit : null
-  const hasMeta = !!(breadcrumb || date || streak || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
+  // Custom field values of the task's project (custom-fields): three badges, then "+n".
+  const fieldDefs = useFieldDefs()
+  const badges = hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved)
+  const moreBadges = badges.slice(MAX_FIELD_BADGES)
+  const hasMeta = !!(badges.length > 0 || breadcrumb || date || streak || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
     || (assignee && task.assignee_id) || task.description || comments > 0 || attachments > 0 || labels.length > 0 || (showProject && (project || !task.project_id)))
 
   // Completion feedback: the check mark animates and the row fades within the
@@ -158,6 +169,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       )}
       {startText && <ToneText tone="muted" icon={start === 'someday' ? 'archive' : 'calendar-days'} data-start="">{startText}</ToneText>}
       {task.estimate_minutes ? <NeutralChip data-estimate="" label={`Estimate ${formatMinutes(task.estimate_minutes)}`}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
+      {badges.slice(0, MAX_FIELD_BADGES).map((b) => <NeutralChip key={b.def.id} data-field-badge={b.def.id}>{b.text}</NeutralChip>)}
+      {moreBadges.length > 0 && (
+        <NeutralChip data-field-more="" label={`${moreBadges.length} more fields: ${moreBadges.map((b) => b.text).join(', ')}`}>
+          +{moreBadges.length}
+        </NeutralChip>
+      )}
       {progress && progress.total > 0 && <NeutralChip data-progress="" label={`${progress.done} of ${progress.total} subtasks completed`}>{progress.done}/{progress.total}</NeutralChip>}
       {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
       {task.description && <NeutralChip icon="list" label="Has notes" data-notes="" />}

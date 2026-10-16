@@ -111,6 +111,13 @@ async function seed() {
   await T({ title: 'Call the plumber', project_id: home.id, section_id: sections.Waiting, assignee_id: bob.id })
   await T({ title: 'Plan the team offsite', project_id: work.id, due: { date: today, time: '14:00' }, estimate_minutes: 90 })
   await T({ title: 'Submit expense report', project_id: work.id, completed_at: Date.now() - 3600e3 })
+  // Five custom fields on Work (custom-fields): the columns layout at 768 px.
+  const F = {}
+  for (const [i, [name, type, options]] of [['Cost', 'number'], ['Client', 'choice', 'Acme\nGlobex'], ['Order date', 'date'], ['Quote', 'link'], ['Paid', 'checkbox']].entries()) {
+    F[name] = (await A('POST', '/api/v1/fields', { name, type, project_id: work.id, options: options ?? '', position: i + 1 })).id
+  }
+  const offsite = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Plan the team offsite')
+  await A('PATCH', `/api/v1/tasks/${offsite.id}`, { fields: { [F.Cost]: 12500, [F.Client]: 'Acme', [F['Order date']]: today, [F.Quote]: LONG_URL, [F.Paid]: true } })
   // A reminder that is already due: its toast shows on every screen.
   const passport = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Renew passport')
   await A('POST', '/api/v1/reminders', { task_id: passport.id, kind: 'absolute', fire_at: Date.now() - 60e3 })
@@ -194,6 +201,13 @@ function screens(ids) {
     { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
+    // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
+    { name: 'columns', path: `/project/${ids.work}`, widths: [768, 1280], overlays: ['fields-dialog'], ready: async (p) => {
+      await row('Plan the team offsite')(p)
+      const toggle = p.locator('[data-columns-toggle]')
+      if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click()
+      await p.getByRole('table', { name: 'Tasks and fields' }).waitFor()
+    } },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
@@ -374,6 +388,12 @@ const OVERLAYS = {
     await p.getByRole('menuitem', { name: item }).click()
     return { overlay: p.locator(`[data-testid="${name}"]`), kind: 'dialog' }
   }])),
+  // Custom fields (custom-fields): the project menu's Fields… dialog.
+  async 'fields-dialog'(p) {
+    await p.getByRole('button', { name: /^Project/ }).first().click()
+    await p.getByRole('menuitem', { name: 'Fields…' }).click()
+    return { overlay: p.locator('[data-testid="fields-dialog"]'), kind: 'dialog' }
+  },
   async 'template-dialog'(p) {
     await openSidebar(p)
     await p.locator('aside[data-sidebar]').getByRole('button', { name: 'New project' }).click()
@@ -736,6 +756,7 @@ async function runCombo(engine, width, theme, ids) {
     for (const s of screens(ids)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
+      if (s.widths && !s.widths.includes(width)) continue
       const p = s.anon ? await anonCtx.newPage() : page
       // A screen that does not load is retried once (a slow CI machine); the second
       // failure is reported with whether the session was still valid.
@@ -809,7 +830,7 @@ async function runCombo(engine, width, theme, ids) {
         }
       }
       if (s.layout) {
-        await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {})
+        await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: s.layout === 'Columns' ? 'Columns' : 'List' }).click().catch(() => {})
       }
       if (s.anon) await p.close()
     }

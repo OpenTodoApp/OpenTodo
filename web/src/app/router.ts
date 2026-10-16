@@ -38,6 +38,9 @@ export type Route =
   | { view: 'help'; page?: string; q?: string }
   // A chrome-free display of one view (display-mode): /display[/today|/upcoming|/project/<id>|/view/<id>]?<options>.
   | { view: 'display'; target: DisplayTarget; options: DisplayOptions }
+  // Weekly review and Statistics (stats-and-review).
+  | { view: 'review' }
+  | { view: 'stats' }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); nine, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -157,6 +160,11 @@ export function parseRoute(pathname: string): Route {
     case 'display':
       // Display mode (display-mode D2): an unknown target shows Today; options come from the query.
       return { view: 'display', target: parseDisplayTarget(parts.slice(1)) ?? { kind: 'today' }, options: parseDisplayOptions(query) }
+    // The weekly review and the statistics (stats-and-review).
+    case 'review':
+      return { view: 'review' }
+    case 'stats':
+      return { view: 'stats' }
     default:
       return { view: 'inbox' }
   }

@@ -6,7 +6,7 @@ import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   ConfigWarning,
-  AppPassword, CaldavSetting, EmailInbox,
+  AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
@@ -250,7 +250,7 @@ export const api = {
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
   // End-to-end encryption (OpenSpec `e2ee`): only wrapped key material ever goes here.
   encryptionKeys: () => request<{ keys: KeyRecord }>('GET', '/api/v1/encryption/keys'),
-  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord }>('PUT', '/api/v1/encryption/keys', {
+  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord; digestDisabled?: boolean }>('PUT', '/api/v1/encryption/keys', {
     version: record.version, kdf: record.kdf, salt: record.salt, iterations: record.iterations,
     wrappedByPassphrase: record.wrappedByPassphrase, wrappedByRecovery: record.wrappedByRecovery,
   }),
@@ -265,6 +265,9 @@ export const api = {
   emailInbox: () => request<EmailInbox>('GET', '/api/v1/email-inbox'),
   updateEmailInbox: (patch: { enabled?: boolean; allowlist?: string[] }) => request<EmailInbox>('PATCH', '/api/v1/email-inbox', patch),
   rotateEmailInbox: () => request<EmailInbox>('POST', '/api/v1/email-inbox/rotate'),
+  // The weekly email digest (stats-and-review): server data, needs a connection.
+  emailDigest: () => request<EmailDigest>('GET', '/api/v1/me/email-digest'),
+  updateEmailDigest: (patch: EmailDigestInput) => request<EmailDigest>('PUT', '/api/v1/me/email-digest', patch),
   // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
   passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
   /** A passkey without user verification on an enrolled account also answers with a challenge. */

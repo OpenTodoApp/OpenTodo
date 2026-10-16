@@ -69,6 +69,13 @@ The endpoint SHALL implement streamable HTTP JSON-RPC 2.0 in stateless mode: `in
 - **WHEN** a client with a `read` token calls `tools/list` while the owner and the user have allowed assistant writes
 - **THEN** exactly the five read tools are listed
 
+### Requirement: Custom fields in tool results
+Projects in tool results and resources SHALL list their live custom field definitions with id, type and options, and tasks SHALL carry their `fields` values for the live definitions of their project (OpenSpec `custom-fields`), with names, options and string values marked untrusted like every user text.
+
+#### Scenario: Fields in results
+- **WHEN** an assistant calls `list_projects` and then `get_task` on a task of "Kitchen", which defines Cost (number) and Client (choice)
+- **THEN** the project carries the two definitions with id, type, options and an untrusted name, and the task carries `fields` keyed by those ids, its Client string marked untrusted
+
 ### Requirement: Resources
 `resources/list` SHALL expose `opentodo://projects` and `opentodo://views/{inbox|today|upcoming}`; `resources/templates/list` SHALL expose `opentodo://projects/{id}` and `opentodo://tasks/{id}`. `resources/read` SHALL return `application/json` content built from the same materialised reads as the tools, with the same exclusions. Reading a resource of another user or a deleted entity SHALL return a JSON-RPC `-32002` resource-not-found error.
 
@@ -197,6 +204,17 @@ When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_t
 #### Scenario: Unknown or foreign target
 - **WHEN** an assistant calls `update_tasks` with a task id that is deleted or belongs to another account
 - **THEN** the result is a tool error `not_found` that does not distinguish the two and nothing changes
+
+### Requirement: Custom field values in write tools
+`create_tasks` and `update_tasks` SHALL accept a `fields` object keyed by definition id, validated against the live definitions of the task's project, each value written as one operation for that field (OpenSpec `custom-fields`). An unknown or foreign id or a value of the wrong type SHALL be a `-32602` error naming the field and its type. No tool SHALL define or delete custom fields.
+
+#### Scenario: Set a field value
+- **WHEN** an allowed assistant calls `update_tasks` with `fields: {"<cost-id>": 120}` on a task of the project that defines Cost as a number
+- **THEN** the task holds Cost 120 after the change set is applied, as one operation for that field
+
+#### Scenario: Value of the wrong type
+- **WHEN** an allowed assistant calls `update_tasks` with `fields: {"<cost-id>": "cheap"}`
+- **THEN** the response is a JSON-RPC `-32602` error naming the field and its type and nothing changes
 
 ### Requirement: Writes go through the operation log
 Every write tool call SHALL be applied as one batch of ops with `ApplyStrict` as the token's user, device `agent:<token-id>` and server timestamps, then wake devices with `NotifyApplied`. A refused op SHALL refuse the whole batch. Devices SHALL receive the ops on sync and converge with offline edits by last-writer-wins. `/api/v1/sync` SHALL refuse submitted ops whose device starts with `agent:`.

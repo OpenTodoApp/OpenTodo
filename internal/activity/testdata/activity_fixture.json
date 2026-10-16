@@ -608,6 +608,14 @@
       "events": []
     },
     {
+      "name": "review ops derive no event (stats-and-review)",
+      "ops": [
+        {"id":"rv1","seq":1,"actor":"alice","entity":"review","entityId":"me","field":"completed_at","value":1760000000000,"ts":1000,"device":"da"},
+        {"id":"rv2","seq":2,"actor":"alice","entity":"review","entityId":"me","field":"completed_at","value":1760600000000,"ts":2000,"device":"db"}
+      ],
+      "events": []
+    },
+    {
       "name": "a project note edit is one edited event naming description only (project-notes)",
       "ops": [
         {"id":"pn1","seq":1,"actor":"alice","entity":"project","entityId":"p1","field":"description","value":"# Trip plan","ts":500000,"device":"da"},
@@ -677,6 +685,20 @@
       "events": [
         {"id":"hb1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":300000,"opIds":["hb1"],"changes":[{"field":"habit","from":null,"to":true}]},
         {"id":"hb2","kind":"edited","actor":"bob","entity":"task","entityId":"t2","taskId":"t2","ts":300000,"opIds":["hb2"],"changes":[{"field":"skipped","from":null,"to":true}]}
+      ]
+    },
+    {
+      "name": "field definitions derive no event, value edits are edited events (custom-fields)",
+      "ops": [
+        {"id":"cf1","seq":1,"actor":"alice","entity":"field","entityId":"f1","field":"name","value":"Cost","ts":400000,"device":"da"},
+        {"id":"cf2","seq":2,"actor":"alice","entity":"field","entityId":"f1","field":"type","value":"number","ts":400000,"device":"da"},
+        {"id":"cf3","seq":3,"actor":"alice","entity":"task","entityId":"t1","field":"fields.f1","value":120,"ts":400000,"device":"da"},
+        {"id":"cf4","seq":4,"actor":"alice","entity":"task","entityId":"t1","field":"fields.f1","value":150,"ts":405000,"device":"da"},
+        {"id":"cf5","seq":5,"actor":"bob","entity":"task","entityId":"occ1","field":"fields.f1","value":40,"ts":500000,"device":"db"}
+      ],
+      "events": [
+        {"id":"cf3","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":400000,"opIds":["cf3","cf4"],"changes":[{"field":"fields.f1","from":null,"to":150}]},
+        {"id":"cf5","kind":"edited","actor":"bob","entity":"task","entityId":"occ1","taskId":"occ1","ts":500000,"opIds":["cf5"],"changes":[{"field":"fields.f1","from":null,"to":40}]}
       ]
     }
   ]

@@ -47,6 +47,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   { section: 'general', label: 'Vim keybindings', description: 'Keyboard navigation with hjkl', anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
   // Notifications
   { section: 'notifications', label: 'Push notifications', description: 'Reminders delivered to this device, and a test', anchor: 'notifications-heading', keywords: 'reminders' },
+  { section: 'notifications', label: 'Weekly digest', description: 'An email on your review day with last week\'s numbers', anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
   // Capture
   { section: 'capture', label: 'Quick add', description: 'Natural-language parsing, its languages and the date order', anchor: 'quick-add-heading', keywords: 'natural language parsing' },
   { section: 'capture', label: 'Voice capture', description: 'Dictate tasks into quick add', anchor: 'voice-settings-heading', keywords: 'dictation microphone' },

@@ -82,6 +82,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>s</kbd> | Go to Settings |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
+| <kbd>g</kbd> then <kbd>r</kbd> | Go to the weekly Review |
+| <kbd>g</kbd> then <kbd>Shift+S</kbd> | Go to Statistics: what you completed, created and let slip |
 
 ### Tasks in a list
 
@@ -105,6 +107,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>→</kbd> | Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project |
 | <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
+| <kbd>Shift+F</kbd> | Manage the custom fields of the current project: add, rename, reorder, delete |
 | <kbd>Shift+P</kbd> | Edit the current project’s note (Esc saves and closes it) |
 | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd> | Set the priority of the selected task, or of the ticked tasks |
 | <kbd>Shift+L</kbd> | Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates) |

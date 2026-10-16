@@ -11,6 +11,7 @@ import Dexie from 'dexie'
 import { api } from './api'
 import { decryptActivityPage } from './e2ee'
 import { db } from './db'
+import { fieldValueLabel } from './fieldNames'
 import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, ActivityPage, Op } from './types'
 
 /** Device prefix of a public link's ops (OpenSpec `public-links`). */
@@ -300,7 +301,7 @@ export function describeEvent(ev: ActivityEvent, name: (id: string) => string, p
     case 'comment_edited': return 'edited a comment'
     case 'comment_deleted': return 'deleted a comment'
     default: {
-      const fields = ev.changes.filter((c) => canon(c.from) !== canon(c.to)).map((c) => FIELD_LABELS[c.field] ?? c.field)
+      const fields = ev.changes.filter((c) => canon(c.from) !== canon(c.to)).map((c) => FIELD_LABELS[c.field] ?? fieldValueLabel(c.field) ?? c.field)
       return fields.length ? `changed ${fields.join(', ')}` : 'edited'
     }
   }

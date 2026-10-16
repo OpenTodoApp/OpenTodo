@@ -222,6 +222,9 @@ const shots = [
   // display-mode: Today full screen in large type, without the shell.
   { name: 'display-today', server: D, async run(p) { await go(p, demoBase, '/display/today', () => p.locator('[data-screen="display"] [data-display-row]').first().waitFor()) } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
+  // stats-and-review: the weekly review on its first unfinished step, and Statistics.
+  { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('[role="tab"][aria-selected="true"]').waitFor()); await settle(p, 300) } },
+  { name: 'stats', server: D, async run(p) { await go(p, demoBase, '/stats', () => p.locator('[data-period-chooser]').waitFor()); await settle(p, 300) } },
   { name: 'upcoming', server: D, card: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
   { name: 'project-list', server: D, card: true, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation') } },
   { name: 'task-detail', server: D, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen') } },
@@ -229,6 +232,11 @@ const shots = [
     await go(p, demoBase, '/inbox'); await openProject(p, 'Q4 launch')
     await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click(); await settle(p, 800)
   }, async after(p) { await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {}) } },
+  // Custom fields (custom-fields): the Side project's list in the columns layout.
+  { name: 'custom-fields', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Side project')
+    await p.locator('[data-columns-toggle]').click(); await p.getByRole('table', { name: 'Tasks and fields' }).waitFor(); await p.mouse.move(700, 700); await settle(p, 800)
+  }, async after(p) { await p.locator('[data-columns-toggle]').click().catch(() => {}) } },
   { name: 'sidebar', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
     return clipOf(p, sidebar(p), 0)

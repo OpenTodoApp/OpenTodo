@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review']
 
 export interface Op {
   id: string
@@ -145,6 +145,40 @@ export interface Task {
    * rows stored before the field; read it with `?? null`.
    */
   completed_by?: string | null
+  /**
+   * Custom field values keyed by definition id (OpenSpec `custom-fields`, design D2).
+   * Each entry is its own op `fields.<id>` on the wire, so entries converge one by one;
+   * `applyOps` folds them in here and `mutateMany` unfolds a partial `fields` patch.
+   * Rows stored before the change hold `undefined`: read it with `?? {}`. A value may
+   * belong to a definition of another project or a deleted one; only the live
+   * definitions of the task's project are shown.
+   */
+  fields?: Record<string, FieldValue>
+  _clock: Clock
+  /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
+  _e2ee?: RowEncryption
+}
+
+/** A custom field value: text, link, date (YYYY-MM-DD) and choice are strings; null clears. */
+export type FieldValue = string | number | boolean | null
+
+/** A custom field definition's type; carried as a string so a later type is additive. */
+export type FieldType = 'text' | 'number' | 'date' | 'choice' | 'link' | 'checkbox'
+
+/**
+ * A custom field definition of one project (OpenSpec `custom-fields`, design D1).
+ * `project_id` and `type` never change after creation; `options` holds a choice
+ * field's options, one per line, in display order (`""` otherwise).
+ */
+export interface FieldDef {
+  id: string
+  name: string
+  project_id: string
+  type: FieldType | string
+  options: string
+  position: number
+  created_at: number
+  deleted_at: number | null
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
@@ -314,6 +348,18 @@ export interface UserPrefs {
 }
 
 export type ThemeModePref = 'system' | 'light' | 'dark'
+
+/**
+ * When the user last finished a weekly review (OpenSpec change `stats-and-review`,
+ * design D4): the synced personal `review` entity, one row with id "me". Not
+ * content: never encrypted, and it derives no activity event.
+ */
+export interface Review {
+  id: string
+  /** Unix ms of the latest finish; 0 = never. */
+  completed_at: number
+  _clock: Clock
+}
 
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
@@ -745,6 +791,30 @@ export type WebhookDeliveryStatus = 'pending' | 'retry' | 'delivered' | 'failed'
 
 /** One entry of a webhook's delivery log. */
 /** The CalDAV endpoint's state (OpenSpec `caldav`); only the owner may change `enabled`. */
+/**
+ * The weekly email digest (OpenSpec `stats-and-review`, design D5): server data,
+ * never synced. `weekday` 0 = Sunday; `nextSendAt` is Unix ms or null.
+ */
+export interface EmailDigest {
+  /** False without outgoing email (also on a demo). */
+  available: boolean
+  /** The account uses end-to-end encryption: the digest would contain task titles. */
+  encryption: boolean
+  enabled: boolean
+  weekday: number
+  hour: number
+  timeZone: string
+  language: string
+  nextSendAt: number | null
+  /** sent, skipped, encrypted_account, rate_limited or a failed stage (connect, tls, auth, send). */
+  lastOutcome?: string
+  /** The local date (YYYY-MM-DD) the last digest was sent or given up for. */
+  lastSentFor?: string
+  lastAttemptAt: number | null
+}
+
+export type EmailDigestInput = Partial<Pick<EmailDigest, 'enabled' | 'weekday' | 'hour' | 'timeZone' | 'language'>>
+
 /** Settings → Email to task (OpenSpec `email-to-task`): the account's secret inbox address. */
 export interface EmailInbox {
   /** False when the operator has not configured OPENTODO_EMAIL_*; then address is null. */

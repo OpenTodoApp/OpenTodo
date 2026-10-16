@@ -84,6 +84,17 @@ Every project SHALL offer a board view with one column per section ordered by se
 - **WHEN** a task with a date, three labels, an estimate and two comments is shown as a card
 - **THEN** the card shows the title, the date, up to three chips and a footer with the comment count, and nothing else
 
+### Requirement: Field badges on cards
+Board cards SHALL show the task's non-empty custom field values as compact badges in definition order (OpenSpec `custom-fields`), at most three, with a count for the rest whose accessible name lists them.
+
+#### Scenario: Field badges on a card
+- **WHEN** a card's task holds Cost 120, Status "Ordered", a checked "Paid" box and an empty Client
+- **THEN** the card shows badges "Cost 120", "Status Ordered" and "Paid", and nothing for Client
+
+#### Scenario: More than three values
+- **WHEN** a card's task holds five non-empty values
+- **THEN** the card shows the first three in definition order and a "+2" badge whose accessible name lists the rest
+
 ### Requirement: Board data and keyboard access
 The board SHALL render from local data and SHALL be navigable by keyboard.
 

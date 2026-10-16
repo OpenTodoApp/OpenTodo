@@ -133,6 +133,8 @@ type projectOut struct {
 	Shared    bool    `json:"shared"`
 	Role      string  `json:"role,omitempty"`
 	OpenCount int     `json:"open_count"`
+	// Fields are the project's live custom field definitions (custom-fields).
+	Fields []fieldOut `json:"fields"`
 }
 
 func (snap *snapshot) openCounts() map[string]int {
@@ -148,7 +150,7 @@ func (snap *snapshot) openCounts() map[string]int {
 func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) projectOut {
 	id := str(p, "id")
 	out := projectOut{ID: id, Untrusted: projectText{Name: str(p, "name"), Description: str(p, "description")}, Color: str(p, "color"),
-		Archived: boolean(p, "archived"), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id],
+		Archived: boolean(p, "archived"), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
 		Encrypted: e2ee.IsCiphertext(rawStr(p, "name")) || e2ee.IsCiphertext(rawStr(p, "description"))}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role

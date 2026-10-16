@@ -37,6 +37,12 @@ func prune(ts []time.Time, cutoff time.Time) []time.Time {
 	return ts[i:]
 }
 
+// paced kinds are sent by a scheduler that spreads them out (the weekly
+// digest, stats-and-review D6): they keep the per-recipient limit but neither
+// count towards nor wait for the server-wide transactional window, so a
+// Friday morning of digests never blocks a password reset.
+func paced(kind Kind) bool { return kind == KindDigest }
+
 // Full reports whether a message of kind to recipient would be refused now,
 // without reserving anything.
 func (l *Limiter) Full(kind Kind, recipient string) bool {
@@ -44,7 +50,7 @@ func (l *Limiter) Full(kind Kind, recipient string) bool {
 	defer l.mu.Unlock()
 	cutoff := l.now().Add(-LimitWindow)
 	key := string(kind) + "\x00" + strings.ToLower(strings.TrimSpace(recipient))
-	return len(prune(l.per[key], cutoff)) >= PerRecipientLimit || len(prune(l.server, cutoff)) >= ServerLimit
+	return len(prune(l.per[key], cutoff)) >= PerRecipientLimit || (!paced(kind) && len(prune(l.server, cutoff)) >= ServerLimit)
 }
 
 // Allow reserves one message of kind to recipient, or reports false when
@@ -57,12 +63,14 @@ func (l *Limiter) Allow(kind Kind, recipient string) bool {
 	key := string(kind) + "\x00" + strings.ToLower(strings.TrimSpace(recipient))
 	per := prune(l.per[key], cutoff)
 	l.server = prune(l.server, cutoff)
-	if len(per) >= PerRecipientLimit || len(l.server) >= ServerLimit {
+	if len(per) >= PerRecipientLimit || (!paced(kind) && len(l.server) >= ServerLimit) {
 		l.per[key] = per
 		return false
 	}
 	l.per[key] = append(per, now)
-	l.server = append(l.server, now)
+	if !paced(kind) {
+		l.server = append(l.server, now)
+	}
 	// Keep the map bounded by the window.
 	if len(l.per) > 10000 {
 		for k, v := range l.per {

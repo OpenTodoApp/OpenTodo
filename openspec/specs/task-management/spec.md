@@ -20,6 +20,21 @@ A task SHALL have a title, description, optional project, priority 1 (highest) t
 - **WHEN** a task carries `ical_extra` and a device edits the task's title while offline, then syncs
 - **THEN** the task keeps its `ical_extra` value and the new title on every device
 
+### Requirement: Custom field values of a task
+A task SHALL have a `fields` map of custom field values keyed by definition id (OpenSpec `custom-fields`), empty on creation. Every entry SHALL be its own field: editable offline and converging by per-field last-writer-wins. An entry that is an object or an array SHALL be rejected as invalid.
+
+#### Scenario: Empty on creation
+- **WHEN** a task is created with only a title
+- **THEN** its `fields` map is empty
+
+#### Scenario: Invalid entry
+- **WHEN** a client submits a `fields` entry that is an object or an array
+- **THEN** the write is rejected as invalid and no field changes
+
+#### Scenario: Field entries are independent operations
+- **WHEN** a device sets the task's "Cost" entry while another device renames the task offline, and both sync
+- **THEN** every device shows the new title and the new Cost, because each is its own operation
+
 ### Requirement: Habit fields
 A task SHALL also have a boolean `habit` flag, default false, and an occurrence record of a habit SHALL carry a boolean `skipped` marker, default false (OpenSpec `habits`). Both SHALL be stored and synced like every task field, SHALL converge by per-field last-writer-wins, and SHALL be rejected when the value is not a boolean.
 

@@ -5,7 +5,7 @@
 // can be undone in one step, skipping fields changed again since. The device keeps
 // the last 20 batches, from the assistant and from bulk actions alike.
 import { db, type AssistantUndo } from './db'
-import { mutateMany, type Change } from './ops'
+import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
 
@@ -17,12 +17,14 @@ export function tableOf(entity: Entity) {
     case 'project': return db.projects
     case 'label': return db.labels
     case 'section': return db.sections
+    case 'field': return db.fields
     case 'comment': return db.comments
     case 'reminder': return db.reminders
     case 'view': return db.views
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
     case 'attachment': return db.attachments
+    case 'review': return db.review
     default: return db.tasks
   }
 }
@@ -40,6 +42,8 @@ export interface BatchOptions {
 /** Applies changes as one batch and stores its inverse. Returns the undo entry, or null for nothing. */
 export async function applyBatch(changes: ProposedChange[], opts: BatchOptions): Promise<AssistantUndo | null> {
   if (changes.length === 0) return null
+  // A `fields` map becomes one `fields.<id>` entry per value, each with its own clock (custom-fields).
+  changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch }))
   const inverse: AssistantUndo['inverse'] = []
   for (const c of changes) {
     if (c.create) {
@@ -48,7 +52,7 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     }
     const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
     const patch: Record<string, unknown> = {}
-    for (const f of Object.keys(c.patch)) patch[f] = norm(local?.[f] ?? c.base?.[f])
+    for (const f of Object.keys(c.patch)) patch[f] = norm((local ? readField(local, f) : undefined) ?? c.base?.[f])
     inverse.push({ entity: c.entity, entityId: c.entityId, patch })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))

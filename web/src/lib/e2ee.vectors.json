@@ -27,6 +27,15 @@
       "field": "name",
       "plaintext": "",
       "value": "enc:v1:wMHCw8TFxsfIycrLd6Fz1u8Lz0wn5RpDcBwXKA"
+    },
+    {
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "nonce": "e0e1e2e3e4e5e6e7e8e9eaeb",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "fields.f1",
+      "plaintext": "Acme",
+      "value": "enc:v1:4OHi4-Tl5ufo6errdaGk5vcfPqzjy0C4KjQQwnxA6a0"
     }
   ],
   "passphrase": {

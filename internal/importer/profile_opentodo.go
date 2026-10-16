@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // opentodoProfile reads the app's own export (`GET /api/v1/export`). Records are
@@ -27,12 +29,15 @@ func (opentodoProfile) Detect(data []byte) bool {
 
 func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	var doc struct {
-		Format    string                       `json:"format"`
-		Version   int                          `json:"version"`
-		Labels    []map[string]json.RawMessage `json:"labels"`
-		Projects  []map[string]json.RawMessage `json:"projects"`
-		Tasks     []map[string]json.RawMessage `json:"tasks"`
-		Sections  []map[string]json.RawMessage `json:"sections"`
+		Format   string                       `json:"format"`
+		Version  int                          `json:"version"`
+		Labels   []map[string]json.RawMessage `json:"labels"`
+		Projects []map[string]json.RawMessage `json:"projects"`
+		Tasks    []map[string]json.RawMessage `json:"tasks"`
+		Sections []map[string]json.RawMessage `json:"sections"`
+		// Fields are custom field definitions (custom-fields); a task's values
+		// are its `fields` object, unfolded into `fields.<id>` keys below.
+		Fields    []map[string]json.RawMessage `json:"fields"`
 		Reminders []map[string]json.RawMessage `json:"reminders"`
 		Views     []map[string]json.RawMessage `json:"views"`
 		Comments  []json.RawMessage            `json:"comments"`
@@ -41,6 +46,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// UserPrefs is the exporting account's date and time preferences row
 		// (date-time-preferences D1); it is restored like any other record.
 		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
+		// Review is when the exporting account last finished a weekly review
+		// (stats-and-review D4).
+		Review []map[string]json.RawMessage `json:"review"`
 		// Template marks a template file (project-templates D1); import is unchanged.
 		Template *TemplateInfo `json:"template"`
 	}
@@ -59,6 +67,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	}
 	taskTitles := map[string]string{}
 	for _, e := range doc.Tasks {
+		unfoldFieldValues(e)
 		var id, title string
 		_ = json.Unmarshal(e["id"], &id)
 		_ = json.Unmarshal(e["title"], &title)
@@ -81,6 +90,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			if kind == KindUserPrefs {
 				row.Title = "Preferences"
 			}
+			if kind == KindReview {
+				row.Title = "Last weekly review"
+			}
 			out.Rows = append(out.Rows, row)
 		}
 	}
@@ -88,10 +100,12 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindLabel, "name", doc.Labels)
 	add(KindProject, "name", doc.Projects)
 	add(KindSection, "name", doc.Sections)
+	add(KindField, "name", doc.Fields)
 	add(KindTask, "title", doc.Tasks)
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
 	add(KindUserPrefs, "", doc.UserPrefs)
+	add(KindReview, "", doc.Review)
 	add(KindAttachment, "name", doc.Attachments)
 	if files := countFileAttachments(doc.Attachments); files > 0 && opts.ownFiles == nil {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d file %s not imported: the files are in the ZIP export (Settings → Data → Export with files)", files, plural(files, "attachment is", "attachments are")))
@@ -102,6 +116,33 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d %s not imported: a comment keeps its author, and the authors in this file are accounts of the exporting instance", n, plural(n, "comment is", "comments are")))
 	}
 	return out, nil
+}
+
+// unfoldFieldValues turns an exported task's `fields` object back into one
+// `fields.<id>` key per value, the op field names (custom-fields D3). A value
+// whose id is not a valid op field name is left in the object and reported as
+// an unknown field by the planner.
+func unfoldFieldValues(task map[string]json.RawMessage) {
+	raw, ok := task["fields"]
+	if !ok {
+		return
+	}
+	var values map[string]json.RawMessage
+	if json.Unmarshal(raw, &values) != nil {
+		return
+	}
+	left := map[string]json.RawMessage{}
+	for id, v := range values {
+		if _, valid := opsync.FieldValueID(opsync.FieldValuePrefix + id); valid {
+			task[opsync.FieldValuePrefix+id] = v
+		} else {
+			left[id] = v
+		}
+	}
+	delete(task, "fields")
+	if len(left) > 0 {
+		task["fields"], _ = json.Marshal(left)
+	}
 }
 
 // topLevel decodes a JSON object's keys without decoding the values deeply.

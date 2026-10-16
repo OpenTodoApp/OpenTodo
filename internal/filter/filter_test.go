@@ -42,6 +42,9 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"completed = last week", "completed >= this month & p1", "completed before yesterday", "due = next week",
 		"created = 2 months ago", "deadline < 1 week ago", "start <= next month", "!(completed > 3 weeks ago) | open",
 		"completed", "p1 & completed", "COMPLETED AFTER 2026-10-01",
+		// Custom field terms (custom-fields).
+		"cost > 100", `client = "Acme"`, `"Order date" <= friday & cost > 100`, "no cost", `no "Order date"`, "done = true",
+		"paid = false", "cost >= -2.5", "status = Ordered", "due_by <= 3 days", `"due" = 2026-10-16`, "no idea", "kitchen = this week",
 	} {
 		if err := Parse(q); err != nil {
 			t.Errorf("%q: %v", q, err)
@@ -76,7 +79,11 @@ func TestFilterParserRejects(t *testing.T) {
 		"!":                  `Expected a term after "!" at position 1`,
 		"()":                 `Expected a term after "(" at position 1`,
 		`"loose text"`:       `Unexpected text "loose text" at position 1; quote names after "@" or "#", or use search:`,
-		"no idea":            `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1`,
+		"no":                 `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1`,
+		"no & p1":            `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1`,
+		"cost >":             `Expected a value after ">" at position 6`,
+		"cost = last year":   `Expected "week" or "month" after "last" at position 8`,
+		"cost 5":             `Unknown term "cost" at position 1`,
 		"due < someday":      `Invalid date "someday" at position 7`,
 		"due < 2026-02-30":   `Invalid date "2026-02-30" at position 7`,
 		"due <":              `Expected a date after "<" at position 5`,

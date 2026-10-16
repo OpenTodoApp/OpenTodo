@@ -63,3 +63,19 @@ func TestExportIncludesUserPrefs(t *testing.T) {
 		t.Fatalf("exported row = %v", row)
 	}
 }
+
+// TestExportIncludesReview (stats-and-review D4): the export carries the
+// caller's own "last weekly review" row beside the collections.
+func TestExportIncludesReview(t *testing.T) {
+	e := ownerEnv(t)
+	e.syncOps("devA", rop("rv1", "review", "me", "completed_at", 1760600000000, 1))
+	resp, out := e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	list, ok := out["review"].([]any)
+	if !ok || len(list) != 1 {
+		t.Fatalf("export review = %v", out["review"])
+	}
+	if row := list[0].(map[string]any); row["id"] != "me" || row["completed_at"] != float64(1760600000000) {
+		t.Fatalf("exported row = %v", row)
+	}
+}

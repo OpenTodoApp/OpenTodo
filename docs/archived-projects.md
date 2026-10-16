@@ -13,7 +13,7 @@ order: 132
 
 Archiving is different from deleting. An archived project disappears from the sidebar, but it isn't in the Trash and isn't deleted after 30 days: it and its tasks are kept as they are. Archive a project from its **Project** menu.
 
-When you complete the last task of a project, OpenTodo offers to archive it. Projects without open tasks for 30 days are archived automatically, with a notice that has an undo button. To switch automatic archiving off on a device, untick the option under **Settings → Data**.
+When you complete the last task of a project, OpenTodo offers to archive it. The [weekly review](review-and-statistics.md#the-four-steps) lists projects without an open task, with an **Archive** button. Projects without open tasks for 30 days are archived automatically, with a notice that has an undo button. To switch automatic archiving off on a device, untick the option under **Settings → Data**.
 
 ## Bring back an archived project
 

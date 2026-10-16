@@ -281,6 +281,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       ['comment', db.comments],
       ['project_prefs', db.prefs],
       ['user_prefs', db.userPrefs],
+      ['review', db.review],
       ['attachment', db.attachments],
     ]
     const me = (await db.meta.get('userId'))?.value
