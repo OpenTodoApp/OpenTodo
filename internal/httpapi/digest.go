@@ -12,7 +12,10 @@ import (
 // D5): server data, never synced. Sessions and full tokens only, also on the
 // read: the schedule is the person's, not an assistant's. The PUT is on the
 // demo deny list ("Email digest"); a demo has no mailer, so the GET reports the
-// digest as unavailable.
+// digest as unavailable. On a hosted tenant (multi-tenant-host) the opt-in is
+// the user's, not an operator setting, so it is not in hostRules; outgoing
+// email is the operator's and the routes answer as without a mailer until the
+// operator configures it.
 
 func (s *Server) registerDigestRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/v1/me/email-digest", s.requireAuth(s.handleGetDigest))
@@ -88,7 +91,12 @@ func (s *Server) handlePutDigest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.mailEnabled(ctx) {
-		writeError(w, http.StatusNotFound, "smtp_disabled", "the weekly digest needs outgoing email, which the server owner has not configured")
+		who := "the server owner"
+		if s.hosted {
+			// On a host outgoing email is the operator's (multi-tenant-host D4).
+			who = "the operator of this hosted service"
+		}
+		writeError(w, http.StatusNotFound, "smtp_disabled", "the weekly digest needs outgoing email, which "+who+" has not configured")
 		return
 	}
 	store := s.digestStore()

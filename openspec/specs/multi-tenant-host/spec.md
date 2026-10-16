@@ -51,7 +51,7 @@ In host mode, a tenant SHALL be opened on its first request, running any pending
 - **THEN** that tenant answers 503 and the failure is reported to the operator, every other tenant keeps working, and the tenant opens again once the cause is fixed
 
 ### Requirement: Background work scales with due work
-In host mode, reminders, scheduled backups, trash retention, audit and delivery-log pruning, webhook deliveries and calendar subscription fetches SHALL be run for a tenant only when that tenant has work due, recorded in a host-level index that each open tenant keeps current, without polling every tenant. Reminders SHALL be delivered no later than they would be on a self-hosted server.
+In host mode, reminders, scheduled backups, trash retention, audit and delivery-log pruning, webhook deliveries, calendar subscription fetches and weekly digest emails SHALL be run for a tenant only when that tenant has work due, recorded in a host-level index that each open tenant keeps current, without polling every tenant. Reminders SHALL be delivered no later than they would be on a self-hosted server.
 
 #### Scenario: Reminder in a closed tenant
 - **WHEN** a reminder is due in a tenant that is currently closed

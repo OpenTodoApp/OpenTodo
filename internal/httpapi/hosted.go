@@ -17,6 +17,10 @@ func WithHosted() Option { return func(s *Server) { s.hosted = true } }
 // hostRules are the settings a host's operator owns (design D4). writes
 // limits a rule to methods other than GET and HEAD, where reading the current
 // value is harmless and the app needs it (whether MCP or the assistant is on).
+// Data and per-user routes are never listed: custom fields (/api/v1/fields)
+// are tenant data like tasks, and the weekly digest opt-in
+// (/api/v1/me/email-digest) is each user's; it sends through the operator's
+// outgoing email and answers smtp_disabled while there is none.
 var hostRules = []demoRule{
 	{"Outgoing email", false, prefix("/api/v1/settings/smtp")},
 	{"Single sign-on", false, prefix("/api/v1/settings/oidc")},

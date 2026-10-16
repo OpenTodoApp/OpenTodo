@@ -172,7 +172,7 @@ func (h *Host) openTenant(_ context.Context, name string) (*tenant.Tenant, error
 	if qq := newQuota(lim, h.now); qq != nil {
 		q = qq
 	}
-	opts := tenant.Options{Version: h.version, Log: h.log.With("tenant", name), Web: h.web,
+	opts := tenant.Options{Version: h.version, Log: h.log.With("tenant", name), Web: h.web, Now: h.now,
 		// A web restore is refused on a host; should one be confirmed anyway,
 		// closing the tenant applies it on the next open.
 		Restart: func() { go h.pool.evict(name) },

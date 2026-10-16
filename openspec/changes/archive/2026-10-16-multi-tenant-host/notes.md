@@ -136,3 +136,7 @@ Literal tables:
 
 - Binary (`CGO_ENABLED=0 go build -trimpath -ldflags="-s -w"`): 25,374,882 → 25,591,970 bytes (+217,088, +0.9 %). No new dependency.
 - A self-hosted server's memory and start-up are unchanged (same services, same goroutines).
+
+## Integration with custom-fields and stats-and-review
+
+Merged onto the branch carrying `custom-fields` and `stats-and-review`. The weekly digest that `stats-and-review` started in `cmd/opentodo/main.go` is built in `internal/tenant` beside outgoing email (`Tenant.Mail`, `Tenant.Digest`) and started by `Tenant.StartJobs` on a self-hosted server. On a host it is a new scheduler kind, `digest`: `computeDue` asks `digest.Service.NextDue` (the earliest send, retry or end of the six-hour window among enabled rows, nothing while outgoing email is off) and `runDue` runs one `Tick`. Tenants get the host's clock (`tenant.Options.Now`). The digest opt-in (`/api/v1/me/email-digest`) is per user, so it is not in `hostRules`; without the operator's email it reports `available: false` and the `PUT` answers `smtp_disabled`, naming the operator. Saving the opt-in writes no op, so the index picks it up at the next 30-second refresh of open tenants or when the tenant closes. Custom fields (`/api/v1/fields`) are tenant data and stay out of `hostRules` and the demo deny list. Tests: `TestDigestInClosedTenant`, `TestDigestWithoutOperatorEmail` (internal/host), `TestStartJobsRunsDigest` (internal/tenant), `TestDueAt` (internal/digest).

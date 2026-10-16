@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/mail/smtptest"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
@@ -153,6 +154,70 @@ func TestOpenHoldsTheDirectory(t *testing.T) {
 		t.Fatal("lock after Close:", err)
 	}
 	release()
+}
+
+// TestStartJobsRunsDigest (multi-tenant-host x stats-and-review): a
+// self-hosted server's weekly digest runs from StartJobs: a user who opted in
+// gets the digest at the chosen hour through the server's outgoing email.
+func TestStartJobsRunsDigest(t *testing.T) {
+	sink := smtptest.New(t, smtptest.Options{NoSTARTTLS: true, NoAuth: true})
+	cfg := testConfig(t.TempDir())
+	cfg.SMTP = config.SMTPConfig{Host: sink.Host, Port: sink.Port, Security: "none", From: "OpenTodo <todo@example.com>"}
+	// Friday 2026-10-23 08:00 UTC: an hour after a Friday 07:00 digest is due.
+	friday := time.Date(2026, 10, 23, 8, 0, 0, 0, time.UTC)
+	tn, err := Open(context.Background(), cfg, Options{Version: "test", Web: http.NotFoundHandler(), Now: func() time.Time { return friday }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(tn.Handler)
+	t.Cleanup(func() {
+		srv.Close()
+		tn.Close()
+	})
+	if tn.Digest == nil || tn.Mail == nil {
+		t.Fatal("digest not wired")
+	}
+	c := newClient(t, srv.URL)
+	if code, out := c.do("POST", "/api/v1/auth/register", map[string]any{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"}); code != http.StatusCreated && code != http.StatusOK {
+		t.Fatalf("register: %d %v", code, out)
+	}
+	if code, out := c.do("PUT", "/api/v1/me/email-digest", map[string]any{"enabled": true, "weekday": 5, "hour": 7, "timeZone": "UTC", "language": "en"}); code != http.StatusOK || out["available"] != true {
+		t.Fatalf("opt in: %d %v", code, out)
+	}
+	_, me := c.do("GET", "/api/v1/me", nil)
+	uid := me["user"].(map[string]any)["id"].(string)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	tn.StartJobs(ctx, done, nil)
+	defer func() {
+		cancel()
+		<-done
+	}()
+	deadline := time.Now().Add(10 * time.Second)
+	for len(sink.Messages()) == 0 {
+		if time.Now().After(deadline) {
+			t.Fatal("no digest sent by the jobs StartJobs started")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if m := sink.Messages()[0]; len(m.To) != 1 || m.To[0] != "owner@example.com" {
+		t.Fatalf("digest to %v", m.To)
+	}
+	// The pass records the send once the message is out.
+	for {
+		st, err := tn.Digest.Store().Get(context.Background(), uid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if st.LastSentFor == "2026-10-23" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("send not recorded: %+v", st)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 }
 
 func mustURL(t *testing.T, raw string) *url.URL {

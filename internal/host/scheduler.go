@@ -15,6 +15,7 @@ const (
 	KindWebhooks     = "webhooks"     // queued webhook deliveries
 	KindCalendars    = "calendars"    // calendar subscriptions to fetch
 	KindHousekeeping = "housekeeping" // Trash retention, audit and log pruning
+	KindDigest       = "digest"       // weekly digest emails (stats-and-review)
 )
 
 // Scheduler tuning.
@@ -80,6 +81,16 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 			due[KindCalendars] = at
 		}
 	}
+	if t.Digest != nil {
+		// Only while the operator configured outgoing email and someone opted in.
+		at, ok, err := t.Digest.NextDue(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			due[KindDigest] = at
+		}
+	}
 	// Housekeeping is due when the first of its deadlines passes.
 	var house time.Time
 	for _, f := range []func(context.Context) (time.Time, bool, error){
@@ -143,6 +154,15 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			}
 		case KindCalendars:
 			t.Calendar.RunOnce(ctx)
+		case KindDigest:
+			if t.Digest == nil {
+				continue
+			}
+			if n, err := t.Digest.Tick(ctx); err != nil {
+				log.Error("digest scheduler", "err", err)
+			} else if n > 0 {
+				log.Info("weekly digests sent", "count", n)
+			}
 		case KindHousekeeping:
 			if _, err := t.Sync.RetentionPass(ctx, t.Cfg.TrashRetentionDays); err != nil {
 				log.Error("trash retention failed", "err", err)
