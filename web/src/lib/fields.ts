@@ -9,6 +9,7 @@ import { mutate, mutateMany, type Change } from './ops'
 import { byPosition, planStep, positionAtEnd } from './ordering'
 import type { FieldDef, FieldType, FieldValue, Task } from './types'
 import { t, msg, translatedList } from './i18n'
+import { uuid } from './ids'
 
 /** The types a definition may have, in the order the dialog offers them. */
 export const FIELD_TYPES: readonly { type: FieldType; label: string }[] = translatedList<{ type: FieldType; label: string }, 'label'>([
@@ -219,7 +220,7 @@ export async function createField(projectId: string, input: { name: string; type
   if (!FIELD_TYPES.some((item) => item.type === input.type)) throw new FieldError(t('Choose a type.'), 'type')
   const options = input.type === 'choice' ? checkOptions(input.options ?? '') : ''
   if (input.type === 'choice' && !options) throw new FieldError(t('A choice field needs at least one option.'), 'options')
-  const id = crypto.randomUUID()
+  const id = uuid()
   await mutate('field', id, {
     name, project_id: projectId, type: input.type, options, position: positionAtEnd(siblings), created_at: Date.now(), deleted_at: null,
   })

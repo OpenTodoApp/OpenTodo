@@ -7,6 +7,7 @@ import { db } from './db'
 import { mutate, mutateMany, type Change } from './ops'
 import { deadlineFireAt, relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
 import type { Op, Reminder, Task } from './types'
+import { uuid } from './ids'
 
 export type ReminderInput =
   | { kind: 'relative'; offset_minutes: number }
@@ -23,7 +24,7 @@ function offsetFireAt(kind: 'relative' | 'deadline', task: Pick<Task, 'due' | 'd
 export async function addReminder(taskId: string, input: ReminderInput, now = Date.now()): Promise<string> {
   const task = await db.tasks.get(taskId)
   if (!task || task.deleted_at) throw new Error('task not found')
-  const id = crypto.randomUUID()
+  const id = uuid()
   const offset = input.kind === 'absolute' ? null : input.offset_minutes
   if (input.kind !== 'absolute' && !Number.isInteger(offset)) throw new Error('offset must be a whole number of minutes')
   if (input.kind === 'absolute' && !(input.fire_at > 0)) throw new Error('reminder time is required')

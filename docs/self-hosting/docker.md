@@ -66,6 +66,8 @@ When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.
 
 Passkeys (Settings → Account → Passkeys) are only offered when `OPENTODO_BASE_URL` is an `https://` URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an `http://` LAN address, the server keeps working with passwords and simply hides passkeys (`auth/status` reports `passkeysAvailable: false`). For local development `http://localhost:8080` also works, because browsers treat localhost as secure.
 
+On a plain-http network address (for example `http://192.168.1.10:8080` on a NAS or home server) tasks, projects, sync, sharing and attachments all work. A few features need what browsers only offer over HTTPS or on localhost: installing the app and working offline, push notifications, passkeys and end-to-end encryption. Put the server behind a reverse proxy with a certificate, or a tool such as Tailscale with HTTPS, to use them.
+
 Passkeys are bound to the **host** of that URL (the relying-party id, for example `todo.example.com`). If you move the server to a new domain, existing passkeys stop matching: users sign in with their password and register new passkeys from Settings. Paths and ports do not matter, only the host. See [SECURITY.md](../../SECURITY.md) for the credential model.
 
 Caddy example:

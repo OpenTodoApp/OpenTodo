@@ -17,6 +17,7 @@ import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
 import { t } from './i18n'
+import { uuid } from './ids'
 
 let devicePromise: Promise<string> | null = null
 
@@ -26,7 +27,7 @@ export function getDeviceId(): Promise<string> {
     devicePromise = (async () => {
       let id = await getMeta<string | null>('device', null)
       if (!id) {
-        id = crypto.randomUUID()
+        id = uuid()
         await setMeta('device', id)
       }
       hlcSeed(await getMeta<number>('hlc', 0))
@@ -359,7 +360,7 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
     const ops: Op[] = []
     for (const { entity, entityId, patch } of changes) {
       for (const [field, value] of Object.entries(patch)) {
-        ops.push({ id: crypto.randomUUID(), entity, entityId, field, value, ts, device })
+        ops.push({ id: uuid(), entity, entityId, field, value, ts, device })
       }
     }
     await applyOps(ops, { actor, local: true })
@@ -539,7 +540,7 @@ function lastAmongProjectSiblings(all: Project[], id: string, parentId: string |
 
 /** A new project goes last at the top level, or last under `parent_id` when given. */
 export async function createProject(input: { name: string; color?: string; parent_id?: string | null }): Promise<string> {
-  const id = crypto.randomUUID()
+  const id = uuid()
   const now = Date.now()
   const all = await liveProjects()
   const parent = input.parent_id ? all.find((p) => p.id === input.parent_id) : undefined
@@ -604,7 +605,7 @@ export type NewTaskInput = {
 
 /** The ops of a new task without writing them, for a batch with other changes (a shared file's attachments). */
 export async function planTask(input: NewTaskInput): Promise<{ id: string; change: Change }> {
-  const id = crypto.randomUUID()
+  const id = uuid()
   const now = Date.now()
   let due = input.due ?? null
   const extra: Record<string, unknown> = {}
@@ -636,7 +637,7 @@ export function planReminders(taskId: string, due: Task['due'], phrases: readonl
   return (phrases ?? []).map((phrase) => {
     const r = resolveReminder(phrase, due, todayISO(now), hhmm)
     const relative = r.kind === 'relative'
-    return { entity: 'reminder', entityId: crypto.randomUUID(), patch: {
+    return { entity: 'reminder', entityId: uuid(), patch: {
       task_id: taskId, kind: r.kind, offset_minutes: relative ? r.offsetMinutes : null,
       fire_at: relative ? relativeFireAt(due, r.offsetMinutes) : dueToInstant({ date: r.date, time: r.time }),
       delivered_at: null, dismissed_at: null, created_at: now.getTime(), deleted_at: null,
@@ -714,7 +715,7 @@ const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'la
 function copyTasks(
   tasks: Task[], projectId: string | null, assignable: Set<string>, overrides: Record<string, Partial<Task>> = {},
 ): { changes: Change[]; ids: Map<string, string> } {
-  const ids = new Map(tasks.map((task) => [task.id, crypto.randomUUID()]))
+  const ids = new Map(tasks.map((task) => [task.id, uuid()]))
   const changes: Change[] = []
   for (const tk of tasks) {
     const patch: Record<string, unknown> = {}
