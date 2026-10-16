@@ -175,9 +175,11 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'someday': return (t) => t.start === 'someday'
           case 'deferred': return (t) => !!t.start && t.start !== 'someday' && t.start > today
           case 'evening': return (t) => !!t.evening
-          case 'completed': return (t) => t.completed_at !== null
+          // A habit's skipped occurrence record is not a completion (OpenSpec habits, D6).
+          case 'completed': return (t) => t.completed_at !== null && !t.skipped
           case 'open': return (t) => t.completed_at === null
           case 'subtask': return (t) => t.parent_id !== null
+          case 'habit': return (t) => t.habit === true
           case 'blocked': { const b = blockedSet(); return (t) => b.has(t.id) }
           case 'unblocked': { const b = blockedSet(); return (t) => !b.has(t.id) }
         }
@@ -186,9 +188,10 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
 
   const pred = build(ast)
   const openOnly = !mentionsState(ast)
+  // Skipped habit records match no query, whatever its terms (habits D6).
   const test: Pred = openOnly
     ? (t) => !t.deleted_at && t.completed_at === null && pred(t)
-    : (t) => !t.deleted_at && pred(t)
+    : (t) => !t.deleted_at && !t.skipped && pred(t)
   return { test, warnings }
 }
 

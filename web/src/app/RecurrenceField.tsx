@@ -1,19 +1,24 @@
 import { Icon } from '../ui'
 import { keysOf } from '../lib/shortcuts'
-import { Tooltip } from '../ui'
+import { Switch, Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
 import { formatShort, todayISO, weekday } from '../lib/dates'
-import { detachOccurrence, setRecurrence, skipOccurrence } from '../lib/ops'
+import { habitRule, habitStats } from '../lib/habits'
+import { detachOccurrence, mutate, setRecurrence, skipOccurrence } from '../lib/ops'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
 import { completedOccurrences } from '../lib/recurring'
 import type { Task } from '../lib/types'
+import { HabitHistory } from './HabitHistory'
 
 /**
  * The detail panel's recurrence controls (OpenSpec change recurring-tasks): the
  * rule with suggestions and validation, a live preview of the next three
  * occurrences computed locally (works offline), and Skip / This occurrence only.
+ * For a calendar rule it also offers "Track as a habit" and, for a habit, the
+ * streak and the month history (OpenSpec change habits, design D5), all derived
+ * from the records already on the device.
  */
 export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: string) => void }) {
   const [draft, setDraft] = useState(task.recurrence ?? '')
@@ -48,6 +53,9 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
   }
 
   const recurring = !!task.recurrence && !task.completed_at
+  // Habits (OpenSpec habits): only a calendar rule has a schedule to measure.
+  const habitOffered = recurring && !task.deleted_at && habitRule(task) !== null
+  const stats = useMemo(() => (habitOffered && task.habit ? habitStats(task, related, today) : null), [habitOffered, task, related, today])
   const skip = async () => {
     setNotice((await skipOccurrence(task.id)) ? null : 'This is the last occurrence; complete or delete it instead.')
   }
@@ -100,6 +108,18 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
         </div>
       )}
       {notice && <p className="text-meta text-muted" role="status">{notice}</p>}
+      {habitOffered && (
+        <div className="space-y-2 pt-2" data-habit>
+          <Switch checked={!!task.habit} onChange={(v) => void mutate('task', task.id, { habit: v })} label="Track as a habit"
+            description="Streaks and a month history, counted on this device from the days done" />
+          {stats && (
+            <>
+              <p className="text-meta text-muted" data-habit-streak>Streak {stats.current} · Best {stats.best}{stats.atRisk ? ' · at risk' : ''}</p>
+              <HabitHistory series={task} records={related} today={today} />
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

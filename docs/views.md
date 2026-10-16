@@ -59,3 +59,4 @@ Each device can open on a different view: your laptop on a "Work" view, your pho
 - Subtasks show up on their own in Today and Upcoming, with their parent's name next to them, so you see exactly what's due.
 - Views that sort by date (Today, Upcoming, labels, filters) can't be reordered by hand. Projects and the Inbox can.
 - [Filter queries](filters.md) has ten ready-made examples to copy.
+- Track habits? Save the query `habit` as a view named "Habits": every habit with its streak, one click from its month history.

@@ -10,6 +10,7 @@ import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/or
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
+import { habitStatsMap } from '../lib/habits'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
@@ -129,6 +130,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
+  const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   // Duration filter chips (OpenSpec `time-blocking`): per view, per device.
   const filterKey = durationFilterKey(route)
@@ -161,7 +164,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       case 'anytime':
         return all.filter((t) => inAnytime(t, today)).sort(byPosition)
       case 'completed':
-        return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
+        // A habit's skipped occurrence record is not a completion (habits D6).
+        return all.filter((t) => t.completed_at && !t.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
       case 'project':
         return all.filter((t) => !t.completed_at && t.project_id === route.id)
       case 'label':
@@ -315,7 +319,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups"); date, project and Later groups collapse per device.
   const doneInProject = useLiveQuery(
-    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((t) => !!t.completed_at && !t.deleted_at).toArray() : Promise.resolve([] as Task[])),
+    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((t) => !!t.completed_at && !t.deleted_at && !t.skipped).toArray() : Promise.resolve([] as Task[])),
     [projectId], [] as Task[],
   )
   const doneBySection = useMemo(() => {
@@ -754,6 +758,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         depth={r.depth}
         progress={progress.get(r.task.id)}
         blockedBy={blocked.get(r.task.id)}
+        habit={habits.get(r.task.id)}
         breadcrumb={r.breadcrumb}
         hasChildren={r.hasChildren}
         collapsed={r.collapsed}

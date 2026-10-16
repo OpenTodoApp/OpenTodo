@@ -92,6 +92,11 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 		if idValue(t["series_id"]) != id || nullish(t["completed_at"]) {
 			continue
 		}
+		// A habit's skipped record is not a completion and never counts
+		// towards `for N times` (OpenSpec change habits, design D2).
+		if string(t["skipped"]) == "true" {
+			continue
+		}
 		d := decodeRecurringDue(t["due"])
 		if d == nil || d.Date == date {
 			continue

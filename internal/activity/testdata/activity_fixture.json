@@ -667,6 +667,17 @@
         {"id":"bb1","kind":"dependencies","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":300000,"opIds":["bb1","bb2"],
          "changes":[{"field":"blocked_by","from":null,"to":["t2"]},{"field":"title","from":null,"to":"Book flights"}]}
       ]
+    },
+    {
+      "name": "habit and skipped edits are edited events (habits)",
+      "ops": [
+        {"id":"hb1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"habit","value":true,"ts":300000,"device":"da"},
+        {"id":"hb2","seq":2,"actor":"bob","entity":"task","entityId":"t2","field":"skipped","value":true,"ts":300000,"device":"db"}
+      ],
+      "events": [
+        {"id":"hb1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":300000,"opIds":["hb1"],"changes":[{"field":"habit","from":null,"to":true}]},
+        {"id":"hb2","kind":"edited","actor":"bob","entity":"task","entityId":"t2","taskId":"t2","ts":300000,"opIds":["hb2"],"changes":[{"field":"skipped","from":null,"to":true}]}
+      ]
     }
   ]
 }

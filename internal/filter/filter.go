@@ -196,7 +196,7 @@ func tokenize(src []rune) ([]token, error) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true, "habit": true}
 	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )

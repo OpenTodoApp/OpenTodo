@@ -216,6 +216,11 @@ var Schema = map[string]map[string]kind{
 		// collaborative-rich-text); additive. description stays its Markdown
 		// projection, written by clients in the same batch. Opaque here.
 		"notes_doc": kDoc,
+		// Habit tracking (OpenSpec change habits, design D1): habit flags a
+		// series as a habit; skipped marks an occurrence record written by a
+		// skip rather than a completion. Additive booleans, not content.
+		"habit":   kBool,
+		"skipped": kBool,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -459,8 +464,10 @@ func checkKind(k kind, raw json.RawMessage) error {
 			return errors.New("must be null or a number")
 		}
 	case kBool:
+		// json.Unmarshal leaves a bool untouched on null, so null is refused
+		// explicitly (OpenSpec change habits: a non-boolean flag is invalid).
 		var b bool
-		if err := json.Unmarshal(raw, &b); err != nil {
+		if err := json.Unmarshal(raw, &b); err != nil || isNull {
 			return errors.New("must be a boolean")
 		}
 	case kPriority:

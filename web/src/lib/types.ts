@@ -124,6 +124,20 @@ export interface Task {
    * batch. Rows synced before the field existed hold undefined; read it with `?? ''`.
    */
   notes_doc?: string
+  /**
+   * The series is tracked as a habit (OpenSpec `habits`): streaks and a month
+   * history are derived on the device from its occurrence records. Only offered for
+   * calendar rules. Rows synced before the field existed hold undefined; read it
+   * with `?? false`.
+   */
+  habit?: boolean
+  /**
+   * On an occurrence record of a habit: the occurrence was skipped, not done
+   * (OpenSpec `habits`, design D2). A skipped record is not a completion: it is
+   * hidden from Completed and `completed` and never counts towards `for N times`.
+   * Read it with `?? false`.
+   */
+  skipped?: boolean
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption

@@ -62,7 +62,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -829,17 +829,19 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
 
 /**
  * Skip the current occurrence of a series: an ordinary due-date change, no record.
+ * A habit also writes the occurrence record marked `skipped` (OpenSpec `habits`).
  * Returns false (and writes nothing) when the task is not an open series or the
  * current occurrence is the last one before `until`.
  */
-export async function skipOccurrence(id: string, opts: { today?: string } = {}): Promise<boolean> {
+export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
+  const now = opts.now ?? Date.now()
   const today = opts.today ?? todayISO()
   await getDeviceId()
   let ok = false
   await db.transaction('rw', mutationTables(), async () => {
     const series = await db.tasks.get(id)
     const rule = seriesRule(series)
-    const changes = series && rule ? planSkip(series, rule, today) : null
+    const changes = series && rule ? planSkip(series, rule, now, today) : null
     if (!changes) return
     await mutateMany(changes)
     ok = true

@@ -140,7 +140,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit'
 
 /** today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N. */
 export type DateExpr =
@@ -160,7 +160,7 @@ export type Node =
   | { kind: 'search'; text: string }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked'])
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked', 'habit'])
 const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start'] as const
 const CMP_EXPECTED = ['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
 

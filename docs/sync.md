@@ -59,6 +59,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `section_id` | string (section id) or null; see [Sections](#sections) |
 | task | `ical_extra` | string or null: opaque iCalendar lines from CalDAV clients, see [CalDAV](#caldav) |
 | task | `notes_doc` | document: `""` or an envelope `"<format>:v<n>:<base64>"` of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see [Mergeable documents](#mergeable-documents) |
+| task | `habit` | boolean, default false: the series is tracked as a habit, with streaks and a month history derived on the device (habits, see [Habits](recurrence.md#habits)). Not content, so never encrypted |
+| task | `skipped` | boolean, default false: on an occurrence record of a habit, the occurrence was skipped rather than done; such a record is not a completion (habits) |
 | section | `name` | string |
 | section | `project_id` | string (project id, required; never changes) |
 | section | `position`, `created_at` | number |

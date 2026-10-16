@@ -856,3 +856,28 @@ func TestProjectNoteInListProjects(t *testing.T) {
 		t.Fatalf("update_project with description = %v", err)
 	}
 }
+
+// TestHabitInResults (OpenSpec change habits, design D7): results carry
+// habit: true, update_tasks refuses habit, and complete_tasks records a done
+// occurrence of a habit like any recurring task.
+func TestHabitInResults(t *testing.T) {
+	f := newFixture(t)
+	f.task("u1", "h1", "Meditate", map[string]any{"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-10-12"}})
+	c := agent("u1")
+	out := f.mustCall(c, "get_task", map[string]any{"id": "h1"})
+	raw, _ := json.Marshal(out)
+	if !strings.Contains(string(raw), `"habit":true`) {
+		t.Fatalf("get_task without habit: %s", raw)
+	}
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "h1", "habit": false}}}); !isArgErr(err) {
+		t.Fatalf("update_tasks accepted habit: %v", err)
+	}
+	f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"h1"}})
+	occ := f.get("u1", opsync.OccurrenceID("h1", "2026-10-12"))
+	if occ == nil || isOpenEntity(occ) || string(occ["skipped"]) == "true" || string(occ["habit"]) == "true" {
+		t.Fatalf("occurrence = %v", occ)
+	}
+	if s := f.get("u1", "h1"); string(s["habit"]) != "true" || string(s["due"]) != `{"date":"2026-10-13"}` {
+		t.Fatalf("series = %v", s)
+	}
+}

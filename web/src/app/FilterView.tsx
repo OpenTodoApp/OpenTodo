@@ -12,6 +12,7 @@ import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
+import { habitStatsMap } from '../lib/habits'
 import { createView } from '../lib/views'
 import { ancestors, flattenTree } from '../lib/tree'
 import type { Label, Project, Task } from '../lib/types'
@@ -66,6 +67,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   // A syntax error keeps the last valid query (and so the previous results) on screen.
   const parsed = useMemo(() => tryParse(debounced), [debounced])
@@ -239,6 +241,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                       selected={t.id === selectedId}
                       progress={progress.get(t.id)}
                       blockedBy={blocked.get(t.id)}
+                      habit={habits.get(t.id)}
                       breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
                       onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
                       onOpen={() => {

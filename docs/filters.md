@@ -36,7 +36,7 @@ date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
-          | "someday" | "deferred" | "evening" | "blocked" | "unblocked"
+          | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "habit"
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -78,16 +78,17 @@ text     := word | '"' chars '"'
 | `evening` | tasks marked for This Evening |
 | `blocked` | tasks waiting for another task that is still open ([Blocked by](tasks-and-projects.md#wait-for-another-task)) |
 | `unblocked` | tasks not waiting for any open task |
+| `habit` | recurring tasks tracked as a [habit](recurring-and-reminders.md#track-a-habit); save `habit` as a view to list every habit with its streak |
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |
-| `completed` | completed tasks |
+| `completed` | completed tasks; the record a skipped habit day leaves is not one |
 | `open` | open (not completed) tasks |
 | `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
 
 ### Open, completed and deleted tasks
 
-A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it. `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match. Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it. `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
 
 ### Dates
 
@@ -230,4 +231,10 @@ blocked
 
 ```filter
 unblocked & today
+```
+
+### 15. Habits still to do today
+
+```filter
+habit & due <= today
 ```

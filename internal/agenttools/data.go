@@ -268,6 +268,9 @@ type taskOut struct {
 	// Encrypted is true when the title or description is end-to-end encrypted
 	// (OpenSpec `e2ee`) and therefore shown as a placeholder.
 	Encrypted bool `json:"encrypted,omitempty"`
+	// Habit is true for a recurring task tracked as a habit (OpenSpec change
+	// habits, design D7). Read-only: no write tool accepts it.
+	Habit bool `json:"habit,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -277,7 +280,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		ID: str(t, "id"), Untrusted: taskText{Title: str(t, "title"), Labels: []string{}},
 		ProjectID: strPtr(t, "project_id"), ParentID: strPtr(t, "parent_id"),
 		Priority: priority(t), LabelIDs: []string{},
-		Recurrence: strPtr(t, "recurrence"), Completed: !isOpen(t),
+		Recurrence: strPtr(t, "recurrence"), Habit: string(t["habit"]) == "true", Completed: !isOpen(t),
 		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
 	}
 	out.Encrypted = e2ee.IsCiphertext(rawStr(t, "title")) || e2ee.IsCiphertext(rawStr(t, "description"))

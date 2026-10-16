@@ -30,6 +30,12 @@ Repeating tasks show a ↻ symbol on the row. To stop repeating, select the **×
 
 Completing a repeating task records that occurrence and moves the task to its next date. **Skip** (<kbd>Shift</kbd>+<kbd>S</kbd>) moves on without recording a completion; **This occurrence only** (<kbd>Shift</kbd>+<kbd>O</kbd>) splits the current occurrence off as a normal task while the series moves on. See [Repeat rules](repeat-rules.md#complete-skip-or-split-off-one-occurrence).
 
+## Track a habit
+
+Turn on **Track as a habit** under **Repeat** (for rules like `every day`, not `after completion`). The row shows a flame chip with your streak; the task panel shows your best streak and a month grid of done, skipped and missed days, counted on your device.
+
+**Skip** keeps the chain without adding to it; a scheduled day that passes undone breaks it. A daily habit due Monday and completed Wednesday misses Tuesday and Wednesday. Save the query `habit` as a view to list your habits. See [Habits](recurrence.md#habits).
+
 ## Add a reminder
 
 Open a task and select **+ Add reminder** under **Reminders**: at the due time, a set time before or after it, relative to the deadline, or at a fixed date and time. A task can have several reminders, and relative ones move with the due date. See [Task reminders](task-reminders.md#add-a-reminder).
