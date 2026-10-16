@@ -6,15 +6,19 @@ Gives each user one live, cross-project view of what other members changed in sh
 ## Requirements
 
 ### Requirement: Cross-project feed
-The client SHALL offer a feed view listing activity events from every shared project the user is a member of, newest first, grouped by day, each entry naming the actor, the project and the change. It SHALL be rendered from the locally retained activity so it works offline, and SHALL load older history from the server when online and more exists.
+The client SHALL offer a view named "Updates" listing activity events from every shared project the user is a member of, newest first, grouped by day, each entry naming the actor, the project and the change. It SHALL be rendered from the locally retained activity so it works offline, and SHALL load older history from the server when online and more exists. Its address SHALL be `/updates`; `/activity` SHALL redirect to it.
 
 #### Scenario: Feed offline
-- **WHEN** the user opens the feed without a network
+- **WHEN** the user opens Updates without a network
 - **THEN** it lists the events retained locally across all shared projects, newest first, grouped by day
 
 #### Scenario: Older history
 - **WHEN** the user reaches the end of the local events while online
 - **THEN** older events are fetched from the server and appended without duplicates
+
+#### Scenario: Old address
+- **WHEN** the user opens a bookmark to `/activity`
+- **THEN** Updates opens and the address reads `/updates`
 
 ### Requirement: Unread tracking per project
 Each shared project SHALL carry a per-user "seen until" time stored as an operation in the user's personal scope, so it syncs between the user's devices and is invisible to other members. Events by other actors newer than that time SHALL count as unread; the user's own events never SHALL. Concurrent updates from two devices converge to the later time by last-writer-wins, which can only hide less, never more.
@@ -43,15 +47,19 @@ Opening the feed SHALL mark every listed project seen up to the newest displayed
 - **THEN** the seen time is today on both devices
 
 ### Requirement: Unread indicators in the sidebar
-The sidebar SHALL show an unread count next to each shared project and a total next to the feed entry, updated live from local storage without a reload, and the feed SHALL be reachable with a `g`-prefixed keyboard shortcut.
+The sidebar SHALL show an unread count next to each shared project and a total next to the Updates entry in the More group, updated live from local storage without a reload, and Updates SHALL be reachable with a `g`-prefixed keyboard shortcut. While the total is above zero the Updates entry SHALL also be visible as a badge on the More group's header when the group is collapsed.
 
 #### Scenario: Counts update on sync
 - **WHEN** a sync delivers three events by other members in two shared projects
-- **THEN** the per-project counts and the feed total update without user action
+- **THEN** the per-project counts and the Updates total update without user action
 
 #### Scenario: Keyboard navigation
-- **WHEN** the user presses the feed shortcut, then moves through entries with `j` and `k` and presses Enter
+- **WHEN** the user presses the Updates shortcut, then moves through entries with `j` and `k` and presses Enter
 - **THEN** the selected entry's task opens in its project
+
+#### Scenario: Collapsed More group
+- **WHEN** the More group is collapsed and there are unread updates
+- **THEN** the group header shows the unread badge
 
 ### Requirement: Live refresh
 While the app is open and connected, the feed and unread counts SHALL reflect another member's change within a few seconds of it reaching the server, using the server wake-up channel to trigger a sync. Without the channel they SHALL refresh on the regular sync triggers, so content is identical and only latency differs.

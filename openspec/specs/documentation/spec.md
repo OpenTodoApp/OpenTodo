@@ -58,7 +58,7 @@ Every release SHALL ship the documentation as a static website in its site bundl
 - **THEN** a guide changed on the main branch after that release shows its released text until the next release
 
 ### Requirement: Help inside the app
-The app SHALL include a Help view with the user guide of its own version, available offline and searchable, reachable from the sidebar, Settings, the `?` overlay and `g` then `?`. Links between guides SHALL stay in the app; admin and developer pages SHALL open on the website. The help content SHALL load only when Help is opened.
+The app SHALL include a Help view with the user guide of its own version, available offline and searchable, reachable from the sidebar footer, every page header, the cheat sheet and `g` then `?`. Each guide page SHALL be under 600 words with a screenshot first. Links between guides SHALL stay in the app; admin and developer pages SHALL open on the website. The help content SHALL load only when Help is opened.
 
 #### Scenario: Offline help
 - **WHEN** the installed app is offline and the user opens Help and searches for "board"
@@ -68,12 +68,23 @@ The app SHALL include a Help view with the user guide of its own version, availa
 - **WHEN** a server runs an older release than the website describes
 - **THEN** its in-app Help shows the guide for the version it runs
 
+### Requirement: Help landing page
+The Help view's landing SHALL open on the search field followed by task-shaped entries ("Add a task with a date", "Repeat a task", "Share a project", "Sync a calendar", "Import from another app", "Install the app", "Use the keyboard", "Run your own server"), with the full guide list below.
+
+#### Scenario: Task-shaped landing
+- **WHEN** the user opens Help
+- **THEN** focus is in the search field and the eight task entries are visible before any guide list
+
 ### Requirement: Contextual help
-Settings panels, the share dialog, the filter view, quick add and the import screen SHALL offer a Help link that opens the matching guide section beside the current screen (a sheet on phones) without closing it or discarding what the user entered.
+Every page header, the task panel menu, the share dialog, quick add (on its first three uses per device) and the import screen SHALL offer a Help action that opens the matching guide section beside the current screen (a sheet on phones) without closing it or discarding what the user entered.
 
 #### Scenario: Help while sharing
 - **WHEN** a user has typed an email in the share dialog and selects Help
 - **THEN** the sharing section opens beside the dialog, and closing it returns to the dialog with the email still there
+
+#### Scenario: Help from the board
+- **WHEN** the user activates Help in a project's page header while the board is shown
+- **THEN** the sections and boards guide opens in the panel slot and the board stays as it was
 
 ### Requirement: Accessible documentation
 The docs website and the in-app Help SHALL meet WCAG 2.2 AA: landmarks, one top heading and no skipped levels, skip link, visible focus, 4.5:1 contrast in light and dark, descriptive link text, header cells in tables, reduced motion respected, 200% zoom and 360 px width without horizontal scroll, and search results announced to screen readers. CI SHALL check this automatically.

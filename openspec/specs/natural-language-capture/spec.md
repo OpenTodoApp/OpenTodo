@@ -78,7 +78,7 @@ Date, time, recurrence and reminder vocabulary SHALL be bundled for English, Ger
 - **THEN** a relative reminder with offset −30 minutes is created in every case
 
 ### Requirement: Live preview chips
-While the user types, the client SHALL show one chip per recognised attribute (due, project, label, priority, estimate, recurrence, reminder) and the title as it will be saved. A recurrence chip SHALL show the canonical rule and, without a typed date, the first occurrence; a reminder chip SHALL show the offset or the moment in the user's formats, or that it needs a due date. The preview SHALL update on every keystroke and be announced to assistive technology without stealing focus.
+While the user types, the client SHALL show one chip per recognised attribute (due, project, label, priority, estimate, recurrence, reminder) and the title as it will be saved. The preview SHALL update on every keystroke and be announced without stealing focus. A link to the quick add guide SHALL appear beside the chips during the first three uses on a device and in the input's tooltip afterwards; no shortcut badge SHALL be printed unless shortcut hints are on.
 
 #### Scenario: Chips appear as tokens are typed
 - **WHEN** the user has typed `Buy milk tomorrow p2`
@@ -87,6 +87,10 @@ While the user types, the client SHALL show one chip per recognised attribute (d
 #### Scenario: Chips disappear when text changes
 - **WHEN** the user deletes `p2` from the line
 - **THEN** the priority chip disappears and the task would be created with priority 4
+
+#### Scenario: Guide link fades out
+- **WHEN** the user has added four tasks on this device
+- **THEN** the guide link is no longer shown beside the chips and is available from the input's tooltip and the Help action
 
 #### Scenario: Recurrence and reminder chips
 - **WHEN** today is Friday 2026-10-09 and the user has typed `Water plants every Monday remind me at 8`

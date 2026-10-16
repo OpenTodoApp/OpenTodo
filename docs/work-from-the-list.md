@@ -3,7 +3,7 @@ title: Work from the list
 summary: Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task.
 audience: user
 section: Guides
-specs: [task-management, manual-ordering]
+specs: [task-management, manual-ordering, task-list-presentation]
 screens: [quick-add#add-a-task]
 order: 15
 ---

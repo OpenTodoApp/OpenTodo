@@ -3,7 +3,7 @@ title: Interface guide
 summary: How a screen of the web app is put together: the page template, the three columns, the task panel, settings, rows and chips, copy, and the interface budget every change stays inside.
 audience: developer
 section: Internals
-specs: [design-system, web-app]
+specs: [design-system, web-app, app-shell, task-list-presentation, keyboard-shortcuts, first-run]
 screens: []
 order: 31
 ---

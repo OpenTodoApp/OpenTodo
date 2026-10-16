@@ -24,3 +24,16 @@ Every project SHALL offer a board view with one column per section ordered by se
 #### Scenario: More than three values
 - **WHEN** a card's task holds five non-empty values
 - **THEN** the card shows the first three in definition order and a "+2" badge whose accessible name lists the rest
+
+#### Scenario: Tall column
+- **WHEN** a column holds more cards than fit the screen height
+- **THEN** that column scrolls inside itself and the page header stays in place
+
+#### Scenario: Board on a phone
+- **WHEN** a project with three sections opens as a board on a 390 px screen
+- **THEN** the first column with open tasks fills most of the width, swiping snaps to the next column and the pager shows three dots
+
+#### Scenario: Card content
+- **WHEN** a task with a date, three labels, an estimate and two comments is shown as a card
+- **THEN** the card shows the title, the date, up to three chips and a footer with the comment count, and nothing else
+
