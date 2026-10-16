@@ -451,6 +451,8 @@ export interface AuthStatus {
   demo?: DemoInfo
   /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
   outgoingEmail?: { enabled: boolean }
+  /** A tenant of a hosted service (OpenSpec `multi-tenant-host`): the operator owns server settings; absent when self-hosted. */
+  hosted?: boolean
 }
 
 /** Outgoing email settings (owner only); the password is never returned. */
@@ -799,7 +801,8 @@ export interface WebhookInput {
 }
 
 /** 'reseeding': the server was restored from a backup and this device is re-sending its local state. */
-// 'limited': a demo sandbox used up its write budget (429 demo_limit); the queue is kept.
+// 'limited': a demo sandbox used up its write budget (429 demo_limit), or a hosted
+// server refused changes for one of its limits (multi-tenant-host); they are kept.
 export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted' | 'locked' | 'limited'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const

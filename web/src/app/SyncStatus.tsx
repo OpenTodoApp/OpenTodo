@@ -1,5 +1,6 @@
 import { Tooltip } from '../ui'
 import { requestSync, useSyncStatus } from '../lib/sync'
+import { useDemo } from '../lib/demo'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
@@ -8,6 +9,7 @@ export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
 export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   const dt = useDateTimeFormat()
   const s = useSyncStatus()
+  const demo = !!useDemo()
   const map = {
     idle: { dot: 'bg-success', text: s.pending > 0 ? `${s.pending} pending` : 'Synced' },
     syncing: { dot: 'bg-info animate-pulse', text: 'Syncing…' },
@@ -18,8 +20,11 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
     restricted: { dot: 'bg-warning', text: s.pending > 0 ? `Set up two-factor · ${s.pending} waiting` : 'Set up two-factor to sync' },
     // End-to-end encryption (OpenSpec e2ee): no key on this device, sync paused.
     locked: { dot: 'bg-warning', text: 'Locked' },
-    // Demo sandbox write budget used up (OpenSpec `demo-sandboxes`); changes wait.
-    limited: { dot: 'bg-warning', text: s.pending > 0 ? `Demo limit · ${s.pending} waiting` : 'Demo limit reached' },
+    // Demo sandbox write budget used up (OpenSpec `demo-sandboxes`), or a hosted
+    // server's limit (multi-tenant-host); changes wait on this device.
+    limited: demo
+      ? { dot: 'bg-warning', text: s.pending > 0 ? `Demo limit · ${s.pending} waiting` : 'Demo limit reached' }
+      : { dot: 'bg-warning', text: s.pending > 0 ? `Server limit · ${s.pending} waiting` : 'Server limit reached' },
   }[s.state]
   // Live state is secondary information: shown next to the existing text, and only
   // when it says something (offline and signed out already imply "not live").

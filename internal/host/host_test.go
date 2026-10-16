@@ -78,7 +78,9 @@ func TestColdStartAndIdleClose(t *testing.T) {
 	if code := c.login("alice@example.com"); code != http.StatusOK {
 		t.Fatalf("sign-in after a cold start: %d", code)
 	}
-	if d := time.Since(start); d > time.Second {
+	d := time.Since(start)
+	t.Logf("cold start and sign-in: %v", d)
+	if d > time.Second {
 		t.Fatalf("cold start took %v", d)
 	}
 	if !f.h.pool.isOpen("alice") {

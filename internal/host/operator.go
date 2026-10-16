@@ -148,7 +148,9 @@ func (h *Host) opCreate(w http.ResponseWriter, r *http.Request) {
 		release()
 	}
 	rec, _ = h.reg.Get(r.Context(), in.Name)
-	writeJSON(w, http.StatusCreated, map[string]any{"tenant": h.view(rec), "setupToken": rec.setupToken})
+	// The owner opens setupUrl once: the sign-in screen fills the token in.
+	writeJSON(w, http.StatusCreated, map[string]any{"tenant": h.view(rec), "setupToken": rec.setupToken,
+		"setupUrl": h.hc.TenantURL(rec.Name).String() + "/?setup=" + rec.setupToken})
 }
 
 // checkFree refuses a name in use (or in its grace period) and a leftover
