@@ -3,6 +3,7 @@
 // members, Ctrl/⌘+Enter submits, Esc cancels or leaves the field. The new-comment
 // composer keeps an unsent draft per task in this tab's session (never synced).
 import { forwardRef, type KeyboardEvent, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { Kbd } from '../shortcuts/Kbd'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken } from '../../lib/comments'
 import type { ProjectMember } from '../../lib/types'
 import { Button, IconButton } from '../../ui'
@@ -160,7 +161,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         id={id}
         ref={area}
         rows={2}
-        className="input min-h-16 resize-none text-sm leading-5"
+        className="ui-input min-h-16 resize-none text-body leading-5"
         placeholder={members.length ? 'Write a comment… (markdown, @ to mention)' : 'Write a comment… (markdown)'}
         aria-label={label}
         aria-describedby={`${id}-hint`}
@@ -202,7 +203,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
               className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-sunken' : ''}`}
               onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
-              {m.name || m.email} <span className="user-text text-xs text-faint">{m.email}</span>
+              {m.name || m.email} <span className="user-text text-meta text-faint">{m.email}</span>
             </li>
           ))}
         </ul>
@@ -219,7 +220,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
           </>
         )}
         {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
-        <span id={`${id}-hint`} className="ml-auto text-hint text-faint"><span className="kbd">{key}</span>+<span className="kbd">Enter</span> to send</span>
+        <span id={`${id}-hint`} className="ml-auto text-hint text-faint">Send with <Kbd k={`${key}+Enter`} /></span>
       </div>
     </div>
   )

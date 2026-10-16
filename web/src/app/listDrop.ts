@@ -49,3 +49,17 @@ export function zoneUnder(attr: string, id: string, y: number, allowInside: bool
   const r = el.getBoundingClientRect()
   return dropZone(y, r.top, r.height, allowInside)
 }
+
+/**
+ * Drag feedback (OpenSpec change ux-overhaul, task-list-presentation "Drag
+ * feedback"): the dragged row lifts with the popover elevation and a slight scale,
+ * an opacity change only under reduced motion; the drop position is a line with a
+ * dot at its start; a drop inside rings the row. Pure, so the classes are tested.
+ */
+export function dragFeedback(reducedMotion: boolean): { lift: string; line: string; inside: string } {
+  return {
+    lift: reducedMotion ? 'opacity-60' : 'scale-[1.01] shadow-2 opacity-90',
+    line: "pointer-events-none absolute inset-x-0 h-0.5 rounded-full bg-accent before:absolute before:-left-1 before:-top-[3px] before:h-2 before:w-2 before:rounded-full before:bg-accent before:content-['']",
+    inside: 'ring-2 ring-accent',
+  }
+}

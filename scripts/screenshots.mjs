@@ -85,8 +85,8 @@ async function api(ctx, method, path, body) {
 async function signIn(page, email) {
   await page.goto(base)
   await page.getByLabel('Email').fill(email); await page.getByLabel(/Password/).fill(PASSWORD)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByLabel('Add a task').waitFor({ timeout: 15000 })
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Add a task' }).waitFor({ timeout: 15000 })
 }
 
 
@@ -94,7 +94,7 @@ const ctx = await mk(); const page = await ctx.newPage()
 await page.goto(base)
 await page.getByLabel('Name').fill('Ada Lovelace'); await page.getByLabel('Email').fill('ada@example.com'); await page.getByLabel(/Password/).fill(PASSWORD)
 await page.getByRole('button', { name: 'Create owner account' }).click()
-await page.getByLabel('Add a task').waitFor()
+await page.getByRole('textbox', { name: 'Add a task' }).waitFor()
 const A = (m, p, b) => api(ctx, m, p, b)
 
 async function member(name, email) {
@@ -265,7 +265,7 @@ await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).wa
 await shot(page, 'today')
 
 // Natural-language quick add: chips under the input as you type
-const qa = page.getByLabel('Add a task')
+const qa = page.getByRole('textbox', { name: 'Add a task' })
 await qa.click(); await qa.pressSequentially('Call Sarah about the offsite next Wed at 3pm #Work @call p1 30m', { delay: 8 })
 await settle(page, 500); await shot(page, 'quick-add')
 await qa.fill(''); await page.keyboard.press('Escape')
@@ -321,7 +321,7 @@ await go(page, `/view/${dash.id}`); await settle(page, 600)
 await shot(page, 'dashboard')
 
 // Activity feed, notifications, trash
-await go(page, '/activity', () => page.getByRole('heading', { name: 'Activity' }).waitFor())
+await go(page, '/updates', () => page.getByRole('heading', { name: 'Updates' }).waitFor())
 await shot(page, 'feed')
 await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).waitFor())
 await page.getByRole('button', { name: /^Notifications/ }).click()
@@ -338,14 +338,15 @@ await shot(page, 'shortcuts')
 await page.keyboard.press('Escape')
 
 // In-app Help: the user guide of this version, searchable and offline
-await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { level: 1, name: 'Tasks and projects' }).waitFor())
+await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { level: 1, name: 'Tasks and projects' }).first().waitFor())
 await shot(page, 'help')
 
 // Settings: each section has its own page (settings-navigation)
-await go(page, '/settings/security', () => page.getByRole('heading', { name: 'Two-factor authentication', level: 2 }).first().waitFor())
+// Legacy section ids open their section at the moved rows (settings-navigation).
+await go(page, '/settings/security', () => page.getByRole('heading', { name: 'Two-factor authentication', level: 2 }).first().waitFor()).catch((e) => console.log('  2fa page:', e.message))
 await page.getByRole('button', { name: 'Set up two-factor authentication' }).click().catch((e) => console.log('  2fa:', e.message))
 await settle(page, 800)
-await go(page, '/settings/preferences', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor())
+await go(page, '/settings/preferences', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor()).catch((e) => console.log('  keyboard page:', e.message))
 await page.getByLabel(/Vim keybindings/).check().catch((e) => console.log('  vim:', e.message))
 for (const [section, heading, name] of [
   ['security', 'Two-factor authentication', 'settings-security'], ['encryption', 'End-to-end encryption', 'settings-encryption'],

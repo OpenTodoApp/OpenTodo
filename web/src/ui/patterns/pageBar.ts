@@ -5,6 +5,8 @@ import { type ReactNode, useSyncExternalStore } from 'react'
 
 export interface PageBar {
   title: ReactNode
+  /** A line under the title on phones (the board's current column). */
+  subtitle?: ReactNode
   actions?: ReactNode
   overflow?: ReactNode
   /** A complete menu element in place of the default overflow (the project menu). */

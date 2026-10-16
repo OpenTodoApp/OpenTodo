@@ -402,7 +402,7 @@ export function describeTurnError(err: unknown): string {
 
 export function describeStreamError(code: string, message: string): string {
   switch (code) {
-    case 'provider_auth': return 'The model provider rejected the API key. The server owner can check it in Settings → AI → Assistant.'
+    case 'provider_auth': return 'The model provider rejected the API key. The server owner can check it in Settings → Integrations → Assistant.'
     case 'provider_rate_limited': return 'The model provider is rate limiting requests. Try again in a moment.'
     case 'timeout': return 'The answer took too long and was stopped.'
   }

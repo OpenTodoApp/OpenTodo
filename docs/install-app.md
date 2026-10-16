@@ -10,31 +10,21 @@ card: mobile-today
 ---
 # Installing the app
 
+<picture><source srcset="images/mobile-today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/mobile-today-light.webp" alt="OpenTodo on a phone, showing the Today list full screen."></picture>
+
 OpenTodo is a web app you can install. Once installed it has its own icon, opens in its own window without browser bars, starts without a connection, and on most platforms can show reminders while it's closed. There is no app store involved: you install it from your server's address, and updates arrive by themselves.
 
-<picture><source srcset="images/mobile-today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/mobile-today-light.webp" alt="OpenTodo on a phone, showing the Today list full screen."></picture>
+On a phone the app is built for one hand: the bar at the bottom switches between Today, Inbox, Upcoming, Search and More (the sidebar), the **+** button adds a task from anywhere, a task opens as a full-screen page you close with Back or by swiping its header down, a project's board shows one column at a time (swipe sideways, or tap a dot), and the Week calendar is a day-by-day list.
 
 Before you start, open your OpenTodo address in the browser and sign in once. Installing needs a secure address (one starting with `https://`); if your browser offers no install option at all, ask whoever runs your server to set that up.
 
 ## iPhone and iPad
 
-1. Open your OpenTodo address in **Safari**.
-2. Tap the **Share** button (the square with an arrow pointing up).
-3. Scroll down and tap **Add to Home Screen**, then **Add**.
-
-OpenTodo now has an icon on your home screen. Open it from there from now on. On iOS 16.4 and later, push notifications for reminders work only in the installed app, not in a Safari tab; turn them on in **Settings → Notifications** inside the app. See [Notifications](notifications.md).
-
-Recent iOS versions also offer **Add to Home Screen** from the share menu of other browsers. If you don't see it, use Safari.
+In **Safari**, tap **Share**, then **Add to Home Screen** and **Add**. Open OpenTodo from the home screen from now on: on iOS 16.4 and later, push notifications for reminders work only in the installed app. The steps are in [Install on your phone](install-phone.md#iphone-and-ipad).
 
 ## Android
 
-1. Open your OpenTodo address in **Chrome** (Edge and Samsung Internet work the same way).
-2. Open the browser menu (⋮).
-3. Tap **Install app**. On some versions it's called **Add to Home screen**.
-
-Chrome sometimes shows an install banner at the bottom of the screen on its own; tapping it does the same thing.
-
-After installing, OpenTodo also appears in Android's share menu, so you can send a link or some text from another app straight into a new task. See [Capturing pages](capture.md).
+In **Chrome** (Edge and Samsung Internet work the same way), open the browser menu and tap **Install app** or **Add to Home screen**. Afterwards OpenTodo also appears in Android's share menu. The steps are in [Install on your phone](install-phone.md#android).
 
 ## Windows, macOS, Linux and ChromeOS
 

@@ -17,7 +17,7 @@ import type { Passkey } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 
-// Settings → Security → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
+// Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
 // it fetched earlier in this session, read-only.
 
@@ -181,7 +181,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
   )
 
   return (
-    <SettingsSection title="Passkeys" helpId="settings/security" headingId="security-heading" testId="security-panel"
+    <SettingsSection title="Passkeys" headingId="security-heading" testId="security-panel"
       description="Sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working; add a passkey on a second device so losing one is never a problem.">
       {p.domain && p.pageHost && !rpIdMatches(p.domain, p.pageHost) && (
         <Notice tone="danger">

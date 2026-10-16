@@ -184,3 +184,32 @@ describe('calendar events', () => {
     await r.unmount()
   })
 })
+
+describe('Week on a phone (ux-overhaul, time-blocking "Week on a phone")', () => {
+  const original = window.matchMedia
+  afterEach(() => { window.matchMedia = original })
+  it('lists the days vertically with their tasks and renders no seven-column grid below 640 px', async () => {
+    window.matchMedia = ((q: string) => ({
+      matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+    await createTask({ title: 'Timed one', due: { date: '2026-10-15', time: '09:30' }, estimate_minutes: 30 })
+    await createTask({ title: 'Loose one', due: { date: '2026-10-15' } })
+    const r = await render(<CalendarView mode="week" />)
+    await waitFor(() => !!r.container.querySelector('[data-week-agenda]') && r.container.querySelectorAll('[data-agenda-task]').length === 2)
+    expect(r.container.querySelectorAll('[data-agenda-day]')).toHaveLength(7)
+    expect(r.container.querySelector('[data-drop-day]')).toBeNull()
+    const rows = [...r.container.querySelectorAll('[data-agenda-day="2026-10-15"] [data-agenda-task]')].map((b) => b.textContent)
+    expect(rows[0]).toContain('all day')
+    expect(rows[0]).toContain('Loose one')
+    expect(rows[1]).toContain('Timed one')
+    expect(rows[1]).toMatch(/9:30|09:30/)
+    // Tapping selects, Enter opens the task in the panel.
+    const timed = r.container.querySelector<HTMLButtonElement>('[data-agenda-day="2026-10-15"] [data-agenda-task]:last-child')!
+    await click(timed)
+    expect(timed.className).toContain('ring-accent')
+    await key(timed, 'Enter')
+    await waitFor(() => panelOccupant()?.kind === 'task')
+    await r.unmount()
+  })
+})

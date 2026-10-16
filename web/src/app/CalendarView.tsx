@@ -3,6 +3,7 @@
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
 import { Button, hueFor, Icon, MenuGroup, MenuItem, MenuSeparator, PageBody, PageHeader } from '../ui'
+import { Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -24,8 +25,10 @@ import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { CalendarRangeSwitch } from './CalendarRange'
-import { estimateFocus, isGPending, placement as placementSignal } from './signals'
+import { estimateFocus, placement as placementSignal } from './signals'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Menu } from './overlay/Menu'
+import { useWide } from './overlay'
 import { PanelFrame } from './PanelFrame'
 import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
 import { rememberCalendarMode } from '../lib/calendarMode'
@@ -149,6 +152,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const [placing, setPlacing] = useState<Placement | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
+  // Below 640 px the Week is a vertical agenda grouped by day (time-blocking "Week on a phone").
+  const wide = useWide()
   // The Calendar destination remembers Day or Week on this device (ux-overhaul).
   useEffect(() => rememberCalendarMode(mode), [mode])
 
@@ -222,124 +227,71 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     if (!dates.includes(d)) goTo(d)
   }, [dates, goTo])
 
-  // Keyboard (design D4): selection, moves, estimate, placement mode.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isGPending()) return
-      const target = e.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
-        if (e.key === 'Escape') target.blur()
-        return
-      }
-      if (placing) {
-        const p = placing
-        let next: Placement | null = null
-        switch (e.key) {
-          case 'ArrowUp': next = { ...p, start: clamp(p.start - SLOT_MINUTES, 0, LAST_SLOT) }; break
-          case 'ArrowDown': next = { ...p, start: clamp(p.start + SLOT_MINUTES, 0, LAST_SLOT) }; break
-          case 'ArrowLeft': next = { ...p, date: addDaysISO(p.date, -1) }; break
-          case 'ArrowRight': next = { ...p, date: addDaysISO(p.date, 1) }; break
-          case 'Enter':
-            e.preventDefault()
-            commit(p.taskId, { type: 'slot', date: p.date, start: p.start })
-            setPlacing(null)
-            return
-          case 'Escape':
-            e.preventDefault()
-            setPlacing(null)
-            return
-          default:
-            return
-        }
-        e.preventDefault()
-        setPlacing(next)
-        follow(next.date)
-        return
-      }
-      if (e.key === 'Escape') {
-        if (expanded) setExpanded(null)
-        else if (openId) setOpenId(null)
-        else setSelectedId(null)
-        return
-      }
-      if (document.querySelector('[role="dialog"]')) return
-      const idx = selectedId ? order.indexOf(selectedId) : -1
-      const task = selectedId ? taskMap.get(selectedId) : undefined
-      const block = task ? days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
-      switch (e.key) {
-        case 'j':
-          e.preventDefault()
-          setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)
-          return
-        case 'k':
-          e.preventDefault()
-          setSelectedId(order[Math.max(0, idx - 1)] ?? null)
-          return
-        case '[':
-          goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))
-          return
-        case ']':
-          goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))
-          return
-        case 't':
-          goTo(today)
-          return
-      }
-      if (!task || !task.due) {
-        // Nothing selected: arrows pick the first item.
-        if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key) && order.length && !task) {
-          e.preventDefault()
-          setSelectedId(order[0])
-        }
-        return
-      }
-      const due = task.due
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'ArrowDown': {
-          e.preventDefault()
-          const dir = e.key === 'ArrowUp' ? -1 : 1
-          if (e.shiftKey) {
-            // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
-            edit(task.id, (t) => ({ estimate_minutes: stepEstimate(t.estimate_minutes, dir * SLOT_MINUTES) }))
-          } else {
-            edit(task.id, (t) => t.due ? { due: nudgeDue(t.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(t, t.due.date, today, nowMinutes, prefs) }) } : null)
-          }
-          return
-        }
-        case 'ArrowLeft':
-        case 'ArrowRight': {
-          e.preventDefault()
-          const days = e.key === 'ArrowLeft' ? -1 : 1
-          edit(task.id, (t) => (t.due ? { due: nudgeDue(t.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
-          return
-        }
-        case 'Enter':
-          e.preventDefault()
-          setOpenId(task.id)
-          return
-        case 'u':
-          // Keyboard twin of dropping on the lane: keep the date, clear the time.
-          if (block) edit(task.id, (t) => (t.due ? { due: { date: t.due.date } } : null))
-          return
-        case 'p':
-          e.preventDefault()
-          startPlacing(task, due.date)
-          return
-        case 'e':
-          e.preventDefault()
-          estimateFocus.request(task.id)
-          setOpenId(task.id)
-          return
-        case 'c':
-          void completeWithUndo(task.id, true)
-          setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
-          return
-      }
+  // Keyboard (design D4; keyboard-shortcuts "One shortcut registry with scopes"):
+  // the `calendar` scope. In placement mode the arrows, Enter and Esc drive the
+  // ghost and every other key waits; otherwise selection, moves, estimate.
+  const idx = selectedId ? order.indexOf(selectedId) : -1
+  const task = selectedId ? taskMap.get(selectedId) : undefined
+  const block = task ? days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
+  const ghost = (next: Placement) => {
+    setPlacing(next)
+    follow(next.date)
+  }
+  /** Arrows with no selection pick the first item; with a dated task they run `move`. */
+  const arrows = (move: (t: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
+    if (placing) return false
+    if (!task || !task.due) {
+      if (!task && order.length) { setSelectedId(order[0]); return }
+      return false
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [placing, expanded, openId, selectedId, order, taskMap, days, anchor, mode, today, nowMinutes, prefs, commit, edit, follow, goTo, startPlacing])
+    move(task, task.due, e)
+  }
+  const unlessPlacing = (fn: () => boolean | void) => () => (placing ? false : fn())
+  useShortcutScope('calendar', {
+    'calendar.escape': (e) => {
+      const target = e.target as HTMLElement | null
+      if (isTypingTarget(target)) { target!.blur(); return }
+      if (placing) setPlacing(null)
+      else if (expanded) setExpanded(null)
+      else if (openId) setOpenId(null)
+      else setSelectedId(null)
+    },
+    'calendar.open': (e) => {
+      if (placing) { commit(placing.taskId, { type: 'slot', date: placing.date, start: placing.start }); setPlacing(null); return }
+      if (!task || isActivationTarget(e.target)) return false
+      setOpenId(task.id)
+    },
+    'calendar.nudge': (e) => {
+      const dir = e.key === 'ArrowUp' ? -1 : 1
+      if (placing) { ghost({ ...placing, start: clamp(placing.start + dir * SLOT_MINUTES, 0, LAST_SLOT) }); return }
+      return arrows((t) => {
+        edit(t.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, nowMinutes, prefs) }) } : null)
+      })(e)
+    },
+    'calendar.shift-day': (e) => {
+      const days = e.key === 'ArrowLeft' ? -1 : 1
+      if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
+      return arrows((t) => {
+        edit(t.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
+      })(e)
+    },
+    // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
+    'calendar.estimate': arrows((t, _due, e) => edit(t.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
+    'calendar.next': unlessPlacing(() => setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)),
+    'calendar.prev': unlessPlacing(() => setSelectedId(order[Math.max(0, idx - 1)] ?? null)),
+    'calendar.range-prev': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))),
+    'calendar.range-next': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))),
+    'calendar.today': unlessPlacing(() => goTo(today)),
+    // Keyboard twin of dropping on the lane: keep the date, clear the time.
+    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (t) => (t.due ? { due: { date: t.due.date } } : null)) }),
+    'calendar.place': unlessPlacing(() => { if (!task?.due) return false; startPlacing(task, task.due.date) }),
+    'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); setOpenId(task.id) }),
+    'calendar.complete': unlessPlacing(() => {
+      if (!task?.due) return false
+      void completeWithUndo(task.id, true)
+      setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
+    }),
+  })
 
   // Keep the selection (or the placement ghost) on screen.
   useEffect(() => {
@@ -401,10 +353,14 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? 'Week calendar' : 'Day calendar'}>
+          {mode === 'week' && !wide ? (
+            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
+              onSelect={(id) => setSelectedId(id)} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} />
+          ) : (
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
-              <div className="w-12 shrink-0 pt-1 text-right text-[10px] text-faint" aria-hidden>
+              <div className="w-12 shrink-0 pt-1 text-right text-hint text-faint" aria-hidden>
                 <span className="pr-1">all day</span>
               </div>
               {days.map((d) => (
@@ -460,11 +416,12 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
 
       {drag && dragTask && (
-        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-accent px-2 py-1 text-xs text-on-accent shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
+        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || 'Untitled'}
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
           {drag.target?.type === 'lane' && ' · unscheduled'}
@@ -475,11 +432,67 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   )
 }
 
+/**
+ * The Week below 640 px: the days listed vertically, each with its capacity, its
+ * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
+ * same selection, keyboard order and panel as the grid.
+ */
+function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId, onSelect, onOpen }: {
+  days: DayData[]
+  today: string
+  prefs: GridPrefs
+  tasks: Task[]
+  taskMap: Map<string, Task>
+  projectMap: Map<string, Project>
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onOpen: (id: string) => void
+}) {
+  const row = (t: Task, time: string | null) => (
+    <li key={t.id}>
+      <button type="button" data-cal-id={t.id} data-agenda-task={t.id} onClick={() => onSelect(t.id)} onDoubleClick={() => onOpen(t.id)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(t.id) } }}
+        className={`flex min-h-11 w-full items-center gap-2 rounded-control px-2 py-1 text-left text-body ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+        data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}>
+        <span className="w-14 shrink-0 font-mono text-meta text-muted">{time ?? 'all day'}</span>
+        <span className="min-w-0 flex-1 truncate">{t.title || 'Untitled'}</span>
+        {t.estimate_minutes ? <span className="shrink-0 font-mono text-hint text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+      </button>
+    </li>
+  )
+  return (
+    <div className="space-y-3 px-1 py-2" data-week-agenda>
+      {days.map((d) => {
+        const [y, m, dd] = d.date.split('-').map(Number)
+        const name = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(new Date(y, m - 1, dd))
+        const load = dayLoad(tasks, d.date, prefs.dayLength)
+        const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
+        return (
+          <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
+            <div className="flex items-baseline justify-between gap-2 border-b border-default px-2 pb-1">
+              <h2 id={`agenda-${d.date}`} className={`text-body font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
+              <span className={`font-mono text-hint ${load.over ? 'text-danger' : 'text-muted'}`} data-capacity data-over={load.over || undefined}>{formatLoad(load, prefs.dayLength)}</span>
+            </div>
+            {d.lane.length === 0 && blocks.length === 0
+              ? <p className="px-2 py-2 text-meta text-faint">Nothing planned</p>
+              : (
+                <ul className="mt-1 space-y-0.5">
+                  {d.lane.map((t) => row(t, null))}
+                  {blocks.map(({ b, t }) => row(t, formatTime(b.start)))}
+                </ul>
+              )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
 function HourGutter() {
   return (
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
-        <div key={h} className="absolute right-1 -translate-y-1/2 text-[10px] text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
+        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
           {h === 0 ? '' : formatHour(h)}
         </div>
       ))}
@@ -509,20 +522,22 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
     <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
-          <span className={`truncate text-xs font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`}>
+          <span className={`truncate text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`}>
             {weekdayName} {d}
           </span>
         ) : <span />}
-        <span
-          data-capacity
-          data-over={load.over || undefined}
-          title={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}
-          className={`whitespace-nowrap rounded px-1 font-mono text-[11px] ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
-        >
-          {formatLoad(load, prefs.dayLength)}
-          {load.over && <span className="sr-only"> over capacity</span>}
-          {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
-        </span>
+        <Tooltip label={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}>
+          <span
+            data-capacity
+            data-over={load.over || undefined}
+            tabIndex={0}
+            className={`whitespace-nowrap rounded-control px-1 font-mono text-hint ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
+          >
+            {formatLoad(load, prefs.dayLength)}
+            {load.over && <span className="sr-only"> over capacity</span>}
+            {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
+          </span>
+        </Tooltip>
       </div>
       {day.allDay.length > 0 && (
         <ul className="mt-1 space-y-0.5" aria-label={`All-day events on ${day.date}`} data-all-day={day.date}>
@@ -532,9 +547,9 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
       <div
         data-drop-lane={day.date}
         aria-label={`Unscheduled on ${day.date}`}
-        className={`mt-1 min-h-8 space-y-0.5 rounded border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
+        className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
-        {day.lane.length === 0 && <span className="block px-1 py-1 text-[10px] text-faint">Unscheduled</span>}
+        {day.lane.length === 0 && <span className="block px-1 py-1 text-hint text-faint">Unscheduled</span>}
         {day.lane.map((t) => (
           <button
             key={t.id}
@@ -544,11 +559,11 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
             onPointerDown={(e) => onPointerDown(e, t.id)}
             onClick={() => onSelect(t.id)}
             onDoubleClick={() => onOpen(t.id)}
-            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-xs ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded-control px-1.5 py-0.5 text-left text-meta ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
             data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}
           >
             <span className="truncate">{t.title || 'Untitled'}</span>
-            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-hint text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
           </button>
         ))}
       </div>
@@ -631,7 +646,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
             }}
             onClick={() => onSelect(b.id)}
             onDoubleClick={() => onOpen(b.id)}
-            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-md border px-1.5 shadow-sm ${height < 20 ? 'py-0 text-[10px] leading-[10px]' : 'py-0.5 text-xs'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${draggingId === b.id ? 'opacity-40' : ''} border-hue-solid bg-surface`}
+            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-control border px-1.5 shadow-1 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${draggingId === b.id ? 'opacity-40' : ''} border-hue-solid bg-surface`}
             style={{
               top, height,
               left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
@@ -641,10 +656,10 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
           >
             <div className="flex items-start gap-1">
               <span className="min-w-0 flex-1 truncate font-medium">{t.title || 'Untitled'}</span>
-              {b.overlap && <span data-overlap-marker title="Overlaps another item" className="shrink-0 text-warning" aria-hidden>⧉</span>}
+              {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
-              <div className="truncate text-[10px] text-muted">
+              <div className="truncate text-hint text-muted">
                 {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
                 {block.estimated && <span className="ml-1 font-mono">{formatMinutes(t.estimate_minutes!)}</span>}
               </div>
@@ -663,24 +678,25 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
         const open = expanded === key
         return (
           <div key={key} className="absolute z-20" style={{ top: o.start * PX_PER_MIN, left: `calc(${(o.lane / o.lanes) * 100}% + 2px)`, width: `calc(${100 / o.lanes}% - 4px)` }}>
-            <button
-              type="button"
-              data-overflow={o.ids.length}
-              className="w-full rounded-md border border-input bg-canvas px-1 dark:bg-raised py-0.5 text-xs font-medium text-muted hover:bg-sunken"
-              onClick={() => setExpanded(open ? null : key)}
-              aria-expanded={open}
-              title={`${o.ids.length} more overlapping items`}
-            >
-              +{o.ids.length}
-            </button>
+            <Tooltip label={`${o.ids.length} more overlapping items`}>
+              <button
+                type="button"
+                data-overflow={o.ids.length}
+                className="w-full rounded-control border border-input bg-canvas px-1 dark:bg-raised py-0.5 text-meta font-medium text-muted hover:bg-sunken"
+                onClick={() => setExpanded(open ? null : key)}
+                aria-expanded={open}
+              >
+                +{o.ids.length}
+              </button>
+            </Tooltip>
             {open && (
-              <ul className="mt-1 w-48 space-y-0.5 rounded-md border border-default bg-surface p-1 shadow-lg">
+              <ul className="mt-1 w-48 space-y-0.5 rounded-control border border-default bg-surface p-1 shadow-2">
                 {o.ids.map((id) => {
                   const ev = day.events.get(id)
                   if (ev) {
                     return (
-                      <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-xs text-muted">
-                        <span className="font-mono text-[10px]">{formatTime(ev.start)}</span>
+                      <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-meta text-muted">
+                        <span className="font-mono text-hint">{formatTime(ev.start)}</span>
                         <span className="truncate">{ev.event.summary || 'Busy'}</span>
                       </li>
                     )
@@ -695,9 +711,9 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
                         onPointerDown={(e) => onDragStart(e, { taskId: id, kind: 'move' })}
                         onClick={() => onSelect(id)}
                         onDoubleClick={() => onOpen(id)}
-                        className={`flex w-full gap-1 truncate rounded px-1 py-0.5 text-left text-xs ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+                        className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
                       >
-                        <span className="font-mono text-[10px] text-muted">{blk ? formatTime(blk.start) : ''}</span>
+                        <span className="font-mono text-hint text-muted">{blk ? formatTime(blk.start) : ''}</span>
                         <span className="truncate">{t?.title || 'Untitled'}</span>
                       </button>
                     </li>
@@ -713,10 +729,10 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
         <div
           data-cal-id={preview.id}
           data-ghost
-          className="pointer-events-none absolute inset-x-0.5 z-30 rounded-md border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-xs text-strong"
+          className="pointer-events-none absolute inset-x-0.5 z-30 rounded-control border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-meta text-strong"
           style={{ top: preview.start * PX_PER_MIN, height: Math.max(SLOT_MINUTES, Math.min(preview.length, DAY_MINUTES - preview.start)) * PX_PER_MIN }}
         >
-          <span className="font-mono text-[10px]">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || 'Untitled'}</span>
+          <span className="font-mono text-hint">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || 'Untitled'}</span>
         </div>
       )}
 

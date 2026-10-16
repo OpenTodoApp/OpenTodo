@@ -44,4 +44,5 @@
 ## Workflow follow-up
 
 - Add a CHANGELOG.md entry under Unreleased ("Project notes": the pinned note, who can edit it, API fields, encryption).
+- After archiving, set `specs: [project-notes]` on `docs/project-notes.md` (the docs check accepts live spec names only) and run `npm run docs:check`.
 - Archive with `/opsx:archive`, then confirm `npx @fission-ai/openspec validate --all --strict` passes.

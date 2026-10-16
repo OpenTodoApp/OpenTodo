@@ -3,16 +3,18 @@
 // explains both modes, fixes the due to the viewer's zone or releases it, and fixes
 // it to any IANA zone with a preview of how it reads in the viewer's zone. Every
 // change is one ordinary due edit through updateTask; `z` toggles as before.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
 import { updateTask } from '../../lib/ops'
 import type { Due, Task } from '../../lib/types'
 import { Button } from '../../ui'
+import { Tooltip } from '../../ui'
 import { ComboboxPanel } from '../../ui'
 import { Icon } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Popover } from '../overlay/Popover'
-import { isTyping, useViewerZone } from '../useViews'
+import { useViewerZone } from '../useViews'
+import { useShortcutScope } from '../shortcuts'
 
 /** `z` with the panel open (not typing) toggles the zone; listed in the shortcut help. */
 export const ZONE_TOGGLE_KEY = 'z'
@@ -87,18 +89,8 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
     write(zoned ? releaseDue(due, zone) : fixDueToZone(due, zone))
   }
 
-  // The `z` shortcut, moved here unchanged from DueField (absolute-datetimes).
-  useEffect(() => {
-    if (readOnly) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== ZONE_TOGGLE_KEY || e.metaKey || e.ctrlKey || e.altKey || isTyping(e)) return
-      if (document.querySelector('[role="dialog"]')) return
-      e.preventDefault()
-      toggleZone()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
+  // The `z` shortcut (absolute-datetimes), now the `panel.zone` registry entry.
+  useShortcutScope('panel', { 'panel.zone': () => { if (readOnly) return false; toggleZone() } })
 
   const items = useMemo<ZoneItem[]>(() => {
     if (!open) return []
@@ -128,21 +120,22 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
 
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <button
-        ref={chip}
-        type="button"
-        className="ui-btn ui-btn--secondary ui-btn--sm"
-        aria-label={`Time zone: ${text}`}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-keyshortcuts={readOnly ? undefined : ZONE_TOGGLE_KEY}
-        aria-describedby={canFix ? undefined : `zone-reason-${task.id}`}
-        disabled={readOnly || !canFix}
-        title={canFix ? `Time zone (${ZONE_TOGGLE_KEY} toggles)` : reason}
-        onClick={() => setOpen(true)}
-      >
-        <Icon name="globe" size="sm" />{text}
-      </button>
+      <Tooltip label={canFix ? 'Time zone' : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
+        <button
+          ref={chip}
+          type="button"
+          className="ui-btn ui-btn--secondary ui-btn--sm"
+          aria-label={`Time zone: ${text}`}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-keyshortcuts={readOnly ? undefined : ZONE_TOGGLE_KEY}
+          aria-describedby={canFix ? undefined : `zone-reason-${task.id}`}
+          disabled={readOnly || !canFix}
+          onClick={() => setOpen(true)}
+        >
+          <Icon name="globe" size="sm" />{text}
+        </button>
+      </Tooltip>
       {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}
       <Popover open={open} onClose={close} anchor={chip} label="Time zone" align="start" width="sm:w-80" className="space-y-3 p-3">
         <div className="space-y-2 text-meta">

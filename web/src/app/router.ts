@@ -21,7 +21,7 @@ export type Route =
   | { view: 'filter'; q?: string }
   | { view: 'views' }
   | { view: 'view'; id: string }
-  | { view: 'settings'; section?: SettingsSectionId }
+  | { view: 'settings'; section?: SettingsSectionId; anchor?: string }
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
@@ -32,17 +32,31 @@ export type Route =
   | { view: 'ask' }
   | { view: 'help'; page?: string; q?: string }
 
-/** Settings sections, each at /settings/<id> (settings-navigation); order is the overview's. */
+/** Settings sections, each at /settings/<id> (settings-navigation); nine, in list order. */
 export const SETTINGS_SECTION_IDS = [
-  'account', 'security', 'encryption', 'activity',
-  'preferences', 'notifications', 'capture', 'projects',
-  'data', 'integrations', 'ai',
-  'admin', 'backups', 'access',
+  'account', 'appearance',
+  'general', 'notifications', 'capture',
+  'integrations', 'data',
+  'people', 'server',
 ] as const
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number]
 
-/** Section ids of an earlier layout, opened as their new section (settings-redesign D2). */
-export const LEGACY_SETTINGS_IDS: Readonly<Record<string, SettingsSectionId>> = { general: 'preferences' }
+/**
+ * Section ids of earlier layouts, opened as the section that now holds their
+ * content, at the anchor of that content (settings-navigation "Legacy settings
+ * addresses"). The address is replaced in place.
+ */
+export const LEGACY_SETTINGS_IDS: Readonly<Record<string, { section: SettingsSectionId; anchor?: string }>> = {
+  security: { section: 'account', anchor: 'security' },
+  encryption: { section: 'account', anchor: 'encryption' },
+  activity: { section: 'account', anchor: 'sessions' },
+  preferences: { section: 'general' },
+  projects: { section: 'data', anchor: 'projects' },
+  ai: { section: 'integrations', anchor: 'ai' },
+  admin: { section: 'people' },
+  access: { section: 'people', anchor: 'access-policies' },
+  backups: { section: 'server' },
+}
 
 function isSettingsSection(s: string | undefined): s is SettingsSectionId {
   return (SETTINGS_SECTION_IDS as readonly string[]).includes(s ?? '')
@@ -78,7 +92,7 @@ export function parseRoute(pathname: string): Route {
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
       if (parts[1] === 'import') return { view: 'import' }
-      if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) return { view: 'settings', section: LEGACY_SETTINGS_IDS[parts[1]] }
+      if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) { const l = LEGACY_SETTINGS_IDS[parts[1]]; return { view: 'settings', section: l.section, ...(l.anchor ? { anchor: l.anchor } : {}) } }
       return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }

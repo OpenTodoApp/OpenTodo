@@ -9,6 +9,7 @@ import { Button, PageBody, PageHeader } from '../../ui'
 import { Card } from '../../ui'
 import { AskComposer, type AskRequest } from '../../ui'
 import { Notice } from '../../ui'
+import { requestSettingsFocus } from '../settingsIndex'
 import { navigate } from '../router'
 import { EncryptionOffHint } from './AssistantPanel'
 
@@ -55,7 +56,7 @@ export function AskScreen({ role }: { role?: AccountRole }) {
       {mode === 'composer' && (
         <>
           <AskComposer skills={skills} onAsk={ask} examples={false} autoFocus />
-          <h2 className="mb-2 mt-6 text-sm font-semibold">Skills</h2>
+          <h2 className="mb-2 mt-6 text-body font-semibold">Skills</h2>
           <ul className="grid gap-3 sm:grid-cols-2" aria-label="Skills">
             {skills.map((s) => (
               <li key={s.id}>
@@ -76,7 +77,7 @@ export function AskScreen({ role }: { role?: AccountRole }) {
           <span data-ask-unavailable>
             {status?.reason === 'demo' ? 'The assistant is not available on the demo instance.' : 'The assistant is not turned on on this server.'}
             {mode === 'owner-hint' && (
-              <> <a className="underline" href="/settings/ai" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'ai' }) }}>Set it up in the assistant settings.</a></>
+              <> <a className="underline" href="/settings/integrations" onClick={(e) => { e.preventDefault(); requestSettingsFocus('ai'); navigate({ view: 'settings', section: 'integrations' }) }}>Set it up in the assistant settings.</a></>
             )}
           </span>
         </Notice>

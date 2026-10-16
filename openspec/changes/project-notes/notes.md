@@ -28,3 +28,11 @@ Setup: `./bin/opentodo` on 127.0.0.1:18080, an owner and an editor ("Sam", invit
 - Both opened the editor at the same time and typed at the end ("From owner", "From Sam"). After both closed it, `GET /api/v1/projects/{id}` held both lines in `description`.
 - On the board layout the note stayed above the columns.
 - Sam wrote `description` over `PATCH /api/v1/projects/{id}`. The owner's device showed the new text, and opening the editor folded it, so the server then held a `notes_doc` paired with the new Markdown.
+
+## Merge with main (2026-10-16, after ux-overhaul, month-and-timeline-views, quick-add-recurrence)
+
+- Shift+P is the registry entry `project.note` (scope `view`, views `['project']`), handled by `ProjectNote` through `useShortcutScope`; the component has no `keydown` listener of its own. The "Add a note" line prints the key only with **Show shortcut hints** on (`<Kbd only>`).
+- The note renders below the quick add and above the sub-projects group, the sections, the board and the timeline. The interface budget test counts the empty note's one quiet line for an editor; a project stays within its allowance.
+- `NotesEditor` keeps main's quiet-at-rest, bordered-while-focused behaviour for the task panel and the `NoteTarget` generalisation for projects.
+- The user guide section moved from the hub (`docs/tasks-and-projects.md`, now a one-sentence pointer) to its own page `docs/project-notes.md` (Guides, order 18), listed in `docs/README.md`; the roles table lives on `docs/roles-and-assignments.md`, and `docs/sharing.md` names the note in its one-line role summary. The page reuses the project-list screenshot until a note screenshot is captured.
+- The `end-to-end-encryption` delta mirrors the live requirement (its attachment scenarios included) plus the project-note scenario.

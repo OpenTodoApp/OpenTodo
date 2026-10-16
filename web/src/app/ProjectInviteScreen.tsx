@@ -147,43 +147,43 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   useDateTimeFormat()
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your invite link…"><p className="text-sm text-muted">One moment.</p></Card>
+      return <Card title="Checking your invite link…"><p className="text-body text-muted">One moment.</p></Card>
     case 'offline':
       return (
         <Card title="You seem to be offline">
-          <p className="text-sm text-muted">Joining a project needs a connection to the server. The page will retry when the network returns.</p>
-          <button className="btn-primary" onClick={onRetry}>Retry now</button>
+          <p className="text-body text-muted">Joining a project needs a connection to the server. The page will retry when the network returns.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry now</button>
         </Card>
       )
     case 'invalid':
       return (
         <Card title="This invite link is no longer valid">
-          <p className="text-sm text-muted">It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.</p>
-          <a className="btn-secondary" href="/">{user ? 'Back to my tasks' : 'Go to sign-in'}</a>
+          <p className="text-body text-muted">It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.</p>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{user ? 'Back to my tasks' : 'Go to sign-in'}</a>
         </Card>
       )
     case 'rate-limited':
       return (
         <Card title="Too many attempts">
-          <p className="text-sm text-muted">Wait a minute, then try again.</p>
-          <button className="btn-primary" onClick={onRetry}>Retry</button>
+          <p className="text-body text-muted">Wait a minute, then try again.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
         </Card>
       )
     case 'error':
       return (
         <Card title="Something went wrong">
-          <p className="text-sm text-danger">{state.message}</p>
-          <button className="btn-primary" onClick={onRetry}>Retry</button>
+          <p className="text-body text-danger">{state.message}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
         </Card>
       )
   }
   const p = state.preview
   if (!user && step !== 'choose' && form) return <>{form}</>
   const summary = (
-    <div className="rounded-md bg-accent-soft p-3 text-sm text-on-accent-soft" data-testid="project-invite-summary">
+    <div className="rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-summary">
       <p><strong>{p.inviterName}</strong> invited you to the project <strong className="user-text">{p.projectName}</strong> as <strong>{p.role}</strong>.</p>
       {p.email && <p className="mt-1">This link is for <strong>{p.email}</strong>.</p>}
-      <p className="mt-1 text-xs opacity-80">It expires {when(p.expiresAt)} and works once.</p>
+      <p className="mt-1 text-meta opacity-80">It expires {when(p.expiresAt)} and works once.</p>
     </div>
   )
   if (user) {
@@ -192,28 +192,28 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
     return (
       <Card title={already ? 'You are already a member' : <>Join <span className="user-text">{p.projectName}</span></>}>
         {summary}
-        <p className="text-sm text-muted">Signed in as <strong>{user.name || user.email}</strong>.</p>
+        <p className="text-body text-muted">Signed in as <strong>{user.name || user.email}</strong>.</p>
         {already ? (
           <>
-            <p className="text-sm text-muted" role="status">You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.</p>
-            <a className="btn-primary" href="/">Back to my tasks</a>
+            <p className="text-body text-muted" role="status">You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.</p>
+            <a className="ui-btn ui-btn--primary ui-btn--md" href="/">Back to my tasks</a>
           </>
         ) : mismatch ? (
           <>
-            <p className="text-sm text-warning" role="alert">This link was issued for {p.email}, but you are signed in as {user.email}. Sign out and sign in with that address to join.</p>
+            <p className="text-body text-warning" role="alert">This link was issued for {p.email}, but you are signed in as {user.email}. Sign out and sign in with that address to join.</p>
             <div className="flex flex-wrap gap-2">
-              <button className="btn-primary" onClick={onLogout}>Sign out</button>
-              <a className="btn-secondary" href="/">Back to my tasks</a>
+              <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>Sign out</button>
+              <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Back to my tasks</a>
             </div>
           </>
         ) : (
           <>
-            {join.kind === 'error' && <p className="text-sm text-danger" role="alert">{join.message}</p>}
+            {join.kind === 'error' && <p className="text-body text-danger" role="alert">{join.message}</p>}
             <div className="flex flex-wrap gap-2">
-              <button className="btn-primary" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? 'Joining…' : 'Join project'}</button>
-              <a className="btn-secondary" href="/">Not now</a>
+              <button className="ui-btn ui-btn--primary ui-btn--md" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? 'Joining…' : 'Join project'}</button>
+              <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Not now</a>
             </div>
-            <p className="text-xs text-muted">Not you? <button type="button" className="underline" onClick={onLogout}>Sign out</button> and use another account.</p>
+            <p className="text-meta text-muted">Not you? <button type="button" className="underline" onClick={onLogout}>Sign out</button> and use another account.</p>
           </>
         )}
       </Card>
@@ -223,13 +223,13 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
     <Card title={<>Join <span className="user-text">{p.projectName}</span></>}>
       {summary}
       <div className="flex flex-col gap-2">
-        <button className="btn-primary w-full" autoFocus onClick={onSignIn}>I have an account: sign in to join</button>
+        <button className="ui-btn ui-btn--primary ui-btn--md w-full" autoFocus onClick={onSignIn}>I have an account: sign in to join</button>
         {p.canCreateAccount && (
-          <button className="btn-ghost w-full border border-input" onClick={onRegister}>Create an account</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--md w-full border border-input" onClick={onRegister}>Create an account</button>
         )}
       </div>
       {!p.canCreateAccount && (
-        <p className="text-sm text-muted" data-testid="account-needed">
+        <p className="text-body text-muted" data-testid="account-needed">
           You need an account on this server first. Ask {p.inviterName} or the server owner for one, then open this link again and sign in.
         </p>
       )}
@@ -240,10 +240,10 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
 function Card({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-4 sm:p-6">
-      <main className="w-full max-w-sm space-y-3 rounded-xl border border-default bg-surface p-5 shadow-sm sm:p-6">
+      <main className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-5 shadow-1 sm:p-6">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <p className="text-lg font-semibold">OpenTodo</p>
+          <p className="text-h3 font-semibold">OpenTodo</p>
         </div>
         <h1 className="font-medium">{title}</h1>
         {children}

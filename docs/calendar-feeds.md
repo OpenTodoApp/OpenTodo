@@ -5,13 +5,15 @@ audience: user
 section: Guides
 specs: [calendar-feeds]
 screens: [settings/calendar-feeds]
-order: 62
+order: 63
 ---
 # Calendar feeds
 
+<picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, where events from subscribed calendars are shown beside them."></picture>
+
 Calendar feeds work in both directions:
 
-- **Other calendars in OpenTodo.** Subscribe to the iCal address of a Google, Outlook, Apple, Fastmail or Nextcloud calendar, and its events appear next to your tasks in [Day and Week](time-blocking.md). You see your real free time while you plan.
+- **Other calendars in OpenTodo.** Subscribe to the iCal address of a Google, Outlook, Apple, Fastmail or Nextcloud calendar, and its events appear next to your tasks in [Day and Week](calendar-views.md). You see your real free time while you plan.
 - **Your tasks in your calendar app.** Create a private feed address, then subscribe to it from Google Calendar, Outlook or Apple Calendar. Your dated tasks show up there as events.
 
 Both directions are read-only. Events from other calendars can't be moved or edited in OpenTodo, and calendar apps can't change your tasks. For two-way sync with apps that support it, use [CalDAV](caldav.md).
@@ -20,37 +22,7 @@ Calendar feeds are off until the server owner turns them on under **Settings →
 
 ## Subscribe to another calendar
 
-1. Copy the calendar's iCal address from its app:
-   - **Google Calendar**: Settings → the calendar → *Integrate calendar* → **Secret address in iCal format**.
-   - **Outlook**: Settings → Calendar → Shared calendars → *Publish a calendar* → the **ICS** link.
-   - **Apple iCloud**: Calendar → the calendar's share button → **Public Calendar**, then copy the `webcal://` link.
-   - **Fastmail and Nextcloud**: the calendar's *Share* or *Export* menu offers an iCal or `.ics` address.
-2. In OpenTodo open **Settings → Integrations → Calendar feeds** and choose **Add calendar**.
-3. Paste the address, and optionally give the calendar a name and a colour. `webcal://` addresses work too.
-
-The server fetches the calendar straight away and then on its own schedule: as often as the calendar asks (between every 30 minutes and once a day), and every hour by default. **Refresh now** in a calendar's menu fetches it at once.
-
-Each calendar's row shows when it was last refreshed. When fetches fail, the row shows the error and the time of the last successful refresh. A calendar that keeps failing is retried less and less often, up to every six hours. **Disable** stops fetching it and hides its events. **Delete** removes it and its events from every device.
-
-### What you see in Day and Week
-
-- Timed events are drawn as blocks in the calendar's colour, next to your task blocks. When a task and an event overlap, both get the overlap marker.
-- All-day and multi-day events appear as chips above each day's unscheduled lane.
-- Events marked as *free* in their calendar are drawn as an outline only, so the slot still reads as free.
-- Events never count toward the day's planned total.
-- Tab onto an event and press Enter, or click it, to see its time, location and calendar.
-
-The **Calendars** button in the calendar's toolbar hides or shows events on this device only. Your choice is kept when you reload.
-
-Events are cached on each device, so Day and Week still show them offline, as of the last refresh. The toolbar then says **Calendars as of** and the time. Weeks your device has not loaded yet show no events while you're offline.
-
-### Limits
-
-- Up to 10 calendars per person.
-- A calendar may be up to 2 MB. Events from 30 days ago to a year ahead are kept, up to 5,000 per calendar.
-- Repeating events are expanded on the server. A repeat rule OpenTodo doesn't understand shows its first occurrence only, and the calendar's row gets a warning.
-- **Refresh now**, adding a calendar and changing its address count toward 12 fetches per person per hour.
-- Calendars on a private network (your NAS, a home server) are refused unless the server owner allows private network targets for [webhooks](webhooks.md#private-network-protection). The same switch applies to both.
+Copy the calendar's iCal or `webcal://` address from its app, then open **Settings → Integrations → Calendar feeds**, choose **Add calendar** and paste it, with a name and a colour if you like. The server fetches the calendar straight away and then on its own schedule, and its events appear in Day and Week beside your tasks. [Other calendars in Day and Week](other-calendars.md) has the steps for each calendar app, what the events look like, how refreshing works, and the limits.
 
 ## Your tasks as a calendar
 

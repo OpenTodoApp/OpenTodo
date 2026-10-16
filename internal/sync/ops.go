@@ -333,6 +333,12 @@ var Schema = map[string]map[string]kind{
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.
 		"sidebar_destinations": kString,
+		// Row density (ux-overhaul, design D8): "comfortable" or "compact"; an
+		// unknown or empty value reads as comfortable.
+		"density": kString,
+		// The first-run card (ux-overhaul, first-run): "done" once the account has
+		// finished or skipped it, so a second device does not show it again after sync.
+		"first_run": kString,
 	},
 }
 

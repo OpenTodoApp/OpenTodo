@@ -20,3 +20,8 @@ Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k
 #### Scenario: Palette from a field
 - **WHEN** focus is in the Filter view's query input and the user presses `Ctrl+K`
 - **THEN** the palette opens and the query text is kept
+
+#### Scenario: Cheat sheet lists the context
+- **WHEN** the user presses `?` in a project list
+- **THEN** the cheat sheet opens with the list shortcuts first, as specified in `keyboard-shortcuts`
+

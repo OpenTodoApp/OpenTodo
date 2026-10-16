@@ -47,7 +47,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the command exits with code 2 and lists the available project names
 
 ### Requirement: Add and edit tasks
-`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, `--label` (repeatable) and `--note`, and SHALL print the new id. `ot edit <ref>` SHALL change the same fields and SHALL clear a value with `--due none`, `--project none` or `--note ""`. `--due` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and English weekday names resolved to the next occurrence. Writes go through the REST API and therefore reach every device on its next sync.
+`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>` and repeatable `--remind <phrase>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`) clears one. `--due` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date.
 
 #### Scenario: Add with attributes
 - **WHEN** the user runs `ot add "Call the plumber" --project Home --due tomorrow --time 09:00 --priority 2`
@@ -60,6 +60,26 @@ The client SHALL read a configuration file from the platform's user configuratio
 #### Scenario: Server rejects the write
 - **WHEN** the server answers a write with an `invalid_input` error
 - **THEN** the command exits with code 1 and prints the server's message verbatim
+
+#### Scenario: Add with a rule and two reminders
+- **WHEN** the user runs `ot add "Backup check" --due monday --time 09:00 --repeat "Every Week" --remind "30 min before" --remind "1 day before"`
+- **THEN** the task is created with rule `every week` and two relative reminders with offsets −30 and −1440 minutes, in that order, and its id is printed
+
+#### Scenario: Invalid rule rejected locally
+- **WHEN** `--repeat "every blursday"` is given
+- **THEN** the command exits with code 2 with the grammar's error message before any request is sent
+
+#### Scenario: Clear the rule
+- **WHEN** the user runs `ot edit 8c2a --repeat none` on a recurring task
+- **THEN** the task's rule is cleared and its due date is kept
+
+#### Scenario: Reminder phrase without a due date
+- **WHEN** the user runs `ot add "Prepare slides" --remind "1 day before"`
+- **THEN** the task is created and a relative reminder with offset −1440 minutes is created with no firing time, and the human output says it fires once the task has a due date
+
+#### Scenario: Idempotent retry with reminders
+- **WHEN** the user runs `ot add "Flight" --due 2026-11-03 --time 06:00 --remind "1 day before" --idempotency-key trip-flight --json` twice
+- **THEN** both runs print the same task id and exactly one task and one reminder exist
 
 ### Requirement: Complete, reopen and delete
 `ot done`, `ot reopen` and `ot rm` SHALL act on one or more `<ref>`s, each a full id or a prefix matching exactly one non-deleted task. With `--json` each task SHALL carry the additive fields `ref` and `status`. A task already in the requested state SHALL be reported as `unchanged` without a write. `ot rm` SHALL soft-delete, SHALL ask on a terminal unless `--yes`, and without a terminal or with `--json` SHALL refuse without `--yes` (exit 2). Writes converge like web edits.
@@ -198,3 +218,30 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 #### Scenario: Release asset
 - **WHEN** a release is published
 - **THEN** its assets include `opentodo-agent-skill.zip` next to the `ot-<os>-<arch>` binaries
+
+### Requirement: Natural-language line in `ot add`
+`ot add --natural <line>` SHALL parse the line with the quick-add grammar (dates, times, `#project`, `@label`, priority, estimate, recurrence, reminders) and create the task and its reminders from the result. Languages come from `--lang`, else the process locale, with English always active; numeric dates follow the first language and weeks start on Monday. For every line in the shared quick-add vectors the result SHALL equal the web parser's. Without `--natural` the title is taken verbatim.
+
+#### Scenario: Line with a rule and a reminder
+- **WHEN** the user runs `ot add --natural "Water plants every Monday remind me at 8 #home"` on Friday 2026-10-09 with a project named Home
+- **THEN** the created task has title `Water plants`, project Home, due `2026-10-12`, rule `every monday`, and one relative reminder with offset −60 minutes, and the task id is printed
+
+#### Scenario: German line
+- **WHEN** the user runs `ot add --natural --lang de "Zahnarzt nächsten Mittwoch um 15 Uhr erinnere mich 30 Minuten vorher"`
+- **THEN** the task is due next Wednesday at `15:00` with a relative reminder of −30 minutes and the title `Zahnarzt`
+
+#### Scenario: Dry run shows every request
+- **WHEN** the user runs `ot add --natural "Flight 3 Nov at 06:00 remind me 1 day before" --dry-run --json`
+- **THEN** stdout lists a planned `POST /api/v1/tasks` and a planned `POST /api/v1/reminders` whose `task_id` is the planned task's placeholder, nothing is created, and the exit code is 0
+
+#### Scenario: Unknown project token stays in the title
+- **WHEN** the user runs `ot add --natural "Read #nosuch tomorrow"` and no project matches `nosuch`
+- **THEN** the task is created in the Inbox with title `Read #nosuch`, due tomorrow, and no error
+
+#### Scenario: Reminder request fails after the task was created
+- **WHEN** the server accepts the task but answers the reminder request with an error
+- **THEN** the command prints the server's message, names the created task id so the user can add the reminder by hand, and exits with code 1
+
+#### Scenario: Read token
+- **WHEN** the stored token has scope `read` and the user runs `ot add --natural "Call mum remind me at 9"`
+- **THEN** no request is sent, the exit code is 5 and the error code is `insufficient_scope`

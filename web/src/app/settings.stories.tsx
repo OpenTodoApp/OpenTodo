@@ -27,5 +27,6 @@ function fixedClock(at: number) {
 }
 export const SectionPage: StoryObj = {
   beforeEach: () => fixedClock(new Date(2026, 9, 14, 12).getTime()),
-  render: () => <SettingsView user={member} onLogout={() => {}} section="preferences" />,
+  render: () => <SettingsView user={member} onLogout={() => {}} section="general" />,
 }
+export const AppearancePage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" /> }

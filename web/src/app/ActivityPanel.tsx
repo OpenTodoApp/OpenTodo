@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
+import { Tooltip } from '../ui'
 import { Badge } from '../ui'
 import { Icon, type IconName } from '../ui'
 import { EmptyState } from '../ui'
@@ -68,7 +70,6 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
   return (
     <SettingsSection
       title="Recent activity"
-      helpId="settings/sessions"
       headingId="activity-heading"
       testId="activity-panel"
       description="Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server."
@@ -78,7 +79,7 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
       ) : (
         <>
           {status === 'error' && <Notice tone="danger">{error}</Notice>}
-          {status === 'loading' && events.length === 0 && <p className="text-sm text-muted" role="status">Loading…</p>}
+          {status === 'loading' && events.length === 0 && <Skeleton shape="line" count={4} label="Loading activity" />}
           {status === 'ready' && events.length === 0 && (
             <EmptyState icon="history" title="No recent activity." body="Sign-ins and token changes on your account will show up here." />
           )}
@@ -93,9 +94,13 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
                       leading={<Icon name={activityIcon(ev)} className={failed ? 'text-danger' : undefined} />}
                       label={<span className={failed ? 'text-danger' : undefined}>{AUDIT_LABELS[ev.name] ?? ev.name}{summary && <span className="text-muted"> · {summary}</span>}</span>}
                       meta={
-                        <span title={ev.userAgent}>
-                          <time dateTime={new Date(ev.ts).toISOString()} title={dt.formatInstant(ev.ts, 'datetime')}>{relativeTime(ev.ts, now)}</time>
-                          {' · '}{shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
+                        <span>
+                          <Tooltip label={dt.formatInstant(ev.ts, 'datetime')}>
+                            <time dateTime={new Date(ev.ts).toISOString()} tabIndex={0} className="rounded-chip">{relativeTime(ev.ts, now)}</time>
+                          </Tooltip>
+                          {' · '}
+                          {ev.userAgent ? <Tooltip label={ev.userAgent}><span tabIndex={0} className="rounded-chip">{shortAgent(ev.userAgent)}</span></Tooltip> : shortAgent(ev.userAgent)}
+                          {ev.ip ? ` · ${ev.ip}` : ''}
                         </span>
                       }
                       badges={failed ? <Badge hue="red">Failed</Badge> : undefined}
@@ -111,7 +116,7 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
   )
 }
 
-/** Recent activity for everyone and the audit log for the owner (Settings → Activity). */
+/** Recent activity for everyone and the audit log for the owner (Settings → Account). */
 export function SecuritySettings({ user }: { user: User }) {
   return (
     <>

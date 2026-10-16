@@ -1,14 +1,20 @@
 // A project's note at the top of the project (OpenSpec change project-notes,
 // design D4): the Markdown projection at rest, the task-notes editor in place
-// when an editor activates it or presses Shift+P. Long notes fold after about
-// eight lines; the fold is a per-device preference in Dexie meta, never synced.
+// when an editor activates it or presses Shift+P (a `project.note` entry of the
+// shortcut registry, resolved by the dispatcher in the project's `view` scope).
+// Long notes fold after about eight lines; the fold is a per-device preference
+// in Dexie meta, never synced. It sits above the sections, the board and the
+// timeline, below the quick add, so chrome stays together above content.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../ui'
 import { db, getMeta, setMeta } from '../lib/db'
 import { canEditProjectNote, roleOf } from '../lib/sharing'
+import { keysOf } from '../lib/shortcuts'
 import type { Membership, Project } from '../lib/types'
 import { Markdown } from './Markdown'
+import { useShortcutScope } from './shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 
 const NotesEditor = lazy(() => import('./NotesEditor'))
 
@@ -26,20 +32,11 @@ export function ProjectNote({ project }: { project: Project }) {
   const body = useRef<HTMLDivElement>(null)
   const note = project.description ?? ''
 
-  // Shift+P edits the note (ignored while typing elsewhere), like m and Shift+S in the header.
-  useEffect(() => {
-    if (!editable) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'P' || !e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      if (document.querySelector('[role="dialog"]')) return
-      e.preventDefault()
-      setEditing(true)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [editable])
+  // Shift+P edits the note. The dispatcher keeps it out of text fields and dialogs
+  // (keyboard-shortcuts "One shortcut registry with scopes"); a viewer lets it fall through.
+  useShortcutScope('view', {
+    'project.note': () => { if (!editable) return false; setEditing(true) },
+  }, { view: 'project' })
 
   useLayoutEffect(() => {
     const el = body.current
@@ -62,10 +59,11 @@ export function ProjectNote({ project }: { project: Project }) {
   }
 
   if (!note.trim()) {
+    // One quiet line for people who may edit (the interface budget counts it as content, not chrome).
     return (
       <div className="mb-3" data-project-note="empty">
-        <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 rounded-control px-1.5 py-1 text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
-          <Icon name="pencil" size="xs" />Add a note <span className="ui-kbd ml-1">Shift+P</span>
+        <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-7 items-center gap-1.5 rounded-control px-1.5 py-1 text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
+          <Icon name="pencil" size="xs" />Add a note <Kbd k={keysOf('project.note')} only className="ml-1" />
         </button>
       </div>
     )
@@ -78,7 +76,7 @@ export function ProjectNote({ project }: { project: Project }) {
         <div ref={body} className={`overflow-hidden text-body ${editable ? 'cursor-text rounded-control hover:bg-sunken dark:hover:bg-raised' : ''}`}
           style={clipped ? { maxHeight: FOLD_PX } : undefined}
           {...(editable ? {
-            role: 'button', tabIndex: 0, 'aria-label': 'Edit the project note (Shift+P)',
+            role: 'button', tabIndex: 0, 'aria-label': `Edit the project note (${keysOf('project.note')})`,
             onClick: (e: React.MouseEvent) => { if (!(e.target as HTMLElement).closest('a')) setEditing(true) },
             onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); setEditing(true) } },
           } : {})}>

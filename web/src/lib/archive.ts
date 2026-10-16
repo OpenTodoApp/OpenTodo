@@ -99,7 +99,7 @@ export async function unarchiveProject(id: string): Promise<void> {
 /** Undo an automatic archive and never archive that project automatically again on this device. */
 export const undoAutoArchive = unarchiveProject
 
-/** One row of Settings → Projects → Archived projects. */
+/** One row of Settings → Data → Archived projects. */
 export interface ArchivedProject {
   project: Project
   /** Name of the parent project, when it is a sub-project of a live one. */
