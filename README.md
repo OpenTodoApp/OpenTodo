@@ -39,7 +39,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 - **On your machine or server:**
 
   ```bash
-  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.4
+  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.5
   ```
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
@@ -162,7 +162,7 @@ No environment variable is required. Open the app, create the owner account, and
 
 ```bash
 docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
-  ghcr.io/pixari/opentodo:0.4
+  ghcr.io/pixari/opentodo:0.5
 ```
 
 Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.4` follows the 0.4 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).

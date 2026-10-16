@@ -4,6 +4,21 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-16
+
+OpenTodo 0.5.0 is a new interface on the same data. The task panel is part of the frame and reads like a summary, the sidebar is shorter, Settings has nine sections with a search field, every keyboard shortcut comes from one registry and <kbd>?</kbd> lists the ones for where you are, and on a phone there is a tab bar, a **+** button and full-screen tasks. Around it: **Process the Inbox** one task at a time, a rich-text **note** at the top of every project, **public links** that share a project's list with anyone, optional **outgoing email** for password resets, verified sign-up and invitations, a **Month** calendar and a project **Timeline**, calendar feeds in both directions, attachments, tasks that wait for other tasks, bulk changes, duplicates and templates, and search and commands on <kbd>Ctrl</kbd>+<kbd>K</kbd>. Every help page is now short and opens with a screenshot.
+
+### Upgrade notes
+
+- **Migrations `0031`, `0032` and `0033`** (calendar feeds, public links, pending sign-ups) are applied automatically at startup. Back up `/data` before upgrading: there are no down-migrations.
+- **No new environment variables are required.** `OPENTODO_CALENDAR_FEEDS`, `OPENTODO_SMTP_*` and `OPENTODO_ATTACHMENTS_*` are optional; everything they configure is off, or has a default, until you set it or the owner turns it on in Settings.
+- **Sync** is additive: the project fields `icon`, `description` and `notes_doc`, the task field `blocked_by`, the `attachment` entity and the `user_prefs` fields `sidebar_destinations`, `density` and `first_run`. Older clients ignore them; a 0.4 device keeps syncing.
+- **Two families of anonymous routes are new:** `GET /api/v1/public/{token}` with `POST …/tick` (public links) and the password-reset request and sign-up verification routes (outgoing email). All are rate limited, re-check their secret on every use, and are refused on the demo. Nothing is reachable without a link or without SMTP configured.
+- **Settings moved.** The fourteen sections of 0.4 are nine; old addresses such as `/settings/security` and old help ids open the right section at the moved rows. The activity feed is **Updates** at `/updates` (old links redirect). Owner settings for attachments, outgoing email and the audit log live under **Server**.
+- **Some shortcuts changed.** Skip occurrence is <kbd>Shift</kbd>+<kbd>K</kbd>, Shift+↓ / Shift+↑ extend a selection, <kbd>.</kbd> opens the row's menu; the keys printed in the app return with **Show shortcut hints**. Press <kbd>?</kbd> for the current list.
+- **Binary size** stays at about 24 MB. (The email templates briefly pulled in `text/template`, whose reflection stops the linker from pruning unused code and had grown the binary to 37 MB; they are plain placeholders again.)
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.5.0` and `:0.5` for `linux/amd64` and `linux/arm64` (`:latest` follows `main`). The Coolify template now follows `:0.5`; if you use `:0.4`, change the tag in **Edit Compose file** and click **Deploy**.
+
 ### Changed
 
 - **A calmer frame.** The task panel is now part of the app's frame: it stays put while the list scrolls, keeps its task in the address (reload or share a link and it reopens), and opens the same way from every list, the calendar, filters and dashboards. The sidebar scrolls as one, with Help and your account always at the bottom and Labels as their own group. Task rows line up across every view and show a second line only when there is something to show. The duration filter lives under a **Filter** button in the list's header, with one chip while it's on; the Inbox no longer labels every row "Inbox". Press <kbd>?</kbd> for a searchable cheat sheet that lists the shortcuts for where you are first. ([Views](docs/views.md), [Keyboard shortcuts](docs/keyboard.md))
@@ -311,7 +326,9 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/pixari/opentodo/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/pixari/opentodo/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/pixari/opentodo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/pixari/opentodo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pixari/opentodo/releases/tag/v0.1.0
