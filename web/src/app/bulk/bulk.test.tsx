@@ -150,6 +150,7 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await updateTask(ids[0], { labels: [l] })
     await key(document.body, 'j'); await key(document.body, 'x')
     await key(document.body, 'ArrowDown', { shiftKey: true }); await key(document.body, 'ArrowDown', { shiftKey: true })
+    await waitFor(() => bar() === '3 selected')
     await key(document.body, 'L', { shiftKey: true })
     await waitFor(() => !!document.querySelector('[data-picker-step]'))
     await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
