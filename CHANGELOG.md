@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Settings no longer scroll past the end of the page.** On General, Integrations, People and Server, the whole app could be scrolled up and away, leaving an empty page below the last card. Labels that are only read out by screen readers sat outside the scrolling area and stretched the page; they now stay inside it. The layout check fails any screen where the page itself scrolls.
 - **Turning encryption off no longer stops part-way.** With a task or project note on the account, the re-write to plaintext (and, on a fresh page load, the re-write to ciphertext) failed after its first batch with "Transaction has already completed" when the note code still had to be fetched: the fetch let the browser close the database transaction under it. The code is now loaded without letting the transaction go, and an interrupted run still resumes where it stopped. ([End-to-end encryption](docs/e2ee.md))
 
 ## [0.6.0] - 2026-10-16

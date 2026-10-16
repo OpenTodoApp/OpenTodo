@@ -621,6 +621,11 @@ function pageOverflow() {
   const vw = window.innerWidth
   const de = document.documentElement
   if (de.scrollWidth > vw + 1) out.push(`page scrolls sideways (${de.scrollWidth}px > ${vw}px)`)
+  // Inside the app frame only its own panes scroll: a taller document lets the
+  // whole frame scroll away and leaves a blank page (issue #95).
+  if (document.querySelector('[data-app-frame]') && de.scrollHeight > window.innerHeight + 1) {
+    out.push(`page scrolls past the app frame (${de.scrollHeight}px > ${window.innerHeight}px)`)
+  }
   for (const el of document.querySelectorAll('body *')) {
     if (el.closest('[data-scroll-x]')) continue
     const cs = getComputedStyle(el)
