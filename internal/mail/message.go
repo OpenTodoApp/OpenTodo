@@ -8,10 +8,10 @@ import (
 	"mime"
 	"mime/quotedprintable"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
@@ -70,20 +70,49 @@ type Message struct {
 //go:embed templates/*.txt
 var templateFS embed.FS
 
-var templates = func() map[string]*template.Template {
-	out := map[string]*template.Template{}
+// templateData is what a template is executed with. The templates are plain
+// text with `{{.Field}}` placeholders for these fields and nothing else: no
+// template engine runs on the server, so no reflection-driven method lookup
+// keeps the linker from pruning unused code (text/template alone added 13 MB
+// to the binary), and a template can never reach a value it is not given.
+type templateData struct {
+	Origin, Email, Link, Expiry, Inviter, Role string
+}
+
+// placeholder matches `{{.Field}}`, with optional spaces inside the braces.
+var placeholder = regexp.MustCompile(`\{\{\s*\.(\w+)\s*\}\}`)
+
+// templates maps "<kind>.<lang>" to its text with the placeholders in
+// canonical form. Loading panics on a template that uses anything but the
+// known placeholders, the way template.Must would on a parse error.
+var templates = func() map[string]string {
+	known := map[string]bool{"Origin": true, "Email": true, "Link": true, "Expiry": true, "Inviter": true, "Role": true}
+	out := map[string]string{}
 	entries, _ := templateFS.ReadDir("templates")
 	for _, e := range entries {
 		raw, _ := templateFS.ReadFile("templates/" + e.Name())
 		name := strings.TrimSuffix(e.Name(), ".txt")
-		out[name] = template.Must(template.New(name).Option("missingkey=error").Parse(string(raw)))
+		text := placeholder.ReplaceAllStringFunc(string(raw), func(m string) string {
+			field := placeholder.FindStringSubmatch(m)[1]
+			if !known[field] {
+				panic(fmt.Sprintf("mail: template %s uses unknown variable %s", e.Name(), field))
+			}
+			return "{{." + field + "}}"
+		})
+		if strings.Contains(strings.ReplaceAll(placeholder.ReplaceAllString(text, ""), "{{.", ""), "{{") {
+			panic(fmt.Sprintf("mail: template %s contains an action that is not a known placeholder", e.Name()))
+		}
+		out[name] = text
 	}
 	return out
 }()
 
-// templateData is what a template is executed with.
-type templateData struct {
-	Origin, Email, Link, Expiry, Inviter, Role string
+// execute fills a template's placeholders from data.
+func (d templateData) execute(text string) string {
+	return strings.NewReplacer(
+		"{{.Origin}}", d.Origin, "{{.Email}}", d.Email, "{{.Link}}", d.Link,
+		"{{.Expiry}}", d.Expiry, "{{.Inviter}}", d.Inviter, "{{.Role}}", d.Role,
+	).Replace(text)
 }
 
 var units = map[string][2][2]string{ // lang → {hours {one, many}, days {one, many}}
@@ -181,8 +210,8 @@ func Render(m Message, origin string) (subject, body string, err error) {
 	if m.Kind == KindVerifySignup && m.Vars.Existing {
 		name = "verify_signup_existing"
 	}
-	t := templates[name+"."+lang]
-	if t == nil {
+	t, ok := templates[name+"."+lang]
+	if !ok {
 		return "", "", fmt.Errorf("mail: no template for %s", name)
 	}
 	role := m.Vars.Role
@@ -195,11 +224,7 @@ func Render(m Message, origin string) (subject, body string, err error) {
 	}
 	data := templateData{Origin: origin, Email: m.To, Link: m.Vars.Link, Expiry: formatExpiry(m.Vars.Expiry, lang),
 		Inviter: inviter, Role: role}
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, data); err != nil {
-		return "", "", err
-	}
-	subject, body, _ = strings.Cut(buf.String(), "\n")
+	subject, body, _ = strings.Cut(data.execute(t), "\n")
 	return strings.TrimSpace(subject), strings.TrimLeft(body, "\n"), nil
 }
 
