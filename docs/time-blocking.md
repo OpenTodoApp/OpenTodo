@@ -84,6 +84,8 @@ Events are read-only. You can't drag, resize or complete them, but you can tab o
 
 ## Adjust the grid
 
+On a phone the Week is a list: each day with its unscheduled tasks and its timed tasks in order, so nothing is squeezed into seven columns. Tap a task to select it, tap again (or press Enter) to open it.
+
 In **Settings → General → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
 
 ## Tips

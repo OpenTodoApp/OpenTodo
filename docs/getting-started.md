@@ -36,7 +36,7 @@ Once you're signed in, the app is stored on your device. You can keep using it w
 
 ## Find your way around
 
-The sidebar on the left lists your views and projects. On a phone it's behind the menu button at the top left.
+The sidebar on the left lists your views and projects. On a phone, a bar at the bottom of the screen takes you to **Today**, **Inbox** and **Upcoming**, opens **Search**, and **More** opens the sidebar as a drawer; the round **+** button above it adds a task from any page, with the page's defaults (today's date in Today, the project in a project).
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view: the sidebar with Inbox, Today, Upcoming and projects on the left, and today's tasks with an Overdue group on the right."></picture>
 

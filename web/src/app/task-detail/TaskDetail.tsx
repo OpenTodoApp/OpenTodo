@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { db } from '../../lib/db'
 import { markTaskNotificationsRead } from '../../lib/notifications'
@@ -8,7 +8,7 @@ import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
-import { IconButton } from '../../ui'
+import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { Badge } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
@@ -88,6 +88,15 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     },
   }, { within: () => panel.current })
 
+  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
+  const swipe = useRef<{ x: number; y: number } | null>(null)
+  const onSwipeStart = (e: TouchEvent<HTMLElement>) => { const t = e.touches[0]; swipe.current = t ? { x: t.clientX, y: t.clientY } : null }
+  const onSwipeEnd = (e: TouchEvent<HTMLElement>) => {
+    const s = swipe.current, t = e.changedTouches[0]
+    swipe.current = null
+    if (s && t && t.clientY - s.y > 80 && Math.abs(t.clientX - s.x) < 60) onClose()
+  }
+
   if (!task) return null
 
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
@@ -110,10 +119,12 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
-        : 'fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
+        : 'fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
-      <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}>
-        {page && <IconButton icon="arrow-left" label="Back to the list" onClick={onClose} data-task-back className="touch-target" />}
+      <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
+        onTouchStart={page ? undefined : onSwipeStart} onTouchEnd={page ? undefined : onSwipeEnd}>
+        {/* Below 768 px the panel is a full-screen sheet (app-shell "Panel width and expansion"): Back, or a swipe down on the header, closes it. */}
+        {(page || phone) && <IconButton icon="arrow-left" label="Back to the list" onClick={onClose} data-task-back className="touch-target" />}
         <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
           className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
           <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${ring} ${done ? 'bg-faint border-input text-on-accent' : 'hover:bg-success-soft'}`}>

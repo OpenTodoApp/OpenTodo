@@ -27,6 +27,7 @@ import { CalendarRangeSwitch } from './CalendarRange'
 import { estimateFocus, placement as placementSignal } from './signals'
 import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Menu } from './overlay/Menu'
+import { useWide } from './overlay'
 import { PanelFrame } from './PanelFrame'
 import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
 import { rememberCalendarMode } from '../lib/calendarMode'
@@ -150,6 +151,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const [placing, setPlacing] = useState<Placement | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
+  // Below 640 px the Week is a vertical agenda grouped by day (time-blocking "Week on a phone").
+  const wide = useWide()
   // The Calendar destination remembers Day or Week on this device (ux-overhaul).
   useEffect(() => rememberCalendarMode(mode), [mode])
 
@@ -349,6 +352,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? 'Week calendar' : 'Day calendar'}>
+          {mode === 'week' && !wide ? (
+            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
+              onSelect={(id) => setSelectedId(id)} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} />
+          ) : (
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
@@ -408,6 +415,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
 
@@ -420,6 +428,62 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         </div>
       )}
     </PageBody>
+  )
+}
+
+/**
+ * The Week below 640 px: the days listed vertically, each with its capacity, its
+ * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
+ * same selection, keyboard order and panel as the grid.
+ */
+function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId, onSelect, onOpen }: {
+  days: DayData[]
+  today: string
+  prefs: GridPrefs
+  tasks: Task[]
+  taskMap: Map<string, Task>
+  projectMap: Map<string, Project>
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onOpen: (id: string) => void
+}) {
+  const row = (t: Task, time: string | null) => (
+    <li key={t.id}>
+      <button type="button" data-cal-id={t.id} data-agenda-task={t.id} onClick={() => onSelect(t.id)} onDoubleClick={() => onOpen(t.id)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(t.id) } }}
+        className={`flex min-h-11 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+        data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}>
+        <span className="w-14 shrink-0 font-mono text-xs text-muted">{time ?? 'all day'}</span>
+        <span className="min-w-0 flex-1 truncate">{t.title || 'Untitled'}</span>
+        {t.estimate_minutes ? <span className="shrink-0 font-mono text-[11px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+      </button>
+    </li>
+  )
+  return (
+    <div className="space-y-3 px-1 py-2" data-week-agenda>
+      {days.map((d) => {
+        const [y, m, dd] = d.date.split('-').map(Number)
+        const name = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(new Date(y, m - 1, dd))
+        const load = dayLoad(tasks, d.date, prefs.dayLength)
+        const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
+        return (
+          <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
+            <div className="flex items-baseline justify-between gap-2 border-b border-default px-2 pb-1">
+              <h2 id={`agenda-${d.date}`} className={`text-sm font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
+              <span className={`font-mono text-[11px] ${load.over ? 'text-danger' : 'text-muted'}`} data-capacity data-over={load.over || undefined}>{formatLoad(load, prefs.dayLength)}</span>
+            </div>
+            {d.lane.length === 0 && blocks.length === 0
+              ? <p className="px-2 py-2 text-xs text-faint">Nothing planned</p>
+              : (
+                <ul className="mt-1 space-y-0.5">
+                  {d.lane.map((t) => row(t, null))}
+                  {blocks.map(({ b, t }) => row(t, formatTime(b.start)))}
+                </ul>
+              )}
+          </section>
+        )
+      })}
+    </div>
   )
 }
 

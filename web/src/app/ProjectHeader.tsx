@@ -136,9 +136,11 @@ function IconSwatches({ project }: { project: Project }) {
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   project: Project
   userId?: string
+  /** Below 768 px, a line under the title in the shell's bar (the board's current column). */
+  subtitle?: ReactNode
   /** Page actions rendered after Share (the duration filter, touch Select). */
   actions?: ReactNode
   /** The List/Board control, first among the actions (app-shell "Page template"). */
@@ -222,7 +224,7 @@ export function ProjectHeader({ project, userId, actions, layout }: {
 
   return (
     <>
-      <PageHeader title={title} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
+      <PageHeader title={title} subtitle={subtitle} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
         actions={<>
           {layout}
           <Tooltip label={canManageMembers(role) ? 'Share project' : 'Members'} shortcut={keysOf('project.share')}>
