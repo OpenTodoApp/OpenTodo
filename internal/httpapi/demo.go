@@ -60,8 +60,14 @@ func (s *Server) handleDemoSandbox(w http.ResponseWriter, r *http.Request) {
 }
 
 // writeLimited answers a write refused by the demo's write budget (429
-// demo_limit, nothing applied) and reports whether err was one.
+// demo_limit, nothing applied) or by a hosted tenant's limit (403 with the
+// limit's reason as code, multi-tenant-host D5) and reports whether err was one.
 func writeLimited(w http.ResponseWriter, err error) bool {
+	var rej *opsync.RejectedError
+	if errors.As(err, &rej) && opsync.IsLimitReason(rej.Reason) {
+		writeError(w, http.StatusForbidden, rej.Reason, limitMessage(rej.Reason))
+		return true
+	}
 	if !errors.Is(err, opsync.ErrWriteLimit) {
 		return false
 	}
@@ -177,6 +183,9 @@ var demoRules = []demoRule{
 	{"Webhooks", true, prefix("/api/v1/webhooks")},
 	{"Email to task", true, prefix("/api/v1/email-inbox")},
 	{"Import", true, prefix("/api/v1/import")},
+	// Only hosted tenants register it (multi-tenant-host), never a demo: listed
+	// so the whole-server archive stays refused should that ever change.
+	{"Backups", false, exact("/api/v1/export/archive")},
 	{"End-to-end encryption", true, prefix("/api/v1/encryption")},
 	{"Web push", true, prefix("/api/v1/push")},
 	{"Sharing changes", true, projectMembership},
@@ -214,4 +223,17 @@ func (s *Server) demoGuard(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// limitMessage explains a hosted tenant's limit refusal (multi-tenant-host D5).
+func limitMessage(reason string) string {
+	switch reason {
+	case opsync.ReasonLimitStorage:
+		return "this server reached its storage limit: empty the Trash or ask the operator for more space"
+	case opsync.ReasonLimitOpsHour:
+		return "this server reached its limit of changes per hour: try again later"
+	case opsync.ReasonLimitOpsTotal:
+		return "this server reached its limit of stored changes"
+	}
+	return "this server reached a limit"
 }

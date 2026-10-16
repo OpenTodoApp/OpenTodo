@@ -1534,6 +1534,14 @@ In `usage`, `month_total` is what counts toward the cap and `cap` is `0` for a t
 
 `changeset` comes at most once, only after `end_turn`, with at most 50 entities: `patch` is what to write, `base` the values it was planned on (for "changed since proposed"), `create` marks new entities, `shared` marks shared projects. The server never applies it: the app applies the confirmed part as ordinary ops with device `assistant:<device-id>`, which `/api/v1/sync` accepts and history labels "Assistant". `done.stop_reason` is `end_turn`, `max_tokens` (with a `message`; no change set), `refusal` (`message`: "The model declined this request."; no change set) or `round_limit` (more than 8 model calls). A failure ends the stream with `event: error` and `{code, message}`: `provider_auth`, `provider_rate_limited`, `provider_error` or `timeout`; never a key. Usage is recorded whatever the outcome.
 
+### Hosted servers
+
+A tenant of a host (see [host mode](self-hosting/host-mode.md)) answers like any server, with these differences. `GET /api/v1/auth/status` adds `"hosted": true`. Settings that belong to the operator answer `403 host_managed` before authentication: `/api/v1/settings/smtp*`, `/api/v1/settings/oidc*` and `/api/v1/backups*` for every method, and writes to `/api/v1/settings/mcp`, `/api/v1/settings/assistant*`, `/api/v1/settings/webhooks` and `/api/v1/settings/attachments`.
+
+`GET /api/v1/export/archive` (owner, session or `full` token; a stale session gets `403 reauth_required`) streams the whole server as a backup archive (`application/gzip`, the format `opentodo restore` reads) and records `export.requested` with format `archive`. Read and agent tokens get `403 insufficient_scope`. The route does not exist on a self-hosted server.
+
+A tenant's limits refuse changes one at a time. On `/api/v1/sync` a refused op appears in `rejected` with reason `limit_storage`, `limit_ops_hour` or `limit_ops_total`; the rest of the batch is applied, and the server does not send its own value back for it, so the device keeps the change and sends it again later. A REST write answers `403` with the reason as code.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -1670,6 +1678,13 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `internal` | 500 | unexpected server error (details only in the server log) |
 | `unavailable` | 503 | backups or webhooks are not available on this server |
 | `demo_busy` | 503 | demo instance: no new sandbox now (live cap reached with none idle for 15 minutes, or the database is above its size limit) |
+| `host_managed` | 403 | hosted server: a setting the operator owns, see [Hosted servers](#hosted-servers) |
+| `limit_storage`, `limit_ops_hour`, `limit_ops_total` | 403 | hosted server: a REST write over the tenant's storage, changes per hour or stored changes; on `/sync` the same codes are per-op `rejected` reasons |
+| `limit_members` | 403 | hosted server: a new account (registration, sign-up confirmation, project invite link, single sign-on) over the tenant's member limit |
+| `limit_import` | 413 | hosted server: an import file over the tenant's import size |
+| `limit_requests` | 429 | hosted server: more requests per minute than the tenant's limit |
+| `suspended` | 503 | hosted server: the operator suspended this tenant; its data is kept |
+| `busy` | 503 | hosted server: every open tenant is in use; try again shortly |
 
 **Sign-in, accounts and credentials**
 

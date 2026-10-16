@@ -144,6 +144,46 @@ func NextSendAt(st Settings, now time.Time) time.Time {
 	return time.Time{}
 }
 
+// NextDue is when a pass next has work: the earliest scheduled send, retry
+// or give-up among the enabled rows. A host's shared scheduler opens a tenant
+// only then (multi-tenant-host D3). ok is false while outgoing email is off or
+// nobody opted in.
+func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
+	if s.mail == nil || !s.mail.Enabled(ctx) {
+		return time.Time{}, false, nil
+	}
+	rows, err := s.store.Enabled(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	now := s.now()
+	var next time.Time
+	for _, st := range rows {
+		if at := dueAt(st, now); !at.IsZero() && (next.IsZero() || at.Before(next)) {
+			next = at
+		}
+	}
+	return next, !next.IsZero(), nil
+}
+
+// dueAt is when a pass next acts on one row (the inverse of planFor): now when
+// it would act now, the scheduled hour when that is ahead, otherwise the next
+// retry or the end of the window, whichever comes first.
+func dueAt(st Settings, now time.Time) time.Time {
+	if act, _ := planFor(st, now); act != actNone {
+		return now
+	}
+	sched := NextSendAt(st, now)
+	if sched.IsZero() || sched.After(now) {
+		return sched
+	}
+	retry := time.UnixMilli(st.LastAttemptAt).Add(RetryEvery)
+	if end := sched.Add(Window); end.Before(retry) {
+		return end
+	}
+	return retry
+}
+
 // Run passes every TickInterval until ctx ends (jobs leader only).
 func (s *Service) Run(ctx context.Context) {
 	t := time.NewTicker(TickInterval)

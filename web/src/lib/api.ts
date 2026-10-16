@@ -137,6 +137,25 @@ function uploadAttachmentContent(id: string, blob: Blob, onProgress?: (fraction:
   })
 }
 
+/**
+ * The whole server as one backup archive (OpenSpec `multi-tenant-host`: a hosted
+ * owner takes their data away). A stale session is confirmed first, as for any
+ * sensitive request.
+ */
+async function downloadServerArchive(retried = false): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch('/api/v1/export/archive', { credentials: 'same-origin' })
+  if (!res.ok) {
+    try {
+      await parse(res)
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'reauth_required' && !retried && (await reauthenticate())) return downloadServerArchive(true)
+      throw err
+    }
+  }
+  const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'opentodo-archive.tar.gz'
+  return { blob: await res.blob(), filename: name }
+}
+
 async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
@@ -149,6 +168,8 @@ async function parse<T>(res: Response): Promise<T> {
 
 export const api = {
   authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
+  /** Hosted servers only: the owner's download of the whole server (multi-tenant-host). */
+  downloadServerArchive: () => downloadServerArchive(),
   /** Demo instance (OpenSpec `demo-sandboxes`): create a private sandbox and sign into it. */
   demoSandbox: (token: string) => request<{ user: User }>('POST', '/api/v1/demo/sandbox', { token }),
   /**

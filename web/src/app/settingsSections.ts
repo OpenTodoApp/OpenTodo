@@ -1,6 +1,7 @@
 // The Settings sections (OpenSpec change ux-overhaul, settings-navigation; design
 // D6): one table of nine sections in four groups, shared by the section list, the
 // pages, the search index, the palette and the tests.
+import { getHosted } from '../lib/hosted'
 import { isAdministrator } from '../lib/roles'
 import type { User } from '../lib/types'
 import type { IconName } from '../ui'
@@ -57,13 +58,13 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   { id: 'data', label: 'Data', group: 'data', icon: 'download', description: () => 'Export, import, sync status and archived projects' },
   {
     id: 'people', label: 'People', group: 'server', icon: 'users',
-    description: (u) => (owner(u) ? 'Users, invitations, members, access policies and single sign-on' : 'Users, invitations and members'),
+    description: (u) => (owner(u) ? (getHosted() ? 'Users, invitations, members and access policies' : 'Users, invitations, members, access policies and single sign-on') : 'Users, invitations and members'),
     visible: (u) => isAdministrator(u),
     demo: (u) => (owner(u) ? ['users and invitations', 'the two-factor policy', 'single sign-on', 'project invite links'] : ['users and invitations']),
   },
   {
     id: 'server', label: 'Server', group: 'server', icon: 'upload',
-    description: () => 'Backups, attachments, outgoing email and the audit log',
+    description: () => (getHosted() ? 'Download your data and the audit log' : 'Backups, attachments, outgoing email and the audit log'),
     visible: owner,
     demo: () => ['backups', 'outgoing email'],
   },

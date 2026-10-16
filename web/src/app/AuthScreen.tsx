@@ -31,7 +31,8 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   const [password, setPassword] = useState('')
   // First-run setup guarded by OPENTODO_SETUP_TOKEN (OpenSpec `owner-bootstrap`).
   const needsSetupToken = !!status.setupRequired && !!status.setupTokenRequired && !invite
-  const [setupToken, setSetupToken] = useState('')
+  // A hosted service's sign-up link carries the tenant's token as ?setup= (multi-tenant-host).
+  const [setupToken, setSetupToken] = useState(() => typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('setup') ?? '')
   // Single sign-on (OpenSpec `oidc-login`): the provider action on plain sign-in;
   // SSO-only mode hides local sign-in unless the owner uses `?owner=1`.
   const sso = invite ? { provider: null, local: true, breakGlass: false } : ssoLayout(status, typeof location === 'undefined' ? '' : location.search)
@@ -280,8 +281,10 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
               <input className="ui-input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
                 autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
               <span id="setup-token-help" className="mt-1 block text-meta text-muted">
-                This server asks for the token its operator configured. Find it in your hosting panel, for example
-                Coolify, this service, Environment Variables, <code>OPENTODO_SETUP_TOKEN</code>.
+                {status.hosted
+                  ? 'Your provider sent this token with the address of your new server.'
+                  : <>This server asks for the token its operator configured. Find it in your hosting panel, for example
+                    Coolify, this service, Environment Variables, <code>OPENTODO_SETUP_TOKEN</code>.</>}
               </span>
             </label>
           )}
@@ -462,6 +465,11 @@ export function describeAuthError(err: unknown): string {
       return 'This account has been deactivated. Ask the server owner or an admin to reactivate it.'
     case 'sso_required':
       return 'This server requires single sign-on for your account. Use the "Sign in with" button instead.'
+    // A hosted server's limits (OpenSpec `multi-tenant-host`).
+    case 'limit_members':
+      return 'This server has as many members as its plan allows. Ask the owner to make room or upgrade.'
+    case 'limit_requests':
+      return 'This server is receiving too many requests. Wait a minute and try again.'
     default:
       return err.message
   }

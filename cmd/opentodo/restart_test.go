@@ -15,11 +15,31 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/pixari/opentodo/internal/backup"
 )
+
+// lockedBuffer collects the server's output, written by os/exec's copier
+// while the test reads it.
+type lockedBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (l *lockedBuffer) Write(p []byte) (int, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.Write(p)
+}
+
+func (l *lockedBuffer) String() string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.String()
+}
 
 // TestWebRestoreRestartsInPlace (backup-restore-web 3.3): the real binary
 // confirms a restore over HTTP, stops, applies it and comes back as the same
@@ -40,7 +60,7 @@ func TestWebRestoreRestartsInPlace(t *testing.T) {
 	addr := l.Addr().String()
 	l.Close()
 	dir := t.TempDir()
-	var logs bytes.Buffer
+	var logs lockedBuffer
 	cmd := exec.Command(bin)
 	cmd.Env = append(os.Environ(), "OPENTODO_DATA_DIR="+dir, "OPENTODO_ADDR="+addr)
 	cmd.Stdout, cmd.Stderr = &logs, &logs

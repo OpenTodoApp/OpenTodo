@@ -90,6 +90,9 @@ type Config struct {
 	// a request whose nearest hop is a Cloudflare edge may then name the client
 	// with CF-Connecting-IP.
 	TrustCloudflare bool
+	// Host turns on host mode (OPENTODO_HOST_URL; OpenSpec `multi-tenant-host`,
+	// see host.go): many tenants in one process. Nil for a normal server.
+	Host *HostConfig
 	// Warnings are configuration problems the server started despite (OpenSpec
 	// `trusted-proxies-lenient`): logged at startup and shown to the owner.
 	Warnings []Warning
@@ -308,6 +311,12 @@ func Load() (Config, error) {
 	}
 	if c.SMTP, err = loadSMTP(); err != nil {
 		return c, err
+	}
+	if c.Host, err = loadHost(); err != nil {
+		return c, err
+	}
+	if c.Host != nil && c.Demo {
+		return c, fmt.Errorf("OPENTODO_HOST_URL (host mode) and OPENTODO_DEMO cannot be combined")
 	}
 	return c, nil
 }

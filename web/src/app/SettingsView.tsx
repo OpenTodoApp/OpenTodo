@@ -36,6 +36,8 @@ import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
+import { useHosted } from '../lib/hosted'
+import { ServerArchivePanel } from './ServerArchivePanel'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
@@ -248,7 +250,10 @@ export function ProfileCard({ user, compact = false }: { user: User; compact?: b
 /** The cards of one section; on a demo instance the refused ones are disabled under one note. */
 function SectionContent({ section, user, onLogout }: { section: SettingsSection; user: User; onLogout: () => void }) {
   const demo = !!useDemo()
+  // A hosted service's operator owns the server-level settings (multi-tenant-host D4).
+  const hosted = useHosted()
   const isOwner = user.role === 'owner'
+  const ownsServer = isOwner && !hosted
   const refused = demo ? (section.demo?.(user) ?? []) : []
   const note = refused.length > 0 ? <DemoRestrictedNote features={refused} /> : null
   switch (section.id) {
@@ -307,13 +312,13 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <DemoDisabled on={demo}>
             <CaldavPanel isOwner={isOwner} email={user.email} />
             <CalendarFeedsPanel isOwner={isOwner} />
-            <WebhooksPanel isOwner={isOwner} />
+            <WebhooksPanel isOwner={ownsServer} />
             <TokensSection />
           </DemoDisabled>
           <Anchor id="ai">
             <DemoDisabled on={demo}>
-              <Suspense fallback={null}><AssistantSettingsSection isOwner={isOwner} /></Suspense>
-              <AssistantsPanel isOwner={isOwner} />
+              <Suspense fallback={null}><AssistantSettingsSection isOwner={ownsServer} /></Suspense>
+              <AssistantsPanel isOwner={ownsServer} />
             </DemoDisabled>
           </Anchor>
         </>
@@ -335,7 +340,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
             <Anchor id="access-policies">
               <DemoDisabled on={demo}>
                 <MfaPolicyPanel />
-                <SsoPanel />
+                {!hosted && <SsoPanel />}
                 <ProjectInvitePolicyPanel />
               </DemoDisabled>
             </Anchor>
@@ -346,10 +351,17 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
       return (
         <>
           {note}
-          <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>
-          <AttachmentSettingsPanel />
-          {/* Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer. */}
-          <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
+          {hosted ? (
+            // Hosted: backups, attachment limits and outgoing email are the operator's; the owner can take the data away.
+            <ServerArchivePanel />
+          ) : (
+            <>
+              <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>
+              <AttachmentSettingsPanel />
+              {/* Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer. */}
+              <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
+            </>
+          )}
           <Anchor id="audit-log"><AuditPanel /></Anchor>
         </>
       )

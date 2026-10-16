@@ -283,6 +283,9 @@ func (s *Service) RegisterWithProjectInvite(ctx context.Context, email, name, pa
 	if !s.MayCreateAccount(inv.CreatorRole, membersAllowed) {
 		return nil, nil, nil, ErrProjectInviteNotAllowed
 	}
+	if err := s.checkMemberLimit(ctx, tx); err != nil {
+		return nil, nil, nil, err
+	}
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: now}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
 		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt); err != nil {
