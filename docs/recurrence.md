@@ -3,7 +3,7 @@ title: Recurring task rules
 summary: The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.
 audience: user
 section: Reference
-specs: [recurring-tasks]
+specs: [recurring-tasks, habits]
 screens: []
 order: 30
 ---

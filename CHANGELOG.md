@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Habits: track a repeating task as a habit with a streak and a month history; skip keeps the chain.** Turn on **Track as a habit** under a task's repeat rule (any rule except `after completion`). Its row shows a streak chip, and the task panel shows the current and best streak and a month grid of done, skipped, missed and upcoming days, navigable with the keyboard. Everything is computed on the device from the series' occurrence records, offline too. Skipping a habit records the day as skipped, so the streak holds; a scheduled day that passes without a record breaks it. Skipped days are not completions: they stay out of Completed and `completed` filters and never count towards `for N times`. The new `habit` filter keyword makes a Habits saved view one word. Sync is additive (the task fields `habit` and `skipped`); upgrade the server before the devices, as for every new field. ([Recurring tasks and reminders](docs/recurring-and-reminders.md#track-a-habit), [Habits reference](docs/recurrence.md#habits))
+
 ## [0.5.0] - 2026-10-16
 
 OpenTodo 0.5.0 is a new interface on the same data. The task panel is part of the frame and reads like a summary, the sidebar is shorter, Settings has nine sections with a search field, every keyboard shortcut comes from one registry and <kbd>?</kbd> lists the ones for where you are, and on a phone there is a tab bar, a **+** button and full-screen tasks. Around it: **Process the Inbox** one task at a time, a rich-text **note** at the top of every project, **public links** that share a project's list with anyone, optional **outgoing email** for password resets, verified sign-up and invitations, a **Month** calendar and a project **Timeline**, calendar feeds in both directions, attachments, tasks that wait for other tasks, bulk changes, duplicates and templates, and search and commands on <kbd>Ctrl</kbd>+<kbd>K</kbd>. Every help page is now short and opens with a screenshot.

@@ -20,6 +20,21 @@ A task SHALL have a title, description, optional project, priority 1 (highest) t
 - **WHEN** a task carries `ical_extra` and a device edits the task's title while offline, then syncs
 - **THEN** the task keeps its `ical_extra` value and the new title on every device
 
+### Requirement: Habit fields
+A task SHALL also have a boolean `habit` flag, default false, and an occurrence record of a habit SHALL carry a boolean `skipped` marker, default false (OpenSpec `habits`). Both SHALL be stored and synced like every task field, SHALL converge by per-field last-writer-wins, and SHALL be rejected when the value is not a boolean.
+
+#### Scenario: Habit defaults on creation
+- **WHEN** a task is created with only a title
+- **THEN** it is not a habit and is not skipped
+
+#### Scenario: Invalid habit values
+- **WHEN** a client submits a non-boolean `habit` or `skipped`
+- **THEN** the write is rejected as invalid and no field changes
+
+#### Scenario: Older client keeps the flags
+- **WHEN** a device running a build without habits edits the title of a habit and syncs
+- **THEN** the task keeps `habit` true on every device, because each field is its own operation
+
 ### Requirement: Quick capture
 The client SHALL offer a single-line quick-add input in every task view that creates a task on Enter and stays focused for the next entry. The line SHALL be parsed for attributes as defined by the natural-language-capture capability. The new task SHALL inherit the view's context (project, Today's date, Upcoming's tomorrow) for every attribute the line does not set.
 

@@ -27,14 +27,20 @@ export const PAIRS: Pair[] = [
   // TEXT × SURFACES above); the hairline that separates them in dark only needs to be visible.
   ...['canvas', 'surface', 'sunken', 'raised'].map((bg): Pair => ({ fg: 'border', bg, min: 1.1, kind: 'ui' })),
   ...ui('focus', ['canvas', 'surface', 'raised']),
-  // The habit month history (OpenSpec habits, design D4): each state's glyph or
-  // border on its cell. Skipped (muted on sunken, border-input), pending (accent-soft-text on
-  // accent-soft) are covered by the text pairs above.
-  ...ui('surface', ['success']),
-  ...ui('danger', ['danger-soft']),
   ...['p1', 'p2', 'p3', 'p4'].flatMap((p) => ui(p, ['canvas', 'surface'])),
   ...HUE_NAMES.flatMap((h): Pair[] => [
     ...ui(`hue-${h}-solid`, ['surface']),
     { fg: `hue-${h}-text`, bg: `hue-${h}-soft`, min: 4.5, kind: 'chip' },
   ]),
+]
+
+/**
+ * Glyphs and borders on the habit month history's cells (OpenSpec habits, design
+ * D4), checked by contrast.test.ts like PAIRS but kept out of the Colours story,
+ * whose swatches label every background in body text. Skipped (muted on sunken,
+ * border-input) and pending (accent-soft-text on accent-soft) are in PAIRS already.
+ */
+export const GLYPH_PAIRS: Pair[] = [
+  ...ui('surface', ['success']),
+  ...ui('danger', ['danger-soft']),
 ]

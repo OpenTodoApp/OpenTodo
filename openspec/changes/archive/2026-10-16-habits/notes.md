@@ -29,9 +29,13 @@ examples), and the docs.
 - **Done glyph colour.** Design D4 named `text-on-accent` on `bg-success`; that
   pair is 1.92:1 in dark (the dark success green is bright). The check is drawn in
   the `surface` colour instead (white in light, near-black in dark), and
-  `pairs.ts` gains `surface` on `success` and `danger` on `danger-soft` (the
-  missed cell's dashed border). Skipped uses `border-input` (the design's
-  `border-muted` is not a token).
+  `pairs.ts` gains `GLYPH_PAIRS`: `surface` on `success` and `danger` on
+  `danger-soft` (the missed cell's dashed border), checked by `contrast.test.ts`
+  in both themes and every accent. They are a separate list because the Colours
+  story renders every entry of `PAIRS` as a labelled swatch in body text, which
+  axe rejects on a green background (and would have changed that story's
+  baseline). Skipped uses `border-input` (the design's `border-muted` is not a
+  token).
 - **Day numbers.** Cells without a glyph (missed, upcoming, unscheduled) show the
   day of the month in the hint size, so the grid can be read without a screen
   reader; the number is `aria-hidden` and the accessible name carries the date.
@@ -48,7 +52,9 @@ examples), and the docs.
   as null. All Go tests pass.
 - **Icons.** `flame` was already in the sprite (used by the project icon set); only
   `minus` was added, regenerated with `scripts/icons-sync.mjs` from lucide-static
-  1.48.0.
+  1.48.0. `minus` was a website-only icon in `site-icons.json`; it is removed
+  there, since the site bundle now takes it from the app sprite (the
+  site-bundle test refuses duplicates).
 
 ## Verification
 
@@ -68,6 +74,23 @@ examples), and the docs.
   `screens-habit-history--*` and for `foundations-icons--all` (the sprite gained
   `minus`); generate them with the "UI baselines" workflow or `make ui-baselines`
   and commit them.
+
+## Archive (2026-10-16)
+
+Merging the deltas as written made four live requirements longer than the strict
+validator's 500 characters, and the extra "Older client keeps the flags" scenario
+in task-management "Task fields" broke the in-flight `custom-fields` change, whose
+MODIFIED block of that requirement must list every current scenario. The merged
+behaviour was therefore split out instead of appended, with no change in meaning:
+
+- task-management: "Task fields" is back to its previous text and scenarios; the
+  new "Habit fields" requirement holds the two booleans, their defaults, the
+  invalid values and the older-client scenario.
+- filter-queries: "Priority, state and search terms" is unchanged; the new "Habit
+  terms" requirement holds `habit` and the skipped-record exclusion.
+- recurring-tasks: "End conditions" is unchanged; "Skip an occurrence" keeps the
+  non-habit sentence; the new "Skipping a habit" requirement holds the skip record
+  and its exclusion from `for N times`, with both habit scenarios.
 
 ## Smoke test (task 5.1 substitute)
 

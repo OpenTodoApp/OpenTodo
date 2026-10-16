@@ -3,7 +3,7 @@ title: Recurring tasks and reminders
 summary: Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment.
 audience: user
 section: Guides
-specs: [recurring-tasks, reminders]
+specs: [recurring-tasks, reminders, habits]
 screens: []
 order: 50
 card: today

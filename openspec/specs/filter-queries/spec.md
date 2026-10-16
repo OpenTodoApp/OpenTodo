@@ -61,6 +61,17 @@ A query SHALL be a boolean expression over terms combined with `&` (and), `|` (o
 - **WHEN** the user enters `search: "oat milk"`
 - **THEN** tasks whose title or description contains "oat milk" in any letter case are listed
 
+### Requirement: Habit terms
+`habit` SHALL match tasks flagged as habits (OpenSpec `habits`). A skipped occurrence record of a habit SHALL match neither `completed` nor `open`, and so no query at all.
+
+#### Scenario: Habits
+- **WHEN** the user enters `habit & due <= today`
+- **THEN** the open habits due today or overdue are listed, evaluated on the device like every query
+
+#### Scenario: Skipped records never match
+- **WHEN** a habit was skipped yesterday and the user enters `completed`
+- **THEN** yesterday's skipped record is not listed, while a day the habit was done is
+
 ### Requirement: Client-side live evaluation
 Queries SHALL be evaluated on the device from local data and SHALL never require a network request. Results SHALL update live as local or synced changes arrive. Evaluation of a query over a few thousand tasks SHALL complete fast enough to keep typing responsive, and the client SHALL debounce evaluation while the user types.
 
