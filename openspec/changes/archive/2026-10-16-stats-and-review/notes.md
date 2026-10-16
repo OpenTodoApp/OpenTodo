@@ -26,3 +26,7 @@ The scheduler scenarios ("sent once before 07:15", "relay down for an hour", "sk
 ## Visual baselines
 
 Baselines are generated in the pinned Playwright image, not here. New stories: `screens-review-and-statistics--statistics-this-week`, `--statistics-four-weeks`, `--statistics-empty`, `--bar-chart`, `--weekly-review`, `--digest-on`, `--digest-change`, `--digest-unavailable`, `--digest-encrypted`, `--digest-offline`. Changed: `foundations-icons--all` (two icons), `screens-sidebar--default`, `--project-selected`, `--collapsed`, `--phone-drawer` and `screens-shell--list-only`, `--list-with-panel` (the Review and Statistics entries, and the "Review due" marker on the closed More group), `settings-navigation--overview-member` (the Notifications description), possibly `settings-navigation--section-page` and `--appearance-page` (the section list). The a11y gate passed for all of these in light and dark.
+
+## Integration with multi-tenant-host
+
+`multi-tenant-host` moved the background jobs into `internal/tenant`: the digest service is built there with outgoing email and started by `Tenant.StartJobs` (the `main.go` wiring is gone). In host mode the shared scheduler runs it as the `digest` kind, opening a tenant only when `digest.Service.NextDue` says a send, retry or give-up is due, and sends through the operator's outgoing email. The opt-in stays each user's on a hosted tenant; the `email-digest` spec says so in one sentence.

@@ -1,5 +1,6 @@
 import { Tooltip } from '../ui'
 import { requestSync, useSyncStatus } from '../lib/sync'
+import { useDemo } from '../lib/demo'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 
@@ -9,6 +10,7 @@ export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
 export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   const dt = useDateTimeFormat()
   const s = useSyncStatus()
+  const demo = !!useDemo()
   const map = {
     idle: { dot: 'bg-success', text: s.pending > 0 ? t('{n} pending', { n: s.pending }) : t('Synced') },
     syncing: { dot: 'bg-info animate-pulse', text: t('Syncing…') },
@@ -19,8 +21,11 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
     restricted: { dot: 'bg-warning', text: s.pending > 0 ? t('Set up two-factor · {n} waiting', { n: s.pending }) : t('Set up two-factor to sync') },
     // End-to-end encryption (OpenSpec e2ee): no key on this device, sync paused.
     locked: { dot: 'bg-warning', text: t('Locked') },
-    // Demo sandbox write budget used up (OpenSpec `demo-sandboxes`); changes wait.
-    limited: { dot: 'bg-warning', text: s.pending > 0 ? t('Demo limit · {n} waiting', { n: s.pending }) : t('Demo limit reached') },
+    // Demo sandbox write budget used up (OpenSpec `demo-sandboxes`), or a hosted
+    // server's limit (multi-tenant-host); changes wait on this device.
+    limited: demo
+      ? { dot: 'bg-warning', text: s.pending > 0 ? t('Demo limit · {n} waiting', { n: s.pending }) : t('Demo limit reached') }
+      : { dot: 'bg-warning', text: s.pending > 0 ? t('Server limit · {n} waiting', { n: s.pending }) : t('Server limit reached') },
   }[s.state]
   // Live state is secondary information: shown next to the existing text, and only
   // when it says something (offline and signed out already imply "not live").

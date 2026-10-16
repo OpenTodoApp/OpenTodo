@@ -2,6 +2,7 @@
 // "Settings search"): every section and the rows people look for, with the id of
 // the element that scrolls into view and takes focus when a result is opened. The
 // settings list's search field and the command palette read the same table.
+import { getHosted } from '../lib/hosted'
 import type { User } from '../lib/types'
 import { matchPrepared, prepare, prepareQuery } from '../ui'
 import type { SettingsSectionId } from './router'
@@ -19,6 +20,8 @@ export interface SettingsEntry {
   keywords?: string
   /** Who sees the row; the section's own visibility applies first. */
   visible?: (user: User) => boolean
+  /** On a hosted service (multi-tenant-host): 'managed' rows belong to the operator and are hidden, 'only' rows exist only there. */
+  hosted?: 'managed' | 'only'
 }
 
 const owner = (u: User) => u.role === 'owner'
@@ -71,19 +74,22 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'people', label: msg('Users'), description: msg('Everyone with an account, their role and last sign-in'), anchor: 'users-heading', keywords: 'admin deactivate reset password' },
   { section: 'people', label: msg('Members'), description: msg('Invite people with a single-use link'), anchor: 'members-heading', keywords: 'invite invitation' },
   { section: 'people', label: msg('Two-factor policy'), description: msg('Optional, required for the owner, or required for everyone'), anchor: 'mfa-policy-heading', visible: owner, keywords: '2fa mfa policy' },
-  { section: 'people', label: msg('Single sign-on'), description: msg('Sign in through your identity provider'), anchor: 'sso-heading', visible: owner, keywords: 'sso oidc' },
+  { section: 'people', label: msg('Single sign-on'), description: msg('Sign in through your identity provider'), anchor: 'sso-heading', visible: owner, keywords: 'sso oidc', hosted: 'managed' },
   { section: 'people', label: msg('Project invite links'), description: msg('Whether members can bring new people with project links'), anchor: 'project-invite-policy-heading', visible: owner, keywords: 'invite policy' },
   // Server
-  { section: 'server', label: msg('Backups'), description: msg('Scheduled backups, destinations, recent runs and restore'), anchor: 'backups-heading', keywords: 's3 webdav restore' },
-  { section: 'server', label: msg('Attachments'), description: msg('Turn attachments on or off and set their size limits'), anchor: 'attachments-settings-heading', keywords: 'files upload limit quota' },
-  { section: 'server', label: msg('Outgoing email'), description: msg('The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message'), anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password' },
+  { section: 'server', label: msg('Backups'), description: msg('Scheduled backups, destinations, recent runs and restore'), anchor: 'backups-heading', keywords: 's3 webdav restore', hosted: 'managed' },
+  { section: 'server', label: msg('Attachments'), description: msg('Turn attachments on or off and set their size limits'), anchor: 'attachments-settings-heading', keywords: 'files upload limit quota', hosted: 'managed' },
+  { section: 'server', label: msg('Outgoing email'), description: msg('The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message'), anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password', hosted: 'managed' },
+  { section: 'server', label: msg('Download your data'), description: msg('The whole server as one backup archive, to move to your own OpenTodo server'), anchor: 'server-archive-heading', keywords: 'archive export backup leave move self-host', hosted: 'only' },
   { section: 'server', label: msg('Audit log'), description: msg('What changed on the server and who did it'), anchor: 'audit-heading', keywords: 'audit' },
 ], 'label', 'description')
 
 /** The entries this user may open, in list order. */
 export function visibleEntries(user: User): SettingsEntry[] {
   const sections = new Set(visibleSections(user).map((s) => s.id))
-  return SETTINGS_INDEX.filter((e) => sections.has(e.section) && (!e.visible || e.visible(user)))
+  const hosted = getHosted()
+  return SETTINGS_INDEX.filter((e) => sections.has(e.section) && (!e.visible || e.visible(user)) &&
+    (e.hosted === 'managed' ? !hosted : e.hosted === 'only' ? hosted : true))
 }
 
 export interface SettingsHit { section: SettingsSection; entries: SettingsEntry[] }

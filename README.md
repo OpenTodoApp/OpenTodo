@@ -242,6 +242,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_EMAIL_ADDRESS`, `_IMAP_HOST`, `_IMAP_USER`, `_IMAP_PASSWORD` (or `_IMAP_PASSWORD_FILE`) | unset (off) | [Email to task](docs/email.md): all four together turn it on; setting only some stops startup |
 | `OPENTODO_EMAIL_IMAP_MAILBOX`, `_POLL_SECONDS`, `_PROCESSED` | `INBOX`, `60`, `move:OpenTodo/Processed` | Email to task tuning (minimum poll 15 s; `_PROCESSED` may be `delete`) |
 | `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](docs/backups.md#environment-presets) (`DESTINATION`, `SCHEDULE`, `TIME`, `WEEKDAY`, `KEEP`, `MAX_AGE_DAYS`, `COMPRESS`, `LOCAL_DIR`, `S3_*`, `WEBDAV_*`, `PASSPHRASE`/`PASSPHRASE_FILE`), applied once; Settings → Backups wins afterwards |
+| `OPENTODO_HOST_URL`, `_TOKEN`, `_OPERATOR_ADDR`, `_IDLE_MINUTES`, `_MAX_OPEN`, `_LIMITS` | unset (off) | [Host mode](docs/self-hosting/host-mode.md) for operators of a hosted service: many tenants in one process, chosen by host name. Not needed to self-host |
 
 `OPENTODO_PORT` in `.env` only changes the host port published by `docker-compose.yml`. The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
 

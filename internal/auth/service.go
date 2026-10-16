@@ -108,6 +108,8 @@ type Service struct {
 	// setupToken, when non-empty, must accompany the first registration
 	// (OPENTODO_SETUP_TOKEN, OpenSpec change owner-bootstrap).
 	setupToken string
+	// maxMembers caps active accounts on a hosted tenant (limits.go); 0: none.
+	maxMembers int
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,
@@ -211,6 +213,11 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 		u.Role, invitationID = role, id
 	case !s.allowSignup:
 		return nil, ErrSignupClosed
+	}
+	if n > 0 {
+		if err := s.checkMemberLimit(ctx, tx); err != nil {
+			return nil, err
+		}
 	}
 	_, err = tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
 		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt)

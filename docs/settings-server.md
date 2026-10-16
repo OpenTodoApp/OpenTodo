@@ -29,4 +29,6 @@ The **Server** group of [Settings](settings.md) is for the people who run the se
 - **Outgoing email**: the SMTP server this server sends mail through, for password resets, sign-up confirmations and invitations. The card shows whether it's configured, the server and From address, and the last test. **Configure** opens the form, where fields set by `OPENTODO_SMTP_*` variables are read-only. **Send test email** sends a message to you and shows the mail server's answer when it fails. See [Outgoing email](self-hosting/outgoing-email.md).
 - **Audit log**: what changed on the server and who did it, with its retention settings.
 
+On a hosted service the provider runs backups, attachment limits, outgoing email and single sign-on, so those cards are hidden. **Download your data** gives the owner the whole server as one backup archive instead, ready to restore into a server of your own. See [Host mode](self-hosting/host-mode.md#owners-take-their-data-away).
+
 Running the server itself is covered in [Running with Docker](self-hosting/docker.md).

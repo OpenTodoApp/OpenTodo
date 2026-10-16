@@ -29,6 +29,7 @@ import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
 import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
+import { setHosted } from '../lib/hosted'
 
 // Display mode (display-mode): its own chunk, fetched when a display route opens.
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
@@ -58,6 +59,7 @@ export function App() {
     try {
       const status = await api.authStatus()
       setDemo(status.demo)
+      setHosted(status.hosted)
       setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))

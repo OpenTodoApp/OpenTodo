@@ -43,6 +43,13 @@ The server SHALL send a user's digest once per chosen weekday, within 15 minutes
 - **WHEN** the SMTP server is unreachable from 07:00 to 08:00
 - **THEN** the digest is sent by the first retry after 08:00 (no later than 08:15) and one `email.failed` per failed attempt is recorded
 
+### Requirement: Digest in host mode
+In host mode (multi-tenant-host) each tenant user SHALL opt in to the digest for themselves, and the host's shared scheduler SHALL send it through the operator's outgoing email, opening the tenant only when a digest is due.
+
+#### Scenario: Digest in a closed tenant
+- **WHEN** a hosted tenant is closed and one of its users' digest hour passes while the operator has configured outgoing email
+- **THEN** the host opens the tenant, sends one `digest` message, and indexes the next one a week later
+
 ### Requirement: Digest content
 The digest SHALL contain: completed, created, completed late and slipped for the last full week by the user's week start; overdue tasks (up to 15, with due date and project); tasks due in the next seven days (up to 15); projects with no open task (up to 10); when the last review was; and a link to `/review`. It SHALL be plain text in the stored language, with no other person's data beyond names already visible to the user.
 

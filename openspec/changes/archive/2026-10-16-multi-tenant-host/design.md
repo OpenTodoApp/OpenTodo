@@ -10,7 +10,8 @@
 - **Services take their database by injection.** Package-level state is limited (about 40 variables to review). The data directory is referenced in 9 packages.
 - **Measured cost:** an idle server uses about 20 MB RSS. A fresh data directory is under 1 MB. Migrations (25 so far) run on open via `PRAGMA user_version`.
 - **Existing machinery to reuse:** demo sandboxes already host many short-lived accounts in one process, with write budgets, a database size guard and per-address limits (`internal/demo`, `internal/httpapi/demo.go`).
-- **No outgoing email.** Password resets are links an admin creates.
+- **Outgoing email** shipped separately as the `outgoing-email` change (`internal/mail`, D6).
+- **Background jobs** already run in one elected process per data directory (`runJobsWhenLeader` with `store.LockJobs`), so rolling updates never run them twice.
 - See proposal.md for the motivation and the decision to keep this in the open binary.
 
 ## Goals / Non-Goals
@@ -29,26 +30,27 @@
 ## Decisions
 
 ### D1. Tenant = data directory, built by one constructor
-`main.go`'s wiring moves into `tenant.Open(dir, hostCfg) (*Tenant, error)`. It holds the store, the services, the notifier and the per-tenant HTTP handler. `Close()` stops its work and closes the database. A normal server calls it once. This is phase 1, shippable alone, with no behaviour change, verified by the existing test suite and `cli-smoke`.
+`main.go`'s wiring moves into `tenant.Open(ctx, cfg, opts) (*Tenant, error)` (`internal/tenant`). It takes the shared data-directory lock, applies a pending web restore, opens and migrates the store and builds the services, the notifier and the per-tenant HTTP handler. `StartJobs` starts a self-hosted server's background goroutines; `Close()` ends live streams, closes the database and releases the lock. A normal server calls it once with its own configuration; a host derives a configuration per tenant (data directory, base URL, setup token, limits) and passes `Options.Hosted`. This is phase 1, with no behaviour change, verified by the existing test suite, `cli-smoke` and a two-tenant isolation test. The review of every package-level variable, with its verdict, is in notes.md: none holds per-server state that leaks between tenants.
 
 Alternative considered: a `tenant_id` column in every table (row-level multi-tenancy). Rejected because it changes every query and the data model, breaks byte-compatibility with self-hosted data, and puts every tenant behind one writer.
 
 ### D2. Host mode: routing, lazy open, idle close
-- **Routing.** With host mode on, a request's host name (`<tenant>.<host domain>`) selects the tenant from a host-level registry, a small SQLite database outside tenant directories.
-- **Lazy open.** A tenant is opened on first request, which also runs its migrations.
-- **Idle close.** An LRU closes tenants idle beyond a timeout, but never while a live event stream is attached.
-- **Open-cost guard.** A per-host cap on open tenants bounds memory. When the cap is reached, the least recently used idle tenant closes first.
+- **Configuration.** Optional `OPENTODO_HOST_URL` (for example `https://example.cloud`) turns host mode on and needs `OPENTODO_HOST_TOKEN`; `OPENTODO_HOST_OPERATOR_ADDR`, `OPENTODO_HOST_IDLE_MINUTES`, `OPENTODO_HOST_MAX_OPEN` and `OPENTODO_HOST_LIMITS` are optional. Host mode refuses a data directory holding a self-hosted database and cannot be combined with `OPENTODO_DEMO`.
+- **Routing.** With host mode on, a request's host name (`<tenant>.<host domain>`) selects the tenant from a host-level registry, a small SQLite database (`<data>/host.db`) beside the tenant directories (`<data>/tenants/<name>`). Unknown and deleted names answer the same 404; suspended ones 503; the bare address answers the health check only.
+- **Lazy open.** A tenant is opened on first request, which also runs its migrations. A tenant that fails to open answers 503, its error is stored for the operator, and it is retried after a minute.
+- **Idle close.** Tenants idle beyond a timeout (default 10 minutes) close, but never while a request, a live event stream included, uses them.
+- **Open-cost guard.** A per-host cap on open tenants (default 500) bounds memory. When the cap is reached, the least recently used idle tenant closes first; when none is idle the request answers 503 `busy`.
 
 ### D3. One scheduler for all tenants
 Per-tenant goroutines (push every 30 s, retention, audit pruning, backups, webhooks) don't scale with thousands of tenants. Instead:
-- **"Next due" index.** Each tenant writes its next due instant per job kind (earliest undelivered reminder, next backup, next retention pass, pending webhook delivery) into a host-level table whenever it changes.
-- **One host scheduler.** It sleeps until the earliest entry, opens only those tenants (D2), runs the job through the same code paths as today, and records the next due time.
+- **"Next due" index.** Each open tenant writes its next due instant per job kind (`reminders`, `backup`, `webhooks`, `calendars`, and `housekeeping` for Trash retention, audit, sign-up and delivery-log pruning) into the registry's `due` table: when it opens, after a committed write (debounced), every 30 s while open, after its jobs ran and when it closes.
+- **One host scheduler.** It sleeps until the earliest entry (at most 30 s, the push tick), opens only those tenants (D2), runs the job through the same code paths as today (`push.Tick`, `backup.RunIfDue`, `webhook.ProcessDue`, `calfeed.RunOnce`, the retention and prune passes), and records the next due time. It runs in the process that holds the host's jobs lock, as a self-hosted server's jobs do.
 - **Single-tenant servers** keep their current loops, so self-hosted behaviour doesn't change.
 
 Alternative considered: polling every tenant on an interval. Rejected because the cost grows with registered tenants, not due work.
 
 ### D4. Operator-level settings move to the host
-On a host, SMTP, single sign-on, backup destinations, push subject, the MCP and AI switches and sign-up policy are operator concerns. Host mode reads them from host configuration and hides the corresponding owner panels in tenants. Tenant owners keep their tenant-level settings (members, invitations, their own policies). A single-tenant server is unchanged: the owner remains the operator.
+On a host, SMTP, single sign-on, backup destinations, push subject, the MCP and AI switches and sign-up policy are operator concerns, and so are attachment limits and the webhook network policy (disk and the host's private network). Host mode reads them from host configuration (the same `OPENTODO_*` variables a self-hosted server reads), answers the tenant routes that read or write them with 403 `host_managed`, and hides the corresponding owner panels in tenants (`auth/status` says `hosted`). Email to task needs a mailbox per server and is off on a host. Tenant owners keep their tenant-level settings (members, invitations, their own policies). A single-tenant server is unchanged: the owner remains the operator.
 
 ### D5. Limits per tenant
 These generalise the demo sandbox budgets into tenant limits:
@@ -58,7 +60,7 @@ These generalise the demo sandbox budgets into tenant limits:
 - import size
 - number of members
 
-Exceeding a limit refuses the write with a clear error and leaves sync otherwise working, as the demo budgets do today. Limits are host configuration, so later paid plans can be expressed as limit sets.
+Exceeding a limit refuses the write with a clear error and leaves sync otherwise working. Unlike the demo budget, which refuses a whole batch, a tenant limit refuses single operations through a `sync.Quota` hook (reasons `limit_storage`, `limit_ops_hour`, `limit_ops_total`), and the server sends no value back for them, so the device keeps the change and offers it again later. Limits are host configuration (`OPENTODO_HOST_LIMITS` defaults, per-tenant overrides through the operator interface), so later paid plans can be expressed as limit sets.
 
 ### D6. Outgoing email (phase 2)
 SMTP with the standard library (`net/smtp` with STARTTLS or TLS), configured by optional `OPENTODO_SMTP_*` variables or owner settings with the password in the secrets directory, like the IMAP password. It enables verified self-service sign-up and self-service password reset. Sending is rate limited per address and per account. Failures are logged and audited, never retried in a tight loop. Without SMTP, nothing changes.
@@ -66,8 +68,8 @@ SMTP with the standard library (`net/smtp` with STARTTLS or TLS), configured by 
 Shipped in the `outgoing-email` change (`openspec/specs/outgoing-email/`). The decisions as shipped: owner settings through `GET`/`PUT /api/v1/settings/smtp` with `OPENTODO_SMTP_*` overriding and locking each field; the password only in the secrets directory; five message kinds (`verify_signup`, `password_reset`, `invitation`, `project_invite`, `test`), plain text in the six quick-add languages; limits of 5 messages of one kind per address per hour and 100 per hour in total; synchronous sending with a 15-second timeout, no queue or retry, `email.sent`/`email.failed` audit events; no task content for accounts with end-to-end encryption. A host reads the same settings from host configuration (3.3).
 
 ### D7. Tenant lifecycle and portability
-The operator interface is authenticated with a host-level token, never reachable from a tenant's host name. It can:
-- create a tenant (empty, or from a backup archive)
+The operator interface is authenticated with a host-level token and listens on its own address (`OPENTODO_HOST_OPERATOR_ADDR`, default `127.0.0.1:8081`), so it is never reachable from a tenant's host name. It can:
+- create a tenant (empty, returning a setup token for its first account, or from a backup archive)
 - suspend and resume it
 - delete it (data directory removed, registry entry kept as a tombstone for a grace period)
 - export it as the same archive `opentodo restore` reads
@@ -101,5 +103,12 @@ A self-hosted server never needs to migrate anything. Rollback of any phase is a
 
 ## Open Questions
 
-- Host-level registry location and schema details, settled in phase 3.
-- Idle timeout and open-tenant cap defaults, settled by measurement in phase 3.
+Settled while implementing (see notes.md):
+- Registry: `<data>/host.db` with `tenants` and `due` tables.
+- Defaults: idle close after 10 minutes and at most 500 open tenants, from a measured ~130 KiB of heap per open tenant and ~60 ms for a cold open with a sign-in.
+
+## Data, size and interface impact
+
+- **Data model:** none per tenant: no migration, no op field. Host mode adds `host.db` outside every tenant. The client keeps ops refused by a limit in one `meta` row (`heldOps`); no IndexedDB schema change.
+- **Size:** no new dependency; the binary grows by about 0.2 MB (0.9 %). A self-hosted server's memory is unchanged.
+- **Interface budget:** the only screen change is in Settings: on a hosted server some cards are hidden and one card ("Download your data") replaces them; no chrome row, task property, sidebar destination, scroll region or shortcut is added.

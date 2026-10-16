@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"strings"
 	"sync"
@@ -268,52 +269,19 @@ WHERE f.entity = 'reminder' AND f.field = 'fire_at' AND f.scope_id LIKE 'user:%'
 ORDER BY CAST(f.value AS REAL)`
 
 func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder, error) {
-	rows, err := s.db.QueryContext(ctx, dueQuery, nowMs)
+	cands, err := s.candidates(ctx, nowMs, -1)
 	if err != nil {
-		return nil, fmt.Errorf("scan due reminders: %w", err)
-	}
-	var cands []dueReminder
-	for rows.Next() {
-		var d dueReminder
-		var scope string
-		var fire float64
-		if err := rows.Scan(&scope, &d.ID, &fire, &d.TaskID); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		d.UserID = strings.TrimPrefix(scope, "user:")
-		d.FireAt = int64(fire)
-		cands = append(cands, d)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	// Only reminders on an open task the user can still see fire, and not while
-	// the task's project or any ancestor project is in the Trash.
 	var out []dueReminder
 	trashed := map[string]bool{} // "<user>\x00<project>" -> in the Trash (this pass)
 	for _, d := range cands {
-		t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
+		ok, err := s.eligible(ctx, &d, trashed)
 		if err != nil {
 			return nil, err
 		}
-		if t == nil || t.Deleted() || !isNull(t["completed_at"]) {
+		if !ok {
 			continue
-		}
-		inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
-		if err != nil {
-			return nil, err
-		}
-		if inTrash {
-			// Not recorded as delivered: once the project is restored the
-			// reminder is delivered on the next pass (OpenSpec `reminders`).
-			continue
-		}
-		// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
-		// as ciphertext: the notification falls back to the content-free text.
-		if title := jsonString(t["title"]); !e2ee.IsCiphertext(title) {
-			d.Title = title
 		}
 		out = append(out, d)
 		if len(out) == batchLimit {
@@ -321,6 +289,81 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 		}
 	}
 	return out, nil
+}
+
+// candidates runs dueQuery: undelivered reminders firing at or before
+// maxFireMs, earliest first, at most limit rows (-1: all).
+func (s *Service) candidates(ctx context.Context, maxFireMs int64, limit int) ([]dueReminder, error) {
+	rows, err := s.db.QueryContext(ctx, dueQuery+" LIMIT ?", maxFireMs, limit)
+	if err != nil {
+		return nil, fmt.Errorf("scan due reminders: %w", err)
+	}
+	defer rows.Close()
+	var cands []dueReminder
+	for rows.Next() {
+		var d dueReminder
+		var scope string
+		var fire float64
+		if err := rows.Scan(&scope, &d.ID, &fire, &d.TaskID); err != nil {
+			return nil, err
+		}
+		d.UserID = strings.TrimPrefix(scope, "user:")
+		d.FireAt = int64(fire)
+		cands = append(cands, d)
+	}
+	return cands, rows.Err()
+}
+
+// eligible reports whether a candidate fires: only reminders on an open task
+// the user can still see, and not while the task's project or any ancestor
+// project is in the Trash. It fills in the title that may be pushed.
+func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[string]bool) (bool, error) {
+	t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
+	if err != nil {
+		return false, err
+	}
+	if t == nil || t.Deleted() || !isNull(t["completed_at"]) {
+		return false, nil
+	}
+	inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
+	if err != nil {
+		return false, err
+	}
+	if inTrash {
+		// Not recorded as delivered: once the project is restored the
+		// reminder is delivered on the next pass (OpenSpec `reminders`).
+		return false, nil
+	}
+	// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
+	// as ciphertext: the notification falls back to the content-free text.
+	if title := jsonString(t["title"]); !e2ee.IsCiphertext(title) {
+		d.Title = title
+	}
+	return true, nil
+}
+
+// nextScan bounds how many candidates NextDue examines.
+const nextScan = 1000
+
+// NextDue is the firing time of the earliest reminder Tick would push; ok is
+// false when none is pending (a host's "next due" index, OpenSpec
+// `multi-tenant-host`). A time in the past means a pass is due now.
+func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
+	cands, err := s.candidates(ctx, math.MaxInt64, nextScan)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	trashed := map[string]bool{}
+	for _, d := range cands {
+		ok, err := s.eligible(ctx, &d, trashed)
+		if err != nil {
+			return time.Time{}, false, err
+		}
+		if ok {
+			return time.UnixMilli(d.FireAt), true, nil
+		}
+	}
+	return time.Time{}, false, nil
 }
 
 // maxProjectDepth bounds the ancestor walk; the seen set already stops cycles.

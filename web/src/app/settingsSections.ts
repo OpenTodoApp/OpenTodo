@@ -1,6 +1,7 @@
 // The Settings sections (OpenSpec change ux-overhaul, settings-navigation; design
 // D6): one table of nine sections in four groups, shared by the section list, the
 // pages, the search index, the palette and the tests.
+import { getHosted } from '../lib/hosted'
 import { isAdministrator } from '../lib/roles'
 import type { User } from '../lib/types'
 import type { IconName } from '../ui'
@@ -58,13 +59,13 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
   { id: 'data', label: msg('Data'), group: 'data', icon: 'download', description: () => t('Export, import, sync status and archived projects') },
   {
     id: 'people', label: msg('People'), group: 'server', icon: 'users',
-    description: (u) => (owner(u) ? t('Users, invitations, members, access policies and single sign-on') : t('Users, invitations and members')),
+    description: (u) => (owner(u) ? (getHosted() ? t('Users, invitations, members and access policies') : t('Users, invitations, members, access policies and single sign-on')) : t('Users, invitations and members')),
     visible: (u) => isAdministrator(u),
     demo: (u) => (owner(u) ? [msg('users and invitations'), msg('the two-factor policy'), msg('single sign-on'), msg('project invite links')] : [msg('users and invitations')]),
   },
   {
     id: 'server', label: msg('Server'), group: 'server', icon: 'upload',
-    description: () => t('Backups, attachments, outgoing email and the audit log'),
+    description: () => (getHosted() ? t('Download your data and the audit log') : t('Backups, attachments, outgoing email and the audit log')),
     visible: owner,
     demo: () => [msg('backups'), msg('outgoing email')],
   },
