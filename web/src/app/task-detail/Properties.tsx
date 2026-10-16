@@ -320,7 +320,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
         {visible('reminders') && (
           <PropertyChip id="reminders" icon="alarm-clock" label={t('Reminders')} readOnly={readOnly} {...chipProps('reminders')}
             empty={reminders === 0} placeholder={t('Reminder')}
-            value={`${reminders} reminder${reminders === 1 ? '' : 's'}`}
+            value={t('{reminders, plural, one {# reminder} other {# reminders}}', { reminders })}
             editorLabel={t('When')} editor={(close) => <WhenControl task={task} readOnly={readOnly} focus="reminders" onDone={close} onOpen={onOpen} />} />
         )}
 

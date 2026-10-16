@@ -236,6 +236,12 @@
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "A task can wait for at most {max} tasks": [
+    "web/src/lib/dependencies.ts"
+  ],
+  "A task cannot wait for itself": [
+    "web/src/lib/dependencies.ts"
+  ],
   "A task due today: press c to complete it": [
     "web/src/app/FirstRun.tsx"
   ],
@@ -3144,7 +3150,7 @@
   "Follow browser languages ({join})": [
     "web/src/app/QuickAddSettings.tsx"
   ],
-  "Follow quick add (": [
+  "Follow quick add ({language})": [
     "web/src/app/VoiceSettings.tsx"
   ],
   "For Chromium and Firefox, in the repository under {path}.": [
@@ -3518,7 +3524,7 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/lib/webhooks.ts"
   ],
-  "Import {actionable} item": [
+  "Import {actionable, plural, one {# item} other {# items}}": [
     "web/src/app/ImportScreen.tsx"
   ],
   "Import: {note}": [
@@ -7797,6 +7803,9 @@
   "That sign-in took too long or was started in another tab. Please try again.": [
     "web/src/app/sso.ts"
   ],
+  "That task": [
+    "web/src/lib/dependencies.ts"
+  ],
   "That task left the Inbox on another device, so the next one is shown.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -9235,6 +9244,7 @@
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/subtasks.ts",
@@ -10341,6 +10351,9 @@
   "next try {instant}": [
     "web/src/lib/webhooks.ts"
   ],
+  "no": [
+    "web/src/lib/history.ts"
+  ],
   "no date": [
     "web/src/lib/activity.ts"
   ],
@@ -10847,6 +10860,9 @@
   "yellow": [
     "web/src/lib/colourNames.ts"
   ],
+  "yes": [
+    "web/src/lib/history.ts"
+  ],
   "yesterday": [
     "web/src/lib/review.ts"
   ],
@@ -10856,13 +10872,16 @@
   "your task": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "{accounts, plural, one {# account} other {# accounts}}, {projects, plural, one {# project} other {# projects}}, {tasks, plural, one {# task} other {# tasks}}": [
+    "web/src/app/RestoreSection.tsx"
+  ],
   "{actor} {action}": [
     "web/src/lib/activityRuns.ts"
   ],
   "{archivesError} You can still upload an archive.": [
     "web/src/app/RestoreSection.tsx"
   ],
-  "{attempts} attempt": [
+  "{attempts, plural, one {# attempt} other {# attempts}}": [
     "web/src/app/WebhooksPanel.tsx"
   ],
   "{browser} on {os}": [
@@ -11036,6 +11055,9 @@
   ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
+  ],
+  "{n, plural, one {# item} other {# items}}": [
+    "web/src/lib/history.ts"
   ],
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx"
@@ -11333,6 +11355,9 @@
   "{rejected}. The server's values are shown again.": [
     "web/src/app/Shell.tsx"
   ],
+  "{reminders, plural, one {# reminder} other {# reminders}}": [
+    "web/src/app/task-detail/Properties.tsx"
+  ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -11387,6 +11412,9 @@
   "{used} used (no total)": [
     "web/src/app/DataSettings.tsx"
   ],
+  "{value} min": [
+    "web/src/lib/history.ts"
+  ],
   "{what} is no longer on this device, so its change was left out.": [
     "web/src/lib/assistant.ts"
   ],
@@ -11413,6 +11441,12 @@
   ],
   "“{name}” would go over your {quota} of attachments.": [
     "web/src/lib/attachments.ts"
+  ],
+  "“{title}” already waits for this task, so it cannot block it": [
+    "web/src/lib/dependencies.ts"
+  ],
+  "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": [
+    "web/src/lib/dependencies.ts"
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"

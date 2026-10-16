@@ -134,7 +134,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                         <code className="text-default">{d.event}</code>
                         <span className="text-faint">{dt.formatInstant(d.createdAt, 'datetime')}</span>
                         <span className="text-muted">
-                          {t('{attempts} attempt', { attempts: d.attempts })}{d.attempts === 1 ? '' : 's'}{deliveryOutcome(d) ? ` · ${deliveryOutcome(d)}` : ''}
+                          {t('{attempts, plural, one {# attempt} other {# attempts}}', { attempts: d.attempts })}{deliveryOutcome(d) ? ` · ${deliveryOutcome(d)}` : ''}
                         </span>
                         {(d.status === 'delivered' || d.status === 'failed') && (
                           <Button size="sm" variant="ghost" disabled={disabled} onClick={() => p.onRedeliver(d)}>{t('Redeliver')}</Button>

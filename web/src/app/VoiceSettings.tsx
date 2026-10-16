@@ -57,7 +57,7 @@ export function VoiceSettingsSection() {
       {supported && s.enabled && (
         <SettingRow label={t('Recognition language')} htmlFor="voice-lang" control={
           <Select id="voice-lang" className="sm:w-56" value={s.lang ?? ''} onChange={(e) => update({ ...s, lang: e.target.value || null })}>
-            <option value="">{t('Follow quick add (')}{LANGUAGE_NAMES[followed] ?? followed})</option>
+            <option value="">{t('Follow quick add ({language})', { language: LANGUAGE_NAMES[followed] ?? followed })}</option>
             {BUNDLED_LANGUAGES.map((code) => <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>)}
           </Select>
         } />

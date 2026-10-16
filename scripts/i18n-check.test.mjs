@@ -45,3 +45,9 @@ test('a Settings path must use the catalog’s own section names', () => {
   const problems = checkCatalog('de', { ...de, 'Open Settings → Security': 'Öffne Einstellungen → Security' }, messages, fmt)
   assert.deepEqual(problems, ['de: "Open Settings → Security" names the section Security, but its translation does not say "Sicherheit"'])
 })
+
+test('a path in an operating system’s settings keeps that system’s wording', () => {
+  const id = 'On Android, check Settings → Apps → your browser.'
+  const problems = checkCatalog('de', { ...de, [id]: 'Prüfe unter Android Einstellungen → Apps → dein Browser.' }, [...messages, id], fmt)
+  assert.deepEqual(problems, [])
+})

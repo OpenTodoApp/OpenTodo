@@ -203,7 +203,7 @@ export function ImportView(p: ImportViewProps) {
             {p.preview ? t('Refresh preview') : t('Preview')}
           </button>
           <button className="ui-btn ui-btn--primary ui-btn--md" disabled={disabled || !p.preview || actionable === 0 || p.job?.status === 'running'} onClick={p.onStart}>
-            {t('Import {actionable} item', { actionable })}{actionable === 1 ? '' : 's'}
+            {t('Import {actionable, plural, one {# item} other {# items}}', { actionable })}
           </button>
           {p.busy && <span className="text-meta text-faint">{t('Working…')}</span>}
         </div>

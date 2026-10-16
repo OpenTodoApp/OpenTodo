@@ -99,10 +99,10 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
   if (field === 'start' && typeof value === 'string') return value === 'someday' ? t('Someday') : formatDate(value, 'compact')
   if (field === 'evening' && typeof value === 'boolean') return value ? t('on') : t('off')
   if (field === 'priority') return `P${String(value)}`
-  if (field === 'estimate_minutes' && typeof value === 'number') return `${value} min`
-  if (field === 'blocked_by' && Array.isArray(value) && names) return value.length ? value.map((id) => names('parent_id', String(id)) ?? 'unknown').join(', ') : '—'
-  if (Array.isArray(value)) return value.length ? `${value.length} item${value.length === 1 ? '' : 's'}` : '—'
-  if (typeof value === 'boolean') return value ? 'yes' : 'no'
+  if (field === 'estimate_minutes' && typeof value === 'number') return t('{value} min', { value })
+  if (field === 'blocked_by' && Array.isArray(value) && names) return value.length ? value.map((id) => names('parent_id', String(id)) ?? t('unknown')).join(', ') : '—'
+  if (Array.isArray(value)) return value.length ? t('{n, plural, one {# item} other {# items}}', { n: value.length }) : '—'
+  if (typeof value === 'boolean') return value ? t('yes') : t('no')
   const s = typeof value === 'string' ? value : JSON.stringify(value)
   return s.length > 80 ? `${s.slice(0, 79)}…` : s
 }

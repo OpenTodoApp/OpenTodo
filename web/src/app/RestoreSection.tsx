@@ -185,7 +185,7 @@ export function RestoreDialog(p: RestoreDialogProps) {
               {s.manifest?.appVersion && <><dt className="text-muted">{t('Made by')}</dt><dd>{t('OpenTodo {appVersion}', { appVersion: s.manifest.appVersion })}</dd></>}
               <dt className="text-muted">{t('Schema version')}</dt><dd>{s.manifest?.schemaVersion}</dd>
               <dt className="text-muted">{t('Size')}</dt><dd>{formatBytes(s.size)}{s.encrypted ? ` · ${t('encrypted')}` : ''}</dd>
-              {s.counts && <><dt className="text-muted">{t('Contains')}</dt><dd>{plural(s.counts.accounts, 'account')}, {plural(s.counts.projects, 'project')}, {plural(s.counts.tasks, 'task')}</dd></>}
+              {s.counts && <><dt className="text-muted">{t('Contains')}</dt><dd>{t('{accounts, plural, one {# account} other {# accounts}}, {projects, plural, one {# project} other {# projects}}, {tasks, plural, one {# task} other {# tasks}}', { accounts: s.counts.accounts, projects: s.counts.projects, tasks: s.counts.tasks })}</dd></>}
             </dl>
             <div className="rounded-control bg-warning-soft p-3 text-meta text-on-warning-soft" data-testid="restore-consequences">
               <p className="font-medium">{t('What will happen')}</p>
@@ -209,10 +209,6 @@ export function RestoreDialog(p: RestoreDialogProps) {
       </div>
     </Dialog>
   )
-}
-
-function plural(n: number, word: string): string {
-  return `${new Intl.NumberFormat().format(n)} ${word}${n === 1 ? '' : 's'}`
 }
 
 /** Full-screen status while the server restarts (spec: restore state across the restart). */

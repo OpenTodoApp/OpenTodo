@@ -29,6 +29,9 @@ export async function loadFormat(root = repo) {
 }
 
 const SETTINGS_PATH = /Settings → ([A-Z][\w-]*(?: [\w-]+)*)/g
+// Paths in an operating system's own settings ("On Android, check Settings → Apps …")
+// use that system's wording in each language, not the app's section names.
+const OS_SETTINGS = /\bOn (Android|Windows|iPhone|macOS)\b|\bSystem Settings\b/
 
 /**
  * Problems of one catalog against the source messages.
@@ -58,7 +61,7 @@ export function checkCatalog(lang, catalog, messages, fmt) {
   const settings = catalog.Settings
   for (const id of messages) {
     const value = catalog[id]
-    if (typeof value !== 'string') continue
+    if (typeof value !== 'string' || OS_SETTINGS.test(id)) continue
     for (const m of id.matchAll(SETTINGS_PATH)) {
       const first = m[1].split(' → ')[0]
       const section = catalog[first]
