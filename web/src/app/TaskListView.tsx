@@ -18,7 +18,8 @@ import { TodayAskAction } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
 import { moveTask, moveTaskBy, type Step } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
-import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, saveViewMode, setSectionCollapsed } from '../lib/sections'
+import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, nextViewMode, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
+import { TimelineView } from './TimelineView'
 import { BoardView, sectionTarget, type BoardColumn } from './BoardView'
 import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
 import { LabelPicker } from './LabelPicker'
@@ -52,9 +53,12 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 }
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
-type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' } | { view: 'task' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
+/** The project layouts, in `v` order (month-and-timeline-views). */
+const LAYOUT_LABEL: Record<ProjectViewMode, string> = { list: 'List', board: 'Board', timeline: 'Timeline' }
+
 interface Row {
   task: Task
   depth: number
@@ -203,6 +207,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     () => (projectId ? loadCollapsedSections(projectId) : Promise.resolve([] as string[])), [projectId], [] as string[],
   )
   const board = !!projectId && viewMode === 'board'
+  const timeline = !!projectId && viewMode === 'timeline'
   const projectEditable = !!projectId && canEditTasks(roleOf(projectId, memberMap))
   const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
   /** Top-level tasks of the project bucketed by section: list headings and board columns. */
@@ -349,8 +354,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
   const toggleViewMode = useCallback(() => {
-    if (projectId) void saveViewMode(projectId, board ? 'list' : 'board')
-  }, [projectId, board])
+    if (projectId) void saveViewMode(projectId, nextViewMode(viewMode))
+  }, [projectId, viewMode])
+  const chooseViewMode = useCallback((m: ProjectViewMode) => {
+    if (projectId && m !== viewMode) void saveViewMode(projectId, m)
+  }, [projectId, viewMode])
   const toggleSection = useCallback((key: string, force?: boolean) => {
     if (projectId) void setSectionCollapsed(projectId, key, force ?? !collapsedSections.includes(key))
   }, [projectId, collapsedSections])
@@ -806,16 +814,16 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div className="min-w-0 px-4 py-5 md:px-8">
-        <div className={board ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
+        <div className={board || timeline ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={(
                 <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
-                  {(['list', 'board'] as const).map((m) => (
-                    <Tooltip key={m} label={m === 'list' ? 'List' : 'Board'} shortcut={keysOf('project.view-mode')}>
-                      <button type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
-                        className={`${m === 'list' ? 'rounded-l-control' : 'rounded-r-control'} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
-                        {m === 'list' ? 'List' : 'Board'}
+                  {(['list', 'board', 'timeline'] as const).map((m) => (
+                    <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
+                      <button type="button" aria-pressed={viewMode === m} onClick={() => chooseViewMode(m)}
+                        className={`${m === 'list' ? 'rounded-l-control' : m === 'timeline' ? 'rounded-r-control' : ''} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+                        {LAYOUT_LABEL[m]}
                       </button>
                     </Tooltip>
                   ))}
@@ -870,6 +878,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
               onCurrentColumn={setCurrentColumn}
             />
+          ) : timeline && currentProject ? (
+            <TimelineView groups={groups} today={today} zone={zone} editable={projectEditable} selectedId={selectedId}
+              onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
             <section key={g.key} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
@@ -908,7 +919,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               {!(g.heading && g.folded === undefined && collapsedGroups.has(groupKey(route.view, g.key))) && <ul>{g.rows.map((r) => renderRow(r))}</ul>}
             </section>
           ))}
-          {route.view === 'project' && !board && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
+          {route.view === 'project' && !board && !timeline && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
         </div>
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>

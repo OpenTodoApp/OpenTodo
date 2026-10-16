@@ -91,6 +91,10 @@ A project with a few hundred open tasks renders a few hundred rows and bars, eac
 - Month < 640 px: cells show the day number and a count badge (`cellTasks(...).length`), the focused day's tasks render under the grid through the same `TaskRow` rows used by lists (with the list's keyboard handling), and the seven columns are `1fr` each with a 16 px gutter.
 - Timeline < 640 px: the label column is `position: sticky; left: 0` at 40 % width, the axis scrolls inside the container (`data-scroll-x`, which the layout check already treats as an allowed horizontal scroller), and touch drag starts after `TOUCH_HOLD_MS` like the board.
 
+### Interface budget and the one Calendar destination (added after ux-overhaul)
+
+ux-overhaul merged Day and Week into one **Calendar** destination that remembers its mode. So Month is a third mode of that destination, with no sidebar entry of its own: Day | Week | Month in the page header, `/calendar` and the sidebar item open the remembered mode, and `g m` opens Month. This replaces "the sidebar entry after Week" in task 1.2 and keeps the sidebar at its six primary destinations. The timeline is a third project layout in the existing List | Board control. Neither adds a scroll region outside the designated ones (the month grid is part of the page, and the timeline's axis is a `data-scroll-x` region like the board's columns), a chrome row above a list, or a task property. The new keys are listed in the shortcut registry under the calendar and board sections.
+
 ## Risks / Trade-offs
 
 - **[Sibling fields land in a different order or shape]** → `spanOf` and `edges` read optional fields and the tasks are grouped so the Month view and a due-only timeline ship first; the start/deadline/dependency groups are gated on the archived siblings and name the field they expect. A shape change is a one-function edit in `timeline.ts`.

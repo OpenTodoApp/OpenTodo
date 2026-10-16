@@ -1,0 +1,1149 @@
+{
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec change quick-add-recurrence. Every scenario of its spec deltas is a case.",
+ "cases": [
+  {
+   "name": "Water plants every Monday",
+   "line": "Water plants every Monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Change filter every 3 days after completion",
+   "line": "Change filter every 3 days after completion",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Change filter",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every 3 days after completion",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Board meeting every 2nd Tuesday until 31 Dec",
+   "line": "Board meeting every 2nd Tuesday until 31 Dec",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Board meeting",
+    "due": {
+     "date": "2026-10-13"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every 2nd tuesday until 2026-12-31",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Standup daily at 9:30",
+   "line": "Standup daily at 9:30",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Standup",
+    "due": {
+     "date": "2026-10-09",
+     "time": "09:30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every day",
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: every 3 hours",
+   "line": "Check logs every 3 hours",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Check logs every 3 hours",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pay rent every month every 1st",
+   "line": "Pay rent every month every 1st",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent every 1st",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every month",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Invoice every month 3 Nov at 10:00",
+   "line": "Invoice every month 3 Nov at 10:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Invoice",
+    "due": {
+     "date": "2026-11-03",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every month",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Gym every weekday for 10 times",
+   "line": "Gym every weekday for 10 times",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Gym",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every weekday for 10 times",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Review every mon, wed and fri #home",
+   "line": "Review every mon, wed and fri #home",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Review",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": "p-home",
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday, wednesday, friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Close books every last friday",
+   "line": "Close books every last friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Close books",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every last friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pay card every 15th",
+   "line": "Pay card every 15th",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay card",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every 15th",
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: every client",
+   "line": "Call every client",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call every client",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dentist tomorrow at 15:00 remind me 30 min before",
+   "line": "Dentist tomorrow at 15:00 remind me 30 min before",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Flight 3 Nov at 06:00 remind me 1 day before remind me 2 hours before",
+   "line": "Flight 3 Nov at 06:00 remind me 1 day before remind me 2 hours before",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Flight",
+    "due": {
+     "date": "2026-11-03",
+     "time": "06:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -1440
+     },
+     {
+      "kind": "offset",
+      "minutes": -120
+     }
+    ]
+   }
+  },
+  {
+   "name": "negative: reminder word alone",
+   "line": "Email Sarah to remind me",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Email Sarah to remind me",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: remind Bob",
+   "line": "Tell Ana to remind Bob",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Tell Ana to remind Bob",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Zahnarzt morgen um 15 Uhr erinnere mich 30 Minuten vorher",
+   "line": "Zahnarzt morgen um 15 Uhr erinnere mich 30 Minuten vorher",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zahnarzt",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Dentist tomorrow at 15:00 remind me at 9",
+   "line": "Dentist tomorrow at 15:00 remind me at 9",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "moment",
+      "date": null,
+      "time": "09:00"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Pay rent 3 Nov remind me at 8",
+   "line": "Pay rent 3 Nov remind me at 8",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-11-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "moment",
+      "date": null,
+      "time": "08:00"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Call mum remind me at 9",
+   "line": "Call mum remind me at 9",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call mum",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "moment",
+      "date": null,
+      "time": "09:00"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Book tickets remind me 20 Oct at 9",
+   "line": "Book tickets remind me 20 Oct at 9",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Book tickets",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "moment",
+      "date": "2026-10-20",
+      "time": "09:00"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Prepare slides remind me 1 day before",
+   "line": "Prepare slides remind me 1 day before",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Prepare slides",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -1440
+     }
+    ]
+   }
+  },
+  {
+   "name": "Gießen jeden Montag",
+   "line": "Gießen jeden Montag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Gießen",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Arroser tous les lundis",
+   "line": "Arroser tous les lundis",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Arroser",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Annaffiare ogni lunedì",
+   "line": "Annaffiare ogni lunedì",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Annaffiare",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Regar cada lunes",
+   "line": "Regar cada lunes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Regar",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Regar toda segunda-feira",
+   "line": "Regar toda segunda-feira",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Regar",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Changer le filtre tous les 3 jours après achèvement",
+   "line": "Changer le filtre tous les 3 jours après achèvement",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Changer le filtre",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every 3 days after completion",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dentiste demain à 15:00 rappelle-moi 30 min avant",
+   "line": "Dentiste demain à 15:00 rappelle-moi 30 min avant",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentiste",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Dentista domani alle 15 ricordamelo 30 minuti prima",
+   "line": "Dentista domani alle 15 ricordamelo 30 minuti prima",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentista",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Dentista mañana a las 15:00 recuérdame 30 minutos antes",
+   "line": "Dentista mañana a las 15:00 recuérdame 30 minutos antes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentista",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Dentista amanhã às 15:00 lembre-me 30 minutos antes",
+   "line": "Dentista amanhã às 15:00 lembre-me 30 minutos antes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentista",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Water plants every Monday remind me at 8",
+   "line": "Water plants every Monday remind me at 8",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every monday",
+    "reminders": [
+     {
+      "kind": "moment",
+      "date": null,
+      "time": "08:00"
+     }
+    ]
+   }
+  },
+  {
+   "name": "negative: quoted reminder",
+   "line": "Read \"remind me at 9\" essay",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Read remind me at 9 essay",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Werktags Zeitung lesen",
+   "line": "Werktags Zeitung lesen",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zeitung lesen",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": "every weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Buy milk tomorrow p2 @shop +15",
+   "line": "Buy milk tomorrow p2 @shop +15",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Buy milk",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [
+     "shop"
+    ],
+    "priority": 2,
+    "estimateMinutes": 15,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Zahnarzt nächsten Mittwoch um 15 Uhr",
+   "line": "Zahnarzt nächsten Mittwoch um 15 Uhr",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zahnarzt",
+    "due": {
+     "date": "2026-10-14",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  }
+ ]
+}

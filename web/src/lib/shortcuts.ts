@@ -12,10 +12,11 @@ export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calenda
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
- * `global` → `view` (one named view) → `list` | `calendar` → `board` → `panel` →
- * `editor`; `vim` sits on top of all of them while the layer is on.
+ * `global` → `view` (one named view) → `list` | `calendar` → `board` | `timeline`
+ * (a project's layouts) → `panel` → `editor`; `vim` sits on top of all of them
+ * while the layer is on.
  */
-export type ShortcutScope = 'global' | 'view' | 'list' | 'panel' | 'board' | 'calendar' | 'editor' | 'vim'
+export type ShortcutScope = 'global' | 'view' | 'list' | 'panel' | 'board' | 'timeline' | 'calendar' | 'editor' | 'vim'
 
 /** One registry entry. */
 export interface Shortcut {
@@ -56,8 +57,8 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'everywhere', title: 'Everywhere' },
   { id: 'go', title: 'Go to a view' },
   { id: 'tasks', title: 'Tasks in a list' },
-  { id: 'board', title: 'Board' },
-  { id: 'calendar', title: 'Day and Week calendar' },
+  { id: 'board', title: 'Board and timeline' },
+  { id: 'calendar', title: 'Day, Week and Month calendar' },
   { id: 'filter', title: 'Filter, saved filters and boards' },
   { id: 'trash', title: 'Trash and projects' },
   { id: 'comments', title: 'Comments and notes' },
@@ -72,8 +73,9 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
  */
 export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   inbox: ['list'], today: ['list'], upcoming: ['list'], anytime: ['list'], someday: ['list'], completed: ['list'], assigned: ['list'],
-  project: ['list', 'board'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
-  dashboard: [], day: ['calendar'], week: ['calendar'], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
+  project: ['list', 'board', 'timeline'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
+  // The Month view keys are its own `view` entries (month-and-timeline-views): it hosts no lane-and-blocks calendar.
+  dashboard: [], day: ['calendar'], week: ['calendar'], month: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -83,9 +85,10 @@ export const SCOPE_ANCESTORS: Record<ShortcutScope, ShortcutScope[]> = {
   list: ['view', 'global'],
   calendar: ['view', 'global'],
   board: ['list', 'view', 'global'],
-  panel: ['board', 'list', 'calendar', 'view', 'global'],
-  editor: ['panel', 'board', 'list', 'calendar', 'view', 'global'],
-  vim: ['editor', 'panel', 'board', 'list', 'calendar', 'view', 'global'],
+  timeline: ['list', 'view', 'global'],
+  panel: ['board', 'timeline', 'list', 'calendar', 'view', 'global'],
+  editor: ['panel', 'board', 'timeline', 'list', 'calendar', 'view', 'global'],
+  vim: ['editor', 'panel', 'board', 'timeline', 'list', 'calendar', 'view', 'global'],
 }
 
 /** Every shortcut, in the order the sheet and the guide list them within a section. */
@@ -94,7 +97,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'global.palette', keys: ['Ctrl+K', '⌘+K'], description: 'Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)', section: 'everywhere', scope: 'global', typing: true, dialog: true },
   { id: 'list.quick-add', keys: ['q'], description: 'Quick add a task', section: 'everywhere', scope: 'list' },
   { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
-  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
+  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
   { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
   { id: 'list.dictate-stop', keys: ['Esc'], description: 'Stop dictating', section: 'everywhere', scope: 'list', hidden: true, typing: true, overrides: ['list.escape', 'panel.escape'] },
   { id: 'global.row-menu', keys: ['.', 'Shift+F10', 'Menu'], description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere', scope: 'global', local: true },
@@ -117,6 +120,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.views', keys: ['g v'], description: 'Go to Filters: saved views, boards and dashboards', section: 'go', scope: 'global' },
   { id: 'go.day', keys: ['g d'], description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
   { id: 'go.week', keys: ['g w'], description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
+  { id: 'go.month', keys: ['g m'], description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
   { id: 'go.trash', keys: ['g x'], description: 'Go to the Trash', section: 'go', scope: 'global' },
   { id: 'go.feed', keys: ['g h'], description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
   { id: 'go.ask', keys: ['g k'], description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go', scope: 'global' },
@@ -142,7 +146,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.collapse', keys: ['←'], description: 'Collapse the subtasks of the selected task (or go to its parent), or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
   { id: 'list.expand', keys: ['→'], description: 'Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
   { id: 'project.move', keys: ['m'], description: 'Move the current project under another project or to the top level', section: 'trash', scope: 'view', views: ['project'] },
-  { id: 'project.view-mode', keys: ['v'], description: 'Toggle the current project between list and board (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
+  { id: 'project.view-mode', keys: ['v'], description: 'Cycle the current project through list, board and timeline (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'project.share', keys: ['Shift+S'], description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'list.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the selected task, or of the ticked tasks', section: 'tasks', scope: 'list' },
   { id: 'list.labels', keys: ['Shift+L'], description: 'Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)', section: 'tasks', scope: 'list' },
@@ -178,6 +182,13 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'board.up', keys: ['k', '↑'], description: 'Select the previous card in the column', section: 'board', scope: 'board', hidden: true, overrides: ['list.up'] },
   { id: 'board.indent', keys: ['Tab', 'Shift+Tab'], description: 'Nothing on a board: cards are not nested', section: 'board', scope: 'board', hidden: true, overrides: ['list.indent', 'list.outdent'], passive: true },
 
+  // ---- timeline (a project's third layout, month-and-timeline-views; j / k / Enter stay the list's)
+  { id: 'timeline.shift', keys: ['←', '→'], description: 'Timeline: move the selected task’s dates one day earlier / later', section: 'board', scope: 'timeline', overrides: ['list.collapse', 'list.expand'] },
+  { id: 'timeline.deadline', keys: ['Shift+←', 'Shift+→'], description: 'Timeline: move the selected task’s deadline one day (from the due date when it has none)', section: 'board', scope: 'timeline' },
+  { id: 'timeline.range-prev', keys: ['['], description: 'Timeline: show the previous week (or four with the week zoom)', section: 'board', scope: 'timeline', overrides: ['global.sidebar'] },
+  { id: 'timeline.range-next', keys: [']'], description: 'Timeline: show the next week (or four)', section: 'board', scope: 'timeline' },
+  { id: 'timeline.today', keys: ['t'], description: 'Timeline: back to today', section: 'board', scope: 'timeline' },
+
   // ---- calendar
   { id: 'calendar.next', keys: ['j'], description: 'Select the next task (lane, then blocks)', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.prev', keys: ['k'], description: 'Select the previous task', section: 'calendar', scope: 'calendar' },
@@ -193,6 +204,17 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'calendar.range-next', keys: [']'], description: 'Next day or week', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.today', keys: ['t'], description: 'Back to today', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.escape', keys: ['Esc'], description: 'Cancel placing or a drag, close the "+N" list or the panel, else clear the selection', section: 'calendar', scope: 'calendar', hidden: true, typing: true },
+  // The Month view (month-and-timeline-views): a grid of due dates with a focused day, no lane or blocks.
+  { id: 'month.move', keys: ['←', '→', '↑', '↓'], description: 'In Month: move the focused day; with a task selected, move it a day or a week (keeps its time)', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.focus', keys: ['Shift+←', 'Shift+→', 'Shift+↑', 'Shift+↓'], description: 'In Month: move the focused day while a task is selected', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
+  { id: 'month.next', keys: ['j'], description: 'In Month: select the next task of the month', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.prev', keys: ['k'], description: 'In Month: select the previous task', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.open', keys: ['Enter'], description: 'In Month: open the selected task', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.quick-add', keys: ['q'], description: 'In Month: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.range-prev', keys: ['['], description: 'In Month: previous month', section: 'calendar', scope: 'view', views: ['month'], overrides: ['global.sidebar'] },
+  { id: 'month.range-next', keys: [']'], description: 'In Month: next month', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.today', keys: ['t'], description: 'In Month: back to today', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.escape', keys: ['Esc'], description: 'In Month: close the "+N more" list or the panel, else clear the selection', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
 
   // ---- filter, saved views and dashboards
   { id: 'filter.jump', keys: ['Enter', 'Esc'], description: 'In Filter: jump from the query to the first result / back to the query', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
@@ -248,7 +270,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 
@@ -256,6 +278,7 @@ export const SHORTCUTS: Shortcut[] = [
 export const QUICK_ADD_SYNTAX: [string, string][] = [
   ['tomorrow · next Wed · 3 Feb · at 3pm', 'Due date and time (6 languages)'],
   ['#project @label p1 +30m', 'Project, label, priority, estimate'],
+  ['every Monday · remind me 30 min before', 'Repeat and remind (6 languages)'],
   ['"quoted text"', 'Keep text literally'],
   ['Backspace ×2 (end of line)', 'Highlight, then dismiss the last chip'],
 ]

@@ -49,6 +49,26 @@
           "description": "description"
         },
         {
+          "name": "repeat",
+          "type": "string",
+          "description": "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"
+        },
+        {
+          "name": "remind",
+          "type": "string_list",
+          "description": "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"
+        },
+        {
+          "name": "natural",
+          "type": "bool",
+          "description": "parse the title like the app's quick add: dates, #project, @label, p1, +30m, every …, remind me …"
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "description": "languages for --natural and --remind, e.g. de,en (default: the locale; English always)"
+        },
+        {
           "name": "idempotency-key",
           "type": "string",
           "description": "1-128 characters of [A-Za-z0-9._:-]; running again with the same key returns the same entity instead of creating another"
@@ -194,6 +214,11 @@
           "name": "note",
           "type": "string",
           "description": "description"
+        },
+        {
+          "name": "repeat",
+          "type": "string",
+          "description": "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"
         }
       ],
       "writes": true,

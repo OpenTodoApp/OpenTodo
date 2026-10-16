@@ -74,6 +74,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>v</kbd> | Go to Filters: saved views, boards and dashboards |
 | <kbd>g</kbd> then <kbd>d</kbd> | Go to the Calendar as Day (the sidebar opens it as last used) |
 | <kbd>g</kbd> then <kbd>w</kbd> | Go to the Calendar as Week |
+| <kbd>g</kbd> then <kbd>m</kbd> | Go to the Calendar as Month |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects |
 | <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
@@ -101,7 +102,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Today, Upcoming, Assigned, Completed, labels, filters | Sorted by date (or their own rule): no drag or Alt moves there |
 | <kbd>←</kbd> | Collapse the subtasks of the selected task (or go to its parent), or the sub-projects of the focused sidebar project |
 | <kbd>→</kbd> | Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project |
-| <kbd>v</kbd> | Toggle the current project between list and board (remembered per project on this device) |
+| <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
 | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd> | Set the priority of the selected task, or of the ticked tasks |
 | <kbd>Shift+L</kbd> | Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates) |
@@ -123,7 +124,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Move the selected task (and its subtasks), or the ticked tasks, to the Trash |
 | <kbd>z</kbd> | Task panel open: fix a timed due to your time zone, or release it to a floating time |
 
-### Board
+### Board and timeline
 
 | Keys | What it does |
 | --- | --- |
@@ -132,8 +133,13 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+←</kbd> | Move the selected task to the previous column (it stays selected) |
 | <kbd>Shift+→</kbd> | Move the selected task to the next column |
 | <kbd>a</kbd> | Add a task to the selected task’s column |
+| <kbd>←</kbd> / <kbd>→</kbd> | Timeline: move the selected task’s dates one day earlier / later |
+| <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | Timeline: move the selected task’s deadline one day (from the due date when it has none) |
+| <kbd>[</kbd> | Timeline: show the previous week (or four with the week zoom) |
+| <kbd>]</kbd> | Timeline: show the next week (or four) |
+| <kbd>t</kbd> | Timeline: back to today |
 
-### Day and Week calendar
+### Day, Week and Month calendar
 
 | Keys | What it does |
 | --- | --- |
@@ -150,6 +156,14 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>[</kbd> | Previous day or week |
 | <kbd>]</kbd> | Next day or week |
 | <kbd>t</kbd> | Back to today |
+| <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Month: move the focused day; with a task selected, move it a day or a week (keeps its time) |
+| <kbd>j</kbd> | In Month: select the next task of the month |
+| <kbd>k</kbd> | In Month: select the previous task |
+| <kbd>Enter</kbd> | In Month: open the selected task |
+| <kbd>q</kbd> | In Month: add a task due on the focused day |
+| <kbd>[</kbd> | In Month: previous month |
+| <kbd>]</kbd> | In Month: next month |
+| <kbd>t</kbd> | In Month: back to today |
 
 ### Filter, saved filters and boards
 
@@ -222,6 +236,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <code>tomorrow · next Wed · 3 Feb · at 3pm</code> | Due date and time (6 languages) |
 | <code>#project @label p1 +30m</code> | Project, label, priority, estimate |
+| <code>every Monday · remind me 30 min before</code> | Repeat and remind (6 languages) |
 | <code>"quoted text"</code> | Keep text literally |
 | <kbd>Backspace</kbd> then <kbd>×2</kbd> | End of line: highlight, then dismiss the last chip |
 

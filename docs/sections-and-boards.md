@@ -3,14 +3,14 @@ title: Sections and boards
 summary: Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard.
 audience: user
 section: Guides
-specs: [sections-and-boards]
+specs: [sections-and-boards, project-timeline]
 screens: []
 order: 30
 card: board
 ---
 # Sections and boards
 
-Sections divide a project into parts, like "Planning", "In progress" and "Waiting", or "Kitchen", "Bathroom" and "Garden". The same project can be shown as a list with headings or as a board with one column per section.
+Sections divide a project into parts, like "Planning", "In progress" and "Waiting", or "Kitchen", "Bathroom" and "Garden". The same project can be shown as a list with headings, as a board with one column per section, or as a timeline of its dates.
 
 ## Add a section
 
@@ -36,7 +36,7 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 ## Switch to a board
 
-At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. Press <kbd>v</kbd> again, or choose **List**, to switch back.
+At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly.
 
 <picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
 
@@ -49,6 +49,18 @@ The choice is remembered for each project on each device. Your laptop can show "
 - **Panel:** open the task and pick another **Section**.
 
 Moving with the keyboard or the panel puts the card at the bottom of the new column.
+
+## See a project on a timeline
+
+Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it shows). Each open task is a row, in list order under its sections and with subtasks indented. Its bar runs from its start to its due date or deadline, whichever is later; a task with a single date gets a one-day bar. A thin mark shows the due day inside a longer bar, a flag shows the deadline, and a deadline that has passed turns the bar red. Tasks with no dates, or parked in Someday, wait under **Unscheduled** at the end.
+
+- **Drag a bar** to move all its dates by the same number of days. The due time stays the same.
+- **Drag the left or right end** to set the start or the deadline. If the task has none yet, one is created.
+- **Drag an unscheduled task** from its name onto a day to give it that due date.
+- **Keyboard:** select a task with <kbd>j</kbd> and <kbd>k</kbd>, then <kbd>←</kbd> and <kbd>→</kbd> move its dates a day. <kbd>Shift</kbd>+<kbd>←</kbd> and <kbd>Shift</kbd>+<kbd>→</kbd> move its deadline, starting from the due date when it has none. <kbd>Enter</kbd> opens it.
+- **Days** and **Weeks** change the scale. <kbd>[</kbd> and <kbd>]</kbd> move the visible range, and <kbd>t</kbd> comes back to today.
+
+When one task [waits for another](tasks-and-projects.md#wait-for-another-task) in the same project, an arrow joins them and the waiting task is dimmed until the other is done. Moving a task never moves the tasks that wait for it. Viewers of a shared project see the timeline but can't change dates. On a phone the task names stay in place while the dates scroll sideways, and you press and hold a bar to drag it.
 
 ## Get around the board with the keyboard
 

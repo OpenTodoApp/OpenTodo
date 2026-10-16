@@ -220,8 +220,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   }
 
   const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode) => {
-    // Day and Week are one Calendar destination (ux-overhaul).
-    const active = r.view === 'day' || r.view === 'week' ? route.view === 'day' || route.view === 'week' : JSON.stringify(r) === JSON.stringify(route)
+    // Day, Week and Month are one Calendar destination (ux-overhaul).
+    const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month'
+    const active = calendar(r.view) ? calendar(route.view) : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge === undefined ? GO_KEYS[r.view] : undefined
     return <SidebarItem key={label} icon={icon} label={label} count={count} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />

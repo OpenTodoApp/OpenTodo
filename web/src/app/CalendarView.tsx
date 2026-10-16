@@ -24,6 +24,7 @@ import { useCalendarDrag, type DropTarget } from './calendarDrag'
 import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
+import { CalendarRangeSwitch } from './CalendarRange'
 import { estimateFocus, placement as placementSignal } from './signals'
 import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Menu } from './overlay/Menu'
@@ -344,10 +345,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               <Button variant="ghost" size="sm" onClick={() => goTo(today)}>Today</Button>
               <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? 'Next day' : 'Next week'} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} />
             </span>
-            <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Calendar range">
-              <button type="button" className={`rounded-l-control px-2 py-1 ${mode === 'day' ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date })}>Day</button>
-              <button type="button" className={`rounded-r-control px-2 py-1 ${mode === 'week' ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`} aria-pressed={mode === 'week'} onClick={() => navigate({ view: 'week', date })}>Week</button>
-            </span>
+            <CalendarRangeSwitch mode={mode} date={date} />
           </>}
           overflow={<MenuItem label={planOpen ? 'Hide the planning list' : 'Plan from a list'} icon="list" description="Drag tasks onto a time, or press s on one" onSelect={togglePlan} />} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">

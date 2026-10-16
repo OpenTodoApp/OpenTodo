@@ -1,0 +1,155 @@
+package quickadd
+
+import (
+	"math"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+// Project is the slice of a project #name matching needs.
+type Project struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Archived bool   `json:"archived,omitempty"`
+	Deleted  bool   `json:"deleted,omitempty"`
+	ParentID string `json:"parent_id,omitempty"`
+}
+
+// MaxEstimateMinutes mirrors the server's bound (one week).
+const MaxEstimateMinutes = 10080
+
+var foldSep = regexp.MustCompile(`[\s_-]+`)
+
+func foldName(s string) string { return foldSep.ReplaceAllString(normalize(s), "") }
+
+func depthOf(p Project, byID map[string]Project) int {
+	depth := 0
+	seen := map[string]bool{p.ID: true}
+	cur := p
+	for cur.ParentID != "" {
+		parent, ok := byID[cur.ParentID]
+		if !ok || seen[parent.ID] {
+			break
+		}
+		seen[parent.ID] = true
+		depth++
+		cur = parent
+	}
+	return depth
+}
+
+func matchProject(token string, projects []Project) *Project {
+	if !strings.HasPrefix(token, "#") || len(token) < 2 {
+		return nil
+	}
+	want := foldName(token[1:])
+	if want == "" {
+		return nil
+	}
+	var live, exact, prefix []Project
+	for _, p := range projects {
+		if !p.Archived && !p.Deleted {
+			live = append(live, p)
+		}
+	}
+	for _, p := range live {
+		f := foldName(p.Name)
+		if f == want {
+			exact = append(exact, p)
+		}
+		if strings.HasPrefix(f, want) {
+			prefix = append(prefix, p)
+		}
+	}
+	if len(exact) == 1 {
+		return &exact[0]
+	}
+	if len(exact) > 1 {
+		byID := map[string]Project{}
+		for _, p := range live {
+			byID[p.ID] = p
+		}
+		sort.SliceStable(exact, func(i, j int) bool {
+			di, dj := depthOf(exact[i], byID), depthOf(exact[j], byID)
+			if di != dj {
+				return di < dj
+			}
+			return exact[i].ID < exact[j].ID
+		})
+		return &exact[0]
+	}
+	if len(prefix) == 1 {
+		return &prefix[0]
+	}
+	return nil
+}
+
+func trimPunct(s string) string { return strings.TrimRight(s, ",;") }
+
+func matchLabel(token string) (string, bool) {
+	if !strings.HasPrefix(token, "@") || len(token) < 2 {
+		return "", false
+	}
+	name := trimPunct(token[1:])
+	if name == "" || strings.ContainsAny(name, " \t\n") {
+		return "", false
+	}
+	return name, true
+}
+
+var priorityRE = regexp.MustCompile(`(?i)^p([1-4])$`)
+
+func matchPriority(token string) int {
+	if m := priorityRE.FindStringSubmatch(trimPunct(token)); m != nil {
+		n, _ := strconv.Atoi(m[1])
+		return n
+	}
+	return 0
+}
+
+var (
+	durHRE   = regexp.MustCompile(`^(\d+(?:[.,]\d+)?)h(?:(\d{1,2})(?:m|min)?)?$`)
+	durMRE   = regexp.MustCompile(`^(\d+)(m|min|mins|minutes)$`)
+	durNumRE = regexp.MustCompile(`^(\d+)$`)
+)
+
+// matchDuration mirrors attributes.ts: +30, +30m, +2h, +1h30, 45min, 2h.
+func matchDuration(token string, bareHourIsTime bool) int {
+	t := strings.ToLower(trimPunct(token))
+	plus := strings.HasPrefix(t, "+")
+	body := strings.TrimPrefix(t, "+")
+	if body == "" {
+		return 0
+	}
+	minutes := -1.0
+	if m := durHRE.FindStringSubmatch(body); m != nil {
+		hours, _ := strconv.ParseFloat(strings.Replace(m[1], ",", ".", 1), 64)
+		mins := 0.0
+		if m[2] != "" {
+			v, _ := strconv.Atoi(m[2])
+			mins = float64(v)
+		}
+		if mins > 59 {
+			return 0
+		}
+		if !plus && (bareHourIsTime || m[2] != "") {
+			return 0
+		}
+		minutes = math.Round(hours*60 + mins)
+	} else if m := durMRE.FindStringSubmatch(body); m != nil {
+		if !plus && m[2] == "m" {
+			return 0
+		}
+		v, _ := strconv.Atoi(m[1])
+		minutes = float64(v)
+	} else if m := durNumRE.FindStringSubmatch(body); plus && m != nil {
+		v, _ := strconv.Atoi(m[1])
+		minutes = float64(v)
+	}
+	if minutes < 1 || minutes > MaxEstimateMinutes || minutes != math.Trunc(minutes) {
+		return 0
+	}
+	return int(minutes)
+}
