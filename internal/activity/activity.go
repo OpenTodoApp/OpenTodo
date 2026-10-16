@@ -16,6 +16,8 @@
 //  4. Ops by the same actor on the same entity whose ts is within Window of the
 //     first op of that actor's open group for the entity join that group; any
 //     other op opens a new group (and closes the previous one for that key).
+//     A public link's ops (device public:…) group apart from the creator's own
+//     and carry their device on the event (public-links D6).
 //  5. A group becomes one event, classified by the fields it touched (see
 //     classify). A group that changed nothing (every new value equals its old
 //     value) and created nothing is dropped.
@@ -25,7 +27,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"sort"
+	"strings"
 )
+
+// PublicDevicePrefix marks a public link's ops (mirrors sync.PublicDevicePrefix).
+const PublicDevicePrefix = "public:"
 
 // Window folds quick consecutive ops by one actor on one entity into one event.
 const Window = 5000 // ms
@@ -64,6 +70,10 @@ type Event struct {
 	TS       int64    `json:"ts"`
 	OpIDs    []string `json:"opIds"`
 	Changes  []Change `json:"changes"`
+	// Device is set only for a public link's ticks (public:<link-id>,
+	// OpenSpec `public-links` D6): those form their own groups and read
+	// "Public link" instead of the link creator's name.
+	Device string `json:"device,omitempty"`
 }
 
 // Event kinds.
@@ -134,9 +144,14 @@ func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 		}
 		last[fk] = op.Value
 		gk := op.Actor + "\x00" + op.Entity + "\x00" + op.EntityID
+		public := ""
+		if strings.HasPrefix(op.Device, PublicDevicePrefix) {
+			public = op.Device
+			gk += "\x00" + public
+		}
 		g := open[gk]
 		if g == nil || op.TS-g.ev.TS > Window {
-			g = &group{ev: Event{ID: op.ID, Actor: op.Actor, Entity: op.Entity, EntityID: op.EntityID, TS: op.TS, OpIDs: []string{}}, changes: map[string]*Change{}}
+			g = &group{ev: Event{ID: op.ID, Actor: op.Actor, Entity: op.Entity, EntityID: op.EntityID, TS: op.TS, OpIDs: []string{}, Device: public}, changes: map[string]*Change{}}
 			open[gk] = g
 			groups = append(groups, g)
 		}

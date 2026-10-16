@@ -37,7 +37,8 @@ export function groupRuns(events: readonly ActivityEvent[], opts: { windowMs?: n
   for (const ev of events) {
     const isComment = COMMENT_KINDS.has(ev.kind)
     const last = out[out.length - 1]
-    const joins = last && last.type === 'changes' && !isComment && last.actor === ev.actor
+    // A public link's ticks (device public:…) never join the link creator's own run (public-links D6).
+    const joins = last && last.type === 'changes' && !isComment && last.actor === ev.actor && (last.events[0].device ?? '') === (ev.device ?? '')
       && taskOf(last.events[0]) === taskOf(ev) && last.firstTs - ev.ts <= windowMs
     const evPending = !!pending && ev.opIds.some((id) => pending.has(id))
     if (joins) {

@@ -12,7 +12,7 @@ card: comments
 
 <picture><source srcset="images/share-dialog-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/share-dialog-light.webp" alt="The Share dialog for Home renovation: an email field, a role menu set to editor, and the member list with the owner and one editor."></picture>
 
-Projects can be shared with other people who have an account on the same OpenTodo server: your partner for the house move, your team for a launch. Everyone sees the same tasks, edits sync to everyone within seconds, and each task has a comment thread.
+Share a project with people who have an account on the same OpenTodo server: your partner for the house move, your team for a launch. Everyone sees the same tasks, edits sync within seconds, and each task has a comment thread.
 
 ## Share a project
 
@@ -22,19 +22,23 @@ Projects can be shared with other people who have an account on the same OpenTod
 
 The project appears on their devices the next time they sync, with all its tasks. Shared projects show a people icon in the sidebar.
 
-Adding by email works only for people with an account on your server; for anyone else, send an invite link (next section).
+Email works only for people with an account on your server; anyone else gets an invite link (next section).
 
 ## Invite with a link
 
-An invite link adds one person to the project, with or without an account. In **Share**, select **Create a link…**, pick a role, optionally an email address and how long the link stays valid, then copy it and send it yourself. It is shown once and works once; the dialog lists and revokes waiting links. [Invite people](invite-people.md#invite-with-a-link) covers what the person sees and when a link stops working.
+An invite link adds one person to the project, with or without an account. In **Share**, select **Create a link…**, pick a role, optionally an email and an expiry, then copy it and send it yourself. It is shown once and works once; the dialog lists and revokes waiting links. See [Invite people](invite-people.md#invite-with-a-link).
 
 ### Who can bring new people
 
-A link can create a new account only when its creator is the owner or an admin of the server, when open sign-up is on, or when the server owner switched on **Members can invite new people with project links** in **Settings → People → Project invite links**. See [Who can bring new people](invite-people.md#who-can-bring-new-people).
+A link creates a new account only when its creator is the owner or an admin of the server, open sign-up is on, or the server owner switched on **Members can invite new people with project links** (**Settings → People → Project invite links**). See [Who can bring new people](invite-people.md#who-can-bring-new-people).
+
+## Share with a public link
+
+A public link shows a project's open tasks to anyone who has it, no account needed, view-only or with ticking; a **Public** badge marks the project while one is active. See [Public links](public-links.md).
 
 ## Choose a role
 
-Viewers see the project and comment, editors also change tasks and the project's note, admins also manage the project and its members, and the owner can also delete or hand it over. Each project has one owner. Change roles next to a name in **Share**; **Remove** takes someone out. See [Roles and assignments](roles-and-assignments.md#choose-a-role).
+Viewers see the project and comment, editors also change tasks and the project's note, admins also manage the project and its members, and the one owner can also delete or hand it over. Change roles next to a name in **Share**; **Remove** takes someone out. See [Roles and assignments](roles-and-assignments.md#choose-a-role).
 
 ## Invite someone new
 
@@ -42,7 +46,7 @@ Sign-up is closed by default. An invite link is the quickest way in; the owner o
 
 ## Leave or hand over a project
 
-**Leave** next to your own name in the Share dialog takes the project off your devices; everyone else keeps it. The owner hands it over with **Make owner** first. See [Roles and assignments](roles-and-assignments.md#leave-or-hand-over-a-project).
+**Leave** next to your name in **Share** takes the project off your devices; everyone else keeps it. The owner hands it over with **Make owner** first. See [Roles and assignments](roles-and-assignments.md#leave-or-hand-over-a-project).
 
 ## Assign tasks
 
@@ -58,7 +62,7 @@ Every task has a comment thread under **Comments**, with @mentions, replies and 
 
 ## Things to know
 
-- **Labels and reminders stay personal.** Labels you add to a shared task, and your reminders, are visible only to you.
+- **Labels and reminders stay personal.** Only you see the labels and reminders you add to a shared task.
 - **Moving a task out of a shared project** to your own project or Inbox makes a copy there and removes the original for everyone.
-- **Deleting a shared project** is for the owner only. It disappears for every member, and its open tasks are copied into the owner's Inbox.
+- **Only the owner deletes a shared project.** It disappears for every member; its open tasks go to the owner's Inbox.
 - **End-to-end encryption and sharing don't mix.** Shared projects are never encrypted, and an account with [encryption](e2ee.md) on can't share new projects.

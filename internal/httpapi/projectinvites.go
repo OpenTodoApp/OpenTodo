@@ -338,7 +338,7 @@ func redactPath(p string) string {
 	}
 	parts := strings.Split(p, "/")
 	for i, part := range parts {
-		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, "oti_") {
+		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) {
 			parts[i] = "[redacted]"
 		}
 	}
