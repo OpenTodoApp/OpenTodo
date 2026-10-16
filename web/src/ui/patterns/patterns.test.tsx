@@ -5,6 +5,7 @@ import { click, flush, key, render } from '../test-utils'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ListRow } from './ListRow'
 import { SettingRow, SettingsSection } from './SettingsSection'
+import { SidebarGroup, SidebarItem } from './Sidebar'
 
 describe('SettingsSection', () => {
   it('uses the heading level it is given and labels the section with it', async () => {
@@ -81,6 +82,24 @@ describe('ListRow', () => {
     await key(row, 'Delete')
     await key(container.querySelector('button')!, 'Enter')
     expect(keys).toEqual(['Enter', 'Delete'])
+    await unmount()
+  })
+})
+
+describe('SidebarGroup', () => {
+  it('shows its count on the heading only while collapsed, and the heading sticks inside the scroller', async () => {
+    const { container, rerender, unmount } = await render(
+      <SidebarGroup title="Projects" collapsible open count={30}><SidebarItem label="Work" /></SidebarGroup>,
+    )
+    const heading = () => container.querySelector('[data-sidebar-group-header]')!
+    expect(heading().className).toContain('sticky')
+    expect(container.querySelector('[data-group-count]')).toBeNull()
+    expect(container.querySelector('[data-sidebar-item]')).not.toBeNull()
+    await rerender(<SidebarGroup title="Projects" collapsible open={false} count={30}><SidebarItem label="Work" /></SidebarGroup>)
+    expect(container.querySelector('[data-group-count]')?.textContent).toBe('30')
+    expect(heading().textContent).toContain('Projects')
+    expect(container.querySelector('[data-sidebar-item]')).toBeNull()
+    expect(container.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded')).toBe('false')
     await unmount()
   })
 })

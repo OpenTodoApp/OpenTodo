@@ -131,6 +131,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.settings', keys: ['g s'], description: 'Go to Settings', section: 'go', scope: 'global' },
   { id: 'go.import', keys: ['g Shift+I'], description: 'Go to Settings → Data → Import data', section: 'go', scope: 'global' },
   { id: 'go.help', keys: ['g ?'], description: 'Open Help: the user guide, offline, with search', section: 'go', scope: 'global' },
+  { id: 'go.find', keys: ['g /'], description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
 
   // ---- tasks in a list
   { id: 'list.down', keys: ['j', '↓'], description: 'Move the selection down', section: 'tasks', scope: 'list' },

@@ -4,7 +4,7 @@
 // local `meta` table; nothing here writes an op, so it is correct offline and the
 // tree converges by construction (orphans at the top level, cycles broken at the
 // member with the newest `parent_id` clock, see tree.ts).
-import { getMeta, setMeta } from './db'
+import { db, getMeta, setMeta } from './db'
 import { buildTree, descendants, isDescendant as isTreeDescendant, type Tree, type TreeNode } from './tree'
 import type { Project, Task } from './types'
 
@@ -72,18 +72,52 @@ function ownOpenCounts(tasks: Iterable<Task>): Map<string, number> {
 // ---- per-device collapse state (local `meta`, never synced) ----
 
 export const COLLAPSED_PROJECTS_KEY = 'collapsedProjects'
+/** Set with the first write; until then every parent reads as collapsed (project-organization "Collapse and expand": roots only on a new device). */
+export const COLLAPSED_PROJECTS_INIT_KEY = 'collapsedProjects.initialised'
 
+/** Ids of the visible projects that have visible sub-projects. */
+export function parentProjectIds(projects: Iterable<Project>): Set<string> {
+  const live = visibleProjects(projects)
+  const ids = new Set(live.map((p) => p.id))
+  const out = new Set<string>()
+  for (const p of live) if (p.parent_id && ids.has(p.parent_id)) out.add(p.parent_id)
+  return out
+}
+
+/** The stored set only; `readCollapsed` is what the sidebar shows. */
 export async function getCollapsedProjects(): Promise<Set<string>> {
   return new Set(await getMeta<string[]>(COLLAPSED_PROJECTS_KEY, []))
 }
 
-export async function setCollapsedProjects(ids: Set<string>): Promise<void> {
-  await setMeta(COLLAPSED_PROJECTS_KEY, [...ids])
+/**
+ * The collapse state this device shows: the stored set once anything was stored,
+ * otherwise every parent, so a new device opens the tree with its roots only.
+ * Reads `projects` from the local table when they are not passed in.
+ */
+export async function readCollapsed(projects?: Iterable<Project>): Promise<Set<string>> {
+  if (await getMeta<boolean>(COLLAPSED_PROJECTS_INIT_KEY, false)) return getCollapsedProjects()
+  return parentProjectIds(projects ?? (await db.projects.toArray()))
 }
 
-/** Collapse or expand one project; `force` sets the state instead of toggling. */
+/** Stores the set and marks the device as initialised, so the default no longer applies. */
+export async function setCollapsedProjects(ids: Set<string>): Promise<void> {
+  await setMeta(COLLAPSED_PROJECTS_KEY, [...ids])
+  await setMeta(COLLAPSED_PROJECTS_INIT_KEY, true)
+}
+
+/** "Collapse all": every parent collapsed on this device. */
+export async function collapseAllProjects(projects?: Iterable<Project>): Promise<void> {
+  await setCollapsedProjects(parentProjectIds(projects ?? (await db.projects.toArray())))
+}
+
+/** "Expand all": nothing collapsed on this device. */
+export async function expandAllProjects(): Promise<void> {
+  await setCollapsedProjects(new Set())
+}
+
+/** Collapse or expand one project; `force` sets the state instead of toggling. The first toggle materialises the default set, so only that project changes. */
 export async function toggleCollapsedProject(id: string, force?: boolean): Promise<Set<string>> {
-  const set = await getCollapsedProjects()
+  const set = await readCollapsed()
   const want = force ?? !set.has(id)
   if (want) set.add(id)
   else set.delete(id)
@@ -96,7 +130,7 @@ export async function toggleCollapsedProject(id: string, force?: boolean): Promi
  * Writes only when something changes, so calling it on each render is harmless.
  */
 export async function expandAncestorsOf(id: string, projects: Project[]): Promise<void> {
-  const set = await getCollapsedProjects()
+  const set = await readCollapsed(projects)
   if (set.size === 0) return
   const byId = new Map(projects.map((p) => [p.id, p]))
   const seen = new Set<string>([id])

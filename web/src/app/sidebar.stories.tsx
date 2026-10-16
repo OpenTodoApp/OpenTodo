@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { Sidebar } from './Sidebar'
 import { seedInbox, seeded, storyUser, withSeed } from './stories/fixtures'
 
@@ -31,6 +31,26 @@ export const ProjectSelected: StoryObj = {
     <Column><Sidebar route={{ view: 'project', id: seeded.website }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
   ),
 }
+
+/** Filters folded on this device (the key is set for this story only) and the scroller pulled down, so the Projects heading is stuck at the top. */
+function FoldedScrolled() {
+  const column = useRef<HTMLDivElement>(null)
+  // Device state the sidebar reads at mount; removed again so the other stories start clean.
+  try { localStorage.setItem('ot.sidebar.group.filters', '0') } catch { /* story only */ }
+  useEffect(() => {
+    const scroller = column.current?.querySelector<HTMLElement>('[data-sidebar-scroll]')
+    if (scroller) scroller.scrollTop = 160
+    return () => { try { localStorage.removeItem('ot.sidebar.group.filters') } catch { /* story only */ } }
+  }, [])
+  return (
+    <div ref={column} className="flex h-[32rem] w-64 flex-col border-r border-default bg-canvas">
+      <Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} />
+    </div>
+  )
+}
+
+/** A folded group (sidebar-groups): Filters closed with its count on the heading, and the Projects heading stuck at the top of a scrolled tree. */
+export const FoldedAndScrolled: StoryObj = { render: () => <FoldedScrolled /> }
 
 /** The icon rail from 1024 px (`[`): icons only, names as tooltips, groups as dividers. */
 export const Collapsed: StoryObj = {

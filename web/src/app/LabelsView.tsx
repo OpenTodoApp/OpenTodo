@@ -251,7 +251,7 @@ export function useLabelDrag() {
   return { drop, start }
 }
 
-export function LabelRow({ label, labels, count, duplicate, route, drop, onDragStart }: {
+export function LabelRow({ label, labels, count, duplicate, route, drop, onDragStart, findActive = false }: {
   label: Label
   labels: Label[]
   count?: number
@@ -259,6 +259,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   route: Route
   drop?: LabelDrop
   onDragStart?: (e: ReactPointerEvent, label: Label) => void
+  /** The active match of the sidebar's find field (sidebar-groups). */
+  findActive?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(label.name)
@@ -296,8 +298,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move })
 
   return (
-    <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-active={active || undefined}
-      className={`group relative rounded-control ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
+    <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-active={active || undefined} data-find-active={findActive || undefined}
+      className={`group relative rounded-control ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}${findActive ? ' ring-2 ring-focus' : ''}`}>
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (

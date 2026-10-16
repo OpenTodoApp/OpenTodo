@@ -142,6 +142,13 @@ describe('registry (4.1, 4.2)', () => {
     commands(ctxFor()).find((c) => c.id === 'go:upcoming')!.run()
     expect(location.pathname).toBe('/upcoming')
   })
+  it('Find in the sidebar asks the sidebar to open its field (sidebar-groups 3.3)', async () => {
+    const { sidebarFind } = await import('../signals')
+    const cmd = commands(ctxFor()).find((c) => c.id === 'app:sidebar-find')!
+    expect(cmd.shortcut).toBe('g /')
+    cmd.run()
+    expect(sidebarFind.take('open')).toBe('open')
+  })
   it('Vim keybindings toggles the preference', async () => {
     const { isVimEnabled } = await import('../vim/prefs')
     commands(ctxFor({ vimEnabled: false })).find((c) => c.id === 'app:vim')!.run()

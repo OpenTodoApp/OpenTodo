@@ -369,7 +369,7 @@ const OVERLAYS = {
   }])),
   async 'template-dialog'(p) {
     await openSidebar(p)
-    await p.locator('aside[data-sidebar]').getByRole('button', { name: 'New project' }).click()
+    await p.locator('aside[data-sidebar]').getByRole('button', { name: 'Projects menu' }).click()
     await p.getByRole('menuitem', { name: 'From a template…' }).click()
     return { overlay: p.locator('[data-testid="template-dialog"]'), kind: 'dialog' }
   },
