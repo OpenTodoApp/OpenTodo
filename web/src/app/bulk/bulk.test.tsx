@@ -155,7 +155,14 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await waitFor(() => !!document.querySelector('[data-picker-step]'))
     await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
     await waitFor(() => !!document.querySelector('[data-bulk-toast]'))
-    for (const id of ids) expect((await db.tasks.get(id))!.labels).toEqual([l])
+    // The toast can show before the batch's last row is read back; poll the store.
+    let labels: string[][] = []
+    for (let t = 0; t < 2000; t += 20) {
+      labels = await Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.labels))
+      if (labels.every((ls) => ls.length === 1)) break
+      await flush(20)
+    }
+    expect(labels).toEqual(ids.map(() => [l]))
     expect(document.querySelector('[data-picker-step]')).not.toBeNull()
   })
 
