@@ -202,6 +202,9 @@ func TestNamedFormatDetection(t *testing.T) {
 		"testdata/ticktick-csv/backup.csv": tickTickFormat,
 		"testdata/linear-csv/export.csv":   linearFormat,
 		"testdata/things-db/main.sqlite":   thingsFormat,
+		"testdata/ticktick-csv/rich.csv":   tickTickFormat,
+		"testdata/linear-csv/rich.csv":     linearFormat,
+		"testdata/things-db/rich.sqlite":   thingsFormat,
 		"testdata/tasks.csv":               "csv",
 		"testdata/items.json":              "json-items",
 		"testdata/lists.json":              "json-lists",
@@ -217,9 +220,11 @@ func TestNamedFormatDetection(t *testing.T) {
 			t.Errorf("%s: detected %v (%v), want %s", path, p, err, want)
 		}
 	}
-	z, _ := os.ReadFile("testdata/todoist-backup/backup.zip")
-	if p, err := parseWith(t, z, nil); err != nil || p.Format != todoistBackupFormat {
-		t.Errorf("todoist backup: %v %v", p, err)
+	for _, path := range []string{"testdata/todoist-backup/backup.zip", "testdata/todoist-backup/rich.zip"} {
+		z, _ := os.ReadFile(path)
+		if p, err := parseWith(t, z, nil); err != nil || p.Format != todoistBackupFormat {
+			t.Errorf("%s: %v %v", path, p, err)
+		}
 	}
 	if p, err := Detect([]byte(todoistCSV), ""); err != nil || p.Name() != todoistFormat {
 		t.Errorf("todoist csv: %v %v", p, err)

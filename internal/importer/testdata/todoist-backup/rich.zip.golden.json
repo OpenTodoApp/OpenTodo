@@ -1,0 +1,270 @@
+{
+  "format": "todoist-backup",
+  "notes": [],
+  "totals": {
+    "rows": 23,
+    "create": 23,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 6,
+    "newProjects": 1,
+    "newLabels": 2,
+    "newSections": 2,
+    "recurring": 2,
+    "reminders": 2,
+    "deadlines": 1,
+    "attachments": 0,
+    "entities": 27,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 4,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:6c11cd324dff4038:1",
+      "kind": "task",
+      "title": "Red flag task",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:636cac48c6126f98:1",
+      "kind": "task",
+      "title": "Orange flag task",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:13a5100b0c1b726e:1",
+      "kind": "task",
+      "title": "Blue flag task",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:1afc6bae49d16230:1",
+      "kind": "task",
+      "title": "Recurring weekly task",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:d57198aeff385ecc:1",
+      "kind": "task",
+      "title": "Recurring German task",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:91f3fea91ec6064c:1",
+      "kind": "task",
+      "title": "Timed task with relative reminder",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:eb80fa52ad2d266f:1",
+      "kind": "task",
+      "title": "Task with absolute reminder",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:ce89d00473b41c10:1",
+      "kind": "task",
+      "title": "Task with deadline",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:d66650396909426b:1",
+      "kind": "task",
+      "title": "Task with an unreadable deadline",
+      "outcome": "create",
+      "warnings": [
+        "deadline \"end of quarter\" not understood; kept in the description"
+      ]
+    },
+    {
+      "row": 13,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:8510cc79740c3252:1",
+      "kind": "task",
+      "title": "Task with duration",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:fe304439f5567bbc:1",
+      "kind": "task",
+      "title": "Task with a day duration",
+      "outcome": "create",
+      "warnings": [
+        "duration of 2 days dropped (estimates are in minutes)"
+      ]
+    },
+    {
+      "row": 15,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:f8cc827de7376d5c:1",
+      "kind": "task",
+      "title": "Task with two labels",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:4e7ff30d99c0123f:1",
+      "kind": "task",
+      "title": "Task with comments",
+      "outcome": "create",
+      "warnings": [
+        "comments appended to the description (their authors cannot be kept)"
+      ]
+    },
+    {
+      "row": 19,
+      "file": "Inbox [p100001].csv",
+      "sourceId": "todoist:a787fe485af29139:1",
+      "kind": "task",
+      "title": "Task with an unknown date phrase",
+      "outcome": "create",
+      "warnings": [
+        "date \"every other full moon\" not understood; imported without a due date"
+      ]
+    },
+    {
+      "row": 1,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:project:p100002",
+      "kind": "project",
+      "title": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:de6f2ce24fe60a42:1",
+      "kind": "task",
+      "title": "Unsectioned task",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 6,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:section:p100002:Section 1",
+      "kind": "section",
+      "title": "Section 1",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:03e8e661f2480638:1",
+      "kind": "task",
+      "title": "Parent task",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:13f0b1d1ad27aa23:1",
+      "kind": "task",
+      "title": "Subtask",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:e9fd7455fa2bc7c7:1",
+      "kind": "task",
+      "title": "Sub-subtask",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:1381ca95f500912f:1",
+      "kind": "task",
+      "title": "Second subtask",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:section:p100002:Section 2",
+      "kind": "section",
+      "title": "Section 2",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "file": "Project 1 [p100002].csv",
+      "sourceId": "todoist:5621403c48a44b8a:1",
+      "kind": "task",
+      "title": "Task in section 2",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    }
+  ],
+  "fields": [
+    "label id-0005: name=\"label1\" created_at=1791979200000",
+    "label id-0019: name=\"label2\" created_at=1791979200000",
+    "project id-0001: name=\"Project 1\" archived=false created_at=1791979200000",
+    "section id-0002: name=\"Section 1\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0003: name=\"Section 2\" project_id=\"id-0001\" created_at=1791979200000",
+    "task id-0004: title=\"Red flag task\" description=\"Shown with the red p1 flag in the app\" priority=1 created_at=1791979200000 due={\"date\":\"2026-10-21\"} labels=[\"id-0005\"]",
+    "task id-0006: title=\"Orange flag task\" description=\"\" priority=2 created_at=1791979200000 labels=[]",
+    "task id-0007: title=\"Blue flag task\" description=\"\" priority=3 created_at=1791979200000 labels=[]",
+    "task id-0008: title=\"Recurring weekly task\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-10-19\"} recurrence=\"every monday\" labels=[]",
+    "task id-0009: title=\"Recurring German task\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-10-19\"} recurrence=\"every monday\" labels=[]",
+    "task id-0010: title=\"Timed task with relative reminder\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-10-21\",\"time\":\"15:30\"} labels=[]",
+    "task id-0012: title=\"Task with absolute reminder\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-10-22\"} labels=[]",
+    "task id-0014: title=\"Task with deadline\" description=\"\" priority=4 created_at=1791979200000 deadline=\"2026-10-30\" labels=[]",
+    "task id-0015: title=\"Task with an unreadable deadline\" description=\"Deadline: end of quarter\" priority=4 created_at=1791979200000 labels=[]",
+    "task id-0016: title=\"Task with duration\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-09-20\",\"time\":\"09:00\"} estimate_minutes=45 labels=[]",
+    "task id-0017: title=\"Task with a day duration\" description=\"\" priority=4 created_at=1791979200000 labels=[]",
+    "task id-0018: title=\"Task with two labels\" description=\"\" priority=4 created_at=1791979200000 labels=[\"id-0005\",\"id-0019\"]",
+    "task id-0020: title=\"Task with comments\" description=\"Comments\\n\\n- Comment 1\\n- Comment 2\" priority=4 created_at=1791979200000 labels=[]",
+    "task id-0021: title=\"Task with an unknown date phrase\" description=\"\" priority=4 created_at=1791979200000 labels=[]",
+    "task id-0022: title=\"Unsectioned task\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]",
+    "task id-0023: title=\"Parent task\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0002\"",
+    "task id-0024: title=\"Subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0023\" labels=[] section_id=\"id-0002\"",
+    "task id-0025: title=\"Sub-subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0024\" due={\"date\":\"2026-09-03\"} labels=[] section_id=\"id-0002\"",
+    "task id-0026: title=\"Second subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0023\" labels=[] section_id=\"id-0002\"",
+    "task id-0027: title=\"Task in section 2\" description=\"\" priority=2 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0003\"",
+    "reminder id-0011: task_id=\"id-0010\" kind=\"relative\" offset_minutes=-30 fire_at=1792594800000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0013: task_id=\"id-0012\" kind=\"absolute\" offset_minutes=null fire_at=1792566000000 created_at=1791979200000 delivered_at=null dismissed_at=null"
+  ]
+}

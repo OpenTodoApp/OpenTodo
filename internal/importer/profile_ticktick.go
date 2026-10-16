@@ -166,6 +166,11 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 					row.warn("reminder %q not supported; dropped", part)
 					continue
 				}
+				if !rr.Absolute && truthy(get("Is All Day")) {
+					// An all-day task's trigger counts from midnight (PT9H is 09:00 on
+					// the day, as in iCalendar); ours count from 09:00.
+					rr.Offset -= 9 * 60
+				}
 				row.Reminders = append(row.Reminders, rr)
 			}
 		}
@@ -180,11 +185,11 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			row.Labels = append(row.Labels, "canceled")
 		}
 		if row.Completed {
-			if ts, err := parseTimestamp(get("Completed Time"), zone); err == nil {
+			if ts, err := tickTickTime(get("Completed Time"), zone); err == nil {
 				row.CompletedAt = ts
 			}
 		}
-		if ts, err := parseTimestamp(get("Created Time"), zone); err == nil {
+		if ts, err := tickTickTime(get("Created Time"), zone); err == nil {
 			row.CreatedAt = ts
 		}
 		content := get("Content")
@@ -227,6 +232,15 @@ func tickTickDue(s string, allDay, floating bool, zone *time.Location) (*Due, er
 		return &Due{Date: t.Format("2006-01-02")}, nil
 	}
 	return &Due{Date: t.Format("2006-01-02"), Time: t.Format("15:04")}, nil
+}
+
+// tickTickTime reads a timestamp such as "2026-10-14T08:00:00+0000" (an offset
+// without a colon, which RFC 3339 layouts refuse).
+func tickTickTime(s string, zone *time.Location) (int64, error) {
+	if t, err := time.Parse("2006-01-02T15:04:05-0700", strings.TrimSpace(s)); err == nil {
+		return t.UnixMilli(), nil
+	}
+	return parseTimestamp(s, zone)
 }
 
 // tickTickItem reads one checklist line: "▪" marks a checked item, "▫" an open one.
