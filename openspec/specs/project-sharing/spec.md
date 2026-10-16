@@ -21,7 +21,7 @@ A project SHALL have exactly one `owner` and any number of members with the role
 - **THEN** Bob's device keeps showing the project read-write until it syncs, and after the sync it shows the project read-only with the viewer role
 
 ### Requirement: Role permissions
-A `viewer` SHALL read the project and its tasks. An `editor` SHALL additionally create, edit, complete and delete tasks in the project. An `admin` SHALL additionally rename, recolour and archive the project and manage members other than the owner. Only the `owner` SHALL delete the project, transfer ownership and change or remove admins. Every write SHALL be checked on the server regardless of what the client allowed, and a refused write SHALL leave the server state unchanged on every device.
+A `viewer` SHALL read the project and its tasks. An `editor` SHALL additionally create, edit, complete and delete tasks in the project, and edit the project's note (`description` and `notes_doc`). An `admin` SHALL additionally rename, recolour and archive the project and manage members other than the owner. Only the `owner` SHALL delete the project, transfer ownership and change or remove admins.
 
 #### Scenario: Viewer tries to edit
 - **WHEN** a viewer's device submits an operation changing a task title in the shared project
@@ -34,6 +34,17 @@ A `viewer` SHALL read the project and its tasks. An `editor` SHALL additionally 
 #### Scenario: Admin manages members
 - **WHEN** an admin changes a viewer to editor and removes another editor
 - **THEN** both changes take effect, while the same admin changing the owner's role is refused with a 403 `forbidden` error
+
+#### Scenario: Editor edits the project note
+- **WHEN** an editor of a shared project changes its note and syncs
+- **THEN** the server stores the note operations and every member sees the new note after their next sync
+
+### Requirement: Writes are checked on the server
+Every write SHALL be checked on the server regardless of what the client allowed, and a refused write SHALL leave the server state unchanged on every device.
+
+#### Scenario: Viewer cannot edit the note
+- **WHEN** a viewer's device submits a `description` or `notes_doc` operation for the shared project
+- **THEN** the server refuses it with reason `forbidden`, the stored note is unchanged, and the viewer's device reverts to the server's value
 
 ### Requirement: Shared project reaches every member
 Once a project is shared, its current state and the full history of its operations SHALL be delivered to each member's devices through the ordinary sync exchange, and operations written by any member SHALL reach every other member's devices. Members' concurrent and offline edits SHALL converge under the same per-field last-writer-wins rule as a single user's devices.

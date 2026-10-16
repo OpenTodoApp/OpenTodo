@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description, calendar extras; project, label, section names; view names and queries; comment bodies; attachment names, types, links; custom field names, options and string values) and its attachment files before they leave the device. Structure fields and number and checkbox values SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description, calendar extras; project names, descriptions and notes; label and section names; view names and queries; comment bodies; attachment names, types, links; custom field names, options and string values) and its attachment files before they leave the device. Structure fields and number and checkbox values SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, a number or checkbox custom field value, or a project's `color` or `archived`
@@ -20,6 +20,10 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Shared project stays plaintext
 - **WHEN** an encrypted account edits a task in a project shared with other accounts
 - **THEN** the operation carries the plaintext title, readable by every member
+
+#### Scenario: Project note is ciphertext
+- **WHEN** an encrypted account writes a note on one of its own projects
+- **THEN** the `description` and `notes_doc` operations carry ciphertext strings, the `notes_doc` ciphertext fits the document size limit, and the project's `position` stays plaintext
 
 #### Scenario: Custom field name and values
 - **WHEN** an encrypted account defines a choice field "Client" with options "Acme" and "Globex" and sets a task's Client to "Acme" and its Cost to 120
