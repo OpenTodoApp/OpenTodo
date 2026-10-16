@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'display' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -62,6 +62,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'filter', title: 'Filter, saved filters and boards' },
   { id: 'trash', title: 'Trash and projects' },
   { id: 'triage', title: 'Process the Inbox' },
+  { id: 'display', title: 'Display mode' },
   { id: 'comments', title: 'Comments and notes' },
   { id: 'settings', title: 'Settings' },
   { id: 'vim', title: 'Vim keybindings' },
@@ -79,6 +80,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   dashboard: [], day: ['calendar'], week: ['calendar'], month: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
   // Process the Inbox (inbox-triage): one card, no task list; its keys are `view` entries.
   triage: [],
+  // Display mode (display-mode D5): no shell, no list; its keys are `view` entries.
+  display: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -261,6 +264,14 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'triage.open', keys: ['Enter'], description: 'Open the task’s panel to edit anything else', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
 
+  // ---- display mode (display-mode D5): the shell's shortcuts (`g` sequences, `q`, `?`) are not active there
+  { id: 'display.down', keys: ['j', '↓', '→'], description: 'Move the focus to the next row, across the day columns', section: 'display', scope: 'view', views: ['display'] },
+  { id: 'display.up', keys: ['k', '↑', '←'], description: 'Move the focus to the previous row', section: 'display', scope: 'view', views: ['display'] },
+  { id: 'display.first', keys: ['Home'], description: 'Focus the first row', section: 'display', scope: 'view', views: ['display'] },
+  { id: 'display.last', keys: ['End'], description: 'Focus the last row', section: 'display', scope: 'view', views: ['display'] },
+  { id: 'display.toggle', keys: ['Space', 'Enter'], description: 'Complete or reopen the focused task (only where you may edit it)', section: 'display', scope: 'view', views: ['display'] },
+  { id: 'display.exit', keys: ['Esc'], description: 'Leave display mode for the same view in the app', section: 'display', scope: 'view', views: ['display'] },
+
   // ---- settings
   { id: 'settings.invite-copy', keys: ['Enter'], description: 'Settings → People → Members: copy the invite link created in this session', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
   { id: 'settings.invite-revoke', keys: ['Delete'], description: 'Settings → People → Members: revoke the focused pending invitation', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
@@ -290,7 +301,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'display.exit'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 
@@ -342,7 +353,7 @@ export interface Chord {
 
 const NAMED: Record<string, string> = {
   esc: 'escape', escape: 'escape', enter: 'enter', tab: 'tab', space: ' ', delete: 'delete', del: 'delete', backspace: 'backspace',
-  '↑': 'arrowup', '↓': 'arrowdown', '←': 'arrowleft', '→': 'arrowright', menu: 'contextmenu', f2: 'f2', f10: 'f10',
+  '↑': 'arrowup', '↓': 'arrowdown', '←': 'arrowleft', '→': 'arrowright', menu: 'contextmenu', f2: 'f2', f10: 'f10', home: 'home', end: 'end',
 }
 
 /** Parses one chord ("Alt+Shift+↑", "⌘+K", "?") into what the dispatcher compares; `null` for a note. */

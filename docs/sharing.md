@@ -34,7 +34,7 @@ A link creates a new account only when its creator is the owner or an admin of t
 
 ## Share with a public link
 
-A public link shows a project's open tasks to anyone who has it, no account needed, view-only or with ticking; a **Public** badge marks the project while one is active. See [Public links](public-links.md).
+A public link shows a project's open tasks to anyone with it, no account needed, view-only or with ticking, also [full screen on a display](public-links.md#show-it-on-a-display); a **Public** badge marks the project. See [Public links](public-links.md).
 
 ## Choose a role
 

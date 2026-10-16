@@ -31,6 +31,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Process the Inbox](process-the-inbox.md) | Walk the Inbox one task at a time and decide each with a single key: today, schedule, move, delegate, label, Someday, complete or trash, with Undo. |
 | &nbsp;&nbsp;↳ [Today and Upcoming](today-and-upcoming.md) | How Today orders overdue, started, evening and blocked tasks, how deadlines and start dates bring tasks in, and how Upcoming lays out the days ahead. |
 | &nbsp;&nbsp;↳ [Saved views](saved-views.md) | Turn a filter query into a view pinned to the sidebar, group and sort it, manage it from its menu, and put up to six views on one dashboard. |
+| &nbsp;&nbsp;↳ [Display mode](display-mode.md) | Show Today, Upcoming, a project or a saved view full screen in large type, for a tablet on the fridge or an e-ink panel on the wall. |
 | [Search and commands](search.md) | One box on Ctrl+K finds any task, project, label, view or setting, runs any command by name, and understands filter queries. |
 | [Sections and boards](sections-and-boards.md) | Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard. |
 | &nbsp;&nbsp;↳ [A project on a timeline](project-timeline.md) | Show a project's tasks as bars from their start to their deadline, drag them to reschedule, and see which tasks wait for which. |

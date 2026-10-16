@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
@@ -27,6 +27,9 @@ import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
 import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
+
+// Display mode (display-mode): its own chunk, fetched when a display route opens.
+const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
 type Phase =
   | { kind: 'loading' }
@@ -243,6 +246,11 @@ export function App() {
     }
     if (route.view === 'share') {
       return <ShareCapture />
+    }
+    if (route.view === 'display') {
+      // Display mode (display-mode D3): the display replaces the shell; sync keeps
+      // running (started above for every signed-in route), so it stays live.
+      return <Suspense fallback={null}><DisplayScreen route={route} /></Suspense>
     }
     return (
       <>

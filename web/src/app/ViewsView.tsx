@@ -6,6 +6,7 @@ import type { View } from '../lib/types'
 import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPinned, setStartView, updateView } from '../lib/views'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
+import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { useStartView, useViewData, useViews } from './useViews'
 import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
 import { Tooltip } from '../ui'
@@ -19,6 +20,8 @@ export interface ViewMenuActions {
   pin: (pinned: boolean) => unknown
   startView: () => unknown
   remove: () => unknown
+  /** Opens the view in display mode (display-mode); offered for list views only. */
+  display?: () => unknown
 }
 
 /**
@@ -37,6 +40,7 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
       { kind: 'check', id: 'start', label: 'Start view on this device', icon: 'house', checked: isStart, disabled: isStart,
         reason: 'This view opens when the app starts', onSelect: a.startView },
     ] },
+    ...(a.display && !isDashboard(view) ? [{ items: [{ kind: 'action' as const, id: 'display', label: 'Display mode', icon: 'monitor' as const, onSelect: a.display }] }] : []),
     { items: [
       { kind: 'action', id: 'up', label: 'Move up', icon: 'arrow-up', disabled: first, reason: 'Already first', onSelect: () => a.move(-1) },
       { kind: 'action', id: 'down', label: 'Move down', icon: 'arrow-down', disabled: last, reason: 'Already last', onSelect: () => a.move(1) },
@@ -63,6 +67,7 @@ export function ViewMenu({ view, align = 'end', className = '' }: { view: View; 
     pin: (p) => setPinned(view.id, p),
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
+    display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
   })
   return (
     <>
