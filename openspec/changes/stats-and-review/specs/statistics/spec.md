@@ -22,7 +22,7 @@ Statistics SHALL be derived from the device's local task and project rows at the
 - **THEN** no request other than ordinary sync leaves the device and the server holds no statistics
 
 ### Requirement: Periods and week start
-Statistics SHALL be shown for one of: this week, last week, the last 4 weeks and the last 12 weeks, default this week. A week SHALL start on the user's first day of the week preference and days SHALL be the device's local calendar days. The period is `[start, end)`; for the current week the end is now.
+Statistics SHALL be shown for one of: this week, last week, the last 4 weeks and the last 12 weeks, default this week. A week SHALL start on the user's first day of the week preference and days SHALL be the device's local calendar days. Week boundaries SHALL be the same as those of the filter periods `this week` and `last week`. The period is `[start, end)`; for the current week the end is now.
 
 #### Scenario: Sunday start
 - **WHEN** the first day of the week is Sunday and today is Wednesday 2026-10-14
@@ -33,7 +33,7 @@ Statistics SHALL be shown for one of: this week, last week, the last 4 weeks and
 - **THEN** the period covers the 11 full weeks before the current one plus the current week to now, and the per-week chart has 12 bars
 
 ### Requirement: What is counted
-For a period the device SHALL count: completed (live tasks, including recurring occurrence records and subtasks, with `completed_at` in the period), created (`created_at` in the period), completed late (completed on a local day after the task's due date), and slipped (a due date in the period and not completed by the period's end). Tasks in the Trash SHALL be excluded. Overdue now SHALL be open live tasks due before today.
+For a period the device SHALL count: completed (live tasks, including recurring occurrence records and subtasks, with `completed_at` in the period), created (`created_at` in the period; occurrence records are not new tasks), completed late (completed on a local day after the task's due date), and slipped (a due date in the period before today and not completed by the period's end). Overdue now SHALL be open live tasks due before today.
 
 #### Scenario: Recurring occurrences count
 - **WHEN** an `every day` task was completed on five days of the week
@@ -43,13 +43,23 @@ For a period the device SHALL count: completed (live tasks, including recurring 
 - **WHEN** a task due Tuesday is still open on Friday, and another due Tuesday was completed on Thursday
 - **THEN** slipped counts the first and completed late counts the second, and both are shown with their project
 
+### Requirement: Excluded rows
+Tasks in the Trash SHALL be excluded from every statistic, and a habit's skipped occurrence SHALL NOT count anywhere, because it is not a completion.
+
 #### Scenario: Trashed task excluded
 - **WHEN** a task completed on Monday is moved to the Trash on Tuesday
 - **THEN** it no longer counts as completed for that week, and counts again if restored
 
+#### Scenario: Skipped habit occurrence
+- **WHEN** a habit was done on four days of the week and skipped on a fifth
+- **THEN** completed counts four for that week and the skipped day is in no number
+
+### Requirement: Whose tasks count in shared projects
+In a shared project a completed task SHALL count for the account that completed it. When the task does not record who completed it (completed before that was recorded, or ticked on a public link), and for open tasks, it SHALL count for its assignee, or for the user when it is unassigned.
+
 #### Scenario: Shared project tasks
-- **WHEN** a shared project holds completed tasks assigned to another member, tasks assigned to the user and unassigned tasks
-- **THEN** the tasks assigned to another member are excluded and the other two kinds count, because local rows record the assignee but not who completed a task
+- **WHEN** a shared project holds a task completed by the user but assigned to another member, a task completed by another member but assigned to the user, and older completed tasks that do not record who completed them
+- **THEN** the first counts and the second does not, because who completed a task decides; of the older tasks, those assigned to the user or unassigned count and those assigned to another member do not
 
 ### Requirement: Breakdowns and charts
 The Statistics screen SHALL show completions per day of the period, per weekday (for 4 and 12 weeks) and per project (the five projects with most completions and "other"), each as a chart with an accessible text alternative (a table or list carrying the same values) and no library-rendered image. The charts SHALL respect light and dark themes and SHALL use no colour alone to convey a value.

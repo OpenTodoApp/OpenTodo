@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Keyboard navigation
-Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k` (or arrows) move, Enter opens, `c` completes or reopens, `1`–`4` set priority, Delete deletes, `g` then `i`/`t`/`u`/`c`/`s` navigates, `g` then `p` opens Inbox triage, `g` then `r` opens the Review and `g` then `Shift+S` Statistics, Escape closes the panel or clears the selection, `?` lists shortcuts, and `Ctrl`/`⌘`+`K` opens the palette. Shortcuts SHALL not fire while typing, except `Ctrl`/`⌘`+`K` outside the notes editor.
+Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k` (or arrows) move, Enter opens, `c` completes or reopens, `1`–`4` set priority, Delete deletes, `g` then `i`/`t`/`u`/`c`/`s` navigates, `g` then `p` opens Inbox triage, `g` then `r` opens the Review and `g` then `Shift+S` Statistics, Escape closes the panel or clears the selection, `?` lists shortcuts, and `Ctrl`/`⌘`+`K` opens the palette. Shortcuts SHALL not fire while typing in a field, except `Ctrl`/`⌘`+`K` outside the notes editor.
 
 #### Scenario: Navigate with g then t
 - **WHEN** focus is not in a text field and the user presses `g` then `t`

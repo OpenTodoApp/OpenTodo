@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An opt-in weekly email digest per user, sent on the user's review day: last week's numbers, what is overdue and due soon, projects without a next action, and a link to the review. Depends on `outgoing-email`; never for encrypted accounts.
+An opt-in weekly email digest per user, sent on the user's review day: last week's numbers, what is overdue and due soon, projects without a next action, and a link to the review. Sent through `outgoing-email`; never for encrypted accounts.
 
 ## ADDED Requirements
 
@@ -14,8 +14,12 @@ An opt-in weekly email digest per user, sent on the user's review day: last week
 - **THEN** the response is 200 with the stored values and `nextSendAt`, and `GET` returns the same
 
 #### Scenario: Outgoing email unavailable
-- **WHEN** outgoing email is not configured, or the instance runs in demo mode
+- **WHEN** outgoing email is not configured
 - **THEN** `PUT` answers 404 `smtp_disabled`, `GET` reports `available: false`, and the app shows that the digest needs outgoing email configured by the owner
+
+#### Scenario: Demo instance
+- **WHEN** the instance runs in demo mode
+- **THEN** `PUT` is refused with 403 `demo_restricted`, `GET` reports `available: false`, and no digest is ever sent
 
 #### Scenario: Encrypted account refused
 - **WHEN** an account with end-to-end encryption puts `enabled: true`
@@ -41,11 +45,14 @@ The server SHALL send a user's digest once per chosen weekday, within 15 minutes
 - **THEN** the digest is sent at the first pass after 08:00 and one `email.failed` per failed pass is recorded
 
 ### Requirement: Digest content
-The digest SHALL contain: completed, created, completed late and slipped for the last full week by the user's week start; overdue tasks (up to 15, with due date and project); tasks due in the next seven days (up to 15); projects with no open task (up to 10); when the last review was; and a link to `/review`. Numbers SHALL follow the same definitions as `statistics`, pinned by a shared fixture. Plain text in the stored language; no other person's data beyond names already visible to the user.
+The digest SHALL contain: completed, created, completed late and slipped for the last full week by the user's week start; overdue tasks (up to 15, with due date and project); tasks due in the next seven days (up to 15); projects with no open task (up to 10); when the last review was; and a link to `/review`. It SHALL be plain text in the stored language, with no other person's data beyond names already visible to the user.
 
 #### Scenario: Content
 - **WHEN** a user completed 12 tasks last week, has 2 overdue and 1 project without a next action
 - **THEN** the digest states those numbers, lists the 2 tasks and the project, says when the last review was, and ends with the review link
+
+### Requirement: Digest numbers match the statistics
+The digest's numbers and lists SHALL follow the same definitions as `statistics`, including whose tasks count in shared projects and the exclusion of skipped habit occurrences, pinned by a fixture that the device and the server both evaluate.
 
 #### Scenario: Shared project tasks
 - **WHEN** an overdue task lives in a shared project and is assigned to another member
