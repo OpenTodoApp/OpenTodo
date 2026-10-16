@@ -1,4 +1,5 @@
 import { Icon, type IconName, PageBody, PageHeader } from '../../ui'
+import { Skeleton } from '../../ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { findTopic, helpSections, loadHelp, searchHelp, type HelpBundle } from '../../lib/help'
 import type { SearchEntry } from '../../../scripts/docs/search-core.mjs'
@@ -63,7 +64,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
     return (
       <PageBody width="list">
         <PageHeader title="Help" />
-        <p className="text-body text-muted" role="status">Loading…</p>
+        <Skeleton shape="line" count={6} label="Loading the guide" />
       </PageBody>
     )
   }

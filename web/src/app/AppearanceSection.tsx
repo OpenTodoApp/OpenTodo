@@ -1,22 +1,31 @@
-// Settings → Preferences → Appearance (OpenSpec change theming, design D9): the
-// mode and the accent theme, saved to the synced user_prefs row and applied at
-// once. Theme tiles are a radio group with roving focus; each tile previews its
-// theme through the real tokens (a data-accent subtree).
+// Settings → Appearance (OpenSpec change theming, design D9; ux-overhaul,
+// appearance-preferences "Appearance in Settings"): mode, accent theme, density
+// and the promoted sidebar destinations, all in the synced user_prefs row and
+// applied at once. Theme tiles are a radio group with roving focus; each tile
+// previews its theme through the real tokens (a data-accent subtree). Below
+// 640 px the tiles are one scrollable row of named swatches.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useRef } from 'react'
-import { readAppearance, setAppearance, THEME_MODES, type Appearance } from '../lib/appearance'
+import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
 import { db } from '../lib/db'
-import type { ThemeModePref } from '../lib/types'
+import type { ThemeModePref, UserPrefs } from '../lib/types'
 import { USER_PREFS_ID } from '../lib/userPrefs'
-import { SettingRow, SettingsSection } from '../ui'
+import { SettingRow, SettingsSection, Switch } from '../ui'
 import { ACCENTS, type AccentId } from '../ui'
 
 const MODE_LABEL: Record<ThemeModePref, string> = { system: 'System', light: 'Light', dark: 'Dark' }
+const DENSITY_LABEL: Record<Density, string> = { comfortable: 'Comfortable', compact: 'Compact' }
+
+/** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
+export const PROMOTABLE_LABEL: Record<Promotable, string> = {
+  anytime: 'Anytime', someday: 'Someday', assigned: 'Assigned to me', completed: 'Completed', feed: 'Updates', trash: 'Trash', filter: 'Filter',
+}
 
 export interface AppearanceViewProps {
   value: Appearance
   onMode: (m: ThemeModePref) => void
   onAccent: (a: AccentId) => void
+  onDensity?: (d: Density) => void
 }
 
 /** Roving focus over a radio group: arrows move and select, Home and End jump. */
@@ -33,35 +42,42 @@ function roving<T>(e: KeyboardEvent, items: readonly T[], current: T, choose: (v
   focus(next)
 }
 
-export function AppearanceView({ value, onMode, onAccent }: AppearanceViewProps) {
-  const modeRefs = useRef<(HTMLButtonElement | null)[]>([])
+function Segmented<T extends string>({ label, items, labels, value, onChange, testId }: {
+  label: string; items: readonly T[]; labels: Record<T, string>; value: T; onChange: (v: T) => void; testId: string
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([])
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-control border border-input bg-surface p-0.5" data-testid={testId}>
+      {items.map((m, i) => (
+        <button key={m} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={value === m} tabIndex={value === m ? 0 : -1}
+          className={`rounded-control px-3 py-1 text-meta touch-target ${value === m ? 'bg-accent text-on-accent' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
+          onClick={() => onChange(m)}
+          onKeyDown={(e) => roving(e, items, value, onChange, (n) => refs.current[n]?.focus())}>
+          {labels[m]}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function AppearanceView({ value, onMode, onAccent, onDensity }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
-    <SettingsSection title="Appearance" helpId="settings/appearance" headingId="appearance-heading"
-      description="Light or dark, and the colour of buttons, links and selection. Saved to your account, so all your devices follow.">
-      <SettingRow label="Mode" description="System follows your device's light or dark setting."
-        control={
-          <div role="radiogroup" aria-label="Mode" className="inline-flex rounded-control border border-input bg-surface p-0.5" data-appearance-mode>
-            {THEME_MODES.map((m, i) => (
-              <button key={m} ref={(el) => { modeRefs.current[i] = el }} type="button" role="radio" aria-checked={value.mode === m} tabIndex={value.mode === m ? 0 : -1}
-                className={`rounded-control px-3 py-1 text-meta touch-target ${value.mode === m ? 'bg-accent text-on-accent' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
-                onClick={() => onMode(m)}
-                onKeyDown={(e) => roving(e, THEME_MODES, value.mode, onMode, (n) => modeRefs.current[n]?.focus())}>
-                {MODE_LABEL[m]}
-              </button>
-            ))}
-          </div>
-        } />
-      <div className="py-3">
-        <p id="appearance-theme-label" className="mb-2 text-sm font-medium text-default">Theme</p>
-        <div role="radiogroup" aria-labelledby="appearance-theme-label" className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-appearance-themes>
+    <SettingsSection title="Appearance" headingId="appearance-heading"
+      description="Light or dark, the colour of buttons, links and selection, and how tight the rows are. Saved to your account, so all your devices follow.">
+      <SettingRow id="appearance-mode" label="Mode" description="System follows your device's light or dark setting."
+        control={<span data-appearance-mode><Segmented label="Mode" items={THEME_MODES} labels={MODE_LABEL} value={value.mode} onChange={onMode} testId="appearance-mode" /></span>} />
+      <div className="py-3" id="appearance-theme" tabIndex={-1} data-setting-row="appearance-theme">
+        <p id="appearance-theme-label" className="mb-2 text-body font-medium text-default">Theme</p>
+        <div role="radiogroup" aria-labelledby="appearance-theme-label" data-appearance-themes data-scroll-x
+          className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
           {ACCENTS.map((a, i) => {
             const on = value.accent === a.id
             return (
               <button key={a.id} ref={(el) => { tileRefs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
                 data-accent={a.id} data-theme-tile={a.id}
-                className={`flex flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
+                className={`flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
                 onClick={() => onAccent(a.id)}
                 onKeyDown={(e) => roving(e, ids, value.accent, onAccent, (n) => tileRefs.current[n]?.focus())}>
                 <span className="flex h-12 w-full overflow-hidden rounded-control border border-default" aria-hidden="true">
@@ -80,13 +96,41 @@ export function AppearanceView({ value, onMode, onAccent }: AppearanceViewProps)
           })}
         </div>
       </div>
+      {onDensity && (
+        <SettingRow id="appearance-density" label="Density" description="Compact makes task rows, group headers and the sidebar tighter. Touch targets stay full size on touch screens."
+          control={<Segmented label="Density" items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
+      )}
     </SettingsSection>
   )
 }
 
+/** The sidebar destinations (app-shell "Sidebar structure"): one switch per destination of the More group. */
+export function SidebarView({ promoted, onPromote }: { promoted: readonly Promotable[]; onPromote: (id: Promotable, on: boolean) => void }) {
+  return (
+    <SettingsSection title="Sidebar" headingId="sidebar-heading"
+      description="Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group's destinations sit next to them, on every device.">
+      {PROMOTABLE.map((id) => (
+        <SettingRow key={id} id={`sidebar-${id}`} label={PROMOTABLE_LABEL[id]} htmlFor={`sidebar-switch-${id}`}
+          control={<Switch id={`sidebar-switch-${id}`} checked={promoted.includes(id)} onChange={(on) => onPromote(id, on)} label={`Show ${PROMOTABLE_LABEL[id]} among the primary items`} hideLabel />} />
+      ))}
+    </SettingsSection>
+  )
+}
+
+function usePrefsRow(): Partial<UserPrefs> | null {
+  return useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, []) ?? null
+}
+
 /** The panel with its data: the synced row, written through ops. */
 export function AppearanceSection() {
-  const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
-  const value = readAppearance(row ?? null)
-  return <AppearanceView value={value} onMode={(m) => void setAppearance('theme_mode', m)} onAccent={(a) => void setAppearance('theme_accent', a)} />
+  const row = usePrefsRow()
+  const value = readAppearance(row)
+  return <AppearanceView value={value} onMode={(m) => void setAppearance('theme_mode', m)} onAccent={(a) => void setAppearance('theme_accent', a)}
+    onDensity={(d) => void setAppearance('density', d)} />
+}
+
+export function SidebarSection() {
+  const row = usePrefsRow()
+  const value = readAppearance(row)
+  return <SidebarView promoted={value.sidebar ?? []} onPromote={(id, on) => void setPromoted(row, id, on)} />
 }

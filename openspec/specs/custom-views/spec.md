@@ -28,7 +28,7 @@ The Filter view SHALL offer a "Save view" action (button and `s` shortcut when f
 - **THEN** the view's results update, and the changed query is shown on other devices after sync
 
 ### Requirement: Pinned views in the sidebar
-Pinned views SHALL be listed in a "Views" group in the sidebar ordered by position, each with a live open-task count computed locally, and SHALL be reorderable and unpinnable from their menu. Unpinned views SHALL remain available from a views overview opened with `g v`. The sidebar SHALL reflect pins, order and renames from other devices after sync.
+Pinned saved filters SHALL be listed in a "Filters" group in the sidebar, in the sidebar's single scroller, ordered by position, each with a live open-task count computed locally, and SHALL be reorderable and unpinnable from their menu. Unpinned saved filters SHALL remain available from the Filters overview opened with `g v` and from the group's "All" action. The sidebar SHALL reflect pins, order and renames from other devices after sync.
 
 #### Scenario: Count and order
 - **WHEN** the user has pinned "Work tomorrow" (4 open matches) and "Waiting" (2) and moves "Waiting" first
@@ -36,7 +36,14 @@ Pinned views SHALL be listed in a "Views" group in the sidebar ordered by positi
 
 #### Scenario: Unpin
 - **WHEN** the user unpins "Waiting"
-- **THEN** it leaves the sidebar and is still listed in the views overview
+- **THEN** it leaves the sidebar and is still listed in the Filters overview
+
+### Requirement: Saved filters and boards in the user interface
+The user interface SHALL call saved views saved filters and dashboards boards of filters; routes and data keep their names.
+
+#### Scenario: Group name
+- **WHEN** the user looks at the sidebar
+- **THEN** the group is titled "Filters" and its overview page is titled "Filters" with "Saved filters" and "Boards" as its sections
 
 ### Requirement: Grouping and sort options
 A list view SHALL group its results by project, due date, priority, label or none, and sort within groups by due date, priority, position, created time or title, ascending or descending, as stored on the view. Defaults SHALL be grouping by project and sort by due date ascending with undated tasks last. Options SHALL be changeable from the view header with the keyboard.

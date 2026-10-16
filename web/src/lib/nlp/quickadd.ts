@@ -1,6 +1,7 @@
 // Glue between parse() and the quick-add input; pure so it can be unit tested.
 import type { Due, Priority } from '../types'
 import type { Chip, ParseResult } from './parse'
+import type { ReminderPhrase } from './reminders'
 import type { Span } from './tokenize'
 
 /** Only the attributes the line set explicitly; the view fills in the rest. */
@@ -17,6 +18,10 @@ export interface QuickAddInput {
   /** "someday" (someday-and-evening). */
   start?: string
   evening?: boolean
+  /** The canonical rule (quick-add-recurrence). */
+  recurrence?: string
+  /** Typed reminders; createTask resolves them against the final due. */
+  reminders?: ReminderPhrase[]
 }
 
 /** The slice of a label the resolver needs. */
@@ -69,6 +74,8 @@ export async function toTaskInput(
   if (r.deadline) out.deadline = r.deadline
   if (r.start) out.start = r.start
   if (r.evening) out.evening = true
+  if (r.recurrence) out.recurrence = r.recurrence
+  if (r.reminders.length) out.reminders = r.reminders
   if (r.projectId) out.project_id = r.projectId
   if (r.labels.length) {
     const ids: string[] = []

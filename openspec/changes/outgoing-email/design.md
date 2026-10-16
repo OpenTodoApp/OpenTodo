@@ -81,11 +81,11 @@ Each creation handler accepts `send` (boolean). Rules: needs `email` (400), need
 - Routes `/forgot` and `/verify/<token>` in `router.ts` (next to `/reset`, `router.ts:91-101`).
 - `AuthScreen`: "Forgot password?" under the password field when enabled and not SSO-only; a "check your email" state after a 202 with a resend button that posts the same registration again (rate limited server-side).
 - `ForgotScreen`, `VerifyScreen`: the card style of `ResetScreen`, with loading, offline (retries when online), invalid and ready states.
-- `OutgoingEmailPanel` in `AdministrationSections` for the owner only: a state-first card (`settings-navigation` "State-first panel summaries"), "Configure" opens the form inline (host, port, security select, username, password with "leave empty to keep", From), locked fields rendered read-only with "Set by OPENTODO_SMTP_HOST", a "Send test email" button with the outcome line and a plaintext warning when security is `none`. Help id `settings/outgoing-email`. The Administration description in `settingsSections.ts` becomes "Users, invitations, members and outgoing email".
+- `OutgoingEmailPanel` on the Settings → Server page (owner only, after Attachments and before the audit log): a `SettingsSection` card with a state-first `SettingRow` (`settings-navigation` "Panel cards and rows", "State-first panel summaries"; the state is a badge beside the label, no header action and no help link in the card), "Configure" opens the form inline (host, port, the design-system `Select` for security, username, password with "leave empty to keep", From), locked fields rendered read-only with "Set by OPENTODO_SMTP_HOST", a "Send test email" button with the outcome line and a plaintext warning when security is `none`. The page header carries Help; the legacy screen id `settings/outgoing-email` maps to `settings/server` in `LEGACY_HELP_SCREENS` and `docs/settings-server.md` claims it. The Server description in `settingsSections.ts` becomes "Backups, attachments, outgoing email and the audit log", and `settingsIndex.ts` gets an "Outgoing email" row (keywords `smtp`, `mail`) so Settings search and the palette find it.
 - "Send by email" checkbox (default on) in `MembersPanel` and `InviteLinksSection` when an email is typed and `outgoingEmail.enabled`; `UsersPanel` reset confirmation gets two actions, "Send reset email" and "Create reset link".
-- Audit labels for the two new events; the demo note lists nothing new because the panel is in the Administration section the demo already hides.
+- Audit labels for the two new events; the Server page's demo note names outgoing email next to backups, and the card is rendered with its controls disabled there (the demo never builds the mailer).
 
-Placing the panel in Administration follows the brief; Access policies (owner-only, where single sign-on lives) was the alternative and would avoid an owner-only panel inside an owner-and-admins section. The spec records the visibility rule explicitly so either placement is testable.
+The panel was first planned for Administration; after `ux-overhaul` reshaped Settings into nine sections it lives in Server, the owner-only section beside Backups and Attachments, which avoids an owner-only card inside the owner-and-admins People section. The spec records the visibility rule explicitly so the placement is testable.
 
 ### D10. Wiring and the demo
 
@@ -95,7 +95,7 @@ Placing the panel in Administration follows the brief; Access policies (owner-on
 
 ### Interface budget (added after ux-overhaul)
 
-- The Outgoing email card is one more section in Settings → Administration, for the owner only. The forgot-password and verification screens sit outside the shell.
+- The Outgoing email card is one more card on the Settings → Server page, for the owner only. The forgot-password and verification screens sit outside the shell.
 - "Forgot password?" is one line under the password field. "Send by email" is one checkbox that appears only once an address is typed. The reset choice replaces the existing confirmation dialog.
 - No new scroll region, sidebar destination, task property, chrome row above a list, or shortcut.
 

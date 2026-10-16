@@ -68,7 +68,7 @@ export function PasswordView(p: {
     wasOpen.current = !!p.open
   }, [p.open])
   return (
-    <SettingsSection title="Password" helpId="settings/password" headingId="password-heading"
+    <SettingsSection title="Password" headingId="password-heading"
       description="Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.">
       {!p.online && <Notice>You are offline. Changing your password needs a connection to your server.</Notice>}
       {p.done && !p.open && <Notice tone="success">Password changed. Your other sessions were signed out.</Notice>}

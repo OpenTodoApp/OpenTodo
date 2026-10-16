@@ -3,12 +3,14 @@
 // this device; Shift+C switches to Comments and focuses the composer. History is
 // a separate chunk, loaded when its tab is first opened.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Skeleton } from '../../ui'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { db } from '../../lib/db'
 import type { Task } from '../../lib/types'
 import { Tabs } from '../../ui'
 import { ActivityTab } from './ActivityTab'
 import { CommentsTab } from './CommentsTab'
+import { useShortcutScope } from '../shortcuts'
 
 const HistoryTab = lazy(() => import('./HistoryTab'))
 
@@ -58,19 +60,8 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost 
 
   useEffect(() => setFocusComment(null), [task.id])
 
-  // Shift+C (outside text fields) shows Comments and focuses the composer; `c` completes the selected task.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'C' || e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      e.preventDefault()
-      setTab('comments')
-      setFocusComposer((n) => n + 1)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  // Shift+C (outside text fields) shows Comments and focuses the composer (`panel.comment`); `c` completes the selected task.
+  useShortcutScope('panel', { 'panel.comment': () => { setTab('comments'); setFocusComposer((n) => n + 1) } })
 
   // After the Comments tab rendered: focus the composer and bring it into view.
   useEffect(() => {
@@ -89,7 +80,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost 
           <ActivityTab task={task} userId={userId} onOpenComment={(id) => { setFocusComment(id); setTab('comments') }} />
         )}
         {tab === 'history' && (
-          <Suspense fallback={<p className="text-meta text-faint">Loading…</p>}>
+          <Suspense fallback={<Skeleton shape="line" count={4} label="Loading history" />}>
             <HistoryTab taskId={task.id} readOnly={readOnly} onRestored={(id) => id !== task.id && onOpen?.(id)} />
           </Suspense>
         )}

@@ -22,6 +22,10 @@ export const PAIRS: Pair[] = [
   ]),
   ...text('highlight-text', ['highlight']),
   ...ui('border-input', ['canvas', 'surface', 'sunken']),
+  // The three surfaces and the board column (ux-overhaul task 8.6): a row, a card and
+  // an overlay keep their text pairs on `sunken` and `raised` in dark too (covered by
+  // TEXT × SURFACES above); the hairline that separates them in dark only needs to be visible.
+  ...['canvas', 'surface', 'sunken', 'raised'].map((bg): Pair => ({ fg: 'border', bg, min: 1.1, kind: 'ui' })),
   ...ui('focus', ['canvas', 'surface', 'raised']),
   ...['p1', 'p2', 'p3', 'p4'].flatMap((p) => ui(p, ['canvas', 'surface'])),
   ...HUE_NAMES.flatMap((h): Pair[] => [

@@ -129,7 +129,7 @@ describe('Settings → Backups', () => {
     expect(html).toContain('Keep the last 7')
     expect(html).toContain('Encrypted with your passphrase')
     expect(html).not.toContain('name="local-dir"')
-    expect(html).toContain('data-help-screen="settings/backups"')
+    expect(html).not.toContain('data-help-screen')
     expect(html).toContain('id="backups-heading"')
   })
 

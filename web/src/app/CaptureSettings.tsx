@@ -1,6 +1,7 @@
 // Settings → Capture: bookmarklet and extension (OpenSpec share-capture; settings-redesign D3).
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui'
+import { Tooltip } from '../ui'
 import { Icon } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -37,16 +38,18 @@ export function CaptureView({ code, linkRef, copied, onCopy }: {
   code: string; linkRef?: React.Ref<HTMLAnchorElement>; copied: 'yes' | 'failed' | null; onCopy: () => void
 }) {
   return (
-    <SettingsSection title="Capture" helpId="settings/capture" headingId="capture-heading"
+    <SettingsSection title="Capture" headingId="capture-heading"
       description="Save pages and selected text from your browser as tasks.">
       <SettingRow label="Bookmarklet" description={
         <>Drag <strong>Add to OpenTodo</strong> to your bookmarks bar. On any page, click it to add the page, its title and the selected text in a small window.
           It holds no password or token; it uses your sign-in on this server.</>
       } control={
         <>
-          <a ref={linkRef} draggable className="ui-btn ui-btn--primary ui-btn--md cursor-grab" title="Drag to your bookmarks bar" onClick={(e) => e.preventDefault()}>
-            <Icon name="plus" />Add to OpenTodo
-          </a>
+          <Tooltip label="Drag to your bookmarks bar">
+            <a ref={linkRef} draggable className="ui-btn ui-btn--primary ui-btn--md cursor-grab" onClick={(e) => e.preventDefault()}>
+              <Icon name="plus" />Add to OpenTodo
+            </a>
+          </Tooltip>
           <Button icon="copy" onClick={onCopy}>Copy bookmarklet</Button>
         </>
       } />
@@ -54,7 +57,7 @@ export function CaptureView({ code, linkRef, copied, onCopy }: {
       {copied === 'failed' && (
         <label className="block py-2 text-meta text-muted">
           Copy this code and paste it as a bookmark's address:
-          <textarea className="input mt-1 font-mono text-meta" readOnly rows={3} value={code} onFocus={(e) => e.currentTarget.select()} />
+          <textarea className="ui-input mt-1 font-mono text-meta" readOnly rows={3} value={code} onFocus={(e) => e.currentTarget.select()} />
         </label>
       )}
       <SettingRow label="Browser extension" description={<>For Chromium and Firefox, in the repository under <code>extension/</code>.</>}

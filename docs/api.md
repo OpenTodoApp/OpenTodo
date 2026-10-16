@@ -362,7 +362,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 ### Outgoing email
 
-Optional SMTP, configured by the owner in **Settings → Administration → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`.
+Optional SMTP, configured by the owner in **Settings → Server → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`.
 
 **Configuration** — `GET /api/v1/settings/smtp` (the owner's session; API tokens get 403) →
 

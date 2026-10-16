@@ -83,8 +83,8 @@ const field = (e: FormEvent<HTMLFormElement>, name: string) => (e.currentTarget.
 function RecoveryKeyBox(p: { recoveryKey: string; copied: boolean; onCopy: () => void; onDownload: () => void }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm text-default">Your recovery key. It is shown once; store it somewhere safe and separate from this device (a password manager or paper):</p>
-      <code className="block select-all rounded-control border border-input bg-sunken p-3 font-mono text-sm break-all text-default" data-recovery-key>{p.recoveryKey}</code>
+      <p className="text-body text-default">Your recovery key. It is shown once; store it somewhere safe and separate from this device (a password manager or paper):</p>
+      <code className="block select-all rounded-control border border-input bg-sunken p-3 font-mono text-body break-all text-default" data-recovery-key>{p.recoveryKey}</code>
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" icon={p.copied ? 'check' : 'copy'} onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy recovery key'}</Button>
         <Button variant="secondary" icon="download" onClick={p.onDownload}>Download as text</Button>
@@ -111,7 +111,7 @@ export function EncryptionView(p: EncryptionViewProps) {
   const idle = () => p.onMode({ kind: 'idle' })
   const status = state.enabled ? (state.unlocked ? 'on' : 'locked') : 'off'
   return (
-    <SettingsSection title="End-to-end encryption" helpId="settings/encryption" headingId="e2ee-heading"
+    <SettingsSection title="End-to-end encryption" headingId="e2ee-heading"
       description={`Encrypts ${ENCRYPTED_FIELDS} on your devices before they are synced, so your server, its backups and integrations only see ciphertext.`}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
@@ -245,15 +245,15 @@ export function EncryptionView(p: EncryptionViewProps) {
 /** The "both lost" path, shared with the unlock screen: states the loss plainly before acting. */
 export function LostKeysConfirm({ busy, onConfirm, onCancel }: { busy: boolean; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div className="space-y-2 rounded border border-danger p-3">
-      <p className="text-sm">
+    <div className="space-y-2 rounded-control border border-danger p-3">
+      <p className="text-body">
         Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way
         forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure)
         is kept.
       </p>
       <div className="flex gap-2">
-        <button type="button" className="btn-danger" disabled={busy} onClick={onConfirm}>{busy ? 'Deleting…' : 'Turn off and delete encrypted content'}</button>
-        <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
+        <button type="button" className="ui-btn ui-btn--danger ui-btn--md" disabled={busy} onClick={onConfirm}>{busy ? 'Deleting…' : 'Turn off and delete encrypted content'}</button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>Cancel</button>
       </div>
     </div>
   )

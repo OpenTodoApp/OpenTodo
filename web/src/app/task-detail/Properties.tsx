@@ -3,6 +3,7 @@
 // properties that have a value (Do on and Priority always), and an Add menu for the
 // rest. Every chip writes the same ops as the rows it replaces, locally first.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { keysOf } from '../../lib/shortcuts'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../../lib/db'
 import { describeDeadline, localDueOf, zoneHint } from '../../lib/dates'
@@ -206,15 +207,15 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   })
   const offerSection = !!projectId && sections.length > 0 && !followsParent
   const offers: { id: Optional; label: string; icon: IconName; shortcut?: string; when?: boolean; run?: () => void }[] = [
-    { id: 'deadline', label: 'Deadline', icon: 'hourglass', shortcut: 'd' },
-    { id: 'when', label: 'Start', icon: 'calendar-range', shortcut: 'Shift+N' },
-    { id: 'evening', label: 'This Evening', icon: 'moon', shortcut: 'Shift+E', run: () => void updateTask(task.id, { evening: true }) },
+    { id: 'deadline', label: 'Deadline', icon: 'hourglass', shortcut: keysOf('list.deadline') },
+    { id: 'when', label: 'Start', icon: 'calendar-range', shortcut: keysOf('list.defer') },
+    { id: 'evening', label: 'This Evening', icon: 'moon', shortcut: keysOf('list.evening'), run: () => void updateTask(task.id, { evening: true }) },
     { id: 'reminders', label: 'Reminder', icon: 'alarm-clock' },
-    { id: 'estimate', label: 'Estimate', icon: 'clock', shortcut: 'e' },
+    { id: 'estimate', label: 'Estimate', icon: 'clock', shortcut: keysOf('list.estimate') },
     { id: 'repeat', label: 'Repeat', icon: 'repeat' },
-    { id: 'labels', label: 'Labels', icon: 'tag', shortcut: 'L' },
-    { id: 'assignee', label: solo ? 'Show in Assigned to me' : 'Assignee', icon: 'user-check', shortcut: solo ? undefined : 'Shift+A', when: !!userId, run: solo && userId ? () => void updateTask(task.id, { assignee_id: userId }) : undefined },
-    { id: 'blocked-by', label: 'Blocked by', icon: 'lock', shortcut: 'b' },
+    { id: 'labels', label: 'Labels', icon: 'tag', shortcut: keysOf('list.labels') },
+    { id: 'assignee', label: solo ? 'Show in Assigned to me' : 'Assignee', icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => void updateTask(task.id, { assignee_id: userId }) : undefined },
+    { id: 'blocked-by', label: 'Blocked by', icon: 'lock', shortcut: keysOf('list.blocked-by') },
     { id: 'parent', label: 'Parent task', icon: 'corner-down-right' },
     { id: 'section', label: 'Section', icon: 'kanban', when: offerSection },
   ]

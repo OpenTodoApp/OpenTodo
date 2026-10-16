@@ -1,4 +1,6 @@
 import { Icon } from '../ui'
+import { Tooltip } from '../ui'
+import { Skeleton } from '../ui'
 import { useCallback, useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
@@ -95,29 +97,29 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
   return (
     <section className={embedded ? '' : 'pt-4'} aria-label="History">
       {!embedded && (
-        <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />History
         </button>
       )}
       {open && (
-        <div className="mt-2 text-sm">
-          {state === 'offline' && <p className="text-xs text-muted">History needs a connection to the server.</p>}
-          {state === 'error' && <p className="text-xs text-danger">History could not be loaded.</p>}
-          {state === 'empty' && <p className="text-xs text-muted">No history on the server yet.</p>}
-          {state === 'loading' && sets.length === 0 && <p className="text-xs text-faint">Loading…</p>}
-          {message && <p role="status" className="mb-1 text-xs text-success">{message}</p>}
+        <div className="mt-2 text-body">
+          {state === 'offline' && <p className="text-meta text-muted">History needs a connection to the server.</p>}
+          {state === 'error' && <p className="text-meta text-danger">History could not be loaded.</p>}
+          {state === 'empty' && <p className="text-meta text-muted">No history on the server yet.</p>}
+          {state === 'loading' && sets.length === 0 && <Skeleton shape="line" count={4} label="Loading history" />}
+          {message && <p role="status" className="mb-1 text-meta text-success">{message}</p>}
           <ol className="space-y-2" aria-label="Changes">
             {sets.map((s) => (
               <li key={`${s.ts}:${s.device}`} className="border-l-2 border-default pl-2">
-                <div className="text-xs text-faint">{dt.formatInstant(s.ts, 'datetime')} · {deviceLabel(s, device)}</div>
+                <div className="text-meta text-faint">{dt.formatInstant(s.ts, 'datetime')} · {deviceLabel(s, device)}</div>
                 <ul>
                   {s.changes.map((c) => (
                     <li key={c.opId} className={`flex flex-wrap items-baseline gap-x-1 ${c.lost ? 'text-faint' : ''}`}>
                       <span className="font-medium">{fieldLabel(c.field)}</span>
                       <span className="break-all">{fmt(c.field, c.from)} → {fmt(c.field, c.to)}</span>
-                      {c.lost && <span className="text-xs italic" title="Arrived after a newer change and was never applied">(lost)</span>}
+                      {c.lost && <Tooltip label="Arrived after a newer change and was never applied"><span className="rounded-chip text-meta italic" tabIndex={0}>(lost)</span></Tooltip>}
                       {!readOnly && canRestoreField(entity, c.field) && (
-                        <button type="button" className="ml-auto text-xs text-accent underline"
+                        <button type="button" className="ml-auto text-meta text-accent underline"
                           aria-label={`Restore ${fieldLabel(c.field)} to ${fmt(c.field, c.to)}`} onClick={() => void restore(c.field, c.to)}>
                           Restore this value
                         </button>
@@ -129,7 +131,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
             ))}
           </ol>
           {before !== undefined && (
-            <button type="button" className="btn-ghost mt-1 text-xs" onClick={() => void load(before)}>Older changes</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm mt-1 text-meta" onClick={() => void load(before)}>Older changes</button>
           )}
         </div>
       )}

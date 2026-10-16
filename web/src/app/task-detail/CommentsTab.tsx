@@ -99,9 +99,9 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
         <Avatar id={c.author_id || 'unknown'} name={author} size={isReply ? 'sm' : 'md'} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-sm font-semibold text-default">{author}</span>
+            <span className="text-body font-semibold text-default">{author}</span>
             <RelativeTime ts={c.created_at} now={now} className="text-meta" />
-            {c.edited_at && <span className="text-meta text-faint" title="Edited">edited</span>}
+            {c.edited_at && <span className="text-meta text-faint">edited</span>}
           </div>
           {editing === c.id ? (
             <div className="mt-1">
@@ -111,7 +111,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
             </div>
           ) : (
             <>
-              {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-sm leading-relaxed text-default" />}
+              {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
               <CommentAttachments list={attachments?.get(c.id) ?? []} />
               <div className={`mt-1 flex flex-wrap gap-1 ${coarse ? '' : 'hover-reveal'}`} data-comment-actions>
                 {!isReply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>Reply</Button>}

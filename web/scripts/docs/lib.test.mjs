@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createSlugger, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
-import { keysHtml, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
+import { keysHtml, loadShortcuts, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
 import { QUICK_ADD_SYNTAX, SHORTCUTS, SHORTCUT_SECTIONS } from '../../src/lib/shortcuts.ts'
 import { normalize, prepare, search, snippet, stem } from './search-core.mjs'
 
@@ -87,12 +87,18 @@ describe('inline HTML allow-list', () => {
 })
 
 describe('keyboard guide', () => {
-  it('lists every shortcut of the data module once, under its section', () => {
-    const md = shortcutsMarkdown({ rows: SHORTCUTS, quickAdd: QUICK_ADD_SYNTAX, sections: SHORTCUT_SECTIONS })
+  it('lists every listed shortcut of the registry once, under its section (hidden rows left out)', async () => {
+    const { rows, quickAdd, sections } = await loadShortcuts(new URL('../../..', import.meta.url).pathname)
+    const md = shortcutsMarkdown({ rows, quickAdd, sections })
     expect(md.startsWith(START) && md.endsWith(END)).toBe(true)
     const tableRows = md.split('\n').filter((l) => l.startsWith('| ') && !l.startsWith('| Keys') && !l.startsWith('| Type') && !l.startsWith('| ---'))
-    expect(tableRows).toHaveLength(SHORTCUTS.length + QUICK_ADD_SYNTAX.length)
+    const listed = SHORTCUTS.filter((s) => !s.hidden)
+    expect(tableRows).toHaveLength(listed.length + QUICK_ADD_SYNTAX.length)
     for (const s of SHORTCUTS) expect(SHORTCUT_SECTIONS.map((x) => x.id)).toContain(s.section)
+    // A sequence is "g then i"; alternatives are joined by " / "; the state leads the description.
+    expect(md).toContain('| <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |')
+    expect(md).toContain('| <kbd>Ctrl+K</kbd> / <kbd>⌘+K</kbd> |')
+    expect(md).toContain('| <kbd>Shift+K</kbd> | Recurring task: skip the current occurrence of the selected recurring task |')
   })
   it('renders keys as <kbd> and splits off contexts', () => {
     expect(keysHtml('g then d / w')).toBe('<kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd>')

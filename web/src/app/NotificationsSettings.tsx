@@ -113,7 +113,7 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 }) {
   const sub = s?.subscription ?? null
   return (
-    <SettingsSection title="Notifications" helpId="settings/notifications" headingId="notifications-heading"
+    <SettingsSection title="Notifications" headingId="notifications-heading"
       description="Reminders always appear inside the app while it is open. Turn on notifications to get them while the app is closed. Each device decides for itself.">
       {!s ? (
         <p className="py-2 text-meta text-faint">Checking…</p>
@@ -202,7 +202,7 @@ export function PushDelivery(props: {
     : !s.subscription ? 'Enable notifications on this device first.' : null
   return (
     <div className="space-y-2" data-testid="push-delivery">
-      <h3 className="text-sm font-medium text-default">Delivery check</h3>
+      <h3 className="text-body font-medium text-default">Delivery check</h3>
       <ul className="divide-y divide-(--ot-border) overflow-hidden rounded-control border border-default">
         {steps.map((step) => {
           const m = STATUS_MARK[step.status]
@@ -210,7 +210,7 @@ export function PushDelivery(props: {
             <li key={step.id} className="flex items-start gap-3 px-3 py-2.5" data-step={step.id} data-status={step.status}>
               <span className={`mt-0.5 flex w-4 shrink-0 justify-center ${m.className}`}><Icon name={m.icon} /></span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-default"><span className="sr-only">{m.label}: </span>{step.label}</div>
+                <div className="text-body font-medium text-default"><span className="sr-only">{m.label}: </span>{step.label}</div>
                 <div className="user-text text-meta text-muted">{step.detail}</div>
               </div>
               {step.action && (

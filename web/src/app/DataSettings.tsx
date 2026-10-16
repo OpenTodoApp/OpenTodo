@@ -1,5 +1,7 @@
 // Settings → Data: export, import and sync status (OpenSpec settings-navigation; settings-redesign D3).
 import { useEffect } from 'react'
+import { keysOf } from '../lib/shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 import { formatBytes, refreshLimits, useAttachmentLimits } from '../lib/attachments'
 import { useSyncStatus } from '../lib/sync'
 import { DEMO_RESTRICTED_NOTE } from '../lib/demo'
@@ -44,7 +46,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
   const dt = useDateTimeFormat()
   const s = SYNC[sync.state] ?? { label: sync.state, hue: 'slate' as HueName }
   return (
-    <SettingsSection title="Your data" helpId="settings/data" headingId="data-heading" testId="data-panel"
+    <SettingsSection title="Your data" headingId="data-heading" testId="data-panel"
       description="Everything you see is stored on this device and on your server.">
       <SettingRow label="Export"
         description="Everything you can see as one JSON file, including the Trash. Keep it as a personal copy or move to another server."
@@ -62,7 +64,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
           status={<span data-testid="attachment-usage">{usageText(attachments)}</span>} />
       )}
       <SettingRow label="Import"
-        description={<>An OpenTodo export, a CSV file or another task manager’s JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).</>}
+        description={<>An OpenTodo export, a CSV file or another task manager’s JSON export (open this with <Kbd k={keysOf('go.import')} />).</>}
         status={demo ? <span id="demo-import-note" className="text-muted">Import: {DEMO_RESTRICTED_NOTE}</span> : undefined}
         control={demo
           ? <Button size="sm" disabled aria-describedby="demo-import-note">Import data…</Button>
@@ -83,7 +85,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
           status={(
             <span data-testid="backups-link">
               Backups of the whole server are under{' '}
-              <a className="text-accent underline" href="/settings/backups" onClick={(e) => followLink(e, { view: 'settings', section: 'backups' })}>Settings → Backups</a>.
+              <a className="text-accent underline" href="/settings/server" onClick={(e) => followLink(e, { view: 'settings', section: 'server' })}>Settings → Server</a>.
             </span>
           )} />
       )}

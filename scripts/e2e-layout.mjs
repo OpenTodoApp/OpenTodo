@@ -163,7 +163,7 @@ function screens(ids) {
   const row = (title) => (p) => p.locator('[data-task-id]').filter({ hasText: title }).first().waitFor()
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
   return [
-    { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in' }).waitFor() },
+    { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in', exact: true }).waitFor() },
     // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
@@ -191,13 +191,16 @@ function screens(ids) {
     { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
-    { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
+    // From 1024 px /settings opens the first section (settings-navigation), so the page title reads Account there.
+    { name: 'settings', path: '/settings', ready: (p) => p.getByRole('heading', { name: /^(Settings|Account)$/, level: 1 }).first().waitFor(), overlays: ['notifications'] },
     ...[
-      ['account', 'Account'], ['security', 'Security'], ['encryption', 'Encryption'], ['activity', 'Sessions and audit log'],
-      ['preferences', 'Preferences'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']], ['projects', 'Projects'],
-      ['data', 'Data'], ['integrations', 'Integrations'], ['ai', 'AI'],
-      ['admin', 'Administration', ['delete-user']], ['backups', 'Backups'], ['access', 'Access policies'],
+      ['account', 'Account'], ['appearance', 'Appearance'],
+      ['general', 'General'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']],
+      ['integrations', 'Integrations'], ['data', 'Data'],
+      ['people', 'People', ['delete-user']], ['server', 'Server'],
     ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
+    // A legacy address opens its section in place (settings-navigation "Legacy settings addresses").
+    { name: 'settings-legacy', path: '/settings/security', ready: heading('Account') },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // The capture screen with shared files (attachments D9): the service worker's
     // hand-over store is filled in the page, then /share?inbox=<id> opens. Chromium
@@ -768,10 +771,10 @@ async function runCombo(engine, width, theme, ids) {
       }
       await shot(p, s.name)
       for (const o of s.overlays ?? []) {
-        try {
+        const checkOne = async () => {
           await visit()
           const res = await OVERLAYS[o](p, { width })
-          if (!res) continue
+          if (!res) return
           checked++
           // Accessibility of the overlay itself (the screen behind it was checked above).
           await res.overlay.waitFor({ state: 'visible', timeout: 5000 })
@@ -781,8 +784,18 @@ async function runCombo(engine, width, theme, ids) {
           await res.overlay.evaluate((el) => el.removeAttribute('data-axe-target')).catch(() => {})
           await checkOverlay(p, s.name, o, res, fail, shot)
           if (res.after) await res.after().catch(() => {})
-        } catch (e) {
-          await fail(p, s.name, o, `could not be checked: ${e.message.split('\n')[0]}`)
+        }
+        // An overlay that does not open in time gets one more try, like a screen that does
+        // not load (WebKit on a loaded runner); the second failure is the one reported.
+        try {
+          await checkOne()
+        } catch {
+          await p.keyboard.press('Escape').catch(() => {})
+          try {
+            await checkOne()
+          } catch (e) {
+            await fail(p, s.name, o, `could not be checked: ${e.message.split('\n')[0]}`)
+          }
         }
       }
       if (s.layout) {

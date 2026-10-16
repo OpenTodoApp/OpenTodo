@@ -11,6 +11,7 @@ import type { SmtpSettings, User } from '../lib/types'
 import { click, flush, render, type } from '../ui/test-utils'
 import { NewInvitationDialog } from './MembersPanel'
 import { draftFrom, inputFrom, OutgoingEmailPanel, OutgoingEmailView, type OutgoingEmailViewProps } from './OutgoingEmailPanel'
+import { SettingsView } from './SettingsView'
 import { AdministrationSections } from './UsersPanel'
 
 const noop = () => {}
@@ -98,9 +99,13 @@ describe('Outgoing email panel', () => {
     await r.unmount()
   })
 
-  it('is mounted for the owner only', () => {
-    expect(renderToStaticMarkup(<AdministrationSections user={owner} />)).toContain('data-testid="outgoing-email-panel"')
-    expect(renderToStaticMarkup(<AdministrationSections user={admin} />)).not.toContain('outgoing-email-panel')
+  it('is mounted on the Server page, for the owner only', () => {
+    // Settings → Server is the owner's section (settings-navigation "Sections follow the user's role"); an admin opening it lands on Account.
+    const page = (user: User) => renderToStaticMarkup(<SettingsView user={user} onLogout={noop} section="server" />)
+    expect(page(owner)).toContain('data-testid="outgoing-email-panel"')
+    expect(page(admin)).not.toContain('outgoing-email-panel')
+    expect(renderToStaticMarkup(<SettingsView user={owner} onLogout={noop} section="people" />)).not.toContain('outgoing-email-panel')
+    expect(renderToStaticMarkup(<AdministrationSections user={owner} />)).not.toContain('outgoing-email-panel')
   })
 })
 

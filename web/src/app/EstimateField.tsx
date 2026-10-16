@@ -59,7 +59,7 @@ export function EstimateField({ task }: { task: Task }) {
       <div className="flex gap-2">
         <input
           ref={ref}
-          className="input w-32"
+          className="ui-input w-32"
           aria-label="Estimate"
           placeholder="e.g. 45m, 1h30"
           value={draft}
@@ -86,7 +86,7 @@ export function EstimateField({ task }: { task: Task }) {
             <button
               key={m}
               type="button"
-              className={`rounded-md border px-2 py-1 font-mono text-xs ${task.estimate_minutes === m ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-input text-muted hover:bg-sunken dark:hover:bg-raised'}`}
+              className={`rounded-control border px-2 py-1 font-mono text-meta ${task.estimate_minutes === m ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-input text-muted hover:bg-sunken dark:hover:bg-raised'}`}
               aria-pressed={task.estimate_minutes === m}
               onClick={() => set(m)}
             >
@@ -94,11 +94,11 @@ export function EstimateField({ task }: { task: Task }) {
             </button>
           ))}
           {task.estimate_minutes !== null && (
-            <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={() => set(null)} aria-label="Clear estimate" title="Clear estimate"><Icon name="x" /></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => set(null)} aria-label="Clear estimate"><Icon name="x" /></button>
           )}
         </div>
       </div>
-      {error && <p id={`estimate-error-${task.id}`} className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p id={`estimate-error-${task.id}`} className="mt-1 text-meta text-danger">{error}</p>}
     </div>
   )
 }

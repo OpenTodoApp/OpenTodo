@@ -5,6 +5,7 @@
 // data attributes; the pure slot math in lib/calendar turns pixels into minutes.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { dropStart, resizeEstimate } from '../lib/calendar'
+import { registerShortcutScope } from './shortcuts/dispatch'
 
 export type DragKind = 'move' | 'resize'
 
@@ -132,13 +133,8 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
     function onCancel(e: PointerEvent) {
       if (pending.current && e.pointerId === pending.current.pointerId) end(false)
     }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && pending.current?.lifted) {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        end(false)
-      }
-    }
+    // Escape cancels a lifted drag before any other Escape behaviour (a capturing `calendar` frame).
+    const unregister = registerShortcutScope({ scope: 'calendar', capture: true, handlers: { 'calendar.escape': () => { if (!pending.current?.lifted) return false; end(false) } } })
     // While a touch drag is lifted the page must not scroll under the finger.
     function onTouchMove(e: TouchEvent) {
       if (pending.current?.lifted) e.preventDefault()
@@ -153,14 +149,13 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
     window.addEventListener('pointermove', onMove, { passive: false })
     window.addEventListener('pointerup', onUp)
     window.addEventListener('pointercancel', onCancel)
-    window.addEventListener('keydown', onKey, true)
     window.addEventListener('click', onClick, true)
     document.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onCancel)
-      window.removeEventListener('keydown', onKey, true)
+      unregister()
       window.removeEventListener('click', onClick, true)
       document.removeEventListener('touchmove', onTouchMove)
     }

@@ -1,4 +1,5 @@
 import { Icon } from '../ui'
+import { Tooltip } from '../ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../ui'
 import { Badge } from '../ui'
@@ -94,7 +95,7 @@ export function SsoPanel() {
 
   if (!settings || !form) {
     return error ? (
-      <SettingsSection title="Single sign-on" helpId="settings/sso" headingId="sso-heading">
+      <SettingsSection title="Single sign-on" headingId="sso-heading">
         <Notice tone="danger">{error}</Notice>
       </SettingsSection>
     ) : null
@@ -134,10 +135,12 @@ export interface SsoPanelViewProps {
 
 function Lock() {
   return (
-    <span className="ml-1 inline-flex items-center gap-1 text-xs text-faint" title="Set by an OPENTODO_OIDC_* environment variable">
-      <Icon name="lock" size="xs" />
-      set by environment
-    </span>
+    <Tooltip label="Set by an OPENTODO_OIDC_* environment variable">
+      <span className="ml-1 inline-flex items-center gap-1 rounded-chip text-meta text-faint" tabIndex={0}>
+        <Icon name="lock" size="xs" />
+        set by environment
+      </span>
+    </Tooltip>
   )
 }
 
@@ -168,7 +171,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
       onChange={(e) => p.onChange({ [key]: e.target.checked } as Partial<SsoForm>)} />
   )
   return (
-    <SettingsSection title="Single sign-on" helpId="settings/sso" headingId="sso-heading" testId="sso-panel"
+    <SettingsSection title="Single sign-on" headingId="sso-heading" testId="sso-panel"
       description="Let people sign in with an OpenID Connect provider you already run (Authentik, Keycloak, Authelia, a hosted login service). The server only contacts the issuer you enter.">
       {!p.online && <Notice>Offline: these settings are on the server and read-only until you reconnect.</Notice>}
       <SettingRow label="Status" status={
@@ -307,7 +310,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
     ? <Button variant="secondary" disabled>Link {name}</Button>
     : <a className="ui-btn ui-btn--secondary ui-btn--md" href={OIDC_START_URL}>Link {name}</a>)
   return (
-    <SettingsSection title="Linked accounts" helpId="settings/linked-accounts" headingId="linked-heading" testId="linked-accounts"
+    <SettingsSection title="Linked accounts" headingId="linked-heading" testId="linked-accounts"
       description={p.provider.enabled
         ? `Sign in with ${name} instead of a password. Linking also lets you confirm sensitive changes with ${name}.`
         : 'Single sign-on is currently off on this server; these links are kept for when it returns.'}>

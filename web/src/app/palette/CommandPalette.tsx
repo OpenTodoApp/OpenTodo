@@ -21,7 +21,7 @@ import { moveTargets } from '../ProjectHeader'
 import { useRoute } from '../router'
 import { useStartView, useToday } from '../useViews'
 import { useVimEnabled } from '../vim/prefs'
-import { isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
+import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
 import { buildEntries, makeTaskEntry } from './index'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
@@ -91,7 +91,9 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const emptySource = useMemo(() => {
     const context = contextEntries(ctx)
     const seen = new Set(context.map((e) => e.key))
+    // Recent picks (from the pick history) sit under their own heading.
     const recent = [...scores.keys()].map((k) => source.find((e) => e.key === k)).filter((e): e is Entry => !!e && !seen.has(e.key)).slice(0, RECENT)
+      .map((e): Entry => ({ ...e, group: 'Recent' }))
     recent.forEach((e) => seen.add(e.key))
     // Never an empty box: general commands (new task, go to…) fill it up to ten.
     const general = source.filter((e) => e.kind === 'command' && !seen.has(e.key)).slice(0, Math.max(0, RECENT - context.length - recent.length))
@@ -103,7 +105,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const keepOpen = useRef(false)
   const state = useCombobox<Entry>({
     source, emptySource, prefix, suffix: trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
-    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf, getKeywords: (e) => e.keywords,
+    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf, getKeywords: (e) => e.keywords, getGroup: groupOf,
     onPick: (e) => {
       // The box closes first, so the action's own focus (quick add, a prompt) wins.
       keepOpen.current = true

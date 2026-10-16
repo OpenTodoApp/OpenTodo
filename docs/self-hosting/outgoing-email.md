@@ -19,7 +19,7 @@ Nothing else is ever sent: no newsletters, no notifications of task changes, no 
 
 ## Configure in Settings
 
-As the owner, open **Settings → Administration → Outgoing email** and choose **Configure**:
+As the owner, open **Settings → Server → Outgoing email** and choose **Configure**:
 
 | Field | What to enter |
 | --- | --- |
@@ -91,7 +91,7 @@ The test result names the stage that failed:
 | `auth` | Wrong username or password, an app password is required, or SMTP sign-in is disabled for the account |
 | `send` | The server refused the From or the recipient address: the From must usually be an address of the signed-in account or a verified domain |
 
-Every message sent or refused is recorded in **Settings → Administration → Audit log** as `email.sent` or `email.failed` with its kind, the recipient and the reason; links are never recorded.
+Every message sent or refused is recorded in **Settings → Server → Audit log** as `email.sent` or `email.failed` with its kind, the recipient and the reason; links are never recorded.
 
 ## Security notes
 

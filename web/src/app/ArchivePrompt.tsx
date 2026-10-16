@@ -2,6 +2,8 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { projectFinishedBy, runAutoArchive, undoAutoArchive } from '../lib/archive'
 import { archiveProject } from '../lib/ops'
 import type { Project } from '../lib/types'
+import { useShortcutScope } from './shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 
 // Automatic archive of finished projects (OpenSpec `trash-and-history`): a one-key
 // prompt after the last open task of a project is completed, and a notice with
@@ -33,22 +35,15 @@ export function ArchivePrompt() {
   )
   const [archived, setArchived] = useState<Project[]>([])
 
-  // Enter archives; any other key dismisses (and still does its usual job).
-  useEffect(() => {
-    if (!project) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return
+  // Enter archives (`list.archive-offer`); any other key dismisses the offer and still does its usual job.
+  useShortcutScope('list', {
+    'list.archive-offer': () => {
       const p = offered
       setOffered(null)
-      if (e.key === 'Enter' && p) {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        void archiveProject(p.id)
-      }
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [project])
+      if (!p) return false
+      void archiveProject(p.id)
+    },
+  }, { capture: true, enabled: !!project, any: (e) => { if (e.key !== 'Enter') setOffered(null) } })
 
   // The daily pass (runAutoArchive runs at most once a day per device).
   useEffect(() => {
@@ -67,17 +62,17 @@ export function ArchivePrompt() {
     <div className="fixed left-1/2 z-40 w-[min(28rem,calc(100%-2rem))] -translate-x-1/2 space-y-2"
       style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
       {project && (
-        <div role="alert" className="flex items-center gap-2 rounded-lg border border-accent/40 bg-surface px-3 py-2 text-sm shadow-lg">
-          <span className="user-text min-w-0 flex-1">Archive <strong>{project.name}</strong>? <span className="kbd">Enter</span></span>
-          <button className="btn-primary px-2 py-0.5 text-xs" onClick={() => { setOffered(null); void archiveProject(project.id) }}>Archive</button>
-          <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setOffered(null)}>Not now</button>
+        <div role="alert" className="flex items-center gap-2 rounded-control border border-accent/40 bg-surface px-3 py-2 text-body shadow-2">
+          <span className="user-text min-w-0 flex-1">Archive <strong>{project.name}</strong>? <Kbd k="Enter" only /></span>
+          <button className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { setOffered(null); void archiveProject(project.id) }}>Archive</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setOffered(null)}>Not now</button>
         </div>
       )}
       {archived.length > 0 && (
-        <div role="status" className="flex items-center gap-2 rounded-lg border border-default bg-surface px-3 py-2 text-sm shadow-lg">
+        <div role="status" className="flex items-center gap-2 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2">
           <span className="flex-1">Archived {archived.map((p) => p.name).join(', ')}: no open tasks for 30 days.</span>
-          <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => { const list = archived; setArchived([]); for (const p of list) void undoAutoArchive(p.id) }}>Undo</button>
-          <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setArchived([])}>Dismiss</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { const list = archived; setArchived([]); for (const p of list) void undoAutoArchive(p.id) }}>Undo</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setArchived([])}>Dismiss</button>
         </div>
       )}
     </div>

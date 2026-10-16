@@ -1,4 +1,6 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
+import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { useOutgoingEmail } from '../lib/outgoingEmail'
@@ -159,7 +161,7 @@ export function MembersView(p: MembersViewProps) {
   }
 
   return (
-    <SettingsSection title="Members" helpId="settings/members" headingId="members-heading"
+    <SettingsSection title="Members" headingId="members-heading"
       description="Invite someone with a single-use link. Sign-up stays closed for everyone else.">
       {p.offline && <Notice>You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.</Notice>}
       <SettingRow label="Invitations" status={p.invitations ? <span data-testid="invitations-summary">{pending} pending</span> : undefined}
@@ -198,8 +200,8 @@ export function MembersView(p: MembersViewProps) {
         <EmptyState icon="link" title="No invitations yet" body="An invitation is a single-use link that lets one person create an account here."
           action={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
       )}
-      {p.invitations === null && <p className="py-2 text-meta text-faint">{p.offline ? 'Nothing fetched yet.' : 'Loading…'}</p>}
-      <p className="pt-2 text-meta text-faint">Keyboard: focus a row, <span className="kbd">Enter</span> copies a link created in this session, <span className="kbd">Delete</span> revokes a pending invitation.</p>
+      {p.invitations === null && (p.offline ? <p className="py-2 text-meta text-faint">Nothing fetched yet.</p> : <Skeleton shape="line" count={3} label="Loading invitations" />)}
+      <p className="pt-2 text-meta text-faint">Keyboard, with a row focused: copy a link created in this session with <Kbd k="Enter" />, revoke a pending invitation with <Kbd k="Delete" />.</p>
     </SettingsSection>
   )
 }

@@ -18,9 +18,9 @@ beforeEach(async () => {
 
 describe('readAppearance', () => {
   it('defaults to system and emerald, and reads an unknown value as the default without writing', async () => {
-    expect(readAppearance(null)).toEqual({ mode: 'system', accent: 'emerald', sidebar: [] })
-    expect(readAppearance({ theme_mode: 'dark', theme_accent: 'orange' } as never)).toEqual({ mode: 'dark', accent: 'orange', sidebar: [] })
-    expect(readAppearance({ theme_mode: 'sepia', theme_accent: 'ultraviolet', sidebar_destinations: 'someday,bogus' } as never)).toEqual({ mode: 'system', accent: 'emerald', sidebar: ['someday'] })
+    expect(readAppearance(null)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: [] })
+    expect(readAppearance({ theme_mode: 'dark', theme_accent: 'orange' } as never)).toEqual({ mode: 'dark', accent: 'orange', density: 'comfortable', sidebar: [] })
+    expect(readAppearance({ theme_mode: 'sepia', theme_accent: 'ultraviolet', sidebar_destinations: 'someday,bogus', density: 'cosy' } as never)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: ['someday'] })
     expect(await db.outbox.count()).toBe(0)
   })
 
@@ -32,7 +32,7 @@ describe('readAppearance', () => {
       ['user_prefs', 'me', 'theme_accent', 'teal'],
       ['user_prefs', 'me', 'theme_mode', 'dark'],
     ])
-    expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', sidebar: [] })
+    expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', density: 'comfortable', sidebar: [] })
   })
 })
 

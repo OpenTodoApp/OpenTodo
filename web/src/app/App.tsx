@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
 import { api, onEnrolmentRequired } from '../lib/api'
@@ -92,7 +93,7 @@ export function App() {
     }
   }, [refresh])
 
-  // Ownership moved (Settings → Users): re-read the profile so the role is current.
+  // Ownership moved (Settings → People → Users): re-read the profile so the role is current.
   useEffect(() => {
     const again = () => void refresh()
     window.addEventListener(ACCOUNT_CHANGED_EVENT, again)
@@ -148,7 +149,8 @@ export function App() {
   // The screen for the current phase and route; ReauthHost above serves all of them.
   function screen() {
     if (phase.kind === 'loading') {
-      return <Centered>Loading…</Centered>
+      // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
+      return <div className="mx-auto w-full max-w-3xl px-4 py-5 md:px-8"><Skeleton shape="row" count={8} label="Loading your tasks" /></div>
     }
     if (route.view === 'reset') {
       return (
@@ -218,8 +220,8 @@ export function App() {
       return (
         <Centered>
           <p className="font-medium">OpenTodo can't reach the server.</p>
-          <p className="text-sm text-muted">Sign in once while online; after that the app works offline.</p>
-          <button className="btn-primary mt-4" onClick={() => void refresh()}>Retry</button>
+          <p className="text-body text-muted">Sign in once while online; after that the app works offline.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md mt-4" onClick={() => void refresh()}>Retry</button>
         </Centered>
       )
     }
@@ -241,7 +243,7 @@ export function App() {
     return (
       <>
         {enc.updateRequired && (
-          <div role="alert" className="border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft">
+          <div role="alert" className="border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft">
             A newer version of OpenTodo is required to read your data. <button className="underline" onClick={() => window.location.reload()}>Reload to update</button>
           </div>
         )}
@@ -273,7 +275,7 @@ async function clearDeviceData() {
 /** Shown on every screen of a demo instance (OpenSpec `demo-mode`, `demo-sandboxes`), with the write-limit notice when it applies. */
 export function DemoBanner({ notice }: { notice?: string }) {
   return (
-    <div role="status" data-testid="demo-banner" className="border-b border-info bg-info-soft px-4 py-1.5 text-center text-sm text-on-info-soft">
+    <div role="status" data-testid="demo-banner" className="border-b border-info bg-info-soft px-4 py-1.5 text-center text-body text-on-info-soft">
       {DEMO_BANNER}
       {notice && <span className="mt-0.5 block font-medium text-on-warning-soft" data-testid="demo-limit">{notice}</span>}
     </div>
@@ -300,9 +302,9 @@ export function DemoExpiredScreen({ onStarted }: { onStarted: () => void }) {
     <Centered>
       <div data-testid="demo-expired" className="max-w-sm">
         <p className="font-medium">Your demo sandbox has expired</p>
-        <p className="mt-1 text-sm text-muted">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
-        <button className="btn-primary mt-4" disabled={busy} onClick={() => void start()}>{busy ? 'Please wait…' : 'Start a new sandbox'}</button>
-        {error && <p className="mt-3 text-sm text-danger" role="alert">{error}</p>}
+        <p className="mt-1 text-body text-muted">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
+        <button className="ui-btn ui-btn--primary ui-btn--md mt-4" disabled={busy} onClick={() => void start()}>{busy ? 'Please wait…' : 'Start a new sandbox'}</button>
+        {error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
       </div>
     </Centered>
   )

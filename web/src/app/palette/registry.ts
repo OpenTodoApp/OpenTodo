@@ -24,6 +24,7 @@ import { setVimEnabled } from '../vim/prefs'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
+import { keysOf } from '../../lib/shortcuts'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -61,25 +62,26 @@ interface Command {
   run: () => unknown
 }
 
+// The "Go to" commands; their shortcut column is the registry's `go.*` rows (keyboard-shortcuts "Registry drives the guide and the palette").
 const ROUTES: { label: string; route: Route; icon: IconName; shortcut?: string; keywords?: string }[] = [
-  { label: 'Go to Inbox', route: { view: 'inbox' }, icon: 'inbox', shortcut: 'g i' },
-  { label: 'Go to Today', route: { view: 'today' }, icon: 'calendar-check', shortcut: 'g t' },
-  { label: 'Go to Upcoming', route: { view: 'upcoming' }, icon: 'calendar-days', shortcut: 'g u' },
-  { label: 'Go to Anytime', route: { view: 'anytime' }, icon: 'layers', shortcut: 'g n' },
-  { label: 'Go to Someday', route: { view: 'someday' }, icon: 'archive', shortcut: 'g o' },
-  { label: 'Go to Assigned to me', route: { view: 'assigned' }, icon: 'user-check', shortcut: 'g a' },
-  { label: 'Go to Calendar (Day)', route: { view: 'day' }, icon: 'clock', shortcut: 'g d', keywords: 'day calendar' },
-  { label: 'Go to Calendar (Week)', route: { view: 'week' }, icon: 'calendar-range', shortcut: 'g w', keywords: 'week calendar' },
-  { label: 'Go to Completed', route: { view: 'completed' }, icon: 'circle-check-big', shortcut: 'g c' },
-  { label: 'Go to Labels', route: { view: 'labels' }, icon: 'tag', shortcut: 'g l' },
-  { label: 'Go to Filter', route: { view: 'filter' }, icon: 'filter', shortcut: 'g f' },
-  { label: 'Go to Filters', route: { view: 'views' }, icon: 'list', shortcut: 'g v', keywords: 'views saved filters boards dashboards' },
-  { label: 'Go to Trash', route: { view: 'trash' }, icon: 'trash-2', shortcut: 'g x' },
-  { label: 'Go to Updates', route: { view: 'feed' }, icon: 'newspaper', shortcut: 'g h', keywords: 'activity feed changes' },
-  { label: 'Go to Ask', route: { view: 'ask' }, icon: 'message-circle', shortcut: 'g k' },
-  { label: 'Open Help', route: { view: 'help' }, icon: 'list', shortcut: 'g ?' },
-  { label: 'Import data', route: { view: 'import' }, icon: 'upload', shortcut: 'g Shift+I' },
-  { label: 'Go to Settings', route: { view: 'settings' }, icon: 'settings', shortcut: 'g s' },
+  { label: 'Go to Inbox', route: { view: 'inbox' }, icon: 'inbox', shortcut: keysOf('go.inbox') },
+  { label: 'Go to Today', route: { view: 'today' }, icon: 'calendar-check', shortcut: keysOf('go.today') },
+  { label: 'Go to Upcoming', route: { view: 'upcoming' }, icon: 'calendar-days', shortcut: keysOf('go.upcoming') },
+  { label: 'Go to Anytime', route: { view: 'anytime' }, icon: 'layers', shortcut: keysOf('go.anytime') },
+  { label: 'Go to Someday', route: { view: 'someday' }, icon: 'archive', shortcut: keysOf('go.someday') },
+  { label: 'Go to Assigned to me', route: { view: 'assigned' }, icon: 'user-check', shortcut: keysOf('go.assigned') },
+  { label: 'Go to Calendar (Day)', route: { view: 'day' }, icon: 'clock', shortcut: keysOf('go.day'), keywords: 'day calendar' },
+  { label: 'Go to Calendar (Week)', route: { view: 'week' }, icon: 'calendar-range', shortcut: keysOf('go.week'), keywords: 'week calendar' },
+  { label: 'Go to Completed', route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
+  { label: 'Go to Labels', route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
+  { label: 'Go to Filter', route: { view: 'filter' }, icon: 'filter', shortcut: keysOf('go.filter') },
+  { label: 'Go to Filters', route: { view: 'views' }, icon: 'list', shortcut: keysOf('go.views'), keywords: 'views saved filters boards dashboards' },
+  { label: 'Go to Trash', route: { view: 'trash' }, icon: 'trash-2', shortcut: keysOf('go.trash') },
+  { label: 'Go to Updates', route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
+  { label: 'Go to Ask', route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
+  { label: 'Open Help', route: { view: 'help' }, icon: 'list', shortcut: keysOf('go.help') },
+  { label: 'Import data', route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
+  { label: 'Go to Settings', route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },
 ]
 
 const prompt = (title: string, label: string, initial: string, onSubmit: (v: string) => unknown): Step => ({ kind: 'prompt', title, label, initial, onSubmit })
@@ -101,18 +103,18 @@ export function commands(ctx: PaletteContext): Command[] {
     const list = ctx.list
     const n = `${ticked.length} ${ticked.length === 1 ? 'task' : 'tasks'}`
     out.push(
-      { id: 'sel:complete', label: `Complete ${n}`, icon: 'check', shortcut: 'c', run: () => runBulk(ticked, { kind: 'complete' }) },
+      { id: 'sel:complete', label: `Complete ${n}`, icon: 'check', shortcut: keysOf('list.complete'), run: () => runBulk(ticked, { kind: 'complete' }) },
       ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `sel:p${p}`, label: `Set priority ${p} on ${n}`, icon: 'flag', shortcut: String(p), run: () => runBulk(ticked, { kind: 'priority', priority: p }) })),
       { id: 'sel:today', label: `Reschedule ${n} to today`, icon: 'calendar-check', run: () => runBulk(ticked, { kind: 'due', pick: 'today' }) },
       { id: 'sel:tomorrow', label: `Reschedule ${n} to tomorrow`, icon: 'calendar-days', run: () => runBulk(ticked, { kind: 'due', pick: 'tomorrow' }) },
       { id: 'sel:next-week', label: `Reschedule ${n} to next week`, icon: 'calendar-range', run: () => runBulk(ticked, { kind: 'due', pick: 'next-week' }) },
       { id: 'sel:no-date', label: `Remove the date from ${n}`, icon: 'x', run: () => runBulk(ticked, { kind: 'due', pick: null }) },
       ...(list.openActions ? [
-        { id: 'sel:labels', label: `Labels for ${n}`, icon: 'tag' as const, shortcut: 'L', run: () => list.openActions!('labels') },
+        { id: 'sel:labels', label: `Labels for ${n}`, icon: 'tag' as const, shortcut: keysOf('list.labels'), run: () => list.openActions!('labels') },
         { id: 'sel:move', label: `Move ${n} to a project`, icon: 'folder-input' as const, run: () => list.openActions!('move') },
-        { id: 'sel:assign', label: `Assign ${n}`, icon: 'user-check' as const, shortcut: 'Shift+A', run: () => list.openActions!('assign') },
+        { id: 'sel:assign', label: `Assign ${n}`, icon: 'user-check' as const, shortcut: keysOf('list.assign'), run: () => list.openActions!('assign') },
       ] : []),
-      { id: 'sel:trash', label: `Move ${n} to the Trash`, icon: 'trash-2', shortcut: 'Delete', run: () => runBulk(ticked, { kind: 'trash' }) },
+      { id: 'sel:trash', label: `Move ${n} to the Trash`, icon: 'trash-2', shortcut: keysOf('list.delete'), run: () => runBulk(ticked, { kind: 'trash' }) },
     )
   }
   const t = ticked.length > 0 ? undefined : ctx.task
@@ -120,30 +122,30 @@ export function commands(ctx: PaletteContext): Command[] {
   if (t && ctx.list) {
     const title = `“${t.title || 'Untitled'}”`
     const list = ctx.list
-    out.push({ id: 'task:open', label: `Open ${title}`, icon: 'chevron-right', shortcut: 'Enter', run: () => list.open(t.id) })
+    out.push({ id: 'task:open', label: `Open ${title}`, icon: 'chevron-right', shortcut: keysOf('list.open'), run: () => list.open(t.id) })
     if (writable) {
       out.push(
-        { id: 'task:complete', label: `${t.completed_at ? 'Reopen' : 'Complete'} ${title}`, icon: 'check', shortcut: 'c', keywords: 'done finish', run: () => list.toggleComplete(t.id, !t.completed_at) },
+        { id: 'task:complete', label: `${t.completed_at ? 'Reopen' : 'Complete'} ${title}`, icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(t.id, !t.completed_at) },
         ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: `Set priority ${p} on ${title}`, icon: 'flag', shortcut: String(p), run: () => updateTask(t.id, { priority: p }) })),
-        { id: 'task:estimate', label: `Edit the estimate of ${title}`, icon: 'clock', shortcut: 'e', run: () => { estimateFocus.request(t.id); list.open(t.id) } },
-        { id: 'task:deadline', label: `Set the deadline of ${title}`, icon: 'hourglass', shortcut: 'd', run: () => { deadlineFocus.request(t.id); list.open(t.id) } },
-        { id: 'task:blocked-by', label: `Choose what ${title} waits for`, icon: 'lock', shortcut: 'b', keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(t.id); list.open(t.id) } },
-        { id: 'task:defer', label: `Defer ${title}`, icon: 'calendar-days', shortcut: 'Shift+N', keywords: 'start later', run: () => { deferFocus.request(t.id); list.open(t.id) } },
+        { id: 'task:estimate', label: `Edit the estimate of ${title}`, icon: 'clock', shortcut: keysOf('list.estimate'), run: () => { estimateFocus.request(t.id); list.open(t.id) } },
+        { id: 'task:deadline', label: `Set the deadline of ${title}`, icon: 'hourglass', shortcut: keysOf('list.deadline'), run: () => { deadlineFocus.request(t.id); list.open(t.id) } },
+        { id: 'task:blocked-by', label: `Choose what ${title} waits for`, icon: 'lock', shortcut: keysOf('list.blocked-by'), keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(t.id); list.open(t.id) } },
+        { id: 'task:defer', label: `Defer ${title}`, icon: 'calendar-days', shortcut: keysOf('list.defer'), keywords: 'start later', run: () => { deferFocus.request(t.id); list.open(t.id) } },
         t.start === 'someday'
-          ? { id: 'task:unpark', label: `Bring back ${title} from Someday`, icon: 'archive', shortcut: 'n', run: () => unparkTask(t.id) }
-          : { id: 'task:park', label: `Park ${title} in Someday`, icon: 'archive', shortcut: 'n', run: () => parkTask(t.id) },
-        { id: 'task:evening', label: `${t.evening ? 'Remove' : 'Mark'} ${title} ${t.evening ? 'from' : 'for'} This Evening`, icon: 'moon', shortcut: 'Shift+E', run: () => updateTask(t.id, { evening: !t.evening }) },
-        { id: 'task:schedule', label: `Schedule ${title} in the Day view`, icon: 'clock', shortcut: 's', run: () => placeInDay(t, ctx.today) },
+          ? { id: 'task:unpark', label: `Bring back ${title} from Someday`, icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(t.id) }
+          : { id: 'task:park', label: `Park ${title} in Someday`, icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(t.id) },
+        { id: 'task:evening', label: `${t.evening ? 'Remove' : 'Mark'} ${title} ${t.evening ? 'from' : 'for'} This Evening`, icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(t.id, { evening: !t.evening }) },
+        { id: 'task:schedule', label: `Schedule ${title} in the Day view`, icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(t, ctx.today) },
       )
-      if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: `Add labels to ${title}`, icon: 'tag', shortcut: 'L', run: () => open(t.id) }) }
-      if (list.openAssignee) { const open = list.openAssignee; out.push({ id: 'task:assign', label: `Assign ${title}`, icon: 'user-check', shortcut: 'Shift+A', run: () => open(t.id) }) }
+      if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: `Add labels to ${title}`, icon: 'tag', shortcut: keysOf('list.labels'), run: () => open(t.id) }) }
+      if (list.openAssignee) { const open = list.openAssignee; out.push({ id: 'task:assign', label: `Assign ${title}`, icon: 'user-check', shortcut: keysOf('list.assign'), run: () => open(t.id) }) }
       if (t.recurrence) {
         out.push(
-          { id: 'task:skip', label: `Skip this occurrence of ${title}`, icon: 'repeat', shortcut: 'Shift+S', run: () => skipOccurrence(t.id) },
-          { id: 'task:detach', label: `This occurrence only: ${title}`, icon: 'repeat', shortcut: 'Shift+O', run: () => detachOccurrence(t.id) },
+          { id: 'task:skip', label: `Skip this occurrence of ${title}`, icon: 'repeat', shortcut: keysOf('list.skip'), run: () => skipOccurrence(t.id) },
+          { id: 'task:detach', label: `This occurrence only: ${title}`, icon: 'repeat', shortcut: keysOf('list.detach'), run: () => detachOccurrence(t.id) },
         )
       }
-      out.push({ id: 'task:trash', label: `Move ${title} to the Trash`, icon: 'trash-2', shortcut: 'Delete', keywords: 'delete remove', run: () => deleteTask(t.id) })
+      out.push({ id: 'task:trash', label: `Move ${title} to the Trash`, icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(t.id) })
     }
   }
 
@@ -186,21 +188,21 @@ export function commands(ctx: PaletteContext): Command[] {
 
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery
-    out.push({ id: 'filter:save', label: 'Save filter as view', icon: 'filter', shortcut: 's', run: () => prompt('Save view', 'View name', '', async (name) => {
+    out.push({ id: 'filter:save', label: 'Save filter as view', icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt('Save view', 'View name', '', async (name) => {
       const id = await createView({ name, query: q })
       navigate({ view: 'view', id })
     }) })
   }
 
   out.push(
-    { id: 'new:task', label: 'New task', icon: 'plus', shortcut: 'q', keywords: 'add create', run: () => { if (!ctx.focusQuickAdd()) navigate({ view: 'inbox' }) } },
+    { id: 'new:task', label: 'Quick add a task', icon: 'plus', shortcut: keysOf('list.quick-add'), keywords: 'new task add create', run: () => { if (!ctx.focusQuickAdd()) navigate({ view: 'inbox' }) } },
     { id: 'new:project', label: 'New project', icon: 'plus', keywords: 'add create', run: () => prompt('New project', 'Project name', '', async (name) => navigate({ view: 'project', id: await createProject({ name }) })) },
     { id: 'new:label', label: 'New label', icon: 'tag', keywords: 'add create', run: () => prompt('New label', 'Label name', '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
     { id: 'new:dashboard', label: 'New dashboard', icon: 'list', keywords: 'add create', run: () => prompt('New dashboard', 'Dashboard name', '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: `Open Settings: ${s.label}`, icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     { id: 'app:sync', label: 'Sync now', icon: 'rotate-ccw', run: () => syncNow() },
-    { id: 'app:shortcuts', label: 'Keyboard shortcuts', icon: 'list', shortcut: '?', run: () => ctx.showShortcuts() },
+    { id: 'app:shortcuts', label: 'Keyboard shortcuts', icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:vim', label: `${ctx.vimEnabled ? 'Turn off' : 'Turn on'} Vim keybindings`, icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
   )
   if (ctx.query.trim()) {

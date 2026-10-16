@@ -4,7 +4,7 @@
 // panels, j / k move inside one.
 import { blockedMap } from '../lib/dependencies'
 import { Button, Icon, PageBody, PageHeader } from '../ui'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import type { Label, Project, View } from '../lib/types'
@@ -13,7 +13,8 @@ import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { navigate } from './router'
 import { ViewMenu } from './ViewsView'
-import { isTyping, type ViewData } from './useViews'
+import type { ViewData } from './useViews'
+import { isActivationTarget, useShortcutScope } from './shortcuts'
 
 export function DashboardView({ dashboard, data }: { dashboard: View; data: ViewData }) {
   const { views, projects, labels, ctx } = data
@@ -40,55 +41,41 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   }
   const focusPanel = (i: number) => gridRef.current?.querySelector<HTMLElement>(`[data-panel-index="${i}"]`)?.focus()
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e) || openId || document.querySelector('[role="dialog"]')) {
-        if (e.key === 'Escape' && openId) setOpenId(null)
-        return
-      }
-      const active = document.activeElement as HTMLElement | null
-      const inGrid = !!active && !!gridRef.current?.contains(active)
-      const onPage = !active || active === document.body
-      if (e.key === 'Tab' && (inGrid || onPage) && panels.length > 0) {
-        e.preventDefault()
-        const cur = focusIdx ?? (e.shiftKey ? panels.length : -1)
-        focusPanel((cur + (e.shiftKey ? panels.length - 1 : 1)) % panels.length)
-        return
-      }
-      if (focusIdx === null || !inGrid) return
-      const panel = panels[focusIdx]
-      const tasks = panel?.kind === 'view' && panel.summary.ok ? panel.summary.tasks : []
-      const cur = selected?.panel === focusIdx ? selected.task : -1
-      switch (e.key) {
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault()
-          if (tasks.length) setSelected({ panel: focusIdx, task: Math.min(tasks.length - 1, cur + 1) })
-          break
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault()
-          if (tasks.length) setSelected({ panel: focusIdx, task: Math.max(0, cur - 1) })
-          break
-        case 'Enter':
-          e.preventDefault()
-          if (cur >= 0 && tasks[cur]) setOpenId(tasks[cur].id)
-          else if (panel?.kind === 'view') navigate({ view: 'view', id: panel.id })
-          break
-        case 'o':
-          if (panel?.kind === 'view') navigate({ view: 'view', id: panel.id })
-          break
-        case 'c':
-          if (cur >= 0 && tasks[cur]) void setTaskCompleted(tasks[cur].id, !tasks[cur].completed_at)
-          break
-        case 'Escape':
-          setSelected(null)
-          break
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [panels, focusIdx, selected, openId])
+  // The dashboard's `view` scope: Tab moves between panels, j / k inside the focused
+  // panel, Enter opens, o opens the view, c completes, Esc clears; nothing while a task is open.
+  const grid = () => {
+    const active = document.activeElement as HTMLElement | null
+    return { inGrid: !!active && !!gridRef.current?.contains(active), onPage: !active || active === document.body }
+  }
+  const focused = () => {
+    if (openId || focusIdx === null || !grid().inGrid) return null
+    const panel = panels[focusIdx]
+    const tasks = panel?.kind === 'view' && panel.summary.ok ? panel.summary.tasks : []
+    return { panel, tasks, cur: selected?.panel === focusIdx ? selected.task : -1, at: focusIdx }
+  }
+  useShortcutScope('view', {
+    'dashboard.panels': (e) => {
+      const { inGrid, onPage } = grid()
+      if (openId || !(inGrid || onPage) || panels.length === 0) return false
+      const cur = focusIdx ?? (e.shiftKey ? panels.length : -1)
+      focusPanel((cur + (e.shiftKey ? panels.length - 1 : 1)) % panels.length)
+    },
+    'dashboard.down': () => { const f = focused(); if (!f || !f.tasks.length) return false; setSelected({ panel: f.at, task: Math.min(f.tasks.length - 1, f.cur + 1) }) },
+    'dashboard.up': () => { const f = focused(); if (!f || !f.tasks.length) return false; setSelected({ panel: f.at, task: Math.max(0, f.cur - 1) }) },
+    'dashboard.open': (e) => {
+      const f = focused()
+      if (!f || isActivationTarget(e.target)) return false
+      if (f.cur >= 0 && f.tasks[f.cur]) setOpenId(f.tasks[f.cur].id)
+      else if (f.panel?.kind === 'view') navigate({ view: 'view', id: f.panel.id })
+    },
+    'dashboard.open-view': () => { const f = focused(); if (f?.panel?.kind !== 'view') return false; navigate({ view: 'view', id: f.panel.id }) },
+    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; void setTaskCompleted(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at) },
+    'dashboard.escape': () => {
+      if (openId) { setOpenId(null); return }
+      if (!focused()) return false
+      setSelected(null)
+    },
+  }, { view: 'dashboard' })
 
   return (
     <PageBody width="full">
@@ -102,23 +89,23 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
             <Button variant="ghost" size="sm" aria-expanded={editing} onClick={() => setEditing((x) => !x)}>{editing ? 'Done' : 'Arrange'}</Button>
           </>}
           menu={<ViewMenu view={dashboard} />} />
-        {error && <p role="alert" className="mb-3 text-xs text-danger">{error}</p>}
+        {error && <p role="alert" className="mb-3 text-meta text-danger">{error}</p>}
         {editing && (
-          <ol className="mb-4 space-y-1 rounded-lg border border-default p-2 text-sm" aria-label="Arrange panels">
+          <ol className="mb-4 space-y-1 rounded-control border border-default p-2 text-body" aria-label="Arrange panels">
             {dashboard.panels.map((id, i) => (
               <li key={id} className="flex items-center gap-2">
-                <span className="w-5 text-right text-xs text-faint">{i + 1}</span>
+                <span className="w-5 text-right text-meta text-faint">{i + 1}</span>
                 <span className="flex-1 truncate">{nameOf(id)}</span>
-                <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === 0} aria-label={`Move ${nameOf(id)} earlier`} onClick={() => run(() => movePanel(dashboard.id, id, -1))}><Icon name="arrow-up" /></button>
-                <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === dashboard.panels.length - 1} aria-label={`Move ${nameOf(id)} later`} onClick={() => run(() => movePanel(dashboard.id, id, 1))}><Icon name="arrow-down" /></button>
-                <button className="btn-danger px-2 py-0.5 text-xs" aria-label={`Remove ${nameOf(id)} from the dashboard`} onClick={() => run(() => removePanel(dashboard.id, id))}>Remove</button>
+                <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === 0} aria-label={`Move ${nameOf(id)} earlier`} onClick={() => run(() => movePanel(dashboard.id, id, -1))}><Icon name="arrow-up" /></button>
+                <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === dashboard.panels.length - 1} aria-label={`Move ${nameOf(id)} later`} onClick={() => run(() => movePanel(dashboard.id, id, 1))}><Icon name="arrow-down" /></button>
+                <button className="ui-btn ui-btn--danger ui-btn--sm px-2 py-0.5 text-meta" aria-label={`Remove ${nameOf(id)} from the dashboard`} onClick={() => run(() => removePanel(dashboard.id, id))}>Remove</button>
               </li>
             ))}
-            {dashboard.panels.length === 0 && <li className="text-xs text-faint">No panels yet.</li>}
+            {dashboard.panels.length === 0 && <li className="text-meta text-faint">No panels yet.</li>}
           </ol>
         )}
         {panels.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-input p-6 text-center text-sm text-muted">
+          <p className="rounded-control border border-dashed border-input p-6 text-center text-body text-muted">
             Add up to six saved filters with “Add panel”.
           </p>
         ) : (
@@ -147,13 +134,13 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFo
   onOpenTask: (id: string) => void
   onRemove: () => void
 }) {
-  const ring = 'rounded-xl border border-default p-3 outline-none focus-within:ring-2 focus-within:ring-focus/60'
+  const ring = 'rounded-card border border-default p-3 outline-none focus-within:ring-2 focus-within:ring-focus/60'
   if (panel.kind === 'removed') {
     return (
       <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label="Removed view" className={`${ring} border-dashed`}>
-        <p className="text-sm font-medium text-muted">View removed</p>
-        <p className="mt-1 text-xs text-faint">The saved view shown here was deleted.</p>
-        <button className="btn-ghost mt-2 border border-input text-xs" tabIndex={-1} onClick={onRemove}>Remove panel</button>
+        <p className="text-body font-medium text-muted">View removed</p>
+        <p className="mt-1 text-meta text-faint">The saved view shown here was deleted.</p>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm mt-2 border border-input text-meta" tabIndex={-1} onClick={onRemove}>Remove panel</button>
       </section>
     )
   }
@@ -162,15 +149,15 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFo
     <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label={view.name} className={ring}>
       <div className="mb-2 flex items-center gap-2">
         <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
-        <h2 className="truncate text-sm font-semibold">{view.name}</h2>
-        {summary.ok && <span className="text-sm text-faint" aria-label={`${summary.count} open tasks`}>{summary.count}</span>}
+        <h2 className="truncate text-body font-semibold">{view.name}</h2>
+        {summary.ok && <span className="text-body text-faint" aria-label={`${summary.count} open tasks`}>{summary.count}</span>}
         <span className="flex-1" />
-        <button className="btn-ghost px-2 py-0.5 text-xs" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>Open view</button>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>Open view</button>
       </div>
       {!summary.ok ? (
-        <p role="alert" className="text-xs text-danger">{summary.error}</p>
+        <p role="alert" className="text-meta text-danger">{summary.error}</p>
       ) : summary.tasks.length === 0 ? (
-        <p className="px-2 py-3 text-xs text-faint">Nothing here.</p>
+        <p className="px-2 py-3 text-meta text-faint">Nothing here.</p>
       ) : (
         <ul>
           {summary.tasks.map((t, i) => (

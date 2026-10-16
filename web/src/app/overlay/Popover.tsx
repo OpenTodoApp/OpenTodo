@@ -101,8 +101,8 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
           style={{ bottom: 'var(--vv-bottom, 0px)' }}>
           <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2">
             <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{label}</h2>
-            <button type="button" className="btn-ghost touch-target px-2 text-lg leading-none" aria-label="Close" data-overlay-close
+            <h2 className="min-w-0 flex-1 truncate text-body font-semibold">{label}</h2>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-h3 leading-none" aria-label="Close" data-overlay-close
               onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}><Icon name="x" size="md" /></button>
           </div>
           <div role={ariaRole === 'menu' ? 'menu' : undefined} aria-label={ariaRole === 'menu' ? label : undefined}

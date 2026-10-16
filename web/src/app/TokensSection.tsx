@@ -10,7 +10,7 @@ import { ConfirmDialog } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
-import { SettingsSection } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
@@ -68,9 +68,8 @@ export function TokensView(p: TokensViewProps) {
   useDateTimeFormat()
   const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>New token</Button>
   return (
-    <SettingsSection title="API tokens" helpId="settings/tokens" headingId="tokens-heading" testId="tokens-panel"
-      description="For scripts, the ot command and AI assistants. Send it as Authorization: Bearer <token>."
-      actions={p.tokens && p.tokens.length > 0 ? newButton : undefined}>
+    <SettingsSection title="API tokens" headingId="tokens-heading" testId="tokens-panel"
+      description="For scripts, the ot command and AI assistants. Send it as Authorization: Bearer <token>.">
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.tokens && p.tokens.length === 0 && (
         <EmptyState icon="key-round" title="No API tokens yet"
@@ -91,6 +90,9 @@ export function TokensView(p: TokensViewProps) {
               )} />
           ))}
         </div>
+      )}
+      {p.tokens && p.tokens.length > 0 && (
+        <SettingRow label="New token" description="A token is shown once, when you create it." control={newButton} />
       )}
       {p.creating && (
         <Dialog title={p.secret ? 'Token created' : 'New API token'} onClose={() => p.onCloseNew?.()} size="md">

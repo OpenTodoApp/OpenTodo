@@ -4,7 +4,7 @@
 
 Server side done on `feat/outgoing-email`: configuration (`internal/config/smtp.go`), `internal/mail` (settings service, net/smtp transport with STARTTLS-before-AUTH and LOGIN fallback, 36 embedded templates, limiter, audit), `internal/mail/smtptest`, owner routes, self-service and admin resets, verified sign-up (migration 0031), `send` on invitations and project invites, demo deny rules, docs for the API and self-hosting, web `lib/api.ts` and `lib/types.ts`.
 
-Screens done after ux-overhaul landed (2026-10-15): `OutgoingEmailPanel` (owner only, in Administration), `/forgot` and `/verify/<token>` (`EmailScreens.tsx`), the "Forgot password?" link and the "check your email" state in `AuthScreen`, the send-or-link choice in the Users panel, and "Send by email" on server invitations and project invite links. Docs: `docs/settings.md` and `docs/sharing.md`.
+Screens done after ux-overhaul landed (2026-10-15): `OutgoingEmailPanel` (owner only; first in Administration, moved to Server when main's nine-section Settings was merged on 2026-10-16), `/forgot` and `/verify/<token>` (`EmailScreens.tsx`), the "Forgot password?" link and the "check your email" state in `AuthScreen`, the send-or-link choice in the Users panel, and "Send by email" on server invitations and project invite links. Docs: `docs/settings.md` and `docs/sharing.md`.
 
 ## Smoke test (2026-10-15, task 7.2)
 
@@ -28,3 +28,7 @@ Not done here: a real provider (Gmail app password, Microsoft 365 LOGIN) and imp
 - The availability flag (`lib/outgoingEmail.ts`) comes from the authentication status, and the owner's panel updates it on load and on save. Without that, an owner who configures SMTP would not see "Send by email" until a reload.
 - The Users panel's choice dialog creates the link directly ("Create reset link"), without a second confirmation. A failed send opens the link confirmation, with the server's error shown above it.
 - `/forgot` and `/verify` sit outside the shell, like `/reset`. They are on the page-template test's `OUTSIDE_SHELL` list.
+
+## Merge with main (2026-10-16)
+
+`ux-overhaul` (archived), `month-and-timeline-views`, `quick-add-recurrence` and `calendar-feeds` landed on main after this branch forked. Resolved: Settings has nine sections and no Administration, so the Outgoing email card is mounted on the Server page (`SettingsView.tsx`, after Attachments, under the demo's disabled group), indexed in `settingsIndex.ts`, and its old help id `settings/outgoing-email` resolves to `settings/server` (`LEGACY_HELP_SCREENS`, claimed by `docs/settings-server.md`); the card has no `helpId` any more (the page header carries Help). The guide text moved from the hubs to `docs/settings-server.md`, `docs/invite-people.md` and `docs/account-security.md` (each under 600 words). `AuthScreen` keeps main's primitives with the Forgot link and the check-your-email state; the share dialog's "Send by email" uses the type tokens. Migration numbers are `0031` (calendar feeds) and `0032` (pending sign-ups), unique and increasing, so nothing was renumbered. The panel's stories stay in `administrationSettings.stories.tsx` so their visual baselines keep their names.

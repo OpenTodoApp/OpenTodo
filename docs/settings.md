@@ -3,131 +3,80 @@ title: Settings
 summary: A tour of Settings, what each section does, which choices belong to one device and which follow your account.
 audience: user
 section: Guides
-specs: [web-app, settings-navigation, date-time-preferences, appearance-preferences]
-screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/attachments#administration, settings/sso#access-policies, settings/backups#backups, settings/outgoing-email#administration, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations, settings, settings/account#account, settings/activity#activity, settings/preferences#preferences, settings/integrations#integrations, settings/ai#ai, settings/admin#administration, settings/access#access-policies]
+specs: [web-app, settings-navigation]
+screens: [settings]
 order: 140
 card: settings
 ---
+
 # Settings
 
-Open **Settings** with the gear next to your name at the bottom of the sidebar, or press <kbd>g</kbd> then <kbd>s</kbd>. Settings opens on your profile card (your initials, name, email and role) and the sections, grouped under **You**, **App**, **Data and connections** and, for the people who run the server, **Server**. Each section has an icon and a line saying what's inside. Pick one to open it.
+<picture><source srcset="images/settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-light.webp" alt="Settings on a wide screen: the list of sections with the profile card and the search field on the left, the Account section open on the right."></picture>
 
-<picture><source srcset="images/settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-light.webp" alt="The Settings overview: the profile card, then the sections grouped under You, App and Data and connections, each with an icon and a short description."></picture>
+Open **Settings** with the gear next to your name at the bottom of the sidebar, or press <kbd>g</kbd> then <kbd>s</kbd>. On a wide screen the sections are listed in the left column with the first, **Account**, open beside it; on a phone the list comes first and each section is its own page with a **← Settings** link back. The list starts with your profile card (initials, name, email, role) and **Search settings**, then the sections, each with an icon and a line saying what's inside, grouped under **You**, **App**, **Data** and, for the people who run the server, **Server**.
 
-On a wide screen the grouped list of sections stays on the left while you work in one, and the current section is highlighted. On a phone, each section starts with a **← Settings** link back to the list. Every section has its own address, such as `/settings/integrations`, so you can bookmark it or share a link with someone on the same server. Older links keep working: `/settings/general` opens **Preferences**.
+**Search settings** finds a setting by name or by what it does; matches are listed under their section and Enter opens the first with that row focused. The command palette (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>) searches the same index: "passkey" lists **Account › Passkeys**.
 
-Inside a section, each panel is a card. It leads with its current state (for example whether two-factor authentication is on and how many recovery codes are left), then its settings as rows with the control on the right. Forms with several fields open from a button, and actions that remove something ask you to confirm first and say what will be lost.
+Every section has its own address, such as `/settings/integrations`, to bookmark or share with someone on the same server. Older links keep working: `/settings/security` opens **Account** at its security rows, `/settings/preferences` opens **General**, and so on.
 
-Some settings follow your account to every device. Others belong to the device you're on, so your phone and laptop can be set up differently. Settings that apply to one device say "this device" next to them.
+Inside a section, each card leads with a heading and one sentence saying what it is for, then its settings as rows: label and description on the left, the control on the right (below the label on a narrow screen), and a badge with the current state. Forms with several fields open from a button; actions that remove something ask you to confirm first and say what will be lost.
 
-Each panel has a **Help** link on the right that opens its part of this guide next to Settings.
+Some settings follow your account to every device; others belong to the device you're on, marked "this device", so your phone and laptop can differ. Each section page has a **Help** button in its header that opens its part of this guide next to Settings.
 
-What you see depends on your role: the owner and admins also see the **Server** group, and the public demo shows a note in place of most account and server settings.
+The owner and admins also see **People**; the owner alone sees **Server**. On the public demo every section is listed, and the rows the demo refuses have their controls disabled, under a note at the top of the page naming them.
 
 ## You
 
+Your account and how the app looks for you: [Settings: You](settings-you.md).
+
 ### Account
 
-Your profile card and **Sign out of this device**. Signing out removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm.
+[Account](settings-you.md#account): your profile, **Sign out of this device**, password, two-factor authentication, passkeys, linked accounts, end-to-end encryption and recent activity.
 
-### Security
+### Appearance
 
-- **Password**: **Change password** opens the form. See [Account security](account-security.md#change-your-password).
-- **Two-factor authentication**: a code from your phone on top of your password. The card shows whether it's on and how many recovery codes are left, and warns when only a few remain. See [Account security](account-security.md#turn-on-two-factor-authentication).
-- **Passkeys**: sign in with your fingerprint, face or device PIN. See [Account security](account-security.md#sign-in-with-a-passkey).
-- **Linked accounts**: connect a single sign-on login, if your server offers one.
-
-### Encryption
-
-Encrypt your task text on your devices, and keep its recovery key. See [End-to-end encryption](e2ee.md).
-
-### Activity
-
-Sign-ins and token changes from the last 90 days. The owner also sees the server's **Audit log** here.
+[Appearance](settings-you.md#appearance): **Mode** (System, Light or Dark), one of eight colour **themes**, **Density** and which **More** destinations the sidebar shows, all following your account.
 
 ## App
 
-### Preferences
+How the app behaves: [Settings: App](settings-app.md).
 
-How the app behaves on this device.
+### General
 
-- **Appearance**: light or dark, and a colour theme, on all your devices (see below).
-- **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
-- **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
-- **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
-- **Keyboard**: turn on Vim keybindings. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
-
-#### Appearance
-
-- **Mode**: **System** follows your device's light or dark setting (the default), **Light** and **Dark** keep the app that way whatever the device says.
-- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal** or **Graphite**. Each tile previews its theme; with the keyboard, the arrow keys move between them.
-
-Both apply at once, without a reload, and follow your account to every device, also when you change them offline. They never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; the splash screen when it starts stays neutral, because it is the same for everyone on the server. Every theme meets the same contrast rules in light and dark.
+[General](settings-app.md#general): the start view, date and time, the calendar grid and the keyboard options.
 
 #### Date and time
 
-Three choices that follow your account to every device, also when you change them offline:
-
-- **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names stay in your browser's language.
-- **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).
-- **First day of the week**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start.
-
-The **Preview** shows a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload: task rows, the task detail, reminders, the Day and Week views, comments, history and the lists in Settings. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
+[Date and time](settings-app.md#date-and-time): the date format, time format and first day of the week, on all your devices.
 
 ### Notifications
 
-Push notifications for reminders on this device, and a test that shows whether they arrive. See [Notifications](notifications.md).
+[Notifications](notifications.md): push notifications for reminders on this device, and a test that shows whether they arrive.
 
 ### Capture
 
-- **Quick add**: turn natural-language parsing on or off, pick the languages it understands, and the order of day and month in dates like `12/11`. See [Quick add syntax](quick-add.md#languages).
-- **Voice capture**: dictate tasks into quick add. Off until you turn it on, and the app explains first what your browser does with the audio. See [Quick add syntax](quick-add.md#voice).
-- **Bookmarklet and extension**: the **Add to OpenTodo** bookmarklet, to save the page you're reading as a task. See [Capturing pages](capture.md).
-- **Email to task**: your own secret address; emails sent there become tasks. See [Email to task](email.md).
+[Capture](settings-app.md#capture): quick add parsing and its languages, voice capture, the bookmarklet and extension, and email to task.
 
-### Projects
+## Data
 
-Archive projects automatically after 30 days without open tasks, and bring back archived projects with **Restore**. See [Trash and history](trash-and-history.md#archived-projects).
-
-## Data and connections
-
-### Data
-
-**Download export (JSON)** saves everything you have in one file, and **Download export with files (ZIP)** adds your attached files. **Import data…** brings in tasks from a file. See [Import and export](import-export.md). **Attachments** shows how much of your total your files use and how large one file may be (see [Attachments](attachments.md)). The sync status of this device is shown too.
+Connections to other tools, and your data: [Settings: Data](settings-data.md).
 
 ### Integrations
 
-These panels connect OpenTodo to other tools. Some appear only when the person running your server has switched the feature on.
+[Integrations](settings-data.md#integrations): calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the in-app assistant and AI assistants over MCP.
 
-- **Calendar apps (CalDAV)**: see your tasks in calendar and reminder apps on your phone or computer, with an app password. See [Calendar apps](caldav.md).
-- **Calendar feeds**: show your Google, Outlook or Apple calendars in Day and Week, and get a private address that lets calendar apps show your tasks. The server owner turns it on here. See [Calendar feeds](calendar-feeds.md).
-- **Webhooks**: send a message to another service when tasks change. See [Webhooks](webhooks.md).
-- **API tokens**: keys for scripts and the `ot` command-line client. A token is shown once, when you create it. Read-only tokens can't change anything; tokens for an AI assistant that can make changes work only through the assistant tools and never on the rest of the API. See [HTTP API](api.md) and [Command-line client](cli.md).
+### Data
 
-### AI
-
-- **Assistant**: the in-app assistant, when the server owner has turned it on: your consent, which assistant you use (the server's, or your own Anthropic, OpenAI or Gemini provider, model and key, if allowed), this month's usage, **Apply small changes without review (this device)** and **Clear conversations on this device**. The owner also chooses the provider, models, keys, network and monthly allowance here. See [AI assistant](assistant.md).
-- **AI assistants**: give an AI assistant read-only access to your tasks, or, when the server owner allows it and you switch on **Allow AI assistants to make changes**, a token for an assistant that can make changes you can undo. See [AI assistants (MCP)](mcp.md). A token you create here is also listed under **Integrations → API tokens**.
+[Data](settings-data.md#data): export and import, attachments, the sync status of this device, and archiving and restoring projects.
 
 ## Server
 
-Only the owner and admins see this group; **Backups** and **Access policies** are for the owner only.
+Owner and admins only; **Server** and the access policies inside **People** are for the owner alone. Every row: [Settings: Server](settings-server.md).
 
-### Administration
+### People
 
-- **Users**: everyone with an account, their role and last sign-in. Make someone an admin (owner only), deactivate or reactivate an account, reset a password, or delete an account. When the server sends email, a reset offers **Send reset email** (the link goes straight to the person, you never see it) beside **Create reset link** (you deliver the link yourself).
-- **Members**: invite people with a single-use link. With outgoing email, **Send by email** mails it to the address you enter. See [Sharing and comments](sharing.md#invite-someone-new).
-- **Outgoing email** (owner only): the SMTP server this server sends mail through, for password resets, sign-up confirmations and invitations. The card shows whether it's configured, the server and From address, and the last test. **Configure** opens the form, where fields set by `OPENTODO_SMTP_*` variables are read-only. **Send test email** sends a message to you and shows the mail server's answer when it fails. See [Outgoing email](self-hosting/outgoing-email.md).
-- **Attachments** (owner only): turn attachments on or off, and set the size per file (25 MB unless changed, up to 2048 MB) and the total per account (1 GB unless changed; 0 means no total). See [Attachments](attachments.md#limits).
+[People](settings-server.md#people): users and their roles, invitations, the two-factor policy, single sign-on and project invite links.
 
-### Backups
+### Server
 
-Scheduled backups to a folder, S3 or WebDAV, the last run and its result, and the next one. **Restore from a backup** puts the whole server back to an archive from the destination or one you upload: you see a verified preview first, type `RESTORE` to confirm, and the server restarts into the restored data. **Undo last restore** puts the previous database back, and old safety copies can be deleted to free space. See [Backups](backups.md#restore-from-the-web-app).
-
-### Access policies
-
-- **Two-factor policy**: optional, required for the owner, or required for everyone. See [Account security](account-security.md#turn-on-two-factor-authentication).
-- **Single sign-on**: sign-in through your company or family identity provider. See [Single sign-on](self-hosting/sso.md).
-- **Project invite links**: **Members can invite new people with project links** (off by default) lets links that members create in a project's Share dialog also create accounts. See [Who can bring new people](sharing.md#who-can-bring-new-people).
-
-Running the server itself is covered in [Running with Docker](self-hosting/docker.md).
+[Server](settings-server.md#server): backups and restore, attachment limits and the audit log. Running the server: [Running with Docker](self-hosting/docker.md).

@@ -11,7 +11,7 @@ describe('YourDataView', () => {
   it('shows export and import rows with the help link', () => {
     const html = render()
     expect(html).toContain('id="data-heading"')
-    expect(html).toContain('data-help-screen="settings/data"')
+    expect(html).not.toContain('data-help-screen')
     expect(html).toContain('href="/api/v1/export"')
     expect(html).toContain('Download export (JSON)')
     expect(html).toContain('href="/settings/import"')
@@ -29,7 +29,7 @@ describe('YourDataView', () => {
   it('links the owner to Backups', () => {
     const html = render({ isOwner: true })
     expect(html).toContain('data-testid="backups-link"')
-    expect(html).toContain('href="/settings/backups"')
+    expect(html).toContain('href="/settings/server"')
   })
   it('disables import on a demo instance with the exact note', () => {
     const html = render({ demo: true })

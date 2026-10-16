@@ -7,10 +7,12 @@ import { setOutgoingEmail } from '../lib/outgoingEmail'
 import type { SmtpSecurity, SmtpSettings, SmtpSettingsInput, SmtpStage, SmtpTestResult } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
-// Settings → Administration → Outgoing email (OpenSpec change outgoing-email,
-// design D7): the owner's SMTP settings. The card leads with its state; the form
-// opens inline; fields set by OPENTODO_SMTP_* are read-only and say so. The
-// password is write-only. Offline, nothing is guessed.
+// Settings → Server → Outgoing email (OpenSpec change outgoing-email, design D9):
+// the owner's SMTP settings. The card leads with its state; the form opens
+// inline; fields set by OPENTODO_SMTP_* are read-only and say so. The password
+// is write-only. Offline, nothing is guessed. The page header carries Help
+// (settings-navigation "Help links name the same screens"); the legacy screen id
+// `settings/outgoing-email` resolves to the Server guide.
 
 export const SMTP_VARIABLE: Record<string, string> = {
   host: 'OPENTODO_SMTP_HOST', port: 'OPENTODO_SMTP_HOST', security: 'OPENTODO_SMTP_SECURITY',
@@ -96,7 +98,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
     p.onSave()
   }
   return (
-    <SettingsSection title="Outgoing email" helpId="settings/outgoing-email" headingId="outgoing-email-heading" testId="outgoing-email-panel"
+    <SettingsSection title="Outgoing email" headingId="outgoing-email-heading" testId="outgoing-email-panel"
       description="Lets this server mail password resets, sign-up confirmations and invitations. Nothing is sent until it is configured.">
       {p.offline ? (
         <Notice>Outgoing email settings need a connection to the server.</Notice>

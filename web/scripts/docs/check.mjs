@@ -36,6 +36,33 @@ export function appScreenIds(repoRoot) {
   return ids
 }
 
+// Guide pages stay short and open with a screenshot (OpenSpec change ux-overhaul,
+// documentation "Help inside the app": under 600 words, a screenshot first). The
+// Reference and Switch sections are documentation of a different kind and exempt;
+// the keyboard guide's generated tables do not count as prose.
+const GUIDE_SECTIONS = new Set(['Guides', 'Get started'])
+export const MAX_GUIDE_WORDS = 600
+
+/** Whether a page is an in-app guide page: a user page in Guides or Get started. */
+export function isGuidePage(fm) {
+  return fm.audience === 'user' && GUIDE_SECTIONS.has(fm.section ?? 'Guides')
+}
+
+/** The prose words of a Markdown body: tags, link targets and the generated shortcut tables do not count. */
+export function guideWords(body) {
+  const start = body.indexOf(START), end = body.indexOf(END)
+  const prose = start >= 0 && end > start ? body.slice(0, start) + body.slice(end + END.length) : body
+  return prose.replace(/<[^>]+>/g, ' ').replace(/\]\([^)]*\)/g, ']').split(/\s+/).filter(Boolean).length
+}
+
+/** Whether the first content after the title line is a screenshot (<picture>, <img> or a Markdown image). */
+export function startsWithScreenshot(body) {
+  const lines = body.split('\n')
+  const title = lines.findIndex((l) => /^#\s/.test(l))
+  const first = lines.slice(title + 1).find((l) => l.trim() !== '')
+  return !!first && /^(<picture\b|<img\b|!\[)/.test(first.trim())
+}
+
 /** Runs every check; returns a list of problems (empty when all is well). */
 export async function runChecks(repoRoot) {
   const { files, pages, rendered, problems } = await buildAll(repoRoot)
@@ -58,6 +85,12 @@ export async function runChecks(repoRoot) {
     else if (hs[0].depth !== 1) out.push(`${where}: the first heading must be the page title (#)`)
     for (let i = 1; i < hs.length; i++) {
       if (hs[i].depth > hs[i - 1].depth + 1) out.push(`${where}: heading "${hs[i].text}" skips a level (h${hs[i - 1].depth} to h${hs[i].depth})`)
+    }
+    // Guide pages: under 600 words, a screenshot first.
+    if (isGuidePage(page.fm)) {
+      const words = guideWords(page.body)
+      if (words >= MAX_GUIDE_WORDS) out.push(`${where}: ${words} words; a guide page stays under ${MAX_GUIDE_WORDS}, split it (documentation "Help inside the app")`)
+      if (!startsWithScreenshot(page.body)) out.push(`${where}: a guide page opens with a screenshot right after its title`)
     }
     // Links and anchors.
     const own = new Set(hs.map((h) => h.id))

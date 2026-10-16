@@ -3,7 +3,7 @@
 // on a day or week axis, dependency arrows, and date moves by drag and keyboard.
 // Selection and opening stay with the list (j / k / Enter); this view adds the
 // axis, the bars and the date edits, each one batch of ordinary field ops.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../ui'
 import { addDaysISO, viewedTask } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
@@ -13,6 +13,7 @@ import { updateTask } from '../lib/ops'
 import { axis, dayOffset, edges, shiftDates, spanOf, type Span, type Zoom } from '../lib/timeline'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useShortcutScope } from './shortcuts'
 
 const ROW_PX = 32
 const ZOOM_KEY = 'ot.timeline.zoom'
@@ -124,35 +125,27 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     }).catch(() => undefined)
   }, [])
 
-  // Keyboard date moves on the selected row. Capture phase: in the timeline the
-  // arrows move dates instead of folding subtasks, and [ ] t move the range.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const target = e.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return
-      if (document.querySelector('[role="dialog"]')) return
-      const step = zoom === 'week' ? 28 : 7
-      if (e.key === '[' || e.key === ']' || (e.key === 't' && !e.shiftKey)) {
-        e.preventDefault()
-        e.stopPropagation()
-        setAnchor((a) => (e.key === 't' ? today : addDaysISO(a, e.key === '[' ? -step : step)))
-        return
-      }
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-      const line = selectedId ? lineOf.get(selectedId) : undefined
-      if (!line) return
-      e.preventDefault()
-      e.stopPropagation()
-      if (!editable) return
-      const dir = e.key === 'ArrowLeft' ? -1 : 1
-      if (e.shiftKey) {
-        edit(line.task.id, (t) => { const deadline = deadlineStep(t, dir, zone); return deadline ? { deadline } : null })
-      } else if (line.span) edit(line.task.id, (t) => shiftDates(t, dir, zone))
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [zoom, today, selectedId, lineOf, editable, zone, edit])
+  // Keyboard date moves on the selected row, as the `timeline` scope of the
+  // shortcut registry (keyboard-shortcuts "One shortcut registry with scopes"):
+  // it sits above the list's, so here the arrows move dates instead of folding
+  // subtasks, and [ ] t move the range instead of the sidebar. Without a selected
+  // bar the arrows fall through to the list.
+  const rangeStep = zoom === 'week' ? 28 : 7
+  const selectedLine = selectedId ? lineOf.get(selectedId) : undefined
+  const dateKey = (fn: (t: Task, dir: number) => Partial<Task> | null, needsSpan = false) => (e: KeyboardEvent) => {
+    if (!selectedLine) return false
+    // A read-only project or an undated row: the key is the timeline's but changes nothing.
+    if (!editable || (needsSpan && !selectedLine.span)) return
+    const dir = e.key === 'ArrowLeft' ? -1 : 1
+    edit(selectedLine.task.id, (t) => fn(t, dir))
+  }
+  useShortcutScope('timeline', {
+    'timeline.range-prev': () => setAnchor((a) => addDaysISO(a, -rangeStep)),
+    'timeline.range-next': () => setAnchor((a) => addDaysISO(a, rangeStep)),
+    'timeline.today': () => setAnchor(today),
+    'timeline.shift': dateKey((t, dir) => shiftDates(t, dir, zone), true),
+    'timeline.deadline': dateKey((t, dir) => { const deadline = deadlineStep(t, dir, zone); return deadline ? { deadline } : null }),
+  })
 
   /** Drag a bar (shift), one of its edges (start / deadline), or an unscheduled row (due). */
   const startDrag = (e: React.PointerEvent, t: Task, kind: 'move' | 'start' | 'end' | 'place') => {

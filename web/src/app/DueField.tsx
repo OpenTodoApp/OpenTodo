@@ -32,7 +32,7 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
         {task.due && <IconButton icon="x" label="Clear due date" onClick={() => void setDueWithUndo(task.id, null)} />}
       </div>
       {task.due && <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} />}
-      {hint && <p className="text-xs text-muted" data-testid="zone-hint">{hint}</p>}
+      {hint && <p className="text-meta text-muted" data-testid="zone-hint">{hint}</p>}
     </div>
   )
 }
