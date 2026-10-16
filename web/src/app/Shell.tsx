@@ -188,7 +188,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col md:!pb-0" data-phone-chrome={phoneChrome || undefined}
+      <main className="flex min-w-0 flex-1 flex-col md:!pb-0" data-app-frame data-phone-chrome={phoneChrome || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
@@ -204,7 +204,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>{t('Dismiss')}</button>
           </div>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* relative: the containing block of absolutely positioned content (every
+            .sr-only label), which would otherwise be the page and stretch the
+            document below the frame (issue #95). */}
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
           {route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
