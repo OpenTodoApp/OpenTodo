@@ -30,6 +30,10 @@ term     := "@" name                       label
           | ("due" | "created" | "deadline" | "start" | "completed") cmp date
           | keyword
           | "search:" text
+          | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
+          | "no" field                                  custom field without a value
+field    := a word that is not a reserved word | '"' chars '"'
+value    := number | "true" | "false" | date | word | '"' chars '"'
 cmp      := "<" | "<=" | "=" | ">=" | ">" | "before" | "after"
 date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
           | INT "days" | INT "days ago" | period
@@ -88,6 +92,21 @@ text     := word | '"' chars '"'
 | `completed` | completed tasks; the record a skipped habit day leaves is not one |
 | `open` | open (not completed) tasks |
 | `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
+| `name <cmp> value` | tasks whose [custom field](custom-fields.md) of that name compares as asked (see [Custom fields](#custom-fields)) |
+| `no name` | tasks of a project that defines the field, with no value for it |
+
+### Custom fields
+
+A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
+
+| Type | Terms |
+| --- | --- |
+| Number | `cost > 100`, `cost <= 99.5`, `cost = 0` |
+| Date | `"Order date" <= friday`, `"Order date" = this week`: the date grammar above |
+| Text, link, choice | `client = "Acme"` only, ignoring case; `client > "A"` is an error |
+| Checkbox | `paid = true`, `paid = false` (an unset box is unchecked) |
+
+`no client` lists the tasks of projects that define Client and have no value for it. A value is only compared while its task is in a project that defines the field. A name that no project defines is not an error: the view warns `No field named "budget"` and the term matches nothing.
 
 ### Open, completed and deleted tasks
 
@@ -268,4 +287,16 @@ completed = last week
 
 ```filter
 ##Work & completed >= this month & (p1 | p2)
+```
+
+### 18. Expensive renovation items ordered by Friday
+
+```filter
+#"Home renovation" & cost > 1000 & "Order date" <= friday
+```
+
+### 19. Quotes still missing a client
+
+```filter
+status = "Quote" & no client
 ```

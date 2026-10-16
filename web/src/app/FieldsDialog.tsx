@@ -13,6 +13,7 @@ import {
 import type { FieldDef, FieldType, Project, Task } from '../lib/types'
 import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea } from '../ui'
 import { Dialog } from './overlay'
+import { HelpLink } from './help/HelpLink'
 
 const typeLabel = (t: string) => FIELD_TYPES.find((x) => x.type === t)?.label ?? t
 
@@ -48,7 +49,7 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
     <Dialog title={`Fields of ${project.name}`} onClose={onClose} size="md" testId="fields-dialog">
       <div className="space-y-4">
         <p className="text-meta text-muted">
-          Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {MAX_FIELDS} fields.
+          Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {MAX_FIELDS} fields. <HelpLink screen="project-fields" topic="Custom fields" />
         </p>
         {live.length === 0 ? (
           <p className="text-body text-faint">No fields yet.</p>

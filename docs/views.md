@@ -60,3 +60,4 @@ Each device can open on a different view: your laptop on a "Work" view, your pho
 - Views that sort by date (Today, Upcoming, labels, filters) can't be reordered by hand. Projects and the Inbox can.
 - [Filter queries](filters.md) has ten ready-made examples to copy.
 - Track habits? Save the query `habit` as a view named "Habits": every habit with its streak, one click from its month history.
+- A project with [custom fields](custom-fields.md)? Save `cost > 1000` or `no client` as a view, or turn on **Columns** in its list.

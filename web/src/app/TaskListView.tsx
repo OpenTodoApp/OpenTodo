@@ -879,15 +879,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
                       </button>
                     </Tooltip>
                   ))}
-                  {offerColumns && (
-                    // The list's columns layout (custom-fields): per project, on this device only.
-                    <Tooltip label="Show fields as columns">
-                      <button type="button" aria-pressed={!!columnsPref} onClick={() => projectId && void saveListColumns(projectId, !columnsPref)} data-columns-toggle
-                        className={`ml-1 border-l border-default px-2 py-1 ${columnsPref ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
-                        Columns
-                      </button>
-                    </Tooltip>
-                  )}
                 </span>
               )} />
           ) : (
@@ -923,6 +914,16 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
           {route.view === 'project' && currentProject && <ProjectNote project={currentProject} />}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
+          {offerColumns && (
+            // The list's columns layout (custom-fields): per project, on this device only.
+            <div className="mb-1 flex justify-end">
+              <Button variant="ghost" size="sm" icon="list" aria-pressed={!!columnsPref} data-columns-toggle
+                className={columnsPref ? 'bg-sunken text-default dark:bg-raised' : undefined}
+                onClick={() => projectId && saveListColumns(projectId, !columnsPref)}>
+                Columns
+              </Button>
+            </div>
+          )}
           {rows.length === 0 && !showFirstRun && !(board || liveSections.length > 0) && (duration ? (
             <EmptyStatePattern icon="filter" title="No task matches this duration filter"
               action={<Button size="sm" variant="secondary" onClick={() => chooseDuration(null)}>Clear the filter</Button>} />

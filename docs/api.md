@@ -124,6 +124,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects, see [Project fields](#project-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections, see [Sections](#sections) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/fields…` | yes | same shape for custom field definitions, see [Custom fields](#custom-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
@@ -479,6 +480,7 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
+| `fields` | object | custom field values keyed by field definition id, always present (`{}` when none), values included for definitions that were deleted or belong to another project. On create and PATCH, a partial object: each key is validated against the live definitions of the task's project after the write and merged into the existing values, one operation per key; `null` clears a value. `400 invalid_input` naming the id for an unknown or foreign id or a value of the wrong type; a raw `fields.<id>` key is refused. See [Custom fields](#custom-fields) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `completed_by` | string or null | account id of whoever completed the task; null when open or unknown (completions made before this field, imports, public links). A write that sets `completed_at` without it records you; one that clears `completed_at` clears it |
@@ -576,6 +578,32 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BAS
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
 # 400 {"error":{"code":"invalid_input","message":"section.project_id references unknown or deleted project \"missing\""}}
+```
+
+### Custom fields
+
+A custom field definition gives the tasks of one project a typed value (OpenSpec change `custom-fields`, see [the guide](custom-fields.md)). Definitions are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) and appear in the export under `fields`, deleted ones included. Tasks carry their values in the `fields` object of [Task fields](#task-fields).
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | required, not blank, at most 100 characters, unique in the project ignoring case |
+| `type` | string | required on create: `text`, `number`, `date`, `choice`, `link` or `checkbox`; cannot change afterwards |
+| `project_id` | string | required on create: an existing, non-deleted project; cannot change afterwards |
+| `options` | string | a choice field's options, one per line (at most 50 of 100 characters); `""` for every other type (the default) |
+| `position` | number | ascending order within the project; defaults to now (last) |
+| `created_at` | number | set by the server when omitted |
+| `deleted_at` | number or null | set by `DELETE`; the values on tasks stay, hidden by the app |
+
+A project has at most 30 live definitions; one more is refused with `400 invalid_input` naming the limit. Values must match their definition's type: text of at most 2,000 characters, a finite number, a date `"YYYY-MM-DD"`, one of a choice's options, an `http` or `https` link of at most 2,000 characters, or a boolean; `null` clears. Unknown fields are refused with `400 invalid_input`; requests without credentials get `401 unauthorized`.
+
+```sh
+# Define a number field, set a value on a task, then read it back
+curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Cost","type":"number","project_id":"<project>"}' $BASE/api/v1/fields
+# 201 {"id":"<cost>","name":"Cost","type":"number","options":"","project_id":"<project>","position":1760000000000,"created_at":1760000000000}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":120}}' $BASE/api/v1/tasks/$TASK
+# 200 {…,"fields":{"<cost>":120}}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":"cheap"}}' $BASE/api/v1/tasks/$TASK
+# 400 {"error":{"code":"invalid_input","message":"task.fields: \"<cost>\" (Cost) must be a number"}}
 ```
 
 ### Label fields
@@ -1221,7 +1249,7 @@ Uploads are `multipart/form-data` with a `file` part. Options go either in one `
 }
 ```
 
-`kind` is `project`, `task`, `label`, `section`, `reminder` or `view`. `outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported`, `possible_duplicate` or `no_project`) or `error` (with `reason`). `newSections`, `recurring` (tasks with a recurrence rule) and `reminders` count what the import adds; `notes` holds file-level remarks, such as the number of comments in an own export that are not imported. `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
+`kind` is `project`, `task`, `label`, `section`, `field`, `reminder` or `view`. `outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported`, `possible_duplicate` or `no_project`) or `error` (with `reason`). `newSections`, `fields` (custom field definitions), `recurring` (tasks with a recurrence rule) and `reminders` count what the import adds; `notes` holds file-level remarks, such as the number of comments in an own export that are not imported. `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
 
 **Start** — `POST /api/v1/import` takes the same upload, re-checks it and returns 202:
 
