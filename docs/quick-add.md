@@ -90,7 +90,7 @@ When a line has two dates, the first one counts and the second stays in the titl
 
 ## Languages
 
-Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
+Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are the [interface language](language.md) when you picked one, then your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. With the interface language on **System** the order is your browser's, as before. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
 
 | | Examples |
 | --- | --- |
@@ -128,7 +128,7 @@ Spoken forms of the tokens are turned into their typed forms first, in the activ
 
 Trigger words per language: *hashtag* (all), *project / Projekt / projet / progetto / proyecto / projeto* (only before an existing project's name), *label / Etikett / étiquette / etichetta / etiqueta*, and *priority / Priorität / priorité / priorità / prioridad / prioridade* followed by one to four. Numbers are only converted next to a time, priority or duration cue, so "buy two apples" stays as it is.
 
-The recognition language follows your first quick-add language (with your browser's region, for example `en-GB`) and can be changed in Settings. If the browser cannot recognise that language, OpenTodo says so once and listens in the browser's default language.
+The recognition language follows your first quick-add language, so the interface language when you picked one (with your browser's region, for example `en-GB`), and can be changed in Settings. If the browser cannot recognise that language, OpenTodo says so once and listens in the browser's default language.
 
 If the microphone is blocked, a message explains how to allow it in the browser's site settings and the button stays there to retry. When nothing is said, listening just stops. When recognition is unavailable (for example offline, in a browser that needs its vendor's service), quick add says "Voice capture is unavailable right now" and typing works as usual. Text already in the box is never cleared.
 

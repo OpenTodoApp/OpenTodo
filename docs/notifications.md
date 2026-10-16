@@ -48,6 +48,10 @@ Push needs iOS or iPadOS 16.4 or later and only works in the installed app, open
 
 A push message contains only an id and a time, encrypted so the push service can't read it; the title travels with it only when you turn on **Include task titles**. See [Privacy](push-notifications.md#privacy).
 
+### Language
+
+The text of a notification (**Due** and the date, **Snooze 10 min**, **Dismiss**, the test message) is written in your [interface language](language.md), read on the device from your synced preferences, so it needs nothing from the server. A device that has not synced your preferences yet writes it in English.
+
 ## A weekly digest by email
 
 Besides reminders, you can get one email a week with last week's numbers and what needs attention. Turn it on in **Settings → Notifications → Weekly digest**; see [Weekly review and statistics](review-and-statistics.md#weekly-digest-by-email).

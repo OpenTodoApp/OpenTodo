@@ -79,13 +79,14 @@ OpenTodo is at **0.4**: every feature on the roadmap is in, covered by automated
 
 ## Features
 
-The highlights: quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
+The highlights: the app in six languages, quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
 
 <details>
 <summary><strong>Full feature list</strong></summary>
 
 ### Capture
 
+- **The app in your language**: English, German, French, Spanish, Italian or Portuguese, picked once and synced to every device; dates, notifications and quick add follow it. The guide stays in English. [Language](docs/language.md) · [Translating](docs/translating.md)
 - **Quick add from anywhere** (`q`), with the view's context as defaults: today in Today, the current project in a project.
 - **Natural language in six languages, offline**: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips. English, German, French, Italian, Spanish and Portuguese. [Syntax](docs/quick-add.md)
 - **Voice capture** (opt-in per device): dictate into quick add with the microphone button or `Shift+V`; "hashtag home priority two" becomes `#home p2`. Uses the browser's own speech recognition; the server never receives audio. [Voice](docs/quick-add.md#voice)
