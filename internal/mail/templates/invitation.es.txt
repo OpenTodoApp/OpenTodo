@@ -1,0 +1,9 @@
+{{.Inviter}} te ha invitado a OpenTodo
+
+Esta es una invitación a OpenTodo.
+
+{{.Inviter}} invitó a {{.Email}} al servidor de OpenTodo {{.Origin}}. Para crear tu cuenta, abre este enlace:
+
+{{.Link}}
+
+El enlace caduca en {{.Expiry}}. Si no conoces a {{.Inviter}}, puedes ignorar este mensaje.

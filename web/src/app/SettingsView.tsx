@@ -31,6 +31,7 @@ import { KeyboardSection, StartViewSection } from './PreferencesPanels'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
+import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
@@ -346,6 +347,8 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           {note}
           <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>
           <AttachmentSettingsPanel />
+          {/* Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer. */}
+          <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
           <Anchor id="audit-log"><AuditPanel /></Anchor>
         </>
       )
@@ -367,7 +370,7 @@ function DemoDisabled({ on, children }: { on: boolean; children: ReactNode }) {
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
   'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'email to task', 'backups',
-  'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+  'outgoing email', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 
 /** The demo note once at the top of a page, naming the rows whose controls are disabled. */

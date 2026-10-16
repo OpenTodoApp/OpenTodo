@@ -553,6 +553,13 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"GET", "/api/v1/calendar-feeds/events?from=2026-10-01&to=2026-10-07"},
 		{"GET", "/feeds/otfeed_x/tasks.ics"},
 		{"PUT", "/api/v1/settings/calendar-feeds"},
+		// Outgoing email: the anonymous routes and the owner's settings.
+		{"POST", "/api/v1/auth/password-reset"},
+		{"GET", "/api/v1/auth/verify/otv_abc"},
+		{"POST", "/api/v1/auth/verify/otv_abc"},
+		{"GET", "/api/v1/settings/smtp"},
+		{"PUT", "/api/v1/settings/smtp"},
+		{"POST", "/api/v1/settings/smtp/test"},
 		// Public links (public-links 2.7): every method.
 		{"GET", "/api/v1/projects/" + shared + "/public-links"},
 		{"POST", "/api/v1/projects/" + shared + "/public-links"},

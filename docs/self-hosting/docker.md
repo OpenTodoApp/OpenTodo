@@ -19,7 +19,7 @@ docker compose up -d
 
 Open <http://localhost:8080>. The first visitor creates the owner account. On a server that is reachable from the internet before you open it, set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`: the setup screen then asks for it, so nobody else can claim the server first. It has no effect once the owner exists.
 
-To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL.
+To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
 
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`.

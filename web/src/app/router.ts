@@ -26,6 +26,8 @@ export type Route =
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
+  | { view: 'forgot' }
+  | { view: 'verify'; token: string }
   | { view: 'public'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
@@ -134,6 +136,12 @@ export function parseRoute(pathname: string): Route {
     case 'reset':
       // Password reset link from an administrator or `opentodo reset-owner-password`.
       return parts[1] ? { view: 'reset', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'forgot':
+      // Self-service password reset request (outgoing-email).
+      return { view: 'forgot' }
+    case 'verify':
+      // Emailed sign-up confirmation (outgoing-email); completes only on the button.
+      return parts[1] ? { view: 'verify', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'public':
       // A public link to a project's list (public-links): no sign-in, no sync.
       return parts[1] ? { view: 'public', token: safeDecode(parts[1]) } : { view: 'inbox' }
@@ -176,6 +184,10 @@ export function routePath(r: Route): string {
       return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'project-invite':
       return `/invite/p/${encodeURIComponent(r.token)}`
+    case 'forgot':
+      return '/forgot'
+    case 'verify':
+      return `/verify/${encodeURIComponent(r.token)}`
     case 'public':
       return `/public/${encodeURIComponent(r.token)}`
     case 'day':

@@ -29,6 +29,8 @@ func allConstructors() []Event {
 		LoginSucceeded("u", "u@example.com", "password"),
 		LoginFailed("u", "u@example.com", ReasonWrongPassword),
 		Logout("u"),
+		EmailSent("o", "u", "password_reset", "u@example.com"),
+		EmailFailed("", "", "verify_signup", "x@example.com", "rate_limited"),
 		PublicLinkCreated("o", "pl1", "p1", "tick"),
 		PublicLinkRevoked("o", "pl1", "p1"),
 		AgentWrite("u", "complete_tasks", "t", "Desk assistant", 3),

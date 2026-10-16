@@ -47,12 +47,19 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'password.changed': 'Password changed',
   'owner.transferred': 'Ownership transferred',
   'agent.write': 'AI assistant made changes',
+  'email.sent': 'Email sent',
+  'email.failed': 'Email not sent',
 }
 
 const REASONS: Record<string, string> = {
   wrong_password: 'wrong password',
   unknown_account: 'unknown account',
   rate_limited: 'too many attempts',
+  connect: 'mail server unreachable',
+  tls: 'secure connection failed',
+  auth: 'mail server refused the sign-in',
+  send: 'mail server refused the message',
+  encrypted_account: 'encrypted account',
   deactivated: 'account deactivated',
   unknown_passkey: 'unknown passkey',
   passkey_rejected: 'passkey rejected',
@@ -63,6 +70,14 @@ const REASONS: Record<string, string> = {
   not_permitted: 'not created by this assistant',
 }
 
+const EMAIL_KINDS: Record<string, string> = {
+  verify_signup: 'Sign-up confirmation',
+  password_reset: 'Password reset',
+  invitation: 'Invitation',
+  project_invite: 'Project invite',
+  test: 'Test message',
+}
+
 const SETTINGS: Record<string, string> = {
   'audit.retention_days': 'Audit retention (days)',
   'audit.log_ip': 'Address logging',
@@ -71,6 +86,12 @@ const SETTINGS: Record<string, string> = {
   'mcp.writes': 'AI assistants may make changes',
   'agent.writes': 'Allow AI assistants to make changes',
   'project_invites.members_create_accounts': 'Members can invite new people with project links',
+  'smtp.host': 'Outgoing email server',
+  'smtp.port': 'Outgoing email port',
+  'smtp.security': 'Outgoing email security',
+  'smtp.user': 'Outgoing email username',
+  'smtp.password': 'Outgoing email password',
+  'smtp.from': 'Outgoing email From address',
 }
 
 /** One-line summary of an event's allow-listed details. */
@@ -78,6 +99,7 @@ export function eventSummary(ev: AuditEvent): string {
   const d = ev.details
   const parts: string[] = []
   if (d.reason) parts.push(REASONS[d.reason] ?? d.reason.replace(/_/g, ' '))
+  if (d.email_kind) parts.push(`${EMAIL_KINDS[d.email_kind] ?? d.email_kind.replace(/_/g, ' ')} to ${d.email ?? '?'}`)
   if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? 'new account' : `via ${d.method}`)
   if (d.tool) parts.push(d.tool)
   if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : d.token_scope === 'agent' ? ' (assistant, can make changes)' : ''}`)

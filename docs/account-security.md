@@ -12,7 +12,7 @@ card: settings-security
 
 <picture><source srcset="images/settings-passkeys-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-passkeys-light.webp" alt="Settings, Security section with the Passkeys card and an Add passkey button."></picture>
 
-Your password is the starting point. A passkey makes signing in quicker and safer, and two-factor authentication adds a second lock. All of it lives in **Settings**, and none of it involves anyone outside your server.
+A passkey makes signing in quicker and safer, and two-factor authentication adds a second lock to your password. All of it lives in **Settings** and involves nobody outside your server.
 
 These settings need a connection to your server. While you're offline they're shown read-only.
 
@@ -28,9 +28,9 @@ Next time, choose **Sign in with a passkey** on the sign-in screen, or pick it f
 
 <picture><source srcset="images/signin-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/signin-light.webp" alt="The sign-in screen with email and password fields and a Sign in with a passkey button below."></picture>
 
-Add a passkey on a second device too, so losing one isn't a problem. You can rename or delete passkeys in the same list. If one is marked as suspicious, OpenTodo noticed something that looks like a copied passkey; delete it if you don't recognise the device.
+Add a passkey on a second device too, so losing one isn't a problem. You can rename or delete passkeys in the same list. One marked as suspicious looks like a copied passkey; delete it if you don't recognise the device.
 
-If you don't see the Security section, passkeys aren't available on your server. They need a secure `https://` address; ask whoever runs your server.
+If you don't see the Passkeys card, passkeys aren't available on your server: they need a secure `https://` address. Ask whoever runs it.
 
 ## Turn on two-factor authentication
 
@@ -48,15 +48,15 @@ Each recovery code works once, in place of a code from the app, if you lose your
 
 Open **Settings → Account**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in.
 
-Forgot it? There's no self-service reset by email. Ask the owner or an admin of your server for a reset link. If you're the owner, see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
+Forgot it? If your server sends email, choose **Forgot password?** on the sign-in screen and enter your address: a reset link valid for 24 hours arrives by email, and the screen answers the same whether or not the address has an account. Otherwise ask the owner or an admin of your server for a reset link; an owner who can't receive mail: see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
 
 ## Check recent sign-ins
 
-**Settings → Account → Recent activity** lists sign-ins and token changes on your account from the last 90 days. If you see one you don't recognise, change your password, revoke your API tokens and tell the owner of your server.
+**Settings → Account → Recent activity** lists sign-ins and token changes on your account from the last 90 days. If you see one you don't recognise, change your password, revoke your API tokens and tell your server's owner.
 
 ## Confirm it's you
 
-Some changes, like creating an API token or turning off two-factor authentication, ask for your password or a code again, unless you entered one in the last ten minutes. That keeps someone who finds your unlocked laptop from changing them.
+Some changes, like creating an API token or turning off two-factor authentication, ask for your password or a code again unless you entered one in the last ten minutes, so someone who finds your unlocked laptop can't change them.
 
 ## Sign out
 

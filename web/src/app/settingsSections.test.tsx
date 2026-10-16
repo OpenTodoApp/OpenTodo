@@ -107,6 +107,7 @@ describe('section table', () => {
     expect(people.description(admin)).not.toContain('single sign-on')
     expect(people.description(owner)).toContain('single sign-on')
     expect(SETTINGS_SECTIONS.find((s) => s.id === 'server')!.description(owner)).toContain('audit log')
+    expect(SETTINGS_SECTIONS.find((s) => s.id === 'server')!.description(owner)).toContain('outgoing email')
   })
 
   it('joins lists for the demo note', () => {
@@ -209,6 +210,11 @@ describe('opening a section', () => {
     const server = render(owner, 'server')
     expect(server).toContain('data-testid="backups-panel"')
     expect(server).toContain('id="attachments-settings-heading"')
+    // Outgoing email (outgoing-email change) sits between Attachments and the audit log, for the owner only.
+    expect(server).toContain('id="outgoing-email-heading"')
+    expect(server.indexOf('id="outgoing-email-heading"')).toBeGreaterThan(server.indexOf('id="attachments-settings-heading"'))
+    expect(server.indexOf('id="outgoing-email-heading"')).toBeLessThan(server.indexOf('Audit log'))
+    expect(render(owner, 'people')).not.toContain('outgoing-email-heading')
     expect(server).toContain('Audit log')
   })
 

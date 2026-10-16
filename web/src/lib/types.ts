@@ -428,6 +428,43 @@ export interface AuthStatus {
   minClientVersion?: number
   /** Public demo instance (OpenSpec `demo-mode`, `demo-sandboxes`); absent on a normal server. */
   demo?: DemoInfo
+  /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
+  outgoingEmail?: { enabled: boolean }
+}
+
+/** Outgoing email settings (owner only); the password is never returned. */
+export interface SmtpSettings {
+  configured: boolean
+  host: string
+  port: number
+  security: SmtpSecurity
+  username: string
+  passwordSet: boolean
+  from: string
+  /** host, port, security, username, password, from → "env" (locked) or "settings". */
+  managedBy: Record<string, 'env' | 'settings'>
+  lastTest: { at: number; outcome: 'sent' | 'failed'; stage?: SmtpStage; reply?: string } | null
+}
+
+export type SmtpSecurity = 'tls' | 'starttls' | 'none' | ''
+export type SmtpStage = 'connect' | 'tls' | 'auth' | 'send'
+
+/** A change to the outgoing email settings: omitted fields are kept, `password: ''` removes it. */
+export interface SmtpSettingsInput {
+  host?: string
+  port?: number
+  security?: SmtpSecurity
+  username?: string
+  password?: string
+  from?: string
+}
+
+export type SmtpTestResult = { outcome: 'sent'; to: string } | { outcome: 'failed'; to: string; stage: SmtpStage; reply: string }
+
+/** A pending sign-up waiting for its emailed confirmation. */
+export interface PendingSignup {
+  email: string
+  expiresAt: number
 }
 
 /**
@@ -893,6 +930,8 @@ export const AUDIT_EVENT_NAMES = [
   'password.reset_issued', 'password.reset_completed', 'password.changed',
   'owner.transferred',
   'agent.write',
+  'email.sent',
+  'email.failed',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 

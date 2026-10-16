@@ -73,6 +73,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   // Server
   { section: 'server', label: 'Backups', description: 'Scheduled backups, destinations, recent runs and restore', anchor: 'backups-heading', keywords: 's3 webdav restore' },
   { section: 'server', label: 'Attachments', description: 'Turn attachments on or off and set their size limits', anchor: 'attachments-settings-heading', keywords: 'files upload limit quota' },
+  { section: 'server', label: 'Outgoing email', description: 'The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message', anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password' },
   { section: 'server', label: 'Audit log', description: 'What changed on the server and who did it', anchor: 'audit-heading', keywords: 'audit' },
 ]
 

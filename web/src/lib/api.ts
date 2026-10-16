@@ -7,7 +7,7 @@ import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptio
 import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -157,7 +157,7 @@ export const api = {
    * `setupToken` is the operator's OPENTODO_SETUP_TOKEN, required for the first account when configured.
    */
   register: (email: string, name: string, password: string, invitation?: string, projectInvite?: string, setupToken?: string) =>
-    request<{ user: User; projectId?: string }>('POST', '/api/v1/auth/register', {
+    request<{ user: User; projectId?: string; verificationRequired?: never } | { verificationRequired: true; user?: never; projectId?: never }>('POST', '/api/v1/auth/register', {
       email, name, password, ...(invitation ? { invitation } : {}), ...(projectInvite ? { projectInvite } : {}),
       ...(setupToken ? { setupToken } : {}),
     }),
@@ -278,15 +278,15 @@ export const api = {
 
   // Invitations (owner and admins, except the public preview). The link is returned once at creation.
   listInvitations: () => request<{ invitations: Invitation[] }>('GET', '/api/v1/invitations'),
-  createInvitation: (input: { email?: string; expiresInHours?: number } = {}) =>
-    request<{ invitation: Invitation; link: string }>('POST', '/api/v1/invitations', input),
+  createInvitation: (input: { email?: string; expiresInHours?: number; send?: boolean } = {}) =>
+    request<{ invitation: Invitation; link: string; sent?: boolean }>('POST', '/api/v1/invitations', input),
   revokeInvitation: (id: string) => request<void>('DELETE', `/api/v1/invitations/${id}`),
   previewInvitation: (token: string) => request<InvitationPreview>('GET', `/api/v1/invitations/${encodeURIComponent(token)}`),
   // Project invite links (OpenSpec `project-invite-links`): managed by the project's owner and admins; the link is returned once.
   listProjectInvites: (projectId: string) =>
     request<{ invites: ProjectInvite[] }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/invites`),
-  createProjectInvite: (projectId: string, input: { role: ProjectRole; email?: string; expiresInHours?: number }) =>
-    request<{ invite: ProjectInvite; link: string; newAccounts: boolean }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/invites`, input),
+  createProjectInvite: (projectId: string, input: { role: ProjectRole; email?: string; expiresInHours?: number; send?: boolean }) =>
+    request<{ invite: ProjectInvite; link: string; newAccounts: boolean; sent?: boolean }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/invites`, input),
   revokeProjectInvite: (projectId: string, id: string) =>
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/invites/${encodeURIComponent(id)}`),
   // Public links (OpenSpec `public-links`): managed by the project's owner and admins; the link is returned once.
@@ -317,11 +317,22 @@ export const api = {
   issuePasswordReset: (id: string, expiresInHours?: number) =>
     request<{ expiresAt: number; link: string }>('POST', `/api/v1/users/${encodeURIComponent(id)}/password-reset`,
       expiresInHours === undefined ? {} : { expiresInHours }),
+  /** Mails the reset link to the account (outgoing email); the administrator never sees it. */
+  sendPasswordReset: (id: string) =>
+    request<{ expiresAt: number; sent: true }>('POST', `/api/v1/users/${encodeURIComponent(id)}/password-reset`, { send: true }),
   transferOwnership: (id: string, password: string) =>
     request<{ user: AdminUser }>('POST', `/api/v1/users/${encodeURIComponent(id)}/transfer-ownership`, { password }),
   /** Every signed-in user: signs out the other sessions, keeps this one. */
   changePassword: (currentPassword: string, newPassword: string) =>
     request<void>('POST', '/api/v1/me/password', { currentPassword, newPassword }),
+  // Outgoing email (OpenSpec `outgoing-email`): owner settings, the forgot-password request and verified sign-up.
+  smtpSettings: () => request<SmtpSettings>('GET', '/api/v1/settings/smtp'),
+  saveSmtpSettings: (input: SmtpSettingsInput) => request<SmtpSettings>('PUT', '/api/v1/settings/smtp', input),
+  testSmtp: () => request<SmtpTestResult>('POST', '/api/v1/settings/smtp/test', {}),
+  /** Always answers the same way, whether or not the address has an account. */
+  requestPasswordReset: (email: string) => request<{ ok: true }>('POST', '/api/v1/auth/password-reset', { email }),
+  verifyPreview: (token: string) => request<PendingSignup>('GET', `/api/v1/auth/verify/${encodeURIComponent(token)}`),
+  verifyComplete: (token: string) => request<{ user: User }>('POST', `/api/v1/auth/verify/${encodeURIComponent(token)}`, {}),
   // Reset links: public, no session needed.
   previewPasswordReset: (token: string) => request<ResetPreview>('GET', `/api/v1/password-resets/${encodeURIComponent(token)}`),
   resetPassword: (token: string, password: string) =>

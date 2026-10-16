@@ -79,6 +79,9 @@ const (
 	// A write tool call made with an `agent` token (mcp-write-tools D6): the
 	// one deliberate exception to "task edits are not events", without content.
 	AgentWriteName Name = "agent.write"
+	// Outgoing email (OpenSpec `outgoing-email`): a message sent or refused.
+	EmailSentName   Name = "email.sent"
+	EmailFailedName Name = "email.failed"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -103,6 +106,7 @@ var Names = []Name{
 	PasswordResetIssuedName, PasswordResetCompletedName, PasswordChangedName,
 	OwnerTransferredName,
 	AgentWriteName,
+	EmailSentName, EmailFailedName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -181,6 +185,7 @@ var allowedDetailKeys = map[string]bool{
 	"backup_id":         true,
 	"source":            true, // restore source: archive, upload or safety-copy
 	"reset_id":          true, // id of a password reset link (never its secret)
+	"email_kind":        true, // kind of an outgoing message: verify_signup, password_reset, invitation, project_invite, test
 	"public_link_id":    true, // id of a public link (never its secret)
 	"link_rights":       true, // view | tick
 }
@@ -471,6 +476,21 @@ func UserDeleted(actorID, targetID, email string) Event {
 // was issued from the server shell. The link secret is never passed in.
 func PasswordResetIssued(actorID, targetID, resetID string) Event {
 	return ev(PasswordResetIssuedName, Success, actorID, targetID, "reset_id", resetID)
+}
+
+// ---- outgoing email (outgoing-email) ----
+
+// EmailSent records a message handed to the SMTP server. The link and the body
+// are never passed in; email is the recipient address, targetID the recipient's
+// account when known.
+func EmailSent(actorID, targetID, kind, email string) Event {
+	return ev(EmailSentName, Success, actorID, targetID, "email_kind", kind, "email", email)
+}
+
+// EmailFailed records a message that was not sent; reason is the stage
+// (connect, tls, auth, send) or rate_limited or encrypted_account.
+func EmailFailed(actorID, targetID, kind, email, reason string) Event {
+	return ev(EmailFailedName, Failure, actorID, targetID, "email_kind", kind, "email", email, "reason", reason)
 }
 
 // PasswordResetCompleted records target setting a new password through a reset

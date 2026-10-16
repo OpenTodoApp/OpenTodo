@@ -1,13 +1,17 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	netmail "net/mail"
+	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/mail"
 )
 
 // User administration routes (OpenSpec change `user-management`, design D8).
@@ -25,6 +29,7 @@ func (s *Server) registerUserRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/v1/users/{id}/password-reset", s.requireAuth(s.requireFresh(s.handleIssueReset)))
 	mux.Handle("POST /api/v1/users/{id}/transfer-ownership", s.requireAuth(s.requireFresh(s.handleTransferOwnership)))
 	mux.Handle("POST /api/v1/me/password", s.requireAuth(s.requireFresh(s.handleChangePassword)))
+	mux.HandleFunc("POST /api/v1/auth/password-reset", s.handleRequestPasswordReset)
 	mux.HandleFunc("GET /api/v1/password-resets/{token}", s.handlePreviewReset)
 	mux.HandleFunc("POST /api/v1/password-resets/{token}", s.handleUseReset)
 }
@@ -182,6 +187,7 @@ func (s *Server) handleIssueReset(w http.ResponseWriter, r *http.Request) {
 	}
 	var in struct {
 		ExpiresInHours *float64 `json:"expiresInHours"`
+		Send           bool     `json:"send"`
 	}
 	if err := readOptionalJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
@@ -196,12 +202,45 @@ func (s *Server) handleIssueReset(w http.ResponseWriter, r *http.Request) {
 		}
 		ttl = time.Duration(h) * time.Hour
 	}
+	var msg mail.Message
+	if in.Send {
+		// Sending by email (OpenSpec `outgoing-email` D6): the administrator never
+		// handles the secret; a failure leaves no link pending.
+		if !s.mailEnabled(r.Context()) {
+			writeError(w, http.StatusConflict, "smtp_disabled", "outgoing email is not configured")
+			return
+		}
+		target, err := s.auth.UserByID(r.Context(), r.PathValue("id"))
+		if err != nil {
+			s.userError(w, err)
+			return
+		}
+		msg = mail.Message{Kind: mail.KindPasswordReset, To: target.Email, Lang: mail.LangFrom(r.Header.Get("Accept-Language")),
+			Origin: s.publicOrigin(r), UserID: target.ID, ActorID: actor.ID, Vars: mail.Vars{Expiry: ttl}}
+		if s.mail.Limited(r.Context(), msg) {
+			s.mailSendError(w, mail.ErrRateLimited)
+			return
+		}
+	}
 	pr, secret, err := s.auth.IssuePasswordReset(r.Context(), actor.ID, r.PathValue("id"), ttl)
 	if err != nil {
 		s.userError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"expiresAt": pr.ExpiresAt, "link": s.publicOrigin(r) + "/reset/" + secret})
+	link := s.publicOrigin(r) + "/reset/" + secret
+	if in.Send {
+		msg.Vars.Link = link
+		if err := s.mail.Send(r.Context(), msg); err != nil {
+			if rerr := s.auth.RevokePasswordReset(context.WithoutCancel(r.Context()), pr.ID); rerr != nil {
+				s.log.Error("revoke unsent reset link", "err", rerr)
+			}
+			s.mailSendError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, map[string]any{"expiresAt": pr.ExpiresAt, "sent": true})
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"expiresAt": pr.ExpiresAt, "link": link})
 }
 
 func (s *Server) handleTransferOwnership(w http.ResponseWriter, r *http.Request) {
@@ -285,4 +324,68 @@ func (s *Server) handleUseReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// resetMinDuration pads every self-service reset answer so the response time
+// does not reveal whether the address has an account (design D5).
+var resetMinDuration = 200 * time.Millisecond
+
+// handleRequestPasswordReset is the anonymous "Forgot password?" request: always
+// 202 with the same body; a link is mailed only for an active account while
+// password sign-in is allowed.
+func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Request) {
+	if !s.mailEnabled(r.Context()) {
+		writeError(w, http.StatusNotFound, "smtp_disabled", "password reset by email is not available on this server")
+		return
+	}
+	if !s.originAllowed(r) {
+		writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
+		return
+	}
+	var in struct {
+		Email string `json:"email"`
+	}
+	if err := readJSON(r, &in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", "a JSON body with an email is required")
+		return
+	}
+	addr, err := netmail.ParseAddress(strings.TrimSpace(in.Email))
+	if err != nil || addr.Name != "" || len(in.Email) > 320 {
+		writeError(w, http.StatusBadRequest, "invalid_input", "email: enter one valid address")
+		return
+	}
+	if !s.limiter.allow(clientIP(r)) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again in a minute")
+		return
+	}
+	start := time.Now()
+	defer func() {
+		if d := resetMinDuration - time.Since(start); d > 0 {
+			time.Sleep(d)
+		}
+		writeJSON(w, http.StatusAccepted, map[string]any{"ok": true})
+	}()
+	if s.auth.SSOOnly(r.Context()) {
+		return
+	}
+	ctx := context.WithoutCancel(r.Context())
+	msg := mail.Message{Kind: mail.KindPasswordReset, To: strings.ToLower(addr.Address), Lang: mail.LangFrom(r.Header.Get("Accept-Language")),
+		Origin: s.publicOrigin(r), Vars: mail.Vars{Expiry: auth.DefaultResetTTL}}
+	if s.mail.Limited(ctx, msg) {
+		return
+	}
+	u, pr, secret, err := s.auth.RequestPasswordReset(ctx, addr.Address)
+	if err != nil {
+		s.log.Error("password reset request", "err", err)
+		return
+	}
+	if u == nil {
+		return
+	}
+	msg.To, msg.UserID, msg.Vars.Link = u.Email, u.ID, s.publicOrigin(r)+"/reset/"+secret
+	if err := s.mail.Send(ctx, msg); err != nil {
+		if rerr := s.auth.RevokePasswordReset(ctx, pr.ID); rerr != nil {
+			s.log.Error("revoke unsent reset link", "err", rerr)
+		}
+	}
 }

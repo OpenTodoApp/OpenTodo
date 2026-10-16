@@ -1,0 +1,9 @@
+{{.Inviter}} vous invite dans un projet partagé
+
+Ceci est une invitation à un projet partagé dans OpenTodo.
+
+{{.Inviter}} a invité {{.Email}} à rejoindre un projet en tant que {{.Role}} sur le serveur OpenTodo {{.Origin}}. Pour le rejoindre, ouvrez ce lien :
+
+{{.Link}}
+
+Le lien expire dans {{.Expiry}}. Si vous ne connaissez pas {{.Inviter}}, ignorez ce message.
