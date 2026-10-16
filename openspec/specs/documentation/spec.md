@@ -58,7 +58,7 @@ Every release SHALL ship the documentation as a static website in its site bundl
 - **THEN** a guide changed on the main branch after that release shows its released text until the next release
 
 ### Requirement: Help inside the app
-The app SHALL include a Help view with the user guide of its own version, available offline and searchable, reachable from the sidebar footer, every page header, the cheat sheet and `g` then `?`. Its landing SHALL open on the search field followed by task-shaped entries ("Add a task with a date", "Repeat a task", "Share a project", "Sync a calendar", "Import from another app", "Install the app", "Use the keyboard", "Run your own server"), with the full guide list below. Each guide page SHALL be under 600 words with a screenshot first. Links between guides SHALL stay in the app; admin and developer pages SHALL open on the website. The help content SHALL load only when Help is opened.
+The app SHALL include a Help view with the user guide of its own version, available offline and searchable, reachable from the sidebar footer, every page header, the cheat sheet and `g` then `?`. Each guide page SHALL be under 600 words with a screenshot first. Links between guides SHALL stay in the app; admin and developer pages SHALL open on the website. The help content SHALL load only when Help is opened.
 
 #### Scenario: Offline help
 - **WHEN** the installed app is offline and the user opens Help and searches for "board"
@@ -67,6 +67,9 @@ The app SHALL include a Help view with the user guide of its own version, availa
 #### Scenario: Version match
 - **WHEN** a server runs an older release than the website describes
 - **THEN** its in-app Help shows the guide for the version it runs
+
+### Requirement: Help landing page
+The Help view's landing SHALL open on the search field followed by task-shaped entries ("Add a task with a date", "Repeat a task", "Share a project", "Sync a calendar", "Import from another app", "Install the app", "Use the keyboard", "Run your own server"), with the full guide list below.
 
 #### Scenario: Task-shaped landing
 - **WHEN** the user opens Help

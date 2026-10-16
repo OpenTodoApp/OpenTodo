@@ -32,11 +32,14 @@ The detail panel SHALL offer an estimate control that accepts shorthand (`15m`, 
 - **THEN** the estimate control opens focused for that task, and typing `20` then Enter sets 20 minutes
 
 ### Requirement: Day and Week calendar views
-The client SHALL provide Day and Week views as one Calendar destination, reachable by `g d` and `g w` and from the sidebar (the last mode remembered per device), using the page header (the range as title, with Today, previous, next and a Day/Week control as actions) and showing a 15-minute grid from a configurable start to end hour (default 06:00 to 22:00, scrollable beyond). The grid SHALL be the content column's own scroller. An open task with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid. The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source. Below 640 px the Week SHALL render as a vertical agenda grouped by day. The views SHALL render from the local store and work offline.
+The client SHALL provide Day and Week views as one Calendar destination, reachable by `g d` and `g w` and from the sidebar (the last mode remembered per device), using the page header (the range as title, with Today, previous, next and a Day/Week control as actions) and showing a 15-minute grid from a configurable start to end hour (default 06:00 to 22:00, scrollable beyond). The grid SHALL be the content column's own scroller. The views SHALL render from the local store and work offline.
 
 #### Scenario: Open the week offline
 - **WHEN** the device is offline and the user presses `g w`
 - **THEN** the current week renders with every timed task as a block and date-only tasks in each day's lane
+
+### Requirement: Tasks as calendar blocks
+An open task with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid.
 
 #### Scenario: Unestimated block
 - **WHEN** a task due today at 10:00 has no estimate
@@ -50,9 +53,16 @@ The client SHALL provide Day and Week views as one Calendar destination, reachab
 - **WHEN** a day has 2 h 50 planned of 8 h with five unestimated tasks
 - **THEN** the lane shows a capacity bar whose tooltip reads "2 h 50 of 8 h planned · 5 tasks without estimate"
 
+### Requirement: Planning list and phone agenda
+The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source. Below 640 px the Week SHALL render as a vertical agenda grouped by day.
+
 #### Scenario: Week on a phone
 - **WHEN** the user opens the Week on a 390 px screen
 - **THEN** the days are listed vertically with their tasks, and no seven-column grid is rendered
+
+#### Scenario: Planning list in the panel slot
+- **WHEN** the user opens the list of tasks to plan from the Calendar
+- **THEN** it opens in the shell's panel slot with a picker for its source, and the grid stays in the content column
 
 ### Requirement: Calendar follows the date and time preferences
 The Week view SHALL start on the user's preferred first day of the week (OpenSpec `date-time-preferences`), and grid hours and block times SHALL follow the user's time format.

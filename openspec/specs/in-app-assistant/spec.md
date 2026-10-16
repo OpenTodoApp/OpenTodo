@@ -311,11 +311,18 @@ While the owner allows member keys, a user MAY choose their own provider (Anthro
 - **THEN** the response is 429 `rate_limited` with `Retry-After` and no provider request is made
 
 ### Requirement: Ask composer
-When the assistant is available to the user, the Ask screen SHALL show a composer with a text field, a Skills menu and up to three example cards, and the Today view SHALL offer an "Ask" action in its page header that opens the assistant panel; no composer or cards SHALL be rendered inside Today's list. Sending from the composer, choosing a skill or choosing a card SHALL open the assistant panel with that text or skill filled in. When the assistant is not available, no composer, card or hint SHALL be shown to anyone in task views; the owner finds the assistant under Settings → Integrations.
+When the assistant is available to the user, the Ask screen SHALL show a composer with a text field, a Skills menu and up to three example cards, and the Today view SHALL offer an "Ask" action in its page header that opens the assistant panel; no composer or cards SHALL be rendered inside Today's list. Sending from the composer, choosing a skill or choosing a card SHALL open the assistant panel with that text or skill filled in.
 
 #### Scenario: Start from Today
 - **WHEN** a user with the assistant available activates Ask in Today's page header, types "what is overdue in Work?" and presses Enter
 - **THEN** the assistant panel opens and sends that message as a turn
+
+#### Scenario: Card fills the panel
+- **WHEN** a user with the assistant available chooses an example card on the Ask screen
+- **THEN** the assistant panel opens with that card's text filled in
+
+### Requirement: No composer when the assistant is unavailable
+When the assistant is not available, no composer, card or hint SHALL be shown to anyone in task views; the owner finds the assistant under Settings → Integrations.
 
 #### Scenario: Assistant off for a member
 - **WHEN** the owner has not enabled the assistant and a member opens Today

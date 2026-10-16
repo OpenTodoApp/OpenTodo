@@ -43,7 +43,7 @@ When a member leaves or is removed from a project, every task in that project as
 - **THEN** the assignment is rejected with reason `not_a_member` and Alice's device shows the task unassigned
 
 ### Requirement: Assigned to me view
-The client SHALL offer an "Assigned to me" view listing the user's open assigned tasks across all projects, grouped by project, reachable from the sidebar's More group and a `g`-prefixed keyboard shortcut, with a live count. The sidebar entry SHALL be shown only when the user is a member of at least one shared project or has at least one assigned task; the view SHALL stay reachable by address and shortcut. The view SHALL be rendered from local storage so it works offline and updates as soon as synced assignments arrive.
+The client SHALL offer an "Assigned to me" view listing the user's open assigned tasks across all projects, grouped by project, reachable from the sidebar's More group and a `g`-prefixed keyboard shortcut, with a live count. The view SHALL be rendered from local storage so it works offline and updates as soon as synced assignments arrive.
 
 #### Scenario: Open the view offline
 - **WHEN** the user opens the app without a network and navigates to Assigned to me
@@ -52,6 +52,9 @@ The client SHALL offer an "Assigned to me" view listing the user's open assigned
 #### Scenario: Completing from the view
 - **WHEN** the user completes a task from Assigned to me
 - **THEN** the task leaves the view and the sidebar count decreases without a reload
+
+### Requirement: Assigned to me sidebar entry
+The sidebar entry SHALL be shown only when the user is a member of at least one shared project or has at least one assigned task; the view SHALL stay reachable by address and shortcut.
 
 #### Scenario: Solo install
 - **WHEN** a user has no shared project and no assigned task

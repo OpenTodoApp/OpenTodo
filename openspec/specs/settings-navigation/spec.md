@@ -108,7 +108,7 @@ Each Settings page SHALL have one Help action in its page header that opens the 
 - **THEN** the Account guide opens at its two-factor section
 
 ### Requirement: Settings groups
-The section list SHALL show sections in this order and in these groups. You: Account, Appearance. App: General, Notifications, Capture. Data: Integrations, Data. Server: People, Server. Groups SHALL be labelled headings, a group with no visible section SHALL be omitted, and each group's list SHALL be exposed to assistive technology under its heading. Account holds profile, sessions, password, two-factor, passkeys, linked accounts and encryption; General holds start view, date and time, calendar, keyboard and language.
+The section list SHALL show sections in this order and in these groups. You: Account, Appearance. App: General, Notifications, Capture. Data: Integrations, Data. Server: People, Server. Groups SHALL be labelled headings, a group with no visible section SHALL be omitted, and each group's list SHALL be exposed to assistive technology under its heading.
 
 #### Scenario: Group headings for screen readers
 - **WHEN** a screen reader user moves through the list
@@ -117,6 +117,13 @@ The section list SHALL show sections in this order and in these groups. You: Acc
 #### Scenario: Owner order
 - **WHEN** the owner opens the list
 - **THEN** the nine sections appear in the four groups in the stated order
+
+### Requirement: Account and General section contents
+Account SHALL hold profile, sessions, password, two-factor, passkeys, linked accounts and encryption; General SHALL hold start view, date and time, calendar, keyboard and language.
+
+#### Scenario: Where a setting lives
+- **WHEN** the user looks for passkeys and for the date and time format
+- **THEN** passkeys are found in the Account section and date and time in the General section
 
 ### Requirement: Legacy settings addresses
 Addresses of earlier layouts SHALL open the section that now holds their content and replace the address without adding a history entry: `security`, `encryption` and `activity` → `account`; `preferences` → `general`; `projects` → `data`; `ai` → `integrations`; `admin` and `access` → `people`; `backups` → `server`. The ids kept (`account`, `general`, `notifications`, `capture`, `integrations`, `data`) SHALL keep opening the section of that id.

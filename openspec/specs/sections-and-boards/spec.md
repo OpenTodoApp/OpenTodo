@@ -32,7 +32,7 @@ A task SHALL have an optional `section_id` naming a section of its project; it S
 - **THEN** the section is deleted on both devices, the task keeps its reference to the deleted section in the data, is displayed under "No section", and is not lost
 
 ### Requirement: Sections in the list view
-A project's list view SHALL group open tasks under section headings ordered by section position, with tasks that have no section listed first under a "No section" heading shown only when sections exist and that group has open tasks. Each heading SHALL use the shared group header with the count of open tasks beneath it, a collapse control and a quick-add action that creates tasks in that section. A section with no open tasks SHALL show its header only, with "n completed" and a reveal control when it holds completed tasks. Sections SHALL be collapsible per device.
+A project's list view SHALL group open tasks under section headings ordered by section position, with tasks that have no section listed first under a "No section" heading shown only when sections exist and that group has open tasks. Each heading SHALL use the shared group header with the count of open tasks beneath it, a collapse control and a quick-add action that creates tasks in that section.
 
 #### Scenario: Grouped list
 - **WHEN** a project has sections "Backlog" and "Doing" with 3 and 1 open tasks, and 2 tasks without a section
@@ -46,8 +46,19 @@ A project's list view SHALL group open tasks under section headings ordered by s
 - **WHEN** the user activates the quick-add action of "Doing", types a title and presses Enter
 - **THEN** a task with that title appears under "Doing" immediately, with no network round trip
 
+### Requirement: Empty and collapsed sections
+A section with no open tasks SHALL show its header only, with "n completed" and a reveal control when it holds completed tasks. Sections SHALL be collapsible per device.
+
+#### Scenario: Section with only completed tasks
+- **WHEN** a section "Done" holds 4 completed tasks and no open task
+- **THEN** the list shows the "Done" header only, with "4 completed" and a reveal control that shows them
+
+#### Scenario: Collapse is per device
+- **WHEN** the user collapses "Backlog" on one device
+- **THEN** its tasks are hidden on that device and the section stays expanded on the user's other devices
+
 ### Requirement: Board view
-Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column only when it has open tasks, each listing the section's open tasks as cards ordered by position with a per-column count and quick-add. The board SHALL be the content column's own scroller: columns fill the available height and each column scrolls alone, the page does not. Below 640 px columns SHALL be 88 % of the screen width with snapping and a dot pager, and the current column's name SHALL be in the page bar. The board SHALL be one of three project layouts (list, board, timeline per `project-timeline`), chosen with the view toggle or by cycling with `v`, remembered per project per device and not synced. The board SHALL render from local data and SHALL be navigable by keyboard.
+Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column only when it has open tasks, each listing the section's open tasks as cards ordered by position with a per-column count and quick-add. The board SHALL be one of three project layouts (list, board, timeline per `project-timeline`), chosen with the view toggle or by cycling with `v`, remembered per project per device and not synced.
 
 #### Scenario: Switch to board
 - **WHEN** the user presses the view toggle or `v` in a project
@@ -72,6 +83,24 @@ Every project SHALL offer a board view with one column per section ordered by se
 #### Scenario: Card content
 - **WHEN** a task with a date, three labels, an estimate and two comments is shown as a card
 - **THEN** the card shows the title, the date, up to three chips and a footer with the comment count, and nothing else
+
+### Requirement: Board data and keyboard access
+The board SHALL render from local data and SHALL be navigable by keyboard.
+
+#### Scenario: Board offline
+- **WHEN** the device is offline and the user opens a project as a board
+- **THEN** the columns and their cards render from local data, and a card can be selected and opened with the keyboard alone
+
+### Requirement: Board scrolling and phone layout
+The board SHALL be the content column's own scroller: columns fill the available height and each column scrolls alone, the page does not. Below 640 px columns SHALL be 88 % of the screen width with snapping and a dot pager, and the current column's name SHALL be in the page bar.
+
+#### Scenario: Page keeps still while a column scrolls
+- **WHEN** the user scrolls a column that holds more cards than fit the screen height
+- **THEN** only that column moves; the page, the header and the other columns stay in place
+
+#### Scenario: Current column named on a phone
+- **WHEN** the user swipes to the second column of a board on a 390 px screen
+- **THEN** the column snaps into place at 88 % of the screen width, the page bar shows that column's name and the second pager dot is current
 
 ### Requirement: Move tasks between sections
 The user SHALL be able to move a task to another section by dragging it onto a column or heading, by pressing Shift+Left or Shift+Right on the selected task in the board, and by choosing a section in the task detail panel. A move SHALL set the task's section and place it last in the target column, SHALL apply locally at once and work offline, and SHALL converge so two devices moving the same task resolve to the newer move.

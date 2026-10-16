@@ -76,7 +76,7 @@ The sidebar SHALL show the number of open tasks for the Inbox, for Today and for
 - **THEN** the sidebar shows 5 next to "Home"; expanding it shows 2 next to "Home" and 3 next to "Garden"
 
 ### Requirement: Project tree in the sidebar
-The sidebar SHALL render non-archived projects as a tree ordered by position within each level, indenting each level 12 px beneath its parent, inside the sidebar's single scroller. Deeply nested levels SHALL stay readable on a 360 px wide screen by capping the visual indentation while keeping the nesting order, and a row's tooltip SHALL show its full path. Each project SHALL show its icon in its colour, or a coloured dot when it has no icon. The tree SHALL be rendered from local data and SHALL reflect remote moves after sync without a reload.
+The sidebar SHALL render non-archived projects as a tree ordered by position within each level, indenting each level 12 px beneath its parent, inside the sidebar's single scroller. Each project SHALL show its icon in its colour, or a coloured dot when it has no icon. The tree SHALL be rendered from local data and SHALL reflect remote moves after sync without a reload.
 
 #### Scenario: Three levels
 - **WHEN** "Work" contains "Client A", which contains "Q4 launch"
@@ -85,6 +85,9 @@ The sidebar SHALL render non-archived projects as a tree ordered by position wit
 #### Scenario: Remote move appears
 - **WHEN** another device moves "Q4 launch" directly under "Work" and this device syncs
 - **THEN** the sidebar shows "Q4 launch" as a sibling of "Client A" without a page reload
+
+### Requirement: Deep nesting on narrow screens
+Deeply nested levels SHALL stay readable on a 360 px wide screen by capping the visual indentation while keeping the nesting order, and a row's tooltip SHALL show its full path.
 
 #### Scenario: Full path on hover
 - **WHEN** the user hovers or focuses "Q4 launch" at the capped indentation
