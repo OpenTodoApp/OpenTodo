@@ -3,7 +3,7 @@ title: The app in your language
 summary: Pick the language of the app once and every device follows: English, German, French, Spanish, Italian or Portuguese, with dates, notifications and quick add to match.
 audience: user
 section: Guides
-specs: []
+specs: [localization]
 screens: []
 order: 143
 ---
