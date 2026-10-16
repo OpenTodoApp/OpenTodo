@@ -211,3 +211,46 @@ describe('service worker due text (date-time-preferences D7)', () => {
     expect(sw.shown[0].options.body).toBe(`Due ${date}, 10:00`)
   })
 })
+
+describe('service worker texts in the stored language (app-localization D9)', () => {
+  const KEYS = { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
+  function workerText(): Record<string, Record<keyof typeof KEYS, string>> {
+    const self: Record<string, unknown> = { addEventListener: () => undefined }
+    new Function('self', 'fetch', 'indexedDB', source)(self, async () => ({ ok: true }), globalThis.indexedDB)
+    return self.__opentodoText as Record<string, Record<keyof typeof KEYS, string>>
+  }
+
+  it('every worker text is the catalog’s translation of the same English message', async () => {
+    const text = workerText()
+    for (const [lang, entries] of Object.entries(text)) {
+      if (lang === 'en') {
+        expect(entries).toEqual(KEYS)
+        continue
+      }
+      const catalog = (await import(`../locales/${lang}.json`)).default as Record<string, string>
+      for (const [key, english] of Object.entries(KEYS)) expect(entries[key as keyof typeof KEYS], `${lang}.${key}`).toBe(catalog[english])
+    }
+  })
+
+  it('a pushed reminder is German when the synced language is German', async () => {
+    const year = new Date().getFullYear()
+    const taskId = await createTask({ title: 'Miete zahlen', due: { date: `${year}-11-03`, time: '15:00' } })
+    const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
+    await setUserPref('language', 'de')
+    await setUserPref('time_format', '24h')
+    db.close()
+    await db.open()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
+    expect(sw.shown[0].options.body).toBe('Fällig 3. Nov., 15:00')
+    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['10 Min. später', 'Verwerfen'])
+  })
+
+  it('without a preferences row the texts stay English', async () => {
+    const { taskId, reminderId, now } = await setup()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(String(sw.shown[0].options.body)).toMatch(/^Due /)
+    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Snooze 10 min', 'Dismiss'])
+  })
+})

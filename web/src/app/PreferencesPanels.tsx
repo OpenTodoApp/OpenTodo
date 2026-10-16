@@ -5,7 +5,6 @@ import { readLanguage, setUserPref, USER_PREFS_ID } from '../lib/userPrefs'
 import type { LanguagePref } from '../lib/types'
 import { SHIPPED, nativeName } from '../locales'
 import { Notice } from '../ui'
-import { HelpLink } from './help/HelpLink'
 import { useLanguageStatus, type LanguageStatus } from './LanguageProvider'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -36,7 +35,7 @@ export function LanguageView({ value, system, status = 'ready', onChange }: {
 }) {
   return (
     <SettingsSection title={t('Language')} headingId="language-heading"
-      description={<>{t('The language of the app on all your devices. Your tasks are not translated.')}{' '}<HelpLink screen="settings/language" topic={t('Language')} /></>}>
+      description={t('The language of the app on all your devices. Your tasks are not translated.')}>
       <SettingRow label={t('Interface language')} htmlFor="language-select" control={
         <Select id="language-select" className="sm:w-56" value={value} onChange={(e) => onChange(e.target.value as LanguagePref)}>
           <option value="system">{t('System ({language})', { language: system })}</option>
