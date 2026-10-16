@@ -22,6 +22,7 @@ import { navigate } from '../router'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
+import { FieldsGroup } from './FieldsGroup'
 import { Properties } from './Properties'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
@@ -187,6 +188,9 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 
           <Properties task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={parent} childCount={children.length} onOpen={onOpen} />
+
+          {/* Custom field values of the task's project (custom-fields). */}
+          <FieldsGroup task={task} readOnly={readOnly} />
 
           {/* Subtasks as a checklist with a quiet add line (ux-overhaul, "Task panel layout"). */}
           <section aria-label="Subtasks" data-subtasks>

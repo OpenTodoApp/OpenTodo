@@ -20,7 +20,10 @@ import { beginDrag } from '../lib/dnd'
 import { moveTask, moveTaskBy, type Step } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { ProjectNote } from './ProjectNote'
-import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, nextViewMode, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
+import { effectiveSection, groupBySection, loadCollapsedSections, loadListColumns, loadViewMode, moveTaskToSection, nextViewMode, saveListColumns, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
+import { liveFields } from '../lib/fields'
+import { useFieldDefs } from './useFields'
+import { FieldColumnsRow, FieldColumnsTable } from './FieldColumns'
 import { TimelineView } from './TimelineView'
 import { BoardView, sectionTarget, type BoardColumn } from './BoardView'
 import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
@@ -47,7 +50,7 @@ import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog, useFinePointer } from './overlay'
 import { FirstRunCard, useFirstRun } from './FirstRun'
 import { Menu } from './overlay/Menu'
-import { ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
+import { DESKTOP_HEADER_QUERY, ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip, useMediaQuery } from '../ui'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
 
 /** The guide section of each list page (user-documentation "Contextual help"); projects use their header's. */
@@ -222,6 +225,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   )
   const board = !!projectId && viewMode === 'board'
   const timeline = !!projectId && viewMode === 'timeline'
+  // Custom fields (custom-fields): the list's columns layout, offered on wide
+  // screens when the project defines fields; below 768 px rows show badges.
+  const fieldDefs = useFieldDefs()
+  const projectFieldDefs = useMemo(() => liveFields(projectId, fieldDefs), [projectId, fieldDefs])
+  const wideScreen = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const columnsPref = useLiveQuery(() => (projectId ? loadListColumns(projectId) : Promise.resolve(false)), [projectId], false)
+  const offerColumns = !!projectId && viewMode === 'list' && wideScreen && projectFieldDefs.length > 0
+  const fieldColumns = offerColumns && columnsPref
   const projectEditable = !!projectId && canEditTasks(roleOf(projectId, memberMap))
   const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
   /** Top-level tasks of the project bucketed by section: list headings and board columns. */
@@ -758,10 +769,20 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
+  /** The list's groups, inside the columns table when that layout is on (custom-fields). */
+  const wrapColumns = (nodes: React.ReactNode) => (fieldColumns ? <FieldColumnsTable defs={projectFieldDefs}>{nodes}</FieldColumnsTable> : nodes)
+  /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
+  const rowList = (children: React.ReactNode, extra?: Record<string, string>) => (fieldColumns
+    ? <div role="rowgroup" {...extra}>{children}</div>
+    : <ul {...extra}>{children}</ul>)
   /** One task line (or a board card); in manually ordered views rows drag and accept drops. */
-  const renderRow = (r: Row) => (
+  const renderRow = (r: Row) => (fieldColumns
+    ? <FieldColumnsRow key={r.task.id} task={r.task} defs={projectFieldDefs} row={renderLine(r)} />
+    : renderLine(r))
+  const renderLine = (r: Row) => (
     <Fragment key={r.task.id}>
       <TaskRow
+        hideFieldBadges={fieldColumns}
         task={r.task}
         project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
         labels={resolveLabels(r.task.labels, labelMap)}
@@ -845,7 +866,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div className="min-w-0 px-4 py-5 md:px-8">
-        <div className={board || timeline ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
+        <div className={board || timeline ? 'mx-auto' : fieldColumns ? 'mx-auto max-w-6xl' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={(
@@ -858,6 +879,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
                       </button>
                     </Tooltip>
                   ))}
+                  {offerColumns && (
+                    // The list's columns layout (custom-fields): per project, on this device only.
+                    <Tooltip label="Show fields as columns">
+                      <button type="button" aria-pressed={!!columnsPref} onClick={() => projectId && void saveListColumns(projectId, !columnsPref)} data-columns-toggle
+                        className={`ml-1 border-l border-default px-2 py-1 ${columnsPref ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+                        Columns
+                      </button>
+                    </Tooltip>
+                  )}
                 </span>
               )} />
           ) : (
@@ -913,9 +943,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           ) : timeline && currentProject ? (
             <TimelineView groups={groups} today={today} zone={zone} editable={projectEditable} selectedId={selectedId}
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} />
-          ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
+          ) : wrapColumns(groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
-            <section key={g.key} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
+            <section key={g.key} role={fieldColumns ? 'rowgroup' : undefined} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
               <SectionHeader
                 section={g.section}
                 count={g.count ?? 0}
@@ -933,11 +963,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               {addingTo === (g.section?.id ?? '') && projectEditable && (
                 <SectionQuickAdd project={currentProject} sectionId={g.section?.id ?? null} sectionName={g.heading ?? 'No section'} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
               )}
-              <ul>{g.rows.map((r) => renderRow(r))}</ul>
-              {g.count === 0 && revealed.has(g.key) && (
-                <ul data-revealed-completed>
-                  {(doneBySection.get(g.section?.id ?? '') ?? []).map((t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null }))}
-                </ul>
+              {rowList(g.rows.map((r) => renderRow(r)))}
+              {g.count === 0 && revealed.has(g.key) && rowList(
+                (doneBySection.get(g.section?.id ?? '') ?? []).map((t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
+                { 'data-revealed-completed': '' },
               )}
             </section>
           ) : g.rows.length === 0 && g.folded === undefined ? null : (
@@ -948,9 +977,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
                 <ListGroupHeader title={g.heading} count={g.note ? undefined : g.rows.length} note={g.note} tone={g.key === 'overdue' ? 'danger' : 'default'}
                   collapsed={collapsedGroups.has(groupKey(route.view, g.key))} onToggle={() => setGroupCollapsed(route.view, g.key, !collapsedGroups.has(groupKey(route.view, g.key)))} />
               )}
-              {!(g.heading && g.folded === undefined && collapsedGroups.has(groupKey(route.view, g.key))) && <ul>{g.rows.map((r) => renderRow(r))}</ul>}
+              {!(g.heading && g.folded === undefined && collapsedGroups.has(groupKey(route.view, g.key))) && rowList(g.rows.map((r) => renderRow(r)))}
             </section>
-          ))}
+          )))}
           {logbook && logbook.total > logbookLimit && (
             <div className="mb-4 flex justify-center">
               <Button variant="secondary" size="sm" onClick={() => setLogbookLimit((n) => n + LOGBOOK_PAGE)} data-logbook-more>

@@ -7,12 +7,13 @@ import { useDemo } from '../lib/demo'
 import { useOnline } from '../lib/online'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
-import { canDeleteProject, canEditProject, canManageMembers } from '../lib/sharing'
+import { canDeleteProject, canEditProject, canEditTasks, canManageMembers } from '../lib/sharing'
 import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
 import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
+import { FieldsDialog } from './FieldsDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
@@ -71,7 +72,7 @@ function ColourSwatches({ project }: { project: Project }) {
  * The project menu as data (labels-and-menus D1), shared by the project header and
  * the command palette (search-and-command-palette D5) so both run the same handlers.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   const tasksText = openTasks === 1 ? '1 open task' : `${openTasks} open tasks`
   const subsText = subCount ? ` Its ${subCount === 1 ? 'sub-project moves' : `${subCount} sub-projects move`} up one level.` : ''
@@ -80,9 +81,14 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
     ...(a.duplicate ? [{ kind: 'action' as const, id: 'duplicate', label: 'Duplicate…', icon: 'copy' as const, onSelect: a.duplicate }] : []),
     ...(a.saveTemplate ? [{ kind: 'action' as const, id: 'save-template', label: 'Save as template…', icon: 'download' as const, onSelect: a.saveTemplate }] : []),
   ] }] : []
-  if (!canEditProject(role)) return copies
+  // Custom fields (custom-fields): whoever edits the project's tasks manages its fields; viewers do not.
+  const fields: ActionGroup[] = a.fields && canEditTasks(role) ? [{ items: [
+    { kind: 'action', id: 'fields', label: 'Fields…', icon: 'list', shortcut: keysOf('project.fields'), onSelect: a.fields },
+  ] }] : []
+  if (!canEditProject(role)) return [...copies, ...fields]
   return [
     ...copies,
+    ...fields,
     { items: [
       { kind: 'picker', id: 'move', label: 'Move to', icon: 'folder-input', shortcut: keysOf('project.move'), picker: {
         title: 'Move to', placeholder: 'Find a project…', emptyText: 'No other project can hold this one',
@@ -192,6 +198,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
     'project.activity': () => activityRef.current(),
     // `m` opens the menu straight into the "Move to" picker step.
     'project.move': () => { if (!editable) return false; setStartPicker('move'); setMenuOpen(true) },
+    // Shift+F opens the Fields dialog for editors and above (custom-fields).
+    'project.fields': () => { if (!canEditTasks(role)) return false; setDialog('fields') },
   }, { view: 'project' })
 
   async function save() {
@@ -200,7 +208,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
     else setName(project.name)
   }
 
-  const [dialog, setDialog] = useState<'duplicate' | 'template' | null>(null)
+  const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const panels: ActionGroup = { items: [
     { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: 'History', icon: 'rotate-ccw', onSelect: showHistory },
@@ -208,7 +216,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks },
-      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template') }),
+      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields') }),
     panels,
   ]
 
@@ -261,6 +269,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
         onPublicLinks={setPublicLinks} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
       {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
+      {dialog === 'fields' && <FieldsDialog project={project} onClose={() => setDialog(null)} />}
     </>
   )
 }

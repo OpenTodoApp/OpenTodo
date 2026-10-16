@@ -24,6 +24,7 @@ import { ConfirmDialog } from '../../ui'
 import { EmptyState } from '../../ui'
 import type { HueName } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { useFieldDefs } from '../useFields'
 import { RelativeTime } from './RelativeTime'
 
 const PRIORITY_HUE: Record<number, HueName> = { 1: 'red', 2: 'orange', 3: 'blue', 4: 'slate' }
@@ -192,6 +193,8 @@ export interface HistoryTabProps {
 /** Container: pages the server history and restores fields or whole versions. */
 export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   const online = useOnline()
+  // Custom field names for "Cost" instead of fields.<id> (custom-fields).
+  useFieldDefs()
   const [sets, setSets] = useState<ChangeSet[]>([])
   const [before, setBefore] = useState<number | undefined>()
   const [state, setState] = useState<HistoryViewProps['state']>('idle')

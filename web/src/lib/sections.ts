@@ -174,5 +174,20 @@ export async function setSectionCollapsed(projectId: string, key: string, collap
   return list
 }
 
+const columnsKey = (projectId: string) => `list-columns:${projectId}`
+
+/**
+ * The list's columns layout (OpenSpec custom-fields, "Columns layout in the list
+ * view"): one column per field, remembered per project on this device, never
+ * synced. It is a layout of the list, so `v` still cycles list, board, timeline.
+ */
+export async function loadListColumns(projectId: string): Promise<boolean> {
+  return (await getMeta<unknown>(columnsKey(projectId), false)) === true
+}
+
+export async function saveListColumns(projectId: string, on: boolean): Promise<void> {
+  await setMeta(columnsKey(projectId), on)
+}
+
 /** Meta keys the UI subscribes to with useLiveQuery. */
-export const prefKeys = { mode: modeKey, collapsed: collapsedKey }
+export const prefKeys = { mode: modeKey, collapsed: collapsedKey, columns: columnsKey }
