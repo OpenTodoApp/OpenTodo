@@ -1,0 +1,26 @@
+Deine Woche in OpenTodo: {{.Completed}} erledigt
+
+Dies ist deine Wochenübersicht von OpenTodo unter {{.Origin}}.
+
+Letzte Woche ({{.Week}})
+  Erledigt: {{.Completed}}
+  Erstellt: {{.Created}}
+  Verspätet erledigt: {{.Late}}
+  Verschoben: {{.Slipped}}
+
+Überfällig
+{{.Overdue}}
+
+Fällig in den nächsten sieben Tagen
+{{.Ahead}}
+
+Projekte ohne nächsten Schritt
+{{.Idle}}
+
+Letzter Wochenrückblick: {{.LastReview}}
+
+Starte deinen Wochenrückblick:
+
+{{.Link}}
+
+Du erhältst diese Nachricht, weil du die Wochenübersicht für {{.Email}} unter Einstellungen, Benachrichtigungen eingeschaltet hast. Dort kannst du sie jederzeit ausschalten.

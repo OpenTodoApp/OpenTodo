@@ -1,0 +1,26 @@
+Tu semana en OpenTodo: {{.Completed}} completadas
+
+Este es tu resumen semanal de OpenTodo en {{.Origin}}.
+
+La semana pasada ({{.Week}})
+  Completadas: {{.Completed}}
+  Creadas: {{.Created}}
+  Completadas con retraso: {{.Late}}
+  Aplazadas: {{.Slipped}}
+
+Vencidas
+{{.Overdue}}
+
+Para los próximos siete días
+{{.Ahead}}
+
+Proyectos sin próxima acción
+{{.Idle}}
+
+Última revisión: {{.LastReview}}
+
+Empieza tu revisión semanal:
+
+{{.Link}}
+
+Recibes este mensaje porque activaste el resumen semanal para {{.Email}} en Ajustes, Notificaciones. Puedes desactivarlo allí en cualquier momento.

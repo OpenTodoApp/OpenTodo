@@ -34,7 +34,7 @@ An opt-in weekly email digest per user, sent on the user's review day: last week
 - **THEN** the response is 401 `unauthorized` or 403 `insufficient_scope`
 
 ### Requirement: Digest schedule
-The server SHALL send a user's digest once per chosen weekday, within 15 minutes after the chosen hour in the user's time zone, from the jobs leader only. A send that fails SHALL be retried at the next pass for up to six hours after the hour, then skipped and recorded as `email.failed`. A restart SHALL NOT send a second digest for the same day.
+The server SHALL send a user's digest once per chosen weekday, within 15 minutes after the chosen hour in the user's time zone, from the jobs leader only. A send that fails SHALL be retried at later passes, at most every 15 minutes, for up to six hours after the hour, then skipped and recorded as `email.failed`. A restart SHALL NOT send a second digest for the same day.
 
 #### Scenario: Sent once
 - **WHEN** Friday 07:00 Europe/Zurich passes with the digest enabled
@@ -42,7 +42,7 @@ The server SHALL send a user's digest once per chosen weekday, within 15 minutes
 
 #### Scenario: Relay down for an hour
 - **WHEN** the SMTP server is unreachable from 07:00 to 08:00
-- **THEN** the digest is sent at the first pass after 08:00 and one `email.failed` per failed pass is recorded
+- **THEN** the digest is sent by the first retry after 08:00 (no later than 08:15) and one `email.failed` per failed attempt is recorded
 
 ### Requirement: Digest content
 The digest SHALL contain: completed, created, completed late and slipped for the last full week by the user's week start; overdue tasks (up to 15, with due date and project); tasks due in the next seven days (up to 15); projects with no open task (up to 10); when the last review was; and a link to `/review`. It SHALL be plain text in the stored language, with no other person's data beyond names already visible to the user.

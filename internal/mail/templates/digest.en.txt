@@ -1,0 +1,26 @@
+Your week in OpenTodo: {{.Completed}} completed
+
+This is your weekly digest from OpenTodo at {{.Origin}}.
+
+Last week ({{.Week}})
+  Completed: {{.Completed}}
+  Created: {{.Created}}
+  Completed late: {{.Late}}
+  Slipped: {{.Slipped}}
+
+Overdue
+{{.Overdue}}
+
+Due in the next seven days
+{{.Ahead}}
+
+Projects without a next action
+{{.Idle}}
+
+Last review: {{.LastReview}}
+
+Start your weekly review:
+
+{{.Link}}
+
+You get this message because you turned on the weekly digest for {{.Email}} in Settings, Notifications. You can turn it off there at any time.
