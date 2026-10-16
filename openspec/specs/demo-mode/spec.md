@@ -55,7 +55,7 @@ Every day at 03:00 UTC, and at startup when the last reset predates the most rec
 - **THEN** it deletes all sandboxes before serving requests
 
 ### Requirement: Restricted features
-With demo mode on, requests to sign-up, invitations, user administration, password change or reset, API tokens, app passwords, CalDAV, passkeys, two-factor, server settings, backups, webhooks, email to task, import, end-to-end encryption, web push, sharing changes, MCP and the in-app assistant SHALL be refused with 403 `demo_restricted` before authentication. The server SHALL make no outbound request. Rate limits SHALL stay.
+With demo mode on, requests to sign-up, invitations, user administration, password change or reset including the self-service reset request and sign-up verification, API tokens, app passwords, CalDAV, passkeys, two-factor, server settings, backups, webhooks, email to task, import, end-to-end encryption, web push, sharing changes, MCP and the in-app assistant SHALL be refused with 403 `demo_restricted` before authentication. Rate limits SHALL stay.
 
 #### Scenario: Refused while signed in
 - **WHEN** the signed-in demo account POSTs to `/api/v1/tokens`
@@ -64,6 +64,10 @@ With demo mode on, requests to sign-up, invitations, user administration, passwo
 #### Scenario: Refused without authentication
 - **WHEN** an anonymous client POSTs to `/api/v1/auth/register`
 - **THEN** the response is 403 `demo_restricted` and no account is created
+
+#### Scenario: Self-service reset and verification refused
+- **WHEN** an anonymous client POSTs to `/api/v1/auth/password-reset` or `/api/v1/auth/verify/{token}`
+- **THEN** the response is 403 `demo_restricted`, no message is sent, and the authentication status reports `outgoingEmail.enabled: false`
 
 #### Scenario: Everyday use allowed
 - **WHEN** the demo account creates, edits, completes and deletes tasks, syncs or exports
@@ -76,6 +80,13 @@ With demo mode on, requests to sign-up, invitations, user administration, passwo
 #### Scenario: Demo mode off
 - **WHEN** demo mode is off
 - **THEN** no request is ever answered with `demo_restricted`
+
+### Requirement: No outbound requests or email on the demo
+The server SHALL make no outbound request and SHALL send no email even when `OPENTODO_SMTP_*` is set.
+
+#### Scenario: SMTP configured on the demo
+- **WHEN** demo mode is on and `OPENTODO_SMTP_HOST` and `OPENTODO_SMTP_FROM` are set
+- **THEN** no message is sent for any action and the authentication status reports `outgoingEmail.enabled: false`
 
 ### Requirement: Demo sign-in and banner
 With demo mode on, `GET /api/v1/auth/status` SHALL include a `demo` object with a short-lived creation token, the sandbox lifetimes and the next reset, and no credentials. "Try the demo" SHALL create a sandbox and sign the browser into it. The app SHALL show a banner that the sandbox is private and deleted after 2 hours of inactivity, and Settings SHALL hide or disable restricted controls with a short note.

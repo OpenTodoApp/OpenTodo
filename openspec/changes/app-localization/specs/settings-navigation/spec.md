@@ -13,6 +13,10 @@ Every Settings panel SHALL keep its Help link and screen id (`settings/...`) whe
 - **WHEN** a user opens Help on the Two-factor authentication panel in the Security section
 - **THEN** the guide section for screen `settings/two-factor` opens, as it did from Account
 
+#### Scenario: Outgoing email help
+- **WHEN** something opens contextual help for screen `settings/outgoing-email`
+- **THEN** the Server guide opens at its Server section, which describes the Outgoing email card
+
 #### Scenario: Section path in German
 - **WHEN** the language is German and a message points the user to the two-factor settings
 - **THEN** it reads `Einstellungen → Sicherheit → Zwei-Faktor-Authentifizierung`, and the Help link on that panel still opens the section for `settings/two-factor`
