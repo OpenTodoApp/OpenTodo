@@ -136,7 +136,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Every live task once; views, breadcrumbs and progress badges derive from this set,
   // so a remote op that lands in IndexedDB updates all of them without a reload.
   const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
-  const taskMap = useMemo(() => new Map(allTasks.map((tVar) => [tVar.id, tVar])), [allTasks])
+  const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
   // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
@@ -159,26 +159,26 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const all = withoutArchived(allTasks, projects, route.view === 'project' ? route.id : undefined)
     switch (route.view) {
       case 'inbox':
-        return all.filter((tVar) => !tVar.completed_at && tVar.project_id === null)
+        return all.filter((task) => !task.completed_at && task.project_id === null)
       case 'today':
         return todayList(all, today)
       case 'upcoming':
         return upcomingList(all, today)
       // Someday and Anytime (someday-and-evening D5), grouped by project below.
       case 'someday':
-        return all.filter((tVar) => !tVar.completed_at && isSomeday(tVar)).sort(byPosition)
+        return all.filter((task) => !task.completed_at && isSomeday(task)).sort(byPosition)
       case 'anytime':
-        return all.filter((tVar) => inAnytime(tVar, today)).sort(byPosition)
+        return all.filter((task) => inAnytime(task, today)).sort(byPosition)
       case 'completed':
         // The logbook pages through every completion (completed-date-filters D4);
         // a habit's skipped occurrence record is not a completion (habits D6).
-        return all.filter((tVar) => tVar.completed_at && !tVar.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
+        return all.filter((task) => task.completed_at && !task.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
       case 'project':
         return projectOpenList(all, route.id)
       case 'label':
-        return all.filter((tVar) => !tVar.completed_at && tVar.labels.includes(route.id)).sort(byPosition)
+        return all.filter((task) => !task.completed_at && task.labels.includes(route.id)).sort(byPosition)
       case 'assigned':
-        return all.filter((tVar) => !tVar.completed_at && !!userId && tVar.assignee_id === userId).sort(compareDueThenPriority)
+        return all.filter((task) => !task.completed_at && !!userId && task.assignee_id === userId).sort(compareDueThenPriority)
     }
   }, [allTasks, projects, route, today, zone, userId])
 
@@ -208,8 +208,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Project and Inbox lists keep deferred and parked tasks in a Later group at the
   // end (someday-and-evening D2); the board keeps every card in its column.
   const boardMode = useLiveQuery(() => (route.view === 'project' ? loadViewMode(route.id) : Promise.resolve('list' as const)), [route], 'list') === 'board'
-  const laterTasks = useMemo(() => (treeView && !boardMode ? tasks.filter((tVar) => inLater(tVar, today)) : []), [treeView, boardMode, tasks, today])
-  const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((tVar) => !inLater(tVar, today)) : tasks), [laterTasks, tasks, today])
+  const laterTasks = useMemo(() => (treeView && !boardMode ? tasks.filter((task) => inLater(task, today)) : []), [treeView, boardMode, tasks, today])
+  const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((task) => !inLater(task, today)) : tasks), [laterTasks, tasks, today])
   const tree = useMemo<Tree<Task> | null>(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
 
   // Sections and the board (OpenSpec `board-view`). View mode and collapsed sections
@@ -240,7 +240,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (!projectId || !tree) return null
     const byId = new Map(tree.roots.map((n) => [n.id, n]))
     return groupBySection(projectId, tree.roots.map((n) => n.item), sections).map((g) => ({
-      ...g, roots: g.tasks.map((tVar) => byId.get(tVar.id) as TreeNode<Task>),
+      ...g, roots: g.tasks.map((task) => byId.get(task.id) as TreeNode<Task>),
     }))
   }, [projectId, tree, sections])
   // "No section" is a column only while it has open tasks (sections-and-boards).
@@ -253,7 +253,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   const groups = useMemo<Group[]>(() => {
     const later: Group[] = laterTasks.length
-      ? [{ key: 'later', heading: t('Later'), rows: laterTasks.map((tVar) => ({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null })) }]
+      ? [{ key: 'later', heading: t('Later'), rows: laterTasks.map((task) => ({ task: task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: task.parent_id ? breadcrumbOf(task, taskMap) : null })) }]
       : []
     const toRow = (n: TreeNode<Task>): Row => ({
       task: n.item,
@@ -267,7 +267,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (board) {
       // Board: cards are top-level tasks, column by column (keyboard order).
       return columns.map((c) => ({
-        key: c.key, heading: null, rows: c.cards.map((tVar) => ({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
+        key: c.key, heading: null, rows: c.cards.map((task) => ({ task: task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
       }))
     }
     if (sectionGroups && liveSections.length > 0) {
@@ -288,8 +288,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       return [{ key: 'all', heading: null, rows: flattenTree(tree.roots, (id) => collapsed.has(id)).map(toRow) }, ...later]
     }
     // Cross-project and date views: flat, each matching task once, with its parent named.
-    const flatRow = (tVar: Task): Row => ({
-      task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null,
+    const flatRow = (task: Task): Row => ({
+      task: task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: task.parent_id ? breadcrumbOf(task, taskMap) : null,
     })
     if (route.view === 'today') {
       // Blocked tasks wait in their own group at the end (task-dependencies D7);
@@ -317,7 +317,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (route.view === 'label' || route.view === 'assigned' || route.view === 'someday' || route.view === 'anytime') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
       const byProject = new Map<string, Task[]>()
-      for (const tVar of tasks) byProject.set(tVar.project_id ?? '', [...(byProject.get(tVar.project_id ?? '') ?? []), tVar])
+      for (const tk of tasks) byProject.set(tk.project_id ?? '', [...(byProject.get(tk.project_id ?? '') ?? []), tk])
       const order = ['', ...projects.slice().sort(compareByPosition).map((p) => p.id)]
       return order.filter((id) => byProject.has(id)).map((id) => ({
         key: id || 'inbox', heading: id ? projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: byProject.get(id)!.map(flatRow),
@@ -332,14 +332,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups"); date, project and Later groups collapse per device.
   const doneInProject = useLiveQuery(
-    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((tVar) => !!tVar.completed_at && !tVar.deleted_at && !tVar.skipped).toArray() : Promise.resolve([] as Task[])),
+    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((task) => !!task.completed_at && !task.deleted_at && !task.skipped).toArray() : Promise.resolve([] as Task[])),
     [projectId], [] as Task[],
   )
   const doneBySection = useMemo(() => {
     const m = new Map<string, Task[]>()
-    for (const tVar of doneInProject) {
-      const key = effectiveSection(tVar, sectionMap) ?? ''
-      m.set(key, [...(m.get(key) ?? []), tVar])
+    for (const task of doneInProject) {
+      const key = effectiveSection(task, sectionMap) ?? ''
+      m.set(key, [...(m.get(key) ?? []), task])
     }
     return m
   }, [doneInProject, sectionMap])
@@ -393,7 +393,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   /** Section key ('' = "No section") of each top-level row or card in a sectioned project. */
   const sectionOfRow = useMemo(() => {
     const m = new Map<string, string>()
-    if (board) for (const c of columns) for (const tVar of c.cards) m.set(tVar.id, c.key)
+    if (board) for (const c of columns) for (const task of c.cards) m.set(task.id, c.key)
     else for (const g of groups) if (g.section !== undefined) for (const r of g.rows) if (r.parent === null) m.set(r.task.id, g.section?.id ?? '')
     return m
   }, [board, columns, groups])
@@ -565,7 +565,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     setOpenId(row.task.id)
   }
   const extend = (dir: 1 | -1) => () => {
-    const order = board ? (columns.find((c) => c.cards.some((tVar) => tVar.id === selectedId))?.cards.map((tVar) => tVar.id) ?? tickRows) : tickRows
+    const order = board ? (columns.find((c) => c.cards.some((task) => task.id === selectedId))?.cards.map((task) => task.id) ?? tickRows) : tickRows
     const at = selectedId ? order.indexOf(selectedId) : -1
     const next = order[Math.max(0, Math.min(order.length - 1, at + dir))]
     if (!next) return false
@@ -678,8 +678,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     // Duplicate the task and its open subtasks right below it (project-templates D6).
     'list.duplicate': () => { if (!row || !writable) return false; void duplicateTask(row.task.id).then((id) => setSelectedId(id)) },
   })
-  const col = board ? columns.findIndex((c) => c.cards.some((tVar) => tVar.id === selectedId)) : -1
-  const pos = col >= 0 ? columns[col].cards.findIndex((tVar) => tVar.id === selectedId) : -1
+  const col = board ? columns.findIndex((c) => c.cards.some((task) => task.id === selectedId)) : -1
+  const pos = col >= 0 ? columns[col].cards.findIndex((task) => task.id === selectedId) : -1
   const firstCard = (from: number, dir: 1 | -1) => {
     for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
     return null
@@ -713,7 +713,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions })
   live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions }
   // Complete / reopen from the panel goes through this list, so the "complete parent too?" prompt and the archive offer follow.
-  useEffect(() => registerPanelHandlers({ toggleComplete: (tVar) => void live.current.toggleComplete(tVar.id, !tVar.completed_at) }), [])
+  useEffect(() => registerPanelHandlers({ toggleComplete: (task) => void live.current.toggleComplete(task.id, !task.completed_at) }), [])
   // Opening another task from the panel (a subtask, the parent) selects it here when it is listed.
   useEffect(() => {
     if (openId && live.current.rows.some((r) => r.task.id === openId)) setSelectedId(openId)
@@ -725,7 +725,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     select: setSelectedId,
     openId: () => live.current.openId,
     open: setOpenId,
-    readOnly: (tVar) => live.current.isReadOnly(tVar),
+    readOnly: (task) => live.current.isReadOnly(task),
     manual: () => live.current.manual,
     focusQuickAdd: (after) => {
       const input = quickAddRef.current
@@ -930,7 +930,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               setAddingTo={setAddingTo}
               projects={projects}
               labels={labels}
-              renderCard={(tVar) => renderRow({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
+              renderCard={(task) => renderRow({ task: task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
               onCurrentColumn={setCurrentColumn}
             />
           ) : timeline && currentProject ? (
@@ -958,7 +958,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               )}
               {rowList(g.rows.map((r) => renderRow(r)))}
               {g.count === 0 && revealed.has(g.key) && rowList(
-                (doneBySection.get(g.section?.id ?? '') ?? []).map((tVar) => renderRow({ task: tVar, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
+                (doneBySection.get(g.section?.id ?? '') ?? []).map((task) => renderRow({ task: task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
                 { 'data-revealed-completed': '' },
               )}
             </section>

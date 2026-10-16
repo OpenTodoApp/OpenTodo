@@ -13,11 +13,12 @@ import { decryptActivityPage } from './e2ee'
 import { db } from './db'
 import { fieldValueLabel } from './fieldNames'
 import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, ActivityPage, Op } from './types'
+import { t, msg, translatedMap, translatedList } from './i18n'
 
 /** Device prefix of a public link's ops (OpenSpec `public-links`). */
 export const PUBLIC_DEVICE_PREFIX = 'public:'
 /** The actor shown for a public link's ticks: the link, never the member who created it. */
-export const PUBLIC_ACTOR_LABEL = 'Public link'
+export const PUBLIC_ACTOR_LABEL = msg('Public link')
 
 /** True for an event made through a public link (public-links D6). */
 export function isPublicEvent(ev: Pick<ActivityEvent, 'device'> | undefined): boolean {
@@ -123,8 +124,8 @@ function finish(g: Group, commentTask: Map<string, string>): ActivityEvent | nul
   const isNull = (f: string) => g.changes.get(f)?.to === null
   let kind: ActivityKind
   if (ev.entity === 'comment') {
-    const t = commentTask.get(ev.entityId)
-    if (t !== undefined) ev.taskId = t
+    const item = commentTask.get(ev.entityId)
+    if (item !== undefined) ev.taskId = item
     if (has('created_at') || has('author_id') || has('task_id')) kind = 'commented'
     else if (has('deleted_at') && !isNull('deleted_at')) kind = 'comment_deleted'
     else kind = 'comment_edited'
@@ -266,9 +267,9 @@ export async function fetchActivity(entity: 'task' | 'project', id: string, befo
 // ---- wording ----
 
 function dueText(v: unknown): string {
-  if (!v || typeof v !== 'object') return 'no date'
+  if (!v || typeof v !== 'object') return t('no date')
   const d = v as { date?: string; time?: string }
-  return d.time ? `${d.date} ${d.time}` : d.date ?? 'no date'
+  return d.time ? `${d.date} ${d.time}` : d.date ?? t('no date')
 }
 
 /**
@@ -278,51 +279,52 @@ function dueText(v: unknown): string {
  */
 export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string, task?: (id: string) => string | undefined): string {
   const to = (f: string) => ev.changes.find((c) => c.field === f)?.to
-  const noun = ev.entity === 'project' ? 'the project' : 'the task'
+  const isProject = ev.entity === 'project'
   switch (ev.kind) {
-    case 'created': return `created ${noun}`
-    case 'completed': return 'completed'
-    case 'reopened': return 'reopened'
-    case 'deleted': return `deleted ${noun}`
-    case 'restored': return `restored ${noun}`
-    case 'rescheduled': return to('due') ? `moved the due date to ${dueText(to('due'))}` : 'removed the due date'
-    case 'assigned': return `assigned to ${name(String(to('assignee_id')))}`
-    case 'unassigned': return 'removed the assignee'
-    case 'moved': return `moved to ${project((to('project_id') as string | null) ?? null)}`
+    case 'created': return isProject ? t('created the project') : t('created the task')
+    case 'completed': return t('completed')
+    case 'reopened': return t('reopened')
+    case 'deleted': return isProject ? t('deleted the project') : t('deleted the task')
+    case 'restored': return isProject ? t('restored the project') : t('restored the task')
+    case 'rescheduled': return to('due') ? t('moved the due date to {date}', { date: dueText(to('due')) }) : t('removed the due date')
+    case 'assigned': return t('assigned to {name}', { name: name(String(to('assignee_id'))) })
+    case 'unassigned': return t('removed the assignee')
+    case 'moved': return t('moved to {project}', { project: project((to('project_id') as string | null) ?? null) })
     case 'dependencies': {
       const ids = (to('blocked_by') as string[] | null) ?? []
-      if (!ids.length) return 'stopped waiting for other tasks'
-      const titles = task ? ids.map((id) => task(id)).filter((t): t is string => !!t) : []
-      return titles.length === ids.length ? `now waits for ${titles.map((t) => `“${t}”`).join(', ')}` : 'changed what this task waits for'
+      if (!ids.length) return t('stopped waiting for other tasks')
+      const titles = task ? ids.map((id) => task(id)).filter((x): x is string => !!x) : []
+      return titles.length === ids.length ? t('now waits for {tasks}', { tasks: titles.map((x) => `“${x}”`).join(', ') }) : t('changed what this task waits for')
     }
-    case 'archived': return 'archived the project'
-    case 'unarchived': return 'unarchived the project'
-    case 'commented': return 'commented'
-    case 'comment_edited': return 'edited a comment'
-    case 'comment_deleted': return 'deleted a comment'
+    case 'archived': return t('archived the project')
+    case 'unarchived': return t('unarchived the project')
+    case 'commented': return t('commented')
+    case 'comment_edited': return t('edited a comment')
+    case 'comment_deleted': return t('deleted a comment')
     default: {
       const fields = ev.changes.filter((c) => canon(c.from) !== canon(c.to)).map((c) => FIELD_LABELS[c.field] ?? fieldValueLabel(c.field) ?? c.field)
-      return fields.length ? `changed ${fields.join(', ')}` : 'edited'
+      return fields.length ? t('changed {fields}', { fields: fields.join(', ') }) : t('edited')
     }
   }
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  title: 'the title', description: 'the notes', priority: 'the priority', labels: 'the labels', parent_id: 'the parent task',
-  position: 'the order', estimate_minutes: 'the estimate', recurrence: 'the repeat rule', name: 'the name', color: 'the colour',
-  series_id: 'the series', deadline: 'the deadline',
-  start: 'when it starts', evening: 'This Evening',
-}
+const FIELD_LABELS = translatedMap<string>({
+  title: msg('the title'), description: msg('the notes'), priority: msg('the priority'), labels: msg('the labels'), parent_id: msg('the parent task'),
+  position: msg('the order'), estimate_minutes: msg('the estimate'), recurrence: msg('the repeat rule'), name: msg('the name'), color: msg('the colour'),
+  series_id: msg('the series'), deadline: msg('the deadline'),
+  start: msg('when it starts'), evening: msg('This Evening'),
+})
 
 /** The event kinds a project activity view can filter by, with labels. */
-export const KIND_FILTERS: { value: string; label: string; kinds: ActivityKind[] }[] = [
-  { value: 'created', label: 'Created', kinds: ['created'] },
-  { value: 'completed', label: 'Completed / reopened', kinds: ['completed', 'reopened'] },
-  { value: 'rescheduled', label: 'Rescheduled', kinds: ['rescheduled'] },
-  { value: 'assigned', label: 'Assigned', kinds: ['assigned', 'unassigned'] },
-  { value: 'moved', label: 'Moved', kinds: ['moved'] },
-  { value: 'dependencies', label: 'Waiting for', kinds: ['dependencies'] },
-  { value: 'comments', label: 'Comments', kinds: ['commented', 'comment_edited', 'comment_deleted'] },
-  { value: 'deleted', label: 'Deleted / restored', kinds: ['deleted', 'restored'] },
-  { value: 'edited', label: 'Other edits', kinds: ['edited', 'archived', 'unarchived'] },
-]
+type KindFilter = { value: string; label: string; kinds: ActivityKind[] }
+export const KIND_FILTERS: KindFilter[] = translatedList<KindFilter, 'label'>([
+  { value: 'created', label: msg('Created'), kinds: ['created'] },
+  { value: 'completed', label: msg('Completed / reopened'), kinds: ['completed', 'reopened'] },
+  { value: 'rescheduled', label: msg('Rescheduled'), kinds: ['rescheduled'] },
+  { value: 'assigned', label: msg('Assigned'), kinds: ['assigned', 'unassigned'] },
+  { value: 'moved', label: msg('Moved'), kinds: ['moved'] },
+  { value: 'dependencies', label: msg('Waiting for'), kinds: ['dependencies'] },
+  { value: 'comments', label: msg('Comments'), kinds: ['commented', 'comment_edited', 'comment_deleted'] },
+  { value: 'deleted', label: msg('Deleted / restored'), kinds: ['deleted', 'restored'] },
+  { value: 'edited', label: msg('Other edits'), kinds: ['edited', 'archived', 'unarchived'] },
+], 'label')

@@ -47,16 +47,16 @@ const langCache = new Map<string, Lang>()
 function lang(code: string): Lang {
   let l = langCache.get(code)
   if (!l) {
-    const t = SPOKEN_TABLES[code]
+    const item = SPOKEN_TABLES[code]
     const v = VOCABULARIES[code]
     const lists: Record<string, string[]> = {
-      hashtag: t.hashtag, project: t.project, label: t.label, labelAt: t.labelAt, priority: t.priority, minuteZero: t.minuteZero,
-      minutes: t.minutes, and: t.and, durationBefore: t.durationBefore, at: v.atWords, hourWord: v.hourWords, am: v.am, pm: v.pm,
+      hashtag: item.hashtag, project: item.project, label: item.label, labelAt: item.labelAt, priority: item.priority, minuteZero: item.minuteZero,
+      minutes: item.minutes, and: item.and, durationBefore: item.durationBefore, at: v.atWords, hourWord: v.hourWords, am: v.am, pm: v.pm,
       in: v.inWords, one: v.oneWords, hour: v.units.hour, unit: [...v.units.hour, ...v.units.day, ...v.units.week, ...v.units.month],
     }
     const sets = new Map(Object.entries(lists).map(([k, words]) => [k, new Set(words.map((w) => w.split(' ').map(bare).join(' ')))]))
-    const numbers = new Map(Object.entries(t.numbers).map(([w, n]) => [w.split(' ').map(bare).join(' '), n]))
-    l = { t, v, sets, numbers }
+    const numbers = new Map(Object.entries(item.numbers).map(([w, n]) => [w.split(' ').map(bare).join(' '), n]))
+    l = { t: item, v, sets, numbers }
     langCache.set(code, l)
   }
   return l

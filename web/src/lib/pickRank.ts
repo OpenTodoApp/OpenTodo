@@ -34,7 +34,7 @@ export async function pickScores(context: string, now = Date.now()): Promise<Map
 }
 
 /** Orders items: picked ones by score, then the rest in their natural order. */
-export function rankBy<T>(items: readonly T[], key: (t: T) => string, scores: Map<string, number>): T[] {
+export function rankBy<T>(items: readonly T[], key: (entry: T) => string, scores: Map<string, number>): T[] {
   return items
     .map((item, i) => ({ item, i, s: scores.get(key(item)) ?? 0 }))
     .sort((a, b) => b.s - a.s || a.i - b.i)

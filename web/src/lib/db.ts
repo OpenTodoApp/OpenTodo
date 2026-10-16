@@ -432,7 +432,7 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 export async function clearLocalData(): Promise<void> {
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions], async () => {
     await Promise.all([
-      ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),
+      ...entityTables().map((task) => task.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),
       db.calendarEvents.clear(), db.calendarSubscriptions.clear(),
       db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(),
     ])

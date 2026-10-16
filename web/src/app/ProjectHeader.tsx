@@ -97,7 +97,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         title: t('Move to'), placeholder: t('Find a project…'), emptyText: t('No other project can hold this one'),
         source: targets, getKey: (item: MoveTarget) => item.id || '__top__', getLabel: (entry: MoveTarget) => entry.name, getPath: (x1: MoveTarget) => x1.path,
         selected: [project.parent_id ?? '__top__'], rankContext: 'project-move',
-        onPick: (tVar: MoveTarget) => { void moveProject(project.id, tVar.id || null) },
+        onPick: (item: MoveTarget) => { void moveProject(project.id, item.id || null) },
       } },
       { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename },
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {

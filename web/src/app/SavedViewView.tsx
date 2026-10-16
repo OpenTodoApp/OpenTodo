@@ -175,23 +175,23 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
               <section key={g.key} data-group={g.key} className="mb-4">
                 {g.heading && <h2 className="mb-1 px-2 text-meta font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>}
                 <ul>
-                  {g.tasks.map((tVar) => {
-                    const key = `${g.key}:${tVar.id}`
+                  {g.tasks.map((tk) => {
+                    const key = `${g.key}:${tk.id}`
                     return (
                         <TaskRow
                           key={key}
-                          task={tVar}
-                          project={tVar.project_id ? projectMap.get(tVar.project_id) : undefined}
-                          labels={resolveLabels(tVar.labels, labelMap)}
+                          task={tk}
+                          project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
+                          labels={resolveLabels(tk.labels, labelMap)}
                           showProject={opts.groupBy !== 'project'}
                           selected={key === selected}
-                          progress={progress.get(tVar.id)}
-                          blockedBy={blocked.get(tVar.id)}
-                          habit={habits.get(tVar.id)}
-                          breadcrumb={tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null}
-                          onToggle={() => void setTaskCompleted(tVar.id, !tVar.completed_at)}
-                          onOpen={() => { setSelected(key); setOpenId(tVar.id) }}
-                          {...bulk.rowProps(tVar.id)}
+                          progress={progress.get(tk.id)}
+                          blockedBy={blocked.get(tk.id)}
+                          habit={habits.get(tk.id)}
+                          breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
+                          onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)}
+                          onOpen={() => { setSelected(key); setOpenId(tk.id) }}
+                          {...bulk.rowProps(tk.id)}
                         />
                     )
                   })}

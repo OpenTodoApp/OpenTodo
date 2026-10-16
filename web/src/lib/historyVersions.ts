@@ -4,6 +4,7 @@
 // version; a field changed twice collapses to its first `from` and last `to`.
 import { fieldLabel } from './history'
 import type { ChangeSet } from './types'
+import { t, formatList } from './i18n'
 
 export const VERSION_WINDOW_MS = 5 * 60_000
 
@@ -66,29 +67,29 @@ const VERB_ORDER = ['title', 'due', 'project_id', 'priority', 'assignee_id', 'co
 
 function verbOf(c: VersionChange): string {
   switch (c.field) {
-    case 'title': return 'renamed'
-    case 'due': return 'rescheduled'
-    case 'project_id': return 'moved'
-    case 'priority': return 'reprioritised'
-    case 'assignee_id': return c.to == null ? 'unassigned' : 'reassigned'
-    case 'completed_at': return c.to == null ? 'reopened' : 'completed'
-    case 'deleted_at': return c.to == null ? 'restored' : 'deleted'
-    case 'description': case 'notes_doc': return 'edited the notes'
-    default: return `edited the ${fieldLabel(c.field)}`
+    case 'title': return t('renamed', { context: 'version' })
+    case 'due': return t('rescheduled', { context: 'version' })
+    case 'project_id': return t('moved', { context: 'version' })
+    case 'priority': return t('reprioritised', { context: 'version' })
+    case 'assignee_id': return c.to == null ? t('unassigned', { context: 'version' }) : t('reassigned', { context: 'version' })
+    case 'completed_at': return c.to == null ? t('reopened', { context: 'version' }) : t('completed', { context: 'version' })
+    case 'deleted_at': return c.to == null ? t('restored', { context: 'version' }) : t('deleted', { context: 'version' })
+    case 'description': case 'notes_doc': return t('edited the notes')
+    default: return t('edited the {field}', { field: fieldLabel(c.field) })
   }
 }
 
 /** "Renamed and rescheduled", "Renamed, rescheduled, and moved", "Completed"; the creating version reads "Created". */
 export function summarizeVersion(v: Pick<Version, 'changes'>): string {
   // The version that created the entity sets every field at once; it reads "Created".
-  if (v.changes.some((c) => c.field === 'created_at')) return 'Created'
+  if (v.changes.some((c) => c.field === 'created_at')) return t('Created')
   const rank = (f: string) => { const i = VERB_ORDER.indexOf(f); return i < 0 ? VERB_ORDER.length : i }
   const verbs: string[] = []
   for (const c of [...v.changes].sort((a, b) => rank(a.field) - rank(b.field))) {
     const verb = verbOf(c)
     if (!verbs.includes(verb)) verbs.push(verb)
   }
-  if (!verbs.length) return 'No changes'
-  const text = verbs.length === 1 ? verbs[0] : verbs.length === 2 ? `${verbs[0]} and ${verbs[1]}` : `${verbs.slice(0, -1).join(', ')}, and ${verbs[verbs.length - 1]}`
+  if (!verbs.length) return t('No changes')
+  const text = formatList(verbs, true)
   return text[0].toUpperCase() + text.slice(1)
 }

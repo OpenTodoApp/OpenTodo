@@ -584,7 +584,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
         onToggle={(i, c) => setReview((r) => r && { ...r, items: r.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) })}
         onApply={() => void apply()} onDiscard={() => void discard()} onUndo={() => void undo()} onDraft={setDraft} onSend={() => void send()}
         onStop={() => abort.current?.abort()} onAccept={(k) => void accept(k)}
-        onPickThread={(id) => { void listThreads().then((all) => { const tVar = all.find((x) => x.id === id); if (tVar) { setThread(tVar); setThreads(null); setReview(null); setResult(null) } }) }} />
+        onPickThread={(id) => { void listThreads().then((all) => { const item = all.find((x) => x.id === id); if (item) { setThread(item); setThreads(null); setReview(null); setResult(null) } }) }} />
     </AssistantSheet>
   )
 }

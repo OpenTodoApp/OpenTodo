@@ -164,7 +164,7 @@ export function FeedView() {
                     className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-accent-soft' : ''}`}>
                     <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`} aria-label={fresh ? t('New') : undefined} />
                     <span className="min-w-0 flex-1">
-                      <strong className="font-medium text-default">{isPublicEvent(e) ? PUBLIC_ACTOR_LABEL : name(e.actor)}</strong>{' '}
+                      <strong className="font-medium text-default">{isPublicEvent(e) ? t(PUBLIC_ACTOR_LABEL) : name(e.actor)}</strong>{' '}
                       <span className="text-muted">{describeEvent(e, name, (id) => projectName(id))}</span>
                       {title && e.entity !== 'project' && (
                         <> {e.entity === 'comment' ? t('on') : '·'}{' '}

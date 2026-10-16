@@ -14,11 +14,11 @@ export const MAX_BLOCKED_BY = 50
 
 type Clocked = Pick<Task, 'id' | 'blocked_by' | '_clock'>
 
-export function blockersOf(t: Pick<Task, 'blocked_by'>): string[] {
-  return t.blocked_by ?? []
+export function blockersOf(task: Pick<Task, 'blocked_by'>): string[] {
+  return task.blocked_by ?? []
 }
 
-const isOpen = (t: Task | undefined): t is Task => !!t && !t.deleted_at && !t.completed_at
+const isOpen = (task: Task | undefined): task is Task => !!task && !task.deleted_at && !task.completed_at
 const edgeKey = (from: string, to: string) => `${from}\u0000${to}`
 
 function newer(a: Clocked, b: Clocked): boolean {
@@ -39,7 +39,7 @@ function newer(a: Clocked, b: Clocked): boolean {
  * result does not depend on the order of `tasks`.
  */
 export function brokenEdges(tasks: readonly Clocked[]): Set<string> {
-  const byId = new Map(tasks.map((t) => [t.id, t]))
+  const byId = new Map(tasks.map((item) => [item.id, item]))
   const broken = new Set<string>()
   const out = (id: string) => blockersOf(byId.get(id) ?? {}).filter((b) => byId.has(b) && !broken.has(edgeKey(id, b)))
   for (;;) {
@@ -107,20 +107,20 @@ export function isBlocked(task: Pick<Task, 'id' | 'blocked_by'>, byId: ReadonlyM
 /** Open blockers per task, for the rows of a view (tasks without any are left out). */
 export function blockedMap(tasks: readonly Task[]): Map<string, number> {
   const out = new Map<string, number>()
-  if (!tasks.some((t) => blockersOf(t).length)) return out
-  const byId = new Map(tasks.map((t) => [t.id, t]))
+  if (!tasks.some((task) => blockersOf(task).length)) return out
+  const byId = new Map(tasks.map((tk) => [tk.id, tk]))
   const broken = brokenEdges(tasks)
-  for (const t of tasks) {
-    if (!blockersOf(t).length || t.completed_at || t.deleted_at) continue
-    const n = openBlockers(t, byId, broken).length
-    if (n) out.set(t.id, n)
+  for (const item of tasks) {
+    if (!blockersOf(item).length || item.completed_at || item.deleted_at) continue
+    const n = openBlockers(item, byId, broken).length
+    if (n) out.set(item.id, n)
   }
   return out
 }
 
 /** Live tasks that wait for `taskId` (the "Blocks" list). */
 export function dependents(taskId: string, tasks: readonly Task[]): Task[] {
-  return tasks.filter((t) => !t.deleted_at && blockersOf(t).includes(taskId))
+  return tasks.filter((task) => !task.deleted_at && blockersOf(task).includes(taskId))
 }
 
 /** True when `to` is reachable from `from` along blocked_by edges (structural: completed and deleted tasks count). */
@@ -144,7 +144,7 @@ export function reaches(from: string, to: string, byId: ReadonlyMap<string, Pick
  */
 export function blockerCandidates(task: Task, tasks: readonly Task[], memberships: Map<string, Membership>): Task[] {
   const scope = scopeOf(task.project_id, memberships)
-  const byId = new Map(tasks.map((t) => [t.id, t]))
+  const byId = new Map(tasks.map((tk) => [tk.id, tk]))
   const current = new Set(blockersOf(task))
   return tasks.filter((c) => isOpen(c) && c.id !== task.id && !current.has(c.id)
     && scopeOf(c.project_id, memberships) === scope && !reaches(c.id, task.id, byId))
@@ -168,7 +168,7 @@ export async function setBlockedBy(taskId: string, ids: string[]): Promise<void>
     const added = list.filter((id) => !current.includes(id))
     if (added.length) {
       const all = await db.tasks.toArray()
-      const byId = new Map(all.map((t) => [t.id, t]))
+      const byId = new Map(all.map((tk) => [tk.id, tk]))
       const scope = scopeOf(task.project_id, memberships)
       byId.set(taskId, { ...task, blocked_by: list })
       for (const id of added) {

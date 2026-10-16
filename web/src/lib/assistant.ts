@@ -286,12 +286,12 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
   const names = await loadNames(changes)
   for (const c of changes) {
     if (c.entity === 'task' && !names.tasks.has(c.entityId)) {
-      const t = await db.tasks.get(c.entityId)
-      if (t) names.tasks.set(t.id, t.title)
+      const task = await db.tasks.get(c.entityId)
+      if (task) names.tasks.set(task.id, task.title)
     }
     if (c.entity === 'comment' && c.patch.task_id && !names.tasks.has(String(c.patch.task_id))) {
-      const t = await db.tasks.get(String(c.patch.task_id))
-      if (t) names.tasks.set(t.id, t.title)
+      const tk = await db.tasks.get(String(c.patch.task_id))
+      if (tk) names.tasks.set(tk.id, tk.title)
     }
   }
   const review: Review = { items: [], dropped: [] }
@@ -376,8 +376,8 @@ export const THREAD_KEEP = 50
 export const THREAD_DAYS = 30
 
 /** Saves a conversation on this device and applies retention (50 threads, 30 days). */
-export async function saveThread(t: AssistantThread): Promise<void> {
-  await db.assistantThreads.put(t)
+export async function saveThread(item: AssistantThread): Promise<void> {
+  await db.assistantThreads.put(item)
   await pruneThreads()
 }
 

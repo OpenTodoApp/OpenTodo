@@ -24,60 +24,60 @@ type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'>
 type StartTask = Pick<Task, 'start'>
 
 /** Parked in Someday. */
-export const isSomeday = (t: StartTask): boolean => t.start === 'someday'
+export const isSomeday = (item: StartTask): boolean => item.start === 'someday'
 /** Deferred: a start date still in the future. */
-export const isDeferred = (t: StartTask, today: string): boolean => !!t.start && t.start !== 'someday' && t.start > today
+export const isDeferred = (item: StartTask, today: string): boolean => !!item.start && item.start !== 'someday' && item.start > today
 /** Started: a start date that has come (the task stays in Today until handled). */
-export const isStarted = (t: StartTask, today: string): boolean => !!t.start && t.start !== 'someday' && t.start <= today
+export const isStarted = (item: StartTask, today: string): boolean => !!item.start && item.start !== 'someday' && item.start <= today
 /** Neither parked nor deferred: what the planning views and counts consider. */
-export const isActive = (t: StartTask, today: string): boolean => !isSomeday(t) && !isDeferred(t, today)
+export const isActive = (item: StartTask, today: string): boolean => !isSomeday(item) && !isDeferred(item, today)
 
 /** A due date or deadline today or earlier: wins over deferral and parking. */
-function hardDate(t: Pick<Task, 'due' | 'deadline'>, today: string): boolean {
-  const deadline = t.deadline ?? null
-  return (!!t.due && localDueOf(t.due).date <= today) || (deadline !== null && deadline <= today)
+function hardDate(task: Pick<Task, 'due' | 'deadline'>, today: string): boolean {
+  const deadline = task.deadline ?? null
+  return (!!task.due && localDueOf(task.due).date <= today) || (deadline !== null && deadline <= today)
 }
 
 /**
  * Today lists open tasks due today or earlier, whose deadline is today or past,
  * or whose start date has come. A hard date wins over deferral and Someday.
  */
-export function inToday(t: DatedTask, today: string): boolean {
-  if (t.completed_at) return false
-  return hardDate(t, today) || isStarted(t, today)
+export function inToday(item: DatedTask, today: string): boolean {
+  if (item.completed_at) return false
+  return hardDate(item, today) || isStarted(item, today)
 }
 
 /** Anytime: open, active tasks with no date of any kind and no start. */
-export function inAnytime(t: DatedTask, today: string): boolean {
-  return !t.completed_at && isActive(t, today) && !t.due && !(t.deadline ?? null) && (t.start ?? null) === null
+export function inAnytime(item: DatedTask, today: string): boolean {
+  return !item.completed_at && isActive(item, today) && !item.due && !(item.deadline ?? null) && (item.start ?? null) === null
 }
 
 /** Counted in the sidebar (Inbox, projects): open and active. */
-export function openCount(t: Pick<Task, 'completed_at' | 'start'>, today: string): boolean {
-  return !t.completed_at && isActive(t, today)
+export function openCount(task: Pick<Task, 'completed_at' | 'start'>, today: string): boolean {
+  return !task.completed_at && isActive(task, today)
 }
 
 /** The Later group of a project or Inbox view: deferred or parked. */
-export const inLater = (t: StartTask, today: string): boolean => isSomeday(t) || isDeferred(t, today)
+export const inLater = (item: StartTask, today: string): boolean => isSomeday(item) || isDeferred(item, today)
 
 /** Within Today, the Overdue group: due before today, or deadline passed and not planned for today. */
-export function overdueInToday(t: DatedTask, today: string): boolean {
-  const due = t.due ? localDueOf(t.due).date : null
-  const deadline = t.deadline ?? null
+export function overdueInToday(item: DatedTask, today: string): boolean {
+  const due = item.due ? localDueOf(item.due).date : null
+  const deadline = item.deadline ?? null
   return (due !== null && due < today) || (deadline !== null && deadline < today && due !== today)
 }
 
 /** Upcoming lists open tasks due after today, and undated ones whose deadline is ahead. */
-export function inUpcoming(t: DatedTask, today: string): boolean {
-  if (t.completed_at || !isActive(t, today)) return false
-  if (t.due) return localDueOf(t.due).date > today
-  const deadline = t.deadline ?? null
+export function inUpcoming(item: DatedTask, today: string): boolean {
+  if (item.completed_at || !isActive(item, today)) return false
+  if (item.due) return localDueOf(item.due).date > today
+  const deadline = item.deadline ?? null
   return deadline !== null && deadline > today
 }
 
 /** The Upcoming day a task is listed under: its due date, else its deadline. */
-export function upcomingDate(t: Pick<Task, 'due' | 'deadline'>): string | null {
-  return t.due ? localDueOf(t.due).date : t.deadline ?? null
+export function upcomingDate(task: Pick<Task, 'due' | 'deadline'>): string | null {
+  return task.due ? localDueOf(task.due).date : task.deadline ?? null
 }
 
 /** A dashboard shows at most this many panels. */
@@ -292,7 +292,7 @@ export type ViewResult =
 
 interface Compiled {
   ok: true
-  test: (t: Task) => boolean
+  test: (task: Task) => boolean
   warnings: string[]
 }
 
@@ -315,7 +315,7 @@ function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Compiled | 
     return { ok: false, error: (e as Error).message }
   }
   const { test, warnings } = compiled
-  return { ok: true, warnings, test: (t) => !(t.project_id && archived.has(t.project_id)) && test(t) }
+  return { ok: true, warnings, test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
 }
 
 function byTitle(a: Task, b: Task): number {
@@ -352,10 +352,10 @@ export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) =
 /** Split sorted tasks into headed groups; headings come in a fixed, meaningful order. */
 export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext): ViewGroup[] {
   const buckets = new Map<string, Task[]>()
-  const put = (key: string, t: Task) => {
+  const put = (key: string, task: Task) => {
     const list = buckets.get(key)
-    if (list) list.push(t)
-    else buckets.set(key, [t])
+    if (list) list.push(task)
+    else buckets.set(key, [task])
   }
   const emit = (order: [string, string][]) => order.filter(([k]) => buckets.has(k)).map(([key, heading]) => ({ key, heading, tasks: buckets.get(key)! }))
 
@@ -363,21 +363,21 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
     case 'none':
       return tasks.length ? [{ key: 'all', heading: '', tasks }] : []
     case 'priority':
-      for (const t of tasks) put(`p${t.priority}`, t)
+      for (const tk of tasks) put(`p${tk.priority}`, tk)
       return emit([1, 2, 3, 4].map((p) => [`p${p}`, `Priority ${p}`]))
     case 'due': {
       const today = ctx.today
       const tomorrow = addDaysISO(today, 1)
       const dates = new Set<string>()
-      for (const t of tasks) {
+      for (const item of tasks) {
         // A zoned due groups under its date in the viewer's zone (absolute-datetimes).
-        const date = localDate(t.due)
-        if (!date) put('none', t)
-        else if (date < today) put('overdue', t)
-        else if (date === today) put('today', t)
-        else if (date === tomorrow) put('tomorrow', t)
+        const date = localDate(item.due)
+        if (!date) put('none', item)
+        else if (date < today) put('overdue', item)
+        else if (date === today) put('today', item)
+        else if (date === tomorrow) put('tomorrow', item)
         else {
-          put(date, t)
+          put(date, item)
           dates.add(date)
         }
       }
@@ -391,17 +391,17 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
       // A task with several labels appears under each of them.
       const labels = activeLabels([...ctx.labels])
       const known = new Set(labels.map((l) => l.id))
-      for (const t of tasks) {
-        const own = [...new Set(t.labels.filter((id) => known.has(id)))]
-        if (own.length === 0) put('none', t)
-        for (const id of own) put(id, t)
+      for (const tVar of tasks) {
+        const own = [...new Set(tVar.labels.filter((id) => known.has(id)))]
+        if (own.length === 0) put('none', tVar)
+        for (const id of own) put(id, tVar)
       }
       return emit([...labels.map((l): [string, string] => [l.id, l.name]), ['none', 'No label']])
     }
     case 'project': {
       const projects = ctx.projects.filter((p) => !p.deleted_at) as Project[]
       const byId = new Map(projects.map((p) => [p.id, p]))
-      for (const t of tasks) put(t.project_id && byId.has(t.project_id) ? t.project_id : t.project_id ? 'unknown' : 'inbox', t)
+      for (const tVar of tasks) put(tVar.project_id && byId.has(tVar.project_id) ? tVar.project_id : tVar.project_id ? 'unknown' : 'inbox', tVar)
       const path = (id: string) => [...ancestors(id, byId).reverse(), byId.get(id)!].map((p) => p.name).join(' › ')
       // Inbox first, then projects in sidebar (tree) order.
       const order: [string, string][] = [['inbox', 'Inbox']]
@@ -434,7 +434,7 @@ export type ViewSummary =
  */
 export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TASKS): Map<string, ViewSummary> {
   const out = new Map<string, ViewSummary>()
-  const live: { view: View; test: (t: Task) => boolean; warnings: string[]; matches: Task[] }[] = []
+  const live: { view: View; test: (task: Task) => boolean; warnings: string[]; matches: Task[] }[] = []
   for (const view of views) {
     if (view.deleted_at || isDashboard(view)) continue
     const c = compileView(view, ctx)
@@ -442,7 +442,7 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
     else live.push({ view, test: c.test, warnings: c.warnings, matches: [] })
   }
   if (live.length > 0) {
-    for (const t of ctx.tasks) for (const l of live) if (l.test(t)) l.matches.push(t)
+    for (const tk of ctx.tasks) for (const l of live) if (l.test(tk)) l.matches.push(tk)
   }
   for (const l of live) {
     const { groupBy, sortBy, sortDir } = viewOptions(l.view)
@@ -452,16 +452,16 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
       // Grouping by label can list a task twice; a panel shows each task once.
       const seen = new Set<string>()
       for (const g of groupTasks(sorted, groupBy, ctx)) {
-        for (const t of g.tasks) {
+        for (const item of g.tasks) {
           if (firstN.length >= limit) break
-          if (!seen.has(t.id)) {
-            seen.add(t.id)
-            firstN.push(t)
+          if (!seen.has(item.id)) {
+            seen.add(item.id)
+            firstN.push(item)
           }
         }
       }
     }
-    out.set(l.view.id, { ok: true, count: sorted.filter((t) => t.completed_at === null).length, tasks: firstN, warnings: l.warnings })
+    out.set(l.view.id, { ok: true, count: sorted.filter((tVar) => tVar.completed_at === null).length, tasks: firstN, warnings: l.warnings })
   }
   return out
 }

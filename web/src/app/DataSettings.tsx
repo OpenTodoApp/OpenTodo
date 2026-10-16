@@ -66,7 +66,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
       )}
       <SettingRow label={t('Import')}
         description={<>{t.rich('An OpenTodo export, a CSV file or another task manager’s JSON export (open this with {kbd}).', { kbd: <Kbd k={keysOf('go.import')} /> })}</>}
-        status={demo ? <span id="demo-import-note" className="text-muted">{t('Import: {DEMO_RESTRICTED_NOTE}', { DEMO_RESTRICTED_NOTE })}</span> : undefined}
+        status={demo ? <span id="demo-import-note" className="text-muted">{t('Import: {note}', { note: t(DEMO_RESTRICTED_NOTE) })}</span> : undefined}
         control={demo
           ? <Button size="sm" disabled aria-describedby="demo-import-note">{t('Import data…')}</Button>
           : <a className={linkButton} href="/settings/import" onClick={(e) => followLink(e, { view: 'import' })}><Icon name="upload" size="sm" />{t('Import data…')}</a>} />

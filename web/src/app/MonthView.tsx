@@ -61,14 +61,14 @@ export function MonthView({ date }: { date?: string }) {
   // The Day and Week selection (open, live, not archived) over the six weeks.
   const shownIds = useMemo(() => new Set(calendarTasks(viewed, projects, days[0], days[days.length - 1]).map((tk) => tk.id)), [viewed, projects, days])
   const shownRaw = useMemo(() => rawTasks.filter((item) => shownIds.has(item.id)), [rawTasks, shownIds])
-  const shownViewed = useMemo(() => viewed.filter((tVar) => shownIds.has(tVar.id)), [viewed, shownIds])
+  const shownViewed = useMemo(() => viewed.filter((task) => shownIds.has(task.id)), [viewed, shownIds])
   const cells = useMemo(() => new Map(days.map((d) => [d, cellTasks(shownRaw, d, zone)])), [days, shownRaw, zone])
-  const viewedMap = useMemo(() => new Map(viewed.map((tVar) => [tVar.id, tVar])), [viewed])
-  const rawMap = useMemo(() => new Map(rawTasks.map((tVar) => [tVar.id, tVar])), [rawTasks])
-  const editable = useCallback((tVar: Task) => canEditTasks(roleOf(tVar.project_id, memberMap)), [memberMap])
+  const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
+  const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
+  const editable = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
 
   /** Selection order: the month's tasks in grid order (`j` / `k`). */
-  const order = useMemo(() => days.flatMap((d) => (cells.get(d) ?? []).map((tVar) => tVar.id)), [days, cells])
+  const order = useMemo(() => days.flatMap((d) => (cells.get(d) ?? []).map((task) => task.id)), [days, cells])
 
   const [focused, setFocused] = useState(anchor)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -93,9 +93,9 @@ export function MonthView({ date }: { date?: string }) {
     queue.current = queue.current.then(async () => {
       const raw = await db.tasks.get(id)
       if (!raw || raw.deleted_at || !raw.due) return
-      const tVar = viewedTask(raw)
-      if (!tVar.due) return
-      const due = nudgeDue(tVar.due, { days })
+      const task = viewedTask(raw)
+      if (!task.due) return
+      const due = nudgeDue(task.due, { days })
       await updateTask(id, { due: dueFromView(raw.due, due) })
       setFocused(due.date)
       if (due.date.slice(0, 7) !== month) goTo(due.date)
@@ -104,9 +104,9 @@ export function MonthView({ date }: { date?: string }) {
 
   /** Dropped on a day: same time and zone, new date (one due edit, with Undo). */
   const dropOn = useCallback((id: string, d: string) => {
-    const tVar = viewedMap.get(id)
-    if (!tVar?.due || tVar.due.date === d) return
-    void setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(tVar.due.time ? { time: tVar.due.time } : {}) }))
+    const task = viewedMap.get(id)
+    if (!task?.due || task.due.date === d) return
+    void setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due.time ? { time: task.due.time } : {}) }))
     setSelectedId(id)
     setFocused(d)
   }, [viewedMap, rawMap])
@@ -153,7 +153,7 @@ export function MonthView({ date }: { date?: string }) {
   useEffect(() => {
     if (!selectedId) return
     const d = viewedMap.get(selectedId)?.due?.date
-    if (d && (cells.get(d)?.length ?? 0) > CELL_ROWS && !visibleRows(cells.get(d)!, CELL_ROWS).shown.some((tVar) => tVar.id === selectedId)) setExpanded(d)
+    if (d && (cells.get(d)?.length ?? 0) > CELL_ROWS && !visibleRows(cells.get(d)!, CELL_ROWS).shown.some((task) => task.id === selectedId)) setExpanded(d)
   }, [selectedId, viewedMap, cells])
 
   const [y, m] = month.split('-').map(Number)
@@ -163,24 +163,24 @@ export function MonthView({ date }: { date?: string }) {
     return new Intl.DateTimeFormat(dateLocaleOf(), { weekday: narrow ? 'narrow' : 'short' }).format(new Date(yy, mm - 1, dd))
   })
 
-  const row = (tVar: Task, compact: boolean) => {
-    const v = viewedMap.get(tVar.id)
-    const canEdit = editable(tVar)
-    const selected = selectedId === tVar.id
-    const hue = hueFor(tVar.project_id ? projectMap.get(tVar.project_id)?.color : null)
+  const row = (task: Task, compact: boolean) => {
+    const v = viewedMap.get(task.id)
+    const canEdit = editable(task)
+    const selected = selectedId === task.id
+    const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
     return (
-      <button key={tVar.id} type="button" tabIndex={-1} data-month-task={tVar.id} data-hue={hue} aria-pressed={selected}
-        aria-label={[tVar.title || t('Untitled'), v?.due?.time ? formatTime(v.due.time) : '', tVar.priority < 4 ? t('priority {n}', { n: tVar.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}
+      <button key={task.id} type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
+        aria-label={[task.title || t('Untitled'), v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}
         onPointerDown={canEdit ? (e) => {
           if (e.button !== 0) return
-          beginDrag(e, { label: tVar.title, onDrop: (key) => { if (key.startsWith('day:')) dropOn(tVar.id, key.slice(4)) } })
+          beginDrag(e, { label: task.title, onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4)) } })
         } : undefined}
-        onClick={(e) => { e.stopPropagation(); setSelectedId(tVar.id); if (v?.due) setFocused(v.due.date) }}
-        onDoubleClick={() => setPanelTaskId(tVar.id)}
+        onClick={(e) => { e.stopPropagation(); setSelectedId(task.id); if (v?.due) setFocused(v.due.date) }}
+        onDoubleClick={() => setPanelTaskId(task.id)}
         className={`flex w-full min-w-0 touch-manipulation items-center gap-1 rounded-chip border-l-3 border-l-hue-solid px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${selected ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken hover:bg-sunken dark:bg-raised'} ${canEdit ? 'cursor-grab' : ''}`}>
         {v?.due?.time && <span className="shrink-0 tabular-nums text-muted">{formatTime(v.due.time)}</span>}
-        <span className="min-w-0 flex-1 truncate">{tVar.title || t('Untitled')}</span>
-        {tVar.priority < 4 && <span className="shrink-0 text-hint font-semibold text-muted" data-priority={tVar.priority}>P{tVar.priority}</span>}
+        <span className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
+        {task.priority < 4 && <span className="shrink-0 text-hint font-semibold text-muted" data-priority={task.priority}>P{task.priority}</span>}
       </button>
     )
   }
@@ -230,7 +230,7 @@ export function MonthView({ date }: { date?: string }) {
                     list.length > 0 && <span data-month-count className="block text-center text-meta font-medium text-default">{list.length}</span>
                   ) : (
                     <div className="space-y-0.5">
-                      {shown.map((tVar) => row(tVar, false))}
+                      {shown.map((task) => row(task, false))}
                       {hidden > 0 && (
                         <button type="button" tabIndex={-1} data-month-more={hidden} aria-expanded={false}
                           onClick={(e) => { e.stopPropagation(); setExpanded(d) }}
@@ -254,12 +254,12 @@ export function MonthView({ date }: { date?: string }) {
         <section aria-label={t('Tasks on {focused}', { focused })} className="mt-3 space-y-1" data-month-day-list>
           {focusedTasks.length === 0
             ? <p className="px-1 py-2 text-meta text-faint">{t('Nothing due on this day. Press q to add a task.')}</p>
-            : focusedTasks.map((tVar) => row(tVar, false))}
+            : focusedTasks.map((task) => row(task, false))}
         </section>
       )}
       <p className="mt-3 hidden text-meta text-faint sm:block">
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}
-        {shownRaw.some((tVar) => tVar.estimate_minutes) ? ` ${t('Planned estimates against a {minutes} day.', { minutes: formatMinutes(prefs.dayLength) })}` : ''}
+        {shownRaw.some((task) => task.estimate_minutes) ? ` ${t('Planned estimates against a {minutes} day.', { minutes: formatMinutes(prefs.dayLength) })}` : ''}
       </p>
       {adding && (
         <Dialog title={t('Add a task on {adding}', { adding })} onClose={() => setAdding(null)} size="md">

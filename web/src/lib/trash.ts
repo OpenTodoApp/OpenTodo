@@ -20,14 +20,14 @@ export function deletedProjectIds(projects: Iterable<Pick<Project, 'id' | 'delet
 }
 
 /** A task shows up in views unless it is deleted or its project is in the Trash. */
-export function isTaskVisible(t: Pick<Task, 'deleted_at' | 'project_id'>, deletedProjects: Set<string>): boolean {
-  return !t.deleted_at && !(t.project_id && deletedProjects.has(t.project_id))
+export function isTaskVisible(task: Pick<Task, 'deleted_at' | 'project_id'>, deletedProjects: Set<string>): boolean {
+  return !task.deleted_at && !(task.project_id && deletedProjects.has(task.project_id))
 }
 
 /** Every visible task (live queries use this so a project restore shows its tasks again). */
 export async function visibleTasks(): Promise<Task[]> {
   const gone = new Set((await db.projects.filter((p) => !!p.deleted_at).primaryKeys()) as string[])
-  return db.tasks.filter((t) => isTaskVisible(t, gone)).toArray()
+  return db.tasks.filter((task) => isTaskVisible(task, gone)).toArray()
 }
 
 export interface TrashItem {
@@ -48,10 +48,10 @@ export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>): 
     byId.set(p.id, p)
     if (p.deleted_at) out.push({ entity: 'project', id: p.id, title: p.name || 'Untitled project', deletedAt: p.deleted_at, color: p.color })
   }
-  for (const t of tasks) {
-    if (!t.deleted_at) continue
-    const project = t.project_id ? byId.get(t.project_id) : undefined
-    out.push({ entity: 'task', id: t.id, title: t.title || 'Untitled', deletedAt: t.deleted_at, projectName: project ? project.name : 'Inbox' })
+  for (const task of tasks) {
+    if (!task.deleted_at) continue
+    const project = task.project_id ? byId.get(task.project_id) : undefined
+    out.push({ entity: 'task', id: task.id, title: task.title || 'Untitled', deletedAt: task.deleted_at, projectName: project ? project.name : 'Inbox' })
   }
   return out.sort((a, b) => b.deletedAt - a.deletedAt || (a.id < b.id ? -1 : 1))
 }
@@ -117,11 +117,11 @@ export async function purgeItems(items: PurgeRequest[]): Promise<'done' | 'pendi
 
 /** Empty the whole Trash (server side: every item the user may delete). */
 export async function emptyTrash(): Promise<'done' | 'pending'> {
-  const tasks = await db.tasks.filter((t) => !!t.deleted_at).toArray()
+  const tasks = await db.tasks.filter((task) => !!task.deleted_at).toArray()
   const projects = await db.projects.filter((p) => !!p.deleted_at).toArray()
   const items: PurgeRequest[] = [
     ...projects.map((p) => ({ entity: 'project' as const, id: p.id })),
-    ...tasks.map((t) => ({ entity: 'task' as const, id: t.id })),
+    ...tasks.map((tk) => ({ entity: 'task' as const, id: tk.id })),
   ]
   if (isOffline()) {
     await queue(items)
@@ -204,16 +204,16 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
       const tasks = await db.tasks.toArray()
       const taskIds = new Set<string>()
       for (const p of list) {
-        if (p.entity === 'project') for (const t of tasks) if (t.project_id === p.entityId) taskIds.add(t.id)
+        if (p.entity === 'project') for (const tk of tasks) if (tk.project_id === p.entityId) taskIds.add(tk.id)
         if (p.entity === 'task') taskIds.add(p.entityId)
       }
       // Deleted descendants of purged tasks.
       let grew = true
       while (grew) {
         grew = false
-        for (const t of tasks) {
-          if (!taskIds.has(t.id) && t.parent_id && taskIds.has(t.parent_id) && t.deleted_at) {
-            taskIds.add(t.id)
+        for (const item of tasks) {
+          if (!taskIds.has(item.id) && item.parent_id && taskIds.has(item.parent_id) && item.deleted_at) {
+            taskIds.add(item.id)
             grew = true
           }
         }

@@ -103,11 +103,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const groups = useMemo<Group[]>(() => {
     if (!result) return []
     const byProject = new Map<string, Task[]>()
-    for (const tVar of result.tasks) {
-      const k = tVar.project_id ?? ''
+    for (const task of result.tasks) {
+      const k = task.project_id ?? ''
       const list = byProject.get(k)
-      if (list) list.push(tVar)
-      else byProject.set(k, [tVar])
+      if (list) list.push(task)
+      else byProject.set(k, [task])
     }
     // Inbox first, then projects in sidebar (tree) order, then anything else.
     const order = ['', ...flattenTree(buildProjectTree(projects).roots).map((n) => n.id)]
@@ -185,7 +185,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   }
 
   // ---- list keyboard navigation (only while focus is outside text fields) ----
-  const keyRows = useMemo(() => rows.map((tVar) => ({ key: tVar.id, task: tVar })), [rows])
+  const keyRows = useMemo(() => rows.map((task) => ({ key: task.id, task: task })), [rows])
   const bulk = useBulkList(rows)
   useListKeys({
     rows: keyRows, selected: selectedId, setSelected: setSelectedId, openId, setOpenId, pickerFor, setPickerFor, bulk,
@@ -257,24 +257,24 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
               <section key={g.key} className="mb-4">
                 <h2 className="mb-1 px-2 text-meta font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>
                 <ul>
-                  {g.tasks.map((tVar) => (
+                  {g.tasks.map((tk) => (
                     <TaskRow
-                      key={tVar.id}
-                      task={tVar}
-                      project={tVar.project_id ? projectMap.get(tVar.project_id) : undefined}
-                      labels={resolveLabels(tVar.labels, labelMap)}
+                      key={tk.id}
+                      task={tk}
+                      project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
+                      labels={resolveLabels(tk.labels, labelMap)}
                       showProject={false}
-                      selected={tVar.id === selectedId}
-                      progress={progress.get(tVar.id)}
-                      blockedBy={blocked.get(tVar.id)}
-                      habit={habits.get(tVar.id)}
-                      breadcrumb={tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null}
-                      onToggle={() => void setTaskCompleted(tVar.id, !tVar.completed_at)}
+                      selected={tk.id === selectedId}
+                      progress={progress.get(tk.id)}
+                      blockedBy={blocked.get(tk.id)}
+                      habit={habits.get(tk.id)}
+                      breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
+                      onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)}
                       onOpen={() => {
-                        setSelectedId(tVar.id)
-                        setOpenId(tVar.id)
+                        setSelectedId(tk.id)
+                        setOpenId(tk.id)
                       }}
-                      {...bulk.rowProps(tVar.id)}
+                      {...bulk.rowProps(tk.id)}
                     />
                   ))}
                 </ul>

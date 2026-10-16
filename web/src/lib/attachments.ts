@@ -13,6 +13,7 @@ import { currentKey, isEnabled, publishEncryption } from './e2ee'
 import { currentUserId, membershipMap } from './sharing'
 import { applyBatch } from './undo'
 import type { Attachment, AttachmentLimits } from './types'
+import { t } from './i18n'
 
 /** The longest attachment name the server accepts. */
 export const MAX_NAME = 255
@@ -93,27 +94,27 @@ export interface PlannedFile {
  */
 export async function planFiles(taskId: string, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
   const author = await currentUserId()
-  if (!author) throw new AttachmentError('signed_out', 'Sign in to add files.')
+  if (!author) throw new AttachmentError('signed_out', t('Sign in to add files.'))
   const l = await limits()
-  if (l && !l.enabled) throw new AttachmentError('disabled', 'Attachments are turned off on this server.')
+  if (l && !l.enabled) throw new AttachmentError('disabled', t('Attachments are turned off on this server.'))
   let room = l && l.quota_bytes > 0 ? l.quota_bytes - l.used_bytes - (await pendingBytes()) : Infinity
   // An encrypted account's personal tasks get encrypted files (design D8).
   const key = (await encryptsTask(taskId, opts.projectId)) ? await currentKey() : undefined
-  if (key === null) throw new AttachmentError('locked', 'Unlock encryption on this device to add files.')
+  if (key === null) throw new AttachmentError('locked', t('Unlock encryption on this device to add files.'))
   const out: PlannedFile[] = []
   // One millisecond apart, so the uploader keeps the order the files were picked in.
   const now = Date.now()
   for (const [i, file] of files.entries()) {
     if (l && file.size > l.max_file_bytes) {
-      throw new AttachmentError('too_large', `“${file.name}” is ${formatBytes(file.size)}; files may be at most ${formatBytes(l.max_file_bytes)} on this server.`)
+      throw new AttachmentError('too_large', t('“{name}” is {size}; files may be at most {max} on this server.', { name: file.name, size: formatBytes(file.size), max: formatBytes(l.max_file_bytes) }))
     }
-    if (file.size > room) throw new AttachmentError('quota', `“${file.name}” would go over your ${formatBytes(l?.quota_bytes ?? 0)} of attachments.`)
+    if (file.size > room) throw new AttachmentError('quota', t('“{name}” would go over your {quota} of attachments.', { name: file.name, quota: formatBytes(l?.quota_bytes ?? 0) }))
     room -= file.size
     const id = crypto.randomUUID()
     const name = cleanName(file.name)
     const stored = key ? await encryptFile(key, id, file) : file
     if (l && stored.size > l.max_file_bytes) {
-      throw new AttachmentError('too_large', `“${file.name}” is too large once encrypted; files may be at most ${formatBytes(l.max_file_bytes)} on this server.`)
+      throw new AttachmentError('too_large', t('“{name}” is too large once encrypted; files may be at most {max} on this server.', { name: file.name, max: formatBytes(l.max_file_bytes) }))
     }
     const sha256 = await sha256Hex(stored)
     out.push({
@@ -137,7 +138,7 @@ export async function commitFiles(planned: PlannedFile[], before: Change[] = [])
     await db.attachmentBlobs.bulkPut(planned.map((p) => p.blob))
   } catch {
     // Safari's private browsing, for one, cannot keep files in IndexedDB.
-    throw new AttachmentError('unsupported', 'This browser cannot keep files on the device (private browsing?), so they cannot be attached here.')
+    throw new AttachmentError('unsupported', t('This browser cannot keep files on the device (private browsing?), so they cannot be attached here.'))
   }
   try {
     await mutateMany([...before, ...planned.map((p) => p.change)])
@@ -172,9 +173,9 @@ export function parseLink(text: string): URL | null {
 /** Attach a link. Returns its id. */
 export async function queueLink(taskId: string, url: string, name?: string, commentId?: string | null): Promise<string> {
   const u = parseLink(url)
-  if (!u) throw new AttachmentError('invalid', 'Links start with http:// or https://.')
+  if (!u) throw new AttachmentError('invalid', t('Links start with http:// or https://.'))
   const author = await currentUserId()
-  if (!author) throw new AttachmentError('signed_out', 'Sign in to add links.')
+  if (!author) throw new AttachmentError('signed_out', t('Sign in to add links.'))
   const id = crypto.randomUUID()
   await mutateMany([{ entity: 'attachment', entityId: id, patch: {
     task_id: taskId, author_id: author, comment_id: commentId ?? null, name: cleanName(name?.trim() || u.hostname),
@@ -211,7 +212,7 @@ export async function renameAttachment(id: string, name: string): Promise<void> 
  * entry's id for the undo toast.
  */
 export async function removeAttachment(id: string, name?: string): Promise<string | null> {
-  const entry = await applyBatch([{ entity: 'attachment', entityId: id, patch: { deleted_at: Date.now() } }], { source: 'bulk', label: name ? `Removed “${name}”` : 'Attachment removed' })
+  const entry = await applyBatch([{ entity: 'attachment', entityId: id, patch: { deleted_at: Date.now() } }], { source: 'bulk', label: name ? t('Removed “{name}”', { name }) : t('Attachment removed') })
   return entry?.id ?? null
 }
 
@@ -256,11 +257,11 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
   if (a.encrypted) {
     // The server holds an envelope only: fetch it (or use the local copy) and decrypt here.
     const key = await currentKey()
-    if (!key) throw new AttachmentError('locked', 'Unlock encryption on this device to open this file.')
+    if (!key) throw new AttachmentError('locked', t('Unlock encryption on this device to open this file.'))
     let envelope = local?.blob
     if (!envelope) {
       const res = await fetch(contentUrl(a.id), { credentials: 'same-origin' })
-      if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? 'This file is missing on the server.' : `The server answered ${res.status}.`)
+      if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? t('This file is missing on the server.') : t('The server answered {status}.', { status: res.status }))
       envelope = await res.blob()
     }
     openBlob(await decryptFile(key, a.id, envelope, a.mime), a, opts.download)
@@ -395,7 +396,7 @@ async function uploadPass(): Promise<void> {
       continue
     }
     if (res.status === 404) return
-    const reason = res.message ?? `The server refused the file (${res.status}).`
+    const reason = res.message ?? t('The server refused the file ({status}).', { status: res.status })
     if (res.status === 413 || res.status === 403 || res.status === 429 || res.status === 400 || res.status === 507) {
       await db.attachmentBlobs.update(b.id, { reason })
       if (res.status === 429 || res.status === 507) return
@@ -468,7 +469,7 @@ export function runFileMigration(mode: FileMigrationMode): Promise<void> {
 async function migrateFiles(mode: FileMigrationMode): Promise<void> {
   await setMeta(K_FILE_MIGRATION, mode)
   const key = await currentKey()
-  if (!key) throw new AttachmentError('locked', 'Unlock encryption on this device first.')
+  if (!key) throw new AttachmentError('locked', t('Unlock encryption on this device first.'))
   const list = await filesToMigrate(mode)
   const total = list.length
   let done = 0

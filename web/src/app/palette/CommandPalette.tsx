@@ -55,7 +55,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     const sections = (await db.sections.where('project_id').equals(task.project_id).toArray()).filter((s) => !s.deleted_at).sort((a, b) => a.position - b.position)
     const i = sections.findIndex((s) => s.id === task.section_id)
     if (i < 0) return undefined
-    const count = await db.tasks.filter((tVar) => tVar.section_id === task.section_id && !tVar.deleted_at && !tVar.completed_at).count()
+    const count = await db.tasks.filter((tk) => tk.section_id === task.section_id && !tk.deleted_at && !tk.completed_at).count()
     return { row: sections[i] as Section, first: i === 0, last: i === sections.length - 1, layout: (await loadViewMode(task.project_id)) === 'board' ? 'board' as const : 'list' as const, count }
   }, [task?.section_id, task?.project_id])
 
@@ -80,7 +80,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
       project: project && canEditProject(role) ? {
         row: project, role, shared: !!memberships?.get(project.id), targets: moveTargets(project, projects),
         subCount: projects.filter((p) => p.parent_id === project.id).length,
-        openTasks: tasks.filter((tVar) => tVar.project_id === project.id && !tVar.completed_at).length,
+        openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
       } : undefined,
       view: view ? { row: view, peers: sorted.filter((v) => v.pinned === view.pinned), isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position) } : undefined,

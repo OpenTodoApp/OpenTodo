@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // Pointer-based drag and drop (OpenSpec `board-view`, design D6): native pointer
 // events, no library, works with mouse, pen and touch. A mouse or pen drag starts
 // after a few pixels of movement; touch starts after a short long-press so a plain
@@ -46,7 +47,7 @@ function markActive(key: string | null): void {
 
 function makeGhost(label: string): HTMLElement {
   const g = document.createElement('div')
-  g.textContent = label || 'Untitled'
+  g.textContent = label || t('Untitled')
   g.setAttribute('aria-hidden', 'true')
   g.setAttribute('data-drag-ghost', '')
   g.className = 'pointer-events-none fixed left-0 top-0 z-50 max-w-60 truncate rounded-md border border-accent bg-surface px-2 py-1 text-sm shadow-lg'

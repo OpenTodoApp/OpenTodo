@@ -253,9 +253,9 @@ export function dueFromView(original: Due | null | undefined, view: Due | null, 
 }
 
 /** A task (or any row with a due) as displayed: its due converted to the viewer's zone. */
-export function viewedTask<T extends { due: Due | null }>(t: T, zone?: string): T {
-  if (!isZoned(t.due)) return t
-  return { ...t, due: localDueOf(t.due, zone) }
+export function viewedTask<T extends { due: Due | null }>(item: T, zone?: string): T {
+  if (!isZoned(item.due)) return item
+  return { ...item, due: localDueOf(item.due, zone) }
 }
 
 export function compareDue(a: Due | null, b: Due | null, zone?: string): number {

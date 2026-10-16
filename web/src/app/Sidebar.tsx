@@ -98,11 +98,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     let assigned = 0
     // Deferred and parked tasks are not counted (someday-and-evening D2).
     const active = openTasks.filter((tk) => openCount(tk, today))
-    for (const tVar of active) {
-      if (tVar.project_id === null) inbox++
-      if (tVar.assignee_id === user.id) assigned++
+    for (const task of active) {
+      if (task.project_id === null) inbox++
+      if (task.assignee_id === user.id) assigned++
     }
-    for (const tVar of openTasks) if (inToday(tVar, today)) due++
+    for (const item of openTasks) if (inToday(item, today)) due++
     return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
   }, [openTasks, tree, collapsed_, user.id, zone])
 

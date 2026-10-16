@@ -105,9 +105,9 @@ function parseOrThrow(input: string): Rule {
   } else if (has(WEEKDAY_ALIASES, tok)) {
     let days = 0
     for (;;) {
-      const t = peek()
-      if (!has(WEEKDAY_ALIASES, t)) throw new RuleError(`expected a weekday, got "${t}"`)
-      days |= 1 << WEEKDAY_ALIASES[t]
+      const item = peek()
+      if (!has(WEEKDAY_ALIASES, item)) throw new RuleError(`expected a weekday, got "${item}"`)
+      days |= 1 << WEEKDAY_ALIASES[item]
       i++
       let j = i
       if (toks[j] === ',') j++
@@ -313,18 +313,18 @@ function asRule(rule: Rule | string): Rule {
  */
 export function nextCalendar(rule: Rule | string, due: string | null, today: string): string {
   const r = asRule(rule)
-  const t = mustDate(today, 'today')
-  const d = due ? mustDate(due, 'due') : t
+  const item = mustDate(today, 'today')
+  const d = due ? mustDate(due, 'due') : item
   let c = firstAfter(r, d)
-  if (c >= t) return formatDate(c)
-  if (r.kind !== 'interval') return formatDate(firstAfter(r, t))
+  if (c >= item) return formatDate(c)
+  if (r.kind !== 'interval') return formatDate(firstAfter(r, item))
   if (r.unit === 'day' || r.unit === 'week') {
     const size = r.unit === 'week' ? 7 * r.interval : r.interval
-    return formatDate(d + size * (Math.floor((t - d) / size) + 1))
+    return formatDate(d + size * (Math.floor((item - d) / size) + 1))
   }
   for (let k = 2; ; k++) {
     c = step(r, d, k)
-    if (c > t) return formatDate(c)
+    if (c > item) return formatDate(c)
   }
 }
 

@@ -16,15 +16,15 @@ export interface TriageState {
 type QueueTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'completed_at' | 'deleted_at' | 'position'>
 
 /** Whether a task belongs in the queue: an open, live, top-level Inbox task. */
-export function qualifies(t: QueueTask): boolean {
-  return t.project_id === null && t.parent_id === null && t.completed_at === null && !t.deleted_at
+export function qualifies(item: QueueTask): boolean {
+  return item.project_id === null && item.parent_id === null && item.completed_at === null && !item.deleted_at
 }
 
 const byInboxOrder = (a: QueueTask, b: QueueTask) => a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 
 /** The queue for a set of tasks, in the Inbox's manual order (or a given comparator). */
 export function buildQueue(tasks: readonly QueueTask[], order: (a: QueueTask, b: QueueTask) => number = byInboxOrder): string[] {
-  return tasks.filter(qualifies).sort(order).map((t) => t.id)
+  return tasks.filter(qualifies).sort(order).map((item) => item.id)
 }
 
 export function startTriage(tasks: readonly QueueTask[]): TriageState {
@@ -56,7 +56,7 @@ export function back(state: TriageState): TriageState {
  * (the view announces it was moved elsewhere).
  */
 export function advanceQueue(state: TriageState, live: readonly QueueTask[]): { state: TriageState; left: boolean } {
-  const ok = new Set(live.filter(qualifies).map((t) => t.id))
+  const ok = new Set(live.filter(qualifies).map((item) => item.id))
   const cur = current(state)
   // Tasks decided this session keep their place (the count stays stable after a
   // complete, trash or move); only undecided tasks that stop qualifying leave.

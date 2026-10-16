@@ -56,9 +56,9 @@ export function searchHelp(entries: SearchEntry[], query: string, limit = 8): Se
 
 /** Page for a `:help <topic>` argument: an exact slug, else the first slug or title starting with it. */
 export function findTopic(bundle: HelpBundle, topic: string): HelpPage | undefined {
-  const t = topic.trim().toLowerCase()
-  if (!t) return undefined
-  return bundle.pages.find((p) => p.slug === t)
-    ?? bundle.pages.find((p) => p.slug.startsWith(t) || p.title.toLowerCase().startsWith(t))
-    ?? bundle.pages.find((p) => p.title.toLowerCase().includes(t))
+  const item = topic.trim().toLowerCase()
+  if (!item) return undefined
+  return bundle.pages.find((p) => p.slug === item)
+    ?? bundle.pages.find((p) => p.slug.startsWith(item) || p.title.toLowerCase().startsWith(item))
+    ?? bundle.pages.find((p) => p.title.toLowerCase().includes(item))
 }

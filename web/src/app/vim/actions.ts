@@ -17,13 +17,13 @@ export function makeListActions(s: ListState): ListActions {
     moveSelection(n) {
       const cols = s.columns()
       if (cols) {
-        const col = cols.findIndex((c) => c.some((tVar) => tVar.id === s.selected()))
+        const col = cols.findIndex((c) => c.some((task) => task.id === s.selected()))
         if (col < 0) {
           s.select(cols.find((c) => c.length)?.[0]?.id ?? null)
           return
         }
         const cards = cols[col]
-        const pos = cards.findIndex((tVar) => tVar.id === s.selected())
+        const pos = cards.findIndex((task) => task.id === s.selected())
         s.select(cards[Math.max(0, Math.min(cards.length - 1, pos + n))].id)
         return
       }

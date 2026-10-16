@@ -3,6 +3,7 @@
 // never changed, only folded into runs of consecutive events by one actor on one
 // task, each within the window of the previous one. Comment events stay single.
 import type { ActivityEvent, ActivityKind } from './types'
+import { t, msg, formatList } from './i18n'
 
 export const RUN_WINDOW_MS = 10 * 60_000
 
@@ -57,33 +58,32 @@ export function groupRuns(events: readonly ActivityEvent[], opts: { windowMs?: n
 type Part = { order: number; verb?: string; noun?: string }
 
 const FIELD_NOUNS: Record<string, [number, string]> = {
-  due: [3, 'due date'], project_id: [4, 'project'], priority: [5, 'priority'], assignee_id: [6, 'assignee'], labels: [7, 'labels'],
-  description: [8, 'notes'], notes_doc: [8, 'notes'], estimate_minutes: [8, 'estimate'], recurrence: [8, 'repeat rule'],
-  parent_id: [8, 'parent task'], section_id: [8, 'section'], position: [9, 'order'],
+  due: [3, msg('due date')], project_id: [4, msg('project')], priority: [5, msg('priority')], assignee_id: [6, msg('assignee')], labels: [7, msg('labels')],
+  description: [8, msg('notes')], notes_doc: [8, msg('notes')], estimate_minutes: [8, msg('estimate')], recurrence: [8, msg('repeat rule')],
+  parent_id: [8, msg('parent task')], section_id: [8, msg('section')], position: [9, msg('order')],
 }
 
 function partsOf(ev: ActivityEvent): Part[] {
   switch (ev.kind) {
-    case 'created': return [{ order: 0, verb: 'created the task' }]
-    case 'completed': return [{ order: 1, verb: 'completed the task' }]
-    case 'reopened': return [{ order: 1, verb: 'reopened the task' }]
-    case 'deleted': return [{ order: 1, verb: 'deleted the task' }]
-    case 'restored': return [{ order: 1, verb: 'restored the task' }]
-    case 'rescheduled': return [{ order: 3, noun: 'due date' }]
-    case 'moved': return [{ order: 4, verb: 'moved the task' }]
-    case 'assigned': case 'unassigned': return [{ order: 6, noun: 'assignee' }]
+    case 'created': return [{ order: 0, verb: msg('created the task') }]
+    case 'completed': return [{ order: 1, verb: msg('completed the task') }]
+    case 'reopened': return [{ order: 1, verb: msg('reopened the task') }]
+    case 'deleted': return [{ order: 1, verb: msg('deleted the task') }]
+    case 'restored': return [{ order: 1, verb: msg('restored the task') }]
+    case 'rescheduled': return [{ order: 3, noun: msg('due date') }]
+    case 'moved': return [{ order: 4, verb: msg('moved the task') }]
+    case 'assigned': case 'unassigned': return [{ order: 6, noun: msg('assignee') }]
     default: {
       const parts: Part[] = []
       for (const c of ev.changes) {
-        if (c.field === 'title') parts.push({ order: 2, verb: 'renamed the task' })
+        if (c.field === 'title') parts.push({ order: 2, verb: msg('renamed the task') })
         else if (FIELD_NOUNS[c.field]) parts.push({ order: FIELD_NOUNS[c.field][0], noun: FIELD_NOUNS[c.field][1] })
       }
-      return parts.length ? parts : [{ order: 10, verb: 'edited the task' }]
+      return parts.length ? parts : [{ order: 10, verb: msg('edited the task') }]
     }
   }
 }
 
-const list = (items: string[]) => (items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`)
 
 /**
  * The run's sentence, e.g. "You renamed the task and changed the due date and
@@ -92,7 +92,7 @@ const list = (items: string[]) => (items.length <= 1 ? items.join('') : `${items
 export function summarizeRun(run: ActivityRun, actorName: string): string {
   if (run.type === 'comment') {
     const kind = run.events[0].kind
-    return `${actorName} ${kind === 'commented' ? 'commented' : kind === 'comment_edited' ? 'edited a comment' : 'deleted a comment'}`
+    return t('{actor} {action}', { actor: actorName, action: kind === 'commented' ? t('commented') : kind === 'comment_edited' ? t('edited a comment') : t('deleted a comment') })
   }
   const seen = new Set<string>()
   const parts = run.events.flatMap(partsOf).filter((p) => {
@@ -103,11 +103,11 @@ export function summarizeRun(run: ActivityRun, actorName: string): string {
   }).sort((a, b) => a.order - b.order)
   const shown = parts.slice(0, 3)
   const more = parts.length - shown.length
-  const verbs = shown.filter((p) => p.verb).map((p) => p.verb!)
-  const nouns = shown.filter((p) => p.noun).map((p) => p.noun!)
+  const verbs = shown.filter((p) => p.verb).map((p) => t(p.verb!))
+  const nouns = shown.filter((p) => p.noun).map((p) => t(p.noun!))
   const clauses = [...verbs]
-  if (nouns.length) clauses.push(`changed the ${list(nouns)}`)
-  let text = clauses.length > 1 ? `${clauses.slice(0, -1).join(', ')} and ${clauses[clauses.length - 1]}` : clauses[0]
-  if (more > 0) text += ` and ${more} more`
-  return `${actorName} ${text}`
+  if (nouns.length) clauses.push(t('changed the {fields}', { fields: formatList(nouns) }))
+  let text = formatList(clauses)
+  if (more > 0) text = t('{text} and {n} more', { text, n: more })
+  return t('{actor} {action}', { actor: actorName, action: text })
 }

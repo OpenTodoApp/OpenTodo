@@ -120,14 +120,14 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   const projectItems = useMemo(() => projectSource(projects, { current: projectId, memberships }), [projects, projectId, memberships])
   const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
   const parentItems = useMemo(() => {
-    const list = parent && !projectTasks.some((tVar) => tVar.id === parent.id) ? [...projectTasks, parent] : projectTasks
+    const list = parent && !projectTasks.some((task) => task.id === parent.id) ? [...projectTasks, parent] : projectTasks
     return parentSource(list, task, sections)
   }, [projectTasks, parent, task, sections])
 
-  const taskById = useMemo(() => new Map(allTasks.map((tVar) => [tVar.id, tVar])), [allTasks])
-  const blockers = useMemo(() => (task.blocked_by ?? []).map((id) => taskById.get(id)).filter((tVar): tVar is Task => !!tVar), [task.blocked_by, taskById])
-  const blocks = useMemo(() => dependents(task.id, allTasks).filter((tVar) => !tVar.completed_at), [task.id, allTasks])
-  const projectName = (tVar: Task) => (tVar.project_id ? projects.find((p) => p.id === tVar.project_id)?.name ?? t('Project') : t('Inbox'))
+  const taskById = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
+  const blockers = useMemo(() => (task.blocked_by ?? []).map((id) => taskById.get(id)).filter((task): task is Task => !!task), [task.blocked_by, taskById])
+  const blocks = useMemo(() => dependents(task.id, allTasks).filter((task) => !task.completed_at), [task.id, allTasks])
+  const projectName = (task: Task) => (task.project_id ? projects.find((p) => p.id === task.project_id)?.name ?? t('Project') : t('Inbox'))
   const blockerItems = useMemo(() => [...blockers, ...blockerCandidates(task, allTasks, memberships)], [blockers, task, allTasks, memberships])
   const toggleBlocker = async (id: string) => {
     setBlockError(null)
@@ -382,8 +382,8 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
             note={blockError ? <span role="alert" className="text-danger">{blockError}</span> : undefined}
             editor={(close) => (
               <ComboboxPanel<Task> label={t('Blocked by')} placeholder={t('Find a task this one waits for…')} source={blockerItems}
-                getKey={(tVar) => tVar.id} getLabel={(tVar) => tVar.title || t('Untitled')} getPath={(tVar) => [projectName(tVar)]} multiple selected={task.blocked_by ?? []}
-                rankContext="task.blocked-by" emptyText={t('No open task can block this one.')} onPick={(tVar) => toggleBlocker(tVar.id)} onClose={close} />
+                getKey={(task) => task.id} getLabel={(task) => task.title || t('Untitled')} getPath={(task) => [projectName(task)]} multiple selected={task.blocked_by ?? []}
+                rankContext="task.blocked-by" emptyText={t('No open task can block this one.')} onPick={(task) => toggleBlocker(task.id)} onClose={close} />
             )} />
         )}
 
@@ -392,9 +392,9 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
             value={`Blocks ${blocks.length}`}
             editor={() => (
               <ul className="flex min-w-0 flex-col gap-0.5" aria-label={t('Tasks waiting for this one')}>
-                {blocks.map((tVar) => (
-                  <li key={tVar.id} className="min-w-0">
-                    <button type="button" className="max-w-full truncate text-left text-meta text-accent hover:underline" onClick={() => onOpen?.(tVar.id)}>{tVar.title || t('Untitled')}</button>
+                {blocks.map((task) => (
+                  <li key={task.id} className="min-w-0">
+                    <button type="button" className="max-w-full truncate text-left text-meta text-accent hover:underline" onClick={() => onOpen?.(task.id)}>{task.title || t('Untitled')}</button>
                   </li>
                 ))}
               </ul>

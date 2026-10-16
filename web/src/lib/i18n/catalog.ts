@@ -148,6 +148,18 @@ export function translatedList<T extends object, K extends keyof T>(items: reado
   })
 }
 
+/**
+ * "a, b and c" in the active language. English keeps the app's two existing
+ * styles (`oxford` adds the comma before "and"); other languages use their own
+ * pattern through Intl.ListFormat.
+ */
+export function formatList(items: readonly string[], oxford = false): string {
+  if (items.length <= 1) return items.join('')
+  if (language !== 'en' && typeof Intl.ListFormat === 'function') return new Intl.ListFormat(locale, { type: 'conjunction' }).format(items)
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return `${items.slice(0, -1).join(', ')}${oxford ? ',' : ''} and ${items[items.length - 1]}`
+}
+
 /** A count or number with the active language's digit grouping. */
 export function formatNumber(n: number): string { return formatNumberIn(locale, n) }
 

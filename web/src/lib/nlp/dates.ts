@@ -210,9 +210,9 @@ function yearAt(token: Token | undefined): number {
 }
 
 export function countAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number; count: number } | null {
-  const t = tokens[i]
-  if (!t || t.quoted) return null
-  if (/^\d{1,3}$/.test(t.norm)) return { n: 1, count: Number(t.norm) }
+  const tok = tokens[i]
+  if (!tok || tok.quoted) return null
+  if (/^\d{1,3}$/.test(tok.norm)) return { n: 1, count: Number(tok.norm) }
   const one = phraseAt(tokens, i, v.oneWords, `${v.code}:one`)
   return one ? { n: one, count: 1 } : null
 }
@@ -387,18 +387,18 @@ const NUMERIC_RE = /^(\d{1,2})([/.-])(\d{1,2})(?:\2(\d{2}|\d{4}))?\.?$/
 const ISO_RE = /^(\d{4})-(\d{1,2})-(\d{1,2})$/
 
 function numericDateAt(tokens: readonly Token[], j: number, ctx: DateContext): { date: string; n: number } | null {
-  const t = tokens[j]
-  if (!t || t.quoted) return null
-  const iso = ISO_RE.exec(t.norm)
+  const tok = tokens[j]
+  if (!tok || tok.quoted) return null
+  const iso = ISO_RE.exec(tok.norm)
   if (iso) {
     const [y, m, d] = [Number(iso[1]), Number(iso[2]), Number(iso[3])]
     return isValidDate(y, m, d) ? { date: toISO(y, m, d), n: 1 } : null
   }
-  const m = NUMERIC_RE.exec(t.norm)
+  const m = NUMERIC_RE.exec(tok.norm)
   if (!m) return null
   const dotted = m[2] === '.'
   // A trailing dot only belongs to the German "12.11." form.
-  if (t.norm.endsWith('.') && !dotted) return null
+  if (tok.norm.endsWith('.') && !dotted) return null
   // "9.30" is a time or a number in month/day locales; dotted dates are D.M only.
   if (dotted && ctx.dayMonthOrder !== 'DM') return null
   const a = Number(m[1])
@@ -470,9 +470,9 @@ function to24(h: number, pm: boolean): number {
 }
 
 function clockAt(tokens: readonly Token[], j: number, v: Vocabulary, o: { afterAt: boolean; hourSuffix: boolean }): { time: string; n: number } | null {
-  const t = tokens[j]
-  if (!t || t.quoted) return null
-  const s = t.norm
+  const tok = tokens[j]
+  if (!tok || tok.quoted) return null
+  const s = tok.norm
   let m: RegExpExecArray | null
   const hourWord = (k: number) => phraseAt(tokens, k, v.hourWords, `${v.code}:hw`)
   if ((m = HM_RE.exec(s))) {

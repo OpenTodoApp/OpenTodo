@@ -1,7 +1,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { RestoreSection } from './RestoreSection'
 import { api, ApiError, isNetworkError } from '../lib/api'
-import { cacheBackupStatus, cachedBackupStatus, defaultBackupSettings, formatBytes, runSummary, scheduleLabel, WEEKDAYS } from '../lib/backups'
+import { cacheBackupStatus, cachedBackupStatus, defaultBackupSettings, formatBytes, runSummary, scheduleLabel, weekdayName, WEEKDAYS } from '../lib/backups'
 import { useOnline } from '../lib/online'
 import type { BackupDestination, BackupRun, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus } from '../lib/types'
 import { Button } from '../ui'
@@ -203,7 +203,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
             {draft.schedule.frequency === 'weekly' && (
               <Field label={t('Day')}>
                 <Select className="w-36" name="schedule-weekday" value={draft.schedule.weekday} onChange={(e) => set({ schedule: { ...draft.schedule, weekday: Number(e.target.value) } })}>
-                  {WEEKDAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
+                  {WEEKDAYS.map((d) => <option key={d} value={d}>{weekdayName(d)}</option>)}
                 </Select>
               </Field>
             )}

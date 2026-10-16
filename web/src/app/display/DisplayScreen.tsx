@@ -105,30 +105,30 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
       if (local.date === (day ?? today)) return local.time ? formatTime(local.time, dt.resolved) : null
       return describeDue(tk.due, today, undefined, dt.resolved)?.label ?? null
     }
-    const toRow = (tVar: Task, group: string, o: { day?: string; depth?: number } = {}): DisplayRowData => {
-      const shared = !!tVar.project_id && memberMap.has(tVar.project_id)
-      const assignee = shared && tVar.assignee_id ? memberName(tVar.assignee_id, memberMap) : null
-      const parent = !o.depth && tVar.parent_id ? breadcrumbOf(tVar, taskMap) : null
-      const due = dueLabel(tVar, o.day)
+    const toRow = (task: Task, group: string, o: { day?: string; depth?: number } = {}): DisplayRowData => {
+      const shared = !!task.project_id && memberMap.has(task.project_id)
+      const assignee = shared && task.assignee_id ? memberName(task.assignee_id, memberMap) : null
+      const parent = !o.depth && task.parent_id ? breadcrumbOf(task, taskMap) : null
+      const due = dueLabel(task, o.day)
       return {
-        key: `${group}:${tVar.id}`, id: tVar.id, title: tVar.title, done: tVar.completed_at !== null, priority: tVar.priority, due,
-        overdue: !!tVar.due && localDueOf(tVar.due).date < today, context: [parent, assignee].filter(Boolean).join(' · ') || null,
-        depth: o.depth, editable: canEditTask(tVar, memberMap),
+        key: `${group}:${task.id}`, id: task.id, title: task.title, done: task.completed_at !== null, priority: task.priority, due,
+        overdue: !!task.due && localDueOf(task.due).date < today, context: [parent, assignee].filter(Boolean).join(' · ') || null,
+        depth: o.depth, editable: canEditTask(task, memberMap),
       }
     }
     const columns = (days: number): Group[] => nextDays(all, today, days).map(({ date, tasks: list }) => ({
-      id: date, heading: dt.formatDate(date, 'heading'), rows: list.map((tVar) => toRow(tVar, date, { day: date })), empty: t('Nothing planned'),
+      id: date, heading: dt.formatDate(date, 'heading'), rows: list.map((task) => toRow(task, date, { day: date })), empty: t('Nothing planned'),
     }))
 
     switch (target.kind) {
       case 'today': {
         const g = groupToday(todayList(all, today), today, blocked)
         const groups: Group[] = [
-          { id: 'overdue', heading: t('Overdue'), rows: g.overdue.map((tVar) => toRow(tVar, 'overdue')) },
-          { id: 'today', heading: t('Today'), rows: g.day.map((tVar) => toRow(tVar, 'today')), empty: g.overdue.length || g.evening.length ? undefined : t('Nothing left for today') },
-          { id: 'evening', heading: t('This Evening'), rows: g.evening.map((tVar) => toRow(tVar, 'evening')) },
-          { id: 'blocked', heading: t('Blocked'), rows: g.blocked.map((tVar) => toRow(tVar, 'blocked')) },
-          { id: 'done', heading: t('Done today'), rows: completedOn(all, today).map((tVar) => toRow(tVar, 'done')) },
+          { id: 'overdue', heading: t('Overdue'), rows: g.overdue.map((task) => toRow(task, 'overdue')) },
+          { id: 'today', heading: t('Today'), rows: g.day.map((task) => toRow(task, 'today')), empty: g.overdue.length || g.evening.length ? undefined : t('Nothing left for today') },
+          { id: 'evening', heading: t('This Evening'), rows: g.evening.map((task) => toRow(task, 'evening')) },
+          { id: 'blocked', heading: t('Blocked'), rows: g.blocked.map((task) => toRow(task, 'blocked')) },
+          { id: 'done', heading: t('Done today'), rows: completedOn(all, today).map((task) => toRow(task, 'done')) },
         ]
         return { title: t('Today'), groups, columns: columns(options.days ?? defaultDays(target)) }
       }
@@ -138,16 +138,16 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         const project = live.find((p) => p.id === target.id)
         if (!project) return { title: t('Project'), missing: { message: t('This project no longer exists.') }, groups: [], columns: [] }
         const open = projectOpenList(all, project.id)
-        const later = open.filter((tVar) => inLater(tVar, today))
-        const tree = buildTaskTree(later.length ? open.filter((tVar) => !inLater(tVar, today)) : open)
+        const later = open.filter((task) => inLater(task, today))
+        const tree = buildTaskTree(later.length ? open.filter((task) => !inLater(task, today)) : open)
         const byId = new Map(tree.roots.map((n) => [n.id, n]))
         const groups: Group[] = groupBySection(project.id, tree.roots.map((n) => n.item), sections)
           .filter((s) => s.tasks.length > 0)
           .map((s) => ({
             id: `section:${s.key}`, heading: s.section?.name ?? null,
-            rows: flattenTree(s.tasks.map((tVar) => byId.get(tVar.id) as TreeNode<Task>)).map((n) => toRow(n.item, `section:${s.key}`, { depth: n.depth })),
+            rows: flattenTree(s.tasks.map((task) => byId.get(task.id) as TreeNode<Task>)).map((n) => toRow(n.item, `section:${s.key}`, { depth: n.depth })),
           }))
-        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: later.map((tVar) => toRow(tVar, 'later')) })
+        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: later.map((task) => toRow(task, 'later')) })
         if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('Nothing left to do in this project') })
         return { title: project.name, groups, columns: [] }
       }
@@ -158,7 +158,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         if (isDashboard(view)) return { title: view.name, missing: { message: t('A dashboard cannot be shown in display mode. Open one of its views instead.') }, groups: [], columns: [] }
         const result = runView(view, { today, labels, projects: live, tasks: all })
         if (!result.ok) return { title: view.name, missing: { message: t('This view’s query has an error: {error}', { error: result.error }) }, groups: [], columns: [] }
-        const groups: Group[] = result.groups.map((g) => ({ id: g.key, heading: g.heading || null, rows: g.tasks.map((tVar) => toRow(tVar, g.key)) }))
+        const groups: Group[] = result.groups.map((g) => ({ id: g.key, heading: g.heading || null, rows: g.tasks.map((task) => toRow(task, g.key)) }))
         if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('No task matches this view') })
         return { title: view.name, groups, columns: [] }
       }

@@ -159,7 +159,7 @@ export function TriageView() {
 
   // The Vim layer acts through the list state (vim-keybindings): j / k move, x completes, dd trashes, :q leaves.
   useEffect(() => registerListState({
-    rows: () => { const s = stateRef.current; return s ? s.ids.map((id) => byId.get(id)).filter((tVar): tVar is Task => !!tVar) : [] },
+    rows: () => { const s = stateRef.current; return s ? s.ids.map((id) => byId.get(id)).filter((task): task is Task => !!task) : [] },
     columns: () => null,
     selected: () => (stateRef.current ? current(stateRef.current) : null),
     select: (id) => {

@@ -13,12 +13,12 @@ import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
 export function withoutArchived(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], keepProject?: string): Task[] {
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   if (hidden.size === 0) return [...tasks]
-  return tasks.filter((t) => !t.project_id || !hidden.has(t.project_id) || t.project_id === keepProject)
+  return tasks.filter((task) => !task.project_id || !hidden.has(task.project_id) || task.project_id === keepProject)
 }
 
 /** Today: open tasks due today or earlier (or deadline / start reached), by due then priority. */
 export function todayList(tasks: readonly Task[], today: string): Task[] {
-  return tasks.filter((t) => inToday(t, today)).sort(compareDueThenPriority)
+  return tasks.filter((task) => inToday(task, today)).sort(compareDueThenPriority)
 }
 
 /**
@@ -27,12 +27,12 @@ export function todayList(tasks: readonly Task[], today: string): Task[] {
  * the tasks due that day within its group (deadlines D3).
  */
 export function upcomingList(tasks: readonly Task[], today: string): Task[] {
-  return tasks.filter((t) => inUpcoming(t, today)).sort(compareDueThenPriority)
+  return tasks.filter((task) => inUpcoming(task, today)).sort(compareDueThenPriority)
 }
 
 /** A project's open tasks (any order; the project list builds its tree and sections from them). */
 export function projectOpenList(tasks: readonly Task[], projectId: string): Task[] {
-  return tasks.filter((t) => !t.completed_at && t.project_id === projectId)
+  return tasks.filter((task) => !task.completed_at && task.project_id === projectId)
 }
 
 export interface TodayGroups {
@@ -47,22 +47,22 @@ export interface TodayGroups {
 
 /** Split Today's list (already sorted) into Overdue, the day, This Evening and Blocked. */
 export function groupToday(list: readonly Task[], today: string, blocked: { has(id: string): boolean } = new Set<string>()): TodayGroups {
-  const waiting = list.filter((t) => blocked.has(t.id))
-  const ready = waiting.length ? list.filter((t) => !blocked.has(t.id)) : [...list]
-  const overdue = ready.filter((t) => overdueInToday(t, today))
-  const rest = ready.filter((t) => !overdueInToday(t, today))
-  return { overdue, day: rest.filter((t) => !t.evening), evening: rest.filter((t) => t.evening), blocked: waiting }
+  const waiting = list.filter((task) => blocked.has(task.id))
+  const ready = waiting.length ? list.filter((tk) => !blocked.has(tk.id)) : [...list]
+  const overdue = ready.filter((item) => overdueInToday(item, today))
+  const rest = ready.filter((task) => !overdueInToday(task, today))
+  return { overdue, day: rest.filter((task) => !task.evening), evening: rest.filter((task) => task.evening), blocked: waiting }
 }
 
 /** Upcoming's list (already sorted) bucketed by its day, in date order. */
 export function groupUpcoming(list: readonly Task[]): { date: string; tasks: Task[] }[] {
   const byDate = new Map<string, Task[]>()
-  for (const t of list) {
-    const date = upcomingDate(t)
+  for (const task of list) {
+    const date = upcomingDate(task)
     if (!date) continue
     const bucket = byDate.get(date)
-    if (bucket) bucket.push(t)
-    else byDate.set(date, [t])
+    if (bucket) bucket.push(task)
+    else byDate.set(date, [task])
   }
   return [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([date, tasks]) => ({ date, tasks }))
 }
@@ -82,6 +82,6 @@ export function nextDays(tasks: readonly Task[], today: string, days: number): {
 /** Tasks completed on the local calendar day `today`, most recent first; a habit's skipped record is not a completion (habits D6). */
 export function completedOn(tasks: readonly Task[], today: string): Task[] {
   return tasks
-    .filter((t) => t.completed_at !== null && !t.deleted_at && !t.skipped && todayISO(new Date(t.completed_at)) === today)
+    .filter((task) => task.completed_at !== null && !task.deleted_at && !task.skipped && todayISO(new Date(task.completed_at)) === today)
     .sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
 }

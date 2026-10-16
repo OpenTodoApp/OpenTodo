@@ -112,7 +112,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const zone = useViewerZone()
   const allTasks = useMemo(() => rawTasks.map((tk) => viewedTask(tk, zone)), [rawTasks, zone])
   const rawMap = useMemo(() => new Map(rawTasks.map((item) => [item.id, item])), [rawTasks])
-  const taskMap = useMemo(() => new Map(allTasks.map((tVar) => [tVar.id, tVar])), [allTasks])
+  const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
 
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
 
@@ -132,11 +132,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const days = useMemo<DayData[]>(() => dates.map((d) => {
     const lane: Task[] = []
     const blocks = new Map<string, Block>()
-    for (const tVar of shown) {
-      if (tVar.due?.date !== d) continue
-      const b = blockFor(tVar)
-      if (b) blocks.set(tVar.id, b)
-      else lane.push(tVar)
+    for (const task of shown) {
+      if (task.due?.date !== d) continue
+      const b = blockFor(task)
+      if (b) blocks.set(task.id, b)
+      else lane.push(task)
     }
     lane.sort((a, b) => a.priority - b.priority || compareByPosition(a, b))
     // Events share the lanes and the overlap marker with task blocks; capacity never sees them.
@@ -145,7 +145,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }), [dates, shown, visibleEvents, zone])
 
   /** Keyboard order: each day's lane, then its blocks in time order (tasks only: events are read-only). */
-  const order = useMemo(() => days.flatMap((d) => [...d.lane.map((tVar) => tVar.id), ...d.layout.blocks.filter((b) => !isEventId(b.id)).map((b) => b.id)]), [days])
+  const order = useMemo(() => days.flatMap((d) => [...d.lane.map((task) => task.id), ...d.layout.blocks.filter((b) => !isEventId(b.id)).map((b) => b.id)]), [days])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -158,11 +158,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // The Calendar destination remembers Day or Week on this device (ux-overhaul).
   useEffect(() => rememberCalendarMode(mode), [mode])
 
-  const startPlacing = useCallback((tVar: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
-    const d = onDate ?? (tVar.due?.date && dates.includes(tVar.due.date) ? tVar.due.date : dates.includes(today) ? today : dates[0])
+  const startPlacing = useCallback((task: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
+    const d = onDate ?? (task.due?.date && dates.includes(task.due.date) ? task.due.date : dates.includes(today) ? today : dates[0])
     const now = new Date()
-    setPlacing({ taskId: tVar.id, date: d, start: placementStart(tVar, d, today, now.getHours() * 60 + now.getMinutes(), gridPrefs) })
-    setSelectedId(tVar.id)
+    setPlacing({ taskId: task.id, date: d, start: placementStart(task, d, today, now.getHours() * 60 + now.getMinutes(), gridPrefs) })
+    setSelectedId(task.id)
   }, [dates, today, prefs])
 
   // `s` from a list sends a task here (placement mode). Read the row and the preferences
@@ -173,8 +173,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     const take = () => {
       const id = placementSignal.take()
       if (!id) return
-      void Promise.all([db.tasks.get(id), getMeta<unknown>(GRID_PREFS_META_KEY, null)]).then(([tVar, raw]) => {
-        if (tVar && !tVar.deleted_at && !tVar.completed_at) startRef.current(viewedTask(tVar), date ?? today, normalizeGridPrefs(raw))
+      void Promise.all([db.tasks.get(id), getMeta<unknown>(GRID_PREFS_META_KEY, null)]).then(([task, raw]) => {
+        if (task && !task.deleted_at && !task.completed_at) startRef.current(viewedTask(task), date ?? today, normalizeGridPrefs(raw))
       })
     }
     take()
@@ -187,15 +187,15 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }, [prefs.startHour, mode])
 
   const commit = useCallback((taskId: string, target: DropTarget) => {
-    const tVar = taskMap.get(taskId)
-    if (!tVar) return
+    const task = taskMap.get(taskId)
+    if (!task) return
     const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
       const time = toHHMM(target.start)
-      if (tVar.due?.date !== target.date || tVar.due?.time !== time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time }))
+      if (task.due?.date !== target.date || task.due?.time !== time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time }))
     } else if (target.type === 'lane') {
-      if (tVar.due?.date !== target.date || tVar.due?.time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date }))
-    } else if (target.estimate !== tVar.estimate_minutes) {
+      if (task.due?.date !== target.date || task.due?.time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date }))
+    } else if (target.estimate !== task.estimate_minutes) {
       void updateTask(taskId, { estimate_minutes: target.estimate })
     }
     setSelectedId(taskId)
@@ -210,15 +210,15 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // Keyboard edits run one after another on the freshest row, so two quick presses
   // move a block two slots even before the live query has re-rendered.
   const queue = useRef<Promise<void>>(Promise.resolve())
-  const edit = useCallback((id: string, fn: (tVar: Task) => Partial<Omit<Task, 'id' | '_clock'>> | null, after?: (tVar: Task, patch: Partial<Task>) => void) => {
+  const edit = useCallback((id: string, fn: (task: Task) => Partial<Omit<Task, 'id' | '_clock'>> | null, after?: (task: Task, patch: Partial<Task>) => void) => {
     queue.current = queue.current.then(async () => {
       const raw = await db.tasks.get(id)
       if (!raw || raw.deleted_at) return
-      const tVar = viewedTask(raw)
-      const patch = fn(tVar)
+      const task = viewedTask(raw)
+      const patch = fn(task)
       if (!patch) return
       await updateTask(id, 'due' in patch ? { ...patch, due: dueFromView(raw.due, patch.due ?? null) } : patch)
-      after?.(tVar, patch)
+      after?.(task, patch)
     }).catch(() => undefined)
   }, [])
 
@@ -239,7 +239,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     follow(next.date)
   }
   /** Arrows with no selection pick the first item; with a dated task they run `move`. */
-  const arrows = (move: (tVar: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
+  const arrows = (move: (task: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
     if (placing) return false
     if (!task || !task.due) {
       if (!task && order.length) { setSelectedId(order[0]); return }
@@ -265,26 +265,26 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     'calendar.nudge': (e) => {
       const dir = e.key === 'ArrowUp' ? -1 : 1
       if (placing) { ghost({ ...placing, start: clamp(placing.start + dir * SLOT_MINUTES, 0, LAST_SLOT) }); return }
-      return arrows((tVar) => {
-        edit(tVar.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, nowMinutes, prefs) }) } : null)
+      return arrows((task) => {
+        edit(task.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, nowMinutes, prefs) }) } : null)
       })(e)
     },
     'calendar.shift-day': (e) => {
       const days = e.key === 'ArrowLeft' ? -1 : 1
       if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
-      return arrows((tVar) => {
-        edit(tVar.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
+      return arrows((task) => {
+        edit(task.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
       })(e)
     },
     // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
-    'calendar.estimate': arrows((tVar, _due, e) => edit(tVar.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
+    'calendar.estimate': arrows((task, _due, e) => edit(task.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
     'calendar.next': unlessPlacing(() => setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)),
     'calendar.prev': unlessPlacing(() => setSelectedId(order[Math.max(0, idx - 1)] ?? null)),
     'calendar.range-prev': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))),
     'calendar.range-next': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))),
     'calendar.today': unlessPlacing(() => goTo(today)),
     // Keyboard twin of dropping on the lane: keep the date, clear the time.
-    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (tVar) => (tVar.due ? { due: { date: tVar.due.date } } : null)) }),
+    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (task) => (task.due ? { due: { date: task.due.date } } : null)) }),
     'calendar.place': unlessPlacing(() => { if (!task?.due) return false; startPlacing(task, task.due.date) }),
     'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); setOpenId(task.id) }),
     'calendar.complete': unlessPlacing(() => {
@@ -317,7 +317,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
   planActions.current = {
     onPointerDown: (e, id) => startDrag(e, { taskId: id, kind: 'move' }),
-    onPlace: (id) => { const tVar = taskMap.get(id); if (tVar) startPlacing(tVar) },
+    onPlace: (id) => { const task = taskMap.get(id); if (task) startPlacing(task) },
     onOpen: (id) => setOpenId(id),
   }
   const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel actions={planActions} />))
@@ -775,8 +775,8 @@ function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
     let out: Task[]
     if (source === 'nodate') out = open.filter((tk) => !tk.due)
     else if (source === 'overdue') out = open.filter((item) => item.due && localDueOf(item.due).date < today)
-    else if (source.startsWith('project:')) out = open.filter((tVar) => tVar.project_id === source.slice(8))
-    else out = open.filter((tVar) => tVar.project_id === null)
+    else if (source.startsWith('project:')) out = open.filter((task) => task.project_id === source.slice(8))
+    else out = open.filter((task) => task.project_id === null)
     return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
   const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Overdue') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')
@@ -800,24 +800,24 @@ function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
       <p className="mb-2 text-meta text-faint">{t.rich('Drag a task onto a time, or focus one and press {key}.', { key: <span className="ui-kbd">s</span> })}</p>
       <ul className="space-y-0.5" aria-label={t('Tasks to plan')}>
         {list.length === 0 && <li className="px-1 py-2 text-meta text-faint">{t('Nothing here.')}</li>}
-        {list.map((tVar) => (
-          <li key={tVar.id}>
+        {list.map((task) => (
+          <li key={task.id}>
             <button
               type="button"
-              data-tray-task={tVar.id}
-              onPointerDown={(e) => actions.current?.onPointerDown(e, tVar.id)}
+              data-tray-task={task.id}
+              onPointerDown={(e) => actions.current?.onPointerDown(e, task.id)}
               onKeyDown={(e) => {
                 if (e.key === 's' || e.key === 'Enter') {
                   e.preventDefault()
                   e.stopPropagation()
-                  actions.current?.onPlace(tVar.id)
+                  actions.current?.onPlace(task.id)
                 }
               }}
-              onDoubleClick={() => actions.current?.onOpen(tVar.id)}
+              onDoubleClick={() => actions.current?.onOpen(task.id)}
               className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
             >
-              <span className="truncate">{tVar.title || t('Untitled')}</span>
-              {tVar.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(tVar.estimate_minutes)}</span> : null}
+              <span className="truncate">{task.title || t('Untitled')}</span>
+              {task.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
             </button>
           </li>
         ))}

@@ -110,7 +110,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     if (x1 && x1 !== task.title) void updateTask(task.id, { title: x1 })
     else setTitle(task.title)
   }
-  const toggle = (tVar: Task) => (onToggleComplete ? onToggleComplete(tVar) : void completeWithUndo(tVar.id, !tVar.completed_at))
+  const toggle = (task: Task) => (onToggleComplete ? onToggleComplete(task) : void completeWithUndo(task.id, !task.completed_at))
   const remove = () => { void deleteWithUndo(task.id); onClose() }
   const copyLink = () => {
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})

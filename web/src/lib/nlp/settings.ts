@@ -86,7 +86,7 @@ export function resolveDayMonthOrder(s: QuickAddSettings, browser: readonly stri
 }
 
 function languageDayMonthOrder(s: QuickAddSettings, browser: readonly string[]): DayMonthOrder {
-  const first = (s.languages !== null ? s.languages[0] : browser.find((t) => t.toLowerCase().split(/[-_]/)[0] in VOCABULARIES)) ?? 'en'
+  const first = (s.languages !== null ? s.languages[0] : browser.find((item) => item.toLowerCase().split(/[-_]/)[0] in VOCABULARIES)) ?? 'en'
   const [lang, region] = first.toLowerCase().split(/[-_]/)
   if (lang === 'en') return !region || region === 'us' ? 'MD' : 'DM'
   return VOCABULARIES[lang]?.dayMonthOrder ?? 'MD'

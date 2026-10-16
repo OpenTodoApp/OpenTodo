@@ -191,10 +191,10 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
       if (!row) continue
       keys.add(`${op.entity}:${op.entityId}`)
       if (op.entity === 'task') {
-        const t = row as unknown as Task
-        if (t.title) tasks.add(t.title)
-        if (t.project_id) {
-          const p = await db.projects.get(t.project_id)
+        const task = row as unknown as Task
+        if (task.title) tasks.add(task.title)
+        if (task.project_id) {
+          const p = await db.projects.get(task.project_id)
           if (p?.name) projects.add(p.name)
         }
       } else if (op.entity === 'project' && typeof row.name === 'string') {

@@ -34,12 +34,12 @@ export function publicGroups(list: PublicList): { id: string | null; name: strin
     out.push({ task: x1, depth })
     for (const c of (children.get(x1.id) ?? []).sort(byPos)) walk(c, depth + 1, out)
   }
-  const top = list.tasks.filter((tVar) => !tVar.parent_id || !ids.has(tVar.parent_id))
+  const top = list.tasks.filter((item) => !item.parent_id || !ids.has(item.parent_id))
   const sections = [{ id: null as string | null, name: null as string | null }, ...[...list.sections].sort((a, b) => a.position - b.position)]
   const known = new Set(list.sections.map((s) => s.id))
   return sections.map((s) => {
     const rows: { task: Task; depth: number }[] = []
-    for (const tVar of top.filter((x) => (s.id === null ? !x.section_id || !known.has(x.section_id) : x.section_id === s.id)).sort(byPos)) walk(tVar, 0, rows)
+    for (const item of top.filter((x) => (s.id === null ? !x.section_id || !known.has(x.section_id) : x.section_id === s.id)).sort(byPos)) walk(item, 0, rows)
     return { id: s.id, name: s.name, rows }
   }).filter((g) => g.rows.length > 0)
 }
@@ -223,8 +223,8 @@ function PublicDisplay({ options, state, groups, pending, error, updatedLine, on
   })), [groups, pending, list])
   const rows = useMemo(() => columns.flatMap((c) => c.rows), [columns])
   const toggle = useCallback((r: DisplayRowData) => {
-    const tVar = byId.get(r.id)
-    if (tVar && r.editable) onToggle(tVar, !r.done)
+    const item = byId.get(r.id)
+    if (item && r.editable) onToggle(item, !r.done)
   }, [byId, onToggle])
   const { focusKey, setFocusKey } = useDisplayKeys(rows, toggle)
 

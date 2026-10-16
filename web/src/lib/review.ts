@@ -55,10 +55,10 @@ export function reviewSteps(input: ReviewInput): ReviewSteps {
   const until = addDaysISO(input.today, 6)
   const archived = new Set(input.projects.filter((p) => p.archived).map((p) => p.id))
   const ahead = counted
-    .filter((t) => t.completed_at === null && t.due && t.due.date >= input.today && t.due.date <= until && !(t.project_id && archived.has(t.project_id)))
+    .filter((task) => task.completed_at === null && task.due && task.due.date >= input.today && task.due.date <= until && !(task.project_id && archived.has(task.project_id)))
     .sort((a, b) => (a.due!.date < b.due!.date ? -1 : a.due!.date > b.due!.date ? 1 : a.priority - b.priority))
   // "No open task" looks at every live task of the project, whoever it is assigned to.
-  const withOpen = new Set(input.tasks.filter((t) => !t.deleted_at && t.completed_at === null && t.project_id).map((t) => t.project_id!))
+  const withOpen = new Set(input.tasks.filter((tk) => !tk.deleted_at && tk.completed_at === null && tk.project_id).map((item) => item.project_id!))
   const memberships = input.memberships as Map<string, Membership>
   const nextActions = input.projects
     .filter((p) => !p.deleted_at && !p.archived && !withOpen.has(p.id) && canEditTasks(roleOf(p.id, memberships)))

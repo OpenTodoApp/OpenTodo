@@ -216,8 +216,8 @@ export const toggleCheck: Command = (state, dispatch) => {
 function listDepth(state: EditorState): number {
   const { $from } = state.selection
   for (let d = $from.depth; d > 0; d--) {
-    const t = $from.node(d).type
-    if (t === schema.nodes.bullet_list || t === schema.nodes.ordered_list) return d
+    const item = $from.node(d).type
+    if (item === schema.nodes.bullet_list || item === schema.nodes.ordered_list) return d
   }
   return -1
 }

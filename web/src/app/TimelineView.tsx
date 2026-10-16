@@ -133,39 +133,39 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   // bar the arrows fall through to the list.
   const rangeStep = zoom === 'week' ? 28 : 7
   const selectedLine = selectedId ? lineOf.get(selectedId) : undefined
-  const dateKey = (fn: (tVar: Task, dir: number) => Partial<Task> | null, needsSpan = false) => (e: KeyboardEvent) => {
+  const dateKey = (fn: (task: Task, dir: number) => Partial<Task> | null, needsSpan = false) => (e: KeyboardEvent) => {
     if (!selectedLine) return false
     // A read-only project or an undated row: the key is the timeline's but changes nothing.
     if (!editable || (needsSpan && !selectedLine.span)) return
     const dir = e.key === 'ArrowLeft' ? -1 : 1
-    edit(selectedLine.task.id, (tVar) => fn(tVar, dir))
+    edit(selectedLine.task.id, (task) => fn(task, dir))
   }
   useShortcutScope('timeline', {
     'timeline.range-prev': () => setAnchor((a) => addDaysISO(a, -rangeStep)),
     'timeline.range-next': () => setAnchor((a) => addDaysISO(a, rangeStep)),
     'timeline.today': () => setAnchor(today),
-    'timeline.shift': dateKey((tVar, dir) => shiftDates(tVar, dir, zone), true),
-    'timeline.deadline': dateKey((tVar, dir) => { const deadline = deadlineStep(tVar, dir, zone); return deadline ? { deadline } : null }),
+    'timeline.shift': dateKey((task, dir) => shiftDates(task, dir, zone), true),
+    'timeline.deadline': dateKey((task, dir) => { const deadline = deadlineStep(task, dir, zone); return deadline ? { deadline } : null }),
   })
 
   /** Drag a bar (shift), one of its edges (start / deadline), or an unscheduled row (due). */
-  const startDrag = (e: React.PointerEvent, tVar: Task, kind: 'move' | 'start' | 'end' | 'place') => {
+  const startDrag = (e: React.PointerEvent, task: Task, kind: 'move' | 'start' | 'end' | 'place') => {
     if (!editable || e.button !== 0) return
     e.stopPropagation()
     const grab = dayAt(e.clientX)
     beginDrag(e, {
-      label: tVar.title,
+      label: task.title,
       onStart: () => setDragging(true),
       onEnd: () => setDragging(false),
       onDrop: (key) => {
         if (!key.startsWith('tl:')) return
         const day = key.slice(3)
-        const fresh = byId.get(tVar.id) ?? tVar
-        if (kind === 'move') write(tVar.id, shiftDates(fresh, dayOffset(grab, day), zone))
-        else if (kind === 'start') write(tVar.id, { start: day })
-        else if (kind === 'end') write(tVar.id, { deadline: day })
-        else write(tVar.id, { due: fresh.due ? { ...fresh.due, date: day } : { date: day } })
-        onSelect(tVar.id)
+        const fresh = byId.get(task.id) ?? task
+        if (kind === 'move') write(task.id, shiftDates(fresh, dayOffset(grab, day), zone))
+        else if (kind === 'start') write(task.id, { start: day })
+        else if (kind === 'end') write(task.id, { deadline: day })
+        else write(task.id, { due: fresh.due ? { ...fresh.due, date: day } : { date: day } })
+        onSelect(task.id)
       },
     })
   }
@@ -193,7 +193,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     )
   }
 
-  const bar = (tVar: Task, s: Span, selected: boolean) => {
+  const bar = (task: Task, s: Span, selected: boolean) => {
     const from = Math.max(0, dayOffset(ax.from, s.from))
     const to = Math.min(totalDays - 1, dayOffset(ax.from, s.to))
     if (to < 0 || from > totalDays - 1) {
@@ -204,13 +204,13 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     const clippedLeft = dayOffset(ax.from, s.from) < 0
     const clippedRight = dayOffset(ax.from, s.to) > totalDays - 1
     return (
-      <div data-bar={tVar.id} data-late={s.late || undefined}
-        onPointerDown={(e) => startDrag(e, tVar, 'move')}
-        onClick={() => onSelect(tVar.id)} onDoubleClick={() => onOpen(tVar.id)}
+      <div data-bar={task.id} data-late={s.late || undefined}
+        onPointerDown={(e) => startDrag(e, task, 'move')}
+        onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
         className={`absolute top-1.5 flex h-5 items-center rounded-chip border ${s.late ? 'border-danger bg-danger-soft' : 'border-accent bg-accent-soft'} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : ''}`}
         style={{ left: from * px, width: Math.max(px, (to - from + 1) * px) }}>
         {clippedLeft && <Icon name="chevron-left" size="xs" className="text-muted" />}
-        {editable && !clippedLeft && <span data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, tVar, 'start')} />}
+        {editable && !clippedLeft && <span data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, task, 'start')} />}
         {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(ax.from, s.dueAt) >= 0 && (
           <span data-due-marker className="absolute top-1 h-2.5 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(ax.from, s.dueAt) - from + 0.5) * px }} aria-hidden />
         )}
@@ -220,7 +220,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
           </span>
         )}
         {clippedRight && <Icon name="chevron-right" size="xs" className="ml-auto text-muted" />}
-        {editable && !clippedRight && <span data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, tVar, 'end')} />}
+        {editable && !clippedRight && <span data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, task, 'end')} />}
       </div>
     )
   }

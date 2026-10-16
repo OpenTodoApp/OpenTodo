@@ -268,7 +268,7 @@ export function App() {
         {demo ? (
           // The banner takes its own row so the shell still fills the rest of the screen.
           <div className="flex h-full flex-col">
-            <DemoBanner notice={sync.state === 'limited' ? DEMO_LIMIT_NOTICE : undefined} />
+            <DemoBanner notice={sync.state === 'limited' ? t(DEMO_LIMIT_NOTICE) : undefined} />
             <div className="min-h-0 flex-1"><Shell user={phase.user} onLogout={() => void logout()} /></div>
           </div>
         ) : (
@@ -294,7 +294,7 @@ async function clearDeviceData() {
 export function DemoBanner({ notice }: { notice?: string }) {
   return (
     <div role="status" data-testid="demo-banner" className="border-b border-info bg-info-soft px-4 py-1.5 text-center text-body text-on-info-soft">
-      {DEMO_BANNER}
+      {t(DEMO_BANNER)}
       {notice && <span className="mt-0.5 block font-medium text-on-warning-soft" data-testid="demo-limit">{notice}</span>}
     </div>
   )

@@ -146,7 +146,7 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   }, [task.id])
 
   const name = useCallback((id: string, ev?: ActivityEvent) => {
-    if (isPublicEvent(ev)) return PUBLIC_ACTOR_LABEL
+    if (isPublicEvent(ev)) return t(PUBLIC_ACTOR_LABEL)
     if (id && id === me) return t('You')
     return memberName(id, memberships) ?? (ev?.actorName || older.find((e) => e.actor === id && e.actorName)?.actorName) ?? t('Someone')
   }, [me, memberships, older])
