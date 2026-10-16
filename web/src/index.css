@@ -325,9 +325,10 @@
    when they leave. Surfaces are pure white or pure black, text reaches 7:1, soft
    tints become the surface (outlined below), borders and marks reach 3:1. The
    selectors outrank the mode and accent blocks above (html:root plus attributes),
-   so they combine with any theme mode and accent. The two dark blocks must stay
+   so they combine with any theme mode and accent; like the mode tokens they also
+   reach [data-theme] subtrees (the workbench frame). The two dark blocks must stay
    identical; contrast.test.ts measures every pair of the override at 7:1 for text. */
-html:root[data-contrast="high"] {
+html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"] {
   --ot-canvas: #ffffff;
   --ot-surface: #ffffff;
   --ot-raised: #ffffff;
@@ -437,7 +438,7 @@ html:root[data-contrast="high"] {
     --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #cbd5e1;
   }
 }
-html:root[data-contrast="high"][data-theme="dark"] {
+html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [data-theme="dark"] {
   --ot-canvas: #000000;
   --ot-surface: #000000;
   --ot-raised: #000000;

@@ -33,9 +33,9 @@ export function parseThemes(css: string) {
  */
 export function parseContrastOverride(css: string) {
   const base = parseThemes(css)
-  const light = declarations(block(css, 'html:root[data-contrast="high"] {').body)
+  const light = declarations(block(css, 'html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"] {').body)
   const darkMedia = declarations(block(css, 'html:root[data-contrast="high"]:not([data-theme="light"]) {').body)
-  const darkAttr = declarations(block(css, 'html:root[data-contrast="high"][data-theme="dark"] {').body)
+  const darkAttr = declarations(block(css, 'html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [data-theme="dark"] {').body)
   return {
     raw: { light, darkMedia, darkAttr },
     light: { ...base.light, ...light },
