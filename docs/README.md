@@ -31,6 +31,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Saved views](saved-views.md) | Turn a filter query into a view pinned to the sidebar, group and sort it, manage it from its menu, and put up to six views on one dashboard. |
 | [Search and commands](search.md) | One box on Ctrl+K finds any task, project, label, view or setting, runs any command by name, and understands filter queries. |
 | [Sections and boards](sections-and-boards.md) | Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard. |
+| &nbsp;&nbsp;↳ [A project on a timeline](project-timeline.md) | Show a project's tasks as bars from their start to their deadline, drag them to reschedule, and see which tasks wait for which. |
 | [Attachments](attachments.md) | Add files and links to tasks and comments, offline included; limits, who can see and remove them, encryption and where the files live. |
 | [Labels and filters](labels-and-filters.md) | Tag tasks across projects with labels, then find exactly what you need with the filter language and save it as a view. |
 | &nbsp;&nbsp;↳ [Manage labels](manage-labels.md) | The labels page: rename, recolour and reorder labels, merge two into one, delete a label, and what happens when two devices create the same one. |
