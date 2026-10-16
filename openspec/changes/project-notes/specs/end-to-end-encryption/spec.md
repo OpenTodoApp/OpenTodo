@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; view names and queries; comment bodies; attachment names, types and links) and its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links) and the bytes of its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`

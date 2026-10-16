@@ -1,16 +1,16 @@
 // The rich-text notes editor (OpenSpec change `collaborative-rich-text`). This
-// module is loaded with React.lazy from TaskDetail, so ProseMirror and Yjs are a
-// separate chunk fetched when a note is first opened.
+// module is loaded with React.lazy from TaskDetail and ProjectNote, so ProseMirror
+// and Yjs are a separate chunk fetched when a note is first opened.
 import { useEffect, useRef, useState } from 'react'
 import { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
 import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
 import { encryptionSnapshot } from '../lib/e2ee'
-import { foldNote, updateTask } from '../lib/ops'
+import { foldNote, mutate } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
 import { applyBody, createState, markdownSlice, pmToModel, remoteKey, writeBody, type EditorHooks } from '../lib/richtextEditor'
-import type { Task } from '../lib/types'
+import type { Clock } from '../lib/types'
 import { Markdown } from './Markdown'
 
 /** Debounce between the last keystroke and saving the note (design D3). */
@@ -32,7 +32,24 @@ function usage(doc: Y.Doc, pm: import('prosemirror-model').Node): number {
   return Math.ceil(Math.max(encodeDoc(doc).length / docCap, text / textCap) * MAX_DOC_CHARS)
 }
 
-export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: boolean }) {
+/** Whose note the editor edits: a task's or a project's (OpenSpec change project-notes, D3). */
+export interface NoteTarget {
+  entity: 'task' | 'project'
+  id: string
+  notes_doc?: string
+  description?: string
+  _clock?: Clock
+}
+
+export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape }: {
+  note: NoteTarget
+  readOnly: boolean
+  /** Focus the editor when it mounts (the project note opens in place). */
+  autoFocus?: boolean
+  /** Called on Escape after the editor lost focus (the project note returns to its rendered view). */
+  onEscape?: () => void
+}) {
+  const task = note
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const ydoc = useRef<Y.Doc | null>(null)
@@ -40,7 +57,8 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
   const size = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dirty = useRef(false)
-  const taskId = task.id
+  const taskId = note.id
+  const entity = note.entity
   const [unreadable, setUnreadable] = useState(false)
   const [sizeNote, setSizeNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -55,9 +73,11 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
   const docClock = task._clock?.notes_doc
   useEffect(() => {
     if (readOnly) return
-    void foldNote(taskId)
-  }, [taskId, readOnly, descClock?.ts, descClock?.device, docClock?.ts, docClock?.device])
+    void foldNote(entity, taskId)
+  }, [entity, taskId, readOnly, descClock?.ts, descClock?.device, docClock?.ts, docClock?.device])
 
+  const onEscapeRef = useRef(onEscape)
+  onEscapeRef.current = onEscape
   const flush = useRef<() => void>(() => {})
   flush.current = () => {
     if (timer.current) clearTimeout(timer.current)
@@ -65,7 +85,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
     if (!dirty.current || !ydoc.current) return
     dirty.current = false
     const value = encodeDoc(ydoc.current)
-    updateTask(taskId, { notes_doc: value }).then(
+    mutate(entity, taskId, { notes_doc: value }).then(
       () => setError(null),
       (err) => setError(err instanceof DocTooLargeError ? err.message : `Could not save the note: ${err instanceof Error ? err.message : String(err)}`),
     )
@@ -84,7 +104,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
     size.current = 0
     const hooks: EditorHooks = {
       askLink: (current) => window.prompt('Link address (empty to remove)', current || 'https://'),
-      onEscape: () => view.current?.dom.blur(),
+      onEscape: () => { view.current?.dom.blur(); onEscapeRef.current?.() },
       size: () => size.current,
       placeholder: readOnly ? '' : 'Add notes…',
     }
@@ -136,6 +156,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
     })
     view.current = v
     size.current = usage(doc, v.state.doc)
+    if (autoFocus && !readOnly) v.focus()
     const onHide = () => {
       if (document.visibilityState === 'hidden') flush.current()
     }
@@ -192,7 +213,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
           This note's formatting could not be read on this device; its text is shown instead.
         </p>
         <div className="rounded-control border border-default p-3 text-body">
-          <Markdown source={task.description} />
+          <Markdown source={task.description ?? ''} />
         </div>
       </div>
     )

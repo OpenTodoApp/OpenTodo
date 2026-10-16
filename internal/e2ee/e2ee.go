@@ -37,7 +37,7 @@ const Placeholder = "Encrypted item"
 // Keep in step with CONTENT_FIELDS in web/src/lib/e2ee.ts.
 var ContentFields = map[string][]string{
 	"task":    {"title", "description", "ical_extra", "notes_doc"},
-	"project": {"name"},
+	"project": {"name", "description", "notes_doc"},
 	"label":   {"name"},
 	"section": {"name"},
 	"view":    {"name", "query"},

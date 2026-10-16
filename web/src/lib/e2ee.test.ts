@@ -61,6 +61,7 @@ vi.mock('./api', () => ({
 }))
 
 import { decryptValue, isEnvelope, MAX_PLAINTEXT_BYTES } from './crypto'
+import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED } from './docfields'
 import { db, getMeta, setMeta, useDatabase } from './db'
 import {
   changePassphrase, currentKey, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
@@ -206,6 +207,19 @@ describe('field split and transport (task 2.1)', () => {
     expect(content.length).toBeGreaterThanOrEqual(6)
     for (const o of content) expect(isEnvelope(o.value), `${o.entity}.${o.field}`).toBe(true)
     expect(JSON.stringify(server.log.slice(logMark))).not.toMatch(/Offline idea|secret plan|Health stuff|crown"|Friday/)
+  })
+
+  it('a project note is ciphertext on the server and its position stays plaintext (project-notes 2.1)', async () => {
+    await enableOnA()
+    await mutate('project', 'p1', { description: 'Packing list', notes_doc: 'ydoc:v1:AAEC', position: 7 })
+    await syncNow()
+    expect(isEnvelope(current('project', 'p1', 'description'))).toBe(true)
+    expect(isEnvelope(current('project', 'p1', 'notes_doc'))).toBe(true)
+    expect(current('project', 'p1', 'position')).toBe(7)
+    expect(JSON.stringify(server.log)).not.toMatch(/Packing list/)
+    const before = await db.outbox.count()
+    await expect(mutate('project', 'p1', { notes_doc: 'ydoc:v1:' + 'A'.repeat(MAX_DOC_CHARS_ENCRYPTED) })).rejects.toBeInstanceOf(DocTooLargeError)
+    expect(await db.outbox.count()).toBe(before)
   })
 
   it('does not encrypt content of shared projects', async () => {
@@ -419,6 +433,20 @@ describe('migration job (task 2.4)', () => {
     const wire = await prepareOutgoing(outbox.map(({ local: _l, ...o }) => o))
     for (const o of wire) expect(isEnvelope(o.value)).toBe(true)
     expect(encryptionSnapshot().migration).toBeNull()
+  })
+
+  it('encrypts an existing project description when encryption is turned on (project-notes 2.1)', async () => {
+    await on('A')
+    await applyOps([
+      { id: 'pd1', entity: 'project', entityId: 'pp', field: 'name', value: 'Trip', ts: 100, device: 'old' },
+      { id: 'pd2', entity: 'project', entityId: 'pp', field: 'description', value: 'Book the ferry', ts: 100, device: 'old' },
+    ])
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    const outbox = await db.outbox.toArray()
+    const wire = await prepareOutgoing(outbox.map(({ local: _l, ...o }) => o))
+    const desc = wire.find((o) => o.entity === 'project' && o.field === 'description')
+    expect(desc && isEnvelope(desc.value)).toBe(true)
   })
 
   it('normalizeOnSight ignores plaintext ops that no longer win', async () => {

@@ -64,6 +64,10 @@ Open the task and type in **Add subtask**, or select it in the list and press <k
 
 Create a project with **+** next to **Projects** in the sidebar; pick a parent to make it a sub-project. The **Project** menu colours, moves, renames, duplicates, archives or deletes it. See [Projects and sub-projects](projects.md) and [Sections and boards](sections-and-boards.md).
 
+## Project notes
+
+Every project can carry a note above its tasks; <kbd>Shift</kbd>+<kbd>P</kbd> edits it. See [Project notes](project-notes.md).
+
 ## Put things in order
 
 In the Inbox and in projects, you decide the order: drag a task, or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>. See [Work from the list](work-from-the-list.md#put-things-in-order).

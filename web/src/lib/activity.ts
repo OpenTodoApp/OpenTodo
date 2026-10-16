@@ -34,7 +34,7 @@ const COUNTED = new Set(['task', 'project', 'comment'])
  * readable projection (`description`) is written in the same batch and counts.
  * Same list as `Opaque` in internal/activity.
  */
-export const OPAQUE = new Set(['task.notes_doc'])
+export const OPAQUE = new Set(['task.notes_doc', 'project.notes_doc'])
 const counts = (op: { entity: string; field: string }) => COUNTED.has(op.entity) && !OPAQUE.has(`${op.entity}.${op.field}`)
 
 /** An op as the rule needs it; `from` is an optional known old value (local rows). */

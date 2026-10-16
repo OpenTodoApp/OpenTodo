@@ -282,7 +282,7 @@ type guard struct{ s *Service }
 // MaxTextBytes (the JSON quotes of a string do not count).
 func (g guard) CheckOp(op opsync.Op) error {
 	limit := MaxTextBytes
-	if op.Entity == "task" && (op.Field == "description" || op.Field == "notes_doc") {
+	if (op.Entity == "task" || op.Entity == "project") && (op.Field == "description" || op.Field == "notes_doc") {
 		limit = MaxNotesBytes
 	}
 	if len(op.Value) > limit+2 {
