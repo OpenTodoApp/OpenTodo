@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Imports from TickTick and Todoist keep more of what you had.** TickTick tasks keep the time they were created and completed (the backup writes times as `+0000`, which was not read), and a reminder on an all-day TickTick task fires at the time you set (`PT9H` is 09:00 on the day, not 18:00). A Todoist task with several comments lists them under one "Comments" heading, and an absolute Todoist reminder fires at its time in the task's time zone. Each named format now has a second, richer test file covering recurring tasks, reminders, deadlines, checklists, completed and canceled items and boards. ([Import formats](docs/import.md))
+
 ## [0.5.0] - 2026-10-16
 
 OpenTodo 0.5.0 is a new interface on the same data. The task panel is part of the frame and reads like a summary, the sidebar is shorter, Settings has nine sections with a search field, every keyboard shortcut comes from one registry and <kbd>?</kbd> lists the ones for where you are, and on a phone there is a tab bar, a **+** button and full-screen tasks. Around it: **Process the Inbox** one task at a time, a rich-text **note** at the top of every project, **public links** that share a project's list with anyone, optional **outgoing email** for password resets, verified sign-up and invitations, a **Month** calendar and a project **Timeline**, calendar feeds in both directions, attachments, tasks that wait for other tasks, bulk changes, duplicates and templates, and search and commands on <kbd>Ctrl</kbd>+<kbd>K</kbd>. Every help page is now short and opens with a screenshot.
