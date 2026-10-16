@@ -174,7 +174,7 @@ describe('vocabularies', () => {
       expect(v.code).toBe(code)
       expect(v.weekdays, code).toHaveLength(7)
       expect(v.months, code).toHaveLength(12)
-      expect(shape(v.units), code).toEqual(['day', 'hour', 'month', 'week'])
+      expect(shape(v.units), code).toEqual(['day', 'hour', 'minute', 'month', 'week', 'year'])
       for (const wd of v.weekdays) expect(wd.length, code).toBeGreaterThan(0)
       for (const m of v.months) expect(m.names.length, code).toBeGreaterThan(0)
       expect(Object.values(v.dayWords), code).toContain(0)
@@ -546,7 +546,7 @@ describe('parse: escaping and dismissal', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, chips: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, recurrence: null, reminders: [], chips: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {

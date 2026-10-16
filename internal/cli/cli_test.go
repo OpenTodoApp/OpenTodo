@@ -910,3 +910,109 @@ func TestTokenCreateScope(t *testing.T) {
 		}
 	}
 }
+
+func TestAddRepeatAndRemind(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	reminders := func(taskID string) []map[string]any {
+		var out []map[string]any
+		for _, r := range h.apiJSON("GET", "/api/v1/reminders", nil)["reminders"].([]any) {
+			m := r.(map[string]any)
+			if m["task_id"] == taskID && m["deleted_at"] == nil {
+				out = append(out, m)
+			}
+		}
+		return out
+	}
+	// A rule and two reminders, in order.
+	id := strings.TrimSpace(h.mustRun("add", "Backup check", "--due", "monday", "--time", "09:00", "--repeat", "Every Week", "--remind", "30 min before", "--remind", "1 day before"))
+	if tk := h.task(id); tk["recurrence"] != "every week" {
+		t.Fatalf("task = %v", tk)
+	}
+	rs := reminders(id)
+	if len(rs) != 2 || rs[0]["offset_minutes"] != float64(-30) || rs[1]["offset_minutes"] != float64(-1440) || rs[0]["kind"] != "relative" {
+		t.Fatalf("reminders = %v", rs)
+	}
+	// An invalid rule never reaches the server.
+	h.requestLog()
+	if code, _, errb := h.run("add", "x", "--repeat", "every blursday"); code != ExitUsage || !strings.Contains(errb, "--repeat") || len(h.requestLog()) != 0 {
+		t.Fatalf("invalid rule: %d %q", code, errb)
+	}
+	// Clear the rule; the due date stays.
+	out := h.mustRun("edit", id, "--repeat", "none", "--json")
+	var edited task
+	_ = json.Unmarshal([]byte(out), &edited)
+	if tk := h.task(id); tk["recurrence"] != nil || tk["due"] == nil {
+		t.Fatalf("cleared = %v", tk)
+	}
+	// A reminder without a due waits for one, and says so.
+	code, stdout, stderr := h.run("add", "Prepare slides", "--remind", "1 day before")
+	if code != 0 || !strings.Contains(stderr, "once the task has a due date") {
+		t.Fatalf("waiting reminder: %d %q %q", code, stdout, stderr)
+	}
+	waiting := reminders(strings.TrimSpace(stdout))
+	if len(waiting) != 1 || waiting[0]["offset_minutes"] != float64(-1440) || waiting[0]["fire_at"] != nil {
+		t.Fatalf("waiting = %v", waiting)
+	}
+	// An idempotent retry converges to one task and one reminder.
+	var first, second map[string]any
+	_ = json.Unmarshal([]byte(h.mustRun("add", "Flight", "--due", "2026-11-03", "--time", "06:00", "--remind", "1 day before", "--idempotency-key", "trip-flight", "--json")), &first)
+	_ = json.Unmarshal([]byte(h.mustRun("add", "Flight", "--due", "2026-11-03", "--time", "06:00", "--remind", "1 day before", "--idempotency-key", "trip-flight", "--json")), &second)
+	if first["id"] != second["id"] || len(reminders(first["id"].(string))) != 1 {
+		t.Fatalf("retry: %v %v %v", first["id"], second["id"], reminders(first["id"].(string)))
+	}
+	// A bad reminder phrase is a usage error before any request.
+	if code, _, errb := h.run("add", "x", "--remind", "whenever"); code != ExitUsage || !strings.Contains(errb, "--remind") {
+		t.Fatalf("bad phrase: %d %q", code, errb)
+	}	// The server refuses the reminder (over a year) after creating the task: exit 1, the task id named.
+	code, stdout, stderr = h.run("add", "Far away", "--due", "2026-11-03", "--remind", "60 weeks before")
+	if code != ExitServer || !strings.Contains(stderr, "the task was created: ") {
+		t.Fatalf("failed reminder: %d %q %q", code, stdout, stderr)
+	}
+}
+
+func TestAddNatural(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	h.put("project", "home0001", map[string]any{"name": "Home", "color": "#10b981", "archived": false})
+	// fixedNow is Saturday 2026-10-10 at 12:00.
+	var created task
+	_ = json.Unmarshal([]byte(h.mustRun("add", "--natural", "Water plants every Monday remind me at 8 #home", "--json")), &created)
+	tk := h.task(created.ID)
+	if tk["title"] != "Water plants" || tk["project_id"] != "home0001" || tk["recurrence"] != "every monday" || tk["due"].(map[string]any)["date"] != "2026-10-12" {
+		t.Fatalf("natural = %v", tk)
+	}
+	var rs []map[string]any
+	for _, r := range h.apiJSON("GET", "/api/v1/reminders", nil)["reminders"].([]any) {
+		if m := r.(map[string]any); m["task_id"] == created.ID {
+			rs = append(rs, m)
+		}
+	}
+	if len(rs) != 1 || rs[0]["offset_minutes"] != float64(-60) {
+		t.Fatalf("reminders = %v", rs)
+	}
+	// German, with an explicit language.
+	_ = json.Unmarshal([]byte(h.mustRun("add", "--natural", "--lang", "de", "Zahnarzt nächsten Mittwoch um 15 Uhr erinnere mich 30 Minuten vorher", "--json")), &created)
+	tk = h.task(created.ID)
+	if tk["title"] != "Zahnarzt" || tk["due"].(map[string]any)["time"] != "15:00" {
+		t.Fatalf("german = %v", tk)
+	}
+	// Unknown project token stays in the title.
+	_ = json.Unmarshal([]byte(h.mustRun("add", "--natural", "Read #nosuch tomorrow", "--json")), &created)
+	tk = h.task(created.ID)
+	if tk["title"] != "Read #nosuch" || tk["project_id"] != nil || tk["due"].(map[string]any)["date"] != "2026-10-11" {
+		t.Fatalf("unknown project = %v", tk)
+	}
+	// Dry run: the reminder refers to the planned task.
+	out := h.mustRun("add", "--natural", "Flight 3 Nov at 06:00 remind me 1 day before", "--dry-run", "--json")
+	var plan struct {
+		Requests []struct {
+			Method, Path string
+			Body         map[string]any
+		} `json:"requests"`
+	}
+	_ = json.Unmarshal([]byte(out), &plan)
+	if len(plan.Requests) != 2 || plan.Requests[0].Path != "/api/v1/tasks" || plan.Requests[1].Path != "/api/v1/reminders" || plan.Requests[1].Body["task_id"] != "(planned-1)" {
+		t.Fatalf("plan = %s", out)
+	}
+}
