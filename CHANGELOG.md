@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Unraid template.** A Community Applications template sets up the container on Unraid: the release image, the Web UI on port 8080, the appdata folder on `/data`, and the optional settings with descriptions; nothing is required. Until it is listed in **Apps**, add it from the template URL. The template is published in its own template repository, [pixari/opentodo-unraid](https://github.com/pixari/opentodo-unraid), from a checked copy in `deploy/unraid/upstream/`. The guide covers appdata permissions (the image ignores `PUID` and `PGID`), https behind a reverse proxy, updates and backups. ([Unraid](docs/self-hosting/unraid.md))
+
 ### Fixed
 
 - **Plain-http installs on a network address work.** Opened as `http://<address>:<port>` on a home server or NAS (for example Unraid), the app showed **Offline** and nothing you added was saved, because it used a browser function that only exists over HTTPS. Adding and editing, sync and attachments now work over plain http too; installing the app, push notifications, passkeys and end-to-end encryption still need HTTPS. ([Docker](docs/self-hosting/docker.md))

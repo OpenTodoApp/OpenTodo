@@ -187,6 +187,10 @@ Data is kept in the `opentodo-data` volume.
 
 Or paste the one-click template [`deploy/coolify/opentodo.yaml`](deploy/coolify/opentodo.yaml) as a **Docker Compose** resource (pending in Coolify's built-in service list). Details, including building from your fork: [docs/self-hosting/coolify.md](docs/self-hosting/coolify.md).
 
+### Unraid
+
+Add the Community Applications template from [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid) (to be listed in **Apps**; until then install it from the template URL; the source is [`deploy/unraid/`](deploy/unraid/)), open the WebUI and create the owner account. Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
+
 ### Single binary
 
 Download `opentodo-<os>-<arch>` from the [latest release](https://github.com/pixari/opentodo/releases/latest) (Linux, macOS and Windows; check it with `SHA256SUMS`), or build it yourself:
