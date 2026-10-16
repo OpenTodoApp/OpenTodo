@@ -10,7 +10,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -48,6 +48,7 @@ function tableFor(entity: Entity) {
     case 'view': return db.views
     case 'reminder': return db.reminders
     case 'section': return db.sections
+    case 'field': return db.fields
     case 'comment': return db.comments
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
@@ -62,7 +63,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null,
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {},
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -79,6 +80,10 @@ const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
 const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
   name: '', project_id: '', position: 0, created_at: 0, deleted_at: null,
 }
+/** field (custom-fields D1): project_id and type are fixed at creation. */
+const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = {
+  name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
+}
 const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
   task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
 }
@@ -93,7 +98,7 @@ const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '' }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
-  comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS,
+  comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
 }
 
 /**
@@ -144,9 +149,13 @@ export async function applyOps(
       for (const op of list) {
         const c = clock[op.field]
         const won = wins(op.ts, op.device, c)
+        // A custom field value `fields.<id>` lives in row.fields[id], its clock
+        // under the op field name (custom-fields D2).
+        const fid = entity === 'task' ? fieldValueId(op.field) : null
+        const current = fid ? (row.fields as Record<string, unknown> | undefined)?.[fid] : row[op.field]
         // A losing op still happened: its old value is unknown here, the activity
         // rule takes it from the op before it in timestamp order.
-        recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? row[op.field] ?? null : undefined, projectKey: '' })
+        recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? current ?? null : undefined, projectKey: '' })
         if (rt && isDocField(entity, op.field)) {
           // Winning or not, the received document is merged with the local one.
           merged = rt.mergeDocs(merged ?? String(row[op.field] ?? ''), String(op.value ?? ''))
@@ -154,7 +163,8 @@ export async function applyOps(
         }
         const rewritten = !won && c && c.ts === op.ts && c.device === op.device && SERVER_REWRITTEN.has(`${entity}.${op.field}`)
         if (!won && !rewritten) continue
-        row[op.field] = op.value
+        if (fid) row.fields = { ...(row.fields as Record<string, unknown> | undefined), [fid]: op.value }
+        else row[op.field] = op.value
         clock[op.field] = { ts: op.ts, device: op.device }
         changed = true
         // End-to-end encryption bookkeeping (OpenSpec e2ee), local only: the form
@@ -278,6 +288,40 @@ export function withCompletedBy(changes: Change[], actor: string): Change[] {
   })
 }
 
+/** The op field prefix of a task's custom field values (custom-fields D2). */
+export const FIELD_VALUE_PREFIX = 'fields.'
+const FIELD_ID = /^[A-Za-z0-9_-]{1,64}$/
+
+/** The definition id of a `fields.<id>` op field, or null for any other field. */
+export function fieldValueId(field: string): string | null {
+  if (!field.startsWith(FIELD_VALUE_PREFIX)) return null
+  const id = field.slice(FIELD_VALUE_PREFIX.length)
+  return FIELD_ID.test(id) ? id : null
+}
+
+/** A row's value of an op field: `fields.<id>` reads row.fields[id]. */
+export function readField(row: Record<string, unknown>, field: string): unknown {
+  const id = fieldValueId(field)
+  return id ? (row.fields as Record<string, unknown> | undefined)?.[id] : row[field]
+}
+
+/**
+ * A task patch's `fields` entry is a partial map of values: each key becomes its
+ * own `fields.<id>` op, so writing one value never touches the others
+ * (custom-fields D2). `mutate('task', id, { fields: { [costId]: 120 } })`.
+ */
+export function unfoldFieldPatches(changes: Change[]): Change[] {
+  if (!changes.some((c) => c.entity === 'task' && c.patch.fields !== undefined)) return changes
+  return changes.map((c) => {
+    if (c.entity !== 'task' || c.patch.fields === undefined) return c
+    const { fields, ...patch } = c.patch
+    for (const [id, value] of Object.entries((fields ?? {}) as Record<string, unknown>)) {
+      if (FIELD_ID.test(id)) patch[FIELD_VALUE_PREFIX + id] = value ?? null
+    }
+    return { ...c, patch }
+  })
+}
+
 /** Tables a read-modify-write helper must lock to wrap mutate()/mutateMany() in one transaction. */
 export function mutationTables() {
   return [...entityTables(), db.outbox, db.meta]
@@ -291,6 +335,7 @@ export function mutationTables() {
  * `db.transaction('rw', mutationTables(), …)` after awaiting getDeviceId() once.
  */
 export async function mutateMany(changes: Change[], opts: MutateOptions = {}): Promise<void> {
+  changes = unfoldFieldPatches(changes)
   checkEncryptedSize(changes)
   const device = await deviceFor(opts)
   changes = [...changes, ...(await reminderFollowUps(changes))]
@@ -676,6 +721,8 @@ function copyTasks(
     // field existed hold undefined, which must never be sent).
     // A copy carries the note's document only when there is one (collaborative-rich-text).
     if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
+    // Custom field values travel with the copy (custom-fields), one op each.
+    if (t.fields && Object.keys(t.fields).length) patch.fields = { ...t.fields }
     // The copy keeps who completed it (completed-date-filters D5); unknown stays null.
     if (patch.completed_at === null || patch.completed_at === undefined) delete patch.completed_by
     else patch.completed_by = patch.completed_by ?? null

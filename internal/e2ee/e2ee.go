@@ -44,12 +44,41 @@ var ContentFields = map[string][]string{
 	"comment": {"body"},
 	// Attachments (OpenSpec attachments, design D8): the bytes are an envelope too.
 	"attachment": {"name", "mime", "url"},
+	// Custom field definitions (OpenSpec custom-fields, design D4).
+	"field": {"name", "options"},
+}
+
+// ContentPrefixes are families of content fields named by a prefix: a task's
+// custom field values `fields.<id>` (OpenSpec custom-fields, design D4). Only
+// string values are encrypted (text, link, date, choice); numbers and booleans
+// stay plaintext like priority. Keep in step with CONTENT_PREFIXES in
+// web/src/lib/e2ee.ts.
+var ContentPrefixes = map[string][]string{
+	"task": {"fields."},
+}
+
+// AllContentFields is ContentFields plus the prefixes of ContentPrefixes (each
+// ending in "."), the form sync.PurgeSupersededContent takes.
+func AllContentFields() map[string][]string {
+	out := make(map[string][]string, len(ContentFields))
+	for e, fs := range ContentFields {
+		out[e] = append([]string(nil), fs...)
+	}
+	for e, ps := range ContentPrefixes {
+		out[e] = append(out[e], ps...)
+	}
+	return out
 }
 
 // IsContentField reports whether entity.field is encrypted for encrypted accounts.
 func IsContentField(entity, field string) bool {
 	for _, f := range ContentFields[entity] {
 		if f == field {
+			return true
+		}
+	}
+	for _, p := range ContentPrefixes[entity] {
+		if strings.HasPrefix(field, p) && len(field) > len(p) {
 			return true
 		}
 	}

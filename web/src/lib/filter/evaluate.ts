@@ -5,8 +5,8 @@
 import { blockedMap } from '../dependencies'
 import { currentDateTime, localDueOf } from '../dates'
 import { descendants } from '../tree'
-import type { Label, Project, Task } from '../types'
-import { parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
+import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
+import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -20,6 +20,11 @@ export interface FilterContext {
    * user's date-time preference snapshot (completed-date-filters D2).
    */
   weekStart?: number
+  /**
+   * Custom field definitions (OpenSpec custom-fields) for `name cmp value` and
+   * `no name`; names resolve against the live ones of every project, ignoring case.
+   */
+  fields?: readonly FieldDef[]
 }
 
 export interface CompiledFilter {
@@ -99,6 +104,70 @@ function instantPred(at: (t: Task) => number | null, op: Cmp, r: DateRange): Pre
   }
 }
 
+const TYPE_WORDS: Record<string, string> = { text: 'Text', link: 'Link', choice: 'Choice' }
+
+function isEmptyValue(v: FieldValue | undefined): boolean {
+  return v === null || v === undefined || v === ''
+}
+
+/**
+ * The predicate of one field term against one definition (custom-fields D5):
+ * numbers numerically, dates with the date grammar, text, link and choice with
+ * `=` only ignoring case, checkboxes with `= true` / `= false`. A term the type
+ * cannot answer is a FilterSyntaxError at the operator. Only tasks of the
+ * definition's project are considered, the same values the panel shows.
+ */
+function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: string, weekStart: number): Pred {
+  const at = n.opPos
+  const value = (t: Task): FieldValue | undefined => (t.project_id === def.project_id ? t.fields?.[def.id] : undefined)
+  const label = `"${n.name}"`
+  switch (def.type) {
+    case 'number': {
+      if (n.value.type !== 'number') throw new FilterSyntaxError(`Field ${label} holds numbers: compare it with a number at position ${at + 1}`, at, ['number'])
+      const want = n.value.value
+      const op = n.op
+      return (t) => {
+        const v = value(t)
+        if (typeof v !== 'number') return false
+        switch (op) {
+          case '<': return v < want
+          case '<=': return v <= want
+          case '=': return v === want
+          case '>=': return v >= want
+          case '>': return v > want
+        }
+      }
+    }
+    case 'date': {
+      if (n.value.type !== 'date') throw new FilterSyntaxError(`Field ${label} holds dates: compare it with a date at position ${at + 1}`, at, ['date'])
+      const range = resolveRange(n.value.date, today, weekStart)
+      const op = n.op
+      return (t) => {
+        const v = value(t)
+        return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && compareISO(v, op, range)
+      }
+    }
+    case 'checkbox': {
+      if (n.op !== '=' || n.value.type !== 'bool') throw new FilterSyntaxError(`Checkbox fields support "= true" or "= false" only, at position ${at + 1}`, at, ['"= true"', '"= false"'])
+      const want = n.value.value
+      // An unset checkbox reads as unchecked.
+      return (t) => {
+        const v = value(t)
+        return t.project_id === def.project_id && (want ? v === true : v !== true)
+      }
+    }
+    default: {
+      if (n.op !== '=') throw new FilterSyntaxError(`${TYPE_WORDS[def.type] ?? 'Text'} fields support "=" only, at position ${at + 1}`, at, ['"="'])
+      // A bare word that reads as a date (`client = today`) still compares as its text.
+      const want = fieldValueText(n.value).toLocaleLowerCase()
+      return (t) => {
+        const v = value(t)
+        return typeof v === 'string' && v.toLocaleLowerCase() === want
+      }
+    }
+  }
+}
+
 /** Compile an AST into a predicate. Deleted tasks never match; open-only unless the query mentions state. */
 export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   const warnings: string[] = []
@@ -112,6 +181,10 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   for (const l of liveLabels) labelsByName.set(nameKey(l.name), [...(labelsByName.get(nameKey(l.name)) ?? []), l.id])
   const projectsByName = new Map<string, string[]>()
   for (const p of liveProjects) projectsByName.set(nameKey(p.name), [...(projectsByName.get(nameKey(p.name)) ?? []), p.id])
+  const fieldsByName = new Map<string, FieldDef[]>()
+  for (const d of ctx.fields ?? []) {
+    if (!d.deleted_at) fieldsByName.set(nameKey(d.name), [...(fieldsByName.get(nameKey(d.name)) ?? []), d])
+  }
   const today = ctx.today
   const weekStart = ctx.weekStart ?? currentDateTime().weekStart
   const tomorrow = shiftISO(today, 1)
@@ -179,6 +252,34 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         // A task without a due date never matches a `due` comparison.
         return (t) => t.due !== null && compareISO(localDueOf(t.due).date, op, date)
       }
+      case 'field': {
+        const defs = fieldsByName.get(nameKey(n.name))
+        if (!defs) {
+          warn(`No field named "${n.name}"`)
+          return NEVER
+        }
+        // Several projects may define the name, with different types: the term
+        // uses every definition it can answer, and fails only when none can.
+        const ps: Pred[] = []
+        let first: unknown = null
+        for (const d of defs) {
+          try {
+            ps.push(fieldPred(d, n, today, weekStart))
+          } catch (e) {
+            first ??= e
+          }
+        }
+        if (ps.length === 0) throw first
+        return (t) => ps.some((p) => p(t))
+      }
+      case 'nofield': {
+        const defs = fieldsByName.get(nameKey(n.name))
+        if (!defs) {
+          warn(`No field named "${n.name}"`)
+          return NEVER
+        }
+        return (t) => defs.some((d) => t.project_id === d.project_id && isEmptyValue(t.fields?.[d.id]))
+      }
       case 'search': {
         const needle = n.text.toLocaleLowerCase()
         return (t) => t.title.toLocaleLowerCase().includes(needle) || t.description.toLocaleLowerCase().includes(needle)
@@ -219,15 +320,15 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
 
 /** Parse and evaluate in one step; syntax errors are returned, not thrown. */
 export function runFilter(source: string, tasks: readonly Task[], ctx: FilterContext): FilterResult {
-  let ast: Node | null
   try {
-    ast = parse(source)
+    const ast = parse(source)
+    if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
+    // A field term its type cannot answer is reported like a syntax error (custom-fields).
+    const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
+    return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
   } catch (e) {
     const err = e as { message: string; offset?: number }
     if (typeof err.offset !== 'number') throw e
     return { ok: false, error: err.message, offset: err.offset, position: err.offset + 1 }
   }
-  if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
-  const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
-  return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
 }

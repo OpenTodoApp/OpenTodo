@@ -30,6 +30,12 @@ func (s *Service) PurgeSupersededContent(ctx context.Context, userID string, fie
 	sort.Strings(entities)
 	for _, e := range entities {
 		for _, f := range fields[e] {
+			// A name ending in "." is a family (custom-fields: task "fields.").
+			if strings.HasSuffix(f, ".") {
+				pairs = append(pairs, "(o.entity = ? AND substr(o.field, 1, ?) = ?)")
+				args = append(args, e, len(f), f)
+				continue
+			}
 			pairs = append(pairs, "(o.entity = ? AND o.field = ?)")
 			args = append(args, e, f)
 		}

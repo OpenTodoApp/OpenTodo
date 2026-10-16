@@ -7,7 +7,9 @@
 import { ApiError } from './api'
 import { db, getMeta, setMeta, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
 import { syncNow } from './sync'
-import type { Label, Project, Section, Task } from './types'
+import type { FieldDef, FieldValue, Label, Project, Section, Task } from './types'
+import { formatValue } from './fields'
+import { fieldValueId, readField } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
 import { applyBatch, tableOf, undoBatch, type UndoResult } from './undo'
 export { UNDO_KEEP } from './undo'
@@ -156,15 +158,18 @@ interface Names {
   projects: Map<string, string>
   labels: Map<string, string>
   sections: Map<string, string>
+  /** Custom field definitions by id (custom-fields), for "Cost → 120". */
+  fields?: Map<string, FieldDef>
   tasks: Map<string, string>
 }
 
 async function loadNames(changes: ProposedChange[]): Promise<Names> {
-  const [projects, labels, sections] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray()])
+  const [projects, labels, sections, fields] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray(), db.fields.toArray()])
   const n: Names = {
     projects: new Map(projects.map((p: Project) => [p.id, p.name])),
     labels: new Map(labels.map((l: Label) => [l.id, l.name])),
     sections: new Map(sections.map((s: Section) => [s.id, s.name])),
+    fields: new Map(fields.map((f: FieldDef) => [f.id, f])),
     tasks: new Map(),
   }
   // Entities created in the same proposal are named from their patch.
@@ -190,6 +195,15 @@ export function dueWords(due: unknown): string {
 
 const clip = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
+/** A custom field value change in words: "Cost → 120", "Client cleared" (custom-fields D6). */
+export function fieldWords(names: Names, id: string, v: unknown): string {
+  const def = names.fields?.get(id)
+  const name = def?.name ?? 'A field'
+  if (v === null || v === undefined || v === '') return `${name} cleared`
+  const text = def ? formatValue(def, v as FieldValue) : String(v)
+  return `${name} → ${clip(text, 60)}`
+}
+
 /** Every field change of one proposed change, in words. */
 export function describe(c: ProposedChange, local: Record<string, unknown> | undefined, names: Names): { title: string; lines: string[] } {
   const p = c.patch
@@ -210,6 +224,10 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
         if (Array.isArray(p.labels) && p.labels.length) lines.push(`Labels: ${p.labels.map((id) => names.labels.get(String(id)) ?? 'a label').join(', ')}`)
         if (p.parent_id) lines.push(`Subtask of “${clip(names.tasks.get(String(p.parent_id)) ?? 'a task', 50)}”`)
         if (p.deleted_at) lines.push('Moved to the Trash')
+        for (const [f, v] of Object.entries(p)) {
+          const fid = fieldValueId(f)
+          if (fid && v !== null) lines.push(fieldWords(names, fid, v))
+        }
         return { title: `New task in ${project(p.project_id)}: ${String(p.title ?? '')}`, lines }
       }
     }
@@ -218,6 +236,11 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
   const title = String((local as { title?: string; name?: string } | undefined)?.title ?? (local as { name?: string } | undefined)?.name ?? `a ${c.entity}`)
   const lines: string[] = []
   for (const [f, v] of Object.entries(p)) {
+    const fid = fieldValueId(f)
+    if (fid) {
+      lines.push(fieldWords(names, fid, v))
+      continue
+    }
     const old = base[f]
     switch (f) {
       case 'due': lines.push(`Due ${dueWords(old)} → ${dueWords(v)}`); break
@@ -282,7 +305,7 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
     let stale = false
     if (!c.create) {
       for (const [f, b] of Object.entries(c.base ?? {})) {
-        if (!sameValue(local?.[f], b)) stale = true
+        if (!sameValue(local ? readField(local, f) : undefined, b)) stale = true
       }
     }
     const { title, lines } = describe(c, local, names)

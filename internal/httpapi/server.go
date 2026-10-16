@@ -1248,6 +1248,24 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
+		// Custom field values become fields.<id> keys before an idempotent
+		// replay compares the planned ops (custom-fields D3).
+		if msg, err := s.checkTaskFields(r.Context(), uid, body, nil); err != nil {
+			s.internal(w, err)
+			return
+		} else if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return
+		}
+	}
+	if entity == "field" {
+		if msg, err := s.checkField(r.Context(), uid, id, body, nil); err != nil {
+			s.internal(w, err)
+			return
+		} else if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return
+		}
 	}
 	if entity == "reminder" {
 		if msg, err := s.completeReminderBody(r.Context(), userFrom(r.Context()).ID, body, nil); err != nil {
@@ -1510,6 +1528,26 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if msg != "" {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
+	// Custom fields (custom-fields D3): task values against the definitions of
+	// the task's project after the write; definitions keep project and type.
+	var fieldMsg string
+	switch entity {
+	case "task":
+		fieldMsg, err = s.checkTaskFields(r.Context(), userFrom(r.Context()).ID, body, existing)
+	case "field":
+		fieldMsg, err = s.checkField(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing)
+	}
+	if err != nil {
+		s.internal(w, err)
+		return
+	} else if fieldMsg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", fieldMsg)
+		return
+	}
+	if len(body) == 0 {
+		writeError(w, http.StatusBadRequest, "bad_request", "no fields to update")
 		return
 	}
 	if err := s.validateParent(r.Context(), entity, r.PathValue("id"), body, existing); err != nil {

@@ -47,6 +47,9 @@ const (
 	KindUserPrefs = "user_prefs"
 	// KindAttachment is a file or link attachment (OpenSpec change attachments).
 	KindAttachment = "attachment"
+	// KindField is a custom field definition (OpenSpec change custom-fields),
+	// restored verbatim from an own export like a section.
+	KindField = "field"
 )
 
 // Due is a floating due date with an optional wall-clock time.

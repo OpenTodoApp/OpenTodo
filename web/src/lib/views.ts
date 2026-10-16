@@ -307,7 +307,14 @@ function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Compiled | 
   if (!ast) return { ok: false, error: 'This view has no query' }
   // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))
-  const { test, warnings } = compile(ast, ctx)
+  let compiled: ReturnType<typeof compile>
+  try {
+    compiled = compile(ast, ctx)
+  } catch (e) {
+    // A field term its type cannot answer (custom-fields).
+    return { ok: false, error: (e as Error).message }
+  }
+  const { test, warnings } = compiled
   return { ok: true, warnings, test: (t) => !(t.project_id && archived.has(t.project_id)) && test(t) }
 }
 

@@ -139,7 +139,8 @@ A query that does not follow the grammar shows a message under the input, and th
 | `due > 7` | `Expected "days", "weeks" or "months" after "7" at position 7` |
 | `due = last year` | `Expected "week" or "month" after "last" at position 7` |
 | `completed > 2 weeks` | `Expected "ago" after "weeks" at position 15` |
-| `no idea` | `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1` |
+| `no &` | `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1` |
+| `cost >` | `Expected a value after ">" at position 6` |
 
 An empty query shows a short usage hint and no results.
 
