@@ -12,7 +12,7 @@ The repository SHALL keep the facts every platform template must agree on in one
 - **THEN** `make check` fails and names the folder
 
 ### Requirement: Unraid Community Applications template
-The repository SHALL include an Unraid Community Applications template for the release image line, with the web port 8080, an appdata path on `/data`, the Web UI link, icon and overview, and the essential optional variables with descriptions. No variable SHALL be required.
+The repository SHALL include an Unraid Community Applications template, published to a separate template repository from an identical checked copy, for the release image line, with the web port 8080, an appdata path on `/data`, the Web UI link, icon and overview, and the essential optional variables with descriptions. No variable SHALL be required.
 
 #### Scenario: Install from the template
 - **WHEN** an Unraid user adds the container from the template and changes nothing

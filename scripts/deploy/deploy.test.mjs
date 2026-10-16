@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { run } from '../deploy-check.mjs'
 import { checkFacts, checkShared, configVariables, latestRelease, loadFacts, readText, ROOT } from './common.mjs'
-import { checkTemplate as checkUnraid, TEMPLATE } from './unraid.mjs'
+import { checkTemplate as checkUnraid, checkUpstream, PROFILE, TEMPLATE } from './unraid.mjs'
 
 const facts = loadFacts()
 const configVars = configVariables()
@@ -58,6 +58,15 @@ test('unraid: path, port, required, shell, description', () => {
   has(checkUnraid(unraid.replace(/(Target="OPENTODO_SESSION_DAYS" Default="90" Mode="" Description=")[^"]*/, '$1Something else'), ctx), /must be the catalogue's/)
   has(checkUnraid(unraid.replace(':0.', ':9.'), ctx), /does not match the latest release/)
   has(checkUnraid(unraid.replace('<Privileged>false', '<Privileged>true'), ctx), /Privileged/)
+  has(checkUnraid(unraid.replace('pixari/unraid-templates/main/templates', 'pixari/opentodo/main/deploy/unraid'), ctx), /TemplateURL/)
+})
+
+test('unraid: the template repository copy', () => {
+  const profile = readText(PROFILE)
+  assert.deepEqual(checkUpstream(unraid, unraid, profile), [])
+  has(checkUpstream(unraid, unraid.replace('0.', '9.'), profile), /must be identical/)
+  has(checkUpstream(unraid, unraid, null), /ca_profile.xml is missing/)
+  has(checkUpstream(unraid, unraid, profile.replace(/<Profile>[^<]*<\/Profile>/, '')), /needs a <Profile>/)
 })
 
 test('a platform folder without a checker fails', async () => {

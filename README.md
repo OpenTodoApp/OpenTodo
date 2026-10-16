@@ -189,7 +189,7 @@ Or paste the one-click template [`deploy/coolify/opentodo.yaml`](deploy/coolify/
 
 ### Unraid
 
-Add the Community Applications template [`deploy/unraid/opentodo.xml`](deploy/unraid/opentodo.xml) (to be listed in **Apps**; until then install it from the template URL), open the WebUI and create the owner account. Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
+Add the Community Applications template from [`pixari/unraid-templates`](https://github.com/pixari/unraid-templates) (to be listed in **Apps**; until then install it from the template URL; the source is [`deploy/unraid/`](deploy/unraid/)), open the WebUI and create the owner account. Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
 
 ### Single binary
 

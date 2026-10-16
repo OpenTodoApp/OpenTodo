@@ -1,5 +1,7 @@
 // Unraid Community Applications template (deploy/unraid/opentodo.xml), OpenSpec
-// change unraid-template. A strict parser for the XML subset CA templates use:
+// change unraid-template. CA reads it from the template repository
+// pixari/unraid-templates, published from deploy/unraid/upstream/: that folder must
+// hold an identical copy of the template and a ca_profile.xml. A strict parser for the XML subset CA templates use:
 // one <Container version="2"> with child elements that hold text or are empty,
 // and <Config> elements with attributes and an optional text value.
 
@@ -8,7 +10,10 @@ import { join } from 'node:path'
 import { checkShared, readText, ROOT } from './common.mjs'
 
 export const TEMPLATE = 'deploy/unraid/opentodo.xml'
+export const UPSTREAM_TEMPLATE = 'deploy/unraid/upstream/templates/opentodo.xml'
+export const PROFILE = 'deploy/unraid/upstream/ca_profile.xml'
 const RAW = 'https://raw.githubusercontent.com/pixari/opentodo/main/'
+export const TEMPLATE_URL = 'https://raw.githubusercontent.com/pixari/unraid-templates/main/templates/opentodo.xml'
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
 const unescape = (s) => s.replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => ENTITIES[e])
 
@@ -68,7 +73,7 @@ export function checkTemplate(text, ctx, root = ROOT) {
   if (f.get('Name') !== ctx.facts.name) errors.push(`<Name> must be ${ctx.facts.name}`)
   if (f.get('Project') !== ctx.facts.project) errors.push(`<Project> must be ${ctx.facts.project}`)
   if (f.get('Support') !== ctx.facts.support) errors.push(`<Support> must be ${ctx.facts.support}`)
-  if (f.get('TemplateURL') !== RAW + TEMPLATE) errors.push(`<TemplateURL> must be ${RAW + TEMPLATE}`)
+  if (f.get('TemplateURL') !== TEMPLATE_URL) errors.push(`<TemplateURL> must be ${TEMPLATE_URL}`)
   if (f.get('Icon') !== RAW + ctx.facts.icon) errors.push(`<Icon> must be ${RAW + ctx.facts.icon}`)
   else if (!existsSync(join(root, ctx.facts.icon))) errors.push(`the icon ${ctx.facts.icon} does not exist`)
   if (f.get('WebUI') !== `http://[IP]:[PORT:${ctx.facts.port}]/`) errors.push(`<WebUI> must be http://[IP]:[PORT:${ctx.facts.port}]/`)
@@ -109,8 +114,25 @@ export function checkTemplate(text, ctx, root = ROOT) {
   return errors
 }
 
-export function check(ctx, root = ROOT) {
-  return checkTemplate(readText(TEMPLATE, root), ctx, root)
+/** The template repository's files: an identical template copy and a CA profile. */
+export function checkUpstream(template, upstream, profile) {
+  const errors = []
+  if (upstream !== template) errors.push(`${UPSTREAM_TEMPLATE} must be identical to ${TEMPLATE}`)
+  if (profile === null) return [...errors, `${PROFILE} is missing`]
+  const lines = profile.trimEnd().split('\n')
+  if (lines[0] !== '<?xml version="1.0"?>' || lines[1] !== '<CommunityApplications>' || lines.at(-1) !== '</CommunityApplications>') {
+    errors.push(`${PROFILE} must be one <CommunityApplications> element`)
+  }
+  if (!/<Profile>[^<]+<\/Profile>/.test(profile)) errors.push(`${PROFILE} needs a <Profile>`)
+  return errors
 }
 
-export const summary = 'release tag, port, appdata path, Web UI, icon and variables'
+export function check(ctx, root = ROOT) {
+  const template = readText(TEMPLATE, root)
+  return [
+    ...checkTemplate(template, ctx, root),
+    ...checkUpstream(template, readText(UPSTREAM_TEMPLATE, root), readText(PROFILE, root)),
+  ]
+}
+
+export const summary = 'release tag, port, appdata path, Web UI, icon, variables and upstream copy'

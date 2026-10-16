@@ -27,4 +27,4 @@ A folder without a checker fails the run. Tests: `node --test scripts/deploy/*.t
 
 ## On a release
 
-Preparing a minor release (for example `0.7.0`) makes the check fail until every template names the new line. Bump the tag in each template (and in Coolify's `upstream/` copy), then follow each folder's README for the upstream update.
+Preparing a minor release (for example `0.7.0`) makes the check fail until every template names the new line. Bump the tag in each template (and in the `upstream/` copies of Coolify and Unraid), then follow each folder's README for the upstream update.

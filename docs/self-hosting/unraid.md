@@ -8,7 +8,7 @@ order: 21
 ---
 # Running OpenTodo on Unraid
 
-OpenTodo is one container with one appdata folder and no required settings. The template in [`deploy/unraid/opentodo.xml`](https://github.com/pixari/opentodo/blob/main/deploy/unraid/opentodo.xml) fills in everything.
+OpenTodo is one container with one appdata folder and no required settings. The template ([`opentodo.xml`](https://github.com/pixari/unraid-templates/blob/main/templates/opentodo.xml) in OpenTodo's [template repository](https://github.com/pixari/unraid-templates)) fills in everything.
 
 ## Install
 
@@ -16,7 +16,7 @@ Once OpenTodo is listed in **Apps** (Community Applications), search for it and 
 
 ```bash
 wget -O /boot/config/plugins/dockerMan/templates-user/my-OpenTodo.xml \
-  https://raw.githubusercontent.com/pixari/opentodo/main/deploy/unraid/opentodo.xml
+  https://raw.githubusercontent.com/pixari/unraid-templates/main/templates/opentodo.xml
 ```
 
 Then open **Docker → Add Container**, choose **OpenTodo** under *User templates*, check the settings below and click **Apply**.

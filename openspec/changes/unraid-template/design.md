@@ -20,7 +20,7 @@ Each entry: `name`, `default`, `description`, and flags `essential` (every templ
 
 ### D4. Unraid specifics
 
-- CA XML `Container version="2"`, `Network` bridge, not privileged, `WebUI` `http://[IP]:[PORT:8080]/`, `TemplateURL` raw on `main`, `Icon` the app's `pwa-512.png` raw on `main`, category `Productivity: Tools:`.
+- CA XML `Container version="2"`, `Network` bridge, not privileged, `WebUI` `http://[IP]:[PORT:8080]/`, `TemplateURL` raw on `main` of the template repository (D6), `Icon` the app's `pwa-512.png` raw on `main`, category `Productivity: Tools:`.
 - Port 8080 (Type Port, tcp), data path `/mnt/user/appdata/opentodo` on `/data` (Type Path, rw), both shown and required (they are not environment variables).
 - The image keeps running as uid 65532: Unraid user shares are world-writable by default, which is what the tester on #4 had, and it signed up fine. The docs say what to do when a path is not writable (`chown 65532:65532`, or `--user 99:100` in Extra Parameters to match Unraid's nobody:users), and that `PUID`/`PGID` are ignored.
 - `OPENTODO_BASE_URL` is empty by default: on a LAN address the server works without it. Its description says to set it to the https address behind a reverse proxy, with the port if there is one.
@@ -29,6 +29,10 @@ Each entry: `name`, `default`, `description`, and flags `essential` (every templ
 ### D5. Release tag
 
 All templates name the release line (`0.6`), checked against the latest release in `CHANGELOG.md` by the shared rule, so preparing a release fails the check until every template is bumped.
+
+### D6. A separate template repository, published from `upstream/`
+
+CA lists apps from template repositories registered through ca.unraid.net/submit: `ca_profile.xml` at the root, one XML per app under `templates/`, an OSI-approved license, and each template's `TemplateURL` pointing at its own raw file. Using the app repository would put `ca_profile.xml` and `templates/` at its root. So the template repository is `pixari/unraid-templates`, and `deploy/unraid/upstream/` holds its content file for file, like Coolify's `upstream/`. The source of truth stays `deploy/unraid/opentodo.xml`; the check requires the copy to be identical and the profile to exist. Publishing is a manual copy and push: automating it would need a write token for a second repository, a secret this project does not otherwise need.
 
 ## Size and data
 

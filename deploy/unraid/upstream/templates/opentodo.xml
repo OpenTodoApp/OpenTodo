@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>OpenTodo</Name>
+  <Repository>ghcr.io/pixari/opentodo:0.6</Repository>
+  <Registry>https://github.com/pixari/opentodo/pkgs/container/opentodo</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/pixari/opentodo/issues</Support>
+  <Project>https://open-todo.app</Project>
+  <Overview>Open-source, local-first task manager. Works offline and syncs every device from one small container. Projects, sections and boards, recurring tasks and reminders, sharing, CalDAV, an optional AI assistant, import from Todoist, Things, TickTick and Linear. No telemetry, no subscription. Open the Web UI and the first visitor creates the owner account. Installing the app, push notifications, passkeys and end-to-end encryption need https (a reverse proxy with a certificate); everything else works on the server's address.</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/pixari/unraid-templates/main/templates/opentodo.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>Nothing else. Data is one SQLite file in the appdata folder.</Requires>
+  <Config Name="Web UI port" Target="8080" Default="8080" Mode="tcp" Description="The port the app and API answer on." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/opentodo" Mode="rw" Description="Everything OpenTodo stores: the database, attachments and backups. Back up this folder." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/opentodo</Config>
+  <Config Name="Base URL" Target="OPENTODO_BASE_URL" Default="" Mode="" Description="The address people open, for example https://todo.example.com. Needed behind a reverse proxy for passkeys, secure cookies and links in emails. Include the port if there is one. Leave empty when you open OpenTodo by the server's address." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Setup token" Target="OPENTODO_SETUP_TOKEN" Default="" Mode="" Description="Optional, at least 16 characters. When set, creating the first (owner) account asks for this token, so a server reachable from the internet cannot be claimed by a stranger." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Open sign-up" Target="OPENTODO_ALLOW_SIGNUP" Default="false" Mode="" Description="true lets anyone who can reach the server create an account. Otherwise the owner invites people." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Trusted proxies" Target="OPENTODO_TRUSTED_PROXIES" Default="" Mode="" Description="Reverse proxies whose X-Forwarded-For is trusted for the visitor's address: IP addresses or ranges such as 192.0.2.0/24 separated by commas, or cloudflare. Set it only when every request comes through them." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="Push notifications" Target="OPENTODO_PUSH" Default="on" Mode="" Description="on or off: reminders as push notifications (needs https)." Type="Variable" Display="advanced" Required="false" Mask="false">on</Config>
+  <Config Name="Session days" Target="OPENTODO_SESSION_DAYS" Default="90" Mode="" Description="Days a sign-in stays valid." Type="Variable" Display="advanced" Required="false" Mask="false">90</Config>
+  <Config Name="Trash retention days" Target="OPENTODO_TRASH_RETENTION_DAYS" Default="30" Mode="" Description="Days deleted items stay in the Trash; 0 keeps them forever." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
+  <Config Name="Largest import (MB)" Target="OPENTODO_IMPORT_MAX_MB" Default="20" Mode="" Description="Largest import file accepted, in MB." Type="Variable" Display="advanced" Required="false" Mask="false">20</Config>
+  <Config Name="Log level" Target="OPENTODO_LOG_LEVEL" Default="info" Mode="" Description="debug, info, warn or error." Type="Variable" Display="advanced" Required="false" Mask="false">info</Config>
+</Container>

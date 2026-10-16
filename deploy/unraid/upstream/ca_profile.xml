@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<CommunityApplications>
+  <Profile>Templates for [OpenTodo](https://open-todo.app), an open-source, local-first task manager you host yourself: one small container, one appdata folder, no required settings. These files are published from the [OpenTodo repository](https://github.com/pixari/opentodo/tree/main/deploy/unraid), where they are checked against every release. Questions and problems: [OpenTodo issues](https://github.com/pixari/opentodo/issues). Setup guide: [Running OpenTodo on Unraid](https://github.com/pixari/opentodo/blob/main/docs/self-hosting/unraid.md).</Profile>
+  <Icon>https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png</Icon>
+  <WebPage>https://open-todo.app</WebPage>
+</CommunityApplications>
