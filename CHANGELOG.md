@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Turning encryption off no longer stops part-way.** With a task or project note on the account, the re-write to plaintext (and, on a fresh page load, the re-write to ciphertext) failed after its first batch with "Transaction has already completed" when the note code still had to be fetched: the fetch let the browser close the database transaction under it. The code is now loaded without letting the transaction go, and an interrupted run still resumes where it stopped. ([End-to-end encryption](docs/e2ee.md))
+
 ## [0.6.0] - 2026-10-16
 
 OpenTodo 0.6.0 speaks your language and looks back as well as ahead. The interface comes in **English, German, French, Spanish, Italian and Portuguese**. **Statistics** and a guided **weekly review** show what you finished, what slipped and what has no next action, computed on your device, with an optional weekly **digest** by email. **Filter by completion date** (`completed = last week`) and a day-by-day **Completed** logbook answer "what did I do this month?". **Habits** keep a streak and a month history, **custom fields** add typed values to a project's tasks, and **display mode** puts a view full screen on a wall tablet or an e-ink panel. Importers from Todoist, TickTick, Linear and Things keep more of what you had, and operators can run many OpenTodo servers in one process with **host mode**. Clicking a task's circle completes it again.
