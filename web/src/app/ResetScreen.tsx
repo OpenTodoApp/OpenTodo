@@ -109,7 +109,7 @@ export function ResetView({ state, user, form, onRetry, onLogout }: {
     return (
       <Card title={t('You are already signed in')}>
         <p className="text-body text-muted">
-          {t('This device is signed in as')}{' '}<strong>{user.name || user.email}</strong>{t('. Sign out first to use this password reset link.')}
+          {t.rich('This device is signed in as <b>{name}</b>. Sign out first to use this password reset link.', { name: user.name || user.email, b: (chunks) => <strong>{chunks}</strong> })}
         </p>
         <div className="flex gap-2">
           <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>{t('Sign out and continue')}</button>

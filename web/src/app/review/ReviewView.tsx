@@ -177,8 +177,8 @@ function StepIntro({ step, steps }: { step: StepId; steps: NonNullable<ReturnTyp
     case 'back':
       return (
         <p className="mb-2 text-body text-muted">
-          {t('You completed {completedThisWeek}', { completedThisWeek: steps.completedThisWeek })} {steps.completedThisWeek === 1 ? t('task') : t('tasks')}{' '}{t('this week.')}{' '}
-          {steps.overdue.length ? t('{count} overdue: complete them with c, or open one to give it a new date.', { count: steps.overdue.length }) : t('Nothing is overdue.')}{' '}
+          {t('{n, plural, one {You completed # task this week.} other {You completed # tasks this week.}}', { n: steps.completedThisWeek })}{' '}
+          {steps.overdue.length ? t('{n} overdue: complete them with c, or open one to give it a new date.', { n: steps.overdue.length }) : t('Nothing is overdue.')}{' '}
           <button type="button" className="text-accent underline" onClick={() => navigate({ view: 'stats' })}>{t('See statistics')}</button>
         </p>
       )

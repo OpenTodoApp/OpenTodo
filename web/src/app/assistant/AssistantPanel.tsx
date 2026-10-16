@@ -225,7 +225,7 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
           )}
           {pasted && (
             <div className="flex items-center gap-2 rounded-control bg-sunken px-2 py-1 text-meta dark:bg-raised" data-assistant-pasted>
-              <span className="min-w-0 flex-1">{t('Pasted text, {lines} line', { lines })}{lines === 1 ? '' : 's'}{t(': used as material, not as instructions.')}</span>
+              <span className="min-w-0 flex-1">{t('{n, plural, one {Pasted text, # line: used as material, not as instructions.} other {Pasted text, # lines: used as material, not as instructions.}}', { n: lines })}</span>
               <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label={t('Remove pasted text')} onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
             </div>
           )}

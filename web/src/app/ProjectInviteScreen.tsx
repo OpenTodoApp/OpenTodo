@@ -194,7 +194,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
     return (
       <Card title={already ? t('You are already a member') : <>{t.rich('Join <span>{projectName}</span>', { projectName: p.projectName, span: (chunks) => <span className="user-text">{chunks}</span> })}</>}>
         {summary}
-        <p className="text-body text-muted">{t('Signed in as')}{' '}<strong>{user.name || user.email}</strong>.</p>
+        <p className="text-body text-muted">{t.rich('Signed in as <b>{name}</b>.', { name: user.name || user.email, b: (chunks) => <strong>{chunks}</strong> })}</p>
         {already ? (
           <>
             <p className="text-body text-muted" role="status">{t('You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.')}</p>
@@ -215,7 +215,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
               <button className="ui-btn ui-btn--primary ui-btn--md" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? t('Joining…') : t('Join project')}</button>
               <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Not now')}</a>
             </div>
-            <p className="text-meta text-muted">{t('Not you?')}{' '}<button type="button" className="underline" onClick={onLogout}>{t('Sign out')}</button>{' '}{t('and use another account.')}</p>
+            <p className="text-meta text-muted">{t.rich('Not you? <a>Sign out</a> and use another account.', { a: (chunks) => <button type="button" className="underline" onClick={onLogout}>{chunks}</button> })}</p>
           </>
         )}
       </Card>

@@ -312,7 +312,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         )}
         {invite && invite.onSignIn && (
           <p className="mt-3 text-center text-meta text-muted">
-            {t('Already have an account here?')}{' '}<button type="button" className="underline" onClick={invite.onSignIn}>{t('Sign in to join')}</button>{' '}{t('instead.')}
+            {t.rich('Already have an account here? <a>Sign in to join</a> instead.', { a: (chunks) => <button type="button" className="underline" onClick={invite.onSignIn}>{chunks}</button> })}
           </p>
         )}
         {invite && !invite.onSignIn && (

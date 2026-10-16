@@ -84,7 +84,7 @@ export function DuplicateProjectDialog({ project, shared, onClose }: { project: 
           <span className="mb-1 block text-muted">{t.rich('Start on <span>(optional; dates move so the earliest lands on this day)</span>', { span: (chunks) => <span className="text-faint">{chunks}</span> })}</span>
           <DateField label={t('Start on')} hideLabel value={startDay} onChange={setStartDay} />
         </div>
-        <p className="text-body text-muted" data-duplicate-count>{count === 1 ? t('1 open task') : t('{count} open tasks', { count })}{' '}{t('and their subtasks are copied; completed work, comments and reminders are not.')}</p>
+        <p className="text-body text-muted" data-duplicate-count>{t('{n, plural, one {# open task and its subtasks are copied; completed work, comments and reminders are not.} other {# open tasks and their subtasks are copied; completed work, comments and reminders are not.}}', { n: count })}</p>
         {error && <p role="alert" className="text-body text-danger">{error}</p>}
         <div className="flex items-center justify-end gap-2">
           <HelpLink screen="templates" topic={t('Duplicate a project')} />

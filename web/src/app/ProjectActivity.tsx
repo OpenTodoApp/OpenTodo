@@ -113,7 +113,7 @@ function ActivityList({ project }: { project: Project }) {
                 <strong className="font-medium text-muted">{isPublicEvent(e) ? t(PUBLIC_ACTOR_LABEL) : name(e.actor)}</strong>{' '}
                 {describeEvent(e, name, projectName)}
                 {title && e.entity !== 'project' && (
-                  <> {e.entity === 'comment' ? t('on') : '·'}{' '}
+                  <> {e.entity === 'comment' ? t('on', { context: 'comment' }) : '·'}{' '}
                     <button type="button" className="text-muted underline decoration-dotted" onClick={() => e.taskId && openTask.request(e.taskId)}>
                       {title}
                     </button>

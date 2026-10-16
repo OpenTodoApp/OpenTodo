@@ -162,7 +162,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
         </div>
       )}
       {p.saved.allow_member_keys && typeof p.saved.own_key_members === 'number' && (
-        <p className="text-meta text-muted" data-own-key-members>{p.saved.own_key_members === 1 ? t('1 person uses') : t('{own_key_members} people use', { own_key_members: p.saved.own_key_members })}{' '}{t('their own provider and key.')}</p>
+        <p className="text-meta text-muted" data-own-key-members>{t('{n, plural, one {# person uses their own provider and key.} other {# people use their own provider and key.}}', { n: p.saved.own_key_members })}</p>
       )}
       <Field label={t('Monthly tokens per person')} description={t('0 means unlimited. Usage resets on the first day of each month (UTC).')}>
         <Input className="max-w-[12rem]" type="number" min={0} step={10000} value={d.monthly_token_cap_per_user} disabled={off}
@@ -376,7 +376,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
       {d.mode === 'server' && !ownActive && (s.server_own_key_set ?? s.own_key_set) && (
         <div data-legacy-key>
           <Notice action={<Button size="sm" variant="ghost" disabled={off} onClick={() => p.onOwnKey('')}>{t('Remove my key')}</Button>}>
-            {t('Your key is saved for')}{' '}{s.server_provider_label ?? s.provider_label}{t('; the server’s assistant uses it instead of the server owner’s key.')}
+            {t('Your key is saved for {provider}; the server’s assistant uses it instead of the server owner’s key.', { provider: s.server_provider_label ?? s.provider_label })}
           </Notice>
         </div>
       )}

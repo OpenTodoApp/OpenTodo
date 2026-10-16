@@ -70,7 +70,7 @@ export function TokensView(p: TokensViewProps) {
   const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>{t('New token')}</Button>
   return (
     <SettingsSection title={t('API tokens')} headingId="tokens-heading" testId="tokens-panel"
-      description={t('For scripts, the ot command and AI assistants. Send it as Authorization: Bearer <token>.')}>
+      description={t('For scripts, the ot command and AI assistants. Send it as {header}.', { header: 'Authorization: Bearer <token>' })}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.tokens && p.tokens.length === 0 && (
         <EmptyState icon="key-round" title={t('No API tokens yet')}

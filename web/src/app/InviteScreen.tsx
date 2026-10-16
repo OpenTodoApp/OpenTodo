@@ -78,7 +78,7 @@ export function InviteView({ state, user, form, onRetry, onLogout }: {
     return (
       <Card title={t('You are already signed in')}>
         <p className="text-body text-muted">
-          {t('This device is signed in as')}{' '}<strong>{user.name || user.email}</strong>{t('. An invitation creates a new account; it cannot be added to an existing one.')}
+          {t.rich('This device is signed in as <b>{name}</b>. An invitation creates a new account; it cannot be added to an existing one.', { name: user.name || user.email, b: (chunks) => <strong>{chunks}</strong> })}
         </p>
         <p className="text-body text-muted">{t('Sign out first to accept it, or keep using your current account.')}</p>
         <div className="flex gap-2">

@@ -79,7 +79,7 @@ export function AskComposer({ skills, onAsk, examples = true, autoFocus, disable
         {pasted && (
           <div className="mb-1 flex items-center gap-2 rounded-control bg-sunken px-2 py-1 text-meta text-muted" data-ask-pasted>
             <Icon name="list" size="xs" />
-            <span className="min-w-0 flex-1 truncate">{t('Pasted text, {lines} line', { lines })}{lines === 1 ? '' : 's'}{t(': used as material, not as instructions')}</span>
+            <span className="min-w-0 flex-1 truncate">{t('{n, plural, one {Pasted text, # line: used as material, not as instructions} other {Pasted text, # lines: used as material, not as instructions}}', { n: lines })}</span>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label={t('Remove pasted text')} onClick={() => setPasted(null)}><Icon name="x" size="xs" /></button>
           </div>
         )}

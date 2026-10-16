@@ -92,7 +92,7 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
       </ul>
       <div className="flex flex-wrap gap-2 pt-1">
         <button type="button" className="ui-btn ui-btn--primary ui-btn--md" onClick={p.onApply} disabled={checked === 0} aria-busy={p.busy} data-assistant-apply>
-          {t('Apply')}{' '}{checked === review.items.length ? t('all') : t('{checked} of {count}', { checked, count: review.items.length })}
+          {checked === review.items.length ? t('Apply all') : t('Apply {checked} of {count}', { checked, count: review.items.length })}
         </button>
         <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onDiscard}>{t('Discard')}</button>
       </div>

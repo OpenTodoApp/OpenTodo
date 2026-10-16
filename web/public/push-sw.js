@@ -18,6 +18,28 @@
   const SHOWN_KEY = 'reminders:shown'
   const SNOOZE_MS = 10 * 60 * 1000
 
+  // Notification texts in the interface language stored on this device (OpenSpec
+  // change app-localization, design D7). The worker runs outside the bundle and
+  // cannot load the catalogs, so it keeps its few texts here; each entry is pinned
+  // to the app catalog's translation of the English text by src/lib/pushWorker.test.ts.
+  // A missing preferences row or "system" means English: the worker cannot know
+  // which language the browser resolves to when no window is open.
+  const TEXT = {
+    en: { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' },
+    de: { reminder: 'Erinnerung', due: 'Fällig {date}', generic: 'Du hast eine Erinnerung', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.' },
+    fr: { reminder: 'Rappel', due: 'Échéance {date}', generic: 'Vous avez un rappel', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
+    es: { reminder: 'Recordatorio', due: 'Vence {date}', generic: 'Tienes un recordatorio', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.' },
+    it: { reminder: 'Promemoria', due: 'Scadenza {date}', generic: 'Hai un promemoria', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.' },
+    pt: { reminder: 'Lembrete', due: 'Vence {date}', generic: 'Você tem um lembrete', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
+  }
+  self.__opentodoText = TEXT
+
+  /** The stored language when it is one the worker has texts for, else English. */
+  function languageOf(prefs) {
+    const l = prefs && prefs.language
+    return typeof l === 'string' && Object.prototype.hasOwnProperty.call(TEXT, l) ? l : 'en'
+  }
+
   function req(r) {
     return new Promise((resolve, reject) => {
       r.onsuccess = () => resolve(r.result)
@@ -172,19 +194,27 @@
   // row or an unknown value means "system": the locale's date and the stored HH:MM.
   function formatDue(dueValue, prefs, today) {
     const p = prefs || {}
+    // Month names and the day period in the stored language (app-localization D4);
+    // without one, the browser's locale as before.
+    const lang = languageOf(p)
+    const locale = lang === 'en' ? undefined : lang
     const pad = (n) => String(n).padStart(2, '0')
     const [y, m, d] = String(dueValue.date).split('-').map(Number)
     const dt = new Date(y, m - 1, d)
     let date = dueValue.date
     if (!Number.isNaN(dt.getTime()) && p.date_format !== 'iso') {
       const otherYear = String(dueValue.date).slice(0, 4) !== String(today).slice(0, 4)
-      if (p.date_format === 'day-month' || p.date_format === 'month-day') {
-        const month = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(dt)
-        date = p.date_format === 'day-month'
+      const parts = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(2026, 10, 3))
+      const at = (type) => parts.findIndex((x) => x.type === type)
+      const natural = at('year') < at('month') ? 'YMD' : at('day') < at('month') ? 'DM' : 'MD'
+      const forced = p.date_format === 'day-month' ? 'DM' : p.date_format === 'month-day' ? 'MD' : null
+      if (forced && forced !== natural) {
+        const month = new Intl.DateTimeFormat(locale, { month: 'short' }).format(dt)
+        date = forced === 'DM'
           ? `${d} ${month}${otherYear ? ` ${y}` : ''}`
           : `${month} ${d}${otherYear ? `, ${y}` : ''}`
       } else {
-        date = new Intl.DateTimeFormat(undefined, otherYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }).format(dt)
+        date = new Intl.DateTimeFormat(locale, otherYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }).format(dt)
       }
     }
     if (!dueValue.time) return date
@@ -193,7 +223,8 @@
     if (t && p.time_format === '24h') time = `${pad(Number(t[1]))}:${t[2]}`
     if (t && p.time_format === '12h') {
       const h = Number(t[1])
-      time = `${h % 12 === 0 ? 12 : h % 12}:${t[2]} ${h < 12 ? 'AM' : 'PM'}`
+      const period = new Intl.DateTimeFormat(locale, { hour: 'numeric', hourCycle: 'h12' }).formatToParts(new Date(2026, 0, 1, h)).find((x) => x.type === 'dayPeriod')
+      time = `${h % 12 === 0 ? 12 : h % 12}:${t[2]} ${period ? period.value : h < 12 ? 'AM' : 'PM'}`
     }
     return `${date}, ${time}`
   }
@@ -205,10 +236,27 @@
   }
 
   function due(task, fallbackTitle, prefs) {
-    const title = (task && task.title) || fallbackTitle || 'Reminder'
-    let body = 'Reminder'
-    if (task && task.due) body = `Due ${formatDue(task.due, prefs, localToday())}`
+    const text = TEXT[languageOf(prefs)]
+    const title = (task && task.title) || fallbackTitle || text.reminder
+    let body = text.reminder
+    if (task && task.due) body = text.due.replace('{date}', formatDue(task.due, prefs, localToday()))
     return { title, body }
+  }
+
+  /** The texts for the language in this device's preferences row. */
+  async function storedText() {
+    try {
+      const db = await openDB()
+      try {
+        if (!db.objectStoreNames.contains('userPrefs')) return TEXT.en
+        const tx = db.transaction(['userPrefs'], 'readonly')
+        return TEXT[languageOf(await req(tx.objectStore('userPrefs').get('me')))]
+      } finally {
+        db.close()
+      }
+    } catch {
+      return TEXT.en
+    }
   }
 
   self.addEventListener('push', (event) => {
@@ -224,7 +272,7 @@
         // even with the app in front, with its own tag so a second test does not
         // replace the first. It writes nothing locally; it only reports receipt.
         await self.registration.showNotification('OpenTodo', {
-          body: 'Test notification: push works on this device.',
+          body: (await storedText()).test,
           tag: `opentodo-test:${data.testId}`,
           icon: '/pwa-192.png',
           badge: '/pwa-192.png',
@@ -235,7 +283,7 @@
         return
       }
       if (data.type !== 'reminder' || !data.reminderId) {
-        await self.registration.showNotification('OpenTodo', { body: 'You have a reminder', icon: '/pwa-192.png' })
+        await self.registration.showNotification('OpenTodo', { body: (await storedText()).generic, icon: '/pwa-192.png' })
         return
       }
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -259,8 +307,8 @@
         timestamp: data.fireAt,
         data: { reminderId: data.reminderId, taskId: data.taskId, fireAt: data.fireAt },
         actions: [
-          { action: 'snooze10', title: 'Snooze 10 min' },
-          { action: 'dismiss', title: 'Dismiss' },
+          { action: 'snooze10', title: TEXT[languageOf(prefs)].snooze },
+          { action: 'dismiss', title: TEXT[languageOf(prefs)].dismiss },
         ],
       })
       await markShown(data.reminderId, data.fireAt)

@@ -239,7 +239,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
   const due = reviewDue(review?.completed_at)
   const reviewBadge = due
-    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{t(': the last weekly review was {reviewAgo}', { reviewAgo: reviewAgo(review?.completed_at) })}</span></span>
+    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })}`}</span></span>
     : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
   const more: { id: Promotable | 'ask' | 'review' | 'stats'; node: ReactNode }[] = [
     { id: 'anytime', node: item({ view: 'anytime' }, t('Anytime'), 'layers') },

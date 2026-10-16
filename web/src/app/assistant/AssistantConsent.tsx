@@ -26,13 +26,11 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
       {changed && <p className="rounded-control bg-warning-soft p-2 text-on-warning-soft">{own ? t('The model provider changed.') : t('The server owner changed the model provider.')}{' '}{t('Read what is sent now and accept again.')}</p>}
       {own ? (
         <p data-consent-own>
-          {t.rich('To answer, the assistant sends what you type and the task data it needs from this server to <strong>{provider_label}</strong>', { provider_label: status.provider_label, strong: (chunks) => <strong>{chunks}</strong> })}
-          {status.model ? <>{' '}{t.rich('(model <code>{model}</code>)', { model: status.model, code: (chunks) => <code className="rounded-control bg-sunken dark:bg-raised px-1">{chunks}</code> })}</> : null}{t(', with your own API key. You chose it in Settings → Integrations → Assistant. Nothing is sent before you accept.')}
+          {t.rich('To answer, the assistant sends what you type and the task data it needs from this server to <strong>{provider}</strong>{model}, with your own API key. You chose it in Settings → Integrations → Assistant. Nothing is sent before you accept.', { provider: status.provider_label, model: status.model ? <>{' '}{t.rich('(model <code>{model}</code>)', { model: status.model, code: (chunks) => <code className="rounded-control bg-sunken dark:bg-raised px-1">{chunks}</code> })}</> : '', strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
       ) : (
         <p>
-          {t.rich('To answer, the assistant sends what you type and the task data it needs to <strong>{provider_label}</strong>', { provider_label: status.provider_label, strong: (chunks) => <strong>{chunks}</strong> })}
-          {status.model ? <>{' '}{t.rich('(model <code>{model}</code>)', { model: status.model, code: (chunks) => <code className="rounded-control bg-sunken dark:bg-raised px-1">{chunks}</code> })}</> : null}{t('. Your server owner chose it. Nothing is sent before you accept.')}
+          {t.rich('To answer, the assistant sends what you type and the task data it needs to <strong>{provider}</strong>{model}. Your server owner chose it. Nothing is sent before you accept.', { provider: status.provider_label, model: status.model ? <>{' '}{t.rich('(model <code>{model}</code>)', { model: status.model, code: (chunks) => <code className="rounded-control bg-sunken dark:bg-raised px-1">{chunks}</code> })}</> : '', strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
       )}
       <div>

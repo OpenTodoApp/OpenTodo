@@ -142,7 +142,7 @@ export function InviteLinksView(p: InviteLinksViewProps) {
                 <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={disabled}
                   aria-label={(inv.email ? t('Revoke the {role} link for {email}', { role: roleName(inv.role), email: inv.email }) : t('Revoke the {role} link', { role: roleName(inv.role) }))} onClick={() => p.onRevoke(inv)}>{t('Revoke')}</button>
               </div>
-              <p className="text-faint">{t('Expires {when} · created by', { when: when(inv.expiresAt) })}{' '}{inv.createdByName || t('a member')}</p>
+              <p className="text-faint">{t('Expires {when} · created by {name}', { when: when(inv.expiresAt), name: inv.createdByName || t('a member') })}</p>
             </li>
           ))}
         </ul>

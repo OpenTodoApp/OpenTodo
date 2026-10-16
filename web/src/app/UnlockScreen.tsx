@@ -27,7 +27,7 @@ export function UnlockView(p: UnlockViewProps) {
       <div className="w-full max-w-md space-y-4 rounded-control border border-default p-6">
         <h1 className="text-h3 font-semibold">{t('Unlock your tasks')}</h1>
         <p className="text-body text-muted">
-          {t('Your account uses end-to-end encryption. Enter your encryption')}{' '}{p.kind === 'passphrase' ? t('passphrase') : t('recovery key')}{' '}{t('to decrypt your tasks on this device. Sync stays paused until then. You only need to do this once per device.')}
+          {p.kind === 'passphrase' ? t('Your account uses end-to-end encryption. Enter your encryption passphrase to decrypt your tasks on this device. Sync stays paused until then. You only need to do this once per device.') : t('Your account uses end-to-end encryption. Enter your encryption recovery key to decrypt your tasks on this device. Sync stays paused until then. You only need to do this once per device.')}
         </p>
         <form className="space-y-2" onSubmit={(e) => {
           e.preventDefault()

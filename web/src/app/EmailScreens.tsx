@@ -184,7 +184,7 @@ export function VerifyView({ state, user, busy, online, onCreate, onRetry, onLog
   if (user) {
     return (
       <Card title={t('You are already signed in')}>
-        <p className="text-meta text-muted">{t('This device is signed in as')}{' '}<strong className="text-default">{user.name || user.email}</strong>{t('. Sign out first to confirm another account.')}</p>
+        <p className="text-meta text-muted">{t.rich('This device is signed in as <b>{name}</b>. Sign out first to confirm another account.', { name: user.name || user.email, b: (chunks) => <strong className="text-default">{chunks}</strong> })}</p>
         <div className="flex gap-2">
           <Button variant="primary" onClick={onLogout}>{t('Sign out and continue')}</Button>
           <Button variant="secondary" onClick={() => navigate({ view: 'inbox' })}>{t('Back to my tasks')}</Button>

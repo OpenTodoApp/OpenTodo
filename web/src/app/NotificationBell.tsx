@@ -54,13 +54,13 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-accent' : 'bg-transparent'}`} />
                   <span className="user-text min-w-0 flex-1">
                     {n.kind === 'mentioned' ? (
-                      <span className="block"><strong>{n.payload.actorName || t('Someone')}</strong>{' '}{t('mentioned you on')}{' '}<strong>{n.payload.taskTitle || t('a task')}</strong>
+                      <span className="block">{t.rich('<b>{actor}</b> mentioned you on <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}
                         {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-meta text-muted">“{n.payload.excerpt}”</span>}
                       </span>
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
-                      <span className="block" data-kind="unblocked"><strong>{n.payload.actorName || t('Someone')}</strong>{' '}{t('completed')}{' '}<strong>{n.payload.blockerTitle || t('a task')}</strong>: <strong>{n.payload.taskTitle || t('your task')}</strong>{' '}{t('is ready to start')}</span>
+                      <span className="block" data-kind="unblocked">{t.rich('<b>{actor}</b> completed <b2>{blocker}</b2>: <b3>{task}</b3> is ready to start', { actor: n.payload.actorName || t('Someone'), blocker: n.payload.blockerTitle || t('a task'), task: n.payload.taskTitle || t('your task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong>, b3: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : (
-                      <span className="block"><strong>{n.payload.actorName || t('Someone')}</strong>{' '}{t('assigned you')}{' '}<strong>{n.payload.taskTitle || t('a task')}</strong></span>
+                      <span className="block">{t.rich('<b>{actor}</b> assigned you <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}</span>
                     )}
                     <span className="block text-meta text-faint">
                       {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{dt.formatInstant(n.createdAt, 'datetime')}

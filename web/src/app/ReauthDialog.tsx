@@ -29,7 +29,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
   return (
     <Dialog title={t('Confirm it\'s you')} onClose={p.onCancel} testId="reauth-dialog">
         <p className="text-body text-muted">
-          {t('This change needs a recent sign-in. Enter your')}{' '}{p.mode === 'password' ? t('password') : t('current code from your authenticator app')}{' '}{t('to continue.')}
+          {p.mode === 'password' ? t('This change needs a recent sign-in. Enter your password to continue.') : t('This change needs a recent sign-in. Enter your current code from your authenticator app to continue.')}
         </p>
         <form className="mt-3 space-y-3" onSubmit={submit}>
           {p.mode === 'password' ? (

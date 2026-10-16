@@ -167,7 +167,7 @@ export function FeedView() {
                       <strong className="font-medium text-default">{isPublicEvent(e) ? t(PUBLIC_ACTOR_LABEL) : name(e.actor)}</strong>{' '}
                       <span className="text-muted">{describeEvent(e, name, (id) => projectName(id))}</span>
                       {title && e.entity !== 'project' && (
-                        <> {e.entity === 'comment' ? t('on') : '·'}{' '}
+                        <> {e.entity === 'comment' ? t('on', { context: 'comment' }) : '·'}{' '}
                           <button type="button" className="text-default underline decoration-dotted" onClick={() => open(e)}>{title}</button>
                         </>
                       )}

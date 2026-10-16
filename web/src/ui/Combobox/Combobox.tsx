@@ -88,7 +88,7 @@ export function ComboboxList<T>({ state, renderLeading, emptyText, label }: { st
     >
       {windowed && <li role="presentation" aria-hidden="true" style={{ height: options.length * rh }} />}
       {rows}
-      {state.more > 0 && <li role="presentation" className="px-3 py-2 text-meta text-muted" data-more>{t('{more} more', { more: state.more })}{' '}{state.more === 1 ? t('matches') : t('match')}{t(', keep typing')}</li>}
+      {state.more > 0 && <li role="presentation" className="px-3 py-2 text-meta text-muted" data-more>{t('{n, plural, one {# more matches, keep typing} other {# more match, keep typing}}', { n: state.more })}</li>}
     </ul>
   )
 }

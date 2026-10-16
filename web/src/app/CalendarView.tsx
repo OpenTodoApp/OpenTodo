@@ -327,7 +327,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <PageHeader title={title} help="calendar"
           meta={placing ? (
             <span role="status" className="rounded-control bg-success-soft px-2 py-0.5 text-meta text-on-success-soft">
-              {t('Placing')}{' '}<strong>{placingTask?.title || t('task')}</strong>{' '}{t('at {time} · arrows move · Enter places · Esc cancels', { time: formatTime(placing.start) })}
+              {t.rich('Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels', { title: placingTask?.title || t('task'), time: formatTime(placing.start), b: (chunks) => <strong>{chunks}</strong> })}
             </span>
           ) : status === 'missing' && !online ? (
             <span data-calendars-status="missing" className="text-meta text-muted">{t('Calendars unavailable offline for these days')}</span>
