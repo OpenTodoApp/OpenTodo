@@ -5,7 +5,7 @@
 // open work, never completion, assignees, comments or reminders.
 import { addDaysISO, daysBetweenISO, todayISO } from './dates'
 import { db } from './db'
-import { nameId } from './ids'
+import { nameId, uuid } from './ids'
 import { mutateMany, type Change } from './ops'
 import { compareByPosition, planMove } from './ordering'
 import { descendants } from './tree'
@@ -224,7 +224,7 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
     const key = name.toLowerCase()
     const hit = byName.get(key)
     if (hit) return hit
-    const id = crypto.randomUUID()
+    const id = uuid()
     byName.set(key, id)
     const color = declared.get(key)?.color ?? PALETTE[created++ % PALETTE.length]
     changes.push({ entity: 'label', entityId: id, patch: { name, color, position: now + created, created_at: now, deleted_at: null } })
@@ -238,7 +238,7 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
   const keyToId = new Map<string, string>()
   const pending: { id: string; blockers: string[] }[] = []
   const addTask = (item: TTask, place: { project_id: string | null; section_id: string | null; parent_id: string | null }, position: number) => {
-    const id = crypto.randomUUID()
+    const id = uuid()
     if (item.key) keyToId.set(item.key, id)
     plan.taskIds.push(id)
     const patch: Record<string, unknown> = {
@@ -260,12 +260,12 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
   }
 
   const addProject = (p: TProject, parentId: string | null, position: number, name?: string) => {
-    const id = crypto.randomUUID()
+    const id = uuid()
     plan.projectIds.push(id)
     changes.push({ entity: 'project', entityId: id, patch: { name: name ?? p.name, color: p.color, position, archived: false, parent_id: parentId, created_at: now, deleted_at: null } })
     p.tasks.forEach((entry) => addTask(entry, { project_id: id, section_id: null, parent_id: null }, nextPos()))
     for (const s of p.sections) {
-      const sid = crypto.randomUUID()
+      const sid = uuid()
       changes.push({ entity: 'section', entityId: sid, patch: { name: s.name, project_id: id, position: nextPos(), created_at: now, deleted_at: null } })
       s.tasks.forEach((x1) => addTask(x1, { project_id: id, section_id: sid, parent_id: null }, nextPos()))
     }

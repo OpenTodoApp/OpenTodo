@@ -21,6 +21,7 @@ import { currentKey, isEnabled } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
+import { uuid } from './ids'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -328,7 +329,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
           if (!(field in row)) continue
           // uploaded_at is the server's word (attachments D3); a device never sends it.
           if (entity === 'attachment' && field === 'uploaded_at') continue
-          chunk.push({ id: crypto.randomUUID(), entity, entityId: row.id as string, field, value: raw[field] ?? row[field], ts: c.ts, device: c.device })
+          chunk.push({ id: uuid(), entity, entityId: row.id as string, field, value: raw[field] ?? row[field], ts: c.ts, device: c.device })
           if (chunk.length >= RESEED_CHUNK) await flush()
         }
       }

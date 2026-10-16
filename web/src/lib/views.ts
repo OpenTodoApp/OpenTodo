@@ -14,6 +14,7 @@ import {
   type GroupBy, type Project, type SortBy, type SortDir, type Task, type View, type ViewKind,
 } from './types'
 import { t, msg } from './i18n'
+import { uuid } from './ids'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
@@ -150,7 +151,7 @@ export async function createView(input: NewView): Promise<string> {
   const kind = input.kind ?? 'list'
   const query = kind === 'dashboard' ? '' : (input.query ?? '').trim()
   checkQuery(query, kind)
-  const id = crypto.randomUUID()
+  const id = uuid()
   const now = Date.now()
   let position = now
   for (const v of await liveViews()) if (v.position >= position) position = v.position + 1

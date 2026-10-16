@@ -7,6 +7,7 @@ import { mutate, mutateMany, type Change } from './ops'
 import { byPosition, planStep, positionAtEnd } from './ordering'
 import type { Section, Task } from './types'
 import { t } from './i18n'
+import { uuid } from './ids'
 
 /** Live sections of a project, in display order. */
 export async function projectSections(projectId: string): Promise<Section[]> {
@@ -18,7 +19,7 @@ export async function projectSections(projectId: string): Promise<Section[]> {
 export async function createSection(projectId: string, name: string): Promise<string> {
   const trimmed = name.trim()
   if (!trimmed) throw new Error(t('a section needs a name'))
-  const id = crypto.randomUUID()
+  const id = uuid()
   const siblings = await projectSections(projectId)
   await mutate('section', id, {
     name: trimmed, project_id: projectId, position: positionAtEnd(siblings), created_at: Date.now(), deleted_at: null,
