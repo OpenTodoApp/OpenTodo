@@ -11,7 +11,7 @@
   <Overview>Open-source, local-first task manager. Works offline and syncs every device from one small container. Projects, sections and boards, recurring tasks and reminders, sharing, CalDAV, an optional AI assistant, import from Todoist, Things, TickTick and Linear. No telemetry, no subscription. Open the Web UI and the first visitor creates the owner account. Installing the app, push notifications, passkeys and end-to-end encryption need https (a reverse proxy with a certificate); everything else works on the server's address.</Overview>
   <Category>Productivity: Tools:</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/pixari/unraid-templates/main/templates/opentodo.xml</TemplateURL>
+  <TemplateURL>https://raw.githubusercontent.com/pixari/opentodo-unraid/main/templates/opentodo.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png</Icon>
   <ExtraParams/>
   <PostArgs/>

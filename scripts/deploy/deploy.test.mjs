@@ -58,7 +58,7 @@ test('unraid: path, port, required, shell, description', () => {
   has(checkUnraid(unraid.replace(/(Target="OPENTODO_SESSION_DAYS" Default="90" Mode="" Description=")[^"]*/, '$1Something else'), ctx), /must be the catalogue's/)
   has(checkUnraid(unraid.replace(':0.', ':9.'), ctx), /does not match the latest release/)
   has(checkUnraid(unraid.replace('<Privileged>false', '<Privileged>true'), ctx), /Privileged/)
-  has(checkUnraid(unraid.replace('pixari/unraid-templates/main/templates', 'pixari/opentodo/main/deploy/unraid'), ctx), /TemplateURL/)
+  has(checkUnraid(unraid.replace('pixari/opentodo-unraid/main/templates', 'pixari/opentodo/main/deploy/unraid'), ctx), /TemplateURL/)
 })
 
 test('unraid: the template repository copy', () => {

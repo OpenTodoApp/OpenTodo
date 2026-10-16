@@ -10,7 +10,7 @@ Install it from **Apps** in Unraid. Until it is listed there, add it by hand fro
 
 ```bash
 wget -O /boot/config/plugins/dockerMan/templates-user/my-OpenTodo.xml \
-  https://raw.githubusercontent.com/pixari/unraid-templates/main/templates/opentodo.xml
+  https://raw.githubusercontent.com/pixari/opentodo-unraid/main/templates/opentodo.xml
 ```
 
 then open **Docker → Add Container** and choose **OpenTodo** under *User templates*. The settings, permissions, https and updates are explained in [Running OpenTodo on Unraid](https://github.com/pixari/opentodo/blob/main/docs/self-hosting/unraid.md).

@@ -32,7 +32,7 @@ All templates name the release line (`0.6`), checked against the latest release 
 
 ### D6. A separate template repository, published from `upstream/`
 
-CA lists apps from template repositories registered through ca.unraid.net/submit: `ca_profile.xml` at the root, one XML per app under `templates/`, an OSI-approved license, and each template's `TemplateURL` pointing at its own raw file. Using the app repository would put `ca_profile.xml` and `templates/` at its root. So the template repository is `pixari/unraid-templates`, and `deploy/unraid/upstream/` holds its content file for file, like Coolify's `upstream/`. The source of truth stays `deploy/unraid/opentodo.xml`; the check requires the copy to be identical and the profile to exist. Publishing is a manual copy and push: automating it would need a write token for a second repository, a secret this project does not otherwise need.
+CA lists apps from template repositories registered through ca.unraid.net/submit: `ca_profile.xml` at the root, one XML per app under `templates/`, an OSI-approved license, and each template's `TemplateURL` pointing at its own raw file. Using the app repository would put `ca_profile.xml` and `templates/` at its root. So the template repository is `pixari/opentodo-unraid`, and `deploy/unraid/upstream/` holds its content file for file, like Coolify's `upstream/`. The source of truth stays `deploy/unraid/opentodo.xml`; the check requires the copy to be identical and the profile to exist. Publishing is a manual copy and push: automating it would need a write token for a second repository, a secret this project does not otherwise need.
 
 ## Size and data
 

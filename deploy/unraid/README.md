@@ -6,7 +6,7 @@
 
 ## The template repository
 
-CA lists apps from template repositories: a repository with `ca_profile.xml` at its root and one XML file per app under `templates/`, under an OSI-approved license. OpenTodo's is [`pixari/unraid-templates`](https://github.com/pixari/unraid-templates), so the app's own repository keeps its root to itself.
+CA lists apps from template repositories: a repository with `ca_profile.xml` at its root and one XML file per app under `templates/`, under an OSI-approved license. OpenTodo's is [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid), so the app's own repository keeps its root to itself.
 
 [`upstream/`](upstream/) is that repository's content, file for file:
 
@@ -22,9 +22,9 @@ CA lists apps from template repositories: a repository with `ca_profile.xml` at 
 Edit the template here, never in the template repository. To publish, copy `upstream/` over the template repository's content on its `main` branch and push:
 
 ```bash
-git clone https://github.com/pixari/unraid-templates /tmp/unraid-templates
-cp -R deploy/unraid/upstream/. /tmp/unraid-templates/
-cd /tmp/unraid-templates && git add -A && git commit -m "OpenTodo template: <what changed>" && git push
+git clone https://github.com/pixari/opentodo-unraid /tmp/opentodo-unraid
+cp -R deploy/unraid/upstream/. /tmp/opentodo-unraid/
+cd /tmp/opentodo-unraid && git add -A && git commit -m "OpenTodo template: <what changed>" && git push
 ```
 
 ## Submitting to Community Applications (maintainer)
@@ -33,7 +33,7 @@ One submission covers the repository and every later version of the template.
 
 1. Test first: install from the template URL on an Unraid server, open the Web UI, create the owner, add a task, restart the container and check the task is still there, then update the container and check again.
 2. Make sure the template repository is public and matches `upstream/`.
-3. Submit it at [ca.unraid.net/submit](https://ca.unraid.net/submit): sign in, enter `https://github.com/pixari/unraid-templates`, run **Validate** and **Scan**, fix anything they report (here, then publish again) and submit. The CA moderators review it; they may ask for a support thread on the Unraid forums, which then becomes the `<Support>` link.
+3. Submit it at [ca.unraid.net/submit](https://ca.unraid.net/submit): sign in, enter `https://github.com/pixari/opentodo-unraid`, run **Validate** and **Scan**, fix anything they report (here, then publish again) and submit. The CA moderators review it; they may ask for a support thread on the Unraid forums, which then becomes the `<Support>` link.
 4. Once listed, CA picks up changes to the template repository's `main` by itself.
 
 ## After a release

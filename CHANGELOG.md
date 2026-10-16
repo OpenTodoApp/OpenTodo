@@ -6,7 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
-- **Unraid template.** A Community Applications template sets up the container on Unraid: the release image, the Web UI on port 8080, the appdata folder on `/data`, and the optional settings with descriptions; nothing is required. Until it is listed in **Apps**, add it from the template URL. The template is published in its own template repository, [pixari/unraid-templates](https://github.com/pixari/unraid-templates), from a checked copy in `deploy/unraid/upstream/`. The guide covers appdata permissions (the image ignores `PUID` and `PGID`), https behind a reverse proxy, updates and backups. ([Unraid](docs/self-hosting/unraid.md))
+- **Unraid template.** A Community Applications template sets up the container on Unraid: the release image, the Web UI on port 8080, the appdata folder on `/data`, and the optional settings with descriptions; nothing is required. Until it is listed in **Apps**, add it from the template URL. The template is published in its own template repository, [pixari/opentodo-unraid](https://github.com/pixari/opentodo-unraid), from a checked copy in `deploy/unraid/upstream/`. The guide covers appdata permissions (the image ignores `PUID` and `PGID`), https behind a reverse proxy, updates and backups. ([Unraid](docs/self-hosting/unraid.md))
 
 ### Fixed
 

@@ -10,7 +10,7 @@
 
 - [x] 2.1 Add `deploy/unraid/opentodo.xml` and `scripts/deploy/unraid.mjs` (strict parser for the CA XML subset; required elements, port, path, Web UI, icon file present, category, no required variable). Verify: `node scripts/deploy-check.mjs` reports Unraid ok, and its tests cover a missing path, a wrong port and a required variable.
 - [x] 2.2 Add `deploy/unraid/README.md`: install from the template URL before the CA listing, and the maintainer's CA submission steps. Verify: links in it resolve to files in the repository.
-- [x] 2.4 Add `deploy/unraid/upstream/` (the template repository: `ca_profile.xml`, `templates/opentodo.xml`, `README.md`, `LICENSE`), point `TemplateURL` at `pixari/unraid-templates`, and check the copy is identical and the profile present. Verify: `node --test scripts/deploy/*.test.mjs` covers a differing copy and a missing profile.
+- [x] 2.4 Add `deploy/unraid/upstream/` (the template repository: `ca_profile.xml`, `templates/opentodo.xml`, `README.md`, `LICENSE`), point `TemplateURL` at `pixari/opentodo-unraid`, and check the copy is identical and the profile present. Verify: `node --test scripts/deploy/*.test.mjs` covers a differing copy and a missing profile.
 - [x] 2.3 Start the image the way the template does (port mapping, appdata bind mount, the template's environment) and check the container is healthy, the first visitor can create the owner and a task added in a browser over plain http on the host's network address is saved. Verify: recorded in `notes.md`.
 
 ## 3. Wiring and docs
