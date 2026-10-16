@@ -35,7 +35,7 @@ Inside a project you can also group tasks into sections and show them as a board
 
 ## Sub-projects
 
-Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists its sub-projects at the bottom with their task counts. Use the small arrow next to a project in the sidebar, or <kbd>←</kbd> / <kbd>→</kbd>, to fold and unfold it. Folding is remembered on each device separately.
+Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists its sub-projects at the bottom with their task counts. Use the small arrow next to a project in the sidebar, or <kbd>←</kbd> / <kbd>→</kbd>, to fold and unfold it. Folding is remembered on each device separately; a new device starts with only the top-level projects shown, and **Collapse all** and **Expand all** in the **+** menu next to **Projects** fold or unfold the whole tree. To find a project without scrolling, click the magnifier next to **Projects** (or press <kbd>g</kbd> then <kbd>/</kbd>) and type: <kbd>Enter</kbd> opens the first match and <kbd>Esc</kbd> clears the field.
 
 ## Duplicate a project or task
 

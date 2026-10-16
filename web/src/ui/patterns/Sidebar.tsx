@@ -55,6 +55,8 @@ export interface SidebarGroupProps {
   label?: string
   /** A badge on the heading while the group is closed (unread updates in More). */
   badge?: ReactNode
+  /** The number of items, shown on the heading while the group is closed (sidebar-groups). */
+  count?: number
   /** Icon rail: no heading or actions, items only. */
   collapsed?: boolean
   /** Primary-level group (More): no top margin, items in the rail. */
@@ -64,17 +66,19 @@ export interface SidebarGroupProps {
 }
 
 /** A titled group of items: Filters, Projects, Labels. */
-export function SidebarGroup({ title, collapsible = false, open = true, onToggle, actions, label, badge, collapsed = false, tight = false, children, testId }: SidebarGroupProps) {
+export function SidebarGroup({ title, collapsible = false, open = true, onToggle, actions, label, badge, count, collapsed = false, tight = false, children, testId }: SidebarGroupProps) {
   const heading = collapsible ? (
     <button type="button" className="flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted" onClick={onToggle} aria-expanded={open}>
       <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />{title}
+      {!open && count !== undefined && <span data-group-count className="ml-0.5 font-medium normal-case tracking-normal tabular-nums">{count}</span>}
       {!open && badge}
     </button>
   ) : <span className="flex min-h-6 items-center">{title}</span>
   return (
     <nav aria-label={label ?? title} data-sidebar-group={title} data-testid={testId}>
+      {/* The heading sticks to the top of the sidebar's scroller while its rows scroll (app-shell "Sticky sidebar group headers"); the top padding, not a margin, keeps the canvas behind it. */}
       {!collapsed && (
-        <div className={`${tight ? 'mt-2' : 'mt-5'} mb-1 flex items-center justify-between px-2 text-hint font-semibold uppercase tracking-wide text-faint`}>
+        <div data-sidebar-group-header className={`${tight ? 'pt-2' : 'pt-5'} sticky top-0 z-10 flex items-center justify-between bg-canvas px-2 pb-1 text-hint font-semibold uppercase tracking-wide text-faint`}>
           {heading}
           {actions && <span className="flex items-center gap-1 normal-case">{actions}</span>}
         </div>
@@ -84,11 +88,14 @@ export function SidebarGroup({ title, collapsible = false, open = true, onToggle
   )
 }
 
-/** A small text action in a group header (All, New). */
-export function SidebarGroupAction({ children, active = false, className, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
+/** A small text action in a group header (All, New, Find). */
+export const SidebarGroupAction = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }>(function SidebarGroupAction(
+  { children, active = false, className, ...rest },
+  ref,
+) {
   return (
-    <button type="button" className={`rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case hover:bg-sunken dark:hover:bg-raised ${active ? 'text-accent' : 'text-faint hover:text-muted'}${className ? ` ${className}` : ''}`} {...rest}>
+    <button ref={ref} type="button" className={`rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case hover:bg-sunken dark:hover:bg-raised ${active ? 'text-accent' : 'text-faint hover:text-muted'}${className ? ` ${className}` : ''}`} {...rest}>
       {children}
     </button>
   )
-}
+})

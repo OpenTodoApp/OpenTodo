@@ -58,6 +58,9 @@ export const deferFocus = channel()
 /** `b` on a selected row: the detail panel opens its Blocked by picker (task-dependencies). */
 export const blockedByFocus = channel()
 
+/** `g /` and the palette: the sidebar opens its find field (sidebar-groups). Request id: `open`. */
+export const sidebarFind = channel()
+
 /** `s` on a selected row: the Day view opens with that task in placement mode. */
 export const placement = channel()
 

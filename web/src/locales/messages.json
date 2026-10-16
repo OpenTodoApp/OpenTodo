@@ -527,6 +527,9 @@
     "web/src/app/NotesEditor.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Add or fold projects": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Add panel": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -1553,6 +1556,9 @@
   ],
   "Code from your authenticator app": [
     "web/src/app/ReauthDialog.tsx"
+  ],
+  "Collapse all": [
+    "web/src/app/Sidebar.tsx"
   ],
   "Collapse or expand the sidebar (from 1024 px)": [
     "web/src/lib/shortcuts.ts"
@@ -2867,6 +2873,9 @@
   "Expand": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Expand all": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Expand sidebar": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -3077,6 +3086,12 @@
   "Find a person…": [
     "web/src/app/TriageView.tsx"
   ],
+  "Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Find a project, label or filter…": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Find a project…": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ProjectPickerField.tsx",
@@ -3094,6 +3109,10 @@
   ],
   "Find an option…": [
     "web/src/app/task-detail/FieldsGroup.tsx"
+  ],
+  "Find in the sidebar": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "Find or create a project…": [
     "web/src/app/task-detail/Properties.tsx"
@@ -5055,6 +5074,9 @@
   ],
   "Nothing linked yet": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Nothing matches.": [
+    "web/src/app/Sidebar.tsx"
   ],
   "Nothing matches. Try fewer letters, or a filter query.": [
     "web/src/app/palette/CommandPalette.tsx"
@@ -10539,6 +10561,9 @@
   ],
   "project invite links": [
     "web/src/app/settingsSections.ts"
+  ],
+  "project label filter": [
+    "web/src/app/palette/registry.ts"
   ],
   "proposed changes": [
     "web/src/lib/shortcuts.ts"

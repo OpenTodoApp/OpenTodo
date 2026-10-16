@@ -9,12 +9,15 @@ import { rememberCalendarMode } from '../lib/calendarMode'
 import { db } from '../lib/db'
 import { ensureFeedBaselines } from '../lib/feed'
 import { createLabel } from '../lib/labels'
-import { applyOps, createProject, resetDeviceId } from '../lib/ops'
+import { setCollapsedProjects } from '../lib/projects'
+import { createView } from '../lib/views'
+import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import type { Membership, Op, User } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, type } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
+import { sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollapsed } from './sidebarLayout'
@@ -187,5 +190,251 @@ describe('resize and collapse (ux-overhaul 4.9)', () => {
     } finally {
       window.matchMedia = original
     }
+  })
+})
+
+// ---- sidebar-groups: collapsible groups, tree defaults, find in the sidebar ----
+
+/** Thirty projects in nine roots, as the exploration seeded them. */
+async function seedTree(): Promise<Record<string, string>> {
+  const ids: Record<string, string> = {}
+  const add = async (name: string, parent?: string) => { ids[name] = await createProject({ name, parent_id: parent ? ids[parent] : null }) }
+  await add('Work'); await add('Website launch', 'Work'); await add('Design', 'Website launch'); await add('Content', 'Website launch')
+  await add('Q4 planning', 'Work'); await add('Hiring', 'Work'); await add('Backend engineer', 'Hiring'); await add('Designer', 'Hiring')
+  await add('Customer calls', 'Work'); await add('Acme', 'Customer calls'); await add('Globex', 'Customer calls')
+  await add('Home'); await add('Kitchen renovation', 'Home'); await add('Garden', 'Home'); await add('Car', 'Home')
+  await add('Health'); await add('Running', 'Health'); await add('Finances'); await add('Taxes 2026', 'Finances'); await add('Investments', 'Finances')
+  await add('Reading list'); await add('Side project'); await add('Docs', 'Side project'); await add('Mobile app', 'Side project')
+  await add('Travel'); await add('Lisbon in May', 'Travel'); await add('Family'); await add('School', 'Family'); await add('Birthdays', 'Family'); await add('Someday maybe')
+  return ids
+}
+const projectRows = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-project-id]')].map((b) => b.querySelector('.truncate')?.textContent ?? '')
+const groupOf = (root: ParentNode, title: string) => root.querySelector(`[data-sidebar-group="${title}"]`)!
+const headingOf = (root: ParentNode, title: string) => groupOf(root, title).querySelector<HTMLButtonElement>('button[aria-expanded]')!
+const menuItem = (label: string) => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.includes(label))!
+
+describe('collapsible groups (sidebar-groups 1.2)', () => {
+  it('Filters folds with its count on the heading, remembers it on the device, and keeps its All action', async () => {
+    await createProject({ name: 'Home' })
+    for (let i = 1; i <= 6; i++) await createView({ name: `Filter ${i}`, query: 'p1', pinned: true })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelectorAll('[data-view-id]').length === 6)
+    expect(groupOf(r.container, 'Filters').querySelector('[data-group-count]')).toBeNull()
+    await click(headingOf(r.container, 'Filters'))
+    await flush(20)
+    expect(r.container.querySelectorAll('[data-view-id]')).toHaveLength(0)
+    expect(groupOf(r.container, 'Filters').querySelector('[data-group-count]')?.textContent).toBe('6')
+    expect(headingOf(r.container, 'Filters').textContent).toContain('Filters')
+    expect(localStorage.getItem('ot.sidebar.group.filters')).toBe('0')
+    // Projects starts right under the folded heading; the All action still works.
+    expect(groupOf(r.container, 'Projects').querySelector('[data-project-id]')).not.toBeNull()
+    await click(groupOf(r.container, 'Filters').querySelector('button[aria-label="All filters"]')!)
+    expect(location.pathname).toBe('/views')
+    await r.unmount()
+    const again = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await flush(50)
+    expect(again.container.querySelectorAll('[data-view-id]')).toHaveLength(0)
+    expect(headingOf(again.container, 'Filters').getAttribute('aria-expanded')).toBe('false')
+    // Other devices are not told: nothing synced, only localStorage.
+    expect(await db.outbox.count()).toBeGreaterThan(0)
+    expect((await db.outbox.toArray()).some((o) => JSON.stringify(o).includes('ot.sidebar'))).toBe(false)
+    await again.unmount()
+  })
+
+  it('every group folds; a folded group takes one line, and adding a label reopens Labels', async () => {
+    await createProject({ name: 'Home' })
+    await createLabel({ name: 'errand' })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
+    for (const g of ['Projects', 'Labels']) await click(headingOf(r.container, g))
+    await flush(20)
+    expect(r.container.querySelector('[data-project-id]')).toBeNull()
+    expect(r.container.querySelector('[data-label-row]')).toBeNull()
+    expect(groupOf(r.container, 'Projects').querySelector('[data-group-count]')?.textContent).toBe('1')
+    expect(groupOf(r.container, 'Labels').querySelector('[data-group-count]')?.textContent).toBe('1')
+    await click(groupOf(r.container, 'Labels').querySelector('button[aria-label="New label"]')!)
+    await flush(20)
+    expect(headingOf(r.container, 'Labels').getAttribute('aria-expanded')).toBe('true')
+    expect(r.container.querySelector('[data-label-row]')).not.toBeNull()
+    await r.unmount()
+  })
+})
+
+describe('tree defaults and bulk toggles (sidebar-groups 2.2)', () => {
+  it('a new device shows the roots only with subtree counts; Collapse all and Expand all; navigation reveals only the ancestors', async () => {
+    const ids = await seedTree()
+    await createTask({ title: 'Mock-ups', project_id: ids.Designer })
+    await createTask({ title: 'Plan', project_id: ids.Work })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 9)
+    expect(projectRows(r.container)).toEqual(['Work', 'Home', 'Health', 'Finances', 'Reading list', 'Side project', 'Travel', 'Family', 'Someday maybe'])
+    // "Work" counts its whole subtree while collapsed.
+    expect(r.container.querySelector(`[data-project-id="${ids.Work}"] [data-count]`)?.textContent).toBe('2')
+    // Expand all, then Collapse all, from the Projects header menu.
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
+    await waitFor(() => !!menuItem('Expand all'))
+    await click(menuItem('Expand all'))
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 30)
+    expect(r.container.querySelector(`[data-project-id="${ids.Work}"] [data-count]`)?.textContent).toBe('1')
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
+    await waitFor(() => !!menuItem('Collapse all'))
+    await click(menuItem('Collapse all'))
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 9)
+    // Opening a nested project (the palette, a link) expands its ancestors and nothing else.
+    await r.rerender(<Sidebar route={{ view: 'project', id: ids.Designer }} user={user} />)
+    await waitFor(() => r.container.querySelector(`[data-project-id="${ids.Designer}"]`) !== null)
+    expect(projectRows(r.container)).toEqual(['Work', 'Website launch', 'Q4 planning', 'Hiring', 'Backend engineer', 'Designer', 'Customer calls', 'Home', 'Health', 'Finances', 'Reading list', 'Side project', 'Travel', 'Family', 'Someday maybe'])
+    await r.unmount()
+  })
+
+  it('a device that already stored a collapse state keeps it', async () => {
+    const ids = await seedTree()
+    await setCollapsedProjects(new Set([ids.Home]))
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length > 9)
+    expect(projectRows(r.container)).toContain('Designer')
+    expect(projectRows(r.container)).not.toContain('Garden')
+    await r.unmount()
+  })
+})
+
+describe('find in the sidebar (sidebar-groups 3.2)', () => {
+  const field = (root: ParentNode) => root.querySelector<HTMLInputElement>('input[aria-label="Find in the sidebar"]')
+  const opener = (root: ParentNode) => root.querySelector<HTMLButtonElement>('button[aria-label="Find in the sidebar"]')!
+
+  it('narrows the tree to the match and its ancestors; Enter opens the first match', async () => {
+    const ids = await seedTree()
+    await createLabel({ name: 'errand' })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 9)
+    expect(field(r.container)).toBeNull()
+    await click(opener(r.container))
+    await waitFor(() => field(r.container) !== null)
+    expect(document.activeElement).toBe(field(r.container))
+    await type(field(r.container)!, 'des')
+    await waitFor(() => projectRows(r.container).length === 5)
+    expect(projectRows(r.container)).toEqual(['Work', 'Website launch', 'Design', 'Hiring', 'Designer'])
+    expect(r.container.querySelector('[data-sidebar-group="Labels"]')).toBeNull()
+    expect(r.container.querySelector('[data-find-active]')?.getAttribute('data-project-id')).toBe(ids.Design)
+    await key(field(r.container)!, 'ArrowDown')
+    expect(r.container.querySelector('[data-find-active]')?.getAttribute('data-project-id')).toBe(ids.Designer)
+    await key(field(r.container)!, 'Enter')
+    expect(location.pathname).toBe(`/project/${ids.Designer}`)
+    expect(field(r.container)).toBeNull()
+    await r.unmount()
+  })
+
+  it('matches across groups and hides groups without matches', async () => {
+    await createProject({ name: 'Home' })
+    await createLabel({ name: 'waiting' })
+    await createView({ name: 'Waiting for', query: '@waiting', pinned: true })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-view-id]') !== null && r.container.querySelector('[data-label-row]') !== null)
+    await click(opener(r.container))
+    await waitFor(() => field(r.container) !== null)
+    await type(field(r.container)!, 'wait')
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 0)
+    // Projects keeps its header (it holds the field's opener) but lists nothing.
+    expect(groupOf(r.container, 'Projects')).toBeTruthy()
+    expect(r.container.querySelectorAll('[data-view-id]')).toHaveLength(1)
+    expect(r.container.querySelectorAll('[data-label-row]')).toHaveLength(1)
+    expect(groupOf(r.container, 'Labels')).toBeTruthy()
+    expect(groupOf(r.container, 'Filters')).toBeTruthy()
+    await type(field(r.container)!, 'zzz')
+    await waitFor(() => r.container.querySelector('[role="status"]')?.textContent === 'Nothing matches.')
+    await r.unmount()
+  })
+
+  it('Escape clears, restores a collapsed group and returns focus to the opener', async () => {
+    await createProject({ name: 'Home' })
+    await createLabel({ name: 'errand' })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
+    await click(headingOf(r.container, 'Labels'))
+    await flush(20)
+    expect(r.container.querySelector('[data-label-row]')).toBeNull()
+    await click(opener(r.container))
+    await waitFor(() => field(r.container) !== null)
+    await type(field(r.container)!, 'err')
+    await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
+    expect(localStorage.getItem('ot.sidebar.group.labels')).toBe('0')
+    await key(field(r.container)!, 'Escape')
+    await flush(20)
+    expect(field(r.container)).toBeNull()
+    expect(r.container.querySelector('[data-label-row]')).toBeNull()
+    expect(headingOf(r.container, 'Labels').getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(opener(r.container))
+    await r.unmount()
+  })
+
+  it('g / opens the field from the shell, expanding the icon rail first', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: /1024/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    try {
+      await createProject({ name: 'Home' })
+      navigate({ view: 'inbox' })
+      toggleSidebarCollapsed()
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => document.querySelector('aside[data-sidebar]')?.getAttribute('data-sidebar-width') === 'collapsed')
+      await flush(100)
+      await key(document.body, 'g')
+      await key(document.body, '/')
+      await waitFor(() => document.querySelector('input[aria-label="Find in the sidebar"]') !== null)
+      expect(document.querySelector('aside[data-sidebar]')?.getAttribute('data-sidebar-width')).toBe('16')
+      await waitFor(() => document.activeElement === document.querySelector('input[aria-label="Find in the sidebar"]'))
+      await r.unmount()
+    } finally {
+      window.matchMedia = original
+    }
+  })
+})
+
+describe('find in the drawer and the budget (sidebar-groups 3.4)', () => {
+  it('on a phone the drawer opens the field, and choosing a match closes the drawer and opens the destination', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const original = window.matchMedia
+    // Nothing matches: below 768 px, a coarse pointer is not needed for the drawer.
+    window.matchMedia = ((q: string) => ({ matches: false, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    try {
+      const work = await createProject({ name: 'Work' })
+      const hiring = await createProject({ name: 'Hiring', parent_id: work })
+      const designer = await createProject({ name: 'Designer', parent_id: hiring })
+      navigate({ view: 'inbox' })
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => document.querySelector('aside[data-sidebar]') !== null)
+      const aside = () => document.querySelector('aside[data-sidebar]')!
+      expect(aside().className).toContain('-translate-x-full')
+      await click([...document.querySelectorAll('[data-tab]')].find((t) => t.textContent === 'More')!)
+      await waitFor(() => aside().className.includes('translate-x-0'))
+      // The palette command (and `g /`) open the field inside the drawer.
+      sidebarFind.request('open')
+      await waitFor(() => document.querySelector('input[aria-label="Find in the sidebar"]') !== null)
+      const field = document.querySelector<HTMLInputElement>('input[aria-label="Find in the sidebar"]')!
+      expect(aside().querySelector('[data-sidebar-scroll]')!.contains(field)).toBe(true)
+      await type(field, 'desi')
+      await waitFor(() => document.querySelector(`[data-project-id="${designer}"]`) !== null)
+      await key(field, 'Enter')
+      await waitFor(() => location.pathname === `/project/${designer}`)
+      await waitFor(() => aside().className.includes('-translate-x-full'))
+      await r.unmount()
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
+  it('the find field adds no scroller: the sidebar still scrolls as one', async () => {
+    for (let i = 0; i < 20; i++) await createProject({ name: `Project ${i}` })
+    await createLabel({ name: 'errand' })
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
+    await waitFor(() => r.container.textContent!.includes('Project 19'))
+    await click(r.container.querySelector('button[aria-label="Find in the sidebar"]')!)
+    await waitFor(() => r.container.querySelector('input[aria-label="Find in the sidebar"]') !== null)
+    await type(r.container.querySelector<HTMLInputElement>('input[aria-label="Find in the sidebar"]')!, 'project 1')
+    await flush(50)
+    const scrollers = [...r.container.querySelectorAll('*')].filter((el) => /\boverflow-y-auto\b/.test(el.className))
+    expect(scrollers).toHaveLength(1)
+    expect(scrollers[0].contains(r.container.querySelector('[data-sidebar-find]'))).toBe(true)
+    await r.unmount()
   })
 })

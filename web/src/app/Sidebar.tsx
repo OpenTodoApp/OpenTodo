@@ -1,4 +1,4 @@
-import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -12,14 +12,14 @@ import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect
 import { readAppearance, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
-import { db, getMeta } from '../lib/db'
+import { db } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { REVIEW_ID, reviewAgo, reviewDue } from '../lib/review'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
-import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
+import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Project, User } from '../lib/types'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
@@ -34,19 +34,26 @@ import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, roleOf } from '../lib/sharing'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
+import { matchSidebar } from '../lib/sidebarFind'
+import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 
 
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 0.75
 
-/** Whether the More group is open on this device (closed by default). */
+/** Whether a group is open on this device: More is closed by default, Filters, Projects and Labels open (app-shell "Sidebar structure"). */
 const MORE_KEY = 'ot.sidebar.more'
-function readMoreOpen(): boolean {
-  try { return localStorage.getItem(MORE_KEY) === '1' } catch { return false }
+type GroupId = 'filters' | 'projects' | 'labels'
+const groupKey = (id: GroupId) => `ot.sidebar.group.${id}`
+function readOpen(key: string, fallback: boolean): boolean {
+  try {
+    const v = localStorage.getItem(key)
+    return v === null ? fallback : v === '1'
+  } catch { return fallback }
 }
-function writeMoreOpen(open: boolean): void {
-  try { localStorage.setItem(MORE_KEY, open ? '1' : '0') } catch { /* device state only */ }
+function writeOpen(key: string, open: boolean): void {
+  try { localStorage.setItem(key, open ? '1' : '0') } catch { /* device state only */ }
 }
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, collapsed = false, onToggleCollapse }: {
@@ -68,8 +75,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const prefsRow = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
   const review = useLiveQuery(() => db.review.get(REVIEW_ID), [])
   const appearance = useMemo(() => readAppearance(prefsRow), [prefsRow])
-  const [moreOpen, setMoreOpenState] = useState(() => readMoreOpen())
-  const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeMoreOpen(open) }
+  const [moreOpen, setMoreOpenState] = useState(() => readOpen(MORE_KEY, false))
+  const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeOpen(MORE_KEY, open) }
+  // Every group folds and remembers it per device (sidebar-groups 1.2).
+  const [groupOpen, setGroupOpenState] = useState<Record<GroupId, boolean>>(() => ({
+    filters: readOpen(groupKey('filters'), true), projects: readOpen(groupKey('projects'), true), labels: readOpen(groupKey('labels'), true),
+  }))
+  const setGroupOpen = (id: GroupId, open: boolean) => { setGroupOpenState((s) => ({ ...s, [id]: open })); writeOpen(groupKey(id), open) }
+  const toggleGroup = (id: GroupId) => setGroupOpen(id, !groupOpen[id])
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
   // Shared projects carry a badge (project-sharing); read from the cached memberships.
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
@@ -80,10 +93,19 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const movable = (id: string) => canEditProject(roleOf(id, memberMap))
   // Per-device collapse state lives in the local meta table (never synced); reading it
   // through a live query keeps every Sidebar instance in step.
-  const collapsedIds = useLiveQuery(() => getMeta<string[]>(COLLAPSED_PROJECTS_KEY, []), [], [] as string[])
-  const collapsed_ = useMemo(() => new Set(collapsedIds), [collapsedIds])
+  // A device that never stored a state reads every parent as collapsed (roots only).
+  const collapsedLive = useLiveQuery(() => readCollapsed(projects), [projects])
+  const collapsed_ = useMemo(() => collapsedLive ?? new Set<string>(), [collapsedLive])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
-  const rows = useMemo(() => flattenTree(tree.roots, (id) => collapsed_.has(id)), [tree, collapsed_])
+  // Find in the sidebar (app-shell "Find in the sidebar"): a query narrows the three
+  // groups without touching the stored collapse or group state.
+  const [finding, setFinding] = useState(false)
+  const [query, setQuery] = useState('')
+  const [activeMatch, setActiveMatch] = useState(0)
+  const findInput = useRef<HTMLInputElement>(null)
+  const findOpener = useRef<HTMLButtonElement>(null)
+  const searching = finding && query.trim() !== ''
+  const rows = useMemo(() => flattenTree(tree.roots, (id) => !searching && collapsed_.has(id)), [tree, collapsed_, searching])
 
   // Unread activity in shared projects (activity-feed): a live query over the local
   // activity log and the synced seen markers, so it moves with every sync.
@@ -132,12 +154,54 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     () => evaluateViews(pinnedViews, { today: todayISO(), labels, projects: allProjects, tasks: openTasks }, 0),
     [pinnedViews, labels, allProjects, openTasks],
   )
-  const [labelsOpen, setLabelsOpen] = useState(true)
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')
 
+  const found = useMemo(() => (searching ? matchSidebar(query, {
+    rows: rows.map((n) => ({ id: n.id, parent: n.parent, name: n.item.name })),
+    labels: labels.map((l) => ({ id: l.id, name: l.name })),
+    views: pinnedViews.map((v) => ({ id: v.id, name: v.name })),
+  }) : null), [searching, query, rows, labels, pinnedViews])
+  const shownRows = useMemo(() => (found ? rows.filter((n) => found.projects.has(n.id)) : rows), [found, rows])
+  const shownLabels = useMemo(() => (found ? labels.filter((l) => found.labels.has(l.id)) : labels), [found, labels])
+  const shownViews = useMemo(() => (found ? pinnedViews.filter((v) => found.views.has(v.id)) : pinnedViews), [found, pinnedViews])
+  const groupShown = (n: number) => (found ? n > 0 : true)
+  const isOpen = (id: GroupId) => (found ? true : groupOpen[id])
+  const active = found?.order[Math.min(activeMatch, Math.max(0, (found?.order.length ?? 1) - 1))] ?? null
+  const isActiveMatch = (kind: 'project' | 'label' | 'view', id: string) => active?.kind === kind && active.id === id
+  useEffect(() => setActiveMatch(0), [query])
+  const openMatch = (m: { kind: 'project' | 'label' | 'view'; id: string }) => {
+    if (m.kind === 'project') navigate({ view: 'project', id: m.id })
+    else if (m.kind === 'label') navigate({ view: 'label', id: m.id })
+    else navigate({ view: 'view', id: m.id })
+  }
+  const refocusOpener = useRef(false)
+  const closeFind = (refocus = true) => {
+    refocusOpener.current = refocus
+    setFinding(false)
+    setQuery('')
+  }
+  const openFind = () => setFinding(true)
+  // The field takes focus once it is rendered (also after the icon rail expands); closing it puts focus back on its opener.
+  useEffect(() => {
+    if (finding && !collapsed) findInput.current?.focus()
+    else if (!finding && refocusOpener.current) { refocusOpener.current = false; findOpener.current?.focus() }
+  }, [finding, collapsed])
+  // `g /`, the palette command and the drawer open the field from outside.
+  useEffect(() => {
+    if (sidebarFind.take('open')) openFind()
+    return sidebarFind.subscribe((id) => { if (id === 'open' && sidebarFind.take('open')) openFind() })
+  }, [])
+  const onFindKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFind() }
+    else if (e.key === 'Enter' && active) { e.preventDefault(); openMatch(active); closeFind(false) }
+    else if (e.key === 'ArrowDown' && found) { e.preventDefault(); setActiveMatch((i) => Math.min(i + 1, found.order.length - 1)) }
+    else if (e.key === 'ArrowUp' && found) { e.preventDefault(); setActiveMatch((i) => Math.max(i - 1, 0)) }
+  }
+
   function startAdding() {
     setParentId(route.view === 'project' && tree.nodes.has(route.id) ? route.id : '')
+    setGroupOpen('projects', true)
     setAdding(true)
   }
 
@@ -282,13 +346,22 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         </SidebarGroup>
       </div>
       <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
-      <SidebarGroup title={t('Filters')} collapsed={collapsed} actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
-        {pinnedViews.map((v) => {
+      {finding && !collapsed && (
+        <div className="pt-3" data-sidebar-find>
+          <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or filter…')} aria-label={t('Find in the sidebar')}
+            value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onFindKey} enterKeyHint="go" autoComplete="off" />
+          {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
+        </div>
+      )}
+      {groupShown(shownViews.length) && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
+        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
+        {shownViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id
           const c = viewCounts.get(v.id)
           return (
             <div key={v.id} className="group flex items-center">
               <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
+                data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
                 leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
                 count={!isDashboard(v) && c && c.ok ? c.count : undefined}
                 badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger" aria-label={c.error}>!</span> : undefined} />
@@ -296,19 +369,24 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
             </div>
           )
         })}
-        {pinnedViews.length === 0 && !collapsed && (
+        {pinnedViews.length === 0 && !collapsed && !found && (
           <p className="px-2 py-1 text-meta text-faint">{t('Save a filter to pin it here.')}</p>
         )}
-      </SidebarGroup>
-      <SidebarGroup title={t('Projects')} collapsed={collapsed} actions={(
-        <Menu kind="menu" label={t('New project')} title={t('New project')} trigger={<Icon name="plus" size="xs" />}
+      </SidebarGroup>}
+      {/* Projects stays while finding: its header holds the field's opener. */}
+      {(finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
+        <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
+        <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
           triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
           <MenuItem label={t('New project')} icon="plus" onSelect={startAdding} />
           <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
+          <MenuSeparator />
+          <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
+          <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
         </Menu>
-      )}>
+      </>)}>
         <ul role="tree">
-          {rows.map((n) => {
+          {shownRows.map((n) => {
             const p = n.item
             const has = n.children.length > 0
             const isCollapsed = collapsed_.has(n.id)
@@ -336,6 +414,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                 )}
                 <SidebarItem
                   data-project-id={n.id}
+                  data-find-active={isActiveMatch('project', n.id) || undefined}
+                  className={isActiveMatch('project', n.id) ? 'ring-2 ring-focus' : found && !found.matched.has(n.id) ? 'text-faint' : undefined}
                   depth={n.depth}
                   active={route.view === 'project' && route.id === n.id}
                   collapsed={collapsed}
@@ -367,16 +447,16 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           </form>
         )}
         {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">{t('No projects yet.')}</p>}
-      </SidebarGroup>
-      <SidebarGroup title={t('Labels')} collapsible open={labelsOpen} onToggle={() => setLabelsOpen((v) => !v)} collapsed={collapsed}
+      </SidebarGroup>}
+      {groupShown(shownLabels.length) && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
         actions={<>
           <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label={t('All labels')}>{t('All')}</SidebarGroupAction>
-          <SidebarGroupAction onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
+          <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
         </>}>
-        {!collapsed && labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} />)}
+        {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
-        {labels.length === 0 && !addingLabel && !collapsed && <p className="px-2 py-1 text-meta text-faint">{t('No labels yet.')}</p>}
-      </SidebarGroup>
+        {labels.length === 0 && !addingLabel && !collapsed && !found && <p className="px-2 py-1 text-meta text-faint">{t('No labels yet.')}</p>}
+      </SidebarGroup>}
       </div>
       {/* Pinned footer (app-shell "No desktop top bar"): Help, search, notifications, the sync dot, the account, collapse. */}
       <div className={`flex shrink-0 flex-col gap-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer>

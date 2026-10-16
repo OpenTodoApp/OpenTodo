@@ -13,10 +13,11 @@ function Frame({ children }: { children: React.ReactNode }) {
   return <div className="flex h-[32rem] w-64 flex-col border-r border-default bg-canvas">{children}</div>
 }
 
-/** The whole structure: pinned top, a scrolling middle, a pinned footer. */
+/** The whole structure: pinned top, a scrolling middle with sticky group headings, a pinned footer; Filters folded with its count. */
 export const Structure: StoryObj = {
   render: () => {
     const [labelsOpen, setLabelsOpen] = useState(true)
+    const [filtersOpen, setFiltersOpen] = useState(false)
     return (
       <Frame>
         <div className="shrink-0 px-3 pt-3">
@@ -29,10 +30,11 @@ export const Structure: StoryObj = {
           </nav>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2" data-sidebar-scroll>
-          <SidebarGroup title="Filters" actions={<SidebarGroupAction>All</SidebarGroupAction>}>
+          <SidebarGroup title="Filters" collapsible open={filtersOpen} onToggle={() => setFiltersOpen((v) => !v)} count={2} actions={<SidebarGroupAction>All</SidebarGroupAction>}>
             <SidebarItem icon="filter" label="Waiting for" count={2} />
+            <SidebarItem icon="filter" label="Deep work" count={4} />
           </SidebarGroup>
-          <SidebarGroup title="Projects" actions={<SidebarGroupAction aria-label="New project"><Icon name="plus" size="xs" /></SidebarGroupAction>}>
+          <SidebarGroup title="Projects" collapsible count={12} actions={<><SidebarGroupAction aria-label="Find in the sidebar"><Icon name="search" size="xs" /></SidebarGroupAction><SidebarGroupAction aria-label="New project"><Icon name="plus" size="xs" /></SidebarGroupAction></>}>
             {['Work', 'Website launch', 'Design system', 'Hiring Q4', 'Home', 'Kitchen renovation', 'Health', 'Learning', 'Side project', 'Travel 2027', 'Finance', 'Reading list'].map((p, i) => (
               <div key={p} style={{ paddingLeft: `${[0, 1, 2, 1, 0, 1, 0, 0, 0, 0, 0, 0][i] * 0.75}rem` }}>
                 <SidebarItem leading={<Dot hue={['blue', 'violet', 'pink', 'teal', 'green', 'orange', 'red', 'indigo', 'green', 'cyan', 'slate', 'orange'][i]} />} label={p}

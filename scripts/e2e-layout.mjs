@@ -386,25 +386,25 @@ const OVERLAYS = {
     return { overlay: toast, kind: 'toast' }
   },
   async 'project-menu'(p) {
-    const trigger = p.getByRole('button', { name: /^Project/ }).first()
+    const trigger = p.getByRole('button', { name: 'Project menu' }).first()
     await trigger.click()
     return { overlay: overlayLoc(p), trigger, kind: 'popover' }
   },
   // Project templates: the project menu's dialogs and the sidebar's From a template.
   ...Object.fromEntries([['duplicate-project', 'Duplicate…'], ['save-template', 'Save as template…']].map(([name, item]) => [name, async (p) => {
-    await p.getByRole('button', { name: /^Project/ }).first().click()
+    await p.getByRole('button', { name: 'Project menu' }).first().click()
     await p.getByRole('menuitem', { name: item }).click()
     return { overlay: p.locator(`[data-testid="${name}"]`), kind: 'dialog' }
   }])),
   // Custom fields (custom-fields): the project menu's Fields… dialog.
   async 'fields-dialog'(p) {
-    await p.getByRole('button', { name: /^Project/ }).first().click()
+    await p.getByRole('button', { name: 'Project menu' }).first().click()
     await p.getByRole('menuitem', { name: 'Fields…' }).click()
     return { overlay: p.locator('[data-testid="fields-dialog"]'), kind: 'dialog' }
   },
   async 'template-dialog'(p) {
     await openSidebar(p)
-    await p.locator('aside[data-sidebar]').getByRole('button', { name: 'New project' }).click()
+    await p.locator('aside[data-sidebar]').getByRole('button', { name: 'Add or fold projects' }).click()
     await p.getByRole('menuitem', { name: 'From a template…' }).click()
     return { overlay: p.locator('[data-testid="template-dialog"]'), kind: 'dialog' }
   },
