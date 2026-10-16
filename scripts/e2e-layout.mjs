@@ -357,13 +357,13 @@ const OVERLAYS = {
     return { overlay: toast, kind: 'toast' }
   },
   async 'project-menu'(p) {
-    const trigger = p.getByRole('button', { name: /^Project/ }).first()
+    const trigger = p.getByRole('button', { name: 'Project menu' }).first()
     await trigger.click()
     return { overlay: overlayLoc(p), trigger, kind: 'popover' }
   },
   // Project templates: the project menu's dialogs and the sidebar's From a template.
   ...Object.fromEntries([['duplicate-project', 'Duplicate…'], ['save-template', 'Save as template…']].map(([name, item]) => [name, async (p) => {
-    await p.getByRole('button', { name: /^Project/ }).first().click()
+    await p.getByRole('button', { name: 'Project menu' }).first().click()
     await p.getByRole('menuitem', { name: item }).click()
     return { overlay: p.locator(`[data-testid="${name}"]`), kind: 'dialog' }
   }])),
