@@ -88,6 +88,9 @@ func (s *Server) handleCompleteSignup(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, auth.ErrVerificationInvalid):
 		writeError(w, http.StatusNotFound, "verification_invalid", err.Error())
 		return
+	case errors.Is(err, auth.ErrMemberLimit):
+		writeError(w, http.StatusForbidden, "limit_members", err.Error())
+		return
 	case errors.Is(err, auth.ErrSignupClosed):
 		writeError(w, http.StatusForbidden, "signup_closed", err.Error())
 		return

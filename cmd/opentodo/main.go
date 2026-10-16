@@ -29,25 +29,12 @@ import (
 	// and zoned due values (absolute-datetimes) are validated by zone name.
 	_ "time/tzdata"
 
-	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/calfeed"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
-	"github.com/pixari/opentodo/internal/digest"
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/email"
-	"github.com/pixari/opentodo/internal/httpapi"
-	"github.com/pixari/opentodo/internal/mail"
-	"github.com/pixari/opentodo/internal/mcp"
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/web"
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/pixari/opentodo/internal/tenant"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -110,26 +97,10 @@ func run() error {
 	slog.SetDefault(log)
 	cfg.LogWarnings(log)
 
-	// A restore confirmed in the web app is applied before the database opens. A
-	// failure is recorded and the server starts on the previous database.
-	if err := backup.ApplyPendingRestore(cfg.DataDir, log, nil); err != nil {
-		log.Error("restore: could not record the outcome", "err", err)
+	if cfg.Host != nil {
+		// Host mode (OpenSpec `multi-tenant-host`): many tenants in one process.
+		return runHost(cfg, log)
 	}
-
-	// Hold the data directory shared for the life of the process: `opentodo
-	// restore` and the other maintenance commands refuse to touch it while we run,
-	// but a newer server may start beside us (rolling updates).
-	unlock, err := store.LockShared(cfg.DataDir)
-	if err != nil {
-		return fmt.Errorf("%s: %w", cfg.DataDir, err)
-	}
-	defer unlock()
-
-	db, err := store.Open(cfg.DataDir)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -137,106 +108,21 @@ func run() error {
 	ctx, requestRestart := context.WithCancel(ctx)
 	defer requestRestart()
 
-	if cfg.Demo {
-		// Demo instance (OpenSpec `demo-mode`, docs/self-hosting/demo.md): no sign-up,
-		// no web push, and none of the outbound integrations below run.
-		cfg.AllowSignup, cfg.PushDisabled = false, true
-	}
-	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
-	authSvc.SetSetupToken(cfg.SetupToken)
-	syncSvc := opsync.NewService(db)
-	// Outbound webhooks: events come from the winning changes of each committed
-	// sync batch; the worker sends queued deliveries until shutdown.
-	hooks := webhook.New(db, syncSvc, webhook.Options{Version: version, Log: log})
-	if err := hooks.SeedAllowPrivate(context.Background(), cfg.WebhooksAllowPrivate); err != nil {
-		return err
-	}
-	syncSvc.SetObserver(hooks.Observe)
-	// In-app notifications (task-assignment): assignment events land in the
-	// notifications table after commit. Old read rows are swept at start-up.
-	inbox := notify.NewInApp(db, log)
-	syncSvc.AddSink(inbox)
-	if n, err := inbox.Sweep(ctx); err != nil {
-		log.Warn("notification sweep failed", "err", err)
-	} else if n > 0 {
-		log.Info("old notifications removed", "count", n)
-	}
-	// Scheduled backups (docs/backups.md): off until the owner configures them.
-	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log, Audit: authSvc.Audit()})
-	backups.SetRestartFunc(func() {
+	// One tenant: the data directory, its services and its handler (OpenSpec
+	// `multi-tenant-host` D1). Open applies a pending web restore and holds the
+	// data directory shared until Close.
+	t, err := tenant.Open(ctx, cfg, tenant.Options{Version: version, Log: log, Restart: func() {
 		restartRequested.Store(true)
 		requestRestart()
-	})
-	if !cfg.Demo {
-		if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
-			return err
-		} else if seeded {
-			log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
-		}
-	}
-	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
-	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
-	// first use. In-app reminders work either way.
-	// MCP endpoint for AI assistants (docs/mcp.md): off until the owner enables
-	// it; OPENTODO_MCP presets the toggle and OPENTODO_MCP_WRITES the "AI
-	// assistants may make changes" switch, on first start only.
-	mcpSettings := mcp.NewSettings(db)
-	if seeded, err := mcpSettings.Seed(ctx, cfg.MCP); err != nil {
+	}})
+	if err != nil {
 		return err
-	} else if seeded {
-		log.Info("MCP setting seeded from OPENTODO_MCP", "enabled", *cfg.MCP)
 	}
-	if seeded, err := mcpSettings.SeedWrites(ctx, cfg.MCPWrites); err != nil {
-		return err
-	} else if seeded {
-		log.Info("MCP writes setting seeded from OPENTODO_MCP_WRITES", "enabled", *cfg.MCPWrites)
-	}
-	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox), httpapi.WithMCPSettings(mcpSettings)}
-	var pushSvc *push.Service
-	if !cfg.PushDisabled {
-		pushSvc = push.New(db, syncSvc, cfg.DataDir, push.Options{Log: log, Subject: cfg.Origin()})
-		opts = append(opts, httpapi.WithPush(pushSvc))
-	}
-	// Email to task (docs/email.md): off unless OPENTODO_EMAIL_* configure a
-	// mailbox; then one goroutine polls it over IMAP.
-	emailSvc := email.New(db, syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
-	opts = append(opts, httpapi.WithEmail(emailSvc))
-	// Calendar subscriptions (calendar-feeds): fetched under the webhooks'
-	// private-network policy; the server sets the switch and the notifier.
-	calWorker := &calfeed.Worker{Store: calfeed.NewStore(db), Fetcher: calfeed.NewFetcher(hooks.AllowPrivate, version), Log: log}
-	opts = append(opts, httpapi.WithCalendarFeeds(calWorker))
-	// Outgoing email (docs/self-hosting/outgoing-email.md): never on a demo
-	// instance; otherwise configured in Settings or by OPENTODO_SMTP_*. The
-	// weekly digest (stats-and-review) rides on it.
-	var digestSvc *digest.Service
-	if !cfg.Demo {
-		ehlo := ""
-		if cfg.BaseURL != nil {
-			ehlo = cfg.BaseURL.Hostname()
-		}
-		mailSvc := mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
-			E2EE: e2ee.NewStore(db), Transport: &mail.Transport{LocalName: ehlo}})
-		opts = append(opts, httpapi.WithMail(mailSvc))
-		digestSvc = digest.New(db, syncSvc, mailSvc, digest.Options{Origin: cfg.Origin(), Log: log})
-	}
-	var demoSvc *demo.Service
-	if cfg.Demo {
-		// Provision the hidden owner, drop the shared accounts of the first demo
-		// version and catch up on a missed nightly reset before serving.
-		demoSvc = demo.New(authSvc, syncSvc, log)
-		demoSvc.SetLimits(cfg.DemoMaxSandboxes, cfg.DemoMaxDBMB)
-		if err := demoSvc.Start(ctx); err != nil {
-			return fmt.Errorf("demo mode: %w", err)
-		}
-		opts = append(opts, httpapi.WithDemo(demoSvc))
-		log.Warn("demo mode is on: every visitor gets a private sandbox, deleted after inactivity and every night", "reset_hour_utc", demo.ResetHour)
-	}
-	// A demo page also tells search engines not to index it (demo-sandboxes D5).
-	handler := httpapi.New(cfg, authSvc, syncSvc, web.HandlerWith(web.Options{NoIndex: cfg.Demo}), log, version, opts...)
+	defer t.Close()
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           handler,
+		Handler:           t.Handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		// The live-update stream (GET /api/v1/sync/events) lifts these two deadlines
 		// for its own connection via http.ResponseController; every other route keeps them.
@@ -246,57 +132,19 @@ func run() error {
 	}
 	// Close open live-update streams first so Shutdown is not held up by them and
 	// clients reconnect to the new process.
-	srv.RegisterOnShutdown(syncSvc.Notifier().CloseAll)
+	srv.RegisterOnShutdown(t.Sync.Notifier().CloseAll)
 
 	// Background jobs run in one server process only: during a rolling update the
 	// new container serves beside the old one and takes them over when it stops.
 	workerDone := make(chan struct{})
 	jobsStarted, releaseJobs := runJobsWhenLeader(ctx, cfg.DataDir, log, jobsRetry, func() {
-		// Prune audit events past the owner's retention at startup and hourly.
-		// Expired pending sign-ups (outgoing-email) go on the same tick.
-		authSvc.Audit().AlsoPrune(authSvc.PruneSignups)
-		go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
-		if !cfg.Demo {
-			backups.Start(ctx)
-		}
-		if pushSvc != nil {
-			go pushSvc.Run(ctx)
-		}
-		if digestSvc != nil {
-			// Weekly digests: a pass every 5 minutes; it sends nothing while
-			// outgoing email is not configured.
-			go digestSvc.Run(ctx)
-		}
-		if demoSvc != nil {
-			// Expired-sandbox cleanup every 5 minutes and the nightly reset.
-			go demoSvc.Run(ctx)
-			// The operator (or a test) can force a reset with SIGUSR1; there is no route.
-			go resetOnSignal(ctx, demoSvc, log)
-		} else {
-			go emailSvc.Run(ctx)
-		}
-		// Purge items that outlived the Trash retention at startup and daily
-		// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
-		go syncSvc.RunRetention(ctx, cfg.TrashRetentionDays, log)
-		if !cfg.Demo {
-			// No outbound calendar fetches on a demo instance.
-			go calWorker.Run(ctx)
-		}
-		go func() {
-			defer close(workerDone)
-			if cfg.Demo {
-				// No outbound webhook deliveries on a demo instance.
-				<-ctx.Done()
-				return
-			}
-			hooks.Run(ctx)
-		}()
+		t.StartJobs(ctx, workerDone, func(ctx context.Context, d *demo.Service) { resetOnSignal(ctx, d, log) })
 	})
 	defer releaseJobs()
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", cfg.AllowSignup)
+		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", t.Cfg.AllowSignup)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}

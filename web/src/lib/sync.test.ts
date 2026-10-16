@@ -618,3 +618,41 @@ describe('calendar-feeds live signal', () => {
     expect(calendarEvents).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('server limits (multi-tenant-host)', () => {
+  type Sent = { id: string; entityId: string }
+  const accept = async () => ({ applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now() })
+
+  it('keeps changes a limit refused on the device, syncs the rest and offers them again later', async () => {
+    await mutate('task', 'kept', { title: 'Over the limit' })
+    await mutate('task', 'fine', { title: 'Fits' })
+    syncCalls.mockImplementation((async (...args: unknown[]) => ({
+      ...(await accept()),
+      rejected: (args[2] as Sent[]).filter((o) => o.entityId === 'kept').map((o) => ({ id: o.id, reason: 'limit_storage' })),
+    })) as never)
+    await syncNow()
+    // The task stays as edited, nothing is queued, and the status says why.
+    expect((await db.tasks.get('kept'))?.title).toBe('Over the limit')
+    expect(await db.outbox.count()).toBe(0)
+    const s = syncSnapshot()
+    expect(s.state).toBe('limited')
+    expect(s.error).toContain('full')
+    expect(s.pending).toBeGreaterThan(0)
+    expect(s.rejected).toBeNull()
+
+    // Within the retry interval the held changes are not sent again.
+    syncCalls.mockClear()
+    syncCalls.mockImplementation(accept as never)
+    await syncNow()
+    expect((syncCalls.mock.calls.at(-1) as unknown as [string, number, Sent[]])[2]).toEqual([])
+
+    // A minute later they go out and, with room again, are accepted.
+    vi.setSystemTime(Date.now() + 61_000)
+    await syncNow()
+    const resent = (syncCalls.mock.calls.at(-1) as unknown as [string, number, Sent[]])[2]
+    expect(resent.length).toBeGreaterThan(0)
+    expect(resent.every((o) => o.entityId === 'kept')).toBe(true)
+    expect(syncSnapshot().state).toBe('idle')
+    expect(syncSnapshot().pending).toBe(0)
+  })
+})

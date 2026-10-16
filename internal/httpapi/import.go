@@ -27,7 +27,12 @@ func (s *Server) readImport(w http.ResponseWriter, r *http.Request) ([]byte, imp
 	var opts importer.Options
 	limit := s.cfg.ImportMaxBytes()
 	tooLarge := func() {
-		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("the file exceeds the import limit of %d MB", limit>>20))
+		// A hosted tenant's import size is one of its limits (multi-tenant-host D5).
+		code := "too_large"
+		if s.hosted {
+			code = "limit_import"
+		}
+		writeError(w, http.StatusRequestEntityTooLarge, code, fmt.Sprintf("the file exceeds the import limit of %d MB", limit>>20))
 	}
 	// Room for the multipart framing and the options next to the file itself.
 	r.Body = http.MaxBytesReader(w, r.Body, limit+1<<20)

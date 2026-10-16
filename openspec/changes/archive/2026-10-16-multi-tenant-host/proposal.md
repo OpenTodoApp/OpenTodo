@@ -8,7 +8,7 @@ OpenTodo asks every user to run a server, which keeps out most people who pay fo
 
 A host that serves many tenants from one process, with one ordinary data directory per tenant, keeps per-tenant isolation and portability at the cost of a shared process. Because the project is AGPL with outside contributions, the hosted service must run the open code, so this capability belongs in the open binary.
 
-This proposal records the agreed direction. It is deliberately **not scheduled before** the switcher work (named importers, comparison and switch-guide pages) and the parity features, and it has no specs or tasks yet.
+This proposal records the agreed direction. It was scheduled after the switcher work (named importers, comparison and switch-guide pages) and the parity features; phase 2 shipped earlier as the `outgoing-email` change, and the remaining phases shipped together (see notes.md).
 
 ## What Changes
 
@@ -30,18 +30,18 @@ This proposal records the agreed direction. It is deliberately **not scheduled b
 - Paid features. Hosted and self-hosted run the same binary with the same features.
 - Scheduling: this change waits until the importer, website and parity work is done. Phases 1 (tenant refactor) and 2 (outgoing email) may be split out and shipped earlier because they help self-hosters.
 
-Advances a new ROADMAP.md item, "Hosted OpenTodo", to be added under Future ideas when this change is scheduled.
+Advances the ROADMAP.md item "Hosted OpenTodo" (host mode in the open binary; the control plane stays outside this repository).
 
 ## Capabilities
 
 ### New Capabilities
 
 - `multi-tenant-host`: host mode, tenant routing, lazy open and idle close, the shared scheduler, per-tenant limits, the tenant lifecycle and the operator interface the control plane uses.
-- `outgoing-email`: optional SMTP configuration, verification and password-reset mail, sending limits and failure behaviour.
+- `outgoing-email`: optional SMTP configuration, verification and password-reset mail, sending limits and failure behaviour. Shipped by the separate `outgoing-email` change, so this change carries no delta for it.
 
 ### Modified Capabilities
 
-- `account-access`: self-service sign-up with email verification and self-service password reset, when outgoing email is configured.
+- `account-access`: self-service sign-up with email verification and self-service password reset, when outgoing email is configured. Shipped by `outgoing-email`.
 - `self-hosting`: optional SMTP and host-mode variables (none mandatory), and the guarantee that a single-tenant server behaves as before.
 - `backups`: a tenant export and import that are the same archive as `opentodo restore` uses, so hosted and self-hosted data move both ways.
 

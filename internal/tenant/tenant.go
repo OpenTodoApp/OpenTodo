@@ -1,0 +1,364 @@
+// Package tenant builds one OpenTodo server around one data directory: the
+// database and its lock, the services, the notifier, the HTTP handler and the
+// background jobs (OpenSpec `multi-tenant-host`, design D1). A self-hosted
+// server opens exactly one tenant; a host (internal/host) opens many, lazily.
+package tenant
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/backup"
+	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/demo"
+	"github.com/pixari/opentodo/internal/digest"
+	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/email"
+	"github.com/pixari/opentodo/internal/httpapi"
+	"github.com/pixari/opentodo/internal/mail"
+	"github.com/pixari/opentodo/internal/mcp"
+	"github.com/pixari/opentodo/internal/notify"
+	"github.com/pixari/opentodo/internal/push"
+	"github.com/pixari/opentodo/internal/settings"
+	"github.com/pixari/opentodo/internal/store"
+	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/web"
+	"github.com/pixari/opentodo/internal/webhook"
+)
+
+// Options configure Open.
+type Options struct {
+	Version string
+	Log     *slog.Logger
+	// Restart is called when a restore confirmed in the web app needs the
+	// tenant to be closed and opened again (backup-restore-web D1). A
+	// self-hosted server re-executes itself; a host closes the tenant so the
+	// next request reopens it and applies the restore.
+	Restart func()
+	// Hosted is set when a host serves this tenant (multi-tenant-host D2, D4):
+	// operator-level settings come from the host, the background jobs run in the
+	// host's shared scheduler and the tenant's limits apply.
+	Hosted *Hosted
+	// Web serves the embedded app; nil builds the default handler.
+	Web http.Handler
+	// PushOptions adjusts web push before it is built (tests point it at a
+	// fake push service).
+	PushOptions func(*push.Options)
+	// Now is the weekly digest's clock (a host passes its own, tests a fake
+	// one); nil is time.Now.
+	Now func() time.Time
+}
+
+// Hosted is what a host passes to each of its tenants.
+type Hosted struct {
+	// Name is the tenant name (the first label of its host name).
+	Name string
+	// PushSubject is the operator's VAPID contact (a mailto: or https: URI).
+	PushSubject string
+	// Quota bounds the tenant's writes (multi-tenant-host D5); nil means none.
+	Quota opsync.Quota
+	// MaxMembers caps the tenant's accounts; 0 means no limit.
+	MaxMembers int
+	// Changed is called after every committed write, so the host can refresh
+	// the tenant's entries in the "next due" index (D3).
+	Changed func()
+	// OnClose is called once the tenant has closed (the host's bookkeeping).
+	OnClose func()
+}
+
+// Tenant is one open data directory and everything built around it.
+type Tenant struct {
+	Cfg      config.Config
+	DB       *sql.DB
+	Auth     *auth.Service
+	Sync     *opsync.Service
+	Hooks    *webhook.Service
+	Inbox    *notify.InApp
+	Backups  *backup.Service
+	MCP      *mcp.Settings
+	Push     *push.Service // nil when web push is off
+	Email    *email.Service
+	Calendar *calfeed.Worker
+	Mail     *mail.Service   // nil on a demo instance
+	Digest   *digest.Service // weekly digests (stats-and-review); nil with Mail
+	Demo     *demo.Service   // nil unless OPENTODO_DEMO
+	Handler  http.Handler
+
+	log       *slog.Logger
+	hosted    *Hosted
+	unlock    func()
+	closeOnce sync.Once
+	closeErr  error
+}
+
+// Open applies a pending web restore, takes the data directory's shared lock,
+// opens and migrates the database and wires every service and the HTTP
+// handler for cfg.DataDir. It starts no background job: a self-hosted server
+// calls StartJobs once it leads the jobs, a host runs them through its shared
+// scheduler. Close releases everything.
+func Open(ctx context.Context, cfg config.Config, o Options) (t *Tenant, err error) {
+	log := o.Log
+	if log == nil {
+		log = slog.Default()
+	}
+	// A restore confirmed in the web app is applied before the database opens. A
+	// failure is recorded and the tenant opens on the previous database.
+	if err := backup.ApplyPendingRestore(cfg.DataDir, log, nil); err != nil {
+		log.Error("restore: could not record the outcome", "err", err)
+	}
+	// Hold the data directory shared for the life of the tenant: `opentodo
+	// restore` and the other maintenance commands refuse to touch it while it is
+	// open, but a newer server may open it beside us (rolling updates).
+	unlock, err := store.LockShared(cfg.DataDir)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", cfg.DataDir, err)
+	}
+	db, err := store.Open(cfg.DataDir)
+	if err != nil {
+		unlock()
+		return nil, err
+	}
+	t = &Tenant{Cfg: cfg, DB: db, log: log, hosted: o.Hosted, unlock: unlock}
+	defer func() {
+		if err != nil {
+			t.Close()
+			t = nil
+		}
+	}()
+	if err := t.wire(ctx, o); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *Tenant) wire(ctx context.Context, o Options) error {
+	cfg, log, db, hosted := t.Cfg, t.log, t.DB, o.Hosted
+	if cfg.Demo {
+		// Demo instance (OpenSpec `demo-mode`, docs/self-hosting/demo.md): no sign-up,
+		// no web push, and none of the outbound integrations below run.
+		cfg.AllowSignup, cfg.PushDisabled = false, true
+	}
+	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
+	authSvc.SetSetupToken(cfg.SetupToken)
+	syncSvc := opsync.NewService(db)
+	// Outbound webhooks: events come from the winning changes of each committed
+	// sync batch; the worker sends queued deliveries until shutdown.
+	hooks := webhook.New(db, syncSvc, webhook.Options{Version: o.Version, Log: log})
+	if hosted != nil {
+		// A host's private network is the operator's (multi-tenant-host D4):
+		// tenants never deliver to it, whatever was stored before.
+		if err := hooks.SetAllowPrivate(ctx, false); err != nil {
+			return err
+		}
+		authSvc.SetMemberLimit(hosted.MaxMembers)
+		syncSvc.SetQuota(hosted.Quota)
+		changed := hosted.Changed
+		syncSvc.SetObserver(func(ctx context.Context, changes []opsync.Change) {
+			hooks.Observe(ctx, changes)
+			if changed != nil {
+				changed()
+			}
+		})
+	} else {
+		if err := hooks.SeedAllowPrivate(ctx, cfg.WebhooksAllowPrivate); err != nil {
+			return err
+		}
+		syncSvc.SetObserver(hooks.Observe)
+	}
+	// In-app notifications (task-assignment): assignment events land in the
+	// notifications table after commit. Old read rows are swept on open.
+	inbox := notify.NewInApp(db, log)
+	syncSvc.AddSink(inbox)
+	if n, err := inbox.Sweep(ctx); err != nil {
+		log.Warn("notification sweep failed", "err", err)
+	} else if n > 0 {
+		log.Info("old notifications removed", "count", n)
+	}
+	// Scheduled backups (docs/backups.md): off until the owner configures them.
+	backups := backup.New(db, cfg.DataDir, backup.Options{Version: o.Version, Log: log, Audit: authSvc.Audit()})
+	if o.Restart != nil {
+		backups.SetRestartFunc(o.Restart)
+	}
+	if !cfg.Demo {
+		if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
+			return err
+		} else if seeded {
+			log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
+		}
+	}
+	// MCP endpoint for AI assistants (docs/mcp.md): off until the owner enables
+	// it; OPENTODO_MCP presets the toggle and OPENTODO_MCP_WRITES the "AI
+	// assistants may make changes" switch, on first start only. On a host both
+	// are the operator's and are applied on every open.
+	mcpSettings := mcp.NewSettings(db)
+	if hosted != nil {
+		if err := mcpSettings.Set(ctx, "", cfg.MCP != nil && *cfg.MCP, nil); err != nil {
+			return err
+		}
+		if err := mcpSettings.SetWrites(ctx, "", cfg.MCPWrites != nil && *cfg.MCPWrites, nil); err != nil {
+			return err
+		}
+	} else {
+		if seeded, err := mcpSettings.Seed(ctx, cfg.MCP); err != nil {
+			return err
+		} else if seeded {
+			log.Info("MCP setting seeded from OPENTODO_MCP", "enabled", *cfg.MCP)
+		}
+		if seeded, err := mcpSettings.SeedWrites(ctx, cfg.MCPWrites); err != nil {
+			return err
+		} else if seeded {
+			log.Info("MCP writes setting seeded from OPENTODO_MCP_WRITES", "enabled", *cfg.MCPWrites)
+		}
+	}
+	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox), httpapi.WithMCPSettings(mcpSettings)}
+	if hosted != nil {
+		opts = append(opts, httpapi.WithHosted())
+	}
+	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
+	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
+	// first use. In-app reminders work either way.
+	var pushSvc *push.Service
+	if !cfg.PushDisabled {
+		subject := cfg.Origin()
+		if hosted != nil {
+			subject = hosted.PushSubject
+		}
+		po := push.Options{Log: log, Subject: subject}
+		if o.PushOptions != nil {
+			o.PushOptions(&po)
+		}
+		pushSvc = push.New(db, syncSvc, cfg.DataDir, po)
+		opts = append(opts, httpapi.WithPush(pushSvc))
+	}
+	// Email to task (docs/email.md): off unless OPENTODO_EMAIL_* configure a
+	// mailbox; then one goroutine polls it over IMAP. A host has no per-tenant
+	// mailbox, so the feature stays off there.
+	emailCfg := cfg.Email
+	if hosted != nil {
+		emailCfg = config.EmailConfig{}
+	}
+	emailSvc := email.New(db, syncSvc, emailCfg, email.Options{Log: log, Audit: authSvc.Audit()})
+	opts = append(opts, httpapi.WithEmail(emailSvc))
+	// Calendar subscriptions (calendar-feeds): fetched under the webhooks'
+	// private-network policy; the server sets the switch and the notifier.
+	calWorker := &calfeed.Worker{Store: calfeed.NewStore(db), Fetcher: calfeed.NewFetcher(hooks.AllowPrivate, o.Version), Log: log}
+	opts = append(opts, httpapi.WithCalendarFeeds(calWorker))
+	// Outgoing email (docs/self-hosting/outgoing-email.md): never on a demo
+	// instance; otherwise configured in Settings or by OPENTODO_SMTP_* (on a
+	// host, only by the operator's OPENTODO_SMTP_*). The weekly digest
+	// (stats-and-review) rides on it: each user opts in for themselves, on a
+	// host too, and it sends nothing while outgoing email is not configured.
+	var mailSvc *mail.Service
+	var digestSvc *digest.Service
+	if !cfg.Demo {
+		ehlo := ""
+		if cfg.BaseURL != nil {
+			ehlo = cfg.BaseURL.Hostname()
+		}
+		mailSvc = mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
+			E2EE: e2ee.NewStore(db), Transport: &mail.Transport{LocalName: ehlo}})
+		opts = append(opts, httpapi.WithMail(mailSvc))
+		digestSvc = digest.New(db, syncSvc, mailSvc, digest.Options{Origin: cfg.Origin(), Log: log, Now: o.Now})
+	}
+	var demoSvc *demo.Service
+	if cfg.Demo {
+		// Provision the hidden owner, drop the shared accounts of the first demo
+		// version and catch up on a missed nightly reset before serving.
+		demoSvc = demo.New(authSvc, syncSvc, log)
+		demoSvc.SetLimits(cfg.DemoMaxSandboxes, cfg.DemoMaxDBMB)
+		if err := demoSvc.Start(ctx); err != nil {
+			return fmt.Errorf("demo mode: %w", err)
+		}
+		opts = append(opts, httpapi.WithDemo(demoSvc))
+		log.Warn("demo mode is on: every visitor gets a private sandbox, deleted after inactivity and every night", "reset_hour_utc", demo.ResetHour)
+	}
+	webHandler := o.Web
+	if webHandler == nil {
+		// A demo page also tells search engines not to index it (demo-sandboxes D5).
+		webHandler = web.HandlerWith(web.Options{NoIndex: cfg.Demo})
+	}
+	t.Handler = httpapi.New(cfg, authSvc, syncSvc, webHandler, log, o.Version, opts...)
+	t.Cfg, t.Auth, t.Sync, t.Hooks, t.Inbox, t.Backups, t.MCP = cfg, authSvc, syncSvc, hooks, inbox, backups, mcpSettings
+	t.Push, t.Email, t.Calendar, t.Demo = pushSvc, emailSvc, calWorker, demoSvc
+	t.Mail, t.Digest = mailSvc, digestSvc
+	return nil
+}
+
+// StartJobs starts the background jobs of a self-hosted server: they stop
+// when ctx is cancelled. done is closed once the webhook worker has finished
+// its last delivery pass, so shutdown can record its outcome.
+func (t *Tenant) StartJobs(ctx context.Context, done chan<- struct{}, demoSignal func(context.Context, *demo.Service)) {
+	cfg := t.Cfg
+	// Prune audit events past the owner's retention at startup and hourly.
+	// Expired pending sign-ups (outgoing-email) go on the same tick.
+	t.Auth.Audit().AlsoPrune(t.Auth.PruneSignups)
+	go t.Auth.Audit().RunPruner(ctx, audit.PruneInterval)
+	if !cfg.Demo {
+		t.Backups.Start(ctx)
+	}
+	if t.Push != nil {
+		go t.Push.Run(ctx)
+	}
+	if t.Digest != nil {
+		// Weekly digests: a pass every 5 minutes; it sends nothing while
+		// outgoing email is not configured.
+		go t.Digest.Run(ctx)
+	}
+	if t.Demo != nil {
+		// Expired-sandbox cleanup every 5 minutes and the nightly reset.
+		go t.Demo.Run(ctx)
+		if demoSignal != nil {
+			// The operator (or a test) can force a reset with SIGUSR1; there is no route.
+			go demoSignal(ctx, t.Demo)
+		}
+	} else {
+		go t.Email.Run(ctx)
+	}
+	// Purge items that outlived the Trash retention at startup and daily
+	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
+	go t.Sync.RunRetention(ctx, cfg.TrashRetentionDays, t.log)
+	if !cfg.Demo {
+		// No outbound calendar fetches on a demo instance.
+		go t.Calendar.Run(ctx)
+	}
+	go func() {
+		defer close(done)
+		if cfg.Demo {
+			// No outbound webhook deliveries on a demo instance.
+			<-ctx.Done()
+			return
+		}
+		t.Hooks.Run(ctx)
+	}()
+}
+
+// Hosted reports the host's settings for this tenant; nil when self-hosted.
+func (t *Tenant) Hosted() *Hosted { return t.hosted }
+
+// Close ends live event streams, closes the database and releases the data
+// directory. It is safe to call more than once.
+func (t *Tenant) Close() error {
+	t.closeOnce.Do(func() {
+		if t.Sync != nil {
+			t.Sync.Notifier().CloseAll()
+		}
+		if t.DB != nil {
+			t.closeErr = t.DB.Close()
+		}
+		if t.unlock != nil {
+			t.unlock()
+		}
+		if t.hosted != nil && t.hosted.OnClose != nil {
+			t.hosted.OnClose()
+		}
+	})
+	return t.closeErr
+}
