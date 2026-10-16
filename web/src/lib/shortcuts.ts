@@ -1,18 +1,58 @@
-// The keyboard shortcuts (OpenSpec change `user-documentation`, design D9): one
-// table for the `?` overlay (ShortcutHelp) and the keyboard guide, which
-// `make docs` writes into docs/keyboard.md, so the two never disagree. Add a
-// shortcut here, run `make docs`, and both list it.
+// The shortcut registry (OpenSpec change ux-overhaul, keyboard-shortcuts "One
+// shortcut registry with scopes", design D5): every keyboard shortcut declared once,
+// with its keys, its scope and the section it is listed under. The dispatcher in
+// `web/src/app/shortcuts` resolves a key press against this table and the scopes
+// on screen; the `?` cheat sheet, the keyboard guide (`make docs` writes it into
+// docs/keyboard.md) and the command palette's shortcut column read the same rows,
+// so the four never disagree. `shortcuts.test.ts` fails on two entries that bind
+// the same keys in one scope, or in a scope and an ancestor scope, without an
+// explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'comments' | 'settings' | 'triage'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'comments' | 'settings' | 'vim'
 
-/** One row: the keys as shown (a context such as "(board)" in parentheses), what they do, and the guide section. */
+/**
+ * Where a shortcut applies. The dispatcher runs the innermost active scope first:
+ * `global` → `view` (one named view) → `list` | `calendar` → `board` | `timeline`
+ * (a project's layouts) → `panel` → `editor`; `vim` sits on top of all of them
+ * while the layer is on.
+ */
+export type ShortcutScope = 'global' | 'view' | 'list' | 'panel' | 'board' | 'timeline' | 'calendar' | 'editor' | 'vim'
+
+/** One registry entry. */
 export interface Shortcut {
-  keys: string
+  /** Stable id, `<scope or area>.<action>`; handlers register against it. */
+  id: string
+  /**
+   * The chords that run the action, each as shown to people: `Shift+K`, `Ctrl+K`,
+   * `⌘+K`, `Alt+Shift+↑`, `g i` (a sequence), `Esc`, `Space`. Alternatives of one
+   * action are separate items and are shown joined by " / ".
+   */
+  keys: string[]
+  /** What it does, the action first. */
   description: string
   section: ShortcutSection
+  scope: ShortcutScope
+  /** For the `view` scope: the route views it applies to. */
+  views?: string[]
+  /** The state it needs, shown after the keys in the sheet and the guide ("ticked tasks"). */
+  when?: string
+  /** Fires while a text field has focus (most shortcuts do not). */
+  typing?: boolean
+  /** Fires while a dialog is open (global shortcuts always do). */
+  dialog?: boolean
+  /** Does not call `preventDefault` after running (the key keeps its default too). */
+  passive?: boolean
+  /** Handled by the control itself (an input's Enter, the notes editor's keymap), never by the dispatcher; listed for the sheet and the guide. */
+  local?: boolean
+  /** Ids this entry deliberately shadows: a sibling in the same scope or an entry in an ancestor scope. */
+  overrides?: string[]
+  /** A row of the sheet and the guide that is not a key: a gesture, a typing rule. Never dispatched. */
+  note?: boolean
+  /** Dispatched but not listed (the per-scope Escape chain; one row says "Esc"). */
+  hidden?: boolean
 }
 
-/** Section titles of the keyboard guide, in order. */
+/** Section titles of the sheet and the keyboard guide, in order. */
 export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'everywhere', title: 'Everywhere' },
   { id: 'go', title: 'Go to a view' },
@@ -21,114 +61,377 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'calendar', title: 'Day, Week and Month calendar' },
   { id: 'filter', title: 'Filter, saved filters and boards' },
   { id: 'trash', title: 'Trash and projects' },
+  { id: 'triage', title: 'Process the Inbox' },
   { id: 'comments', title: 'Comments and notes' },
   { id: 'settings', title: 'Settings' },
-  { id: 'triage', title: 'Process the Inbox' },
+  { id: 'vim', title: 'Vim keybindings' },
 ]
 
-/** Every shortcut, in the order the overlay lists them. */
+/**
+ * Which scopes a route view hosts: the conflict test uses it to tell whether a
+ * `view` entry and a `list`, `board` or `calendar` entry can ever be active at the
+ * same time (the Trash has no task list, so its `j` never meets the list's).
+ */
+export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
+  inbox: ['list'], today: ['list'], upcoming: ['list'], anytime: ['list'], someday: ['list'], completed: ['list'], assigned: ['list'],
+  project: ['list', 'board', 'timeline'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
+  // The Month view keys are its own `view` entries (month-and-timeline-views): it hosts no lane-and-blocks calendar.
+  dashboard: [], day: ['calendar'], week: ['calendar'], month: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
+  // Process the Inbox (inbox-triage): one card, no task list; its keys are `view` entries.
+  triage: [],
+}
+
+/** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
+export const SCOPE_ANCESTORS: Record<ShortcutScope, ShortcutScope[]> = {
+  global: [],
+  view: ['global'],
+  list: ['view', 'global'],
+  calendar: ['view', 'global'],
+  board: ['list', 'view', 'global'],
+  timeline: ['list', 'view', 'global'],
+  panel: ['board', 'timeline', 'list', 'calendar', 'view', 'global'],
+  editor: ['panel', 'board', 'timeline', 'list', 'calendar', 'view', 'global'],
+  vim: ['editor', 'panel', 'board', 'timeline', 'list', 'calendar', 'view', 'global'],
+}
+
+/** Every shortcut, in the order the sheet and the guide list them within a section. */
 export const SHORTCUTS: Shortcut[] = [
-  { keys: 'Ctrl+K / ⌘+K', description: 'Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)', section: 'everywhere' },
-  { keys: 'q', description: 'Quick add a task', section: 'everywhere' },
-  { keys: 'Shift+I', description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere' },
-  { keys: 'Enter / Esc (proposed changes)', description: 'Assistant: apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere' },
-  { keys: 'Shift+V', description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere' },
-  { keys: 'j / k', description: 'Move selection down / up', section: 'tasks' },
-  { keys: 'Enter', description: 'Open selected task; accept "complete parent too?"', section: 'tasks' },
-  { keys: 'c', description: 'Complete / reopen selected task (and its subtasks)', section: 'tasks' },
-  { keys: 'a', description: 'Add a subtask to the selected task', section: 'tasks' },
-  { keys: 'Shift+A', description: 'Assign the selected task (type to find a member, Enter assigns)', section: 'tasks' },
-  { keys: 'Tab / Shift+Tab', description: 'Indent under previous sibling / outdent', section: 'tasks' },
-  { keys: 'Alt+↑ / Alt+↓', description: 'Move the selected task, or the focused sidebar project, one place within its list (it stays selected)', section: 'tasks' },
-  { keys: 'Alt+Shift+↑ / Alt+Shift+↓', description: 'Move it to the top / bottom of its list', section: 'tasks' },
-  { keys: 'Drag (touch: press and hold)', description: 'Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels', section: 'tasks' },
-  { keys: 'Today, Upcoming, Assigned, Completed, labels, filters', description: 'Sorted by date (or their own rule): no drag or Alt moves there', section: 'tasks' },
-  { keys: '← / →', description: 'Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project', section: 'tasks' },
-  { keys: 'm', description: 'Move the current project under another project or to the top level', section: 'trash' },
-  { keys: 'v', description: 'Cycle the current project through list, board and timeline (remembered per project on this device)', section: 'tasks' },
-  { keys: '← / → (timeline)', description: 'Move the selected task’s dates one day', section: 'board' },
-  { keys: 'Shift+← / Shift+→ (timeline)', description: 'Move the selected task’s deadline one day (from the due date when it has none)', section: 'board' },
-  { keys: '[ / ] / t (timeline)', description: 'Move the visible range, back to today', section: 'board' },
-  { keys: 'h / l, ← / → (board)', description: 'Select the first task of the previous / next column; j / k move within a column', section: 'board' },
-  { keys: 'Shift+← / Shift+→ (board)', description: 'Move the selected task to the previous / next column (it stays selected)', section: 'board' },
-  { keys: 'a (board)', description: 'Add a task to the selected task’s column', section: 'board' },
-  { keys: 'Shift+S', description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks' },
-  { keys: '. / Shift+F10 / Menu key', description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere' },
-  { keys: 'F2 (focused label)', description: 'Rename the label in place; Alt+↑ / Alt+↓ move it, Alt+Shift+↑ / ↓ to the top / bottom', section: 'everywhere' },
-  { keys: '1 – 4', description: 'Set priority of selected task', section: 'tasks' },
-  { keys: 'L', description: 'Labels of selected task (type to find, Enter adds or creates)', section: 'tasks' },
-  { keys: 'e', description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks' },
-  { keys: 'd', description: 'Set the deadline of the selected task (type fri, 2026-11-06; Enter)', section: 'tasks' },
-  { keys: 'b', description: 'Choose the tasks the selected task waits for (Blocked by)', section: 'tasks' },
-  { keys: 'Shift+D', description: 'Duplicate the selected task and its subtasks', section: 'tasks' },
-  { keys: 'n', description: 'Park the selected task in Someday, or bring it back', section: 'tasks' },
-  { keys: 'x / Space', description: 'Tick the selected task for a bulk action (Space with Vim keybindings on)', section: 'tasks' },
-  { keys: 'Shift+↓ / Shift+↑', description: 'Extend the ticked range down / up (also Shift+J / Shift+K without Vim keybindings)', section: 'tasks' },
-  { keys: 'Ctrl+A / ⌘+A', description: 'Tick every task in the list, once something is ticked', section: 'tasks' },
-  { keys: '.', description: 'Actions for the ticked tasks (or the selected one): complete, priority, labels, date, move, assign, Trash', section: 'tasks' },
-  { keys: 'Ctrl+Z / ⌘+Z', description: 'Undo the last bulk action while its notice is shown', section: 'tasks' },
-  { keys: 'Shift+N', description: 'Defer the selected task: type its start date, Enter', section: 'tasks' },
-  { keys: 'Shift+E', description: 'Toggle This Evening on the selected task', section: 'tasks' },
-  { keys: 's', description: 'Schedule the selected task: Day view in placement mode', section: 'tasks' },
-  { keys: 'Shift+S', description: 'Skip the current occurrence of a recurring task', section: 'tasks' },
-  { keys: 'Shift+O', description: 'Recurring task: this occurrence only (standalone copy, series moves on)', section: 'tasks' },
-  { keys: 'Delete', description: 'Delete selected task (and its subtasks)', section: 'tasks' },
-  { keys: 'g then i / t / u / c / l / f / v / s', description: 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Filters / Settings', section: 'go' },
-  { keys: 'g then a', description: 'Go to Assigned to me', section: 'go' },
-  { keys: 'g then n / o', description: 'Go to Anytime / Someday', section: 'go' },
-  { keys: 'g then x', description: 'Go to the Trash', section: 'go' },
-  { keys: 'g then p', description: 'Process the Inbox one task at a time', section: 'go' },
-  { keys: 'g then k', description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go' },
-  { keys: 'g then h', description: 'Go to Updates: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)', section: 'go' },
-  { keys: 'j / k, r, Delete (in the Trash)', description: 'Select, restore, delete permanently (Enter confirms, Esc cancels)', section: 'trash' },
-  { keys: 'Enter (after completing the last task of a project)', description: 'Archive the project; any other key dismisses', section: 'trash' },
-  { keys: 'g then Shift+I', description: 'Go to Settings → Data → Import data', section: 'go' },
-  { keys: 'g then d / w / m', description: 'Go to the Calendar as Day / Week / Month (the sidebar opens it as last used)', section: 'go' },
-  { keys: 'g then ?', description: 'Open Help: the user guide, offline, with search', section: 'go' },
-  { keys: 'j / k (calendar)', description: 'Select the next / previous task (lane, then blocks)', section: 'calendar' },
-  { keys: '↑ / ↓ (calendar)', description: 'Move the selected task 15 minutes (a lane task gets a time)', section: 'calendar' },
-  { keys: '← / → (calendar)', description: 'Move the selected task one day', section: 'calendar' },
-  { keys: 'Shift+↑ / Shift+↓ (calendar)', description: 'Shorten / lengthen the estimate by 15 minutes', section: 'calendar' },
-  { keys: 'u / p (calendar)', description: 'Unschedule (keep the date) / placement mode for the selected task', section: 'calendar' },
-  { keys: 'Enter / Esc (placing)', description: 'Place the task at the ghost / cancel without changes', section: 'calendar' },
-  { keys: '[ / ] / t (calendar)', description: 'Previous / next day, week or month, back to today', section: 'calendar' },
-  { keys: '← → ↑ ↓ (month)', description: 'Move the focused day; with a task selected, move it a day or a week (keeps its time)', section: 'calendar' },
-  { keys: 'j / k, Enter, Esc (month)', description: 'Select the next / previous task of the month, open it, clear the selection', section: 'calendar' },
-  { keys: 'q (month)', description: 'Add a task due on the focused day', section: 'calendar' },
-  { keys: 'Enter / Esc (in Filter)', description: 'Jump from the query to the first result / back to the query', section: 'filter' },
-  { keys: 's (in Filter results)', description: 'Save the query as a view, pinned to the sidebar', section: 'filter' },
-  { keys: '/ (in a saved view)', description: 'Edit the query; Enter saves it, Esc discards', section: 'filter' },
-  { keys: 'Tab / Shift+Tab (on a dashboard)', description: 'Move between panels; j / k inside a panel, Enter opens, o opens the view', section: 'filter' },
-  { keys: '↑ / ↓ (in the filter query)', description: 'Recall recent queries on this device', section: 'filter' },
-  { keys: 'Enter (on an invitation)', description: 'Settings → Administration → Members: copy the invite link created in this session', section: 'settings' },
-  { keys: 'Delete (on an invitation)', description: 'Settings → Administration → Members: revoke a pending invitation', section: 'settings' },
-  { keys: 'd / r / Delete (on a user)', description: 'Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms)', section: 'settings' },
-  { keys: 'Tab (in Settings → Security)', description: 'Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings' },
-  { keys: 'Shift+C', description: 'Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)', section: 'comments' },
-  { keys: 'Ctrl+Enter / ⌘+Enter (in a comment)', description: 'Post the comment, reply or edit; Esc cancels or leaves the field', section: 'comments' },
-  { keys: 'Tab, Enter (in the comment thread)', description: 'In the Comments tab: reach Reply, Edit and Delete; in the Activity tab: expand a group or load older activity', section: 'comments' },
-  { keys: '← / → (on the task tabs)', description: 'Switch between Comments, Activity and History in the task panel', section: 'comments' },
-  { keys: 'Shift+H (in a project)', description: 'Show or hide the project activity; Tab reaches the person and kind filters', section: 'comments' },
-  { keys: 'z (task panel open)', description: 'Fix a timed due to your time zone, or release it to a floating time', section: 'tasks' },
-  { keys: 'Ctrl/⌘+B, I, Shift+X, E, K (in the notes)', description: 'Bold, italic, strikethrough, inline code, link', section: 'comments' },
-  { keys: 'Ctrl/⌘+Alt+1–3 / 0 (in the notes)', description: 'Heading 1–3 / normal text', section: 'comments' },
-  { keys: 'Ctrl/⌘+Shift+8 / 7 / 9 (in the notes)', description: 'Bullet, numbered, check list; Ctrl/⌘+Enter ticks a check item; Tab / Shift+Tab indent', section: 'comments' },
-  { keys: '- · 1. · # · [ ] · **x** (typed in the notes)', description: 'Markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes', section: 'comments' },
-  { keys: 'Esc', description: 'Close panel, clear selection', section: 'everywhere' },
-  { keys: '?', description: 'Toggle this help', section: 'everywhere' },
-  { keys: 't / s (triage)', description: 'Due today / schedule (type a date, Enter), then the next task', section: 'triage' },
-  { keys: 'm / a (triage)', description: 'Move to a project / delegate to someone in a shared project, then the next task', section: 'triage' },
-  { keys: 'l (triage)', description: 'Labels (does not move on, so you can add a decision)', section: 'triage' },
-  { keys: 'y (triage)', description: 'Park in Someday, then the next task', section: 'triage' },
-  { keys: 'c / Delete (triage)', description: 'Complete / move to the Trash, then the next task', section: 'triage' },
-  { keys: 'j or Space / k (triage)', description: 'Skip to the next task / back to the previous one', section: 'triage' },
-  { keys: 'Enter / Esc (triage)', description: 'Open the task\'s panel / back to the Inbox with this task selected', section: 'triage' },
+  // ---- everywhere
+  { id: 'global.palette', keys: ['Ctrl+K', '⌘+K'], description: 'Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)', section: 'everywhere', scope: 'global', typing: true, dialog: true },
+  { id: 'list.quick-add', keys: ['q'], description: 'Quick add a task', section: 'everywhere', scope: 'list' },
+  { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
+  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
+  { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
+  { id: 'list.dictate-stop', keys: ['Esc'], description: 'Stop dictating', section: 'everywhere', scope: 'list', hidden: true, typing: true, overrides: ['list.escape', 'panel.escape'] },
+  { id: 'global.row-menu', keys: ['.', 'Shift+F10', 'Menu'], description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere', scope: 'global', local: true },
+  { id: 'labels.rename', keys: ['F2'], description: 'Rename the label in place; Alt+↑ / Alt+↓ move it, Alt+Shift+↑ / ↓ to the top / bottom', section: 'everywhere', scope: 'view', views: ['labels'], local: true, when: 'focused label' },
+  { id: 'list.escape', keys: ['Esc'], description: 'Close the panel or the picker, else clear the selection', section: 'everywhere', scope: 'list', typing: true },
+  { id: 'global.help', keys: ['?'], description: 'Toggle this cheat sheet', section: 'everywhere', scope: 'global' },
+  { id: 'global.sidebar', keys: ['['], description: 'Collapse or expand the sidebar (from 1024 px)', section: 'everywhere', scope: 'global' },
+  { id: 'global.undo-bulk', keys: ['Ctrl+Z', '⌘+Z'], description: 'Undo the last bulk action', section: 'everywhere', scope: 'global', when: 'while its notice is shown' },
+
+  // ---- go to
+  { id: 'go.inbox', keys: ['g i'], description: 'Go to Inbox', section: 'go', scope: 'global' },
+  { id: 'go.today', keys: ['g t'], description: 'Go to Today', section: 'go', scope: 'global' },
+  { id: 'go.upcoming', keys: ['g u'], description: 'Go to Upcoming', section: 'go', scope: 'global' },
+  { id: 'go.anytime', keys: ['g n'], description: 'Go to Anytime', section: 'go', scope: 'global' },
+  { id: 'go.someday', keys: ['g o'], description: 'Go to Someday', section: 'go', scope: 'global' },
+  { id: 'go.assigned', keys: ['g a'], description: 'Go to Assigned to me', section: 'go', scope: 'global' },
+  { id: 'go.completed', keys: ['g c'], description: 'Go to Completed', section: 'go', scope: 'global' },
+  { id: 'go.labels', keys: ['g l'], description: 'Go to Labels', section: 'go', scope: 'global' },
+  { id: 'go.filter', keys: ['g f'], description: 'Go to Filter', section: 'go', scope: 'global' },
+  { id: 'go.views', keys: ['g v'], description: 'Go to Filters: saved views, boards and dashboards', section: 'go', scope: 'global' },
+  { id: 'go.day', keys: ['g d'], description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
+  { id: 'go.week', keys: ['g w'], description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
+  { id: 'go.month', keys: ['g m'], description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
+  { id: 'go.trash', keys: ['g x'], description: 'Go to the Trash', section: 'go', scope: 'global' },
+  { id: 'go.triage', keys: ['g p'], description: 'Process the Inbox one task at a time', section: 'go', scope: 'global' },
+  { id: 'go.feed', keys: ['g h'], description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
+  { id: 'go.ask', keys: ['g k'], description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go', scope: 'global' },
+  { id: 'go.settings', keys: ['g s'], description: 'Go to Settings', section: 'go', scope: 'global' },
+  { id: 'go.import', keys: ['g Shift+I'], description: 'Go to Settings → Data → Import data', section: 'go', scope: 'global' },
+  { id: 'go.help', keys: ['g ?'], description: 'Open Help: the user guide, offline, with search', section: 'go', scope: 'global' },
+
+  // ---- tasks in a list
+  { id: 'list.down', keys: ['j', '↓'], description: 'Move the selection down', section: 'tasks', scope: 'list' },
+  { id: 'list.up', keys: ['k', '↑'], description: 'Move the selection up', section: 'tasks', scope: 'list' },
+  { id: 'list.open', keys: ['Enter'], description: 'Open the selected task; accept "complete parent too?"', section: 'tasks', scope: 'list' },
+  { id: 'list.complete', keys: ['c'], description: 'Complete / reopen the selected task (and its subtasks), or the ticked tasks', section: 'tasks', scope: 'list' },
+  { id: 'list.add-subtask', keys: ['a'], description: 'Add a subtask to the selected task', section: 'tasks', scope: 'list' },
+  { id: 'list.assign', keys: ['Shift+A'], description: 'Assign the selected task, or the ticked tasks (type to find a member, Enter assigns)', section: 'tasks', scope: 'list' },
+  { id: 'list.indent', keys: ['Tab'], description: 'Indent the selected task under the previous sibling', section: 'tasks', scope: 'list' },
+  { id: 'list.outdent', keys: ['Shift+Tab'], description: 'Outdent the selected task', section: 'tasks', scope: 'list' },
+  { id: 'list.move-up', keys: ['Alt+↑'], description: 'Move the selected task, or the focused sidebar project, one place up within its list (it stays selected)', section: 'tasks', scope: 'list' },
+  { id: 'list.move-down', keys: ['Alt+↓'], description: 'Move it one place down', section: 'tasks', scope: 'list' },
+  { id: 'list.move-top', keys: ['Alt+Shift+↑'], description: 'Move it to the top of its list', section: 'tasks', scope: 'list' },
+  { id: 'list.move-bottom', keys: ['Alt+Shift+↓'], description: 'Move it to the bottom of its list', section: 'tasks', scope: 'list' },
+  { id: 'note.drag', keys: ['Drag (touch: press and hold)'], description: 'Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels', section: 'tasks', scope: 'list', note: true },
+  { id: 'note.sorted-views', keys: ['Today, Upcoming, Assigned, Completed, labels, filters'], description: 'Sorted by date (or their own rule): no drag or Alt moves there', section: 'tasks', scope: 'list', note: true },
+  { id: 'list.collapse', keys: ['←'], description: 'Collapse the subtasks of the selected task (or go to its parent), or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
+  { id: 'list.expand', keys: ['→'], description: 'Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
+  { id: 'project.move', keys: ['m'], description: 'Move the current project under another project or to the top level', section: 'trash', scope: 'view', views: ['project'] },
+  { id: 'project.view-mode', keys: ['v'], description: 'Cycle the current project through list, board and timeline (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
+  { id: 'project.share', keys: ['Shift+S'], description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks', scope: 'view', views: ['project'] },
+  { id: 'list.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the selected task, or of the ticked tasks', section: 'tasks', scope: 'list' },
+  { id: 'list.labels', keys: ['Shift+L'], description: 'Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)', section: 'tasks', scope: 'list' },
+  { id: 'list.estimate', keys: ['e'], description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks', scope: 'list' },
+  { id: 'list.deadline', keys: ['d'], description: 'Set the deadline of the selected task (type fri, 2026-11-06; Enter)', section: 'tasks', scope: 'list' },
+  { id: 'list.blocked-by', keys: ['b'], description: 'Choose the tasks the selected task waits for (Blocked by)', section: 'tasks', scope: 'list' },
+  { id: 'list.duplicate', keys: ['Shift+D'], description: 'Duplicate the selected task and its subtasks', section: 'tasks', scope: 'list' },
+  { id: 'list.park', keys: ['n'], description: 'Park the selected task in Someday, or bring it back', section: 'tasks', scope: 'list' },
+  { id: 'list.tick', keys: ['x', 'Space'], description: 'Tick the selected task for a bulk action (Space with Vim keybindings on)', section: 'tasks', scope: 'list' },
+  { id: 'list.extend-down', keys: ['Shift+↓'], description: 'Extend the ticked range down', section: 'tasks', scope: 'list' },
+  { id: 'list.extend-up', keys: ['Shift+↑'], description: 'Extend the ticked range up', section: 'tasks', scope: 'list' },
+  { id: 'list.select-all', keys: ['Ctrl+A', '⌘+A'], description: 'Tick every task in the list', section: 'tasks', scope: 'list', when: 'once something is ticked' },
+  { id: 'list.actions', keys: ['.'], description: 'Actions for the ticked tasks (or the selected one): complete, priority, labels, date, move, assign, Trash', section: 'tasks', scope: 'list', overrides: ['global.row-menu'] },
+  { id: 'list.defer', keys: ['Shift+N'], description: 'Defer the selected task: type its start date, Enter', section: 'tasks', scope: 'list' },
+  { id: 'list.evening', keys: ['Shift+E'], description: 'Toggle This Evening on the selected task', section: 'tasks', scope: 'list' },
+  { id: 'list.schedule', keys: ['s'], description: 'Schedule the selected task: Day view in placement mode', section: 'tasks', scope: 'list', overrides: ['filter.save'] },
+  { id: 'list.skip', keys: ['Shift+K'], description: 'Skip the current occurrence of the selected recurring task', section: 'tasks', scope: 'list', when: 'recurring task' },
+  { id: 'list.detach', keys: ['Shift+O'], description: 'Recurring task: this occurrence only (standalone copy, series moves on)', section: 'tasks', scope: 'list' },
+  { id: 'list.delete', keys: ['Delete', 'Backspace'], description: 'Move the selected task (and its subtasks), or the ticked tasks, to the Trash', section: 'tasks', scope: 'list' },
+  { id: 'panel.zone', keys: ['z'], description: 'Fix a timed due to your time zone, or release it to a floating time', section: 'tasks', scope: 'panel', when: 'task panel open' },
+  { id: 'panel.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.priority'] },
+  { id: 'panel.skip', keys: ['Shift+K'], description: 'Skip the current occurrence of the open recurring task', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.skip'] },
+  { id: 'panel.escape', keys: ['Esc'], description: 'Close the panel', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.escape', 'calendar.escape'] },
+  { id: 'list.archive-offer', keys: ['Enter'], description: 'Archive the project after completing its last task; any other key dismisses the offer', section: 'trash', scope: 'list', when: 'archive offered', overrides: ['list.open'] },
+
+  // ---- board
+  { id: 'board.column-prev', keys: ['h', '←'], description: 'Select the first task of the previous column; j / k move within a column', section: 'board', scope: 'board', overrides: ['list.collapse'] },
+  { id: 'board.column-next', keys: ['l', '→'], description: 'Select the first task of the next column', section: 'board', scope: 'board', overrides: ['list.expand'] },
+  { id: 'board.move-prev', keys: ['Shift+←'], description: 'Move the selected task to the previous column (it stays selected)', section: 'board', scope: 'board' },
+  { id: 'board.move-next', keys: ['Shift+→'], description: 'Move the selected task to the next column', section: 'board', scope: 'board' },
+  { id: 'board.add', keys: ['a'], description: 'Add a task to the selected task’s column', section: 'board', scope: 'board', overrides: ['list.add-subtask'] },
+  { id: 'board.down', keys: ['j', '↓'], description: 'Select the next card in the column', section: 'board', scope: 'board', hidden: true, overrides: ['list.down'] },
+  { id: 'board.up', keys: ['k', '↑'], description: 'Select the previous card in the column', section: 'board', scope: 'board', hidden: true, overrides: ['list.up'] },
+  { id: 'board.indent', keys: ['Tab', 'Shift+Tab'], description: 'Nothing on a board: cards are not nested', section: 'board', scope: 'board', hidden: true, overrides: ['list.indent', 'list.outdent'], passive: true },
+
+  // ---- timeline (a project's third layout, month-and-timeline-views; j / k / Enter stay the list's)
+  { id: 'timeline.shift', keys: ['←', '→'], description: 'Timeline: move the selected task’s dates one day earlier / later', section: 'board', scope: 'timeline', overrides: ['list.collapse', 'list.expand'] },
+  { id: 'timeline.deadline', keys: ['Shift+←', 'Shift+→'], description: 'Timeline: move the selected task’s deadline one day (from the due date when it has none)', section: 'board', scope: 'timeline' },
+  { id: 'timeline.range-prev', keys: ['['], description: 'Timeline: show the previous week (or four with the week zoom)', section: 'board', scope: 'timeline', overrides: ['global.sidebar'] },
+  { id: 'timeline.range-next', keys: [']'], description: 'Timeline: show the next week (or four)', section: 'board', scope: 'timeline' },
+  { id: 'timeline.today', keys: ['t'], description: 'Timeline: back to today', section: 'board', scope: 'timeline' },
+
+  // ---- calendar
+  { id: 'calendar.next', keys: ['j'], description: 'Select the next task (lane, then blocks)', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.prev', keys: ['k'], description: 'Select the previous task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.nudge', keys: ['↑', '↓'], description: 'Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.shift-day', keys: ['←', '→'], description: 'Move the selected task one day earlier / later', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.estimate', keys: ['Shift+↑', 'Shift+↓'], description: 'Shorten / lengthen the estimate by 15 minutes', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.unschedule', keys: ['u'], description: 'Unschedule the selected task (keep the date)', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.place', keys: ['p'], description: 'Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.open', keys: ['Enter'], description: 'Open the selected task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.edit-estimate', keys: ['e'], description: 'Edit the estimate of the selected task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.complete', keys: ['c'], description: 'Complete the selected task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.range-prev', keys: ['['], description: 'Previous day or week', section: 'calendar', scope: 'calendar', overrides: ['global.sidebar'] },
+  { id: 'calendar.range-next', keys: [']'], description: 'Next day or week', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.today', keys: ['t'], description: 'Back to today', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.escape', keys: ['Esc'], description: 'Cancel placing or a drag, close the "+N" list or the panel, else clear the selection', section: 'calendar', scope: 'calendar', hidden: true, typing: true },
+  // The Month view (month-and-timeline-views): a grid of due dates with a focused day, no lane or blocks.
+  { id: 'month.move', keys: ['←', '→', '↑', '↓'], description: 'In Month: move the focused day; with a task selected, move it a day or a week (keeps its time)', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.focus', keys: ['Shift+←', 'Shift+→', 'Shift+↑', 'Shift+↓'], description: 'In Month: move the focused day while a task is selected', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
+  { id: 'month.next', keys: ['j'], description: 'In Month: select the next task of the month', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.prev', keys: ['k'], description: 'In Month: select the previous task', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.open', keys: ['Enter'], description: 'In Month: open the selected task', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.quick-add', keys: ['q'], description: 'In Month: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.range-prev', keys: ['['], description: 'In Month: previous month', section: 'calendar', scope: 'view', views: ['month'], overrides: ['global.sidebar'] },
+  { id: 'month.range-next', keys: [']'], description: 'In Month: next month', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.today', keys: ['t'], description: 'In Month: back to today', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.escape', keys: ['Esc'], description: 'In Month: close the "+N more" list or the panel, else clear the selection', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
+
+  // ---- filter, saved views and dashboards
+  { id: 'filter.jump', keys: ['Enter', 'Esc'], description: 'In Filter: jump from the query to the first result / back to the query', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
+  { id: 'filter.save', keys: ['s'], description: 'Save the Filter query as a view, pinned to the sidebar', section: 'filter', scope: 'view', views: ['filter'], when: 'in Filter results' },
+  { id: 'view.edit-query', keys: ['/'], description: 'Edit the query of a saved view; Enter saves it, Esc discards', section: 'filter', scope: 'list', when: 'in a saved view' },
+  { id: 'dashboard.panels', keys: ['Tab', 'Shift+Tab'], description: 'On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view', section: 'filter', scope: 'view', views: ['dashboard'] },
+  { id: 'dashboard.down', keys: ['j', '↓'], description: 'Select the next task in the focused dashboard panel', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'dashboard.up', keys: ['k', '↑'], description: 'Select the previous task in the focused dashboard panel', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'dashboard.open', keys: ['Enter'], description: 'Open the selected task of the dashboard panel, else its view', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'dashboard.open-view', keys: ['o'], description: 'Open the focused dashboard panel’s view', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'dashboard.complete', keys: ['c'], description: 'Complete the selected task of the dashboard panel', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'dashboard.escape', keys: ['Esc'], description: 'Clear the dashboard selection', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'filter.history', keys: ['↑', '↓'], description: 'In the filter query: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
+
+  // ---- trash, projects and updates
+  { id: 'trash.down', keys: ['j'], description: 'In the Trash: select the next item', section: 'trash', scope: 'view', views: ['trash'] },
+  { id: 'trash.up', keys: ['k'], description: 'In the Trash: select the previous item', section: 'trash', scope: 'view', views: ['trash'] },
+  { id: 'trash.restore', keys: ['r'], description: 'In the Trash: restore the selected item', section: 'trash', scope: 'view', views: ['trash'] },
+  { id: 'trash.purge', keys: ['Delete'], description: 'In the Trash: delete the selected item permanently (Enter confirms, Esc cancels)', section: 'trash', scope: 'view', views: ['trash'] },
+  { id: 'trash.confirm', keys: ['Enter'], description: 'Confirm deleting permanently', section: 'trash', scope: 'view', views: ['trash'], hidden: true },
+  { id: 'trash.escape', keys: ['Esc'], description: 'Cancel deleting permanently', section: 'trash', scope: 'view', views: ['trash'], hidden: true },
+  { id: 'feed.down', keys: ['j', '↓'], description: 'In Updates: select the next change', section: 'trash', scope: 'view', views: ['feed'] },
+  { id: 'feed.up', keys: ['k', '↑'], description: 'In Updates: select the previous change', section: 'trash', scope: 'view', views: ['feed'] },
+  { id: 'feed.open', keys: ['Enter'], description: 'In Updates: open the task of the selected change (Tab reaches the filters)', section: 'trash', scope: 'view', views: ['feed'] },
+  { id: 'share.escape', keys: ['Esc'], description: 'Leave the shared page without saving it as a task', section: 'trash', scope: 'view', views: ['share'], hidden: true, typing: true },
+
+  // ---- Process the Inbox (inbox-triage): one Inbox task at a time, a key per decision; every decision but Labels moves on to the next task.
+  { id: 'triage.today', keys: ['t'], description: 'Due today, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.schedule', keys: ['s'], description: 'Schedule: type a date (fri, 3/11) and press Enter, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.move', keys: ['m'], description: 'Move to a project, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.delegate', keys: ['a'], description: 'Delegate: move into a shared project and assign it to someone there, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.labels', keys: ['l'], description: 'Labels (does not move on, so you can add a label and then decide)', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.someday', keys: ['y'], description: 'Park in Someday, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.complete', keys: ['c'], description: 'Complete, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.trash', keys: ['Delete', 'Backspace'], description: 'Move to the Trash, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.skip', keys: ['j', 'Space'], description: 'Skip to the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.back', keys: ['k'], description: 'Back to the previous task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.open', keys: ['Enter'], description: 'Open the task’s panel to edit anything else', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
+
+  // ---- settings
+  { id: 'settings.invite-copy', keys: ['Enter'], description: 'Settings → People → Members: copy the invite link created in this session', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
+  { id: 'settings.invite-revoke', keys: ['Delete'], description: 'Settings → People → Members: revoke the focused pending invitation', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
+  { id: 'settings.user-actions', keys: ['d', 'r', 'Delete'], description: 'Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused user' },
+  { id: 'settings.audit-export', keys: ['e'], description: 'Settings → Server → Audit log: export with the current filters while the table has focus', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused table' },
+  { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
+
+  // ---- comments and notes
+  { id: 'panel.comment', keys: ['Shift+C'], description: 'Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)', section: 'comments', scope: 'panel' },
+  { id: 'editor.send', keys: ['Ctrl+Enter', '⌘+Enter'], description: 'Post the comment, reply or edit; Esc cancels or leaves the field', section: 'comments', scope: 'editor', local: true, typing: true, when: 'in a comment' },
+  { id: 'panel.thread', keys: ['Tab', 'Enter'], description: 'In the Comments tab: reach Reply, Edit and Delete; in the Activity tab: expand a group or load older activity', section: 'comments', scope: 'panel', local: true, when: 'in the thread' },
+  { id: 'panel.tabs', keys: ['←', '→'], description: 'Switch between Comments, Activity and History in the task panel', section: 'comments', scope: 'panel', local: true, when: 'on the task tabs' },
+  { id: 'project.activity', keys: ['Shift+H'], description: 'Show or hide the project activity; Tab reaches the person and kind filters', section: 'comments', scope: 'view', views: ['project'] },
+  { id: 'editor.inline', keys: ['Ctrl+B', 'Ctrl+I', 'Ctrl+Shift+X', 'Ctrl+E', 'Ctrl+K'], description: 'In the notes: bold, italic, strikethrough, inline code, link (⌘ on a Mac)', section: 'comments', scope: 'editor', local: true, typing: true },
+  { id: 'editor.heading', keys: ['Ctrl+Alt+1', 'Ctrl+Alt+2', 'Ctrl+Alt+3', 'Ctrl+Alt+0'], description: 'In the notes: heading 1–3 / normal text', section: 'comments', scope: 'editor', local: true, typing: true },
+  { id: 'editor.lists', keys: ['Ctrl+Shift+8', 'Ctrl+Shift+7', 'Ctrl+Shift+9'], description: 'In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent', section: 'comments', scope: 'editor', local: true, typing: true },
+  { id: 'note.markdown', keys: ['- · 1. · # · [ ] · **x** (typed in the notes)'], description: 'Markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes', section: 'comments', scope: 'editor', note: true },
+
+  // ---- vim (listed while the layer is on)
+  { id: 'vim.count', keys: ['3j', '5k', '2↓'], description: 'Count: move the selection that many tasks (clamped)', section: 'vim', scope: 'vim', note: true },
+  { id: 'vim.first', keys: ['g g'], description: 'Select the first task; 4gg selects the fourth', section: 'vim', scope: 'vim' },
+  { id: 'vim.last', keys: ['Shift+G'], description: 'Select the last task; 4G selects the fourth', section: 'vim', scope: 'vim' },
+  { id: 'vim.move-down', keys: ['Shift+J'], description: 'Move the selected task down one place (with a count, that many; manually ordered views only)', section: 'vim', scope: 'vim' },
+  { id: 'vim.move-up', keys: ['Shift+K'], description: 'Move the selected task up one place', section: 'vim', scope: 'vim', overrides: ['list.skip', 'panel.skip'] },
+  { id: 'vim.delete', keys: ['d d'], description: 'Delete the selected task (d alone does nothing after 1 s)', section: 'vim', scope: 'vim', overrides: ['list.deadline'] },
+  { id: 'vim.complete', keys: ['x'], description: 'Complete / reopen the selected task (same as c); Space ticks', section: 'vim', scope: 'vim', overrides: ['list.tick'] },
+  { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
+  { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
+  { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape'] },
+  { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 
-/** Quick add syntax shown at the end of the overlay and the guide. */
+/** Quick add syntax shown at the end of the sheet and the guide. */
 export const QUICK_ADD_SYNTAX: [string, string][] = [
   ['tomorrow · next Wed · 3 Feb · at 3pm', 'Due date and time (6 languages)'],
   ['#project @label p1 +30m', 'Project, label, priority, estimate'],
+  ['every Monday · remind me 30 min before', 'Repeat and remind (6 languages)'],
   ['"quoted text"', 'Keep text literally'],
   ['Backspace ×2 (end of line)', 'Highlight, then dismiss the last chip'],
 ]
+
+// ---------------------------------------------------------------- display
+
+/** The keys of an entry as one string: alternatives joined by " / ", then the state in parentheses. */
+export function displayKeys(s: Pick<Shortcut, 'keys' | 'when'>): string {
+  const keys = s.keys.join(' / ')
+  return s.when ? `${keys} (${s.when})` : keys
+}
+
+/** The entry with this id. */
+export function shortcut(id: string): Shortcut {
+  const s = SHORTCUTS.find((x) => x.id === id)
+  if (!s) throw new Error(`unknown shortcut ${id}`)
+  return s
+}
+
+/** The keys of an entry for a tooltip or a menu item ("Shift+S"), alternatives joined by " / ". */
+export function keysOf(id: string): string {
+  return shortcut(id).keys.join(' / ')
+}
+
+/** The rows the sheet and the guide list: not hidden; vim rows only while the layer is on. */
+export function listedShortcuts(vim = false): Shortcut[] {
+  return SHORTCUTS.filter((s) => !s.hidden && (vim || s.scope !== 'vim'))
+}
+
+// ---------------------------------------------------------------- chords
+
+export interface Chord {
+  /** `e.key`, lower-cased for letters and named keys; symbols as typed. */
+  key: string
+  ctrl: 'ctrl' | 'meta' | 'either' | false
+  alt: boolean
+  shift: boolean
+  /** A symbol typed with Shift on some layouts (`?`, `:`): the Shift state is not compared. */
+  symbol: boolean
+}
+
+const NAMED: Record<string, string> = {
+  esc: 'escape', escape: 'escape', enter: 'enter', tab: 'tab', space: ' ', delete: 'delete', del: 'delete', backspace: 'backspace',
+  '↑': 'arrowup', '↓': 'arrowdown', '←': 'arrowleft', '→': 'arrowright', menu: 'contextmenu', f2: 'f2', f10: 'f10',
+}
+
+/** Parses one chord ("Alt+Shift+↑", "⌘+K", "?") into what the dispatcher compares; `null` for a note. */
+export function parseChord(text: string): Chord | null {
+  const parts = text.split('+')
+  if (parts.length > 1 && parts[parts.length - 1] === '') { parts.pop(); parts[parts.length - 1] += '+' }
+  const keyText = parts.pop()!
+  let ctrl: Chord['ctrl'] = false
+  let alt = false
+  let shift = false
+  for (const m of parts) {
+    const mod = m.trim().toLowerCase()
+    if (mod === 'ctrl') ctrl = ctrl === 'meta' ? 'either' : 'ctrl'
+    else if (mod === '⌘' || mod === 'cmd' || mod === 'meta') ctrl = ctrl === 'ctrl' ? 'either' : 'meta'
+    else if (mod === 'ctrl/⌘') ctrl = 'either'
+    else if (mod === 'alt') alt = true
+    else if (mod === 'shift') shift = true
+    else return null
+  }
+  const lower = keyText.trim().toLowerCase()
+  const named = NAMED[lower]
+  if (named) return { key: named, ctrl, alt, shift, symbol: false }
+  if (keyText.length !== 1) return null
+  const letter = /[a-z]/i.test(keyText)
+  const digit = /[0-9]/.test(keyText)
+  // A capital on its own (`L`, `G`) means Shift; with Ctrl, ⌘ or Alt it is the usual spelling (`Ctrl+K`).
+  if (letter) return { key: keyText.toLowerCase(), ctrl, alt, shift: shift || (!ctrl && !alt && keyText !== keyText.toLowerCase()), symbol: false }
+  return { key: keyText, ctrl, alt, shift, symbol: !digit }
+}
+
+/** Parses a sequence ("g i", "g Shift+I", "d d") into chords; `null` when any part is not a key. */
+export function parseKeys(text: string): Chord[] | null {
+  const out: Chord[] = []
+  for (const part of text.split(' ')) {
+    if (!part) return null
+    const c = parseChord(part)
+    if (!c) return null
+    out.push(c)
+  }
+  return out.length ? out : null
+}
+
+/** Something that looks enough like a KeyboardEvent to match a chord. */
+export interface KeyLike {
+  key: string
+  ctrlKey?: boolean
+  metaKey?: boolean
+  altKey?: boolean
+  shiftKey?: boolean
+}
+
+/** Whether a key press is this chord. */
+export function matchesChord(c: Chord, e: KeyLike): boolean {
+  const letter = e.key.length === 1 && /[a-z]/i.test(e.key)
+  const key = e.key.toLowerCase()
+  if (c.key !== key) return false
+  const ctrl = !!e.ctrlKey, meta = !!e.metaKey
+  if (c.ctrl === false && (ctrl || meta)) return false
+  if (c.ctrl === 'ctrl' && !(ctrl && !meta)) return false
+  if (c.ctrl === 'meta' && !(meta && !ctrl)) return false
+  if (c.ctrl === 'either' && !(ctrl || meta)) return false
+  if (c.alt !== !!e.altKey) return false
+  if (c.symbol) return true
+  // A capital letter is the shifted key whatever the modifier flag says (Caps Lock, a
+  // synthetic press); a lower-case one needs Shift off.
+  if (letter) {
+    const upper = e.key !== key
+    return c.shift ? upper || !!e.shiftKey : !upper && !e.shiftKey
+  }
+  return c.shift === !!e.shiftKey
+}
+
+/** The chord sequences of an entry, parsed once; notes have none. */
+const parsed = new Map<string, Chord[][]>()
+export function chordsOf(s: Shortcut): Chord[][] {
+  let out = parsed.get(s.id)
+  if (!out) {
+    out = s.note ? [] : s.keys.map((k) => parseKeys(k)).filter((c): c is Chord[] => !!c)
+    parsed.set(s.id, out)
+  }
+  return out
+}
+
+/** A canonical string of a chord sequence, for comparing bindings. */
+export function chordKey(seq: Chord[]): string {
+  return seq.map((c) => `${c.ctrl || ''}${c.alt ? '+alt' : ''}${!c.symbol && c.shift ? '+shift' : ''}+${c.key}`).join(' ')
+}
+
+/** Whether two sequences collide: the same keys, or one is the start of the other (`d` and `d d`). */
+export function sequencesClash(a: Chord[], b: Chord[]): boolean {
+  const n = Math.min(a.length, b.length)
+  for (let i = 0; i < n; i++) if (chordKey([a[i]]) !== chordKey([b[i]])) return false
+  return true
+}

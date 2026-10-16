@@ -9,6 +9,8 @@ order: 35
 ---
 # Attachments
 
+<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, notes and properties; attachments are added further down the panel."></picture>
+
 A task, or a comment on it, can carry files and links: a receipt, a photo of a whiteboard, a PDF, the link to a design. Open a task and use **Attachments** below its subtasks, or the paperclip in the comment box.
 
 ## Add a file or a link
@@ -25,7 +27,7 @@ Attachments belong to their task: everyone who can see the task can see its atta
 
 ## Limits
 
-The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Administration → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file itself stays on the server for the Trash retention period (30 days unless changed), so a removal can be undone from any device, and is then deleted for good. Purging a task from the Trash deletes its files immediately.
+The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file itself stays on the server for the Trash retention period (30 days unless changed), so a removal can be undone from any device, and is then deleted for good. Purging a task from the Trash deletes its files immediately.
 
 ## Encryption
 

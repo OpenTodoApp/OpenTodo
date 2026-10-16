@@ -3,18 +3,20 @@ title: Getting started
 summary: From the demo or your first sign-in to adding, scheduling and completing your first task, in about five minutes.
 audience: user
 section: Get started
-specs: [task-management, account-access, web-app, documentation]
+specs: [task-management, account-access, web-app, documentation, first-run]
 screens: []
 order: 10
 card: quick-add
 ---
 # Getting started
 
-This guide takes you from opening OpenTodo for the first time to adding a task, giving it a date and ticking it off. It takes about five minutes. You can follow along in the demo or on your own server.
+<picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view: the sidebar with Inbox, Today, Upcoming and projects on the left, and today's tasks with an Overdue group on the right."></picture>
+
+This guide takes you from opening OpenTodo for the first time to adding a task, giving it a date and ticking it off, in about five minutes. Follow along in the demo or on your own server.
 
 ## Open OpenTodo
 
-You have three ways in.
+There are three ways in.
 
 ### Try the demo
 
@@ -36,9 +38,7 @@ Once you're signed in, the app is stored on your device. You can keep using it w
 
 ## Find your way around
 
-The sidebar on the left lists your views and projects. On a phone it's behind the menu button at the top left.
-
-<picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view: the sidebar with Inbox, Today, Upcoming and projects on the left, and today's tasks with an Overdue group on the right."></picture>
+The sidebar on the left lists your views and projects. On a phone, a bar at the bottom of the screen takes you to **Today**, **Inbox** and **Upcoming**, opens **Search**, and **More** opens the sidebar as a drawer; the round **+** button above it adds a task from any page, with the page's defaults (today's date in Today, the project in a project).
 
 - **Inbox** collects tasks that don't belong to a project yet.
 - **Today** shows what's due today, with anything overdue at the top.
@@ -49,37 +49,15 @@ The circle to the left of each task completes it. The small line under the title
 
 ## Add your first task
 
-1. Press <kbd>q</kbd>, or click the **Add a task** box at the top of the list.
-2. Type what you need to do, for example `Call the dentist`.
-3. Press <kbd>Enter</kbd>.
-
-The task appears straight away. The box stays open, so you can type the next one right after.
-
-Where the task goes depends on where you are: in a project it goes into that project, in Today it's due today, and in the Inbox it waits there until you sort it.
+Press <kbd>q</kbd> (or click the **Add a task** box at the top of the list), type `Call the dentist` and press <kbd>Enter</kbd>. The task appears straight away. [Your first task](your-first-task.md) walks through this step by step, starting with the card the Inbox shows on your first visit.
 
 ## Give it a date
 
-You can schedule a task while you type it. Quick add understands everyday words:
-
-```
-Call the dentist tomorrow at 9am
-```
-
-As you type, small chips appear under the box to show what OpenTodo understood: a date chip for "tomorrow at 9am", and below them the title that will be saved. If a word was picked up by mistake ("May" as in the name, not the month), click the **×** on its chip and it stays part of the title.
-
-<picture><source srcset="images/quick-add-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/quick-add-light.webp" alt="Quick add with the line Call Sam about the tiles tomorrow at 4pm #Home @call p2 +15m, and chips for the date, project, label, priority and estimate below it."></picture>
-
-The same line can also set a project with `#`, a label with `@`, a priority from `p1` (highest) to `p4`, and how long it will take with `+`, like `+15m`. The [quick add reference](quick-add.md) lists everything it understands, in six languages.
-
-To change the date later, open the task (click it, or select it and press <kbd>Enter</kbd>) and use **Due** in the panel that opens.
+Quick add understands everyday words: type `Call the dentist tomorrow at 9am` and a chip under the box shows the date it understood. See [Give it a date](your-first-task.md#give-it-a-date).
 
 ## Complete it
 
-When you're done, click the circle next to the task, or select it with <kbd>j</kbd> and <kbd>k</kbd> and press <kbd>c</kbd>. The task leaves the list and moves to **Completed** in the sidebar. Changed your mind? Open Completed and reopen it.
-
-## Get it on your phone
-
-OpenTodo runs in the browser, and you can install it like an app on your phone, tablet or computer. It then opens in its own window and works offline. See [Installing the app](install-app.md).
+Click the circle next to the task, or select it and press <kbd>c</kbd>. It moves to **Completed** in the sidebar, where you can reopen it. See [Complete it](your-first-task.md#complete-it).
 
 ## Help inside the app
 
@@ -87,7 +65,4 @@ Every guide on this site is also in the app: select **Help** at the bottom of th
 
 ## Where to go next
 
-- [Tasks and projects](tasks-and-projects.md): notes, subtasks, priorities and organising your work.
-- [Views](views.md): Today, Upcoming, the calendar and views you save yourself.
-- [Recurring tasks and reminders](recurring-and-reminders.md): repeat a task every week and get a nudge on time.
-- [Keyboard shortcuts](keyboard.md): press <kbd>?</kbd> in the app to see them all.
+Continue with [Your first task](your-first-task.md): the first-visit card, the full quick add line and completing. Then [install the app](install-app.md) on your phone or computer.

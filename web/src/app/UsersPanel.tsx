@@ -1,4 +1,6 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
+import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
@@ -229,7 +231,7 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <SettingsSection title="Users" helpId="settings/users" headingId="users-heading"
+    <SettingsSection title="Users" headingId="users-heading"
       description={`Everyone with an account on this server. ${isOwner
         ? 'You can manage every account and choose admins; admins manage members.'
         : 'As an admin you can deactivate, reset and delete members.'}`}>
@@ -305,9 +307,9 @@ export function UsersView(p: UsersViewProps) {
         })}
       </ul>
       {p.users && p.users.length === 0 && <EmptyState icon="users" title="No accounts" body="Invite someone below to give them an account on this server." />}
-      {p.users === null && !p.offline && <p className="py-2 text-meta text-faint">Loading…</p>}
+      {p.users === null && !p.offline && <Skeleton shape="row" count={3} label="Loading users" />}
       <p className="pt-2 text-meta text-faint">
-        Keyboard: focus a row, <span className="kbd">d</span> deactivates or reactivates, <span className="kbd">r</span> creates a reset link, <span className="kbd">Delete</span> deletes; each asks for confirmation.
+        Keyboard, with a row focused: deactivate or reactivate with <Kbd k="d" />, create a reset link with <Kbd k="r" />, delete with <Kbd k="Delete" />; each asks for confirmation.
       </p>
 
       {p.dialog?.kind === 'delete' && (

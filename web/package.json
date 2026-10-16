@@ -8,6 +8,7 @@
     "build": "node -e \"require('node:fs').rmSync('../internal/web/dist/assets', { recursive: true, force: true })\" && tsc --noEmit && tsc --noEmit -p tsconfig.sw.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "nlp:vocab": "UPDATE_QUICKADD_VOCAB=1 vitest run src/lib/nlp/vocab.test.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",
     "docs:build": "node scripts/docs/build.mjs",
     "docs:check": "node scripts/docs/check.mjs",

@@ -21,9 +21,9 @@ import { Dialog } from './overlay/Dialog'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
+import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { selectTask } from './signals'
 import { completeWithUndo, deleteWithUndo, moveWithUndo, parkWithUndo, setDueWithUndo } from './undoable'
-import { useVimEnabled } from './vim/prefs'
 
 /** Someday (`y`) needs the `start` field of someday-and-evening, which has landed. */
 export const HAS_SOMEDAY = true
@@ -58,7 +58,6 @@ export function TriageView() {
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
   const me = useLiveQuery(() => currentUserId(), [], null)
-  const vim = useVimEnabled()
   const openId = usePanelTaskId()
   const [state, setState] = useState<TriageState | null>(null)
   const [picker, setPicker] = useState<Picker>(null)
@@ -165,7 +164,7 @@ export function TriageView() {
       if (id === null) { leave(); return }
       const i = s.ids.indexOf(id)
       if (i === s.index + 1) next()
-      else if (i >= 0 && i < s.index) setState({ ...s, index: i })
+      else if (i >= 0 && i !== s.index) { dir.current = i > s.index ? 1 : -1; setState({ ...s, index: i }) }
     },
     openId: () => openId,
     open: (id) => setPanelTaskId(id),
@@ -175,51 +174,36 @@ export function TriageView() {
     toggleComplete: async (id, completed) => { await completeWithUndo(id, completed); if (completed) next() },
   }), [byId, openId, leave, next])
 
-  // Keys (design D3): ignored in text fields and while a picker, a dialog or the panel is open.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      if (picker || document.querySelector('[role="dialog"]')) return
-      if (openId) return
-      if (e.key === 'Escape') { e.preventDefault(); leave(); return }
-      if (!task) return
-      // With Vim keybindings on, j / k / x / d belong to the Vim layer.
-      if (vim && ['j', 'k', 'x', 'd'].includes(e.key)) return
-      const keys: Record<string, () => void> = {
-        t: () => void decide('today'),
-        c: () => void decide('complete'),
-        Delete: () => void decide('trash'),
-        Backspace: () => void decide('trash'),
-        j: () => void decide('skip'),
-        ' ': () => void decide('skip'),
-        k: () => { dir.current = -1; setState((s) => (s ? back(s) : s)) },
-        Enter: () => setPanelTaskId(task.id),
-        s: () => setPicker('schedule'),
-        m: () => setPicker('move'),
-        l: () => setPicker('labels'),
-        ...(delegates.length ? { a: () => setPicker('delegate') } : {}),
-        ...(HAS_SOMEDAY ? { y: () => void decide('someday') } : {}),
-      }
-      const run = keys[e.key]
-      if (!run) return
-      e.preventDefault()
-      run()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [task, picker, openId, vim, delegates.length, decide, leave])
+  // Keys (design D3): the mode's `view` entries of the shortcut registry (keyboard-
+  // shortcuts "One shortcut registry with scopes"). The dispatcher keeps them out of
+  // text fields and open dialogs (the pickers); the panel's own Escape runs first while
+  // focus is inside it. With Vim keybindings on, x and dd arrive through the list
+  // state above, and j / k without a count still skip and go back.
+  const onCard = (e: KeyboardEvent) => !!task && !openId && !isActivationTarget(e.target)
+  useShortcutScope('view', {
+    'triage.escape': () => { if (openId) setPanelTaskId(null); else leave() },
+    'triage.today': () => { if (!task || openId) return false; void decide('today') },
+    'triage.complete': () => { if (!task || openId) return false; void decide('complete') },
+    'triage.trash': () => { if (!task || openId) return false; void decide('trash') },
+    'triage.skip': (e) => { if (!onCard(e)) return false; void decide('skip') },
+    'triage.back': () => { if (!task || openId) return false; dir.current = -1; setState((s) => (s ? back(s) : s)) },
+    'triage.open': (e) => { if (!onCard(e)) return false; setPanelTaskId(task!.id) },
+    'triage.schedule': () => { if (!task || openId) return false; setPicker('schedule') },
+    'triage.move': () => { if (!task || openId) return false; setPicker('move') },
+    'triage.labels': () => { if (!task || openId) return false; setPicker('labels') },
+    'triage.delegate': () => { if (!task || openId || !delegates.length) return false; setPicker('delegate') },
+    'triage.someday': () => { if (!task || openId || !HAS_SOMEDAY) return false; void decide('someday') },
+  }, { view: 'triage', paused: !!picker })
 
   // Back from the panel: the card takes the focus again.
   useEffect(() => { if (!openId) card.current?.focus() }, [openId])
 
   const label = (id: string) => labels.find((l) => l.id === id)?.name ?? 'label'
-  const bar: { key: string; hint: string; label: string; run: () => void; disabled?: boolean; title?: string }[] = task ? [
+  const bar: { key: string; hint: string; label: string; run: () => void; disabled?: boolean }[] = task ? [
     { key: 'today', hint: 't', label: 'Today', run: () => void decide('today') },
     { key: 'schedule', hint: 's', label: 'Schedule', run: () => setPicker('schedule') },
     { key: 'move', hint: 'm', label: 'Move', run: () => setPicker('move') },
-    { key: 'delegate', hint: 'a', label: 'Delegate', run: () => setPicker('delegate'), disabled: delegates.length === 0, title: delegates.length ? undefined : 'Delegating needs a project you share with someone' },
+    { key: 'delegate', hint: 'a', label: 'Delegate', run: () => setPicker('delegate'), disabled: delegates.length === 0 },
     { key: 'labels', hint: 'l', label: 'Labels', run: () => setPicker('labels') },
     ...(HAS_SOMEDAY ? [{ key: 'someday', hint: 'y', label: 'Someday', run: () => void decide('someday') }] : []),
     { key: 'complete', hint: 'c', label: 'Complete', run: () => void decide('complete') },

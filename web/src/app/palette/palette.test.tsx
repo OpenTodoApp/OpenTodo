@@ -246,3 +246,43 @@ describe('commands on ticked tasks (bulk-edit 6.3)', () => {
     expect(cmds.find((c) => c.id === 'sel:complete')!.label).toBe('Complete 3 tasks')
   })
 })
+
+describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () => {
+  const headings = () => [...document.querySelectorAll('[data-palette] [role="presentation"]')].map((h) => h.textContent ?? '')
+
+  it('shows q beside "Quick add a task", from the registry', async () => {
+    const { keysOf } = await import('../../lib/shortcuts')
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await flush(50)
+    await type(field(), 'quick add')
+    await waitFor(() => options().some((o) => o.includes('Quick add a task')))
+    const row = options().find((o) => o.includes('Quick add a task'))!
+    expect(row).toContain(keysOf('list.quick-add'))
+    expect(keysOf('list.quick-add')).toBe('q')
+    await r.unmount()
+  })
+
+  it('groups results under Tasks, Projects, Labels, Filters, Commands and Settings', async () => {
+    await createProject({ name: 'Garden' })
+    await createTask({ title: 'Garden hose' })
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await flush(50)
+    await type(field(), 'garden')
+    await waitFor(() => options().some((o) => o.includes('Garden hose')) && options().some((o) => o === 'Garden' || o.startsWith('Garden')))
+    const h = headings()
+    expect(h).toContain('Tasks')
+    expect(h).toContain('Projects')
+    await type(field(), 'settings')
+    await waitFor(() => headings().includes('Settings') && headings().includes('Commands'))
+    await r.unmount()
+  })
+
+  it('an empty box lists recent picks under "Recent", from the pick history', async () => {
+    const id = await createTask({ title: 'Picked again' })
+    await recordPick('palette', `task:${id}`)
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await waitFor(() => options().some((o) => o.includes('Picked again')))
+    expect(headings()[0]).toBe('Recent')
+    await r.unmount()
+  })
+})

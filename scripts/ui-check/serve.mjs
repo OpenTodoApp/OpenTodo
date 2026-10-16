@@ -10,15 +10,25 @@ const TYPES = {
 }
 
 export async function serveStatic(root) {
+  // The file is read before any header is written, and a malformed URL answers 400,
+  // so no request can throw past the handler and end the process (see serve-cli.mjs).
   const server = createServer(async (req, res) => {
-    const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')
+    let path
+    try {
+      path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')
+    } catch {
+      res.writeHead(400).end('bad request')
+      return
+    }
     try {
       const body = await readFile(join(root, path.endsWith('/') ? `${path}index.html` : path))
       res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream' }).end(body)
     } catch {
-      res.writeHead(404).end('not found')
+      if (!res.headersSent) res.writeHead(404)
+      res.end('not found')
     }
   })
+  server.on('clientError', (_err, socket) => { if (!socket.destroyed) socket.end('HTTP/1.1 400 Bad Request\r\n\r\n') })
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   return { url: `http://127.0.0.1:${server.address().port}`, close: () => server.close() }
 }

@@ -149,7 +149,7 @@ function wordMatches(token: Token | undefined, word: string): boolean {
  * Number of tokens at `i` consumed by the longest phrase in `list`, or 0. The
  * `key` identifies the list for the normalisation cache (vocab code + field).
  */
-function phraseAt(tokens: readonly Token[], i: number, list: readonly string[], key: string): number {
+export function phraseAt(tokens: readonly Token[], i: number, list: readonly string[], key: string): number {
   let best = 0
   for (const words of phrases(list, key)) {
     if (words.length <= best || words.length === 0) continue
@@ -166,7 +166,7 @@ function phraseAt(tokens: readonly Token[], i: number, list: readonly string[], 
 }
 
 /** Longest-matching entry of a phrase → value map, with the value. */
-function lookupAt<T>(tokens: readonly Token[], i: number, map: Record<string, T>, key: string): { n: number; value: T } | null {
+export function lookupAt<T>(tokens: readonly Token[], i: number, map: Record<string, T>, key: string): { n: number; value: T } | null {
   let best: { n: number; value: T } | null = null
   for (const [phrase, value] of Object.entries(map)) {
     const n = phraseAt(tokens, i, [phrase], `${key}:${phrase}`)
@@ -175,7 +175,7 @@ function lookupAt<T>(tokens: readonly Token[], i: number, map: Record<string, T>
   return best
 }
 
-function weekdayAt(tokens: readonly Token[], i: number, v: Vocabulary): number {
+export function weekdayAt(tokens: readonly Token[], i: number, v: Vocabulary): number {
   for (let wd = 0; wd < 7; wd++) {
     if (phraseAt(tokens, i, v.weekdays[wd], `${v.code}:wd${wd}`) > 0) return wd
   }
@@ -195,7 +195,7 @@ function monthAt(tokens: readonly Token[], i: number, v: Vocabulary, allowAbbr: 
 const DAY_RE = /^(\d{1,2})(?:st|nd|rd|th|er|o|a|º|°|ª|\.)?$/
 const YEAR_RE = /^(\d{4})$/
 
-function dayNumber(token: Token | undefined): number {
+export function dayNumber(token: Token | undefined): number {
   if (!token || token.quoted) return 0
   const m = DAY_RE.exec(token.norm)
   if (!m) return 0
@@ -209,7 +209,7 @@ function yearAt(token: Token | undefined): number {
   return m ? Number(m[1]) : 0
 }
 
-function countAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number; count: number } | null {
+export function countAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number; count: number } | null {
   const t = tokens[i]
   if (!t || t.quoted) return null
   if (/^\d{1,3}$/.test(t.norm)) return { n: 1, count: Number(t.norm) }

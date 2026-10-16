@@ -119,25 +119,28 @@ describe('expired sandbox', () => {
 })
 
 describe('Settings', () => {
-  it('replaces restricted sections with a note and disables Import on a demo instance', () => {
+  it('shows every card on a demo instance, disabling the refused ones under one note, and disables Import', () => {
     setDemo(info)
-    const page = (section: 'security' | 'preferences' | 'data') => renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section={section} />)
-    const security = page('security')
-    expect(security).toContain('data-testid="demo-restricted"')
-    expect(security).not.toContain('id="password-heading"')
+    const page = (section: 'account' | 'general' | 'data') => renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section={section} />)
+    const account = page('account')
+    expect(account.match(/data-testid="demo-restricted"/g)).toHaveLength(1)
+    expect(account).toContain('id="password-heading"')
+    expect(account).toMatch(/<fieldset disabled=""[^>]*data-demo-disabled/)
     const data = page('data')
     expect(data).toMatch(/<button[^>]*disabled=""[^>]*>Import data…<\/button>/)
     expect(data).toContain('Import: Disabled on this demo instance.')
     expect(data).not.toContain('href="/settings/import"')
     // Local preferences and the export keep working.
     expect(data).toContain('Download export (JSON)')
-    expect(page('preferences')).toContain('Vim keybindings')
+    expect(page('general')).toContain('Vim keybindings')
+    expect(page('general')).not.toContain('demo-restricted')
   })
 
-  it('shows every section on a normal server', () => {
-    const security = renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section="security" />)
-    expect(security).not.toContain('demo-restricted')
-    expect(security).toContain('id="password-heading"')
+  it('shows every section without the note on a normal server', () => {
+    const account = renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section="account" />)
+    expect(account).not.toContain('demo-restricted')
+    expect(account).not.toContain('data-demo-disabled')
+    expect(account).toContain('id="password-heading"')
     expect(renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section="data" />)).toContain('href="/settings/import"')
   })
 })

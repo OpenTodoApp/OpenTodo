@@ -1,21 +1,13 @@
-import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { db } from '../lib/db'
 import { activeLabels, addLabel, createLabel, toggleLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
-import { Combobox, ComboboxPanel } from '../ui'
+import { Combobox, ComboboxPanel, LabelChip as UiLabelChip } from '../ui'
 
+/** A label as a chip (the design-system LabelChip), with a remove control when `onRemove` is given. */
 export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-default px-1.5 py-px text-[11px] text-muted">
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
-      {label.name}
-      {onRemove && (
-        <button type="button" aria-label={`Remove label ${label.name}`} onClick={onRemove} className="ml-0.5 leading-none text-faint hover:text-danger"><Icon name="x" size={10} /></button>
-      )}
-    </span>
-  )
+  return <UiLabelChip name={label.name} color={label.color} onRemove={onRemove} />
 }
 
 /**
@@ -55,7 +47,7 @@ export function LabelPicker({ taskId, onClose, inline = false }: { taskId: strin
   return (
     <div>
       {inline ? <Combobox {...props} placeholder="Add label…" /> : <ComboboxPanel {...props} placeholder="Type to find or create a label…" />}
-      {error && <p role="alert" className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
     </div>
   )
 }

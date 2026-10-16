@@ -27,22 +27,22 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
   }
   return (
     <Dialog title="Confirm it's you" onClose={p.onCancel} testId="reauth-dialog">
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           This change needs a recent sign-in. Enter your {p.mode === 'password' ? 'password' : 'current code from your authenticator app'} to continue.
         </p>
         <form className="mt-3 space-y-3" onSubmit={submit}>
           {p.mode === 'password' ? (
-            <input className="input" type="password" autoComplete="current-password" aria-label="Password" required autoFocus
+            <input className="ui-input" type="password" autoComplete="current-password" aria-label="Password" required autoFocus
               value={p.value} onChange={(e) => p.onValue(e.target.value)} />
           ) : (
-            <input className="input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" aria-label="Code from your authenticator app"
+            <input className="ui-input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" aria-label="Code from your authenticator app"
               required autoFocus maxLength={7} value={p.value} onChange={(e) => p.onValue(e.target.value)} />
           )}
-          {p.error && <p className="text-sm text-danger" role="alert">{p.error}</p>}
+          {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn-primary" disabled={p.busy}>{p.busy ? 'Checking…' : 'Continue'}</button>
-            <button type="button" className="btn-ghost" onClick={p.onCancel}>Cancel</button>
-            <button type="button" className="btn-ghost ml-auto text-xs" onClick={() => p.onMode(p.mode === 'password' ? 'code' : 'password')}>
+            <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.busy}>{p.busy ? 'Checking…' : 'Continue'}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>Cancel</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm ml-auto text-meta" onClick={() => p.onMode(p.mode === 'password' ? 'code' : 'password')}>
               {p.mode === 'password' ? 'Use an app code instead' : 'Use my password instead'}
             </button>
           </div>

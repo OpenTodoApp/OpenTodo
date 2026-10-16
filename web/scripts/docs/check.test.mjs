@@ -29,8 +29,8 @@ export const QUICK_ADD_SYNTAX = [['p1', 'Priority']]
   write('docs/README.md', page('layout: index\ntitle: Docs\nsummary: All of it.', '# Docs\n\nSee [boards](boards.md).\n'))
   write('docs/images/board-light.webp', WEBP)
   write('docs/boards.md', page('title: Boards\nsummary: Columns.\naudience: user\nspecs: [boards]\nscreens: [board-view#switch-to-a-board]\norder: 1',
-    '# Boards\n\n## Switch to a board\n\n![A board](images/board-light.webp)\n\nSee [the readme](../README.md#configuration) and [keys](keyboard.md#all-shortcuts).\n'))
-  write('docs/keyboard.md', page('title: Keys\nsummary: Shortcuts.\naudience: user\nspecs: []\norder: 2', '# Keys\n\n## All shortcuts\n\n<!-- shortcuts:start -->\n<!-- shortcuts:end -->\n'))
+    '# Boards\n\n![A board](images/board-light.webp)\n\n## Switch to a board\n\nSee [the readme](../README.md#configuration) and [keys](keyboard.md#all-shortcuts).\n'))
+  write('docs/keyboard.md', page('title: Keys\nsummary: Shortcuts.\naudience: user\nspecs: []\norder: 2', '# Keys\n\n![Keys](images/board-light.webp)\n\n## All shortcuts\n\n<!-- shortcuts:start -->\n<!-- shortcuts:end -->\n'))
   for (const n of SCREENSHOTS) write(`${SHOTS_DIR}/${n}.webp`, WEBP)
   const { files } = await buildAll(root)
   writeAll(root, files)
@@ -67,6 +67,18 @@ describe('docs check', () => {
     const problems = await runChecks(root)
     expect(problems).toContainEqual('docs/boards.md: image "/docs/images/board-light.webp" has no alt text')
     expect(problems).toContainEqual('docs/boards.md: image "/docs/images/board-dark.webp" does not exist')
+  })
+
+  it('reports a guide page of 600 words or more, or one that does not open with a screenshot', async () => {
+    const long = Array.from({ length: 600 }, (_, i) => `word${i}`).join(' ')
+    write('docs/long.md', page('title: Long\nsummary: Too long.\naudience: user\nspecs: []\norder: 3', `# Long\n\n![A board](images/board-light.webp)\n\n${long}\n`))
+    write('docs/bare.md', page('title: Bare\nsummary: No image.\naudience: user\nsection: Get started\nspecs: []\norder: 4', '# Bare\n\nText first.\n'))
+    write('docs/ref.md', page('title: Ref\nsummary: Exempt.\naudience: user\nsection: Reference\nspecs: []\norder: 5', `# Ref\n\n${long} more\n`))
+    const problems = await runChecks(root)
+    expect(problems.some((p) => /^docs\/long\.md: 60\d words; a guide page stays under 600, split it/.test(p))).toBe(true)
+    expect(problems).toContain('docs/bare.md: a guide page opens with a screenshot right after its title')
+    expect(problems.filter((p) => p.startsWith('docs/ref.md'))).toEqual([])
+    expect(problems.filter((p) => p.startsWith('docs/boards.md'))).toEqual([])
   })
 
   it('reports a capability no page covers', async () => {

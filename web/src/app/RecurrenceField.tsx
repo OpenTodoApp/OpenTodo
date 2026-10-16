@@ -1,4 +1,6 @@
 import { Icon } from '../ui'
+import { keysOf } from '../lib/shortcuts'
+import { Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -59,7 +61,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
     <div className="space-y-1">
       <div className="flex gap-2">
         <input
-          className="input"
+          className="ui-input"
           aria-label="Repeat rule"
           list="recurrence-suggestions"
           placeholder="Does not repeat (e.g. every weekday)"
@@ -74,30 +76,30 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           }}
         />
         {task.recurrence && (
-          <button className="btn-ghost" aria-label="Stop repeating" title="Stop repeating" onClick={() => { setDraft(''); void setRecurrence(task.id, null) }}><Icon name="x" /></button>
+          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label="Stop repeating" onClick={() => { setDraft(''); void setRecurrence(task.id, null) }}><Icon name="x" /></button>
         )}
       </div>
       <datalist id="recurrence-suggestions">
         {RULE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
       </datalist>
-      {error && <p className="text-xs text-danger" role="alert">Not a rule I understand: {error}. The previous rule is kept.</p>}
+      {error && <p className="text-meta text-danger" role="alert">Not a rule I understand: {error}. The previous rule is kept.</p>}
       {preview.length > 0 && (
-        <p className="text-xs text-muted" data-recurrence-preview>
+        <p className="text-meta text-muted" data-recurrence-preview>
           Next: {preview.map((d) => `${weekday(d).slice(0, 3)} ${formatShort(d)}`).join(' · ')}
         </p>
       )}
-      {parsed?.ok && preview.length === 0 && <p className="text-xs text-muted">No further occurrences: the next completion ends the series.</p>}
+      {parsed?.ok && preview.length === 0 && <p className="text-meta text-muted">No further occurrences: the next completion ends the series.</p>}
       {recurring && (
         <div className="flex flex-wrap gap-2 pt-1">
-          <button className="btn-ghost text-xs" onClick={() => void skip()} title="Move to the next occurrence without completing (Shift+S)">
-            ⤼ Skip <span className="kbd ml-1">⇧S</span>
-          </button>
-          <button className="btn-ghost text-xs" onClick={() => void detach()} title="Make a standalone copy of this occurrence and move the series on (Shift+O)">
-            This occurrence only <span className="kbd ml-1">⇧O</span>
-          </button>
+          <Tooltip label="Move to the next occurrence without completing" shortcut={keysOf('list.skip')}>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => void skip()}>⤼ Skip</button>
+          </Tooltip>
+          <Tooltip label="Make a standalone copy of this occurrence and move the series on" shortcut={keysOf('list.detach')}>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => void detach()}>This occurrence only</button>
+          </Tooltip>
         </div>
       )}
-      {notice && <p className="text-xs text-muted" role="status">{notice}</p>}
+      {notice && <p className="text-meta text-muted" role="status">{notice}</p>}
     </div>
   )
 }

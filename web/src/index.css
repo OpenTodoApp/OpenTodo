@@ -169,7 +169,7 @@
     --ot-text: #f1f5f9;
     --ot-muted: #94a3b8;
     --ot-faint: #8695aa;
-    --ot-border: #1e293b;
+    --ot-border: #334155;
     --ot-border-input: #64748b;
     --ot-accent: #047857;
     --ot-accent-hover: #065f46;
@@ -224,7 +224,7 @@
   --ot-text: #f1f5f9;
   --ot-muted: #94a3b8;
   --ot-faint: #8695aa;
-  --ot-border: #1e293b;
+  --ot-border: #334155;
   --ot-border-input: #64748b;
   --ot-accent: #047857;
   --ot-accent-hover: #065f46;
@@ -363,20 +363,8 @@ body {
 }
 
 @layer components {
-/* Legacy component classes on tokens (design-system "Legacy component classes
-   follow the tokens"). The base is shared by selector instead of repeated per
-   variant; height comes from padding (40 px buttons and inputs, so they line up in a row) so the many
-   compact buttons that override padding or text size keep working. Dark hovers use
-   `raised` because `sunken` equals the dark canvas. */
-.btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-control px-3.5 py-2.5 text-sm font-medium transition duration-(--duration-ui) ease-calm
-    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-50;
-}
-.btn-primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover; }
-.btn-secondary { @apply border border-input bg-surface text-default hover:bg-sunken dark:hover:bg-raised; }
-.btn-ghost { @apply text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised; }
-.btn-danger { @apply text-danger hover:bg-danger-soft; }
-.input, .ui-input {
+/* Shared Input (src/ui/Field.tsx): 40 px tall, so it lines up with a medium button. */
+.ui-input {
   @apply w-full min-w-0 rounded-control border border-input bg-surface px-3 py-2 text-body text-default placeholder:text-faint
     focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30;
 }
@@ -395,7 +383,7 @@ body {
     disabled:cursor-not-allowed disabled:opacity-50 aria-busy:cursor-progress;
 }
 .ui-btn--sm { @apply min-h-8 px-2.5 py-1 text-meta; }
-.ui-btn--md { @apply min-h-10 px-3.5 py-2 text-sm; }
+.ui-btn--md { @apply min-h-10 px-3.5 py-2 text-body; }
 .ui-btn--lg { @apply min-h-12 px-4 py-2.5 text-body; }
 .ui-btn--icon.ui-btn--sm { @apply h-8 w-8 p-0; }
 .ui-btn--icon.ui-btn--md { @apply h-10 w-10 p-0; }
@@ -406,8 +394,8 @@ body {
 .ui-btn--danger { @apply text-danger hover:bg-danger-soft active:bg-danger-soft; }
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
-select.input, select.ui-input { @apply truncate; contain: layout paint; }
-.kbd, .ui-kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
+select.ui-input { @apply truncate; contain: layout paint; }
+.ui-kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
 /* At rest the notes are a quiet block of text (one placeholder line when empty);
@@ -437,8 +425,8 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
   @apply -mx-2 min-h-8 w-[calc(100%+1rem)] resize-y rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-default
     placeholder:text-faint focus:min-h-28 focus:border-input focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus/30 dark:focus:bg-raised;
 }
-.notes-editor h1 { @apply text-lg font-semibold; }
-.notes-editor h2 { @apply text-base font-semibold; }
+.notes-editor h1 { @apply text-h2 font-semibold; }
+.notes-editor h2 { @apply text-h3 font-semibold; }
 .notes-editor h3, .notes-editor h4, .notes-editor h5, .notes-editor h6 { @apply font-semibold; }
 .notes-editor ul { @apply list-disc space-y-1 pl-5; }
 .notes-editor ol { @apply list-decimal space-y-1 pl-5; }
@@ -446,7 +434,7 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 .notes-editor ul:has(> li.task-item) { @apply pl-0; }
 .notes-editor li.task-item { @apply relative list-none pl-6; }
 .notes-editor li.task-item::before {
-  @apply absolute top-0.5 left-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border border-input text-[10px] leading-none text-on-accent;
+  @apply absolute top-0.5 left-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-chip border border-input text-hint leading-none text-on-accent;
   content: "";
 }
 .notes-editor li.task-item[data-checked="true"]::before {
@@ -454,7 +442,7 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
   content: "✓";
 }
 .notes-editor li.task-item[data-checked="true"] > p { @apply text-faint line-through; }
-.notes-editor code { @apply rounded bg-sunken px-1 font-mono text-[0.85em]; }
+.notes-editor code { @apply rounded-chip bg-sunken px-1 font-mono text-meta; }
 .notes-editor a { @apply text-accent underline; }
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }
 .notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
@@ -462,6 +450,21 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
 @layer components {
+/* Row density (OpenSpec change ux-overhaul, appearance-preferences "Density
+   preference"): comfortable rows by default, 36 px rows under compact. Touch
+   targets keep 44 px on coarse pointers through the rules further down. */
+.row-pad { padding-block: 0.5rem; }
+/* Completion feedback (task-list-presentation): the check mark pops within the emphasis
+   duration; under reduced motion the animation is instant and only the row's opacity fades. */
+@keyframes row-check-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.row-check-pop { animation: row-check-pop var(--duration-emphasis) var(--ease-calm, ease-out) both; }
+:root[data-density="compact"] .row-pad { padding-block: 0.25rem; }
+:root[data-density="compact"] [data-sidebar-item] { min-height: 2rem; padding-block: 0.25rem; }
+:root[data-density="compact"] [data-group-header] { min-height: 2rem; }
+@media (pointer: coarse) {
+  :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
+  :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
+}
 /* User-written text wraps instead of pushing the page sideways. */
 .user-text { overflow-wrap: anywhere; }
 }
@@ -483,7 +486,7 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 }
 }
 @media (pointer: coarse) {
-  :where(button, [role="button"], summary, select, a.btn-primary, a.btn-secondary, a.btn-ghost, a.btn-danger, a.ui-btn) { min-height: 44px; min-width: 44px; }
+  :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
 }
@@ -491,10 +494,10 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 
 @layer components {
 /* In-app Help (user-documentation): the guide HTML generated from docs/. */
-.help-prose { @apply text-[15px] leading-relaxed text-default; overflow-wrap: break-word; }
-.help-prose h1 { @apply mb-3 text-2xl font-semibold; }
-.help-prose h2 { @apply mt-8 mb-2 scroll-mt-16 border-t border-default pt-4 text-lg font-semibold; }
-.help-prose h3 { @apply mt-6 mb-1.5 scroll-mt-16 text-base font-semibold; }
+.help-prose { @apply text-body leading-relaxed text-default; overflow-wrap: break-word; }
+.help-prose h1 { @apply mb-3 text-h1 font-semibold; }
+.help-prose h2 { @apply mt-8 mb-2 scroll-mt-16 border-t border-default pt-4 text-h2 font-semibold; }
+.help-prose h3 { @apply mt-6 mb-1.5 scroll-mt-16 text-h3 font-semibold; }
 .help-prose h4 { @apply mt-4 mb-1 font-semibold; }
 .help-prose h1 + p { @apply text-muted; }
 .help-prose p, .help-prose ul, .help-prose ol, .help-prose details { @apply mb-3; }
@@ -503,15 +506,15 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 .help-prose li { @apply my-1; }
 .help-prose a { @apply text-accent underline underline-offset-2; }
 .help-prose .anchor { @apply hidden; }
-.help-prose code { @apply rounded bg-sunken px-1 py-0.5 text-[0.85em]; }
-.help-prose pre { @apply mb-3 overflow-x-auto rounded-lg border border-default bg-canvas p-3 text-xs; }
+.help-prose code { @apply rounded-chip bg-sunken px-1 py-0.5 text-meta; }
+.help-prose pre { @apply mb-3 overflow-x-auto rounded-control border border-default bg-canvas p-3 text-meta; }
 .help-prose pre code { @apply bg-transparent p-0; }
-.help-prose kbd { @apply rounded border border-input bg-canvas px-1.5 py-0.5 font-mono text-[12px] text-muted; }
+.help-prose kbd { @apply rounded-chip border border-input bg-canvas px-1.5 py-0.5 font-mono text-hint text-muted; }
 .help-prose blockquote { @apply mb-3 border-l-4 border-accent pl-3 text-muted; }
-.help-prose .table-wrap { @apply mb-4 overflow-x-auto rounded-lg border border-default; }
-.help-prose table { @apply w-full border-collapse text-sm; }
+.help-prose .table-wrap { @apply mb-4 overflow-x-auto rounded-card border border-default; }
+.help-prose table { @apply w-full border-collapse text-meta; }
 .help-prose th, .help-prose td { @apply border-t border-default px-3 py-2 text-left align-top; }
 .help-prose thead th { @apply border-t-0 bg-sunken font-semibold; }
 .help-prose summary { @apply cursor-pointer font-medium; }
-.help-snippet mark, .help-prose mark { @apply rounded bg-highlight px-0.5 text-on-highlight; }
+.help-snippet mark, .help-prose mark { @apply rounded-chip bg-highlight px-0.5 text-on-highlight; }
 }

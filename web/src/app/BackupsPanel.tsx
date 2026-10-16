@@ -65,7 +65,7 @@ function destinationSummary(d: BackupSettings): string {
 }
 
 /**
- * Presentational part of Settings → Backups: a summary of the schedule and the
+ * Presentational part of Settings → Server: a summary of the schedule and the
  * last run, the settings as rows with an inline form behind "Change settings",
  * and the recent runs. Every control is native, so the page works with the keyboard alone.
  */
@@ -86,7 +86,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
   }
 
   return (
-    <SettingsSection title="Backups" helpId="settings/backups" headingId="backups-heading"
+    <SettingsSection title="Backups" headingId="backups-heading"
       description={<>Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share, and restored from here.</>}>
       {offline && (
         <div data-testid="backups-offline" className="py-3 first:pt-0">
@@ -98,7 +98,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
         {status === null ? (
           <p className="text-meta text-faint">{offline ? 'No status fetched yet.' : 'Loading status…'}</p>
         ) : (
-          <div className="grid gap-1 text-sm text-default">
+          <div className="grid gap-1 text-body text-default">
             <p className="flex flex-wrap items-center gap-2">
               <span className="font-medium">Schedule:</span> {status.enabled ? scheduleLabel(status.schedule) : 'Off (manual backups only)'}
               {status.encrypted && <Badge hue="slate" title="Archives are encrypted with your passphrase"><Icon name="lock" size="xs" /> encrypted</Badge>}
@@ -140,8 +140,8 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
       {editing && (
         <form onSubmit={submit} className="space-y-5 py-3" aria-label="Backup settings">
           <fieldset className="space-y-3" disabled={disabled}>
-            <legend className="text-sm font-medium text-default">Destination</legend>
-            <div className="flex flex-wrap gap-4 text-sm text-default" role="radiogroup" aria-label="Destination type">
+            <legend className="text-body font-medium text-default">Destination</legend>
+            <div className="flex flex-wrap gap-4 text-body text-default" role="radiogroup" aria-label="Destination type">
               {(['local', 's3', 'webdav'] as BackupDestination[]).map((d) => (
                 <label key={d} className="flex items-center gap-1.5">
                   <input type="radio" className="accent-(--ot-accent)" name="backup-destination" value={d} checked={draft.destination === d} onChange={() => set({ destination: d })} />
@@ -185,7 +185,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
           </fieldset>
 
           <fieldset className="flex flex-wrap items-end gap-3" disabled={disabled}>
-            <legend className="mb-1 text-sm font-medium text-default">Schedule</legend>
+            <legend className="mb-1 text-body font-medium text-default">Schedule</legend>
             <Field label="Frequency">
               <Select className="w-36" name="schedule-frequency" value={draft.schedule.frequency} onChange={(e) => set({ schedule: { ...draft.schedule, frequency: e.target.value as BackupSettings['schedule']['frequency'] } })}>
                 <option value="off">Off</option>
@@ -209,7 +209,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
           </fieldset>
 
           <fieldset className="flex flex-wrap items-end gap-3" disabled={disabled}>
-            <legend className="mb-1 text-sm font-medium text-default">Retention</legend>
+            <legend className="mb-1 text-body font-medium text-default">Retention</legend>
             <Field label="Keep the last">
               <Input className="w-24" name="retention-keep" type="number" min={1} value={draft.retention.keepLast} onChange={(e) => set({ retention: { ...draft.retention, keepLast: Number(e.target.value) } })} />
             </Field>
@@ -220,7 +220,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
           </fieldset>
 
           <fieldset className="space-y-3" disabled={disabled}>
-            <legend className="text-sm font-medium text-default">Encryption</legend>
+            <legend className="text-body font-medium text-default">Encryption</legend>
             <p className="text-meta text-muted">
               {flags.hasPassphrase ? 'Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).' : 'Optional. With a passphrase, archives are encrypted (AES-256-GCM) before they leave the server.'}
             </p>
@@ -250,7 +250,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
       {status && status.history.length > 0 && (
         <div className="py-3 last:pb-0">
-          <h3 className="mb-1 text-sm font-medium text-default">Recent runs</h3>
+          <h3 className="mb-1 text-body font-medium text-default">Recent runs</h3>
           <ul className="-mx-3" aria-label="Backup history" data-testid="backups-history">
             {status.history.map((r) => (
               <li key={r.id}>

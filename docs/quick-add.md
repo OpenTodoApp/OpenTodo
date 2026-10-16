@@ -84,9 +84,9 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
-**Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → Preferences → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
+**Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → General → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
 
-**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → Preferences → Date and time**, so they give the same result on all your devices.
+**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → General → Date and time**, so they give the same result on all your devices.
 
 ## Languages
 
@@ -144,9 +144,27 @@ Before voice capture can be switched on, Settings shows this statement and waits
 
 OpenTodo's code never records, stores or sends audio: the Web Speech API hands it text. On-device recognition is requested whenever the browser reports it available for the language (Chromium's `processLocally`); OpenTodo never asks the browser to download a speech model. The browser asks for microphone permission on your first dictation, not when you switch the setting on.
 
+## Repeat and remind
+
+A rule and reminders can be typed in the same line. Each gets its own chip and is removed from the title.
+
+| English | Deutsch | Français | Italiano | Español | Português |
+| --- | --- | --- | --- | --- | --- |
+| `every Monday` | `jeden Montag` | `tous les lundis` | `ogni lunedì` | `cada lunes` | `toda segunda-feira` |
+| `every 3 days after completion` | `alle 3 Tage nach Erledigung` | `tous les 3 jours après achèvement` | `ogni 3 giorni dopo il completamento` | `cada 3 días después de completar` | `todo 3 dias após a conclusão` |
+| `daily`, `weekly`, `monthly`, `yearly` | `täglich`, `wöchentlich`, `monatlich`, `jährlich` | `quotidiennement`, `hebdomadairement`, `mensuellement`, `annuellement` | `quotidianamente`, `settimanalmente`, `mensilmente`, `annualmente` | `diariamente`, `semanalmente`, `mensualmente`, `anualmente` | `diariamente`, `semanalmente`, `mensalmente`, `anualmente` |
+| `remind me 30 min before` | `erinnere mich 30 Minuten vorher` | `rappelle-moi 30 min avant` | `ricordamelo 30 minuti prima` | `recuérdame 30 minutos antes` | `lembre-me 30 minutos antes` |
+| `remind me at 9` | `erinnere mich um 9 Uhr` | `rappelle-moi à 9h` | `ricordamelo alle 9` | `recuérdame a las 9` | `lembre-me às 9` |
+
+Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, wed and fri`), `every weekday`, `every 15th`, `every 2nd Tuesday`, `every last Friday`, `every last day`, with `after completion`, `until 31 Dec` or `for 10 times` at the end. The stored rule is always the English canonical form, whatever language you typed. A phrase the grammar cannot express, such as `every 3 hours`, stays in the title; only the first rule of a line counts.
+
+**First date.** Without a date in the line, the task is due on the rule's first occurrence from today, and the rule chip shows it (`every monday · Mon 12 Oct`). With a date (`Invoice every month 3 Nov at 10:00`) that date starts the series; a time becomes the series' time. The view's own default date never replaces the rule's date.
+
+**Reminders.** `remind me` followed by an offset (`30 min before`, `1 hour after`, `2 days before`) or a moment (`at 9`, `tomorrow at 9`, `20 Oct at 9`). Several reminders per line are fine. A moment on a task with a due date becomes a reminder relative to it, counting a date-only due as 09:00 (`Pay rent 3 Nov remind me at 8` reminds an hour before), so it moves with the task and repeats with the series. On a task without a due date a moment is a one-off reminder at that time (tomorrow if the time has passed today), and an offset waits until the task gets a due date (its chip says *needs a due date*). `remind me` alone, or in quotes, stays in the title. The task, its rule and its reminders are saved together, offline too.
+
 ## Not understood
 
-Recurrence ("every Monday") and reminders ("remind me at 9") are set in the task's detail panel (see [recurrence.md](recurrence.md) and [reminders.md](reminders.md)), not in the quick-add line. Quick add does not create a project from an unknown `#name`, and the line is parsed only in the web app, not by the server, the REST API or the `ot` CLI. Some of this is listed under [future ideas](../ROADMAP.md#future-ideas).
+Quick add does not create a project from an unknown `#name`. The server and the REST API do not parse lines; the [`ot` CLI](cli.md) does with `ot add --natural`. Some ideas are listed under [future ideas](../ROADMAP.md#future-ideas).
 
 ## Data
 

@@ -9,6 +9,8 @@ order: 25
 ---
 # Search and commands
 
+<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The Filter view with the query (@call | @errand) & due <= 7 days and the matching tasks below; the search box understands the same queries."></picture>
+
 Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) anywhere in the app to find anything or do anything by name. It also works while you are typing in a field, except in a task's notes, where the same keys insert a link.
 
 ## Open the box

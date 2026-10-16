@@ -96,6 +96,9 @@ ot add "Call the plumber" --project Home --due tomorrow --time 09:00 --priority 
 ot add "Read the sync design" --label reading --label work --note "docs/sync.md"
 ot edit 8c2a --priority 1 --due friday
 ot edit 8c2a --due none --project none --note ""     # clear values
+ot add "Backup check" --due monday --time 09:00 --repeat "every week" --remind "30 min before"
+ot edit 8c2a --repeat none                           # stop repeating, keep the date
+ot add --natural "Water plants every Monday remind me at 8 #home"
 ```
 
 | Flag | Meaning |
@@ -107,9 +110,15 @@ ot edit 8c2a --due none --project none --note ""     # clear values
 | `--label <l>` | Repeatable; a label name (case-insensitive) or id. Unknown names create the label. With `ot edit` the given labels replace the list |
 | `--note <text>` | Description; `--note ""` clears it |
 | `--title <text>` | New title (`ot edit` only) |
-| `--idempotency-key <key>` | `ot add` only: a retry with the same key returns the same task, see [Retry-safe creates](#retry-safe-creates) |
+| `--repeat <rule>` | Recurrence rule in any spelling of the [rule grammar](recurrence.md) (`"Every Week"`, `"every mon, wed"`), checked locally and sent in canonical form; `none` (edit) clears the rule and keeps the date |
+| `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
+| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
+| `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |
+| `--idempotency-key <key>` | `ot add` only: a retry with the same key returns the same task, see [Retry-safe creates](#retry-safe-creates). Reminders send `<key>.r1`, `<key>.r2`, …, so a retry also converges to one set of reminders |
 
-`ot add` prints the new task's id (the whole task with `--json`). Priority, time and date are validated locally before any request is sent.
+`ot add` prints the new task's id (the whole task with `--json`). Priority, time, date, rule and reminder phrases are validated locally before any request is sent. Reminders are created after the task with one `POST /api/v1/reminders` each (a dry run lists them, referring to the planned task as `(planned-1)`); if one fails, the command exits 1 and names the created task so you can add the reminder by hand.
+
+`--natural` uses the same grammar as the web app, pinned by shared test cases, with two differences because `ot` cannot read your preferences: weeks start on Monday (`next week`), and numeric dates such as `3/11` follow the first language (day first in German, month first in English) rather than your date-format setting.
 
 ### Complete, reopen, delete
 
@@ -138,7 +147,7 @@ Projects are referenced by name (case-insensitive), full id or unique id prefix.
 
 ## Tokens and export
 
-`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → AI → AI assistants).
+`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).
 
 ```bash
 ot token list                           # with each token's scope
@@ -246,7 +255,7 @@ Or add a reminder task every Monday morning:
 
 `ot` is a dependable tool for coding agents and automation harnesses. The short version, which the skill file below spells out for the agent itself:
 
-1. **Give the agent an `agent` token**, not a full one: `ot token create "my assistant" --scope agent`, then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **AI assistants may make changes** (owner) and **Allow AI assistants to make changes** (you) in Settings → AI → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
+1. **Give the agent an `agent` token**, not a full one: `ot token create "my assistant" --scope agent`, then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **AI assistants may make changes** (owner) and **Allow AI assistants to make changes** (you) in Settings → Integrations → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
 2. **Use `--json`** everywhere, and `ot schema` to discover commands and output shapes.
 3. **Use `--dry-run`** before a write that touches more than one task, and **`--idempotency-key`** on creates.
 4. **Handle exit codes:** stop and ask on 3, do not retry 5, retry 4 later.

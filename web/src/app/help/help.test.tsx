@@ -67,7 +67,7 @@ describe('Help bundle', () => {
 
 describe('Help entry points', () => {
   it('lists g then ? in the shortcut table', () => {
-    expect(SHORTCUTS.some((s) => s.keys === 'g then ?')).toBe(true)
+    expect(SHORTCUTS.some((s) => s.keys.includes('g ?'))).toBe(true)
   })
   it('renders Help links with the screen id and an accessible name', () => {
     const html = renderToStaticMarkup(<><HelpLink screen="share-dialog" topic="Sharing" /><HelpHeading screen="settings/password">Password</HelpHeading></>)
@@ -117,8 +117,10 @@ describe('Help landing (ux-overhaul)', () => {
     for (const id of ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'completed', 'calendar', 'project', 'label', 'labels', 'filters', 'filter', 'saved-filter', 'dashboard', 'trash', 'updates', 'ask', 'task-panel', 'quick-add', 'settings']) {
       expect(bundle.screens[id], id).toBeDefined()
     }
-    for (const id of ['settings/account', 'settings/preferences', 'settings/integrations', 'settings/admin', 'settings/session']) {
-      expect(bundle.screens[id]?.page, id).toBe('settings')
+    // Each old settings panel resolves to the Settings page that now holds its section (ux-overhaul 4.8 split the guide).
+    const split: Record<string, string> = { 'settings/account': 'settings-you', 'settings/preferences': 'settings-app', 'settings/integrations': 'settings-data', 'settings/admin': 'settings-server', 'settings/session': 'settings-you' }
+    for (const [id, page] of Object.entries(split)) {
+      expect(bundle.screens[id]?.page, id).toBe(page)
       expect(bundle.screens[id]?.anchor, id).toBeTruthy()
     }
   })

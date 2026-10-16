@@ -1,20 +1,22 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Component, type FormEvent, type KeyboardEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { db } from '../../lib/db'
 import { markTaskNotificationsRead } from '../../lib/notifications'
-import { createSubtask, updateTask } from '../../lib/ops'
+import { createSubtask, updateTask, skipOccurrence } from '../../lib/ops'
 import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
-import { IconButton } from '../../ui'
+import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
+import { Tooltip } from '../../ui'
 import { Badge } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
 import { Markdown } from '../Markdown'
 import { Menu } from '../overlay/Menu'
-import { isTyping } from '../useViews'
+import { useShortcutScope } from '../shortcuts'
+import { keysOf } from '../../lib/shortcuts'
 import { openHelp } from '../help/store'
 import { navigate } from '../router'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
@@ -74,6 +76,28 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     void markTaskNotificationsRead(taskId)
   }, [taskId])
 
+  // The `panel` scope while focus is inside the panel (keyboard-shortcuts "Innermost
+  // scope wins"): 1–4 set the open task's priority, Shift+K skips its occurrence.
+  useShortcutScope('panel', {
+    'panel.priority': (e) => {
+      if (!task || readOnly) return false
+      void updateTask(task.id, { priority: Number(e.key) as Priority })
+    },
+    'panel.skip': () => {
+      if (!task || readOnly || !task.recurrence) return false
+      void skipOccurrence(task.id)
+    },
+  }, { within: () => panel.current })
+
+  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
+  const swipe = useRef<{ x: number; y: number } | null>(null)
+  const onSwipeStart = (e: TouchEvent<HTMLElement>) => { const t = e.touches[0]; swipe.current = t ? { x: t.clientX, y: t.clientY } : null }
+  const onSwipeEnd = (e: TouchEvent<HTMLElement>) => {
+    const s = swipe.current, t = e.changedTouches[0]
+    swipe.current = null
+    if (s && t && t.clientY - s.y > 80 && Math.abs(t.clientX - s.x) < 60) onClose()
+  }
+
   if (!task) return null
 
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
@@ -89,27 +113,19 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const copyLink = () => {
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
-  // 1–4 set the priority while focus is in the panel but not in a text field.
-  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
-    if (readOnly || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.nativeEvent)) return
-    if (e.key >= '1' && e.key <= '4') {
-      e.preventDefault()
-      e.stopPropagation()
-      void updateTask(task.id, { priority: Number(e.key) as Priority })
-    }
-  }
-
   const page = variant === 'page'
   const done = !!task.completed_at
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }[task.priority] ?? 'border-p4'
   return (
-    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} onKeyDown={onKeyDown}
+    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
-        : 'fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
+        : 'fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
-      <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}>
-        {page && <IconButton icon="arrow-left" label="Back to the list" onClick={onClose} data-task-back className="touch-target" />}
+      <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
+        onTouchStart={page ? undefined : onSwipeStart} onTouchEnd={page ? undefined : onSwipeEnd}>
+        {/* Below 768 px the panel is a full-screen sheet (app-shell "Panel width and expansion"): Back, or a swipe down on the header, closes it. */}
+        {(page || phone) && <IconButton icon="arrow-left" label="Back to the list" onClick={onClose} data-task-back className="touch-target" />}
         <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
           className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
           <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${ring} ${done ? 'bg-faint border-input text-on-accent' : 'hover:bg-success-soft'}`}>
@@ -128,13 +144,13 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         />
         {progress.total > 0 && <Badge hue="slate" title="Completed subtasks">{progress.done}/{progress.total}</Badge>}
         {copied && <span role="status" className="text-meta text-muted">Link copied</span>}
-        <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
+        <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
           <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
           <MenuItem label="Help" icon="circle-help" description="The guide to the task panel" onSelect={() => openHelp('task-panel')} />
           {!page && <MenuItem label="Expand" icon="external-link" description="Open the task as a page" onSelect={() => navigate({ view: 'task', id: task.id })} />}
           {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
-          {!readOnly && <MenuItem label="Duplicate" icon="copy" shortcut="Shift+D" onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
+          {!readOnly && <MenuItem label="Duplicate" icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
           {!readOnly && assistant?.available && <MenuItem label="Break this down" icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
           {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}
@@ -149,15 +165,19 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
       <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'}>
         <div className="min-w-0 space-y-4 p-4">
           {parent && (
-            <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)} title="Open parent task">
-              <Icon name="corner-down-right" />{parent.title || 'Untitled'}
-              {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
-            </button>
+            <Tooltip label="Open parent task">
+              <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)}>
+                <Icon name="corner-down-right" />{parent.title || 'Untitled'}
+                {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
+              </button>
+            </Tooltip>
           )}
           {series && (
-            <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
-              <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
-            </button>
+            <Tooltip label="Open the recurring task">
+              <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(series.id)}>
+                <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
+              </button>
+            </Tooltip>
           )}
           <NotesBoundary task={task} readOnly={readOnly}>
             <Suspense fallback={<NotesPreview text={task.description} />}>

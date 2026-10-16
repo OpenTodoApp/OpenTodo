@@ -1,4 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Skeleton } from '../ui'
+import { Tooltip } from '../ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button } from '../ui'
 import { Badge } from '../ui'
@@ -74,9 +76,8 @@ export function WebhooksView(p: WebhooksViewProps) {
   const close = () => (p.secret ? p.onDismissSecret() : p.onDraftChange(null))
   const add = <Button variant="primary" size="sm" icon="plus" disabled={disabled} onClick={() => p.onDraftChange(emptyDraft())}>Add webhook</Button>
   return (
-    <SettingsSection title="Webhooks" helpId="settings/webhooks" headingId="webhooks-heading" testId="webhooks-panel"
-      description="Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook's secret."
-      actions={add}>
+    <SettingsSection title="Webhooks" headingId="webhooks-heading" testId="webhooks-panel"
+      description="Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook's secret.">
       {!p.connected && (
         <Notice>You are offline. Webhooks are delivered by the server, so changing or testing them requires a connection. The list below is the last one fetched.</Notice>
       )}
@@ -91,7 +92,7 @@ export function WebhooksView(p: WebhooksViewProps) {
         {p.webhooks && p.webhooks.length === 0 && (
           <EmptyState icon="link" title="No webhooks yet" body="Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change." />
         )}
-        {p.webhooks === null && <p className="py-2 text-meta text-faint">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</p>}
+        {p.webhooks === null && (p.connected ? <Skeleton shape="line" count={3} label="Loading webhooks" /> : <p className="py-2 text-meta text-faint">Nothing fetched yet.</p>)}
         {p.webhooks?.map((h) => {
           const st = webhookStatus(h)
           const result = p.testResults[h.id]
@@ -99,7 +100,7 @@ export function WebhooksView(p: WebhooksViewProps) {
           return (
             <div key={h.id} className="-mx-3 space-y-1">
               <ListRow leading={<Icon name="link" size="md" />} ariaLabel={h.url}
-                label={<span className="block truncate font-mono text-meta" title={h.url}>{h.url}</span>}
+                label={<Tooltip label={h.url}><span className="block truncate font-mono text-meta">{h.url}</span></Tooltip>}
                 meta={`${h.events.join(', ')} · ${projectName(h.projectId)}`}
                 badges={<Badge hue={TONE[st.tone]}>{st.label}</Badge>}
                 menu={(
@@ -123,7 +124,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                     <span className="text-meta font-medium text-muted">Last 100 deliveries</span>
                     <Button size="sm" variant="ghost" icon="rotate-ccw" disabled={!p.connected} onClick={p.onRefreshLog}>Refresh</Button>
                   </div>
-                  {p.log.deliveries === null && <p className="text-meta text-faint">Loading…</p>}
+                  {p.log.deliveries === null && <Skeleton shape="line" count={3} label="Loading deliveries" />}
                   {p.log.deliveries?.length === 0 && <p className="text-meta text-faint">No deliveries yet.</p>}
                   <ul className="space-y-2">
                     {p.log.deliveries?.map((d) => (
@@ -171,7 +172,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                 <Notice tone="warning">This is a plain http:// address: task content will travel unencrypted. Prefer https:// unless the receiver is on a network you trust.</Notice>
               )}
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-default">Events</legend>
+                <legend className="mb-2 text-body font-medium text-default">Events</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {WEBHOOK_EVENTS.map(({ event, label }) => (
                     <Checkbox key={event} checked={draft.events.includes(event)} disabled={disabled}
@@ -200,6 +201,7 @@ export function WebhooksView(p: WebhooksViewProps) {
           )}
         </Dialog>
       )}
+      <SettingRow label="Add a webhook" description="Posts a signed request to your endpoint when tasks or projects change." control={add} />
     </SettingsSection>
   )
 }

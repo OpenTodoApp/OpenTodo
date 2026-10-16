@@ -6,7 +6,7 @@ import { db } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import { click, flush, key, render } from '../ui/test-utils'
 import { AppearanceProvider } from './AppearanceProvider'
-import { AppearanceSection } from './AppearanceSection'
+import { AppearanceSection, SidebarSection } from './AppearanceSection'
 
 beforeEach(async () => {
   await db.delete()
@@ -61,6 +61,28 @@ describe('AppearanceProvider', () => {
     expect(root().getAttribute('data-accent')).toBe('violet')
     expect(JSON.parse(localStorage.getItem('ot.appearance')!).accent).toBe('violet')
     expect(await db.outbox.count()).toBe(0)
+    await r.unmount()
+  })
+})
+
+describe('Appearance → Sidebar', () => {
+  it('one switch per destination of the More group, each written as the synced list', async () => {
+    const r = await render(<SidebarSection />)
+    await flush(30)
+    const ids = [...document.querySelectorAll('[data-setting-row^="sidebar-"]')].map((e) => e.getAttribute('data-setting-row'))
+    expect(ids).toEqual(['sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
+    const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
+    expect(someday.getAttribute('aria-checked')).toBe('false')
+    await click(someday)
+    await flush(40)
+    expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('someday')
+    await click(document.querySelector<HTMLButtonElement>('#sidebar-switch-trash')!)
+    await flush(40)
+    expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('someday,trash')
+    expect(document.querySelector('#sidebar-switch-someday')?.getAttribute('aria-checked')).toBe('true')
+    await click(document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!)
+    await flush(40)
+    expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('trash')
     await r.unmount()
   })
 })

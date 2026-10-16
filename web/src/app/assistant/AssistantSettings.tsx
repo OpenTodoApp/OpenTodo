@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { keysOf } from '../../lib/shortcuts'
+import { Kbd } from '../shortcuts/Kbd'
 import { api, ApiError } from '../../lib/api'
 import { clearThreads, getAutoApply, setAutoApply } from '../../lib/assistant'
 import { refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
@@ -117,7 +119,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
         const noModel = !v.model.trim()
         return (
           <fieldset key={n} className="space-y-3 rounded-control border border-default p-3" data-provider={n}>
-            <legend className="px-1 text-sm font-medium text-default">{LABEL[n]}</legend>
+            <legend className="px-1 text-body font-medium text-default">{LABEL[n]}</legend>
             <Checkbox checked={v.enabled} disabled={off} onChange={(e) => setProv(n, { enabled: e.target.checked })} label="Allow this provider" />
             <Field label="Model">
               <Input value={v.model} disabled={off} placeholder={MODEL_HINT[n]} list={n === 'anthropic' ? 'assistant-anthropic-models' : undefined}
@@ -310,8 +312,8 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
   }
   const radio = 'mt-0.5 h-4 w-4 shrink-0 accent-(--ot-accent) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
   return (
-    <fieldset className="space-y-3 py-3 text-sm" data-assistant-own>
-      <legend className="float-left mb-2 w-full text-sm font-medium text-default">Which assistant you use</legend>
+    <fieldset className="space-y-3 py-3 text-body" data-assistant-own>
+      <legend className="float-left mb-2 w-full text-body font-medium text-default">Which assistant you use</legend>
       <label className="clear-left flex items-start gap-2.5">
         <input type="radio" name="assistant-own-mode" className={radio} checked={d.mode === 'server'} disabled={off} onChange={() => set({ mode: 'server' })} />
         <span className="text-default">The server’s assistant
@@ -397,7 +399,7 @@ function LegacyOwnKey(p: UserViewProps & { status: AssistantStatus }) {
   )
 }
 
-/** Settings → AI → Assistant for everyone: consent, which assistant you use, usage, auto-apply, conversations. */
+/** Settings → Integrations → Assistant for everyone: consent, which assistant you use, usage, auto-apply, conversations. */
 export function UserAssistantSettings(p: UserViewProps) {
   useDateTimeFormat()
   const s = p.status
@@ -414,7 +416,7 @@ export function UserAssistantSettings(p: UserViewProps) {
             <span className="block">Provider: <strong>{s.provider_label}</strong>{s.model ? ` (${s.model})` : ''}{s.source === 'own' ? ', with your own key' : ''}.</span>
             <span className="flex flex-wrap items-center gap-2 text-muted">
               <Badge hue={s.consented ? 'green' : 'slate'}>{s.consented ? 'Accepted' : 'Not accepted yet'}</Badge>
-              {s.consented ? 'You accepted what is sent.' : 'You have not accepted yet; the assistant asks before your first message.'} Open it with <span className="kbd">Shift+I</span>.
+              {s.consented ? 'You accepted what is sent.' : 'You have not accepted yet; the assistant asks before your first message.'} Open it with <Kbd k={keysOf('global.assistant')} />.
             </span>
           </span>
         )}
@@ -550,7 +552,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
   }
 
   return (
-    <SettingsSection title="Assistant" helpId="settings/assistant" headingId="assistant-settings-heading" testId="assistant-settings"
+    <SettingsSection title="Assistant" headingId="assistant-settings-heading" testId="assistant-settings"
       description="Plan and change your tasks by talking, with a model provider your server owner chooses (including a model on your own network), or with your own provider and key when the owner allows it. Every change is proposed for you to review and can be undone. Conversations stay on this device.">
       {!connected && <div className="pb-3"><Notice>You are offline. These settings live on the server and need a connection.</Notice></div>}
       {error && !configuring && <div className="py-3"><Notice tone="danger">{error}</Notice></div>}

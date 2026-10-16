@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dropTarget, dropZone, sameDrop } from './listDrop'
+import { dragFeedback, dropTarget, dropZone, sameDrop } from './listDrop'
 
 describe('drop placement (manual-ordering)', () => {
   it('quarters with nesting, halves without', () => {
@@ -23,5 +23,17 @@ describe('drop placement (manual-ordering)', () => {
     expect(sameDrop(null, null)).toBe(true)
     expect(sameDrop({ id: 'a', zone: 'before' }, { id: 'a', zone: 'before' })).toBe(true)
     expect(sameDrop({ id: 'a', zone: 'before' }, { id: 'a', zone: 'after' })).toBe(false)
+  })
+})
+
+describe('drag feedback (ux-overhaul)', () => {
+  it('lifts with elevation and scale, an opacity change only under reduced motion; the line has a dot at its start', () => {
+    expect(dragFeedback(false).lift).toContain('shadow-2')
+    expect(dragFeedback(false).lift).toContain('scale-')
+    expect(dragFeedback(true).lift).toBe('opacity-60')
+    expect(dragFeedback(true).lift).not.toContain('scale-')
+    expect(dragFeedback(false).line).toContain('before:rounded-full')
+    expect(dragFeedback(false).line).toContain('bg-accent')
+    expect(dragFeedback(false).inside).toBe('ring-2 ring-accent')
   })
 })

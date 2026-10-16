@@ -1,4 +1,4 @@
-import { Icon } from '../ui'
+import { Button, EmptyState as EmptyStatePattern, Icon, type IconName } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
@@ -16,7 +16,7 @@ import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
 import type { AccountRole, Label, Priority, Project, Section, Task } from '../lib/types'
 import { TodayAskAction } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
-import { moveTask, moveTaskBy } from '../lib/move'
+import { moveTask, moveTaskBy, type Step } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, nextViewMode, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { TimelineView } from './TimelineView'
@@ -32,16 +32,19 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay, selectTask } from './signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, openTask, placeInDay, selectTask } from './signals'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
+import { Kbd } from './shortcuts/Kbd'
+import { keysOf } from '../lib/shortcuts'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
 import { useSelection } from './selection'
-import { useVimEnabled } from './vim/prefs'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
-import { Dialog } from './overlay'
+import { Dialog, useFinePointer } from './overlay'
+import { FirstRunCard, useFirstRun } from './FirstRun'
 import { Menu } from './overlay/Menu'
-import { Button, ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
+import { ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
 
 /** The guide section of each list page (user-documentation "Contextual help"); projects use their header's. */
@@ -215,9 +218,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       ...g, roots: g.tasks.map((t) => byId.get(t.id) as TreeNode<Task>),
     }))
   }, [projectId, tree, sections])
+  // "No section" is a column only while it has open tasks (sections-and-boards).
   const columns = useMemo<BoardColumn[]>(
-    () => (sectionGroups ?? []).map((g) => ({ key: g.key, section: g.section, cards: g.tasks })), [sectionGroups],
+    () => (sectionGroups ?? []).filter((g) => g.key !== '' || g.tasks.length > 0).map((g) => ({ key: g.key, section: g.section, cards: g.tasks })), [sectionGroups],
   )
+  const [currentColumn, setCurrentColumn] = useState<string | null>(null)
+  // The row being dragged lifts (task-list-presentation "Drag feedback").
+  const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const groups = useMemo<Group[]>(() => {
     const later: Group[] = laterTasks.length
@@ -320,7 +327,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   }, [doneInProject, sectionMap])
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
-  const vimEnabled = useVimEnabled()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
   const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
@@ -341,6 +347,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   /** Task whose assignee picker (Shift+A) is open (task-assignment). */
   const [assignFor, setAssignFor] = useState<string | null>(null)
   const quickAddRef = useRef<HTMLInputElement>(null)
+  const focusQuickAdd = useCallback(() => quickAddRef.current?.focus(), [])
+  // The first run (first-run "Three-step first run"): the Inbox shows the card instead of its empty state.
+  const showFirstRun = useFirstRun() && route.view === 'inbox'
   /** Section whose quick add is open ('' = "No section"), board-view. */
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
@@ -393,6 +402,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     }
     beginDrag(e, {
       label: task.title,
+      onStart: () => setDraggingId(task.id),
       onMove: (target, _x, y) => {
         const id = target?.startsWith('task:') ? target.slice('task:'.length) : null
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !dragState.current.board) : null
@@ -414,7 +424,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         } else return
         setSelectedId(task.id)
       },
-      onEnd: () => show(null),
+      onEnd: () => { show(null); setDraggingId(null) },
     })
   }, [manual, moveToSection])
 
@@ -518,291 +528,167 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     void setTaskParent(row.task.id, grandparent).catch(() => undefined)
   }, [tree])
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
+  // Keyboard (keyboard-shortcuts "One shortcut registry with scopes"): the `list`
+  // scope, the `board` scope on a board and the project's `view` scope; the
+  // dispatcher resolves the key, these handlers act on the selection. A handler
+  // returns false when it does not apply, so the key keeps its default.
+  const idx = rows.findIndex((r) => r.task.id === selectedId)
+  const row = idx >= 0 ? rows[idx] : undefined
+  // A viewer may navigate and open tasks of a shared project, never change them.
+  const writable = !!row && !isReadOnly(row.task)
+  const leaveSidebar = () => {
+    // Selecting tasks moves keyboard attention to the list: a sidebar project left
+    // focused by a click must not take the next Alt+Up/Down (manual-ordering).
+    if ((document.activeElement as HTMLElement | null)?.closest?.('nav[aria-label="Projects"]')) (document.activeElement as HTMLElement).blur()
+  }
+  const openFor = (focus: { request(id: string): void }) => () => {
+    if (!row || !writable) return false
+    focus.request(row.task.id)
+    setOpenId(row.task.id)
+  }
+  const extend = (dir: 1 | -1) => () => {
+    const order = board ? (columns.find((c) => c.cards.some((t) => t.id === selectedId))?.cards.map((t) => t.id) ?? tickRows) : tickRows
+    const at = selectedId ? order.indexOf(selectedId) : -1
+    const next = order[Math.max(0, Math.min(order.length - 1, at + dir))]
+    if (!next) return false
+    if (selection.ticked.size === 0 && selectedId) selection.toggle(selectedId)
+    selection.extendTo(next, order)
+    setSelectedId(next)
+  }
+  const moveBy = (how: Step) => () => {
+    // Keyboard moves (manual-ordering): only in manually ordered views; the selection stays on the moved task; edges do nothing.
+    if (!manual || !selectedId) return false
+    void moveTaskBy(selectedId, how)
+  }
+  useShortcutScope('view', { 'project.view-mode': () => { if (!projectId) return false; toggleViewMode() } }, { view: route.view })
+  useShortcutScope('list', {
+    'list.quick-add': () => { if (projectReadOnly) return false; quickAddRef.current?.focus() },
+    'list.escape': (e) => {
       const target = e.target as HTMLElement | null
-      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
-      if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-        // Keyboard moves (manual-ordering): Alt+Up/Down one place, with Shift to the
-        // top / bottom of the task's list. Only in manually ordered views, never
-        // while typing; the selection stays on the moved task; edges do nothing.
-        if (typing || isGPending() || !manual || !selectedId || document.querySelector('[role="dialog"]')) return
-        e.preventDefault()
-        const up = e.key === 'ArrowUp'
-        void moveTaskBy(selectedId, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1)
-        return
-      }
-      // Ctrl/⌘+A selects every row once something is ticked (bulk-edit D2); before
-      // that it keeps selecting the page's text.
-      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'a' && !typing && selection.ticked.size > 0 && !document.querySelector('[role="dialog"]')) {
-        e.preventDefault()
-        selection.selectAll()
-        return
-      }
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key === 'Escape') {
-        if (typing) (target as HTMLElement).blur()
-        else if (pickerFor) setPickerFor(null)
-        else if (assignFor) setAssignFor(null)
-        else if (prompt) setPrompt(null)
-        else if (addingUnder) setAddingUnder(null)
-        else if (openId) setOpenId(null)
-        else if (selection.ticked.size) selection.clear()
-        else setSelectedId(null)
-        return
-      }
-      if (typing || isGPending()) return
-      if (['j', 'k', 'ArrowDown', 'ArrowUp'].includes(e.key) && (document.activeElement as HTMLElement | null)?.closest?.('nav[aria-label="Projects"]')) {
-        // Selecting tasks moves keyboard attention to the list: a sidebar project left
-        // focused by a click must not take the next Alt+Up/Down (manual-ordering).
-        (document.activeElement as HTMLElement).blur()
-      }
-      const idx = rows.findIndex((r) => r.task.id === selectedId)
-      const row = idx >= 0 ? rows[idx] : undefined
-      // A viewer may navigate and open tasks of a shared project, never change them.
-      if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace', 'n', 'N', 'E', 'd'].includes(e.key)) return
-      if (e.key === 'q' && projectReadOnly) return
-      // Bulk selection and actions (bulk-edit D2, D3).
-      if ((e.key === 'x' || e.key === ' ') && row) {
-        e.preventDefault()
-        selection.toggle(row.task.id)
-        return
-      }
-      const extend = e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || (!vimEnabled && (e.key === 'J' || e.key === 'K')))
-      if (extend) {
-        e.preventDefault()
-        const order = board ? (columns.find((c) => c.cards.some((t) => t.id === selectedId))?.cards.map((t) => t.id) ?? tickRows) : tickRows
-        const at = selectedId ? order.indexOf(selectedId) : -1
-        const next = order[Math.max(0, Math.min(order.length - 1, at + (e.key === 'ArrowDown' || e.key === 'J' ? 1 : -1)))]
-        if (!next) return
-        if (selection.ticked.size === 0 && selectedId) selection.toggle(selectedId)
-        selection.extendTo(next, order)
-        setSelectedId(next)
-        return
-      }
-      if (e.key === '.') {
-        if (ticked.length || selectedId) { e.preventDefault(); openActions() }
-        return
-      }
-      if (ticked.length) {
-        switch (e.key) {
-          case 'c': e.preventDefault(); void runBulk(ticked, { kind: 'complete' }); return
-          case '1': case '2': case '3': case '4': e.preventDefault(); void runBulk(ticked, { kind: 'priority', priority: Number(e.key) as Priority }); return
-          case 'L': e.preventDefault(); openActions('labels'); return
-          case 'A': e.preventDefault(); openActions('assign'); return
-          case 'Delete': case 'Backspace': e.preventDefault(); void runBulk(ticked, { kind: 'trash' }); return
+      if (isTypingTarget(target)) target!.blur()
+      else if (pickerFor) setPickerFor(null)
+      else if (assignFor) setAssignFor(null)
+      else if (prompt) setPrompt(null)
+      else if (addingUnder) setAddingUnder(null)
+      else if (openId) setOpenId(null)
+      else if (selection.ticked.size) selection.clear()
+      else setSelectedId(null)
+    },
+    'list.move-up': moveBy(-1), 'list.move-down': moveBy(1), 'list.move-top': moveBy('top'), 'list.move-bottom': moveBy('bottom'),
+    // Ctrl/⌘+A selects every row once something is ticked (bulk-edit D2); before that it keeps selecting the page's text.
+    'list.select-all': () => { if (selection.ticked.size === 0) return false; selection.selectAll() },
+    'list.tick': () => { if (!row) return false; selection.toggle(row.task.id) },
+    'list.extend-down': extend(1), 'list.extend-up': extend(-1),
+    'list.actions': () => { if (!ticked.length && !selectedId) return false; openActions() },
+    'list.down': () => { leaveSidebar(); setSelectedId(rows[Math.min(rows.length - 1, idx + 1)]?.task.id ?? null) },
+    'list.up': () => { leaveSidebar(); setSelectedId(rows[Math.max(0, idx - 1)]?.task.id ?? null) },
+    'list.collapse': () => {
+      if (!row || !treeView) return false
+      if (row.hasChildren && !row.collapsed) toggleCollapsed(row.task.id, true)
+      else if (row.parent) setSelectedId(row.parent)
+    },
+    'list.expand': () => {
+      if (!row || !treeView) return false
+      if (row.hasChildren && row.collapsed) toggleCollapsed(row.task.id, false)
+    },
+    'list.open': (e) => {
+      if (prompt) { acceptPrompt(); return }
+      // Enter on a focused button or link is that control's own (the panel's tabs, a version's expander).
+      if (!selectedId || isActivationTarget(e.target)) return false
+      setOpenId(selectedId)
+    },
+    'list.add-subtask': () => {
+      if (!row || !writable) return false
+      toggleCollapsed(row.task.id, false)
+      setAddingUnder(row.task.id)
+    },
+    'list.indent': () => { if (!row || !writable || !treeView) return false; indent(row, idx) },
+    'list.outdent': () => { if (!row || !writable || !treeView) return false; outdent(row) },
+    'list.complete': () => {
+      if (ticked.length) { void runBulk(ticked, { kind: 'complete' }); return }
+      if (!row || !writable) return false
+      void toggleComplete(row.task.id, !row.task.completed_at)
+    },
+    'list.priority': (e) => {
+      const priority = Number(e.key) as Priority
+      if (ticked.length) { void runBulk(ticked, { kind: 'priority', priority }); return }
+      if (!selectedId || (row && !writable)) return false
+      void updateTask(selectedId, { priority })
+    },
+    'list.labels': () => {
+      if (ticked.length) { openActions('labels'); return }
+      if (!row || !writable) return false
+      setPickerFor(row.task.id)
+    },
+    'list.assign': () => {
+      if (ticked.length) { openActions('assign'); return }
+      if (!row || !writable || !userId) return false
+      setAssignFor(row.task.id)
+    },
+    'list.delete': () => {
+      if (ticked.length) { void runBulk(ticked, { kind: 'trash' }); return }
+      if (!selectedId || (row && !writable)) return false
+      void deleteWithUndo(selectedId)
+      setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
+    },
+    'list.skip': () => {
+      // Skip the current occurrence of the selected (or open) recurring task.
+      const id = row?.task.id ?? openId
+      if (!id) return false
+      void skipOccurrence(id)
+    },
+    'list.detach': () => {
+      // "This occurrence only": detach a standalone copy and open it.
+      const id = row?.task.id ?? openId
+      if (!id) return false
+      void detachOccurrence(id).then((copy) => {
+        if (copy) {
+          setSelectedId(copy)
+          setOpenId(copy)
         }
-      }
-      if (e.key === 'v' && projectId) {
-        // List / board toggle, remembered per project on this device (board-view).
-        e.preventDefault()
-        toggleViewMode()
-        return
-      }
-      if (board) {
-        const col = columns.findIndex((c) => c.cards.some((t) => t.id === selectedId))
-        const pos = col >= 0 ? columns[col].cards.findIndex((t) => t.id === selectedId) : -1
-        const firstCard = (from: number, dir: 1 | -1) => {
-          for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
-          return null
-        }
-        switch (e.key) {
-          case 'j':
-          case 'ArrowDown':
-          case 'k':
-          case 'ArrowUp': {
-            e.preventDefault()
-            const down = e.key === 'j' || e.key === 'ArrowDown'
-            if (col < 0) setSelectedId(firstCard(0, 1))
-            else setSelectedId(columns[col].cards[Math.max(0, Math.min(columns[col].cards.length - 1, pos + (down ? 1 : -1)))].id)
-            return
-          }
-          case 'h':
-          case 'l':
-          case 'ArrowLeft':
-          case 'ArrowRight': {
-            e.preventDefault()
-            const dir = e.key === 'h' || e.key === 'ArrowLeft' ? -1 : 1
-            if (e.shiftKey && e.key.startsWith('Arrow')) {
-              // Shift+←/→ moves the selected card to the adjacent column; it stays selected.
-              const target = columns[col + dir]
-              if (row && col >= 0 && target && projectEditable) moveToSection(row.task, target.key)
-              return
-            }
-            if (col < 0) setSelectedId(firstCard(0, 1))
-            else setSelectedId(firstCard(col + dir, dir) ?? selectedId)
-            return
-          }
-          case 'a':
-            // On the board, `a` opens the quick add of the selected card's column.
-            if (projectEditable) {
-              e.preventDefault()
-              setAddingTo(col >= 0 ? columns[col].key : '')
-            }
-            return
-          case 'Tab':
-            return
-        }
-      }
-      switch (e.key) {
-        case 'q':
-          e.preventDefault()
-          quickAddRef.current?.focus()
-          break
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault()
-          setSelectedId(rows[Math.min(rows.length - 1, idx + 1)]?.task.id ?? null)
-          break
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault()
-          setSelectedId(rows[Math.max(0, idx - 1)]?.task.id ?? null)
-          break
-        case 'ArrowLeft':
-          if (!row || !treeView) break
-          e.preventDefault()
-          if (row.hasChildren && !row.collapsed) toggleCollapsed(row.task.id, true)
-          else if (row.parent) setSelectedId(row.parent)
-          break
-        case 'ArrowRight':
-          if (!row || !treeView) break
-          e.preventDefault()
-          if (row.hasChildren && row.collapsed) toggleCollapsed(row.task.id, false)
-          break
-        case 'Enter':
-          if (prompt) {
-            e.preventDefault()
-            acceptPrompt()
-          } else if (selectedId) setOpenId(selectedId)
-          break
-        case 'a':
-          if (row) {
-            e.preventDefault()
-            toggleCollapsed(row.task.id, false)
-            setAddingUnder(row.task.id)
-          }
-          break
-        case 'Tab':
-          if (row && treeView) {
-            e.preventDefault()
-            if (e.shiftKey) outdent(row)
-            else indent(row, idx)
-          }
-          break
-        case 'c':
-          if (row) void toggleComplete(row.task.id, !row.task.completed_at)
-          break
-        case 'S': {
-          // Skip the current occurrence of the selected (or open) recurring task.
-          const id = row?.task.id ?? openId
-          if (id) {
-            e.preventDefault()
-            void skipOccurrence(id)
-          }
-          break
-        }
-        case 'O': {
-          // "This occurrence only": detach a standalone copy and open it.
-          const id = row?.task.id ?? openId
-          if (id) {
-            e.preventDefault()
-            void detachOccurrence(id).then((copy) => {
-              if (copy) {
-                setSelectedId(copy)
-                setOpenId(copy)
-              }
-            })
-          }
-          break
-        }
-        case 'L':
-          if (row) {
-            e.preventDefault()
-            setPickerFor(row.task.id)
-          }
-          break
-        case 'A':
-          if (row && userId) {
-            e.preventDefault()
-            setAssignFor(row.task.id)
-          }
-          break
-        case 's':
-          // Placement mode in the Day view (OpenSpec `time-blocking`).
-          if (row && !row.task.completed_at) {
-            e.preventDefault()
-            placeInDay(row.task, todayISO())
-          }
-          break
-        case 'e':
-          if (row) {
-            e.preventDefault()
-            estimateFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case 'n':
-          // Park or un-park (someday-and-evening D5).
-          if (row) {
-            e.preventDefault()
-            void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id))
-          }
-          break
-        case 'N':
-          if (row) {
-            e.preventDefault()
-            deferFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case 'E':
-          if (row) {
-            e.preventDefault()
-            void updateTask(row.task.id, { evening: !row.task.evening })
-          }
-          break
-        case 'd':
-          if (row) {
-            e.preventDefault()
-            deadlineFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case 'D':
-          // Duplicate the task and its open subtasks right below it (project-templates D6).
-          if (row && !isReadOnly(row.task)) {
-            e.preventDefault()
-            void duplicateTask(row.task.id).then((id) => setSelectedId(id))
-          }
-          break
-        case 'b':
-          if (row && !isReadOnly(row.task)) {
-            e.preventDefault()
-            blockedByFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-          if (selectedId) void updateTask(selectedId, { priority: Number(e.key) as Priority })
-          break
-        case 'Delete':
-        case 'Backspace':
-          if (selectedId) {
-            e.preventDefault()
-            void deleteWithUndo(selectedId)
-            setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
-          }
-          break
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly,
-    projectId, board, columns, projectEditable, toggleViewMode, moveToSection, manual, selection, ticked, tickRows, vimEnabled, openActions])
+      })
+    },
+    // Placement mode in the Day view (OpenSpec `time-blocking`).
+    'list.schedule': () => { if (!row || row.task.completed_at) return false; placeInDay(row.task, todayISO()) },
+    'list.estimate': () => { if (!row) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
+    'list.deadline': openFor(deadlineFocus),
+    'list.defer': openFor(deferFocus),
+    'list.blocked-by': openFor(blockedByFocus),
+    // Park or un-park (someday-and-evening D5).
+    'list.park': () => { if (!row || !writable) return false; void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
+    'list.evening': () => { if (!row || !writable) return false; void updateTask(row.task.id, { evening: !row.task.evening }) },
+    // Duplicate the task and its open subtasks right below it (project-templates D6).
+    'list.duplicate': () => { if (!row || !writable) return false; void duplicateTask(row.task.id).then((id) => setSelectedId(id)) },
+  })
+  const col = board ? columns.findIndex((c) => c.cards.some((t) => t.id === selectedId)) : -1
+  const pos = col >= 0 ? columns[col].cards.findIndex((t) => t.id === selectedId) : -1
+  const firstCard = (from: number, dir: 1 | -1) => {
+    for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
+    return null
+  }
+  const boardStep = (dir: 1 | -1) => () => {
+    if (col < 0) setSelectedId(firstCard(0, 1))
+    else setSelectedId(columns[col].cards[Math.max(0, Math.min(columns[col].cards.length - 1, pos + dir))].id)
+  }
+  const boardColumn = (dir: 1 | -1) => () => {
+    if (col < 0) setSelectedId(firstCard(0, 1))
+    else setSelectedId(firstCard(col + dir, dir) ?? selectedId)
+  }
+  const boardMove = (dir: 1 | -1) => () => {
+    // Shift+←/→ moves the selected card to the adjacent column; it stays selected.
+    const target = columns[col + dir]
+    if (row && col >= 0 && target && projectEditable) moveToSection(row.task, target.key)
+  }
+  useShortcutScope('board', {
+    'board.down': boardStep(1), 'board.up': boardStep(-1),
+    'board.column-prev': boardColumn(-1), 'board.column-next': boardColumn(1),
+    'board.move-prev': boardMove(-1), 'board.move-next': boardMove(1),
+    // On the board, `a` opens the quick add of the selected card's column.
+    'board.add': () => { if (!projectEditable) return false; setAddingTo(col >= 0 ? columns[col].key : columns[0]?.key ?? '') },
+    // Cards are not nested: Tab keeps moving focus and never reaches the list's indent.
+    'board.indent': () => undefined,
+  }, { enabled: board })
+
 
   // List actions for the optional Vim layer (vim-keybindings, design D3); getters
   // read the latest render through a ref so the registration happens once.
@@ -875,6 +761,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         onPointerDown={manual ? (e) => startDrag(e, r.task) : undefined}
         dropKey={manual ? `task:${r.task.id}` : undefined}
         dropIndicator={dropAt?.id === r.task.id ? dropAt.zone : null}
+        dragging={draggingId === r.task.id}
         onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
         onToggleCollapse={treeView && !board ? () => toggleCollapsed(r.task.id) : undefined}
         onOpen={() => {
@@ -908,7 +795,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         </Tooltip>
       )}
       {route.view !== 'completed' && rows.length > 0 && (
-        <button type="button" className="btn-ghost hidden px-2 py-1 text-sm pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm hidden px-2 py-1 text-body pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
           {selectMode ? 'Done' : 'Select'}
         </button>
       )}
@@ -922,14 +809,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
     return (
-      <div className="p-6 text-sm text-muted">
+      <div className="p-6 text-body text-muted">
         This project no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
       </div>
     )
   }
   if (route.view === 'label' && labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) {
     return (
-      <div className="p-6 text-sm text-muted">
+      <div className="p-6 text-body text-muted">
         This label no longer exists. <button className="underline" onClick={() => navigate({ view: 'labels' })}>All labels</button>
       </div>
     )
@@ -939,11 +826,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <div className="min-w-0 px-4 py-5 md:px-8">
         <div className={board || timeline ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} userId={userId} actions={pageActions}
+            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={(
                 <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
                   {(['list', 'board', 'timeline'] as const).map((m) => (
-                    <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut="v">
+                    <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
                       <button type="button" aria-pressed={viewMode === m} onClick={() => chooseViewMode(m)}
                         className={`${m === 'list' ? 'rounded-l-control' : m === 'timeline' ? 'rounded-r-control' : ''} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
                         {LAYOUT_LABEL[m]}
@@ -964,14 +851,16 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <div className="mb-3 border-b border-default pb-2">
               {projectReadOnly ? (
                 <>
-                  <input className="input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
-                  <p role="note" className="mt-1 text-xs text-muted">Read-only: you are a viewer of this shared project.</p>
+                  <input className="ui-input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
+                  <p role="note" className="mt-1 text-meta text-muted">Read-only: you are a viewer of this shared project.</p>
                 </>
               ) : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
               )}
             </div>
           )}
+
+          {showFirstRun && <FirstRunCard onFocusQuickAdd={focusQuickAdd} />}
 
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
             onMenuOpenChange={(v) => { setActionsOpen(v); if (!v) setActionsPicker(null) }} startPicker={actionsPicker} />
@@ -982,11 +871,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
-          {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
-            <p className="px-2 py-8 text-center text-sm text-faint">
-              No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
-            </p>
-          ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} />)}
+          {rows.length === 0 && !showFirstRun && !(board || liveSections.length > 0) && (duration ? (
+            <EmptyStatePattern icon="filter" title="No task matches this duration filter"
+              action={<Button size="sm" variant="secondary" onClick={() => chooseDuration(null)}>Clear the filter</Button>} />
+          ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={projectReadOnly} onAdd={focusQuickAdd} />)}
 
           {board && currentProject ? (
             <BoardView
@@ -998,13 +886,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               projects={projects}
               labels={labels}
               renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
+              onCurrentColumn={setCurrentColumn}
             />
           ) : timeline && currentProject ? (
             <TimelineView groups={groups} today={today} zone={zone} editable={projectEditable} selectedId={selectedId}
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
-            <section key={g.key} className="mb-3 rounded-md data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
+            <section key={g.key} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
               <SectionHeader
                 section={g.section}
                 count={g.count ?? 0}
@@ -1044,23 +933,23 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         </div>
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-surface px-4 py-2 text-sm shadow-lg">
+          <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
             <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-on-accent/40 bg-accent-hover text-on-accent">Enter</span></button>
-            <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
+            <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
           </div>
         </div>
       )}
       {assignFor && userId && (
         <Dialog title="Assign" label="Assign task" onClose={() => setAssignFor(null)}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Type to filter · Enter assigns · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Type to filter · Enter assigns · Esc closes</p>
         </Dialog>
       )}
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
     </div>
@@ -1087,7 +976,7 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
       <span className="text-accent">+</span>
       <input
         ref={ref}
-        className="input py-1"
+        className="ui-input py-1"
         placeholder={`Add a subtask to ${parent.title || 'this task'}…`}
         aria-label="Add a subtask"
         value={value}
@@ -1122,14 +1011,14 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
   return (
     <span className="flex items-center gap-1" data-duration-filter>
       {current && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-xs font-medium text-on-accent-soft" data-duration-active>
+        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
           {current.label}
-          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" title="Clear filter" onClick={() => onChange(null)} data-clear-duration>
+          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" onClick={() => onChange(null)} data-clear-duration>
             <Icon name="x" size="xs" />
           </button>
         </span>
       )}
-      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`btn-ghost touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
+      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
         {DURATION_FILTERS.map((f) => (
           <MenuItem key={f.kind} label={f.label} description={f.title} checked={active === f.kind} onSelect={() => onChange(active === f.kind ? null : f.kind)} />
         ))}
@@ -1161,22 +1050,42 @@ function placeholderFor(route: ListRoute, project?: Project, label?: Label): str
   }
 }
 
-function EmptyState({ view, waiting = 0 }: { view: ListRoute['view']; waiting?: number }) {
+// Empty states name the action first (first-run spec): an icon, one sentence, one
+// button that does it, and the key hint on a second line only with a fine pointer.
+const EMPTY: Record<ListRoute['view'], { icon: IconName; title: string }> = {
+  inbox: { icon: 'inbox', title: 'Your Inbox is empty' },
+  today: { icon: 'sun', title: 'Nothing due today' },
+  upcoming: { icon: 'calendar-days', title: 'Nothing scheduled yet' },
+  someday: { icon: 'coffee', title: 'Nothing parked for later' },
+  anytime: { icon: 'layers', title: 'Nothing to do whenever' },
+  completed: { icon: 'circle-check-big', title: 'Nothing completed yet' },
+  project: { icon: 'folder', title: 'This project has no open tasks' },
+  label: { icon: 'tag', title: 'No open task carries this label' },
+  assigned: { icon: 'user-check', title: 'Nothing is assigned to you' },
+}
+
+function EmptyState({ view, waiting = 0, readOnly = false, onAdd }: { view: ListRoute['view']; waiting?: number; readOnly?: boolean; onAdd: () => void }) {
+  const fine = useFinePointer()
+  const { icon, title } = EMPTY[view]
   // Everything due today waits for other tasks (task-dependencies): say so.
-  if (view === 'today' && waiting > 0) {
-    return <p className="px-2 py-8 text-center text-sm text-faint">Nothing is ready to start today: {waiting === 1 ? 'one task is' : `${waiting} tasks are`} waiting for other tasks below.</p>
-  }
-  const text = {
-    inbox: 'Your Inbox is empty. Press q to capture something.',
-    today: 'Nothing due today. Enjoy the calm, or pull something in from Upcoming.',
-    upcoming: 'No scheduled tasks. Add a due date to a task and it will show up here.',
-    someday: 'Nothing parked. Select a task and press n to put it here for later.',
-    anytime: 'Nothing to do whenever. Tasks without a date or a start show up here.',
-    completed: 'Nothing completed yet. Completed tasks show up here for a while.',
-    project: 'This project has no open tasks.',
-    label: 'No open task carries this label. Select a task and press L to add it.',
-    assigned: 'Nothing is assigned to you. Select a task and press Shift+A to assign it.',
-  }[view]
-  return <p className="px-2 py-8 text-center text-sm text-faint">{text}</p>
+  const body = view === 'today' && waiting > 0
+    ? `${waiting === 1 ? 'One task is' : `${waiting} tasks are`} waiting for other tasks below.`
+    : undefined
+  const action = view === 'completed'
+    ? { label: 'Open Today', run: () => navigate({ view: 'today' }), hint: <>Press <kbd className="ui-kbd">g</kbd> then <kbd className="ui-kbd">t</kbd> to open Today</> }
+    : readOnly
+      ? { label: 'Open Inbox', run: () => navigate({ view: 'inbox' }), hint: <>Press <kbd className="ui-kbd">g</kbd> then <kbd className="ui-kbd">i</kbd> to open the Inbox</> }
+      : { label: 'Add a task', run: onAdd, hint: <>Press <kbd className="ui-kbd">q</kbd> to add a task</> }
+  return (
+    <div data-empty-state={view}>
+      <EmptyStatePattern icon={icon} title={body ? 'Nothing is ready to start today' : title} body={body}
+        action={(
+          <>
+            <Button size="sm" variant="secondary" data-empty-action onClick={action.run}>{action.label}</Button>
+            {fine && <p className="mt-2 text-meta text-faint" data-empty-hint>{action.hint}</p>}
+          </>
+        )} />
+    </div>
+  )
 }
 

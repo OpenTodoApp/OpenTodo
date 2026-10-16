@@ -10,10 +10,10 @@ import { openHelp } from './store'
 export function HelpLink({ screen, topic, className = '' }: { screen: string; topic?: string; className?: string }) {
   return (
     <button type="button" data-help-screen={screen}
-      className={`btn-ghost touch-target shrink-0 px-1.5 py-0.5 text-xs font-normal text-muted hover:text-default ${className}`}
+      className={`ui-btn ui-btn--ghost ui-btn--sm touch-target shrink-0 px-1.5 py-0.5 text-meta font-normal text-muted hover:text-default ${className}`}
       aria-label={topic ? `Help: ${topic}` : 'Help'} aria-haspopup="dialog"
       onClick={(e) => openHelp(screen, e.currentTarget)}>
-      <span aria-hidden="true" className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] leading-none">?</span>Help
+      <span aria-hidden="true" className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-hint leading-none">?</span>Help
     </button>
   )
 }

@@ -76,46 +76,46 @@ export function InviteView({ state, user, form, onRetry, onLogout }: {
   if (user) {
     return (
       <Card title="You are already signed in">
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           This device is signed in as <strong>{user.name || user.email}</strong>. An invitation creates a new account; it cannot be added to an existing one.
         </p>
-        <p className="text-sm text-muted">Sign out first to accept it, or keep using your current account.</p>
+        <p className="text-body text-muted">Sign out first to accept it, or keep using your current account.</p>
         <div className="flex gap-2">
-          <button className="btn-primary" onClick={onLogout}>Sign out and continue</button>
-          <a className="btn-secondary" href="/">Back to my tasks</a>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>Sign out and continue</button>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Back to my tasks</a>
         </div>
       </Card>
     )
   }
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your invitation…"><p className="text-sm text-muted">One moment.</p></Card>
+      return <Card title="Checking your invitation…"><p className="text-body text-muted">One moment.</p></Card>
     case 'offline':
       return (
         <Card title="You seem to be offline">
-          <p className="text-sm text-muted">Accepting an invitation needs a connection to the server. The page will retry when the network returns.</p>
-          <button className="btn-primary" onClick={onRetry}>Retry now</button>
+          <p className="text-body text-muted">Accepting an invitation needs a connection to the server. The page will retry when the network returns.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry now</button>
         </Card>
       )
     case 'invalid':
       return (
         <Card title="This invitation link is no longer valid">
-          <p className="text-sm text-muted">It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.</p>
-          <a className="btn-secondary" href="/">Go to sign-in</a>
+          <p className="text-body text-muted">It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.</p>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Go to sign-in</a>
         </Card>
       )
     case 'rate-limited':
       return (
         <Card title="Too many attempts">
-          <p className="text-sm text-muted">Wait a minute, then try again.</p>
-          <button className="btn-primary" onClick={onRetry}>Retry</button>
+          <p className="text-body text-muted">Wait a minute, then try again.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
         </Card>
       )
     case 'error':
       return (
         <Card title="Something went wrong">
-          <p className="text-sm text-danger">{state.message}</p>
-          <button className="btn-primary" onClick={onRetry}>Retry</button>
+          <p className="text-body text-danger">{state.message}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
         </Card>
       )
     case 'ready':
@@ -126,10 +126,10 @@ export function InviteView({ state, user, form, onRetry, onLogout }: {
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-sm space-y-3 rounded-xl border border-default bg-surface p-6 shadow-sm">
+      <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <h1 className="text-lg font-semibold">OpenTodo</h1>
+          <h1 className="text-h3 font-semibold">OpenTodo</h1>
         </div>
         <h2 className="font-medium">{title}</h2>
         {children}

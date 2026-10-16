@@ -6,19 +6,16 @@
 import { localDate } from '../lib/dates'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
+import { armGPrefix, clearPrefix, isPrefixPending } from './shortcuts/dispatch'
 
-let gPending = false
-let gTimer: ReturnType<typeof setTimeout> | undefined
-
-/** Shell calls this on `g`; list and calendar handlers ignore the next key while it is set. */
+/** The `g` prefix now lives in the shortcut dispatcher (ux-overhaul D5); these stay for the Vim layer and tests. */
 export function setGPending(on: boolean): void {
-  gPending = on
-  clearTimeout(gTimer)
-  if (on) gTimer = setTimeout(() => (gPending = false), 800)
+  if (on) armGPrefix()
+  else clearPrefix()
 }
 
 export function isGPending(): boolean {
-  return gPending
+  return isPrefixPending()
 }
 
 type Listener = (id: string) => void

@@ -4,7 +4,7 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
 
-// Settings → Access policies, owner only (OpenSpec `project-invite-links`):
+// Settings → People, owner only (OpenSpec `project-invite-links`):
 // "Members can invite new people with project links". Off by default: then
 // only links created by the owner or an admin (or any link while open sign-up
 // is on) can create an account. The pure view renders every state.
@@ -17,7 +17,7 @@ export function ProjectInvitePolicyView({ value, busy, error, onChange }: {
   onChange: (on: boolean) => void
 }) {
   return (
-    <SettingsSection title="Project invite links" helpId="settings/project-invites" headingId="project-invite-policy-heading" testId="project-invite-policy"
+    <SettingsSection title="Project invite links" headingId="project-invite-policy-heading" testId="project-invite-policy"
       description="Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also create an account for someone new.">
       {value === null ? (
         <Notice>This setting is available when you are online.</Notice>
