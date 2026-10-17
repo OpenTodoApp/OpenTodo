@@ -1,0 +1,63 @@
+{
+  "version": "3",
+  "templates": [
+    {
+      "type": 1,
+      "title": "OpenTodo",
+      "name": "opentodo",
+      "description": "Open-source, local-first task manager. Works offline and syncs every device from one small container. Source: https://github.com/pixari/opentodo",
+      "categories": [
+        "Productivity"
+      ],
+      "platform": "linux",
+      "logo": "https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png",
+      "image": "ghcr.io/pixari/opentodo:stable",
+      "restart_policy": "unless-stopped",
+      "ports": [
+        "8080:8080/tcp"
+      ],
+      "volumes": [
+        {
+          "container": "/data"
+        }
+      ],
+      "env": [
+        {
+          "name": "OPENTODO_SETUP_TOKEN",
+          "label": "Setup token (optional, 16+ characters)",
+          "description": "When set, creating the first (owner) account asks for this token, so a server others can reach cannot be claimed by a stranger. Generate one with: openssl rand -hex 16",
+          "default": ""
+        },
+        {
+          "name": "OPENTODO_BASE_URL",
+          "label": "Public https address (optional)",
+          "description": "The https address people open behind a reverse proxy, for example https://todo.example.com. Leave empty when you open OpenTodo by the server's address over plain http: an https value there breaks sign-in.",
+          "default": ""
+        },
+        {
+          "name": "OPENTODO_ALLOW_SIGNUP",
+          "label": "Open sign-up",
+          "description": "true lets anyone who can reach the server create an account. Otherwise the owner invites people.",
+          "select": [
+            {
+              "text": "Closed: the owner invites people",
+              "value": "false",
+              "default": true
+            },
+            {
+              "text": "Open to anyone who can reach the server",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "name": "OPENTODO_TRUSTED_PROXIES",
+          "label": "Trusted proxies (optional)",
+          "description": "Reverse proxies whose X-Forwarded-For is trusted for the visitor's address: IP addresses or ranges such as 192.0.2.0/24 separated by commas, or cloudflare. Set it only when every request comes through them.",
+          "default": ""
+        }
+      ],
+      "note": "Open <code>http://&lt;your-host&gt;:8080</code> right after deploying: the first visitor creates the owner account (paste the setup token there if you set one), and sign-up is closed after that. Everything OpenTodo stores is in the <code>/data</code> volume, so back that volume up. On plain http, tasks, sync and sharing work; installing the app, offline use, push notifications and passkeys need https: put a reverse proxy with a certificate in front and set the public https address. Updates: re-pull the <code>stable</code> image (Recreate with <b>Re-pull image</b>). Docs: <a href=\"https://open-todo.app/docs/self-hosting/portainer/\" target=\"_blank\">open-todo.app/docs/self-hosting/portainer</a>"
+    }
+  ]
+}
