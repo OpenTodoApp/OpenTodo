@@ -31,7 +31,7 @@ The server owner sets a size limit per file (25 MB unless changed) and a total p
 
 ## Encryption
 
-On an account with [end-to-end encryption](e2ee.md), the file name, its type, a link's address and the file's bytes are encrypted on your device before they leave it. The server stores and serves only the encrypted bytes and never holds a key. Turning encryption on or off re-uploads existing files in the new form as part of the switch.
+On an account with [end-to-end encryption](e2ee.md), the file name, its type, a link's address and the file's bytes are encrypted on your device before they leave it. The server stores and serves only the encrypted bytes and never holds a key. Turning encryption on or off re-uploads existing files in the new form as part of the switch, and replaces each of your links with a copy in the new form.
 
 ## Privacy and safety
 
