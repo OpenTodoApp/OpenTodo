@@ -7,10 +7,10 @@ import { WrongSecretError } from '../lib/crypto'
 import type { EncryptionSnapshot } from '../lib/e2ee'
 import { UnlockThrottledError } from '../lib/e2ee'
 import { encryptionMessage, EncryptionView, type EncryptionViewProps, type Mode } from './EncryptionPanel'
-import { UnlockView, type UnlockViewProps } from './UnlockScreen'
+import { RecordMissingView, type RecordMissingViewProps, UnlockView, type UnlockViewProps } from './UnlockScreen'
 
 const noop = () => {}
-const off: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false }
+const off: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false }
 const on: EncryptionSnapshot = { ...off, enabled: true, unlocked: true, keyVersion: 2 }
 
 function render(state: EncryptionSnapshot, mode: Mode = { kind: 'idle' }, over: Partial<EncryptionViewProps> = {}) {
@@ -101,5 +101,28 @@ describe('UnlockView', () => {
     const html = renderToStaticMarkup(<UnlockView {...props({ lost: true })} />)
     expect(html).toContain('cannot be recovered')
     expect(labels(html)).toContain('Turn off and delete encrypted content')
+  })
+})
+
+describe('RecordMissingView (encryption-state-integrity)', () => {
+  const props = (over: Partial<RecordMissingViewProps> = {}): RecordMissingViewProps => ({
+    unlocked: true, busy: false, error: null, confirmOff: false, onRestore: noop, onConfirmOff: noop, onTurnOff: noop, onLogout: noop, ...over,
+  })
+  it('explains the pause and offers restore, turning off, and signing out', () => {
+    const html = renderToStaticMarkup(<RecordMissingView {...props()} />)
+    expect(html).toContain('Sync is paused')
+    expect(labels(html)).toEqual(['Restore the key record from this device', 'Turn off encryption on this device…', 'Sign out'])
+    expect(html).not.toContain('type="password"')
+  })
+  it('without the key, the passphrase restores the record', () => {
+    const html = renderToStaticMarkup(<RecordMissingView {...props({ unlocked: false, error: 'not correct' })} />)
+    expect(html).toContain('type="password"')
+    expect(labels(html)).toContain('Restore the key record')
+    expect(html).toContain('role="alert"')
+  })
+  it('turning off states the consequence before acting', () => {
+    const html = renderToStaticMarkup(<RecordMissingView {...props({ confirmOff: true })} />)
+    expect(html).toContain('in plaintext again')
+    expect(labels(html)).toEqual(['Restore the key record from this device', 'Turn off encryption', 'Cancel'])
   })
 })

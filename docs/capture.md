@@ -46,6 +46,8 @@ After an update that adds or changes the share target, the browser may need the 
 
 **Shared files never leave the device before you save.** The app's service worker receives the share on the device, also offline, and keeps the files in a separate local store (`opentodo-share`) only until the capture screen is saved or cancelled. Anything left there is removed after ten minutes and at sign-out. Saving creates the task and its attachments in one step, on the device first; the files upload with the next sync.
 
+The service worker only takes a share from the system share sheet or from the app's own pages: a form on another website that posts to `/share` just opens the app and nothing is stored. A share larger than 100 MB in total (files and text together) is not stored either.
+
 ## Bookmarklet
 
 **Settings → Capture** shows an **Add to OpenTodo** button generated for your server's address. Drag it to the bookmarks bar (or use **Copy bookmarklet** and paste the code as the address of a new bookmark). Clicking it on any page opens a small popup with the capture screen, prefilled with the page's address, title and the text you selected.

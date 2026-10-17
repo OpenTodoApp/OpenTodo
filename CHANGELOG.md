@@ -6,6 +6,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Security
 
+- **A server can no longer turn end-to-end encryption off on your devices.** If the server says it has no encryption key record (for example after it was restored from an older backup), your devices keep encrypting and pause syncing instead of uploading your content in plaintext. A screen lets you restore the key record from the device, turn encryption off on that device, or sign out. When you turn encryption off on one device, each of your other devices now asks once before following. ([End-to-end encryption](docs/e2ee.md))
+- **Encryption key records with unusual settings are refused.** A device only unlocks with a key record whose key derivation strength is within the expected range; otherwise it stays locked and says why.
+- **Only the share sheet can hand files to the installed app.** Other websites can no longer store shares in the app through its share target, and a share larger than 100 MB in total is not stored. ([Capture](docs/capture.md))
+- **The encryption threat model now notes that the server can show an older version of an encrypted field.** Content stays unreadable and unforgeable to the server, but the app cannot tell when it is served a previous encrypted value of the same field. ([End-to-end encryption](docs/e2ee.md))
 - **Pasting into notes is safer.** The rich-text editor's ProseMirror view is updated to 1.42.6, which fixes a published issue with pasted content (GHSA-c8x8-7fp4-3x9w).
 - **Links are encrypted with the rest of your data.** Turning end-to-end encryption on now also encrypts the address and name of links you attached before, and turning it off decrypts them again. Each link is replaced by a copy in the new form; the old one moves to the Trash. ([End-to-end encryption](docs/e2ee.md))
 

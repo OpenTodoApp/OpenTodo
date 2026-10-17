@@ -17,7 +17,7 @@ import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
-import { currentKey, isEnabled } from './e2ee'
+import { isEnabled, refreshFromServer, syncBlocked } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
@@ -150,7 +150,8 @@ async function runOnce(): Promise<void> {
   }
   // End-to-end encryption (OpenSpec e2ee, design D5): a device without the key
   // of an encrypted account neither pulls nor pushes.
-  if ((await isEnabled()) && !(await currentKey())) {
+  // The same while the server has lost the key record (encryption-state-integrity).
+  if (await syncBlocked()) {
     publish({ state: 'locked', error: null })
     return
   }
@@ -224,6 +225,16 @@ async function runOnce(): Promise<void> {
         // The server was restored from a backup: its log went back in time, so our
         // cursor means nothing there and it may lack edits we hold. Re-send every
         // local field with its original clock, then pull everything from zero.
+        // A restored server may have lost the key record too: confirm it before
+        // re-sending anything, so the re-seed of an encrypted account waits
+        // (locked) instead of going out in plaintext (encryption-state-integrity).
+        if (await isEnabled()) {
+          await refreshFromServer()
+          if (await syncBlocked()) {
+            publish({ state: 'locked', error: null, pending: (await db.outbox.count()) + (await heldCount()) })
+            return
+          }
+        }
         publish({ state: 'reseeding' })
         await reseedAfterRestore(res.generation as string)
         publish({ pending: await db.outbox.count() })
@@ -314,6 +325,8 @@ async function generationChanged(generation: string | undefined): Promise<boolea
  * Entity ids are unchanged, so nothing is duplicated.
  */
 export async function reseedAfterRestore(generation: string): Promise<number> {
+  // Never re-send an encrypted account's content while it cannot be encrypted.
+  if (await syncBlocked()) throw new LockedError()
   let emitted = 0
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
     let chunk: Op[] = []

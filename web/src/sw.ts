@@ -6,7 +6,7 @@
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { entryFromForm, putInboxEntry } from './lib/shareInbox'
+import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestAllowed } from './lib/shareInbox'
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (string | { url: string; revision: string | null })[] }
 
@@ -25,9 +25,13 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denyl
 registerRoute(
   ({ url, request }) => url.pathname === '/share' && request.method === 'POST',
   async ({ request }) => {
-    const form = await request.formData()
+    // Only the share sheet or the app itself may hand over a share, and only up
+    // to a size cap; anything else opens the app without storing a thing.
+    if (!shareRequestAllowed(request.headers)) return Response.redirect('/', 303)
     const id = crypto.randomUUID()
-    await putInboxEntry(entryFromForm(form, id))
+    const entry = entryFromForm(await request.formData(), id)
+    if (entrySize(entry) > SHARE_MAX_BYTES) return Response.redirect('/', 303)
+    await putInboxEntry(entry)
     return Response.redirect(`/share?inbox=${encodeURIComponent(id)}`, 303)
   },
   'POST',
