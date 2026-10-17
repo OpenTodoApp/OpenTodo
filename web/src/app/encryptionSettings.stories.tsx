@@ -4,7 +4,7 @@ import type { EncryptionSnapshot } from '../lib/e2ee'
 import { EncryptionView, type EncryptionViewProps, type Mode } from './EncryptionPanel'
 
 const noop = () => {}
-const off: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false }
+const off: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false }
 const on: EncryptionSnapshot = { ...off, enabled: true, unlocked: true, keyVersion: 2 }
 const key = 'ABCD-EFGH-IJKL-MNOP-QRST-UVWX-YZ23-4567'
 const view = (state: EncryptionSnapshot, mode: Mode = { kind: 'idle' }, over: Partial<EncryptionViewProps> = {}) => (

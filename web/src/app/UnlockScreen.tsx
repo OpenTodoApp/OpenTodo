@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { disableWithoutKey, unlock } from '../lib/e2ee'
+import { disableWithoutKey, restoreKeyRecord, turnOffAfterMissingRecord, unlock } from '../lib/e2ee'
+import { startMigration } from '../lib/e2eeSync'
+import { FileMigrationPaused, runFileMigration } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
 import { encryptionMessage, LostKeysConfirm } from './EncryptionPanel'
 import { t } from '../lib/i18n'
@@ -76,6 +78,105 @@ export function UnlockScreen({ onLogout }: { onLogout: () => void }) {
       kind={kind} busy={busy} error={error} lost={lost} onKind={(k) => { setKind(k); setError(null) }} onLost={setLost} onLogout={onLogout}
       onSubmit={(secret) => void act(() => unlock(secret, kind))}
       onConfirmLost={() => void act(() => disableWithoutKey())}
+    />
+  )
+}
+
+// The server answered that it has no key record while this device encrypts
+// (OpenSpec encryption-state-integrity): a server restored from an older backup,
+// another device that turned encryption off, or a hostile server. A server answer
+// never turns encryption off by itself; sync stays paused until the user restores
+// the record from this device or turns encryption off here.
+
+export interface RecordMissingViewProps {
+  /** This device holds the account key (no passphrase needed to restore). */
+  unlocked: boolean
+  busy: boolean
+  error: string | null
+  confirmOff: boolean
+  onRestore: (passphrase?: string) => void
+  onConfirmOff: (open: boolean) => void
+  onTurnOff: () => void
+  onLogout: () => void
+}
+
+export function RecordMissingView(p: RecordMissingViewProps) {
+  return (
+    <div className="flex min-h-full items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-4 rounded-control border border-default p-6" data-testid="e2ee-record-missing">
+        <h1 className="text-h3 font-semibold">{t('Encryption key record missing')}</h1>
+        <p className="text-body text-muted">
+          {t('This device encrypts your content, but the server says it has no encryption key record. This happens when the server was restored from an older backup or another device turned encryption off. Sync is paused, so nothing is uploaded unencrypted. Choose how to continue.')}
+        </p>
+        {p.unlocked ? (
+          <div className="space-y-2">
+            <button type="button" className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy} onClick={() => p.onRestore()}>
+              {p.busy ? t('Restoring…') : t('Restore the key record from this device')}
+            </button>
+            <p className="text-meta text-muted">{t('Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.')}</p>
+          </div>
+        ) : (
+          <form className="space-y-2" onSubmit={(e) => {
+            e.preventDefault()
+            p.onRestore((e.currentTarget.elements.namedItem('secret') as HTMLInputElement).value)
+          }}>
+            <label className="block text-body">{t('Re-enter your passphrase to restore the key record from this device')}
+              <input className="ui-input mt-1" name="secret" type="password" autoComplete="current-password" spellCheck={false} autoFocus required />
+            </label>
+            <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy}>{p.busy ? t('Restoring…') : t('Restore the key record')}</button>
+          </form>
+        )}
+        {p.error && <p role="alert" className="text-body text-danger">{p.error}</p>}
+        {p.confirmOff ? (
+          <div className="space-y-2 rounded-control border border-danger p-3">
+            <p className="text-body">{t('Your content will be uploaded to the server in plaintext again. Only do this if you turned encryption off on purpose.')}</p>
+            <div className="flex gap-2">
+              <button type="button" className="ui-btn ui-btn--danger ui-btn--md" disabled={p.busy} onClick={p.onTurnOff}>{t('Turn off encryption')}</button>
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => p.onConfirmOff(false)}>{t('Cancel')}</button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap justify-between gap-2 text-body">
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => p.onConfirmOff(true)}>{t('Turn off encryption on this device…')}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onLogout}>{t('Sign out')}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function RecordMissingScreen({ unlocked, onLogout }: { unlocked: boolean; onLogout: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [confirmOff, setConfirmOff] = useState(false)
+  const act = async (fn: () => Promise<void>) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await fn()
+      requestSync(0)
+    } catch (err) {
+      setError(encryptionMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <RecordMissingView
+      unlocked={unlocked} busy={busy} error={error} confirmOff={confirmOff} onConfirmOff={setConfirmOff} onLogout={onLogout}
+      onRestore={(passphrase) => void act(() => restoreKeyRecord(passphrase))}
+      onTurnOff={() => void act(async () => {
+        await turnOffAfterMissingRecord()
+        if (!unlocked) return
+        // As in Settings → Turn off encryption: content and files go back to plaintext.
+        await startMigration('decrypt')
+        try {
+          await runFileMigration('decrypt')
+        } catch (err) {
+          if (!(err instanceof FileMigrationPaused)) throw err
+        }
+      })}
     />
   )
 }

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
-import { clearInbox, deleteInboxEntry, entryFromForm, getInboxEntry, INBOX_MAX_AGE_MS, putInboxEntry, sweepInbox } from './shareInbox'
+import { clearInbox, deleteInboxEntry, entryFromForm, entrySize, getInboxEntry, INBOX_MAX_AGE_MS, putInboxEntry, SHARE_MAX_BYTES, shareRequestAllowed, sweepInbox } from './shareInbox'
 
 describe('share inbox', () => {
   it('stores a share sheet POST, reads it back and deletes it', async () => {
@@ -24,5 +24,25 @@ describe('share inbox', () => {
     expect(await getInboxEntry('new')).toBeDefined()
     await clearInbox()
     expect(await getInboxEntry('new')).toBeUndefined()
+  })
+
+  it('takes shares only from the share sheet or the app itself, and only up to the cap (encryption-state-integrity)', () => {
+    const h = (o: Record<string, string>) => new Headers(o)
+    expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none' }))).toBe(true)
+    expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'same-origin' }))).toBe(true)
+    // Older browsers send no Sec-Fetch-Site.
+    expect(shareRequestAllowed(h({}))).toBe(true)
+    expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'cross-site' }))).toBe(false)
+    expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'same-site' }))).toBe(false)
+    expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none', 'Content-Length': String(SHARE_MAX_BYTES + 1) }))).toBe(false)
+    expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none', 'Content-Length': String(SHARE_MAX_BYTES) }))).toBe(true)
+  })
+
+  it('measures an entry by its files and text', () => {
+    const form = new FormData()
+    form.append('title', 'abc')
+    form.append('files', new File(['12345'], 'a.txt'))
+    form.append('files', new File(['67'], 'b.txt'))
+    expect(entrySize(entryFromForm(form, 'e2'))).toBe(10)
   })
 })
