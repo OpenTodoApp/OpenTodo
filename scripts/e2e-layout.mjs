@@ -955,8 +955,16 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
       const inert = await p.evaluate(({ x, y }) => !document.elementFromPoint(x, y)?.closest('button, a, input, select, textarea, label, [role="button"], [role="switch"], [tabindex]'), q)
       if (inert) { pt = q; break }
     }
+    // What the tap lands on, so a failure names it (an element over the backdrop,
+    // or a panel that grew under the point after it was measured).
+    const under = await p.evaluate(({ x, y }) => { const el = document.elementFromPoint(x, y); return el ? `${el.tagName.toLowerCase()}${el.hasAttribute('data-overlay-root') ? '[data-overlay-root]' : ''}${el.getAttribute('aria-label') ? ` "${el.getAttribute('aria-label')}"` : ''}` : 'nothing' }, pt)
     await p.mouse.click(pt.x, pt.y)
-    if (!(await closes(overlay))) { await fail(p, screen, name, 'does not close with a tap outside'); await p.keyboard.press('Escape') }
+    if (!(await closes(overlay))) {
+      const now = await overlay.boundingBox().catch(() => null)
+      const fmt = (b) => b ? `${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.width)}x${Math.round(b.height)}` : 'none'
+      await fail(p, screen, name, `does not close with a tap outside (tap at ${Math.round(pt.x)},${Math.round(pt.y)} on ${under}; panel ${fmt(box)}, now ${fmt(now)})`)
+      await p.keyboard.press('Escape')
+    }
   }
 }
 
