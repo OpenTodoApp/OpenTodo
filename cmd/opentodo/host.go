@@ -56,7 +56,8 @@ func runHost(cfg config.Config, log *slog.Logger) error {
 		}()
 	}
 	log.Info("opentodo host listening", "addr", cfg.Addr, "operator_addr", cfg.Host.OperatorAddr, "host_url", cfg.Host.URL.String(),
-		"data_dir", cfg.DataDir, "version", version, "max_open", cfg.Host.MaxOpen, "idle", cfg.Host.IdleTimeout)
+		"data_dir", cfg.DataDir, "version", version, "max_open", cfg.Host.MaxOpen, "idle", cfg.Host.IdleTimeout, "log_level", logLevelName(cfg.LogLevel))
+	logDebugNote(log)
 	select {
 	case err = <-errCh:
 		stop()
