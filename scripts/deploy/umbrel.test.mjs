@@ -106,7 +106,7 @@ test('umbrel: the auth whitelist names real routes and keeps sign-up behind Umbr
   has(c('PROXY_AUTH_BLACKLIST: "/api/v1/auth/register"', 'PROXY_AUTH_BLACKLIST: "/api/v1/auth/login"'), /PROXY_AUTH_BLACKLIST must be \/api\/v1\/auth\/register/)
   // The whitelist follows the server: a route that disappears from internal/httpapi fails the check.
   const caldav = readText('internal/httpapi/caldav.go')
-  has(variant({ 'internal/httpapi/caldav.go': caldav.replace(/\n\tmux\.HandleFunc\("\/dav", s\.handleDAV\)/, '') }), /OpenTodo serves nothing at \/dav \(/)
+  has(variant({ 'internal/httpapi/caldav.go': caldav.replace(/\n\tmux\.handle\("\/dav", [^\n]*/, '') }), /OpenTodo serves nothing at \/dav \(/)
   assert.ok(routes().has('/api/v1/auth/register'))
 })
 
