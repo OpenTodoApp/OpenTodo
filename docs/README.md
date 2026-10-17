@@ -110,6 +110,12 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running on Runtipi](self-hosting/runtipi.md) | Adding OpenTodo's app store, settings, the data folder, https, updates and backups |
 | [Running on TrueNAS](self-hosting/truenas.md) | Install via YAML or the Apps catalogue, settings, dataset permissions, https, updates and backups |
 | [Running on Umbrel](self-hosting/umbrel.md) | The App Store package, the first account, Umbrel login and the routes it lets through, settings, updates |
+| [Running on CapRover](self-hosting/caprover.md) | One-click app or pasted template, the setup token, https then the base URL, the volume, updates and backups |
+| [Running on Fly.io](self-hosting/fly.md) | `fly launch` from the repository's `fly.toml`, the setup token as a secret, one always-on machine with a volume, updates and backups |
+| [Running on Kubernetes](self-hosting/kubernetes.md) | The Helm chart, the setup token, Ingress and https, one pod by design, security, updates and backups |
+| [Running with Podman](self-hosting/podman.md) | A Quadlet systemd service, rootful or rootless, `podman auto-update`, the data volume and backups |
+| [Running on Render](self-hosting/render.md) | Deploy to Render Blueprint, the paid instance and disk it needs, the setup token, custom domains, updates and backups |
+| [Running on Synology](self-hosting/synology.md) | Container Manager project, the data folder and its owner, https with DSM's reverse proxy and Let's Encrypt, updates and backups |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Single sign-on](self-hosting/sso.md) | Connecting an OpenID Connect provider, linking, SSO-only mode, break-glass |

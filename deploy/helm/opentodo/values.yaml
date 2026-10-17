@@ -1,0 +1,80 @@
+# OpenTodo Helm chart values. Guide: https://open-todo.app/docs/self-hosting/kubernetes/
+# The chart always runs one replica with the Recreate strategy: SQLite has one writer.
+
+image:
+  repository: ghcr.io/pixari/opentodo
+  # Empty: the chart's appVersion, the release this chart version was published with.
+  # helm upgrade to a newer chart version moves to the newer release.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# OPENTODO_* variables, as strings. Every variable of the configuration table can be added here:
+# https://github.com/pixari/opentodo#configuration
+env:
+  # The https address people open, for example https://todo.example.com. Leave empty on plain http.
+  # Empty with an Ingress that has tls: the chart sets https://<ingress.host>.
+  OPENTODO_BASE_URL: ""
+  # true lets anyone who can reach the server create an account. Otherwise the owner invites people.
+  OPENTODO_ALLOW_SIGNUP: "false"
+  # The ingress controller's hop is trusted without it. Set it when more proxies sit in front of the
+  # controller: their IPs or CIDRs separated by commas, or cloudflare for Cloudflare's proxy.
+  OPENTODO_TRUSTED_PROXIES: ""
+
+# More environment entries in Kubernetes form, for example values from your own Secrets:
+# - name: OPENTODO_SMTP_PASSWORD
+#   valueFrom:
+#     secretKeyRef:
+#       name: opentodo-smtp
+#       key: password
+extraEnv: []
+
+# OPENTODO_SETUP_TOKEN: asked when the first (owner) account is created, so a stranger who
+# reaches the server first cannot claim it. Read it with the command the install prints.
+setupToken:
+  # Generate a random token into a Secret named after the release (kept across upgrades).
+  generate: true
+  # Or use your own Secret (generate is then ignored).
+  existingSecret: ""
+  # The key in either Secret.
+  secretKey: setup-token
+
+persistence:
+  # false keeps the data in an emptyDir: it is lost when the pod goes. For trying the chart only.
+  enabled: true
+  # Use an existing PersistentVolumeClaim instead of creating one.
+  existingClaim: ""
+  # Empty: the cluster's default StorageClass.
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 2Gi
+  # helm uninstall keeps the claim (and your data); delete it with kubectl when you mean it.
+  keep: true
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: todo.example.com
+  # For example:
+  # - secretName: opentodo-tls
+  #   hosts:
+  #     - todo.example.com
+  tls: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
