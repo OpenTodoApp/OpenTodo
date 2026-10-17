@@ -24,7 +24,7 @@ Actions: the newest patch of the major already in use that is at least two weeks
 
 The end-to-end scripts had drifted from the UI (sidebar menus, Settings landing on Account, Filters instead of Views, Boards instead of Dashboards, quick add focused on load); they were repaired and pass locally against a fresh server in about 10 s and 15 s, so they run on every pull request in the layout job instead of nightly. `e2e-smoke.mjs` now reports failed requests with their URL and ignores only the expected 404 for a just-created project's public links.
 
-`go test -race ./...` takes too long for every pull request, so it runs nightly (and on demand). Timing assertions in tests that the race detector slows are relaxed under the `race` build tag.
+`go test -race ./...` takes too long for every pull request, so it runs nightly (and on demand). Tests do not assert wall-clock durations (the calendar expansion test counts work units, test-integrity), so the race detector needs no allowance.
 
 ## Concurrency
 

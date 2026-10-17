@@ -19,7 +19,7 @@
 ## 4. CI runs make check (OPS-7, OPS-10, OPS-17)
 - [x] 4.1 `make ci-checks` (fmt-check, openspec-validate, ui-lint, i18n-check, deploy-check, repo-check) in a `checks` job; `fmt-check` in `make check`
 - [x] 4.2 Repair `e2e-smoke.mjs` and `e2e-views.mjs`; `make e2e`; run in the layout job; path filter counts them as code
-- [x] 4.3 Nightly `go test -race ./...`; relax timing assertions under the race detector
+- [x] 4.3 Nightly `go test -race ./...` (timing assertions replaced by work counts in test-integrity)
 
 ## 5. Operations (OPS-15, OPS-23)
 - [x] 5.1 Concurrency group per workflow and ref; `timeout-minutes` on every job
