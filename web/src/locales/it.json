@@ -3596,5 +3596,6 @@
   "{n, plural, one {# API token} other {# API tokens}}": "{n, plural, one {# token API} other {# token API}}",
   "{n, plural, one {# app password} other {# app passwords}}": "{n, plural, one {# password per app} other {# password per app}}",
   "{n, plural, one {# session} other {# sessions}}": "{n, plural, one {# sessione} other {# sessioni}}",
-  "“{name}” (admin)": "«{name}» (admin)"
+  "“{name}” (admin)": "«{name}» (admin)",
+  "This server is set up for {host}. Open https://{host} and try again.": "Questo server è configurato per {host}. Apri https://{host} e riprova."
 }

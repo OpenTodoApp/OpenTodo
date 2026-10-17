@@ -3,6 +3,8 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -248,5 +250,39 @@ func TestHSTSWithHTTPSBaseURL(t *testing.T) {
 	}
 	if strings.Contains(resp.Header.Get("Strict-Transport-Security"), "preload") {
 		t.Fatal("preload")
+	}
+}
+
+// TestWrongHostIsLoggedOnce: a page opened at a host that is not the base URL's
+// is refused and the server says why in its log, once per host, so a stale
+// OPENTODO_BASE_URL after a domain move is easy to spot (issue #125).
+func TestWrongHostIsLoggedOnce(t *testing.T) {
+	base, _ := url.Parse("https://opentodo-demo.example.dev")
+	var buf bytes.Buffer
+	s := &Server{cfg: config.Config{BaseURL: base}, log: slog.New(slog.NewTextHandler(&buf, nil))}
+	req := func(host, origin string) *http.Request {
+		r := httptest.NewRequest("POST", "http://"+host+"/api/v1/demo/sandbox", nil)
+		r.Header.Set("Origin", origin)
+		return r
+	}
+	for range 3 {
+		if s.originAllowed(req("demo.example.app", "https://demo.example.app")) {
+			t.Fatal("a host other than the base URL's was accepted")
+		}
+	}
+	logged := buf.String()
+	if strings.Count(logged, "level=WARN") != 1 || !strings.Contains(logged, "host=demo.example.app") || !strings.Contains(logged, "base_url=https://opentodo-demo.example.dev") {
+		t.Fatalf("log: %s", logged)
+	}
+	// A real cross-site page (Origin is another site) is not a configuration problem.
+	buf.Reset()
+	s.originAllowed(req("demo.example.app", "https://evil.example"))
+	// Made-up Host headers stop being reported after maxWrongHosts.
+	for i := range maxWrongHosts + 10 {
+		h := fmt.Sprintf("h%d.example", i)
+		s.originAllowed(req(h, "https://"+h))
+	}
+	if n := strings.Count(buf.String(), "level=WARN"); n != maxWrongHosts-1 {
+		t.Fatalf("%d warnings for made-up hosts, want %d: %s", n, maxWrongHosts-1, buf.String())
 	}
 }

@@ -16,6 +16,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **A server opened at an address other than its base URL says so.** After a move to a new domain with `OPENTODO_BASE_URL` still naming the old one, signing in and "Try the demo" were refused with "cross-site request rejected" or "This page expired. Reload it", which a reload does not fix. The sign-in screen now names the address the server is set up for, and the log has one warning per refused host naming it and the base URL. ([Behind a reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy), #125)
 - **A proxy page no longer loses unsynced changes.** When something between the app and the server (a proxy, a captive portal) answered a sync with its own page, changes made offline were dropped. They now stay on the device and upload on the next sync, and the status says the answer was not understood.
 - **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.
 - **Custom fields survive a server restore.** After the server is restored from a backup, devices now send their custom field definitions back with everything else.

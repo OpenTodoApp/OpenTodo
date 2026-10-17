@@ -37,7 +37,7 @@ The hidden owner exists so that "first visit creates the owner" never happens on
 
 ### Creating a sandbox
 
-The sign-in page gets a creation token from `GET /api/v1/auth/status` (`demo.token`): signed with a key kept in the database, valid for 10 minutes, usable once. "Try the demo" sends it to `POST /api/v1/demo/sandbox`, which also requires a same-origin request (an `Origin` header naming this server). Crawlers and link previews only fetch pages and never create a sandbox. The new sandbox is seeded through the op log, exactly like any REST write (about 570 ops, 0.1 s).
+The sign-in page gets a creation token from `GET /api/v1/auth/status` (`demo.token`): signed with a key kept in the database, valid for 10 minutes, usable once. "Try the demo" sends it to `POST /api/v1/demo/sandbox`, which also requires a same-origin request (an `Origin` header naming this server). The page must be opened at the host of `OPENTODO_BASE_URL`: on a demo moved to a new domain, set the base URL to the new address, or every visitor gets "cross-site request rejected" ([behind a reverse proxy](docker.md#behind-a-reverse-proxy)). Crawlers and link previews only fetch pages and never create a sandbox. The new sandbox is seeded through the op log, exactly like any REST write (about 570 ops, 0.1 s).
 
 ## Limits
 
