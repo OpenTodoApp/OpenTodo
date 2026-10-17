@@ -102,6 +102,14 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running with Docker](self-hosting/docker.md) | Compose, `docker run`, reverse proxies, push, bind mounts, recovery commands |
 | [Deploying on Coolify](self-hosting/coolify.md) | One-click deployment from the compose file, environment variables, troubleshooting |
 | [Running on Unraid](self-hosting/unraid.md) | Install from Community Applications, settings, appdata permissions, https, updates and backups |
+| [Running on CasaOS and ZimaOS](self-hosting/casaos.md) | App store or custom app, settings, the data folder, https, updates and backups |
+| [Running on Cosmos Cloud](self-hosting/cosmos.md) | Market or custom compose, the setup token, the address, updates and backups |
+| [Running on Dokploy](self-hosting/dokploy.md) | Templates or a templates base URL, the setup token, http and https domains, updates and backups |
+| [Running on Easypanel](self-hosting/easypanel.md) | App service or template, the setup token, the https domain, updates and backups |
+| [Running on Portainer](self-hosting/portainer.md) | App Templates, settings, the volume, https and reverse proxies, updates and backups |
+| [Running on Runtipi](self-hosting/runtipi.md) | Adding OpenTodo's app store, settings, the data folder, https, updates and backups |
+| [Running on TrueNAS](self-hosting/truenas.md) | Install via YAML or the Apps catalogue, settings, dataset permissions, https, updates and backups |
+| [Running on Umbrel](self-hosting/umbrel.md) | The App Store package, the first account, Umbrel login and the routes it lets through, settings, updates |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Single sign-on](self-hosting/sso.md) | Connecting an OpenID Connect provider, linking, SSO-only mode, break-glass |
