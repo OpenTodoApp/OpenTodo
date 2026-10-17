@@ -31,7 +31,7 @@
     { "name": "OPENTODO_IMPORT_MAX_MB", "default": "20",
       "description": "Largest import file accepted, in MB." },
     { "name": "OPENTODO_LOG_LEVEL", "default": "info",
-      "description": "debug, info, warn or error." },
+      "description": "debug, info, warn or error. The first log line shows the level in use; debug adds one line per request the app makes." },
     { "name": "OPENTODO_EMAIL_ADDRESS", "default": "",
       "description": "Email to task: the mailbox address people send tasks to." },
     { "name": "OPENTODO_EMAIL_IMAP_HOST", "default": "",

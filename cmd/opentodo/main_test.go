@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -74,5 +75,24 @@ func TestMFAResetSubcommand(t *testing.T) {
 	}
 	if err := db.QueryRow("SELECT COUNT(*) FROM audit_events WHERE name = 'mfa.reset' AND target_id = ?", u.ID).Scan(&n); err != nil || n != 1 {
 		t.Fatalf("mfa.reset events = %d %v", n, err)
+	}
+}
+
+// TestDebugNoteShowsTheLevel: with OPENTODO_LOG_LEVEL=debug the log shows it at
+// startup, before any request (#128); at info the note stays out of the log.
+func TestDebugNoteShowsTheLevel(t *testing.T) {
+	for _, tc := range []struct {
+		level slog.Level
+		want  bool
+	}{{slog.LevelDebug, true}, {slog.LevelInfo, false}} {
+		var buf bytes.Buffer
+		log := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: tc.level}))
+		logDebugNote(log)
+		if got := strings.Contains(buf.String(), "level=DEBUG msg=\"debug logging is on"); got != tc.want {
+			t.Fatalf("level %v: note logged %v: %q", tc.level, got, buf.String())
+		}
+	}
+	if logLevelName(slog.LevelDebug) != "debug" || logLevelName(slog.LevelWarn) != "warn" {
+		t.Fatal("level names")
 	}
 }

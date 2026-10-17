@@ -331,3 +331,19 @@ func TestSetupTokenValidation(t *testing.T) {
 		t.Fatalf("valid token: got %q, err %v", c.SetupToken, err)
 	}
 }
+
+// TestLogLevel: OPENTODO_LOG_LEVEL is read in any case and with stray spaces,
+// as panels such as Unraid may pass it (#128); an unknown value is refused.
+func TestLogLevel(t *testing.T) {
+	for in, want := range map[string]slog.Level{"debug": slog.LevelDebug, " DEBUG ": slog.LevelDebug, "warning": slog.LevelWarn, "error\n": slog.LevelError, "": slog.LevelInfo} {
+		t.Setenv("OPENTODO_LOG_LEVEL", in)
+		c, err := Load()
+		if err != nil || c.LogLevel != want {
+			t.Fatalf("%q: level %v, err %v; want %v", in, c.LogLevel, err, want)
+		}
+	}
+	t.Setenv("OPENTODO_LOG_LEVEL", "verbose")
+	if _, err := Load(); err == nil {
+		t.Fatal("unknown level accepted")
+	}
+}

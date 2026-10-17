@@ -85,6 +85,15 @@ func main() {
 	}
 }
 
+// logLevelName is the OPENTODO_LOG_LEVEL value in effect, as the operator writes it.
+func logLevelName(l slog.Level) string { return strings.ToLower(l.String()) }
+
+// logDebugNote says at startup what debug logging adds, so a log read before
+// any request still shows that OPENTODO_LOG_LEVEL=debug took effect (#128).
+func logDebugNote(log *slog.Logger) {
+	log.Debug("debug logging is on: one line per API request (method, path, status, duration)")
+}
+
 // restartRequested is set when the server stops to apply a confirmed restore.
 var restartRequested atomic.Bool
 
@@ -161,7 +170,8 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", t.Cfg.AllowSignup)
+		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", t.Cfg.AllowSignup, "log_level", logLevelName(cfg.LogLevel))
+		logDebugNote(log)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}

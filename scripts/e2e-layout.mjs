@@ -880,6 +880,18 @@ async function runComboOnce(engine, width, theme, ids, failures) {
 // an overlay that stays open.
 const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2000 }).then(() => true, () => false)
 
+// The overlay's box once two readings 150 ms apart agree (at most about 3 s).
+async function settledBox(p, overlay) {
+  let prev = await overlay.boundingBox()
+  for (let i = 0; i < 20; i++) {
+    await p.waitForTimeout(150)
+    const next = await overlay.boundingBox()
+    if (!prev || !next || (prev.x === next.x && prev.y === next.y && prev.width === next.width && prev.height === next.height)) return next
+    prev = next
+  }
+  return prev
+}
+
 async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1 }, fail, shot) {
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
   await p.waitForTimeout(250)
@@ -941,7 +953,10 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
       await overlay.waitFor({ state: 'visible', timeout: 5000 })
     }
     const vs = p.viewportSize()
-    const box = await overlay.boundingBox()
+    // Content that loads after opening (the share dialog's invite links) can grow
+    // and re-centre the panel: measure only once its box has stopped changing,
+    // or the "outside" point may end up inside it.
+    const box = await settledBox(p, overlay)
     // A full-screen sheet has no outside to tap.
     if (box && box.x <= 1 && box.width >= vs.width - 1 && box.y <= 1) { await p.keyboard.press('Escape'); return }
     // A point outside the panel: above a bottom sheet, else a top corner. The
