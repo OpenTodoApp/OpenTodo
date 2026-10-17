@@ -277,7 +277,7 @@ func TestSelfServicePasswordReset(t *testing.T) {
 	// The mailed link works through the existing reset routes.
 	link := mailLink(t, msgs[0])
 	token := link[strings.LastIndex(link, "/")+1:]
-	resp, out = anon.do("POST", "/api/v1/password-resets/"+token, map[string]string{"password": "a brand new password"}, "Origin", e.srv.URL)
+	resp, out = anon.do("POST", "/api/v1/password-resets/"+token, map[string]string{"password": "a brand new password"}, "Origin", testBaseURL)
 	if resp.StatusCode >= 300 {
 		t.Fatalf("use link = %d %v", resp.StatusCode, out)
 	}
@@ -427,7 +427,7 @@ func TestVerifiedOpenSignup(t *testing.T) {
 	e.configureMail(srv)
 	visitor := newClientAt(e, "10.5.0.1")
 	resp, out := visitor.do("POST", "/api/v1/auth/register", map[string]string{"email": "New@Example.com", "name": "New", "password": "a long enough password"},
-		"Origin", e.srv.URL, "Accept-Language", "fr")
+		"Origin", testBaseURL, "Accept-Language", "fr")
 	visitor.mustStatus(resp, 202, out)
 	if out["verificationRequired"] != true || hasCookie(resp, sessionCookie) {
 		t.Fatalf("register = %v", out)
@@ -456,7 +456,7 @@ func TestVerifiedOpenSignup(t *testing.T) {
 	if n != 0 {
 		t.Fatal("preview created the account")
 	}
-	resp, out = visitor.do("POST", "/api/v1/auth/verify/"+token, nil, "Origin", e.srv.URL)
+	resp, out = visitor.do("POST", "/api/v1/auth/verify/"+token, nil, "Origin", testBaseURL)
 	visitor.mustStatus(resp, 201, out)
 	if !hasCookie(resp, sessionCookie) || out["user"].(map[string]any)["role"] != "member" {
 		t.Fatalf("complete = %v", out)
@@ -467,14 +467,14 @@ func TestVerifiedOpenSignup(t *testing.T) {
 	}
 	// Used, unknown: the same 404.
 	for _, tok := range []string{token, "otv_unknown"} {
-		resp, out = visitor.do("POST", "/api/v1/auth/verify/"+tok, nil, "Origin", e.srv.URL)
+		resp, out = visitor.do("POST", "/api/v1/auth/verify/"+tok, nil, "Origin", testBaseURL)
 		if resp.StatusCode != 404 || errCode(out) != "verification_invalid" {
 			t.Fatalf("%s = %d %v", tok, resp.StatusCode, out)
 		}
 	}
 	// An address with an account: the same 202, the other message, nothing stored.
 	other := newClientAt(e, "10.5.0.2")
-	resp, out = other.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "password": "a long enough password"}, "Origin", e.srv.URL)
+	resp, out = other.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "password": "a long enough password"}, "Origin", testBaseURL)
 	other.mustStatus(resp, 202, out)
 	msgs = srv.Messages()
 	last := mailBody(t, msgs[len(msgs)-1])
@@ -488,16 +488,16 @@ func TestVerifiedOpenSignup(t *testing.T) {
 	// Invitations skip verification even with mail configured.
 	_, secret, _ := e.invite(map[string]any{})
 	inv := newClientAt(e, "10.5.0.3")
-	resp, out = inv.do("POST", "/api/v1/auth/register", map[string]string{"email": "invited@example.com", "password": "a long enough password", "invitation": secret}, "Origin", e.srv.URL)
+	resp, out = inv.do("POST", "/api/v1/auth/register", map[string]string{"email": "invited@example.com", "password": "a long enough password", "invitation": secret}, "Origin", testBaseURL)
 	inv.mustStatus(resp, 201, out)
 }
 
 func TestOpenSignupWithoutMailUnchanged(t *testing.T) {
 	e, _ := mailEnv(t, true)
 	c := newClientAt(e, "10.6.0.1")
-	resp, out := c.do("POST", "/api/v1/auth/register", map[string]string{"email": "direct@example.com", "password": "a long enough password"}, "Origin", e.srv.URL)
+	resp, out := c.do("POST", "/api/v1/auth/register", map[string]string{"email": "direct@example.com", "password": "a long enough password"}, "Origin", testBaseURL)
 	c.mustStatus(resp, 201, out)
-	resp, out = newClientAt(e, "10.6.0.2").do("POST", "/api/v1/auth/register", map[string]string{"email": "direct@example.com", "password": "a long enough password"}, "Origin", e.srv.URL)
+	resp, out = newClientAt(e, "10.6.0.2").do("POST", "/api/v1/auth/register", map[string]string{"email": "direct@example.com", "password": "a long enough password"}, "Origin", testBaseURL)
 	if resp.StatusCode != 409 || errCode(out) != "email_taken" {
 		t.Fatalf("duplicate = %d %v", resp.StatusCode, out)
 	}

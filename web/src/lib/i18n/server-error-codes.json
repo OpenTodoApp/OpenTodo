@@ -1,6 +1,7 @@
 [
   "account_active",
   "account_deactivated",
+  "account_locked",
   "already_member",
   "already_uploaded",
   "assistant_busy",
@@ -81,6 +82,7 @@
   "scope_change",
   "self_action",
   "session_required",
+  "setup_code_invalid",
   "setup_token_invalid",
   "signup_closed",
   "smtp_disabled",

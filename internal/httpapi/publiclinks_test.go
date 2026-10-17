@@ -147,7 +147,8 @@ func TestPublicListRead(t *testing.T) {
 	if resp, _ := anon.do("GET", "/api/v1/public/"+secret, nil); resp.StatusCode != 200 {
 		t.Fatalf("unarchived = %d", resp.StatusCode)
 	}
-	// Unknown secrets share the sign-in window: the 11th is limited.
+	// Unknown secrets have their own window: the 11th is limited, sign-in from
+	// the same address is not (trusted-client-identity).
 	guesser := newClientAt(se.alice, "10.9.0.3")
 	var last int
 	for i := 0; i < 11; i++ {
@@ -157,7 +158,7 @@ func TestPublicListRead(t *testing.T) {
 	if last != 429 {
 		t.Fatalf("11th guess = %d", last)
 	}
-	if resp, _ := guesser.do("POST", "/api/v1/auth/login", map[string]string{"email": "alice@example.com", "password": "x"}); resp.StatusCode != 429 {
+	if resp, _ := guesser.do("POST", "/api/v1/auth/login", map[string]string{"email": "alice@example.com", "password": "x"}); resp.StatusCode != 401 {
 		t.Fatalf("sign-in after guessing = %d", resp.StatusCode)
 	}
 }

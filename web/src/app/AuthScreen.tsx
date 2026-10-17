@@ -32,7 +32,10 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   // First-run setup guarded by OPENTODO_SETUP_TOKEN (OpenSpec `owner-bootstrap`).
-  const needsSetupToken = !!status.setupRequired && !!status.setupTokenRequired && !invite
+  // Without a token, setup from outside the local network asks for the code the
+  // server printed in its log, in the same field (trusted-client-identity).
+  const needsSetupCode = !!status.setupRequired && !status.setupTokenRequired && !!status.setupCodeRequired && !invite
+  const needsSetupToken = (!!status.setupRequired && !!status.setupTokenRequired && !invite) || needsSetupCode
   // A hosted service's sign-up link carries the tenant's token as ?setup= (multi-tenant-host).
   const [setupToken, setSetupToken] = useState(() => typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('setup') ?? '')
   // Single sign-on (OpenSpec `oidc-login`): the provider action on plain sign-in;
@@ -279,11 +282,13 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           )}
           {needsSetupToken && (
             <label className="block text-body">
-              <span className="mb-1 block text-muted">{t('Setup token')}</span>
+              <span className="mb-1 block text-muted">{needsSetupCode ? t('Setup code') : t('Setup token')}</span>
               <input className="ui-input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
                 autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
               <span id="setup-token-help" className="mt-1 block text-meta text-muted">
-                {status.hosted
+                {needsSetupCode
+                  ? t.rich('You are setting up this server from outside its local network, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.', { command: <code>docker logs opentodo</code> })
+                  : status.hosted
                   ? t('Your provider sent this token with the address of your new server.')
                   : t.rich('This server asks for the token its operator configured. Find it in your hosting panel, for example Coolify, this service, Environment Variables, {variable}.', { variable: <code>OPENTODO_SETUP_TOKEN</code> })}
               </span>
@@ -460,6 +465,10 @@ export function describeAuthError(err: unknown): string {
       return t('Too many attempts. Wait a minute and try again.')
     case 'setup_token_invalid':
       return t('That setup token is not right. Copy OPENTODO_SETUP_TOKEN from your hosting panel and try again.')
+    case 'setup_code_invalid':
+      return t('That setup code is not right. Copy it from the server log and try again.')
+    case 'account_locked':
+      return t('Too many failed attempts for this account. Wait 15 minutes and try again.')
     case 'signup_closed':
       return t('Sign-up is closed on this server. Ask the owner for an invitation link.')
     case 'account_deactivated':

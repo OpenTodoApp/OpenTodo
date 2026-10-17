@@ -79,7 +79,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ip := clientIP(r)
-	if s.limiter.blocked(ip) {
+	if s.mcpLimiter.blocked(ip) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -96,7 +96,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if u == nil {
-		s.limiter.hit(ip)
+		s.mcpLimiter.hit(ip)
 		w.Header().Set("WWW-Authenticate", `Bearer realm="OpenTodo MCP"`)
 		writeError(w, http.StatusUnauthorized, "unauthorized", "an API token is required: Authorization: Bearer <token>")
 		return

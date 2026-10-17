@@ -175,7 +175,7 @@ func (s *Server) handleRevokeAppPassword(w http.ResponseWriter, r *http.Request)
 // while an address is over it every attempt is refused with 429.
 func (s *Server) davAuth(w http.ResponseWriter, r *http.Request) (*auth.User, string, bool) {
 	ip := clientIP(r)
-	if s.davLimiter.over(ip) {
+	if s.davLimiter.blocked(ip) {
 		w.Header().Set("Retry-After", "60")
 		http.Error(w, "too many failed attempts", http.StatusTooManyRequests)
 		return nil, "", false
@@ -215,13 +215,4 @@ func basicAuth(r *http.Request) (user, pass string, ok bool) {
 	}
 	user, pass, ok = strings.Cut(string(raw), ":")
 	return user, pass, ok && user != "" && pass != ""
-}
-
-// over reports whether key has used up its attempts in the current window,
-// without counting an attempt.
-func (l *rateLimiter) over(key string) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	w, ok := l.hits[key]
-	return ok && time.Since(w.start) <= l.window && w.count >= l.limit
 }

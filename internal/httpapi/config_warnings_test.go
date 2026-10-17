@@ -12,7 +12,7 @@ import (
 // config_warnings for the owner's session only; admins, members and API tokens
 // (even the owner's) never see them.
 func TestConfigWarningsOwnerOnly(t *testing.T) {
-	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflar, 192.0.2.0/24")
+	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflar, private, 192.0.2.0/24")
 	cfg, err := config.Load()
 	if err != nil {
 		t.Fatal(err)

@@ -41,7 +41,7 @@ func (s *Server) handleDemoSandbox(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 		return
 	}
-	u, err := s.demo.CreateSandbox(r.Context(), in.Token, clientIP(r))
+	u, err := s.demo.CreateSandbox(r.Context(), in.Token, addrKey(clientIP(r)))
 	switch {
 	case errors.Is(err, demo.ErrBadToken):
 		writeError(w, http.StatusForbidden, "demo_token", err.Error())

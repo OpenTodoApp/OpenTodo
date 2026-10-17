@@ -228,10 +228,10 @@ func (s *Server) resolveProjectInvite(w http.ResponseWriter, r *http.Request, se
 	return inv, name, true
 }
 
-// handlePreviewProjectInvite is public. It shares the sign-in limiter so
-// guessing links costs as much as guessing passwords, and returns no ids.
+// handlePreviewProjectInvite is public. The invite-link limiter makes guessing
+// links cost as much as guessing passwords, and it returns no ids.
 func (s *Server) handlePreviewProjectInvite(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.invitePreviewLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -289,7 +289,7 @@ func (s *Server) projectInviteError(w http.ResponseWriter, err error) {
 }
 
 func (s *Server) handleAcceptProjectInvite(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.invitePreviewLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}

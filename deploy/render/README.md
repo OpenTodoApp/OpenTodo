@@ -9,7 +9,7 @@
 - `PORT=8080`, so Render routes to the port OpenTodo listens on;
 - `OPENTODO_BASE_URL` from the service itself (`fromService` with `envVarKey: RENDER_EXTERNAL_URL`, its `https://<name>.onrender.com` address, [self-referencing variables](https://render.com/docs/blueprint-spec#self-referencing-environment-variables));
 - `OPENTODO_SETUP_TOKEN` with `generateValue: true` (a random 44-character base64 value per service; the owner reads it under **Environment** and enters it when creating the owner account);
-- `OPENTODO_ALLOW_SIGNUP=false` and `OPENTODO_TRUSTED_PROXIES` empty (Render's load balancer is the only hop, and OpenTodo trusts the nearest proxy by default).
+- `OPENTODO_ALLOW_SIGNUP=false` and `OPENTODO_TRUSTED_PROXIES` empty (Render's load balancer is the only hop, and OpenTodo trusts proxies on private addresses by default).
 
 `node scripts/deploy-check.mjs` (part of `make check`) parses it and checks it against the fields of Render's Blueprint reference and JSON Schema ([blueprint-spec](https://render.com/docs/blueprint-spec), [render.yaml.json](https://render.com/schema/render.yaml.json)), plus the shared rules (`scripts/deploy/render.mjs`; tests in `scripts/deploy/render.test.mjs`). The user guide is [docs/self-hosting/render.md](../../docs/self-hosting/render.md).
 

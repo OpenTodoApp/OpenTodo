@@ -108,6 +108,9 @@ type Service struct {
 	// setupToken, when non-empty, must accompany the first registration
 	// (OPENTODO_SETUP_TOKEN, OpenSpec change owner-bootstrap).
 	setupToken string
+	// setupCode is the one-time code a first registration from a public address
+	// must carry when no setup token is configured (setupcode.go).
+	setupCode setupCode
 	// maxMembers caps active accounts on a hosted tenant (limits.go); 0: none.
 	maxMembers int
 }
@@ -173,6 +176,13 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 // RegisterWithSetupToken is Register with the setup token a first registration
 // must carry when one is configured. After the first account it is ignored.
 func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, password, invitation, setupToken string) (*User, error) {
+	return s.RegisterFrom(ctx, email, name, password, invitation, setupToken, true)
+}
+
+// RegisterFrom is RegisterWithSetupToken for a client that is (local) or is not
+// on a loopback or private network. Without a setup token, a first
+// registration from a public address must carry the setup code instead.
+func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invitation, setupToken string, local bool) (*User, error) {
 	email = normalizeEmail(email)
 	if _, err := mail.ParseAddress(email); err != nil || email == "" {
 		return nil, ErrInvalidEmail
@@ -201,6 +211,9 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 	case n == 0:
 		if s.setupToken != "" && !s.setupTokenMatches(strings.TrimSpace(setupToken)) {
 			return nil, ErrSetupTokenInvalid
+		}
+		if s.setupToken == "" && !local && !s.setupCode.matches(setupToken) {
+			return nil, ErrSetupCodeInvalid
 		}
 		u.Role = "owner"
 	case invitation != "":
@@ -237,7 +250,14 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 			return nil, err
 		}
 	}
-	return u, tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		// The owner exists: the setup code has done its job.
+		s.setupCode.discard()
+	}
+	return u, nil
 }
 
 // LoginFailure is the error Authenticate returns for refused credentials. It

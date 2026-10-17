@@ -10,13 +10,24 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 )
 
-// proxyTrust is the operator's OPENTODO_TRUSTED_PROXIES, installed by New.
+// proxyTrust is the operator's OPENTODO_TRUSTED_PROXIES, installed by New. With
+// the variable unset (no prefixes) the default applies: loopback, private and
+// link-local networks (OpenSpec change trusted-client-identity).
 type proxyTrust struct {
 	prefixes   []netip.Prefix
 	cloudflare []netip.Prefix // Cloudflare's edges, when trusted
 }
 
 var trustedProxies atomic.Pointer[proxyTrust]
+
+// privatePrefixes is config.PrivateRanges parsed once.
+var privatePrefixes = func() []netip.Prefix {
+	out := make([]netip.Prefix, len(config.PrivateRanges))
+	for i, r := range config.PrivateRanges {
+		out[i] = netip.MustParsePrefix(r)
+	}
+	return out
+}()
 
 func setTrustedProxies(p []netip.Prefix, cloudflare bool) {
 	t := &proxyTrust{prefixes: p}
@@ -26,6 +37,16 @@ func setTrustedProxies(p []netip.Prefix, cloudflare bool) {
 		}
 	}
 	trustedProxies.Store(t)
+}
+
+// trusted returns the prefixes whose X-Forwarded-* headers are believed: the
+// configured list, or the default when none is configured.
+func trusted() *proxyTrust {
+	t := trustedProxies.Load()
+	if t == nil || len(t.prefixes) == 0 {
+		return &proxyTrust{prefixes: privatePrefixes}
+	}
+	return t
 }
 
 func within(hop string, prefixes []netip.Prefix) bool {
@@ -42,19 +63,33 @@ func within(hop string, prefixes []netip.Prefix) bool {
 	return false
 }
 
-// clientIP is the address every rate limiter, the demo sandbox limit and the
-// audit log use. Behind a reverse proxy it is the LAST X-Forwarded-For entry:
-// the one the nearest proxy appended (Traefik, Caddy and nginx append the
-// address they saw). Earlier entries come from the client and can be forged, so
-// trusting the first one would let anyone evade the limits. Without the header
-// it is the connection's address.
+// peerAddr is the address of the connection itself.
+func peerAddr(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+// clientIP is the address every rate limiter, the demo sandbox limit, the
+// setup-code check and the audit log use.
 //
-// With OPENTODO_TRUSTED_PROXIES, trailing hops that belong to those proxies (a
-// CDN in front of the reverse proxy) are skipped, so the client is the nearest
-// untrusted hop. With "cloudflare", a request that reached us from a Cloudflare
-// edge and carries CF-Connecting-IP is attributed to that address, which covers
-// reverse proxies that drop the incoming X-Forwarded-For.
+// X-Forwarded-For is believed only when the connection comes from a trusted
+// proxy (OPENTODO_TRUSTED_PROXIES, by default loopback and private networks);
+// any other peer is the client whatever it sends. From a trusted peer the
+// client is the nearest untrusted hop, reading the chain from the right: each
+// proxy appends the address it saw, while earlier entries come from the client
+// and can be forged. With "cloudflare", a hop that is a Cloudflare edge and a
+// request carrying CF-Connecting-IP is attributed to that address, which covers
+// reverse proxies that drop the incoming X-Forwarded-For. When every hop is
+// trusted the client is the first one.
 func clientIP(r *http.Request) string {
+	peer := peerAddr(r)
+	t := trusted()
+	if !within(peer, t.prefixes) {
+		return peer
+	}
 	var hops []string
 	for _, v := range r.Header.Values("X-Forwarded-For") {
 		for _, part := range strings.Split(v, ",") {
@@ -63,17 +98,7 @@ func clientIP(r *http.Request) string {
 			}
 		}
 	}
-	if len(hops) == 0 {
-		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			return r.RemoteAddr
-		}
-		return host
-	}
-	t := trustedProxies.Load()
-	if t == nil || len(t.prefixes) == 0 {
-		return hops[len(hops)-1]
-	}
+	hops = append(hops, peer)
 	for i := len(hops) - 1; i >= 0; i-- {
 		if !within(hops[i], t.prefixes) {
 			return hops[i]
@@ -87,17 +112,39 @@ func clientIP(r *http.Request) string {
 	return hops[0]
 }
 
-// fromTrustedProxy reports whether the connection itself comes from an address
-// in OPENTODO_TRUSTED_PROXIES, the only peers whose X-Forwarded-Host and
+// fromTrustedProxy reports whether the connection itself comes from a trusted
+// proxy (see clientIP), the only peers whose X-Forwarded-Host and
 // X-Forwarded-Proto are believed.
 func fromTrustedProxy(r *http.Request) bool {
-	t := trustedProxies.Load()
-	if t == nil || len(t.prefixes) == 0 {
-		return false
-	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	return within(peerAddr(r), trusted().prefixes)
+}
+
+// isLocalAddr reports whether a client address is loopback, private or
+// link-local: a first registration from there needs no setup code.
+// Unparseable addresses are not local.
+func isLocalAddr(ip string) bool { return within(ip, privatePrefixes) }
+
+// addrKey is the rate-limit key for a client address: IPv6 addresses are
+// grouped by their /64 (one subscriber usually holds a whole /64), IPv4 and
+// IPv4-mapped addresses stay as they are, anything else is returned unchanged.
+func addrKey(ip string) string {
+	a, err := netip.ParseAddr(ip)
 	if err != nil {
-		host = r.RemoteAddr
+		return ip
 	}
-	return within(host, t.prefixes)
+	a = a.Unmap()
+	if a.Is4() {
+		return a.String()
+	}
+	p, err := a.WithZone("").Prefix(64)
+	if err != nil {
+		return ip
+	}
+	return p.String()
+}
+
+// requestIsHTTPS reports whether the client reached us over https: TLS on
+// this connection, or a trusted proxy saying so in X-Forwarded-Proto.
+func requestIsHTTPS(r *http.Request) bool {
+	return r.TLS != nil || fromTrustedProxy(r) && strings.EqualFold(firstHeaderValue(r, "X-Forwarded-Proto"), "https")
 }

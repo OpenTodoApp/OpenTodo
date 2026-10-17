@@ -318,9 +318,10 @@ func TestPasskeyLoginRateLimit(t *testing.T) {
 	if last != http.StatusTooManyRequests {
 		t.Fatalf("expected 429 after repeated attempts, got %d", last)
 	}
-	// Passkey attempts share the window with password sign-in.
+	// Passkey attempts have their own window (trusted-client-identity): password
+	// sign-in from the same address is still answered.
 	resp, out := e.do("POST", "/api/v1/auth/login", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
-	if resp.StatusCode != http.StatusTooManyRequests || errCode(out) != "rate_limited" {
+	if resp.StatusCode != http.StatusUnauthorized || errCode(out) != "invalid_credentials" {
 		t.Fatalf("password login after passkey attempts = %d %v", resp.StatusCode, out)
 	}
 

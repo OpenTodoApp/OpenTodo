@@ -44,7 +44,7 @@ The address is public from the first minute, which is why the token is set: with
 | `OPENTODO_BASE_URL` | the service's `https://….onrender.com` address | Taken from the service (`RENDER_EXTERNAL_URL`). Passkeys, secure cookies and links in emails use it. |
 | `OPENTODO_SETUP_TOKEN` | generated | Asked when the owner account is created. |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the address create an account. |
-| `OPENTODO_TRUSTED_PROXIES` | empty | Leave it empty: Render's load balancer is the only proxy, and OpenTodo trusts the nearest one. Set `cloudflare` if you put Cloudflare's proxy in front of a custom domain. |
+| `OPENTODO_TRUSTED_PROXIES` | empty | Leave it empty: Render's load balancer is the only proxy, and OpenTodo trusts proxies on private addresses by default. Set `cloudflare` if you put Cloudflare's proxy in front of a custom domain. |
 | `PORT` | `8080` | Tells Render which port OpenTodo listens on. Do not change it. |
 
 Change or add variables on the service's **Environment** page (other `OPENTODO_*` variables are in the [configuration table](https://github.com/pixari/opentodo#configuration)); saving redeploys the service.

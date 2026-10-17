@@ -25,6 +25,19 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Security
 
+- **Forwarded client addresses count only from trusted proxies.** `X-Forwarded-For` (and Cloudflare's `CF-Connecting-IP`) are believed only when the connection comes from a trusted proxy: by default loopback, private and link-local addresses, which covers a reverse proxy on the same machine or a container network. A client that reaches the server directly can no longer choose the address that rate limits, the audit log and the demo limit see. IPv6 clients are limited per `/64`. ([Behind a reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy))
+- **Repeated wrong passwords lock the account for a while.** Ten failed passwords, two-factor codes or re-authentications for one account within 15 minutes, from any addresses, lock its password sign-in for the rest of those 15 minutes (the app says so; the API answers 429 `account_locked` with `Retry-After`). A successful sign-in clears the count. Passkeys, single sign-on and existing sessions keep working.
+- **A new server cannot be claimed from the internet without a code.** Without `OPENTODO_SETUP_TOKEN`, creating the owner account from a public address now needs a one-time setup code that the server prints in its log when it starts without an owner (`docker logs opentodo`). From the same machine or your local network nothing changes. The code is forgotten once the owner exists. ([The setup code](docs/self-hosting/docker.md#the-setup-code))
+- **Stricter origin check with a base URL.** With `OPENTODO_BASE_URL` set, browser requests must be addressed to its host, so a page under another name that resolves to your server is treated as cross-site.
+- **Secure cookies over https, and HSTS.** Cookies are marked `Secure` whenever the request arrived over https, also without a base URL. With an https `OPENTODO_BASE_URL`, responses send `Strict-Transport-Security` for one year (no `includeSubDomains`, no preload).
+
+### Changed
+
+- **Separate rate limits per purpose.** Sign-in, registration, password resets, invitation links, public links, MCP token failures and passkey sign-in each have their own window of 10 a minute per address, and successful sign-ins no longer count, so guessing one kind of link no longer blocks signing in.
+- **Operator notes for the address change.** Proxies on loopback, private or container networks, and `OPENTODO_TRUSTED_PROXIES=cloudflare`, need nothing. If you set `OPENTODO_TRUSTED_PROXIES` to your own addresses, the list now replaces the default: add the new keyword `private` if a reverse proxy on the machine or a container network also connects (for example `private, 203.0.113.10`); a list without any local address shows a configuration warning. A reverse proxy on a public address must be listed, otherwise every visitor shares its address. Behind `OPENTODO_BASE_URL`, open the app at the base URL's host.
+
+### Security
+
 - **Calendar data, MCP batches and calendar subscriptions are bounded.** Reading iCalendar data (CalDAV writes and subscribed calendars) takes time in proportion to its size, and one content line may be at most 64 KB. The MCP endpoint refuses JSON-RPC batches under protocol revisions that no longer have them (2025-06-18 and later), accepts at most 20 messages per batch otherwise, and stops running a batch once its answer reaches 4 MB. Expanding a subscribed calendar's repeating events starts at the shown period, shares one work budget and a 5-second deadline per calendar, and keeps what it found with a warning when it runs out. ([CalDAV](docs/caldav.md), [MCP](docs/mcp.md#limits-and-security), [Other calendars](docs/other-calendars.md#limits))
 
 ### Fixed

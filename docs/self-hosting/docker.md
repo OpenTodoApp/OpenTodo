@@ -17,7 +17,23 @@ cp .env.example .env        # optional
 docker compose up -d
 ```
 
-Open <http://localhost:8080>. The first visitor creates the owner account. On a server that is reachable from the internet before you open it, set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`: the setup screen then asks for it, so nobody else can claim the server first. It has no effect once the owner exists.
+Open <http://localhost:8080>. The first visitor creates the owner account. From this machine or your local network (loopback and private addresses) that is all.
+
+### The setup code
+
+Opened from a public address while no owner exists, the setup screen asks for a **setup code**, so nobody on the internet can claim a fresh server before you do. The server generates the code when it starts without an owner and prints it once in its log:
+
+```bash
+docker logs opentodo            # or: docker compose logs opentodo
+```
+
+```text
+level=WARN msg="No owner account exists yet. To create it from outside this server's local network, enter this setup code on the setup screen: ABCD-EFGH-IJKL-MNOP (from this machine or a private network no code is needed)." setup_code=ABCD-EFGH-IJKL-MNOP
+```
+
+Type it into the **Setup code** field (case and dashes do not matter). It works once: as soon as the owner exists it is discarded, and a restart without an owner prints a new one. Attempts count against the registration rate limit. On a platform without a terminal, open the container's logs in its panel.
+
+Instead of the code you can set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`, a secret you choose: the setup screen then asks for it from every address, including your own network, and no code is printed. It has no effect once the owner exists.
 
 To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
 
@@ -39,18 +55,22 @@ docker run -d --name opentodo \
 
 ## Behind a reverse proxy
 
-OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and links point at the public address. Emailed links (password resets, sign-up confirmations, invitations) are only ever built from it, so without it [outgoing email](outgoing-email.md#set-the-base-url-first) sends none of them. Without a base URL, the links the app shows you (invite and reset links to copy, the CalDAV address, calendar feeds, public links) use the address of your own request. `X-Forwarded-Host` and `X-Forwarded-Proto` count only when the request comes from an address listed in `OPENTODO_TRUSTED_PROXIES`; from anywhere else they are ignored, because any client can send them. So behind a proxy that terminates TLS, set `OPENTODO_BASE_URL` (recommended), or add the proxy's address to `OPENTODO_TRUSTED_PROXIES`, or links will start with `http://`. The server uses `X-Forwarded-For` for rate limiting and the audit log. It trusts only the **last** `X-Forwarded-For` hop, the address your proxy appended (Traefik, Caddy, and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` append it); earlier entries come from the client and are ignored. So run exactly one proxy in front of the container and do not publish the container port, or a client could send its own header.
+OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, responses carry `Strict-Transport-Security` (one year, no `includeSubDomains`, no preload), the origin check matches and links point at the public address. With a base URL, a browser request must also be addressed to its host: a page under another name that happens to resolve to your server is treated as cross-site. Emailed links (password resets, sign-up confirmations, invitations) are only ever built from it, so without it [outgoing email](outgoing-email.md#set-the-base-url-first) sends none of them. Without a base URL, the links the app shows you (invite and reset links to copy, the CalDAV address, calendar feeds, public links) use the address of your own request, and cookies are still marked `Secure` whenever the request arrived over https.
 
-**A CDN in front of your proxy** (Cloudflare's orange cloud, or another proxy of yours) adds its own hop, so every visitor would look like the CDN's address and share one rate-limit bucket. Tell OpenTodo which hops to skip with the optional `OPENTODO_TRUSTED_PROXIES`: a comma-separated list of IP addresses and CIDR prefixes, and the keyword `cloudflare` for Cloudflare's published edge ranges (built in, no network request). With `cloudflare`, a request that reaches your proxy from a Cloudflare edge is attributed to its `CF-Connecting-IP` header, which also works when your proxy drops the incoming `X-Forwarded-For`. Only set it when every request really comes through those proxies.
+**Which proxies are believed.** `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and Cloudflare's `CF-Connecting-IP` count only when the connection comes from a trusted proxy. By default those are loopback, private and link-local addresses (`127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`, `169.254.0.0/16`, `fe80::/10`), which covers a proxy on the same machine or a container network (Traefik, Caddy, nginx, Coolify, Dokploy, Kubernetes ingress). From any other address the headers are ignored and the connection's address is the client, so a client that reaches the container directly cannot choose its own address. From a trusted proxy the client is the nearest untrusted `X-Forwarded-For` hop, read from the right: the address your proxy appended (Traefik, Caddy, and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` append it). Make sure your proxy appends to or replaces the header rather than passing the client's through. Rate limits, the audit log, the demo sandbox limit and the [setup code](#the-setup-code) all use this address; IPv6 clients share a limit per `/64`.
+
+**Brute-force limits.** Each anonymous route has its own window per address (password sign-in counts failures only, 10 a minute; registration, password resets, invitation links, public links, MCP requests without a valid token and passkey sign-in 10 a minute each). On top of that, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes lock that account's sign-in for the rest of the window, from every address: the answer is 429 `account_locked` with `Retry-After`. A successful sign-in clears the count.
+
+**`OPENTODO_TRUSTED_PROXIES`** replaces the default with your own list: IP addresses, CIDR prefixes and the keywords `private` (the default ranges above) and `cloudflare` (Cloudflare's published edge ranges, built in, no network request; it keeps the default ranges too). Behind Cloudflare's orange cloud every visitor would otherwise look like a Cloudflare address and share one rate-limit bucket; with `cloudflare`, a hop from a Cloudflare edge is attributed to its `CF-Connecting-IP` header, which also works when your proxy drops the incoming `X-Forwarded-For`.
 
 ```env
 OPENTODO_TRUSTED_PROXIES=cloudflare
 ```
 
-Entries may be separated by commas or spaces, and the keyword is case-insensitive (`cloudflare, 192.0.2.0/24` and `Cloudflare 192.0.2.0/24` are the same). **An invalid entry does not stop the server.** It is ignored, the valid entries still apply and the server starts and stays healthy. Ignoring an entry only ever trusts fewer hops, so a typo never lets a client choose its own address; if no entry is valid, the server behaves as if the variable were unset. The container log has one error line naming each ignored entry, what is accepted and what was applied, with a hint for a near miss of the keyword:
+A proxy on a public address of yours is listed by address; add `private` when your reverse proxy on this machine or network should stay trusted (`private, 203.0.113.10`). A list that names no loopback or private address gets a configuration warning, because the local proxy is then no longer believed and every visitor would share its address. Entries may be separated by commas or spaces, and the keywords are case-insensitive (`cloudflare, 192.0.2.0/24` and `Cloudflare 192.0.2.0/24` are the same). **An invalid entry does not stop the server.** It is ignored, the valid entries still apply and the server starts and stays healthy. Ignoring an entry only ever trusts fewer hops, so a typo never lets a client choose its own address; if no entry is valid, the server behaves as if the variable were unset. The container log has one error line naming each ignored entry, what is accepted and what was applied, with a hint for a near miss of a keyword:
 
 ```text
-level=ERROR msg="OPENTODO_TRUSTED_PROXIES: invalid entries ignored" invalid=cloudflar hint="did you mean \"cloudflare\"?" accepted="IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keyword \"cloudflare\", separated by commas or spaces" applied="none (only the nearest proxy is trusted, as when unset)"
+level=ERROR msg="OPENTODO_TRUSTED_PROXIES: invalid entries ignored" invalid=cloudflar hint="did you mean \"cloudflare\"?" accepted="IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keywords \"private\" and \"cloudflare\", separated by commas or spaces" applied="none (loopback and private networks are trusted, as when unset)"
 ```
 
 The owner also sees a **Server configuration warning** at the top of **Settings** and of **Settings → People**, naming the ignored value. Admins, members and API tokens do not see it. Correct the value and restart the container; the warning goes away.
@@ -160,7 +180,7 @@ Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the 
 The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in **Settings → Account → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
 
 - **Retention** defaults to 90 days (7–3650, set in Settings). Expired events are pruned at startup, hourly and right after you lower the retention.
-- **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a reverse proxy the address is the last `X-Forwarded-For` hop (the one the proxy appended), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do) and that the container is not reachable around the proxy, or a client could send its own header. Turning address logging off erases every stored address immediately.
+- **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a trusted reverse proxy the address is the nearest untrusted `X-Forwarded-For` hop (the one the proxy appended; see [Which proxies are believed](#behind-a-reverse-proxy)), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do). Turning address logging off erases every stored address immediately.
 - **Disk use** is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one `rate_limited` event per address per minute rather than one per attempt.
 - **Export** the log as newline-delimited JSON from the same panel to archive it beyond the retention window.
 
