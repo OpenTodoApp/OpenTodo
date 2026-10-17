@@ -97,8 +97,14 @@ func TestMembershipRoutesAuthAndErrors(t *testing.T) {
 		}
 	}
 	// Non-members get the same 404 as for a project that does not exist, also when probing emails.
+	// Each route gets the body it defines: request bodies refuse unknown fields.
+	bodies := map[string]any{
+		"POST " + p + "/members":                     map[string]any{"email": "nobody@example.com", "role": "viewer"},
+		"PATCH " + p + "/members/" + se.ids["alice"]: map[string]any{"role": "viewer"},
+		"POST " + p + "/transfer":                    map[string]any{"userId": se.ids["bob"]},
+	}
 	for _, rt := range [][2]string{{"GET", p + "/members"}, {"POST", p + "/members"}, {"PATCH", p + "/members/" + se.ids["alice"]}, {"DELETE", p + "/members/me"}, {"POST", p + "/transfer"}} {
-		resp, out := se.bob.do(rt[0], rt[1], map[string]any{"email": "nobody@example.com", "role": "viewer", "userId": se.ids["bob"]})
+		resp, out := se.bob.do(rt[0], rt[1], bodies[rt[0]+" "+rt[1]])
 		se.bob.mustStatus(resp, 404, out)
 		if errCode(out) != "not_found" {
 			t.Fatalf("non-member %s %s: %v", rt[0], rt[1], out)

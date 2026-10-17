@@ -104,17 +104,18 @@ func (s *Service) RevokeAppPassword(ctx context.Context, userID, id string) erro
 // to the account and the app password's id, or ErrNotFound. Revoked passwords,
 // deactivated accounts, a mismatched email and anything that is not an app
 // password (account passwords, API tokens) are all ErrNotFound. A success
-// updates the password's last-use time.
+// updates the password's last-use time, at most once per LastUseInterval.
 func (s *Service) UserByAppPassword(ctx context.Context, email, secret string) (*User, string, error) {
 	if !strings.HasPrefix(secret, AppPasswordPrefix) {
 		return nil, "", ErrNotFound
 	}
 	var u User
 	var id string
-	err := s.db.QueryRowContext(ctx, `SELECT p.id,u.id,u.email,u.name,u.role,u.created_at FROM app_passwords p
+	var lastUsed sql.NullInt64
+	err := s.db.QueryRowContext(ctx, `SELECT p.id,p.last_used_at,u.id,u.email,u.name,u.role,u.created_at FROM app_passwords p
 		JOIN users u ON u.id = p.user_id WHERE p.hash = ? AND p.revoked_at IS NULL
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(secret)).
-		Scan(&id, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+		Scan(&id, &lastUsed, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, "", ErrNotFound
 	}
@@ -124,6 +125,8 @@ func (s *Service) UserByAppPassword(ctx context.Context, email, secret string) (
 	if normalizeEmail(email) != u.Email {
 		return nil, "", ErrNotFound
 	}
-	_, _ = s.db.ExecContext(ctx, `UPDATE app_passwords SET last_used_at = ? WHERE id = ?`, time.Now().UnixMilli(), id)
+	if now := time.Now().UnixMilli(); lastUseStale(lastUsed, now) {
+		_, _ = s.db.ExecContext(ctx, `UPDATE app_passwords SET last_used_at = ? WHERE id = ?`, now, id)
+	}
 	return &u, id, nil
 }

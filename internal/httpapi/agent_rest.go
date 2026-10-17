@@ -78,9 +78,8 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 	}
 	body := map[string]json.RawMessage{}
 	if r.Method != http.MethodDelete {
-		r.Body = http.MaxBytesReader(w, r.Body, agentMaxBody)
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "bad_request", "invalid JSON body: "+err.Error())
+		if err := readJSONLimit(r, &body, agentMaxBody); err != nil {
+			badBody(w, err)
 			return
 		}
 		if body == nil {

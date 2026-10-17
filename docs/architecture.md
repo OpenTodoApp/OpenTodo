@@ -67,7 +67,7 @@ REST collections, the export, MCP tools (the shared agent tool registry in `inte
 
 ### Live updates
 
-`GET /api/v1/sync/events` is a server-sent event stream per device (`httpapi/events.go`). It carries only the latest op cursor, never data; the client reacts by running the ordinary sync exchange. `sync.Notifier` is the in-memory per-user fan-out (at most 16 streams per account). See [sync.md](sync.md#live-updates).
+`GET /api/v1/sync/events` is a server-sent event stream per device (`httpapi/events.go`). It carries only the latest op cursor, never data; the client reacts by running the ordinary sync exchange. `sync.Notifier` is the in-memory per-user fan-out (at most 10 streams per account; `httpapi/events.go` also caps streams per client address and per server). See [sync.md](sync.md#live-updates).
 
 ### Background work
 

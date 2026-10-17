@@ -8185,6 +8185,9 @@
   "The server has push notifications turned off (OPENTODO_PUSH=off). Reminders still appear inside the app.": [
     "web/src/lib/push.ts"
   ],
+  "The server is busy. Try again in a moment.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.": [
     "web/src/app/RestoreSection.tsx"
   ],
