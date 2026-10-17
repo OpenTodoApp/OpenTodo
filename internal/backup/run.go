@@ -9,11 +9,13 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/settings"
+	"github.com/pixari/opentodo/internal/store"
 )
 
 // ErrRunning is returned when a backup is requested while one is in progress.
@@ -131,8 +133,27 @@ func (s *Service) execute(ctx context.Context, kind, actorID string) Run {
 
 // backupTo snapshots, packages, uploads and applies retention. Local temp files
 // are always removed. The returned warning is a retention failure after a
-// successful upload.
+// successful upload. The archive is written in the local destination's
+// directory and renamed into place there; for a remote destination it is
+// staged in the data directory's tmp. Free space for both is checked first.
 func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, sec settings.Secrets, r *Run) (warn, err error) {
+	attachments, err := attachmentFiles(s.dataDir)
+	if err != nil {
+		return nil, fmt.Errorf("list attachments: %w", err)
+	}
+	local, _ := dest.(*localDest)
+	stageDir := s.tmpDir()
+	if local != nil {
+		stageDir = local.dir
+	}
+	for _, d := range []string{s.tmpDir(), stageDir} {
+		if err := os.MkdirAll(d, 0o700); err != nil {
+			return nil, fmt.Errorf("create %s: %w", d, err)
+		}
+	}
+	if err := s.checkBackupSpace(stageDir, attachments); err != nil {
+		return nil, err
+	}
 	snap, err := s.snapshot(ctx)
 	if err != nil {
 		return nil, err
@@ -153,7 +174,15 @@ func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, 
 	m := Manifest{Format: ManifestFormat, FormatVersion: ManifestVersion, AppVersion: s.version, SchemaVersion: schema,
 		CreatedAt: now.UTC().Format(time.RFC3339), Generation: gen}
 
-	f, err := os.OpenFile(filepath.Join(s.tmpDir(), name+"."+randomHex(4)), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
+	var f *os.File
+	if local != nil {
+		if err := validObjectName(name); err != nil {
+			return nil, err
+		}
+		f, err = os.CreateTemp(stageDir, localTempPrefix+name+"-*")
+	} else {
+		f, err = os.OpenFile(filepath.Join(stageDir, name+"."+randomHex(4)), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("create archive: %w", err)
 	}
@@ -161,10 +190,6 @@ func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, 
 		f.Close()
 		os.Remove(f.Name())
 	}()
-	attachments, err := attachmentFiles(s.dataDir)
-	if err != nil {
-		return nil, fmt.Errorf("list attachments: %w", err)
-	}
 	if err := writeArchive(f, snap, m, archiveOptions{compress: set.Compress, passphrase: pass, extras: s.extraFiles(), attachments: attachments}); err != nil {
 		return nil, fmt.Errorf("write archive: %w", err)
 	}
@@ -172,14 +197,92 @@ func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, 
 	if err != nil {
 		return nil, err
 	}
-	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		return nil, err
-	}
-	if err := dest.Put(ctx, name, f, size); err != nil {
-		return nil, err
+	if local != nil {
+		// Already in the destination directory: make it durable and rename it
+		// into place, so a crash never leaves a half-written archive under
+		// the final name.
+		if err := f.Sync(); err != nil {
+			return nil, fmt.Errorf("write to %s: %w", local.dir, err)
+		}
+		if err := os.Rename(f.Name(), filepath.Join(local.dir, name)); err != nil {
+			return nil, fmt.Errorf("write to %s: %w", local.dir, err)
+		}
+	} else {
+		if _, err := f.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+		if err := dest.Put(ctx, name, f, size); err != nil {
+			return nil, err
+		}
 	}
 	r.ArchiveName, r.Bytes = name, size
 	return s.applyRetention(ctx, dest, set.Retention, name), nil
+}
+
+// localTempPrefix starts the name of an archive being written in the local
+// destination directory; List skips such dot files and Start sweeps them.
+const localTempPrefix = ".tmp-"
+
+// archiveOverhead is added per archived file for tar headers and padding.
+const archiveOverhead = 1024
+
+// checkBackupSpace refuses a backup the disk cannot hold: the snapshot (the
+// database and its WAL, VACUUM INTO writes at most that) in the data
+// directory, and the archive (snapshot plus attachments, uncompressed as the
+// worst case) in stageDir; both on the data directory's filesystem when they
+// share it. restoreMargin is kept free on top.
+func (s *Service) checkBackupSpace(stageDir string, attachments []archivedFile) error {
+	dbPath := store.DBPath(s.dataDir)
+	snap := fileSize(dbPath) + fileSize(dbPath+"-wal")
+	archive := snap + archiveOverhead*int64(len(attachments)+len(ExtraFiles)+2)
+	for _, a := range attachments {
+		archive += fileSize(a.path)
+	}
+	for _, p := range s.extraFiles() {
+		archive += fileSize(p)
+	}
+	if stageDir == s.tmpDir() || s.sameFS(s.dataDir, stageDir) {
+		return ensureSpace(s.freeSpace, s.dataDir, snap+archive, ErrBackupStorage)
+	}
+	if err := ensureSpace(s.freeSpace, s.dataDir, snap, ErrBackupStorage); err != nil {
+		return err
+	}
+	return ensureSpace(s.freeSpace, stageDir, archive, ErrBackupStorage)
+}
+
+// sweepTemp removes what an interrupted run left behind: snapshots and
+// archives in the data directory's tmp, and half-written archives in the
+// local destination directory. Staged web restores (tmp/restore) have their
+// own sweep.
+func (s *Service) sweepTemp(ctx context.Context) {
+	remove := func(dir string, match func(string) bool) {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return
+		}
+		for _, e := range entries {
+			if !e.Type().IsRegular() || !match(e.Name()) {
+				continue
+			}
+			if err := os.Remove(filepath.Join(dir, e.Name())); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				s.log.Warn("backup: remove stale temp file", "file", e.Name(), "err", err)
+			} else if err == nil {
+				s.log.Info("backup: removed a temp file left by an interrupted run", "file", e.Name())
+			}
+		}
+	}
+	remove(s.tmpDir(), func(n string) bool {
+		return strings.HasPrefix(n, "snapshot-") || strings.HasPrefix(n, "opentodo-")
+	})
+	set, err := s.LoadSettings(ctx)
+	if err != nil || (set.Destination != DestLocal && set.Destination != "") {
+		return
+	}
+	dir := set.Local.Dir
+	if dir == "" {
+		dir = s.defaultLocalDir()
+	}
+	remove(dir, func(n string) bool { return strings.HasPrefix(n, localTempPrefix+"opentodo-") })
 }
 
 // applyRetention deletes archives beyond the policy at the destination.

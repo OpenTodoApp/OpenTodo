@@ -49,6 +49,8 @@ type Service struct {
 	restart   func()
 	// freeSpace reports free bytes on a filesystem; tests replace it.
 	freeSpace func(dir string) (int64, bool)
+	// sameFS reports whether two directories share a filesystem; tests replace it.
+	sameFS func(a, b string) bool
 
 	// Lifecycle (reliable-background-jobs): every goroutine the service starts
 	// is counted in wg, and life is cancelled by Stop (or when Start's context
@@ -85,6 +87,7 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 		wakeCh: make(chan struct{}, 1), freeSpace: o.FreeSpace,
 	}
 	s.life, s.lifeStop = context.WithCancel(context.Background())
+	s.sameFS = sameFilesystem
 	if s.freeSpace == nil {
 		s.freeSpace = freeBytes
 	}

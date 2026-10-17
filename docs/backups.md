@@ -114,8 +114,18 @@ travel unencrypted.
 - **History:** each run (time, outcome, size, duration, error) is recorded and
   shown in Settings for 90 days.
 
-A run takes a snapshot of the database into `<data>/tmp`, packages it there,
-uploads it and deletes the temporary files, whether the run succeeded or not.
+A run takes a snapshot of the database into `<data>/tmp`, packages it (in the
+destination folder for a folder on the server, in `<data>/tmp` for S3 and
+WebDAV), uploads it and deletes the temporary files, whether the run succeeded
+or not. Before it starts, it checks the free disk space: the snapshot needs
+about the size of the database, the archive about the database plus the
+attachments (before compression), and 64 MiB are kept free on top. When the
+disk is too full, the run fails at once with **not enough free disk space for a
+backup** and the space it needs, instead of filling the disk the database
+lives on. Temporary files left by a run that was interrupted (a crash, a power
+cut) are removed when the server starts. When the server stops during a run,
+the run is cancelled, recorded as failed, and the server waits for that before
+it closes the database; the next scheduled run starts normally.
 Uploads stream from disk; memory use stays at a few megabytes regardless of the
 database size (plus about 19 MiB for a moment while the encryption key is
 derived).
@@ -190,7 +200,10 @@ section with their size and can be deleted (after a confirmation, and with a
 fresh sign-in check) to free space. They are never deleted automatically. A
 restore needs room for the archive, the extracted database and the safety copy,
 roughly *archive size + 2 × database size* plus a 64 MiB margin; the server
-checks first and refuses with the space it needs.
+checks first and refuses with the space it needs. Before extracting, it also
+checks that the files the archive's manifest lists fit, and every file in the
+archive must have exactly the size the manifest gives, so a damaged or
+tampered archive cannot fill the disk.
 
 **Reverse proxies.** Uploads go through your reverse proxy, and many limit
 request bodies (nginx allows 1 MiB by default). If an upload is refused, raise

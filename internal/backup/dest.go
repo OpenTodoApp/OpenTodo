@@ -87,7 +87,7 @@ func (d *localDest) Put(_ context.Context, name string, body io.ReadSeeker, _ in
 	if err := os.MkdirAll(d.dir, 0o700); err != nil {
 		return fmt.Errorf("create %s: %w", d.dir, err)
 	}
-	tmp, err := os.CreateTemp(d.dir, ".tmp-"+name+"-*")
+	tmp, err := os.CreateTemp(d.dir, localTempPrefix+name+"-*")
 	if err != nil {
 		return fmt.Errorf("write to %s: %w", d.dir, err)
 	}
