@@ -4,6 +4,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **Pasting into notes is safer.** The rich-text editor's ProseMirror view is updated to 1.42.6, which fixes a published issue with pasted content (GHSA-c8x8-7fp4-3x9w).
+- **Links are encrypted with the rest of your data.** Turning end-to-end encryption on now also encrypts the address and name of links you attached before, and turning it off decrypts them again. Each link is replaced by a copy in the new form; the old one moves to the Trash. ([End-to-end encryption](docs/e2ee.md))
+
+### Fixed
+
+- **A proxy page no longer loses unsynced changes.** When something between the app and the server (a proxy, a captive portal) answered a sync with its own page, changes made offline were dropped. They now stay on the device and upload on the next sync, and the status says the answer was not understood.
+- **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.
+- **Custom fields survive a server restore.** After the server is restored from a backup, devices now send their custom field definitions back with everything else.
+- **Refused custom field and link changes are handled.** A custom field change the server refused now shows the server's value, and a refused attachment no longer stops syncing.
+
 ### Added
 
 - **Templates for eight more platforms.** CasaOS and ZimaOS, Cosmos Cloud, Dokploy, Easypanel, Portainer, Runtipi, TrueNAS Community Edition and Umbrel each get a template in their own format, checked by `make check`, with a guide covering install, settings, data permissions, https, updates and backups. Until a platform's catalog lists OpenTodo, the guide shows how to install it as a custom app; Portainer and Dokploy can already load the templates from this repository by URL. Stores that refuse moving tags name the release version (Umbrel also its digest, refreshed by `scripts/deploy/pin.mjs`); the others use `stable`. ([CasaOS](docs/self-hosting/casaos.md), [Cosmos](docs/self-hosting/cosmos.md), [Dokploy](docs/self-hosting/dokploy.md), [Easypanel](docs/self-hosting/easypanel.md), [Portainer](docs/self-hosting/portainer.md), [Runtipi](docs/self-hosting/runtipi.md), [TrueNAS](docs/self-hosting/truenas.md), [Umbrel](docs/self-hosting/umbrel.md))
