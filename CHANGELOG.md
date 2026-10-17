@@ -16,6 +16,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Unraid: Tailscale explained.** The container's **Use Tailscale** switch cannot work with the OpenTodo image (it has no shell for Unraid's Tailscale script, so the container stopped with `exec /opt/unraid/tailscale: no such file or directory`). The Unraid template and guide now say to leave it off and give the steps for Tailscale Serve on the Unraid server, which gives OpenTodo an https address on your tailnet. ([Unraid](docs/self-hosting/unraid.md#tailscale), #123)
 - **A proxy page no longer loses unsynced changes.** When something between the app and the server (a proxy, a captive portal) answered a sync with its own page, changes made offline were dropped. They now stay on the device and upload on the next sync, and the status says the answer was not understood.
 - **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.
 - **Custom fields survive a server restore.** After the server is restored from a backup, devices now send their custom field definitions back with everything else.
