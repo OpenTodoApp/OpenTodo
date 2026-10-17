@@ -12,7 +12,7 @@
 - [x] 2.3 Tests
 
 ## 3. Confirmed backfill pages (CORE-11)
-- [x] 3.1 Migration `0036_backfill_confirm.sql`; `PullWith` with `PullOptions`; `backfillSeq`/`backfillAck` on the wire; client echoes it
+- [x] 3.1 Migration `0037_backfill_confirm.sql`; `PullWith` with `PullOptions`; `backfillSeq`/`backfillAck` on the wire; client echoes it
 - [x] 3.2 Test: a lost page is served again
 
 ## 4. Account deletion unassigns (CORE-9)

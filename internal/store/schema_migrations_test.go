@@ -109,7 +109,7 @@ func TestMigrationBackfillConfirm(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	body, err := migrations.ReadFile("migrations/0036_backfill_confirm.sql")
+	body, err := migrations.ReadFile("migrations/0037_backfill_confirm.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

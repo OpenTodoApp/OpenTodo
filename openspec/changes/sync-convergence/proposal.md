@@ -33,6 +33,6 @@ An audit of the sync core found ways devices or the server stop converging, or l
 
 - Wire format: additive request fields `features`, `backfillAck`; additive response field `backfillSeq`; rejection field `serverTime`; new rejection reason `clock_skew` (only for clients that ask for it).
 - New ops from the server carry device `server:<boot id>` instead of `server` (webhook `source` stays `server`).
-- Migration `0036_backfill_confirm.sql` (side table `member_backfill_served` plus a cleanup trigger) and the `schema_migrations` table, created at startup.
+- Migration `0037_backfill_confirm.sql` (side table `member_backfill_served` plus a cleanup trigger) and the `schema_migrations` table, created at startup.
 - A `due` with an impossible date or time is now refused (400 `invalid_op` on sync, `invalid_input` on REST).
 - No new dependency, environment variable or setting; binary and bundle size change negligibly (a few hundred bytes of client code).
