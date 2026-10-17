@@ -7,7 +7,7 @@ import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { compareDueThenPriority } from '../../lib/ordering'
 import type { Task } from '../../lib/types'
 import { Icon, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
-import { Menu } from '../overlay/Menu'
+import { Menu } from '../../ui'
 import { PanelFrame } from '../PanelFrame'
 import { useToday } from '../useViews'
 

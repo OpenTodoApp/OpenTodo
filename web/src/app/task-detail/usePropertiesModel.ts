@@ -6,7 +6,7 @@ import { localDueOf, zoneHint } from '../../lib/dates'
 import { blockerCandidates, dependents, setBlockedBy } from '../../lib/dependencies'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
-import { useLiveSections, useMembershipMap, useProjectTasks, useReminderCount } from '../../lib/liveData'
+import { useMembershipMap, useProjectLiveSections, useProjectTasks, useReminderCount } from '../../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { setTaskParent } from '../../lib/ops'
 import { INBOX_KEY, parentSource, projectSource } from '../../lib/pickerSources'
@@ -25,7 +25,7 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   const zone = useViewerZone()
   const projectId = task.project_id ?? null
   const memberships = useMembershipMap()
-  const sections = useLiveSections(projectId)
+  const sections = useProjectLiveSections(projectId)
   // Tasks of the same project (any state): the parent picker applies its own rules.
   const projectTasks = useProjectTasks(projectId)
   const reminders = useReminderCount(task.id)

@@ -25,11 +25,14 @@ describe('web layering', () => {
     expect(await rules('src/app/Fake.tsx', 'declare const db: { tasks: unknown }\nexport const x = db.tasks\n')).toEqual(['no-restricted-syntax'])
   })
 
-  it('allows the lifecycle calls, tests and the files web-component-structure clears', async () => {
+  it('allows the lifecycle calls and tests', async () => {
     expect(await rules('src/app/Fake.tsx', "import { clearLocalData } from '../lib/db'\nexport const x = clearLocalData\n")).toEqual([])
     expect(await rules('src/app/fake.test.tsx', "import { db } from '../lib/db'\nexport const x = db.tasks\n")).toEqual([])
+  })
+
+  it('has no exceptions left: the split screens are held to the rule too (web-component-structure)', async () => {
     for (const file of ['src/app/TaskListView.tsx', 'src/app/task-detail/Properties.tsx', 'src/app/CalendarView.tsx', 'src/app/assistant/AssistantPanel.tsx']) {
-      expect(await rules(file, "import { db } from '../lib/db'\nexport const x = db.tasks\n")).toEqual([])
+      expect(await rules(file, "import { db } from '../lib/db'\nexport const x = db.tasks\n")).toContain('no-restricted-imports')
     }
   })
 })

@@ -9,38 +9,20 @@ import { cachedWindow, showEvents, type EventsWindow } from './calendarFeeds'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { byPosition } from './ordering'
 import { loadCollapsedSections, loadListColumns, loadViewMode, type ProjectViewMode } from './sections'
-import { membershipMap } from './sharing'
-import type { CalendarEvent, CalendarSubscription, Label, Membership, Project, Section, Task } from './types'
+import type { CalendarEvent, CalendarSubscription, Section, Task } from './types'
 
-const NO_PROJECTS: Project[] = []
-const NO_LABELS: Label[] = []
-const NO_MEMBERSHIPS: Membership[] = []
+// Shared with the rest of the app (web-layering): one live query each, one visibility rule.
+export { getTask, useAllLabels, useMembershipMap, useMemberships, useProjects as useLiveProjects } from './localData'
+
 const NO_SECTIONS: Section[] = []
 const NO_STRINGS: string[] = []
 const NO_EVENTS: CalendarEvent[] = []
 const NO_SUBSCRIPTIONS: CalendarSubscription[] = []
 const NO_TASKS: Task[] = []
 
-/** Projects that are not in the trash (archived ones included). */
-export function useLiveProjects(): Project[] {
-  return useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], NO_PROJECTS)
-}
 
-/** Every label on the device, deleted ones included (a label view names a deleted label). */
-export function useAllLabels(): Label[] {
-  return useLiveQuery(() => db.labels.toArray(), [], NO_LABELS)
-}
 
-/** Cached memberships of shared projects (project-sharing), also offline. */
-export function useMemberships(): Membership[] {
-  return useLiveQuery(() => db.memberships.toArray(), [], NO_MEMBERSHIPS)
-}
 
-/** The memberships keyed by project id. */
-export function useMembershipMap(): Map<string, Membership> {
-  return useLiveQuery(() => membershipMap(), [], EMPTY_MEMBERSHIP_MAP)
-}
-const EMPTY_MEMBERSHIP_MAP = new Map<string, Membership>()
 
 /** Every section row of a project, deleted ones included (they still resolve a task's section). */
 export function useProjectSectionRows(projectId: string | null): Section[] {
@@ -50,7 +32,7 @@ export function useProjectSectionRows(projectId: string | null): Section[] {
 }
 
 /** The live sections of a project, by position. */
-export function useLiveSections(projectId: string | null): Section[] {
+export function useProjectLiveSections(projectId: string | null): Section[] {
   return useLiveQuery(
     () => (projectId ? db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray().then((l) => l.sort(byPosition)) : Promise.resolve(NO_SECTIONS)),
     [projectId], NO_SECTIONS,
@@ -119,7 +101,3 @@ export async function readGridPrefs(): Promise<GridPrefs> {
   return normalizeGridPrefs(await getMeta<unknown>(GRID_PREFS_META_KEY, null))
 }
 
-/** One stored task row (tombstones included), read now rather than live. */
-export function getTask(id: string): Promise<Task | undefined> {
-  return db.tasks.get(id)
-}

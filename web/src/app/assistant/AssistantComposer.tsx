@@ -2,7 +2,7 @@ import type { KeyboardEvent } from 'react'
 import { isMaterial, type AssistantSkill } from '../../lib/assistantSkills'
 import { t } from '../../lib/i18n'
 import { Icon, MenuGroup, MenuItem } from '../../ui'
-import { Menu } from '../overlay'
+import { Menu } from '../../ui'
 import { OFFLINE_MESSAGE } from './AssistantPanelBody'
 
 export function Composer({ draft, onDraft, onSend, onStop, streaming, connected, disabled, skills = [], skill = null, onSkill, pasted = null, onPasted }: {

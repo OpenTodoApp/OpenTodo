@@ -4,7 +4,7 @@
 
 - [x] 1.1 Move `web/src/app/overlay` to `web/src/ui/overlay`, export it from the `web/src/ui` barrel, and point screens at the barrel (`npx tsc -b`, `barrel.test.ts`)
 - [x] 1.2 Move the help request store to `web/src/lib/helpRequest.ts` (help tests in `app/help/help.test.tsx`)
-- [x] 1.3 Keep `web/src/app/overlay` as a re-export for the four files of `web-component-structure` only
+- [x] 1.3 Keep `web/src/app/overlay` as a re-export for the four files of `web-component-structure` only; removed with the allow-list once both changes are combined
 - [x] 1.4 Workbench stories for the overlay pieces (`ui/overlay/Overlay.stories.tsx`, a11y-checked, tag no-visual until `make ui-baselines`; `make ui-lint`)
 - [x] 1.5 ESLint refuses `src/app` imports in `src/ui` (`src/layering.test.ts`, `npm run lint`)
 

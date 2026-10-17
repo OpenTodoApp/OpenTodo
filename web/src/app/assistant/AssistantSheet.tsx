@@ -2,8 +2,7 @@ import { type ReactNode, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
-import { trapTab } from '../overlay/stack'
-import { isolate, useOverlay } from '../overlay/useOverlay'
+import { isolate, trapTab, useOverlay } from '../../ui'
 
 /**
  * The side sheet (in-app-assistant D9) on the overlay module's behaviour:

@@ -67,8 +67,6 @@ export default [
     files: ['src/app/**/*.{ts,tsx}'],
     ignores: [
       'src/app/**/*.test.{ts,tsx}', 'src/app/**/*.testkit.tsx', 'src/app/**/*.stories.tsx', 'src/app/stories/**',
-      // cleared by web-component-structure
-      'src/app/TaskListView.tsx', 'src/app/task-detail/Properties.tsx', 'src/app/CalendarView.tsx', 'src/app/assistant/AssistantPanel.tsx',
     ],
     rules: {
       'no-restricted-imports': ['error', { patterns: [{
