@@ -28,3 +28,18 @@ A restore (command line or web) SHALL check, before extracting anything, that th
 #### Scenario: Manifest larger than the disk
 - **WHEN** the files a manifest lists do not fit on the disk
 - **THEN** the restore is refused with the space it needs before any file is extracted
+
+### Requirement: Large archives reach S3 and slow destinations
+Archives larger than 100 MiB SHALL be uploaded to an S3-compatible destination as a multipart upload in 64 MiB parts, each signed with its own payload hash; a failed part SHALL abort the upload. Requests to a destination SHALL have no fixed overall time limit; a request SHALL fail when nothing was sent or received for 5 minutes.
+
+#### Scenario: Archive above 5 GB
+- **WHEN** a backup archive is larger than a single S3 PUT allows
+- **THEN** it is uploaded in parts and assembled at the destination
+
+#### Scenario: Failed part
+- **WHEN** the destination refuses one part of a multipart upload
+- **THEN** the run fails with the destination's error and the upload is aborted
+
+#### Scenario: Slow line
+- **WHEN** an upload keeps making progress but takes longer than 30 minutes
+- **THEN** it completes; only a destination that stops answering for 5 minutes fails the run

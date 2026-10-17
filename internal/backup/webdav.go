@@ -47,20 +47,22 @@ func (d *webdavDest) objectURL(name string) string {
 }
 
 func (d *webdavDest) do(ctx context.Context, method, target string, body io.Reader, size int64, hdr map[string]string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, target, body)
-	if err != nil {
-		return nil, err
-	}
-	if body != nil {
-		req.ContentLength = size
-	}
-	if d.username != "" || d.password != "" {
-		req.SetBasicAuth(d.username, d.password)
-	}
-	for k, v := range hdr {
-		req.Header.Set(k, v)
-	}
-	resp, err := d.client.Do(req)
+	resp, err := doWithProgress(ctx, d.client, func(ctx context.Context, body io.Reader) (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, method, target, body)
+		if err != nil {
+			return nil, err
+		}
+		if body != nil {
+			req.ContentLength = size
+		}
+		if d.username != "" || d.password != "" {
+			req.SetBasicAuth(d.username, d.password)
+		}
+		for k, v := range hdr {
+			req.Header.Set(k, v)
+		}
+		return req, nil
+	}, body)
 	if err != nil {
 		return nil, fmt.Errorf("webdav %s: %w", strings.ToLower(method), err)
 	}

@@ -9,6 +9,7 @@ An integrations audit found that the server's background jobs are not reliable a
 - **Restore extraction (INT-12).** A tar entry is copied with `io.Copy` and its size is compared with the manifest only afterwards, so a crafted or damaged archive can write far more than the manifest lists.
 - **IMAP without UIDPLUS (INT-13).** After processing, the email poller sends a bare `EXPUNGE`, which also removes messages that another mail client flagged `\Deleted` in the same mailbox.
 - **Reminder scan (INT-3).** The scheduler loads every overdue, undelivered reminder every 30 seconds without a limit; reminders of completed tasks are never delivered or dismissed, so the scan grows forever.
+- **Large archives (INT-8).** S3 uploads are a single PUT (5 GB limit) and every destination request shares a 30-minute client-wide timeout, so a large archive (attachments are included) cannot reach S3 at all, and a slow line cuts off long uploads.
 - **Notification retention (INT-19).** A self-hosted server sweeps read notifications past the 90-day retention only at start-up, and the three insert paths are copies of each other.
 
 ## What Changes
@@ -18,6 +19,7 @@ An integrations audit found that the server's background jobs are not reliable a
 - Restore rejects a tar entry whose size differs from the manifest before copying it, copies at most the listed size (`io.CopyN`), and checks free space against the sum of the manifest's sizes before extracting anything.
 - On an IMAP server without UIDPLUS, processed messages are left flagged `\Seen` and `\Deleted` (moved copies are in the processed folder); no bare `EXPUNGE` is sent. Documented in `docs/email.md`.
 - The reminder scheduler records a reminder whose task is completed as dismissed (a server op), so it leaves the scan; the candidate query is read in pages of 500 with a keyset. Reminders on deleted tasks keep the Trash rule (nothing recorded).
+- S3 archives above 100 MiB go up as a multipart upload in 64 MiB parts, each signed with its own payload hash, aborted on failure. Requests to S3 and WebDAV fail after 5 minutes without progress instead of after 30 minutes overall.
 - One insert helper for in-app notifications; a self-hosted server sweeps read notifications daily from `StartJobs` (hosts already do).
 
 No new dependency, environment variable, route or op field. Shutdown can take up to 20 s longer when a job is mid-send.
@@ -25,7 +27,7 @@ No new dependency, environment variable, route or op field. Shutdown can take up
 ## Capabilities
 
 - `self-hosting`: graceful shutdown of background jobs (ADDED).
-- `backups`: disk space and temporary files during a backup; restore extraction bounded by the manifest (ADDED).
+- `backups`: disk space and temporary files during a backup; restore extraction bounded by the manifest; large archives (ADDED).
 - `email-capture`: processed messages on servers without UIDPLUS (ADDED).
 - `reminders`: reminders of completed tasks are dismissed by the server (ADDED).
 - `task-assignment`: read notifications are removed after 90 days (ADDED).

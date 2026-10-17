@@ -30,5 +30,10 @@
 - [x] 6.1 One insert helper
 - [x] 6.2 Daily sweep from `StartJobs`; test; docs/api.md
 
-## 7. Changelog
-- [x] 7.1 CHANGELOG lines
+## 7. Large archives (INT-8)
+- [x] 7.1 S3 multipart upload above 100 MiB in 64 MiB parts with per-part payload hashes; abort on failure
+- [x] 7.2 Progress deadline per request (5 minutes without progress) instead of the 30-minute client timeout, for S3 and WebDAV
+- [x] 7.3 Tests with the fake S3 (parts, abort) and a stalled WebDAV server; docs/backups.md
+
+## 8. Changelog
+- [x] 8.1 CHANGELOG lines

@@ -104,7 +104,9 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 		s.loc = time.Local
 	}
 	if s.client == nil {
-		s.client = &http.Client{Timeout: 30 * time.Minute}
+		// No client-wide timeout: each request has a progress deadline
+		// (requestIdle), so large archives are not cut off at a fixed time.
+		s.client = &http.Client{}
 	}
 	return s
 }

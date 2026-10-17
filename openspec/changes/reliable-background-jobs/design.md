@@ -30,6 +30,12 @@ Two options: filter completed/deleted tasks in SQL, or record dismissal. A task 
 
 Pages of 500 candidates ordered by `(fire_at, scope_id, entity_id)` with a keyset continuation; dismissals during the scan do not shift pages.
 
+## Large archives
+
+Multipart only when the body is an `io.ReaderAt` (the archive file) and above 100 MiB, so ordinary archives keep the single signed PUT. Each part is read twice (hash, then send) through an `io.NewSectionReader`, keeping memory constant; `UNSIGNED-PAYLOAD` was rejected to keep every request's integrity covered by the signature, as today. `CompleteMultipartUpload` can answer 200 with an `<Error>` body, which is checked. A failure aborts with `WithoutCancel` so shutdown does not leave billed parts.
+
+Deadlines: `doWithProgress` wraps both destinations' requests. A timer cancels the request context with cause `errStalled` after 5 minutes without progress; reading the request body, receiving headers and reading the response body reset it; closing the response body releases it. The default client has no `Timeout`. A restore download from the destination is covered the same way.
+
 ## Size impact
 
 No dependency; a few hundred lines of Go including tests.

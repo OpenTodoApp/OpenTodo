@@ -153,6 +153,9 @@ type fakeS3 struct {
 	pageMax int
 	reqs    []string
 	failPut int // respond 403 to PUT when > 0
+	// Multipart uploads in progress: upload id -> part number -> bytes.
+	uploads  map[string]map[int][]byte
+	failPart int // respond 500 to this part number
 }
 
 func newFakeS3(t *testing.T) (*fakeS3, *httptest.Server) {
@@ -198,6 +201,9 @@ func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := strings.TrimPrefix(strings.TrimPrefix(r.URL.Path, prefix), "/")
+	if f.multipart(w, r, key, payload) {
+		return
+	}
 	switch r.Method {
 	case http.MethodPut:
 		if f.failPut > 0 {
@@ -266,6 +272,81 @@ func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		f.fail(w, 405, "MethodNotAllowed", r.Method)
 	}
+}
+
+// multipart serves CreateMultipartUpload, UploadPart, CompleteMultipartUpload
+// and AbortMultipartUpload; it reports whether the request was one of them.
+func (f *fakeS3) multipart(w http.ResponseWriter, r *http.Request, key, payload string) bool {
+	q := r.URL.Query()
+	_, create := q["uploads"]
+	id := q.Get("uploadId")
+	if !create && id == "" {
+		return false
+	}
+	if f.uploads == nil {
+		f.uploads = map[string]map[int][]byte{}
+	}
+	body, _ := io.ReadAll(r.Body)
+	if sum := sha256.Sum256(body); hex.EncodeToString(sum[:]) != payload {
+		f.fail(w, 400, "XAmzContentSHA256Mismatch", "payload hash mismatch")
+		return true
+	}
+	switch {
+	case create && r.Method == http.MethodPost:
+		id = fmt.Sprintf("up-%d", len(f.uploads)+1)
+		f.uploads[id] = map[int][]byte{}
+		fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?><InitiateMultipartUploadResult><Bucket>%s</Bucket><Key>%s</Key><UploadId>%s</UploadId></InitiateMultipartUploadResult>`, f.bucket, key, id)
+	case r.Method == http.MethodPut:
+		parts, ok := f.uploads[id]
+		if !ok {
+			f.fail(w, 404, "NoSuchUpload", "no upload")
+			return true
+		}
+		var n int
+		fmt.Sscanf(q.Get("partNumber"), "%d", &n)
+		if n == f.failPart {
+			f.fail(w, 500, "InternalError", "part failed")
+			return true
+		}
+		parts[n] = body
+		sum := sha256.Sum256(body)
+		w.Header().Set("ETag", `"`+hex.EncodeToString(sum[:8])+`"`)
+		w.WriteHeader(200)
+	case r.Method == http.MethodPost:
+		parts, ok := f.uploads[id]
+		if !ok {
+			f.fail(w, 404, "NoSuchUpload", "no upload")
+			return true
+		}
+		var req struct {
+			Parts []struct {
+				PartNumber int
+				ETag       string
+			} `xml:"Part"`
+		}
+		if err := xml.Unmarshal(body, &req); err != nil || len(req.Parts) != len(parts) {
+			f.fail(w, 400, "InvalidPart", "parts do not match")
+			return true
+		}
+		var obj []byte
+		for i, p := range req.Parts {
+			sum := sha256.Sum256(parts[p.PartNumber])
+			if p.PartNumber != i+1 || p.ETag != `"`+hex.EncodeToString(sum[:8])+`"` {
+				f.fail(w, 400, "InvalidPart", "bad part")
+				return true
+			}
+			obj = append(obj, parts[p.PartNumber]...)
+		}
+		f.objects[key] = obj
+		delete(f.uploads, id)
+		fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?><CompleteMultipartUploadResult><Key>`+key+`</Key></CompleteMultipartUploadResult>`)
+	case r.Method == http.MethodDelete:
+		delete(f.uploads, id)
+		w.WriteHeader(204)
+	default:
+		f.fail(w, 400, "InvalidRequest", "multipart")
+	}
+	return true
 }
 
 func TestS3PutListDelete(t *testing.T) {
