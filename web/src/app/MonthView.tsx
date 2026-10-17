@@ -14,7 +14,7 @@ import { formatMinutes } from '../lib/duration'
 import { cellTasks, monthGrid, visibleRows } from '../lib/month'
 import { createTask, updateTask } from '../lib/ops'
 import { canEditTasks, roleOf } from '../lib/sharing'
-import { visibleTasks } from '../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import type { Membership, Project, Task } from '../lib/types'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useGridPrefs } from './CalendarView'
@@ -57,7 +57,7 @@ export function MonthView({ date }: { date?: string }) {
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
-  const rawTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const rawTasks = useLiveTasks() ?? NO_TASKS
   const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
   // The Day and Week selection (open, live, not archived) over the six weeks.
   const shownIds = useMemo(() => new Set(calendarTasks(viewed, projects, days[0], days[days.length - 1]).map((tk) => tk.id)), [viewed, projects, days])

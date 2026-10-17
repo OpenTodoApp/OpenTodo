@@ -17,7 +17,7 @@ import { groupBySection } from '../../lib/sections'
 import { canEditTask, memberName } from '../../lib/sharing'
 import { breadcrumbOf, buildTaskTree } from '../../lib/subtasks'
 import { useSyncStatus } from '../../lib/sync'
-import { visibleTasks } from '../../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { flattenTree, type TreeNode } from '../../lib/tree'
 import type { Label, Membership, Project, Section, Task, View } from '../../lib/types'
 import { inLater, isDashboard, runView, setStartView } from '../../lib/views'
@@ -82,7 +82,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   useWakeLock()
 
   const projects = useLiveQuery(() => db.projects.toArray(), [], undefined as Project[] | undefined)
-  const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const tasks = useLiveTasks() ?? NO_TASKS
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const views = useLiveQuery(() => db.views.toArray(), [], undefined as View[] | undefined)

@@ -13,8 +13,8 @@ import { resolveLabels } from '../../lib/labels'
 import { finishReview, firstUnfinished, REVIEW_ID, reviewSteps, STEP_IDS, STEP_TITLES, type NextActionProject, type StepId } from '../../lib/review'
 import { currentUserId } from '../../lib/sharing'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
-import { visibleTasks } from '../../lib/trash'
-import type { Label, Membership, Project, Task } from '../../lib/types'
+import { useLiveTasks } from '../../lib/liveTasks'
+import type { Label, Membership, Project } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { HelpLink } from '../help/HelpLink'
 import { LabelPicker } from '../LabelPicker'
@@ -32,7 +32,7 @@ import { act } from '../actionError'
 export function ReviewView({ userId }: { userId?: string }) {
   const today = useToday()
   const weekStart = useDateTimeFormat().resolved.weekStart
-  const tasks = useLiveQuery(() => visibleTasks(), [], undefined as Task[] | undefined)
+  const tasks = useLiveTasks()
   const projects = useLiveQuery(() => db.projects.toArray(), [], [] as Project[])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])

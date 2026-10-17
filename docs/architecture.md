@@ -148,7 +148,7 @@ Files in the data directory: `opentodo.db` (plus WAL files), `opentodo.lock`, `p
 | `public/push-sw.js` | Imported by the generated service worker: `push`, `notificationclick` (snooze and dismiss written as ops into the outbox), `notificationclose` |
 | `app/` | Router, auth screens, shell, views (lists, board, calendar, filters, dashboards, feed, trash), detail panel, settings panels, Vim layer (`app/vim/`, lazy) |
 
-The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; local edits and remote ops surface through the same path. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.
+The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; local edits and remote ops surface through the same path. Views that need the whole task list share one live snapshot (`web/src/lib/liveTasks.ts`) instead of each scanning the tasks table on every change. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.
 
 ## Build and packaging
 

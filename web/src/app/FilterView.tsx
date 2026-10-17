@@ -27,7 +27,7 @@ import { useShortcutScope } from './shortcuts'
 import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
-import { visibleTasks } from '../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { Dialog } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg } from '../lib/i18n'
@@ -68,8 +68,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   // undefined until the first read: Enter can arrive before the tasks are loaded.
-  const loadedTasks = useLiveQuery(() => visibleTasks(), [])
-  const allTasks = useMemo(() => loadedTasks ?? [], [loadedTasks])
+  const loadedTasks = useLiveTasks()
+  const allTasks = loadedTasks ?? NO_TASKS
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(allTasks.map((tk) => [tk.id, tk])), [allTasks])

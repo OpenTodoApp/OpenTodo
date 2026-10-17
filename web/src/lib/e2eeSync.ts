@@ -14,7 +14,7 @@
 import {
   decryptValue, encryptValue, isEnvelope,
 } from './crypto'
-import { db, entityTables, getMeta, setMeta, tableOf } from './db'
+import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './db'
 import {
   CONTENT_FIELDS, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
 } from './e2ee'
@@ -262,26 +262,32 @@ interface MigrationState {
   total: number
 }
 
-/** Rows of one entity kind that still need a re-write, in id order after `after`. */
-async function pending(entity: Entity, mode: MigrationState['mode'], after: string, me: string): Promise<{ id: string; patch: Record<string, unknown> }[]> {
+/** Rows read per page while counting pending ones (primary-key order); a batch reads pages of its own size. */
+const SCAN_PAGE = 500
+
+/**
+ * Rows of one entity kind that still need a re-write, in id order after `after`,
+ * at most `limit` of them. Rows are read a page at a time along the primary key
+ * from `after`, so each batch of the job reads about its own rows, not the whole
+ * table again (large-list-performance).
+ */
+async function pending(entity: Entity, mode: MigrationState['mode'], after: string, me: string, limit = Infinity): Promise<{ id: string; patch: Record<string, unknown> }[]> {
   const fields = CONTENT_FIELDS[entity] ?? []
   const target: Wire = mode === 'encrypt' ? 'c' : 'p'
-  const rows = (await tableOf(entity).toArray()).filter((r) => (r.id as string) > after)
-  rows.sort((a, b) => ((a.id as string) < (b.id as string) ? -1 : 1))
   const personal = await personalResolver([])
   const out: { id: string; patch: Record<string, unknown> }[] = []
-  for (const row of rows) {
+  const consider = async (row: EntityRow): Promise<void> => {
     // Only the author may write a comment.
-    if (entity === 'comment' && row.author_id !== me) continue
+    if (entity === 'comment' && row.author_id !== me) return
     if (entity === 'attachment') {
       // Links only: files are re-uploaded by the file phase (attachments D8). The
       // server fixes a link's url and mime at creation, so it moves to the other
       // form as a new attachment that replaces it (client-data-safety).
-      if (!row.url || row.deleted_at || row.author_id !== me) continue
+      if (!row.url || row.deleted_at || row.author_id !== me) return
       const wire = row._e2ee?.wire?.url
-      if (mode === 'encrypt' ? wire === 'c' || wire === 'x' : wire !== 'c') continue
+      if (mode === 'encrypt' ? wire === 'c' || wire === 'x' : wire !== 'c') return
       if (await personal(entity, row.id)) out.push({ id: row.id, patch: Object.fromEntries(LINK_FIELDS.map((f) => [f, row[f] ?? null])) })
-      continue
+      return
     }
     const patch: Record<string, unknown> = {}
     // A task's custom field values are content too (custom-fields D4): one entry each.
@@ -294,7 +300,17 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
     }
     if (Object.keys(patch).length && (await personal(entity, row.id as string))) out.push({ id: row.id as string, patch })
   }
-  return out
+  const page = Number.isFinite(limit) ? Math.max(1, limit) : SCAN_PAGE
+  let cursor = after
+  for (;;) {
+    const rows = await tableOf(entity).where(':id').above(cursor).limit(page).toArray()
+    for (const row of rows) {
+      await consider(row)
+      if (out.length >= limit) return out
+    }
+    if (rows.length < page) return out
+    cursor = rows[rows.length - 1].id as string
+  }
 }
 
 async function countPending(mode: MigrationState['mode'], me: string): Promise<number> {
@@ -345,7 +361,7 @@ export async function runMigration(opts: { failAfterBatches?: number } = {}): Pr
   publishEncryption({ migration: { mode: state.mode, done: state.done, total: state.total } })
   while (state.entity < MIGRATION_ORDER.length) {
     const entity = MIGRATION_ORDER[state.entity]
-    const list = (await pending(entity, state.mode, state.lastId, me)).slice(0, MIGRATION_BATCH)
+    const list = await pending(entity, state.mode, state.lastId, me, MIGRATION_BATCH)
     if (list.length === 0) {
       state = { ...state, entity: state.entity + 1, lastId: '' }
       await setMeta(K_MIGRATION, state)
