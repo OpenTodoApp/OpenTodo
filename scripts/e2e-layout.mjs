@@ -739,7 +739,23 @@ function overlayGeometry(el) {
 }
 
 // ------------------------------------------------------------------ runner
-async function runCombo(engine, width, theme, ids) {
+// WebKit sometimes loses its IndexedDB server process under load (four browsers at once in
+// CI): the app's local database is gone, the session reads as signed out, and every later
+// screen of that combination fails. That is the engine, not the app, so such a combination
+// is run once more from a fresh browser; a second loss is reported as usual.
+const ENGINE_DB_LOST = /Connection to Indexed Database server lost|unknown transient reason/i
+
+async function runCombo(engine, width, theme, ids, attempt = 1) {
+  const mine = []
+  const crashed = await runComboOnce(engine, width, theme, ids, mine)
+  if (crashed && attempt === 1) {
+    log(`  ${engine} ${width}px ${theme}: WebKit lost its IndexedDB server; running this combination again`)
+    return runCombo(engine, width, theme, ids, 2)
+  }
+  failures.push(...mine)
+}
+
+async function runComboOnce(engine, width, theme, ids, failures) {
   const tag = `${engine} ${width}px ${theme}`
   const launcher = pw[engine]
   const exe = engine === 'chromium' ? process.env.CHROMIUM_PATH : engine === 'webkit' ? process.env.WEBKIT_PATH : undefined
@@ -856,6 +872,7 @@ async function runCombo(engine, width, theme, ids) {
     await browser.close()
   }
   log(`  ${tag}: ${checked} screens and overlays checked`)
+  return engine === 'webkit' && failures.some((f) => ENGINE_DB_LOST.test(f))
 }
 
 // Whether an overlay closes: waits for it to leave instead of a fixed pause, so a
