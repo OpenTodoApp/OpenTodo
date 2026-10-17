@@ -2,9 +2,9 @@
 // by "No section", each listing its open top-level tasks by position. A pure
 // rendering of the same local query as the list (design D5); the parent view owns
 // selection and keyboard handling. Columns are drop targets for lib/dnd.
+import { useWide } from '../ui'
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { useWide } from './overlay'
 import type { Label, Project, Section, Task } from '../lib/types'
 import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
 import { t } from '../lib/i18n'

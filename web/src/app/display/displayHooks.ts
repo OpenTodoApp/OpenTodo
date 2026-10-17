@@ -2,10 +2,10 @@
 // change display-mode, design D4, D5): root attributes for high contrast and no
 // motion, the screen wake lock, and one roving focus across all rows. Kept apart
 // from DisplayScreen so the public page does not pull the local database in.
+import { useOverlayDepth } from '../../ui'
 import { useEffect, useState } from 'react'
 import { useShortcutScope } from '../shortcuts'
 import { isActivationTarget } from '../shortcuts/dispatch'
-import { useOverlayDepth } from '../overlay'
 import type { DisplayOptions } from './displayOptions'
 
 /** Sets the high-contrast and no-motion attributes on the document root while mounted (design D4). */

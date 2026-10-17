@@ -4,12 +4,10 @@
 // applied at once. Theme tiles are a radio group with roving focus; each tile
 // previews its theme through the real tokens (a data-accent subtree). Below
 // 640 px the tiles are one scrollable row of named swatches.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useRef } from 'react'
 import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
-import { db } from '../lib/db'
+import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
-import { USER_PREFS_ID } from '../lib/userPrefs'
 import { SettingRow, SettingsSection, Switch } from '../ui'
 import { ACCENTS, type AccentId } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
@@ -121,7 +119,7 @@ export function SidebarView({ promoted, onPromote }: { promoted: readonly Promot
 }
 
 function usePrefsRow(): Partial<UserPrefs> | null {
-  return useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, []) ?? null
+  return useUserPrefsRow() ?? null
 }
 
 /** The panel with its data: the synced row, written through ops. */

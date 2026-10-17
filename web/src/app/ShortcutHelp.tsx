@@ -3,9 +3,9 @@
 // come first, then "Everywhere" and "Go to", then the other sections, in two
 // columns from 768 px, with a search field, inside a dialog capped at 80 % of the
 // viewport with its own scroller.
+import { Dialog } from '../ui'
 import { useMemo, useState } from 'react'
 import { displayKeys, listedShortcuts, QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
-import { Dialog } from './overlay'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
 

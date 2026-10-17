@@ -3,7 +3,7 @@
 // context for lib/views. Local edits and synced ops re-render without a reload.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { db } from '../lib/db'
+import { useAllLabels, useProjects, useViewRows } from '../lib/localData'
 import { onViewerZoneChange, todayISO, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
@@ -32,7 +32,8 @@ export function useToday(): string {
 
 /** Non-deleted views in sidebar order. */
 export function useViews(): View[] {
-  return useLiveQuery(() => db.views.toArray().then(activeViews), [], [] as View[])
+  const rows = useViewRows()
+  return useMemo(() => activeViews(rows), [rows])
 }
 
 /** This device's start view (local meta, never synced). */
@@ -51,8 +52,8 @@ export interface ViewData {
 export function useViewData(): ViewData {
   const today = useToday()
   const views = useViews()
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  const projects = useProjects()
+  const labels = useAllLabels()
   const tasks = useLiveTasks() ?? NO_TASKS
   const zone = useViewerZone()
   // A new context on a zone change re-groups zoned dues (absolute-datetimes).

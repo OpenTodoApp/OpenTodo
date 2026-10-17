@@ -1,12 +1,11 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react'
-import { Button } from '../ui'
+import { Button, Dialog } from '../ui'
 import { Badge } from '../ui'
 import { Field, Input } from '../ui'
 import { Checkbox } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { Dialog } from './overlay/Dialog'
 import { ApiError, isNetworkError } from '../lib/api'
 import { MIN_PASSPHRASE_LENGTH, RecoveryKeyFormatError, WrongSecretError } from '../lib/crypto'
 import {

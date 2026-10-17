@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Menu } from '../app/overlay/Menu'
+import { Menu } from './overlay/Menu'
 import { Icon } from './Icon'
 import { MenuGroup, MenuItem, MenuSeparator } from './Menu'
 

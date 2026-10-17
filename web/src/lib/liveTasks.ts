@@ -7,67 +7,18 @@
 //
 // The snapshot is shared: callers treat the array and its tasks as read-only (sort
 // a copy, never the array itself).
-import { liveQuery, type Subscription } from 'dexie'
-import { useSyncExternalStore } from 'react'
-import { db } from './db'
+import { liveSnapshot } from './liveSnapshot'
 import { visibleTasks } from './trash'
 import type { Task } from './types'
 
 /** Stable empty list for callers that render before the first snapshot arrives. */
 export const NO_TASKS: Task[] = []
 
-let snapshot: Task[] | undefined
-let sub: Subscription | null = null
-/** The database the live query reads; tests swap it with useDatabase. */
-let source: unknown = null
-const listeners = new Set<() => void>()
-
-/**
- * Under test the snapshot is frozen, so a caller that sorts or edits the shared
- * array or one of its tasks in place fails loudly instead of changing what the
- * other components show.
- */
-function frozen(list: Task[]): Task[] {
-  for (const task of list) {
-    Object.freeze(task.labels)
-    if (task.due) Object.freeze(task.due)
-    Object.freeze(task)
-  }
-  return Object.freeze(list) as Task[]
-}
-
-function start() {
-  sub?.unsubscribe()
-  source = db
-  snapshot = undefined
-  sub = liveQuery(visibleTasks).subscribe({
-    next: (list) => {
-      snapshot = import.meta.env.MODE === 'test' ? frozen(list) : list
-      for (const l of listeners) l()
-    },
-    // A failed read keeps the last snapshot; the next write retries it.
-    error: (err) => console.warn('live tasks:', err),
-  })
-}
-
-function subscribe(fn: () => void): () => void {
-  listeners.add(fn)
-  if (!sub || source !== db) start()
-  return () => {
-    listeners.delete(fn)
-    if (listeners.size === 0 && sub) {
-      sub.unsubscribe()
-      sub = null
-      snapshot = undefined
-    }
-  }
-}
-
-const read = () => (source === db ? snapshot : undefined)
+const tasks = liveSnapshot('tasks', visibleTasks)
 
 /** Every visible task (not deleted, project not in the Trash), live; undefined until loaded. */
 export function useLiveTasks(): Task[] | undefined {
-  return useSyncExternalStore(subscribe, read, read)
+  return tasks.use()
 }
 
 // Derived lists are computed once per snapshot and shared by every caller.

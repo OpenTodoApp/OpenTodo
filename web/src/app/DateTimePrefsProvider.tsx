@@ -3,15 +3,14 @@
 // as the formatters' module snapshot and through context, so a component that
 // reads it with useDateTimeFormat() re-renders when a preference changes, on this
 // device or by sync, without a reload.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import { db } from '../lib/db'
+import { useUserPrefsRow } from '../lib/localData'
 import {
   currentDateTime, formatDate, formatHour, formatInstant, formatTime, setDateTime, weekDays, weekStartOf,
   type DateStyle, type InstantStyle, type ResolvedDateTime,
 } from '../lib/dates'
 import { useLanguageVersion } from '../lib/i18n'
-import { readUserPrefs, USER_PREFS_ID, type DateTimePrefs } from '../lib/userPrefs'
+import { readUserPrefs, type DateTimePrefs } from '../lib/userPrefs'
 
 interface DateTimeContextValue {
   prefs: DateTimePrefs
@@ -21,7 +20,7 @@ interface DateTimeContextValue {
 const DateTimeContext = createContext<DateTimeContextValue | null>(null)
 
 export function DateTimePrefsProvider({ children }: { children: ReactNode }) {
-  const row = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const row = useUserPrefsRow()
   const prefs = readUserPrefs(row)
   // The interface language decides what `system` means and the month names (app-localization D4).
   const lang = useLanguageVersion()

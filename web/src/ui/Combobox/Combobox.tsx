@@ -2,8 +2,8 @@
 // listbox. Combobox opens anchored from 640 px up and as a sheet below; ComboboxPanel
 // keeps field and list together (inside a dialog or a panel).
 import { useEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
-import { Popover } from '../../app/overlay/Popover'
-import { useWide } from '../../app/overlay/stack'
+import { Popover } from '../overlay/Popover'
+import { useWide } from '../overlay/stack'
 import { Icon } from '../Icon'
 import { highlight, type Range } from './match'
 import { useCombobox, type ComboboxConfig, type ComboboxState, type ComboOption } from './useCombobox'

@@ -2,12 +2,11 @@
 // design D8). Read-only: blocks and chips are buttons that open a popover with the
 // summary, time, location and calendar name; they never start a drag, are never
 // selected with j/k and are never drop targets.
-import { hueFor, Icon, Tooltip } from '../ui'
+import { hueFor, Icon, Tooltip, Popover } from '../ui'
 import { useRef, useState } from 'react'
 import { formatTime as toHHMM, type EventBlock } from '../lib/calendar'
 import { formatShort, formatTime as formatWallTime, localDueOf } from '../lib/dates'
 import type { CalendarEvent, CalendarSubscription, CalendarWhen } from '../lib/types'
-import { Popover } from './overlay/Popover'
 import { t } from '../lib/i18n'
 
 /** Wall time of a timed point in the viewer's zone ("10:00"), or the date for all-day points. */

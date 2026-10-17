@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { openHelp } from './store'
+import { openHelp } from '../../lib/helpRequest'
 import { t } from '../../lib/i18n'
 
 /**

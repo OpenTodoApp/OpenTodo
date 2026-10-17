@@ -2,10 +2,9 @@
 // D5; web-app "Comments, activity and history tabs"). The last tab is remembered on
 // this device; Shift+C switches to Comments and focuses the composer. History is
 // a separate chunk, loaded when its tab is first opened.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { Skeleton } from '../../ui'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { db } from '../../lib/db'
+import { useLiveCommentCount } from '../../lib/localData'
 import type { Task } from '../../lib/types'
 import { Tabs } from '../../ui'
 import { ActivityTab } from './ActivityTab'
@@ -52,7 +51,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost 
   const [focusComment, setFocusComment] = useState<string | null>(null)
   const [focusComposer, setFocusComposer] = useState(0)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
-  const count = useLiveQuery(() => db.comments.where('task_id').equals(task.id).filter((c) => !c.deleted_at).count(), [task.id], 0)
+  const count = useLiveCommentCount(task.id)
 
   const setTab = (item: TaskTab) => {
     setTabState(item)

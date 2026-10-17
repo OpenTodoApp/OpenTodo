@@ -1550,9 +1550,9 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/help/HelpPanel.tsx",
-    "web/src/app/overlay/Dialog.tsx",
-    "web/src/app/overlay/Popover.tsx",
-    "web/src/app/task-detail/TaskDetail.tsx"
+    "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/ui/overlay/Dialog.tsx",
+    "web/src/ui/overlay/Popover.tsx"
   ],
   "Close the panel": [
     "web/src/lib/shortcuts.ts"
@@ -9408,11 +9408,11 @@
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
-    "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
+    "web/src/lib/localData.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/subtasks.ts",
     "web/src/lib/trash.ts"

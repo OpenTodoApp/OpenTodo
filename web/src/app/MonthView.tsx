@@ -2,24 +2,22 @@
 // six-week grid of due dates, a pure projection of local tasks like Day and Week.
 // Moving a task, by drag onto a day or with the arrows, is one due edit that keeps
 // its time and zone; `q` adds a task due on the focused day. Works offline.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, hueFor, PageBody, PageHeader, useMediaQuery } from '../ui'
+import { Button, hueFor, PageBody, PageHeader, useMediaQuery, Dialog } from '../ui'
 import { calendarTasks, dayLoad, formatLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, dueFromView, formatTime, viewedTask, dateLocaleOf } from '../lib/dates'
-import { db } from '../lib/db'
+import { getTask, useMembershipMap, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import { formatMinutes } from '../lib/duration'
 import { cellTasks, monthGrid, visibleRows } from '../lib/month'
 import { createTask, updateTask } from '../lib/ops'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import type { Membership, Project, Task } from '../lib/types'
+import type { Task } from '../lib/types'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useGridPrefs } from './CalendarView'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { Dialog } from './overlay/Dialog'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { QuickAdd } from './QuickAdd'
 import { navigate } from './router'
@@ -53,10 +51,9 @@ export function MonthView({ date }: { date?: string }) {
 
   const grid = useMemo(() => monthGrid(anchor, resolved.weekStart), [anchor, resolved.weekStart])
   const days = useMemo(() => grid.flat(), [grid])
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const projects = useProjects()
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
-  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const memberMap = useMembershipMap()
   const rawTasks = useLiveTasks() ?? NO_TASKS
   const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
   // The Day and Week selection (open, live, not archived) over the six weeks.
@@ -92,7 +89,7 @@ export function MonthView({ date }: { date?: string }) {
   const queue = useRef<Promise<void>>(Promise.resolve())
   const move = useCallback((id: string, days: number) => {
     queue.current = queue.current.then(async () => {
-      const raw = await db.tasks.get(id)
+      const raw = await getTask(id)
       if (!raw || raw.deleted_at || !raw.due) return
       const task = viewedTask(raw)
       if (!task.due) return

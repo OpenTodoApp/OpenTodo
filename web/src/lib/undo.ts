@@ -12,9 +12,6 @@ import { uuid } from './ids'
 
 export const UNDO_KEEP = 20
 
-/** The Dexie table of an entity kind (the registry in db.ts). */
-export { tableOf }
-
 const norm = (v: unknown) => (v === undefined ? null : v)
 
 export interface BatchOptions {

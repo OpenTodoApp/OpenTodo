@@ -1,8 +1,7 @@
-import { Icon } from '../../ui'
+import { Icon, ToastRegion } from '../../ui'
 import { useEffect, useState } from 'react'
 import { undoChanges } from '../../lib/assistant'
 import { closeAssistant, useAssistantOpen } from '../../lib/assistantStatus'
-import { ToastRegion } from '../overlay'
 import { AssistantPanel } from './AssistantPanel'
 import { t } from '../../lib/i18n'
 

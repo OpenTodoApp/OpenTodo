@@ -1,11 +1,10 @@
 // Filter view (OpenSpec change `filter-query-language`): a query input over the
 // local store. Parsing and evaluation are pure (lib/filter); results are a live
 // query, so local edits and synced ops update them without a reload, offline too.
-import { useLiveQuery } from 'dexie-react-hooks'
-import { Button, PageBody, PageHeader } from '../ui'
+import { Button, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
-import { db } from '../lib/db'
+import { useAllLabels, useProjects } from '../lib/localData'
 import { compareDueThenPriority } from '../lib/ordering'
 import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, parse, type Node } from '../lib/filter'
 import { useFieldDefs } from './useFields'
@@ -16,7 +15,7 @@ import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { habitStatsMap } from '../lib/habits'
 import { createView } from '../lib/views'
 import { ancestors, flattenTree } from '../lib/tree'
-import type { Label, Project, Task } from '../lib/types'
+import type { Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
@@ -28,7 +27,6 @@ import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import { Dialog } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg } from '../lib/i18n'
 import { act } from './actionError'
@@ -65,8 +63,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     return () => clearTimeout(id)
   }, [query])
 
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  const projects = useProjects()
+  const labels = useAllLabels()
   // undefined until the first read: Enter can arrive before the tasks are loaded.
   const loadedTasks = useLiveTasks()
   const allTasks = loadedTasks ?? NO_TASKS

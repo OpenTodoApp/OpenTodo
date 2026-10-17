@@ -5,13 +5,12 @@
 // Long notes fold after about eight lines; the fold is a per-device preference
 // in Dexie meta, never synced. It sits above the sections, the board and the
 // timeline, below the quick add, so chrome stays together above content.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../ui'
-import { db, getMeta, setMeta } from '../lib/db'
+import { setProjectNoteFolded, useMembership, useProjectNoteFolded } from '../lib/localData'
 import { canEditProjectNote, roleOf } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
-import type { Membership, Project } from '../lib/types'
+import type { Project } from '../lib/types'
 import { Markdown } from './Markdown'
 import { useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
@@ -21,13 +20,11 @@ const NotesEditor = lazy(() => import('./NotesEditor'))
 
 /** Folded height: about eight lines of body text. */
 const FOLD_PX = 8 * 22
-const foldKey = (projectId: string) => `project-note-folded:${projectId}`
-
 export function ProjectNote({ project }: { project: Project }) {
   // null: a personal project; undefined: still loading (render nothing rather than flash "Add a note" to a viewer).
-  const membership = useLiveQuery(() => db.memberships.get(project.id).then((m) => m ?? null), [project.id]) as Membership | null | undefined
+  const membership = useMembership(project.id)
   const editable = canEditProjectNote(roleOf(project.id, new Map(membership ? [[project.id, membership]] : [])))
-  const folded = useLiveQuery(() => getMeta<boolean>(foldKey(project.id), true), [project.id], true)
+  const folded = useProjectNoteFolded(project.id)
   const [editing, setEditing] = useState(false)
   const [tall, setTall] = useState(false)
   const body = useRef<HTMLDivElement>(null)
@@ -87,7 +84,7 @@ export function ProjectNote({ project }: { project: Project }) {
       </div>
       {tall && (
         <button type="button" className="mt-1 text-meta text-muted hover:text-default hover:underline" aria-expanded={!folded}
-          onClick={() => void setMeta(foldKey(project.id), !folded)}>
+          onClick={() => void setProjectNoteFolded(project.id, !folded)}>
           {folded ? t('Show more') : t('Show less')}
         </button>
       )}

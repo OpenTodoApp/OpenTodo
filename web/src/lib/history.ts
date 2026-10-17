@@ -106,3 +106,8 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
   const s = typeof value === 'string' ? value : JSON.stringify(value)
   return s.length > 80 ? `${s.slice(0, 79)}…` : s
 }
+
+/** The task ids that parent changes in these change sets name (for useReferenceNames). */
+export function parentRefs(sets: readonly Pick<ChangeSet, 'changes'>[]): string[] {
+  return [...new Set(sets.flatMap((cs) => cs.changes.filter((c) => c.field === 'parent_id').flatMap((c) => [c.from, c.to]).filter((v): v is string => typeof v === 'string')))]
+}

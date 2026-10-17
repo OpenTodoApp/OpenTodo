@@ -9,7 +9,7 @@ import { parseRoute, routePath } from '../router'
 import { HelpContent } from './HelpContent'
 import { HelpHeading, HelpLink } from './HelpLink'
 import { HELP_TASKS, HelpView } from './HelpView'
-import { closeHelp, openHelp } from './store'
+import { closeHelp, openHelp } from '../../lib/helpRequest'
 import { applyLanguagePreference } from '../../lib/i18n'
 
 afterEach(() => { document.body.innerHTML = '' })

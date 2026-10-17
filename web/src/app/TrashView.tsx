@@ -1,14 +1,14 @@
 import { Button, Icon, PageBody, PageHeader } from '../ui'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
-import { db } from '../lib/db'
+import { useAllProjects, useDeletedTasks, useMembershipMap, useMeta } from '../lib/localData'
 import { restoreProject, restoreTask } from '../lib/ops'
 import { canDeleteProject, canEditTasks, roleOf } from '../lib/sharing'
 import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
-import type { Membership } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
+
+const NO_PURGES: PurgeRequest[] = []
 
 /**
  * The Trash (OpenSpec `trash-and-history`): deleted tasks and projects from local
@@ -17,13 +17,12 @@ import { t } from '../lib/i18n'
  */
 export function TrashView() {
   const dt = useDateTimeFormat()
-  const tasks = useLiveQuery(() => db.tasks.filter((task) => !!task.deleted_at).toArray(), [], [])
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
-  const retention = useLiveQuery(async () => ((await db.meta.get(RETENTION_KEY))?.value as number | undefined) ?? 30, [], 30)
-  const pending = useLiveQuery(async () => ((await db.meta.get(PENDING_PURGES_KEY))?.value as PurgeRequest[] | undefined) ?? [], [], [] as PurgeRequest[])
+  const tasks = useDeletedTasks()
+  const projects = useAllProjects()
+  const retention = useMeta<number>(RETENTION_KEY, 30)
+  const pending = useMeta<PurgeRequest[]>(PENDING_PURGES_KEY, NO_PURGES)
   const items = useMemo(() => trashItems(tasks, projects), [tasks, projects])
-  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const memberMap = useMembershipMap()
   const pendingKeys = useMemo(() => new Set(pending.map((p) => `${p.entity}:${p.id}`)), [pending])
   const taskById = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
   const [selected, setSelected] = useState(0)

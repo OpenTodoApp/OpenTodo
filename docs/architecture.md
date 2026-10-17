@@ -159,7 +159,7 @@ Files in the data directory: `opentodo.db` (plus WAL files), `opentodo.lock`, `p
 | `public/push-sw.js` | Imported by the generated service worker: `push`, `notificationclick` (snooze and dismiss written as ops into the outbox), `notificationclose` |
 | `app/` | Router, auth screens, shell, views (lists, board, calendar, filters, dashboards, feed, trash), detail panel, settings panels, Vim layer (`app/vim/`, lazy) |
 
-The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; local edits and remote ops surface through the same path. Views that need the whole task list share one live snapshot (`web/src/lib/liveTasks.ts`) instead of each scanning the tasks table on every change. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.
+The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; local edits and remote ops surface through the same path. Screens in `web/src/app` never open IndexedDB themselves: they read through `web/src/lib` (`localData.ts` and `liveTasks.ts`, enforced by ESLint), where widely read tables (tasks, projects, labels, memberships, views, preferences, field definitions) each have one shared live snapshot instead of every component scanning the table on every change, and where one visibility rule decides which projects a screen sees (live ones, archived included; browsing lists narrow them with `visibleProjects`; only the Trash, history and statistics read deleted ones). Shared UI in `web/src/ui`, overlays included, never imports a screen. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.
 
 ## Build and packaging
 

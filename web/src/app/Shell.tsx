@@ -1,4 +1,4 @@
-import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, useMediaQuery, usePageBar } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
@@ -24,12 +24,11 @@ import { ArchivePrompt } from './ArchivePrompt'
 import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
-import { useOverlayDepth } from './overlay'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { QuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
-import { db } from '../lib/db'
+import { getTask } from '../lib/localData'
 import { watchViewerZone } from '../lib/dates'
 import { UndoToast } from './bulk/UndoToast'
 import { PanelBoundary } from './PanelBoundary'
@@ -37,7 +36,7 @@ import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
-import { closeHelp, useHelpRequest } from './help/store'
+import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
 import { SkipLink, usePageFocus } from './pageFocus'
@@ -85,7 +84,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     if (taskParam) {
       if (location.pathname === '/') {
         history.replaceState(null, '', location.pathname)
-        void db.tasks.get(taskParam).then((task) => task && openTaskInList(task))
+        void getTask(taskParam).then((task) => task && openTaskInList(task))
       } else openTaskPanel(taskParam)
       return
     }

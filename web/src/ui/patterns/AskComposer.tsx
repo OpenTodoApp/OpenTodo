@@ -3,7 +3,7 @@
 // request; the caller opens the assistant panel with it. A long or multi-line
 // paste becomes separate material (sent as untrusted text, design D3).
 import { type ClipboardEvent, type KeyboardEvent, useId, useState } from 'react'
-import { Menu } from '../../app/overlay'
+import { Menu } from '../overlay'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Icon } from '../Icon'

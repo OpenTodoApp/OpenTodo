@@ -2,21 +2,19 @@
 // the task detail panel is rendered. It owns the panel's data (projects, labels,
 // memberships) so every view, and the palette, notifications and reminders, open
 // a task the same way.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo } from 'react'
-import { db } from '../lib/db'
+import { useLabels, useMembershipMap, useProjects, useTask } from '../lib/localData'
 import { roleOf } from '../lib/sharing'
-import type { Label, Project, Task, User } from '../lib/types'
+import type { Task, User } from '../lib/types'
 import { closePanel, openTaskPanel, usePanel, usePanelHandlers } from './panel'
 import { TaskDetail } from './TaskDetail'
 
 /** The data every task detail needs (the panel and the expanded page share it). */
 export function useTaskDetailData() {
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const labels = useLiveQuery(() => db.labels.filter((l) => !l.deleted_at).toArray(), [], [] as Label[])
+  const projects = useProjects()
+  const labels = useLabels()
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
-  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const memberMap = useMembershipMap()
   const readOnly = (task: Task) => roleOf(task.project_id, memberMap) === 'viewer'
   return { projects, labelMap, readOnly }
 }
@@ -27,7 +25,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   const taskId = occupant?.kind === 'task' ? occupant.id : null
   const { projects, labelMap, readOnly } = useTaskDetailData()
   // undefined while loading, null when the task does not exist.
-  const task = useLiveQuery<Task | null | undefined>(() => (taskId ? db.tasks.get(taskId).then((t) => t ?? null) : Promise.resolve(undefined)), [taskId])
+  const task = useTask(taskId)
 
   // A task that is gone (deleted here or elsewhere) leaves the slot.
   useEffect(() => {

@@ -7,15 +7,14 @@ import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useState } from 'react'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan } from '../../lib/bulk'
-import { db } from '../../lib/db'
+import { useAllLabels, useLiveSections, useProjects } from '../../lib/localData'
 import { projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { membershipMap } from '../../lib/sharing'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
-import { Icon } from '../../ui'
+import { Icon, Dialog } from '../../ui'
 import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
-import { Dialog } from '../overlay/Dialog'
 import { BulkReview } from './BulkReview'
 import { showBulkToast } from './toastStore'
 import { t } from '../../lib/i18n'
@@ -89,9 +88,9 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
 function useBulkData(ids: readonly string[]): Data {
   const key = ids.join(',')
   const tasks = useLiveQuery(() => readTicked(ids).then((r) => r.tasks), [key], [] as Task[])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const sections = useLiveQuery(() => db.sections.filter((s) => !s.deleted_at).toArray(), [], [] as Section[])
+  const labels = useAllLabels()
+  const projects = useProjects()
+  const sections = useLiveSections()
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
   return { tasks, labels, projects, sections, memberships }
 }

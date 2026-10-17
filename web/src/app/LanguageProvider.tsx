@@ -4,11 +4,10 @@
 // or the first sync on a new device). Loading a catalog is asynchronous; while it
 // loads the current language stays, and when it fails the Language panel says so
 // and the next attempt (back online, another change) applies it.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { db } from '../lib/db'
+import { useUserPrefsRow } from '../lib/localData'
 import { applyLanguagePreference, isApplied } from '../lib/i18n'
-import { readLanguage, USER_PREFS_ID } from '../lib/userPrefs'
+import { readLanguage } from '../lib/userPrefs'
 
 export type LanguageStatus = 'ready' | 'loading' | 'failed'
 
@@ -17,7 +16,7 @@ const LanguageContext = createContext<LanguageStatus>('ready')
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // null: no row yet (signed out, or a new device before its first sync); the
   // language applied at first paint stays.
-  const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
+  const row = useUserPrefsRow()
   const pref = row ? readLanguage(row) : null
   const [status, setStatus] = useState<LanguageStatus>('ready')
   const [attempt, setAttempt] = useState(0)

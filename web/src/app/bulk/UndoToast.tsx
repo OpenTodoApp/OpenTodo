@@ -1,9 +1,8 @@
 // "12 tasks completed · Undo" for ten seconds after a bulk action (bulk-edit D5).
 // The Undo button is reachable with Tab; Ctrl/⌘+Z outside a text field undoes too.
 import { useEffect } from 'react'
-import { Tooltip } from '../../ui'
+import { Tooltip, ToastRegion } from '../../ui'
 import { undoBatch } from '../../lib/undo'
-import { ToastRegion } from '../overlay'
 import { hideBulkToast, updateBulkToast, useBulkToast } from './toastStore'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'

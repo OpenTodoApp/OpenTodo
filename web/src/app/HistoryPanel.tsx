@@ -1,11 +1,10 @@
 import { Icon } from '../ui'
 import { Tooltip } from '../ui'
 import { Skeleton } from '../ui'
-import { useCallback, useEffect, useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../lib/db'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useReferenceNames } from '../lib/localData'
 import { isNetworkError } from '../lib/api'
-import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, restoreValue } from '../lib/history'
+import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, parentRefs, restoreValue } from '../lib/history'
 import { getDeviceId } from '../lib/ops'
 import { syncNow } from '../lib/sync'
 import type { ChangeSet } from '../lib/types'
@@ -37,15 +36,8 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
   const [device, setDevice] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   // Names for reference fields (assignee, project, section, parent task), from local data.
-  const refNames = useLiveQuery(async () => {
-    const m = new Map<string, string>()
-    for (const ms of await db.memberships.toArray()) for (const u of ms.members) m.set(`assignee_id:${u.userId}`, u.name || u.email)
-    for (const p of await db.projects.toArray()) m.set(`project_id:${p.id}`, p.name)
-    for (const x of await db.sections.toArray()) m.set(`section_id:${x.id}`, x.name)
-    const parents = [...new Set(sets.flatMap((cs) => cs.changes.filter((c) => c.field === 'parent_id').flatMap((c) => [c.from, c.to]).filter((v): v is string => typeof v === 'string')))]
-    for (const task of await db.tasks.bulkGet(parents)) if (task) m.set(`parent_id:${task.id}`, task.title)
-    return m
-  }, [sets], new Map<string, string>())
+  const parents = useMemo(() => parentRefs(sets), [sets])
+  const refNames = useReferenceNames(parents)
   const fmt = (field: string, value: unknown) => formatValue(field, value, (f, ref) => refNames.get(`${f}:${ref}`))
 
   const load = useCallback(async (older?: number) => {

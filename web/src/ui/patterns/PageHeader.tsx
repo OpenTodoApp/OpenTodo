@@ -4,8 +4,8 @@
 // Help action) inside a PageBody whose width is fixed per page type. The header
 // stays visible while the content column scrolls.
 import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
-import { openHelp } from '../../app/help/store'
-import { Menu } from '../../app/overlay/Menu'
+import { openHelp } from '../../lib/helpRequest'
+import { Menu } from '../overlay/Menu'
 import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { setPageBar } from './pageBar'

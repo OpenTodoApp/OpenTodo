@@ -3,24 +3,19 @@
 // order, each with an editor for its type. Every edit is one `fields.<id>` op,
 // applied locally first. A value that no longer fits its definition's type is
 // shown as text with a note; the next edit replaces it.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { db } from '../../lib/db'
+import { useProjectFieldRows } from '../../lib/localData'
 import { formatValue, liveFields, matchesType, parseOptions, setFieldValue, taskFields, validateValue } from '../../lib/fields'
 import type { FieldDef, FieldValue, Task } from '../../lib/types'
-import { ComboboxPanel, Icon, Input, Switch } from '../../ui'
+import { ComboboxPanel, Icon, Input, Switch, Popover } from '../../ui'
 import { DateField } from '../datetime/DateField'
-import { Popover } from '../overlay/Popover'
 import { t, msg, translatedMap } from '../../lib/i18n'
 
 const NOT_A = translatedMap<string>({ number: msg('not a number'), date: msg('not a date'), checkbox: msg('not on or off'), text: msg('not text'), link: msg('not a link'), choice: msg('not an option') })
 
 export function FieldsGroup({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const projectId = task.project_id
-  const defs = useLiveQuery(
-    () => (projectId ? db.fields.where('project_id').equals(projectId).toArray() : Promise.resolve([] as FieldDef[])),
-    [projectId], [] as FieldDef[],
-  )
+  const defs = useProjectFieldRows(projectId)
   const live = liveFields(projectId, defs)
   if (live.length === 0) return null
   const values = taskFields(task)

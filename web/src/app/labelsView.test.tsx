@@ -7,7 +7,7 @@ import { db } from '../lib/db'
 import { addLabel, createLabel } from '../lib/labels'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Label } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { LabelEditPanel, LabelsView, duplicatePair, labelDropAt, labelMenuGroups } from './LabelsView'
 
 beforeEach(async () => { await db.delete(); await db.open(); resetDeviceId() })
@@ -115,13 +115,13 @@ describe('labels page (5.1, 5.3)', () => {
     const banner = document.querySelector('[data-testid="duplicate-banner"]')!
     expect(banner.textContent).toContain('Merge “Errand” into “errand”?')
     await click([...banner.querySelectorAll('button')].find((b) => b.textContent === 'Swap')!)
-    await flush(20)
-    expect(document.querySelector('[data-testid="duplicate-banner"]')!.textContent).toContain('Merge “errand” into “Errand”?')
+    await waitFor(() => !!document.querySelector('[data-testid="duplicate-banner"]')?.textContent?.includes('Merge “errand” into “Errand”?'), 'the swapped banner')
     await click([...document.querySelectorAll('[data-testid="duplicate-banner"] button')].find((b) => b.textContent?.includes('Merge…'))!)
-    await flush(40)
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the merge confirmation')
     const dialog = document.querySelector('[role="alertdialog"]')!
     await click([...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Merge')!)
-    await flush(40)
+    // Waits for the merge itself, not a fixed delay: it failed under load (wave 6).
+    await waitFor(async () => (await db.labels.get('x2'))?.deleted_at != null, 'the merged label deleted')
     expect((await db.labels.get('x2'))?.deleted_at).not.toBeNull()
     expect((await db.labels.get('x1'))?.deleted_at).toBeNull()
     await r.unmount()

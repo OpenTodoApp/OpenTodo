@@ -2,18 +2,16 @@
 // files and links on the task, from local data, with Add by picker, paste and
 // drop. The list keeps one item in the tab order: arrows move between items,
 // Enter opens, Delete removes, F2 renames.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AttachmentError, contentUrl, formatBytes, isImage, openAttachment, parseLink, queueFiles, queueLink, removeAttachment, renameAttachment,
   retryUpload, stateOf, useAttachmentLimits, useUploadProgress, type AttachmentState,
 } from '../../lib/attachments'
-import { db, type AttachmentBlob } from '../../lib/db'
+import { hasAttachmentBlob, useAttachmentBlobs, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
-import { Button, ConfirmDialog, Icon, IconButton, MenuItem } from '../../ui'
+import { Button, ConfirmDialog, Icon, IconButton, MenuItem, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
-import { Menu } from '../overlay/Menu'
 import { showBulkToast } from '../bulk/toastStore'
 import { t, msg, translatedMap } from '../../lib/i18n'
 
@@ -61,16 +59,8 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
 }) {
   const demo = useDemo()
   const limits = useAttachmentLimits()
-  const rows = useLiveQuery(
-    async () => (await db.attachments.where('task_id').equals(taskId).toArray())
-      .filter((a) => !a.deleted_at && !a.comment_id)
-      .sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1)),
-    [taskId], [] as Attachment[],
-  )
-  const blobs = useLiveQuery(async () => {
-    const list = await db.attachmentBlobs.bulkGet(rows.map((r) => r.id))
-    return new Map(list.filter((b): b is AttachmentBlob => !!b).map((b) => [b.id, b]))
-  }, [rows], new Map<string, AttachmentBlob>())
+  const rows = useTaskAttachments(taskId)
+  const blobs = useAttachmentBlobs(rows)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(0)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -345,7 +335,7 @@ export function CommentAttachments({ list }: { list: Attachment[] }) {
   if (list.length === 0) return null
   async function open(a: Attachment) {
     setNote(null)
-    if (!a.url && !(await db.attachmentBlobs.get(a.id))) {
+    if (!a.url && !(await hasAttachmentBlob(a.id))) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return setNote(t('Connect to the internet to open this file.'))
       if (!a.uploaded_at) return setNote(t('This file is still uploading.'))
     }

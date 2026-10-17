@@ -1,7 +1,6 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { db } from '../lib/db'
-import { activeLabels, addLabel, createLabel, toggleLabel } from '../lib/labels'
+import { useLabels, useTask } from '../lib/localData'
+import { addLabel, createLabel, toggleLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
 import { Combobox, ComboboxPanel, LabelChip as UiLabelChip } from '../ui'
 import { t } from '../lib/i18n'
@@ -19,8 +18,8 @@ export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => 
  * attaches it. The picker stays open for further labels.
  */
 export function LabelPicker({ taskId, onClose, inline = false }: { taskId: string; onClose?: () => void; inline?: boolean }) {
-  const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
-  const labels = useLiveQuery(() => db.labels.toArray().then(activeLabels), [], [] as Label[])
+  const task = useTask(taskId)
+  const labels = useLabels()
   const [error, setError] = useState<string | null>(null)
 
   const run = async (fn: () => Promise<unknown>) => {

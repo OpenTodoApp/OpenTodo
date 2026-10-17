@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, fetchActivity, isPublicEvent, mergeOlder, pendingOpIds, PUBLIC_ACTOR_LABEL, taskActivity } from '../../lib/activity'
 import { type ActivityRun, groupRuns, summarizeRun } from '../../lib/activityRuns'
 import { isNetworkError } from '../../lib/api'
-import { db } from '../../lib/db'
+import { useAllProjects, useTasksById } from '../../lib/localData'
 import { useOnline } from '../../lib/online'
 import { currentUserId, membershipMap, memberName } from '../../lib/sharing'
 import type { ActivityEvent, ActivityKind, Membership, Task } from '../../lib/types'
@@ -132,7 +132,7 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
   const local = useLiveQuery(() => taskActivity(task.id), [task.id], [] as ActivityEvent[])
   const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [])
+  const projects = useAllProjects()
   const [older, setOlder] = useState<ActivityEvent[]>([])
   const [cursor, setCursor] = useState<string | undefined>()
   const [more, setMore] = useState(true)
@@ -154,7 +154,8 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   const runs = useMemo(() => groupRuns(mergeOlder(local, older), { pending }), [local, older, pending])
   // Titles for the tasks a dependencies event names (task-dependencies D8).
   const named = useMemo(() => [...new Set([...local, ...older].flatMap((e) => e.changes.filter((c) => c.field === 'blocked_by').flatMap((c) => (Array.isArray(c.to) ? c.to as string[] : []))))], [local, older])
-  const titles = useLiveQuery(async () => new Map((await db.tasks.bulkGet(named)).filter((tk): tk is Task => !!tk).map((item) => [item.id, item.title])), [named], new Map<string, string>())
+  const namedTasks = useTasksById(named)
+  const titles = useMemo(() => new Map(namedTasks.map((item) => [item.id, item.title])), [namedTasks])
   const taskTitle = useCallback((id: string) => titles.get(id), [titles])
 
   async function loadOlder() {

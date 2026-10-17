@@ -1,13 +1,11 @@
-import { Icon } from '../ui'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { useState } from 'react'
-import { db } from '../lib/db'
+import { Icon, Menu } from '../ui'
+import { useMemo, useState } from 'react'
+import { useReminderRows } from '../lib/localData'
 import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
 import { DEADLINE_PRESETS, deadlineOffsetLabel, DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
 import type { Reminder, Task } from '../lib/types'
 import { MenuGroup, MenuItem, MenuSeparator } from '../ui'
-import { Menu } from './overlay/Menu'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { DateField } from './datetime/DateField'
 import { TimeField } from './datetime/TimeField'
@@ -44,10 +42,8 @@ function defaultMoment(task: Task): { date: string; time: string } {
  * a deadline the menu also offers deadline reminders (OpenSpec change `deadlines`).
  */
 export function RemindersField({ task }: { task: Task }) {
-  const reminders = useLiveQuery(
-    () => db.reminders.where('task_id').equals(task.id).filter((r) => !r.deleted_at).toArray().then(sortReminders),
-    [task.id], [] as Reminder[],
-  )
+  const rows = useReminderRows(task.id)
+  const reminders = useMemo(() => sortReminders(rows.filter((r) => !r.deleted_at)), [rows])
   const [adding, setAdding] = useState<'custom' | 'deadline' | 'absolute' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)

@@ -5,8 +5,7 @@
 import { type FormEvent, useState } from 'react'
 import { safeHref } from '../lib/markdown'
 import { t } from '../lib/i18n'
-import { Button, Field, Input } from '../ui'
-import { Dialog } from './overlay/Dialog'
+import { Button, Field, Input, Dialog } from '../ui'
 
 export function LinkDialog({ current, onSubmit, onCancel }: {
   /** The selection's link, or '' when it has none. */

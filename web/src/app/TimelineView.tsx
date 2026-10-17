@@ -7,7 +7,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../ui'
 import { addDaysISO, viewedTask, dateLocaleOf } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
-import { db } from '../lib/db'
+import { getTask } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import { updateTask } from '../lib/ops'
 import { axis, dayOffset, edges, shiftDates, spanOf, type Span, type Zoom } from '../lib/timeline'
@@ -120,7 +120,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   const queue = useRef<Promise<void>>(Promise.resolve())
   const edit = useCallback((id: string, fn: (tk: Task) => Partial<Task> | null) => {
     queue.current = queue.current.then(async () => {
-      const item = await db.tasks.get(id)
+      const item = await getTask(id)
       if (!item || item.deleted_at) return
       const patch = fn(item)
       if (patch && Object.keys(patch).length) await updateTask(id, patch)

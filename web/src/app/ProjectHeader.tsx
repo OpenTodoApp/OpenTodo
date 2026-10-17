@@ -1,8 +1,7 @@
 import { Button, Icon, type IconName, isIconName, PageHeader, Tooltip } from '../ui'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
-import { db } from '../lib/db'
+import { useMembership, useProjects } from '../lib/localData'
 import { useDemo } from '../lib/demo'
 import { useOnline } from '../lib/online'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
@@ -165,7 +164,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const [editing, setEditing] = useState(false)
   const [sharing, setSharing] = useState<false | true | 'public'>(false)
   // Cached membership (project-sharing): roles render the same offline.
-  const membership = useLiveQuery(() => db.memberships.get(project.id), [project.id])
+  const membership = useMembership(project.id)
   const role = membership?.role ?? 'owner'
   const editable = canEditProject(role)
   const [name, setName] = useState(project.name)
@@ -185,7 +184,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
     return () => { cancelled = true }
   }, [online, managesLinks, project.id])
 
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const projects = useProjects()
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
   const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
   const openTasks = useOpenTaskCount(project.id)
@@ -276,7 +275,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
         menu={<ActionMenu label={t('Project menu')} title={project.name} groups={groups} header={editable ? <><ColourSwatches project={project} /><IconSwatches project={project} /></> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
-      {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} section={sharing === 'public' ? 'public' : undefined}
+      {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership ?? undefined} section={sharing === 'public' ? 'public' : undefined}
         onPublicLinks={setPublicLinks} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
       {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}

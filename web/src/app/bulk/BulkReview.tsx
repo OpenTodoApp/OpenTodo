@@ -1,12 +1,12 @@
 // Moves and assignments are reviewed first (bulk-edit D6): a move can change who
 // sees a task, an assignment tells someone. The assistant's review renders the
 // changes; Enter applies the checked ones as one undoable batch, Escape discards.
+import { Dialog } from '../../ui'
 import { useEffect, useState } from 'react'
 import { reviewChangeSet, type Review } from '../../lib/assistant'
 import type { ReviewPlan } from '../../lib/bulk'
 import { applyBatch } from '../../lib/undo'
 import { ChangeSetReview } from '../assistant/ChangeSetReview'
-import { Dialog } from '../overlay/Dialog'
 import { showBulkToast } from './toastStore'
 import { t } from '../../lib/i18n'
 

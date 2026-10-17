@@ -1,9 +1,8 @@
 import { Icon } from '../ui'
 import { keysOf } from '../lib/shortcuts'
 import { Switch, Tooltip } from '../ui'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
-import { db } from '../lib/db'
+import { useSeriesRecords } from '../lib/localData'
 import { formatShort, todayISO, weekday } from '../lib/dates'
 import { habitRule, habitStats } from '../lib/habits'
 import { detachOccurrence, mutate, setRecurrence, skipOccurrence } from '../lib/ops'
@@ -33,7 +32,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
   }, [task.id, task.recurrence])
 
   // Occurrence records of this series, for the `for N times` count in the preview.
-  const related = useLiveQuery(() => db.tasks.filter((tk) => tk.series_id === task.id).toArray(), [task.id], [] as Task[])
+  const related = useSeriesRecords(task.id)
   const done = useMemo(() => completedOccurrences(task.id, related, task.due?.date), [task.id, related, task.due?.date])
 
   const today = todayISO()

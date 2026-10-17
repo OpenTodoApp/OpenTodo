@@ -3,16 +3,15 @@
 // browser extension, all of which open /share?title=…&text=…&url=… A share with
 // files arrives as /share?inbox=<id>: the service worker put the files and text in
 // the device-local hand-over store (OpenSpec attachments, design D9).
-import { useLiveQuery } from 'dexie-react-hooks'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { commitFiles, formatBytes, isImage, planFiles, useAttachmentLimits } from '../lib/attachments'
-import { db } from '../lib/db'
+import { useAllLabels, useProjects } from '../lib/localData'
 import { useDemo } from '../lib/demo'
 import { createTask, planReminders, planTask } from '../lib/ops'
 import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
-import type { Label, Task } from '../lib/types'
+import type { Task } from '../lib/types'
 import { IconButton } from '../ui'
 import { Icon } from '../ui'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
@@ -127,8 +126,8 @@ export function ShareCapture() {
   const [error, setError] = useState<string | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   // Same inputs as the task views' quick add, so `#project`, `@label`, dates and `p1` in the title parse alike.
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  const projects = useProjects()
+  const labels = useAllLabels()
 
   useEffect(() => { titleRef.current?.focus() }, [])
   // The capture screen renders outside the shell, so it installs the dispatcher itself; Esc leaves without saving.

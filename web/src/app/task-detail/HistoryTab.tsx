@@ -5,17 +5,17 @@
 // shows nothing stale. Loaded lazily with its tab.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Skeleton } from '../../ui'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { isNetworkError } from '../../lib/api'
 import { zoneCity } from '../../lib/dates'
-import { db } from '../../lib/db'
-import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, restoreValue } from '../../lib/history'
+import { useAllLabels, useMemberships, useReferenceNames } from '../../lib/localData'
+import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, parentRefs, restoreValue } from '../../lib/history'
 import { summarizeVersion, toVersions, type Version, type VersionChange } from '../../lib/historyVersions'
 import { useOnline } from '../../lib/online'
 import { getDeviceId } from '../../lib/ops'
 import { currentUserId, memberName } from '../../lib/sharing'
 import { syncNow } from '../../lib/sync'
-import type { ChangeSet, Label, Membership } from '../../lib/types'
+import type { ChangeSet, Label } from '../../lib/types'
 import { Avatar } from '../../ui'
 import { Button } from '../../ui'
 import { Badge } from '../../ui'
@@ -202,17 +202,11 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   const [device, setDevice] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const me = useLiveQuery(() => currentUserId(), [], null)
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
-  const labels = useLiveQuery(async () => new Map((await db.labels.toArray()).map((l) => [l.id, l])), [], new Map<string, Label>())
-  const refNames = useLiveQuery(async () => {
-    const m = new Map<string, string>()
-    for (const ms of await db.memberships.toArray()) for (const u of ms.members) m.set(`assignee_id:${u.userId}`, u.name || u.email)
-    for (const p of await db.projects.toArray()) m.set(`project_id:${p.id}`, p.name)
-    for (const x of await db.sections.toArray()) m.set(`section_id:${x.id}`, x.name)
-    const parents = [...new Set(sets.flatMap((cs) => cs.changes.filter((c) => c.field === 'parent_id').flatMap((c) => [c.from, c.to]).filter((v): v is string => typeof v === 'string')))]
-    for (const task of await db.tasks.bulkGet(parents)) if (task) m.set(`parent_id:${task.id}`, task.title || t('Untitled'))
-    return m
-  }, [sets], new Map<string, string>())
+  const memberships = useMemberships()
+  const labelRows = useAllLabels()
+  const labels = useMemo(() => new Map(labelRows.map((l) => [l.id, l])), [labelRows])
+  const parents = useMemo(() => parentRefs(sets), [sets])
+  const refNames = useReferenceNames(parents)
 
   const load = useCallback(async (older?: number) => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {

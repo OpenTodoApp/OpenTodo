@@ -4,23 +4,22 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { db } from '../../lib/db'
+import { useLabels, useProjects, useSectionPlace } from '../../lib/localData'
 import { pickScores } from '../../lib/pickRank'
 import { canEditProject, membershipMap, roleOf } from '../../lib/sharing'
 import { loadViewMode } from '../../lib/sections'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
-import type { Label, Project, Section, User, View } from '../../lib/types'
-import { ComboboxField, ComboboxList, ComboboxPanel } from '../../ui'
+import type { User } from '../../lib/types'
+import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
 import { Icon } from '../../ui'
 import { HelpLink } from '../help/HelpLink'
 import { currentFilter, listState } from '../listActions'
 import { Confirmation } from '../menus/ActionMenu'
 import { NamePrompt } from '../NamePrompt'
-import { Dialog } from '../overlay/Dialog'
 import { moveTargets } from '../ProjectHeader'
 import { useRoute } from '../router'
-import { useStartView, useToday } from '../useViews'
+import { useStartView, useToday, useViews } from '../useViews'
 import { useVimEnabled } from '../vim/prefs'
 import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
@@ -44,20 +43,15 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const [mode, setMode] = useState<'search' | 'closing' | Step>('search')
 
   const tasks = useLiveTasks() ?? NO_TASKS
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const labels = useLiveQuery(() => db.labels.filter((l) => !l.deleted_at).toArray(), [], [] as Label[])
-  const views = useLiveQuery(() => db.views.filter((v) => !v.deleted_at).toArray(), [], [] as View[])
+  const projects = useProjects()
+  const labels = useLabels()
+  const views = useViews()
   const memberships = useLiveQuery(() => membershipMap(), [])
   const scores = useLiveQuery(() => pickScores('palette'), [], new Map<string, number>())
   const task = useMemo(() => tasks.find((tk) => tk.id === taskId), [tasks, taskId])
-  const sectionInfo = useLiveQuery(async () => {
-    if (!task?.section_id || !task.project_id) return undefined
-    const sections = (await db.sections.where('project_id').equals(task.project_id).toArray()).filter((s) => !s.deleted_at).sort((a, b) => a.position - b.position)
-    const i = sections.findIndex((s) => s.id === task.section_id)
-    if (i < 0) return undefined
-    const count = await db.tasks.filter((tk) => tk.section_id === task.section_id && !tk.deleted_at && !tk.completed_at).count()
-    return { row: sections[i] as Section, first: i === 0, last: i === sections.length - 1, layout: (await loadViewMode(task.project_id)) === 'board' ? 'board' as const : 'list' as const, count }
-  }, [task?.section_id, task?.project_id])
+  const place = useSectionPlace(task?.section_id, task?.project_id)
+  const viewMode = useLiveQuery(() => (task?.project_id ? loadViewMode(task.project_id) : undefined), [task?.project_id])
+  const sectionInfo = useMemo(() => (place ? { ...place, layout: viewMode === 'board' ? 'board' as const : 'list' as const } : undefined), [place, viewMode])
 
   // What is typed, debounced, for the filter results and the "Search Help" command.
   const [typed, setTyped] = useState('')

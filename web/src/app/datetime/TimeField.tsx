@@ -5,10 +5,9 @@
 // Enter picks.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { formatTime } from '../../lib/dates'
-import { IconButton } from '../../ui'
+import { IconButton, Popover } from '../../ui'
 import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { Popover } from '../overlay/Popover'
 import { parseTimeInput } from './parse'
 import { t } from '../../lib/i18n'
 

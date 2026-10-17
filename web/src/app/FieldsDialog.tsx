@@ -4,15 +4,13 @@
 // lib/fields.ts, so it works offline and converges; every action is reachable
 // with the keyboard. Offered to editors and above only (the project menu hides it
 // from viewers).
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
-import { db } from '../lib/db'
+import { useProjectFieldRows, useProjectTaskRows } from '../lib/localData'
 import {
   countValues, createField, deleteField, FIELD_TYPES, FieldError, liveFields, MAX_FIELDS, parseOptions, renameField, reorderField, setFieldOptions,
 } from '../lib/fields'
 import type { FieldDef, FieldType, Project, Task } from '../lib/types'
-import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea } from '../ui'
-import { Dialog } from './overlay'
+import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea, Dialog } from '../ui'
 import { HelpLink } from './help/HelpLink'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
@@ -20,8 +18,8 @@ import { act } from './actionError'
 const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.label ?? item
 
 export function FieldsDialog({ project, onClose }: { project: Project; onClose: () => void }) {
-  const defs = useLiveQuery(() => db.fields.where('project_id').equals(project.id).toArray(), [project.id], [] as FieldDef[])
-  const tasks = useLiveQuery(() => db.tasks.where('project_id').equals(project.id).toArray(), [project.id], [] as Task[])
+  const defs = useProjectFieldRows(project.id)
+  const tasks = useProjectTaskRows(project.id)
   const live = useMemo(() => liveFields(project.id, defs), [project.id, defs])
   const [removing, setRemoving] = useState<FieldDef | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)

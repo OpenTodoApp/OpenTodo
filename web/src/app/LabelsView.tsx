@@ -1,26 +1,24 @@
 // Labels: the overview (`g l`), the sidebar rows, the label menu and the edit panel
 // (OpenSpec change labels-and-menus, group 5). Every write goes through lib/labels,
 // so it works offline and converges like any other edit.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { keysOf } from '../lib/shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { db } from '../lib/db'
+import { useLabels, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import {
-  LabelExistsError, activeLabels, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
+  LabelExistsError, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
   mergeLabels, moveLabelTo, reorderLabel, updateLabel,
 } from '../lib/labels'
 import { useOpenTasks } from '../lib/liveTasks'
 import type { Label } from '../lib/types'
-import { Badge, Button, PageBody, PageHeader, ReadAs } from '../ui'
+import { Badge, Button, PageBody, PageHeader, ReadAs, Popover } from '../ui'
 import { ComboboxPanel } from '../ui'
 import { Icon } from '../ui'
 import { EmptyState } from '../ui'
 import { HUES, hueFor } from '../ui'
 import { ActionMenu, useConfirm, type ActionGroup, type ConfirmSpec } from './menus/ActionMenu'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
-import { Popover } from './overlay'
 import { navigate, type Route } from './router'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
@@ -28,15 +26,15 @@ import { act } from './actionError'
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
 export function useLabelData() {
-  const labels = useLiveQuery(() => db.labels.toArray().then(activeLabels), [], [] as Label[])
+  const labels = useLabels()
   // Same rule as TaskListView: tasks of archived projects and of trashed projects are
   // hidden. The tasks come from the shared snapshot (large-list-performance D2).
-  const hidden = useLiveQuery(async () => (await db.projects.filter((p) => !p.deleted_at && p.archived).primaryKeys()).join('\n'), [], '')
+  const projects = useProjects()
   const openTasks = useOpenTasks()
   const counts = useMemo(() => {
-    const skip = new Set(hidden ? hidden.split('\n') : [])
+    const skip = new Set(projects.filter((p) => p.archived).map((p) => p.id))
     return countOpenByLabel(openTasks.filter((task) => !task.project_id || !skip.has(task.project_id)))
-  }, [hidden, openTasks])
+  }, [projects, openTasks])
   return { labels, counts, duplicates: duplicateLabelIds(labels) }
 }
 

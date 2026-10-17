@@ -2,7 +2,7 @@
 // grouping and sort options in the header, and live results from the view runner.
 // A dashboard is rendered by DashboardView instead.
 import { blockedMap } from '../lib/dependencies'
-import { Button, PageBody, PageHeader } from '../ui'
+import { Button, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
@@ -21,7 +21,6 @@ import { placeInDay } from './signals'
 import { todayISO } from '../lib/dates'
 import { habitStatsMap } from '../lib/habits'
 import { useViewData, type ViewData } from './useViews'
-import { Dialog } from './overlay'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { act } from './actionError'
 

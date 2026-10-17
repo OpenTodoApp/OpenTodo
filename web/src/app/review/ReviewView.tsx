@@ -4,21 +4,20 @@
 // manual action is "Finish review", which writes the synced `review` row.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Icon, Notice, PageBody, PageHeader, Skeleton, Tabs } from '../../ui'
-import { db } from '../../lib/db'
+import { Button, Icon, Notice, PageBody, PageHeader, Skeleton, Tabs, Dialog } from '../../ui'
+import { useAllLabels, useAllProjects, useMemberships, useReviewRow } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
 import { archiveProject, createTask, setTaskCompleted } from '../../lib/ops'
 import { unarchiveProject } from '../../lib/archive'
 import { resolveLabels } from '../../lib/labels'
-import { finishReview, firstUnfinished, REVIEW_ID, reviewSteps, STEP_IDS, STEP_TITLES, type NextActionProject, type StepId } from '../../lib/review'
+import { finishReview, firstUnfinished, reviewSteps, STEP_IDS, STEP_TITLES, type NextActionProject, type StepId } from '../../lib/review'
 import { currentUserId } from '../../lib/sharing'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { useLiveTasks } from '../../lib/liveTasks'
-import type { Label, Membership, Project } from '../../lib/types'
+import type { Project } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { HelpLink } from '../help/HelpLink'
 import { LabelPicker } from '../LabelPicker'
-import { Dialog } from '../overlay'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
 import { QuickAdd, type QuickAddInput } from '../QuickAdd'
 import { navigate } from '../router'
@@ -33,12 +32,12 @@ export function ReviewView({ userId }: { userId?: string }) {
   const today = useToday()
   const weekStart = useDateTimeFormat().resolved.weekStart
   const tasks = useLiveTasks()
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [] as Project[])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  const projects = useAllProjects()
+  const memberships = useMemberships()
+  const labels = useAllLabels()
   const meRow = useLiveQuery(() => currentUserId(), [], null)
   const me = meRow ?? userId ?? null
-  const review = useLiveQuery(() => db.review.get(REVIEW_ID), [])
+  const review = useReviewRow()
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
   const steps = useMemo(() => {
     if (!tasks) return null

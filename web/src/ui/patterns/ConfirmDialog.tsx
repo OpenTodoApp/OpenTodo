@@ -1,7 +1,7 @@
 // Confirmation dialog (OpenSpec change ui-primitives, design D9): replaces the
 // browser's confirm(). Focus starts on Cancel; a destructive one ignores outside taps.
 import { useState, type ReactNode } from 'react'
-import { Dialog } from '../../app/overlay/Dialog'
+import { Dialog } from '../overlay/Dialog'
 import { Button } from '../Button'
 import { t } from '../../lib/i18n'
 

@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { keysOf } from '../lib/shortcuts'
 import { Kbd } from './shortcuts/Kbd'
-import { Button } from '../ui'
+import { Button, Dialog } from '../ui'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../lib/nlp'
 import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
-import { Dialog } from './overlay'
 import { t, preferredLanguages } from '../lib/i18n'
 
 const LANGUAGE_NAMES: Record<string, string> = {

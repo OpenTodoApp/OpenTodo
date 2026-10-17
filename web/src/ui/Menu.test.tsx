@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest'
-import { Menu } from '../app/overlay/Menu'
+import { Menu } from './overlay/Menu'
 import { MenuGroup, MenuItem, MenuSeparator, nextIndex } from './Menu'
 import { click, flush, key, render } from './test-utils'
 

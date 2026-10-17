@@ -20,6 +20,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **The quick add sheet treats archived projects like the views' quick add.** Typing `#name` of an archived project no longer behaves differently in the sheet and in a list; every screen now reads projects, labels and shared-project roles from one shared live copy, so they agree with each other and update together after a sync.
 - **Screen readers hear what the chips say.** Counts, "Has notes", deadlines, group counts and the warning on a title that could not be decrypted were silent or read as bare numbers; they are now read as full phrases ("3 comments", "4 open tasks").
 - **Screen readers follow the list.** Moving with <kbd>j</kbd> / <kbd>k</kbd> moves focus to the selected task, subtasks are read with their level and position, and each complete button names its task ("Complete Buy milk"). ([Keyboard shortcuts](docs/keyboard.md))
 - **Page changes are announced.** The browser tab names the page ("Today – OpenTodo"), going to another page moves focus to its heading, and a "Skip to content" link jumps past the sidebar. ([Keyboard shortcuts](docs/keyboard.md))
@@ -82,6 +83,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Changed
 
+- **The task list, calendar, task properties and assistant panel are built from smaller parts.** Nothing changes in how they look or work; their grouping rules now have their own tests, and a check keeps new screens from growing into one very long function again.
 - **For contributors: the deploy template checks share one strict YAML parser** (`scripts/deploy/yaml.mjs`) instead of four that read some files differently, so a quoted `'it''s'` or a folded text means the same in every check. The committed templates are unchanged.
 - **For contributors: `AGENTS.md` and `docs/architecture.md` name every server package**, `AGENTS.md` describes the MCP server's write tools, and a repository check fails when a package or token scope is left out. The privacy list in the README now also names outgoing email and calendar subscriptions.
 - **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
