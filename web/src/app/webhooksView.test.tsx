@@ -15,7 +15,7 @@ const props = (over: Partial<WebhooksViewProps>): WebhooksViewProps => ({
   testResults: {}, log: null, onDraftChange: noop, onSave: noop, onDismissSecret: noop, onToggleEnabled: noop, onTest: noop,
   onDelete: noop, onOpenLog: noop, onRefreshLog: noop, onRedeliver: noop, onPolicyChange: noop, ...over,
 })
-const items = () => Object.fromEntries([...document.querySelectorAll('[role^="menuitem"]')].map((i) => [i.getAttribute('aria-label'), i as HTMLButtonElement]))
+const items = () => Object.fromEntries([...document.querySelectorAll('[role^="menuitem"]')].map((i) => [i.getAttribute('data-menu-label'), i as HTMLButtonElement]))
 
 describe('webhook row menu', () => {
   it('disables Send test, Edit, Disable and Delete offline; the delivery log stays available', async () => {

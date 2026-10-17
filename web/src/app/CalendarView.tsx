@@ -639,7 +639,6 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
             data-hue={hue}
             role="button"
             tabIndex={-1}
-            aria-label={[task.title || t('Untitled'), block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : ''].filter(Boolean).join(', ')}
             onPointerDown={(e) => {
               // The lowest few pixels (handle and border) resize; the rest moves the block.
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -656,12 +655,14 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
               borderLeftWidth: 3,
             }}
           >
-            <div className="flex items-start gap-1">
+            {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
+            <span className="sr-only">{[task.title || t('Untitled'), block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : ''].filter(Boolean).join(', ')}</span>
+            <div aria-hidden className="flex items-start gap-1">
               <span className="min-w-0 flex-1 truncate font-medium">{task.title || t('Untitled')}</span>
               {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
-              <div className="truncate text-hint text-muted">
+              <div aria-hidden className="truncate text-hint text-muted">
                 {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
                 {block.estimated && <span className="ml-1 font-mono">{formatMinutes(task.estimate_minutes!)}</span>}
               </div>

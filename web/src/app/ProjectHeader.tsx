@@ -239,15 +239,17 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const meta = (
     <>
       {membership && (
-        <button type="button" className="flex items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)} aria-label={t('Members: {list}', { list: membership.members.map((m) => `${m.name || m.email} (${roleName(m.role)})`).join(', ') })}>
-          <span className="flex -space-x-1">
+        <button type="button" className="flex items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)}>
+          {/* Named by its content (WCAG 2.5.3 Label in Name): the member list is visually hidden, the initials and count are not read. */}
+          <span className="sr-only">{t('Members: {list}', { list: membership.members.map((m) => `${m.name || m.email} (${roleName(m.role)})`).join(', ') })}</span>
+          <span aria-hidden className="flex -space-x-1">
             {membership.members.slice(0, 4).map((m) => (
               <span key={m.userId} className="flex h-5 w-5 items-center justify-center rounded-full border border-surface bg-sunken text-hint font-semibold uppercase text-muted dark:bg-raised">
                 {(m.name || m.email).slice(0, 1)}
               </span>
             ))}
           </span>
-          <span>{membership.members.length} · {roleName(role)}</span>
+          <span aria-hidden>{membership.members.length} · {roleName(role)}</span>
         </button>
       )}
       {role === 'viewer' && <span role="note" className="rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted">{t('Read-only')}</span>}

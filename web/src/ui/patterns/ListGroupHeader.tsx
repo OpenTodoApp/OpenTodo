@@ -30,7 +30,6 @@ export function ListGroupHeader({ title, count, tone = 'default', collapsed, onT
   const H = level === 2 ? 'h2' : 'h3'
   const color = tone === 'danger' ? 'text-danger' : tone === 'muted' ? 'text-muted' : 'text-default'
   const collapsible = onToggle !== undefined
-  const label = typeof title === 'string' ? title : undefined
   const text = (
     <>
       <span className={`min-w-0 truncate text-body font-semibold ${color}`}>{title}</span>
@@ -41,8 +40,9 @@ export function ListGroupHeader({ title, count, tone = 'default', collapsed, onT
     <div className={`group flex min-h-9 items-center gap-1.5 px-1 ${className}`} data-group-header data-testid={testId} data-collapsed={collapsed || undefined}>
       <H className="flex min-w-0 flex-1 items-center">
         {collapsible ? (
+          // Named by its visible title and count (WCAG 2.5.3 Label in Name); aria-expanded says whether it is open.
           <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pr-1 text-left hover:bg-sunken dark:hover:bg-raised"
-            aria-expanded={!collapsed} aria-label={label ? (collapsed ? t('Expand {name}', { name: label }) : t('Collapse {name}', { name: label })) : undefined} onClick={onToggle} data-group-toggle>
+            aria-expanded={!collapsed} onClick={onToggle} data-group-toggle>
             <Icon name="chevron-right" size="xs" className={`shrink-0 text-faint transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             {text}
           </button>

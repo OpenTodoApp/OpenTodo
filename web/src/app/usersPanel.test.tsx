@@ -26,7 +26,7 @@ async function menuOf(over: Partial<UsersViewProps>, email: string) {
   await click(li.querySelector('button[aria-haspopup="menu"]')!)
   await flush(20)
   const items = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')] as HTMLButtonElement[]
-  return { ...r, items, labels: items.map((i) => i.getAttribute('aria-label')) }
+  return { ...r, items, labels: items.map((i) => i.getAttribute('data-menu-label')) }
 }
 
 describe('UsersView row menus', () => {

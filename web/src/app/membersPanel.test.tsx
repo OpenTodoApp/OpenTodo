@@ -54,7 +54,7 @@ describe('MembersView', () => {
     const { container, unmount } = await render(createElement(MembersView, props()))
     await click(container.querySelector('[data-invitation="i1"] button[aria-haspopup="menu"]')!)
     await flush(20)
-    const labels = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].map((i) => i.getAttribute('aria-label'))
+    const labels = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].map((i) => i.getAttribute('data-menu-label'))
     expect(labels).toEqual(['Copy link', 'Revoke'])
     await unmount()
   })
