@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Attachment, FieldDef, CalendarEvent, CalendarSubscription, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type UserPrefs, type View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -411,12 +411,39 @@ export function useDatabase(name: string): OpenTodoDB {
   return db
 }
 
+/** A row of any synced entity, for code that treats every kind alike. */
+export type EntityRow = Record<string, unknown> & { id: string; _clock?: Clock; _e2ee?: RowEncryption }
+
+function tableMap(d: OpenTodoDB) {
+  // `satisfies` keeps this exhaustive: a new entity kind does not compile until
+  // it has its table here, and there is no fallback table (client-data-safety).
+  return {
+    project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
+    field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
+  } satisfies Record<Entity, Table<unknown, string>>
+}
+
+let tables: { of: OpenTodoDB; map: Record<Entity, Table<EntityRow, string>> } | null = null
+
+/** The one registry of the Dexie table of each synced entity kind. */
+export function tableOf(entity: Entity): Table<EntityRow, string> {
+  if (tables?.of !== db) tables = { of: db, map: tableMap(db) as unknown as Record<Entity, Table<EntityRow, string>> }
+  const table = tables.map[entity]
+  if (!table) throw new Error(`unknown entity kind: ${String(entity)}`)
+  return table
+}
+
+/** The tables of every synced entity kind, in ENTITIES order. */
+export function syncedTables(): Table<EntityRow, string>[] {
+  return ENTITIES.map(tableOf)
+}
+
 /**
  * Every table that holds synced entities, plus the activity log that applyOps
  * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
  */
-export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.fields, db.comments, db.prefs, db.userPrefs, db.attachments, db.review, db.activity]
+export function entityTables(): Table[] {
+  return [...syncedTables(), db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {

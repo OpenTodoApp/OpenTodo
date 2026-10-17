@@ -5,7 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import { forgetActivity } from './activity'
 import { api, ApiError } from './api'
-import { db, entityTables, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
@@ -16,7 +16,7 @@ import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
-import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
+import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
@@ -302,19 +302,10 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       emitted += chunk.length
       chunk = []
     }
-    // Every synced entity kind (keep in step with ENTITIES / entityTables()).
-    const tables: [Entity, unknown][] = [
-      ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views], ['reminder', db.reminders],
-      ['section', db.sections],
-      ['comment', db.comments],
-      ['project_prefs', db.prefs],
-      ['user_prefs', db.userPrefs],
-      ['review', db.review],
-      ['attachment', db.attachments],
-    ]
     const me = (await db.meta.get('userId'))?.value
-    for (const [entity, table] of tables) {
-      const rows = (await (table as unknown as { toArray(): Promise<Record<string, unknown>[]> }).toArray())
+    // Every synced entity kind, from the one registry (client-data-safety).
+    for (const entity of ENTITIES) {
+      const rows = await tableOf(entity).toArray()
       for (const row of rows) {
         // Only the author may write a comment (comments-and-activity): other
         // members' comments come back from their own devices.

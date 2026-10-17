@@ -14,13 +14,13 @@
 import {
   decryptValue, encryptValue, isEnvelope,
 } from './crypto'
-import { db, entityTables, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta, tableOf } from './db'
 import {
   CONTENT_FIELDS, currentKey, isContentField, isEnabled, K_DISCARD, publishEncryption, refreshFromServer, UNDECRYPTABLE,
 } from './e2ee'
 import { getDeviceId, mutateMany, mutationTables, readField, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
-import type { Clock, Entity, Op, RowEncryption } from './types'
+import type { Entity, Op, RowEncryption } from './types'
 import { t } from './i18n'
 
 export type Wire = 'p' | 'c' | 'x'
@@ -35,17 +35,6 @@ export class LockedError extends Error {
   constructor() {
     super(t('This device is locked. Unlock it to sync.'))
   }
-}
-
-type Row = Record<string, unknown> & { _clock?: Clock; _e2ee?: RowEncryption }
-type AnyTable = { get(id: string): Promise<Row | undefined>; put(v: Row): Promise<unknown>; toArray(): Promise<Row[]> }
-
-function tableOf(entity: Entity): AnyTable {
-  const tk = {
-    project: db.projects, task: db.tasks, label: db.labels, view: db.views, reminder: db.reminders, section: db.sections,
-    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments, field: db.fields, review: db.review,
-  }[entity]
-  return tk as unknown as AnyTable
 }
 
 /**
