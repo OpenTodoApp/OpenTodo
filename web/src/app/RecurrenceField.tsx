@@ -73,7 +73,8 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           className="ui-input"
           aria-label={t('Repeat rule')}
           list="recurrence-suggestions"
-          placeholder={t('Does not repeat (e.g. every weekday)')}
+          // Rules are English in every language (the grammar is shared with the server), so the example is not translated.
+          placeholder={t('Does not repeat (e.g. {example})', { example: 'every weekday' })}
           value={draft}
           maxLength={200}
           aria-invalid={!!error}
@@ -91,6 +92,9 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       <datalist id="recurrence-suggestions">
         {RULE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
       </datalist>
+      {!draft.trim() && !error && (
+        <p className="text-meta text-faint" data-recurrence-hint>{t('Type any interval or pattern, such as {examples}.', { examples: 'every 3 months, every 2nd tuesday, every 10 days after completion' })}</p>
+      )}
       {error && <p className="text-meta text-danger" role="alert">{t('Not a rule I understand: {error}. The previous rule is kept.', { error })}</p>}
       {preview.length > 0 && (
         <p className="text-meta text-muted" data-recurrence-preview>

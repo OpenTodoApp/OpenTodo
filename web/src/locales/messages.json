@@ -2408,7 +2408,7 @@
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
-  "Does not repeat (e.g. every weekday)": [
+  "Does not repeat (e.g. {example})": [
     "web/src/app/RecurrenceField.tsx"
   ],
   "Done": [
@@ -9097,6 +9097,9 @@
   ],
   "Type a title": [
     "web/src/app/QuickAdd.tsx"
+  ],
+  "Type any interval or pattern, such as {examples}.": [
+    "web/src/app/RecurrenceField.tsx"
   ],
   "Type the six-digit code the app shows.": [
     "web/src/app/TwoFactorPanel.tsx"

@@ -24,7 +24,7 @@ Repeating tasks show a ↻ symbol on the row. To stop repeating, select the **×
 
 ## Rules you can write
 
-`every day`, `every weekday`, `every 2 weeks`, `every mon, wed, fri`, `every 15th`, `every last friday`, `every 2nd tuesday` and `every year` all work. Add `after completion` to count from the day you finish, and `until 2026-12-31` or `for 10 times` to end the series. Rules are in English. See [Repeat rules](repeat-rules.md#rules-you-can-write) for the full list and the [recurring task rules](recurrence.md) reference for every detail.
+`every day`, `every weekday`, `every 2 weeks`, `every 3 months`, `every mon, wed, fri`, `every 15th`, `every last friday`, `every 2nd tuesday` and `every year` all work. Add `after completion` to count from the day you finish, and `until 2026-12-31` or `for 10 times` to end the series. Rules are in English. See [Repeat rules](repeat-rules.md#rules-you-can-write) for the full list and the [recurring task rules](recurrence.md) reference for every detail.
 
 ## Complete, skip or split off one occurrence
 
