@@ -116,7 +116,7 @@ func (s *Server) handleMFALogin(w http.ResponseWriter, r *http.Request) {
 		Remember     bool   `json:"remember"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	code, recovery := in.Code, false
@@ -184,7 +184,7 @@ func (s *Server) handleReauth(w http.ResponseWriter, r *http.Request) {
 		Code     string `json:"code"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	u := sess.User
@@ -261,7 +261,7 @@ func (s *Server) handleMFAConfirm(w http.ResponseWriter, r *http.Request) {
 		Code string `json:"code"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	tokenHash := ""
@@ -377,7 +377,7 @@ func (s *Server) handlePutMFAPolicy(w http.ResponseWriter, r *http.Request) {
 		Required string `json:"required"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	p, err := auth.ParsePolicy(in.Required)

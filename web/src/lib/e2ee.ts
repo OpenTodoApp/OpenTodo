@@ -10,7 +10,7 @@
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import {
-  createKeyRecord, decryptValue, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
+  checkRecordParams, createKeyRecord, decryptValue, KeyRecordParamsError, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
   type KeyRecord,
 } from './crypto'
 import { db, getMeta, setMeta } from './db'
@@ -63,6 +63,13 @@ const K_KEY = 'e2ee.key'
 const K_FAILURES = 'e2ee.failures'
 /** createdAt of the key record the stored key belongs to (a re-enabled account has a new key). */
 const K_KEY_FOR = 'e2ee.keyFor'
+/**
+ * The account encrypts on this device but the server answered that it has no key
+ * record (encryption-state-integrity): sync stays paused until the user restores
+ * the record from this device or turns encryption off here. A server answer alone
+ * never turns encryption off.
+ */
+const K_MISSING = 'e2ee.recordMissing'
 /** Set by the "both lost" path: undecryptable content is tombstoned on sight. */
 export const K_DISCARD = 'e2ee.discardUndecryptable'
 
@@ -95,9 +102,11 @@ export interface EncryptionSnapshot {
   migration: { mode: 'encrypt' | 'decrypt'; done: number; total: number; files?: boolean } | null
   /** The server needs a newer client (design D9). */
   updateRequired: boolean
+  /** The account encrypts here but the server has no key record: sync is paused until the user decides. */
+  recordMissing: boolean
 }
 
-let snap: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false }
+let snap: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false }
 const listeners = new Set<() => void>()
 
 export function publishEncryption(patch: Partial<EncryptionSnapshot>): void {
@@ -163,20 +172,42 @@ async function setEnabled(enabled: boolean, record: KeyRecord | null): Promise<v
   await setMeta(K_ENABLED, enabled)
   if (record) await setMeta(K_RECORD, record)
   else await db.meta.delete(K_RECORD)
-  publishEncryption({ enabled, keyVersion: record?.version ?? 0 })
+  // Either the server has a record again or the user turned encryption off here.
+  await db.meta.delete(K_MISSING)
+  publishEncryption({ enabled, keyVersion: record?.version ?? 0, recordMissing: false })
+}
+
+/** The server reported no key record while this device encrypts. */
+export async function isRecordMissing(): Promise<boolean> {
+  return getMeta<boolean>(K_MISSING, false)
+}
+
+/**
+ * Nothing may be pulled or pushed: the account encrypts on this device and
+ * either the device holds no key or the server lost the key record.
+ */
+export async function syncBlocked(): Promise<boolean> {
+  if (!(await isEnabled())) return false
+  return !(await currentKey()) || (await isRecordMissing())
 }
 
 /** Load the stored state into the snapshot (app start, database switch in tests). */
 export async function loadEncryptionState(): Promise<EncryptionSnapshot> {
   memKeys.delete(db.name)
-  const [enabled, key, record] = await Promise.all([isEnabled(), currentKey(), cachedRecord()])
-  publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0 })
+  const [enabled, key, record, missing] = await Promise.all([isEnabled(), currentKey(), cachedRecord(), isRecordMissing()])
+  publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0, recordMissing: enabled && missing })
   return snap
 }
 
 /**
- * Fetch the server's key record (null when encryption is off) and adopt the
- * account mode it implies. Network errors propagate.
+ * Fetch the server's key record (null when there is none) and adopt it. A record
+ * turns encryption on; a missing record never turns it off on a device that
+ * encrypts (encryption-state-integrity): a server restored from an older backup,
+ * or a hostile one, would otherwise downgrade the device to plaintext. The device
+ * is marked "record missing" instead and sync pauses until the user restores the
+ * record (restoreKeyRecord) or turns encryption off here (turnOffAfterMissingRecord,
+ * disableEncryption). A record with out-of-range derivation parameters is not
+ * adopted (KeyRecordParamsError). Network errors propagate.
  */
 export async function refreshFromServer(): Promise<KeyRecord | null> {
   let record: KeyRecord | null = null
@@ -185,7 +216,23 @@ export async function refreshFromServer(): Promise<KeyRecord | null> {
   } catch (err) {
     if (!(err instanceof ApiError && err.status === 404)) throw err
   }
-  await setEnabled(!!record, record)
+  if (record) {
+    try {
+      checkRecordParams(record)
+    } catch (err) {
+      // The account encrypts, but this record is not used or cached: a device
+      // without the key stays locked with this reason.
+      if (!(await isEnabled())) {
+        await setMeta(K_ENABLED, true)
+        publishEncryption({ enabled: true })
+      }
+      throw err
+    }
+    await setEnabled(true, record)
+  } else if (await isEnabled()) {
+    await setMeta(K_MISSING, true)
+    publishEncryption({ recordMissing: true })
+  }
   return record
 }
 
@@ -238,7 +285,9 @@ async function recordForUnlock(): Promise<KeyRecord> {
   try {
     const r = await refreshFromServer()
     if (r) return r
-  } catch {
+  } catch (err) {
+    // A record this client refuses keeps the device locked, with that reason.
+    if (err instanceof KeyRecordParamsError) throw err
     // Offline: fall back to the cached record (offline unlock).
   }
   const cached = await cachedRecord()
@@ -352,6 +401,46 @@ export async function disableEncryption(): Promise<void> {
 }
 
 /**
+ * The server lost the key record while this device encrypts (encryption-state-integrity):
+ * upload the record this device cached as a new record (version 1). It wraps the
+ * same account key, so other devices keep decrypting with the same passphrase. A
+ * device without the key proves the passphrase against the cached record first.
+ * When another device was faster (409), its record is adopted instead.
+ */
+export async function restoreKeyRecord(passphrase?: string): Promise<void> {
+  const cached = await cachedRecord()
+  if (!cached) throw new Error(t('This device has no copy of the key record. Turn encryption off on this device, or unlock another device that still has it.'))
+  let key = await currentKey()
+  if (!key) {
+    if (!passphrase) throw new Error(t('Enter your encryption passphrase to restore the key record.'))
+    key = await attempt(() => unlockWithPassphrase(cached, passphrase))
+  }
+  const { createdAt: _created, updatedAt: _updated, ...rest } = cached
+  let stored: KeyRecord
+  try {
+    stored = (await api.putEncryptionKeys({ ...rest, version: 1 })).keys
+  } catch (err) {
+    if (err instanceof ApiError && err.code === 'encryption_conflict') {
+      await refreshFromServer()
+      return
+    }
+    throw err
+  }
+  await storeKey(key, stored)
+  await setEnabled(true, stored)
+}
+
+/**
+ * The user's explicit choice after the server lost the key record: stop
+ * encrypting on this device. No server call (there is no record to delete). The
+ * key stays, as with disableEncryption, so ciphertext that still arrives is
+ * re-written as plaintext; the caller starts the decrypt job when unlocked.
+ */
+export async function turnOffAfterMissingRecord(): Promise<void> {
+  await setEnabled(false, null)
+}
+
+/**
  * Both passphrase and recovery key lost: delete the key record and discard the
  * encrypted content, which nobody can read any more. Undecryptable content is
  * tombstoned as it arrives (e2eeSync).
@@ -373,7 +462,7 @@ export async function purgeHistory(): Promise<{ purged: number; notice: string }
 /** Settings → Sign out clears local data; forget the in-memory key as well. */
 export function forgetMemoryKeys(): void {
   memKeys.clear()
-  publishEncryption({ enabled: false, unlocked: false, keyVersion: 0, migration: null })
+  publishEncryption({ enabled: false, unlocked: false, keyVersion: 0, migration: null, recordMissing: false })
 }
 
 /** A content value the UI should mark: plaintext on the server while the account encrypts. */

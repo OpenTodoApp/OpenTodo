@@ -1316,6 +1316,7 @@
     "web/src/app/TokensSection.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TwoFactorPanel.tsx",
+    "web/src/app/UnlockScreen.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/VoiceSettings.tsx",
     "web/src/app/WebhooksPanel.tsx",
@@ -2693,6 +2694,9 @@
   "Encryption is on. Your content was re-written as ciphertext; your files continue encrypting when you are online.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Encryption key record missing": [
+    "web/src/app/UnlockScreen.tsx"
+  ],
   "Encryption was already set up on another device. Unlock with that passphrase instead.": [
     "web/src/lib/e2ee.ts"
   ],
@@ -2749,6 +2753,9 @@
   ],
   "Enter your API key for {provider}.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Enter your encryption passphrase to restore the key record.": [
+    "web/src/lib/e2ee.ts"
   ],
   "Error": [
     "web/src/app/DataSettings.tsx"
@@ -6091,6 +6098,9 @@
   "Re-enable": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Re-enter your passphrase to restore the key record from this device": [
+    "web/src/app/UnlockScreen.tsx"
+  ],
   "Re-syncing after restore…": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -6477,6 +6487,12 @@
   "Restore requested": [
     "web/src/app/auditFormat.ts"
   ],
+  "Restore the key record": [
+    "web/src/app/UnlockScreen.tsx"
+  ],
+  "Restore the key record from this device": [
+    "web/src/app/UnlockScreen.tsx"
+  ],
   "Restore this value": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -6511,6 +6527,9 @@
   ],
   "Restoring runs on the server and needs a connection.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Restoring…": [
+    "web/src/app/UnlockScreen.tsx"
   ],
   "Restricted": [
     "web/src/app/DataSettings.tsx"
@@ -7946,6 +7965,9 @@
     "web/src/app/UsersPanel.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
+  "The encryption key record from the server uses {n} key derivation iterations, outside the accepted range. This device stays locked; ask the server operator to check the server.": [
+    "web/src/lib/crypto.ts"
+  ],
   "The encryption key was created or changed on another device. Unlock with the existing passphrase.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -8158,6 +8180,9 @@
   ],
   "The server has push notifications turned off (OPENTODO_PUSH=off). Reminders still appear inside the app.": [
     "web/src/lib/push.ts"
+  ],
+  "The server is busy. Try again in a moment.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.": [
     "web/src/app/RestoreSection.tsx"
@@ -8464,6 +8489,12 @@
   "This device": [
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "This device encrypts your content, but the server says it has no encryption key record. This happens when the server was restored from an older backup or another device turned encryption off. Sync is paused, so nothing is uploaded unencrypted. Choose how to continue.": [
+    "web/src/app/UnlockScreen.tsx"
+  ],
+  "This device has no copy of the key record. Turn encryption off on this device, or unlock another device that still has it.": [
+    "web/src/lib/e2ee.ts"
   ],
   "This device has no subscription on the server.": [
     "web/src/lib/push.ts"
@@ -9042,7 +9073,11 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Turn off encryption": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/UnlockScreen.tsx"
+  ],
+  "Turn off encryption on this device…": [
+    "web/src/app/UnlockScreen.tsx"
   ],
   "Turn off encryption?": [
     "web/src/app/EncryptionPanel.tsx"
@@ -9345,6 +9380,9 @@
   ],
   "Uploading… {round}%": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": [
+    "web/src/app/UnlockScreen.tsx"
   ],
   "Usage": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -9803,6 +9841,9 @@
   ],
   "Your content is synced in plaintext again.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Your content will be uploaded to the server in plaintext again. Only do this if you turned encryption off on purpose.": [
+    "web/src/app/UnlockScreen.tsx"
   ],
   "Your current password is not correct.": [
     "web/src/app/PasswordSection.tsx"

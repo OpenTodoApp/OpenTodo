@@ -186,7 +186,7 @@ func (s *Server) handlePutMCPSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	var enabled, writes *bool
@@ -234,15 +234,11 @@ func (s *Server) agentAccessStatus(r *http.Request, allow bool) map[string]any {
 }
 
 // requireSessionOrFull refuses read and agent tokens even on reads: the switch
-// is managed by the person, never by an assistant (mcp-write-tools D3).
+// is managed by the person, never by an assistant (mcp-write-tools D3). It
+// reads the scope requireAuth resolved instead of looking the token up again.
 func (s *Server) requireSessionOrFull(w http.ResponseWriter, r *http.Request) bool {
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-		_, scope, err := s.auth.UserByTokenScope(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
-		if err != nil && !errors.Is(err, auth.ErrNotFound) {
-			s.internal(w, err)
-			return false
-		}
-		if scope != auth.ScopeFull {
+		if tokenFrom(r.Context()).Scope != auth.ScopeFull {
 			writeError(w, http.StatusForbidden, "insufficient_scope", "only you can change this, signed in or with a full-access token")
 			return false
 		}
@@ -268,7 +264,7 @@ func (s *Server) handlePutAgentAccess(w http.ResponseWriter, r *http.Request) {
 	}
 	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	var allow bool

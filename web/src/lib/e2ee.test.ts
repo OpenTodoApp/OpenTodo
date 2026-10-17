@@ -25,6 +25,8 @@ const { server, MockApiError } = vi.hoisted(() => {
     digestOn: false,
     /** Refuses an op with this reason (client-data-safety); null accepts it. */
     reject: null as ((op: Op) => string | null) | null,
+    /** The log generation sent with every answer; a new value means "restored from a backup". */
+    generation: undefined as string | undefined,
   }
   return { server, MockApiError }
 })
@@ -50,7 +52,7 @@ vi.mock('./api', () => ({
         server.log.push({ ...structuredClone(op), seq: ++server.seq })
         applied++
       }
-      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now(), rejected }
+      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now(), rejected, ...(server.generation ? { generation: server.generation } : {}) }
     },
     encryptionKeys: async () => {
       if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
@@ -73,19 +75,21 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { decryptValue, isEnvelope, MAX_PLAINTEXT_BYTES } from './crypto'
+import { decryptValue, isEnvelope, ITERATION_LIMITS, KeyRecordParamsError, MAX_PLAINTEXT_BYTES } from './crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED } from './docfields'
 import { db, getMeta, setMeta, useDatabase } from './db'
 import {
   changePassphrase, commitEnable, currentKey, prepareEnable, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
-  MAX_FAILURES, notYetEncrypted, resetPassphrase, unlock, UnlockThrottledError, UNDECRYPTABLE,
+  MAX_FAILURES, notYetEncrypted, refreshFromServer, resetPassphrase, restoreKeyRecord, turnOffAfterMissingRecord, unlock, UnlockThrottledError, UNDECRYPTABLE,
 } from './e2ee'
-import { decryptIncoming, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
+import { decryptIncoming, LockedError, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
 import { applyOps, mutate, PlaintextTooLongError, resetDeviceId } from './ops'
 import { syncNow, syncSnapshot } from './sync'
 
 const PASS = 'correct horse battery staple'
 const FAST = { iterations: 1000 }
+// Fast derivations in tests: lower the accepted minimum (the range test restores it).
+ITERATION_LIMITS.min = 1000
 let run = 0
 
 /** Switch the global database to one device's. */
@@ -116,6 +120,7 @@ beforeEach(() => {
   server.calls = []
   server.digestOn = false
   server.reject = null
+  server.generation = undefined
 })
 afterEach(() => vi.useRealTimers())
 
@@ -413,13 +418,122 @@ describe('passphrase change, recovery and disabling', () => {
     expect(current('task', 't1', 'title')).toBe('Dentist')
     expect(current('label', 'l1', 'name')).toBe('errand')
     const settled = server.log.length
+    // B learns of it from the server, which alone never turns encryption off
+    // (encryption-state-integrity): B pauses and asks; its user turns it off here.
     await on('B')
     await syncNow()
-    expect(encryptionSnapshot().enabled).toBe(false)
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, recordMissing: true })
+    expect(syncSnapshot().state).toBe('locked')
+    await turnOffAfterMissingRecord()
+    await syncNow()
+    expect(encryptionSnapshot()).toMatchObject({ enabled: false, recordMissing: false })
     expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
     await on('A')
     await syncNow()
     expect(server.log.length).toBe(settled)
+  })
+})
+
+describe('a server without the key record (encryption-state-integrity)', () => {
+  const contentSent = (n: number) => sentAfter(n).filter((o) => ['title', 'description', 'name'].includes(o.field) && typeof o.value === 'string' && o.value !== '')
+
+  it('a 404 on refresh keeps encryption on and locks; nothing is uploaded until the user decides', async () => {
+    await enableOnA()
+    server.record = null
+    await expect(refreshFromServer()).resolves.toBeNull()
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, unlocked: true, recordMissing: true })
+    await mutate('task', 't1', { title: 'Dentist at 3' })
+    await expect(prepareOutgoing(await db.outbox.toArray())).rejects.toBeInstanceOf(LockedError)
+    const before = server.calls.length
+    await syncNow()
+    expect(syncSnapshot().state).toBe('locked')
+    expect(server.calls.length).toBe(before)
+    // The state survives a reload.
+    await loadEncryptionState()
+    expect(encryptionSnapshot().recordMissing).toBe(true)
+    // Restoring from this device's copy: same account key, sync resumes encrypted.
+    await restoreKeyRecord()
+    expect(server.record).not.toBeNull()
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, unlocked: true, recordMissing: false })
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    expect(isEnvelope(current('task', 't1', 'title'))).toBe(true)
+    // Another device unlocks the restored record with the same passphrase.
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist at 3')
+  })
+
+  it('a device without the key restores the record with its passphrase', async () => {
+    await enableOnA()
+    await lock()
+    server.record = null
+    await refreshFromServer()
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, unlocked: false, recordMissing: true })
+    await expect(restoreKeyRecord('wrong passphrase!')).rejects.toThrow()
+    expect(server.record).toBeNull()
+    await restoreKeyRecord(PASS)
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, unlocked: true, recordMissing: false })
+  })
+
+  it('restoring the server from a pre-encryption backup never uploads plaintext content', async () => {
+    await on('A')
+    await seedTasks()
+    const before = structuredClone(server.log)
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    // The server goes back to the backup: plaintext log, no key record, new generation.
+    server.generation = 'g1'
+    await syncNow()
+    server.log = before
+    server.seq = before.length
+    server.record = null
+    server.generation = 'g2'
+    const n = server.calls.length
+    await syncNow()
+    expect(syncSnapshot().state).toBe('locked')
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, recordMissing: true })
+    expect(contentSent(n).filter((o) => !isEnvelope(o.value))).toEqual([])
+    // Restoring the record lets the re-seed go out, encrypted.
+    await restoreKeyRecord()
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    const sent = contentSent(n)
+    expect(sent.length).toBeGreaterThan(0)
+    expect(sent.filter((o) => !isEnvelope(o.value))).toEqual([])
+  })
+
+  it('explicit disable on the device still turns encryption off', async () => {
+    await enableOnA()
+    await disableEncryption()
+    expect(server.record).toBeNull()
+    expect(encryptionSnapshot()).toMatchObject({ enabled: false, recordMissing: false })
+    await startMigration('decrypt')
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    expect(current('task', 't1', 'title')).toBe('Dentist')
+  })
+
+  it('refuses a key record with an iteration count outside the accepted range and stays locked', async () => {
+    await enableOnA()
+    await on('B')
+    const good = structuredClone(server.record!)
+    const saved = ITERATION_LIMITS.min
+    ITERATION_LIMITS.min = 100_000
+    try {
+      for (const iterations of [99_999, 10_000_001, 1.5]) {
+        server.record = { ...good, iterations }
+        await expect(unlock(PASS, 'passphrase')).rejects.toBeInstanceOf(KeyRecordParamsError)
+        expect(await currentKey()).toBeNull()
+        await syncNow()
+        expect(syncSnapshot().state).toBe('locked')
+      }
+    } finally {
+      ITERATION_LIMITS.min = saved
+      server.record = good
+    }
   })
 })
 

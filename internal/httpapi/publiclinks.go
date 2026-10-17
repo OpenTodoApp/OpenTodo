@@ -71,7 +71,7 @@ func (s *Server) handleCreatePublicLink(w http.ResponseWriter, r *http.Request) 
 		ExpiresInDays *int   `json:"expiresInDays"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	days := 0
@@ -275,7 +275,7 @@ func (s *Server) handlePublicTick(w http.ResponseWriter, r *http.Request) {
 		Completed *bool  `json:"completed"`
 	}
 	if err := readJSON(r, &in); err != nil || in.TaskID == "" || in.Completed == nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", "taskId and completed are required")
+		badBodyWith(w, err, "invalid_input", "taskId and completed are required")
 		return
 	}
 	var task opsync.Entity

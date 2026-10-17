@@ -190,6 +190,15 @@ func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invit
 	if err := CheckPasswordPolicy(password); err != nil {
 		return nil, err
 	}
+	invitation = strings.TrimSpace(invitation)
+	// Refuse what the policy refuses before paying for a hash (SEC-5). The
+	// write transaction checks again, so a change in between is still caught.
+	if err := s.readTx(ctx, func(tx *sql.Tx) error {
+		_, _, _, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, time.Now().UnixMilli())
+		return err
+	}); err != nil {
+		return nil, err
+	}
 	hash, err := HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -199,39 +208,12 @@ func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invit
 		return nil, err
 	}
 	defer tx.Rollback()
-	var n int
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
+	now := time.Now().UnixMilli()
+	n, role, invitationID, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, now)
+	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UnixMilli()
-	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: now}
-	invitation = strings.TrimSpace(invitation)
-	var invitationID string
-	switch {
-	case n == 0:
-		if s.setupToken != "" && !s.setupTokenMatches(strings.TrimSpace(setupToken)) {
-			return nil, ErrSetupTokenInvalid
-		}
-		if s.setupToken == "" && !local && !s.setupCode.matches(setupToken) {
-			return nil, ErrSetupCodeInvalid
-		}
-		u.Role = "owner"
-	case invitation != "":
-		// Validate before inserting so a bad link is reported ahead of email_taken,
-		// and the invitation stays pending whenever the account is not created.
-		role, id, err := s.checkInvitation(ctx, tx, invitation, email, now)
-		if err != nil {
-			return nil, err
-		}
-		u.Role, invitationID = role, id
-	case !s.allowSignup:
-		return nil, ErrSignupClosed
-	}
-	if n > 0 {
-		if err := s.checkMemberLimit(ctx, tx); err != nil {
-			return nil, err
-		}
-	}
+	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: now}
 	_, err = tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
 		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt)
 	if err != nil {
@@ -258,6 +240,56 @@ func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invit
 		s.setupCode.discard()
 	}
 	return u, nil
+}
+
+// admitRegistration applies the registration policy inside tx and returns the
+// number of existing accounts, the new account's role and the invitation id.
+// The first account needs the setup token when one is configured and becomes
+// the owner; after that an invitation admits one member even while sign-up is
+// closed, and otherwise the open sign-up policy and the member limit apply.
+func (s *Service) admitRegistration(ctx context.Context, tx *sql.Tx, email, invitation, setupToken string, local bool, now int64) (int, string, string, error) {
+	var n int
+	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
+		return 0, "", "", err
+	}
+	role, invitationID := "member", ""
+	switch {
+	case n == 0:
+		if s.setupToken != "" && !s.setupTokenMatches(strings.TrimSpace(setupToken)) {
+			return 0, "", "", ErrSetupTokenInvalid
+		}
+		// Without a setup token, a first registration from a public address must
+		// carry the setup code the server printed in its log (SEC-9).
+		if s.setupToken == "" && !local && !s.setupCode.matches(setupToken) {
+			return 0, "", "", ErrSetupCodeInvalid
+		}
+		return 0, "owner", "", nil
+	case invitation != "":
+		// Validate before inserting so a bad link is reported ahead of email_taken,
+		// and the invitation stays pending whenever the account is not created.
+		r, id, err := s.checkInvitation(ctx, tx, invitation, email, now)
+		if err != nil {
+			return 0, "", "", err
+		}
+		role, invitationID = r, id
+	case !s.allowSignup:
+		return 0, "", "", ErrSignupClosed
+	}
+	if err := s.checkMemberLimit(ctx, tx); err != nil {
+		return 0, "", "", err
+	}
+	return n, role, invitationID, nil
+}
+
+// readTx runs fn in a transaction that is always rolled back: the policy checks
+// made before an expensive step such as hashing a password.
+func (s *Service) readTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	return fn(tx)
 }
 
 // LoginFailure is the error Authenticate returns for refused credentials. It
@@ -295,14 +327,19 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 	err := s.db.QueryRowContext(ctx, "SELECT id,email,name,role,created_at,password_hash FROM users WHERE email = ?", email).
 		Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
-		// Burn comparable time so timing does not reveal whether the account exists.
-		VerifyPassword("$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", password)
+		// Burn comparable time so timing does not reveal whether the account
+		// exists (VerifyPassword checks the dummy hash for an empty one).
+		if _, err := VerifyPassword("", password); err != nil {
+			return nil, err
+		}
 		return nil, &LoginFailure{Reason: audit.ReasonUnknownAccount}
 	}
 	if err != nil {
 		return nil, err
 	}
-	if !VerifyPassword(hash, password) {
+	if ok, err := VerifyPassword(hash, password); err != nil {
+		return nil, err
+	} else if !ok {
 		return nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonWrongPassword}
 	}
 	if off, err := s.isDeactivated(ctx, s.db, u.ID); err != nil {
@@ -496,19 +533,33 @@ func (s *Service) UserByTokenScope(ctx context.Context, plain string) (*User, st
 func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, TokenInfo, error) {
 	var u User
 	var info TokenInfo
-	err := s.db.QueryRowContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
+	var lastUsed sql.NullInt64
+	err := s.db.QueryRowContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.last_used_at,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
 		JOIN users u ON u.id = t.user_id LEFT JOIN api_token_scopes sc ON sc.token_id = t.id
 		LEFT JOIN api_token_agent ag ON ag.token_id = t.id WHERE t.token_hash = ?
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
-		Scan(&info.ID, &info.Name, &info.Scope, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+		Scan(&info.ID, &info.Name, &info.Scope, &lastUsed, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, TokenInfo{}, ErrNotFound
 	}
 	if err != nil {
 		return nil, TokenInfo{}, err
 	}
-	_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", time.Now().UnixMilli(), info.ID)
+	if now := time.Now().UnixMilli(); lastUseStale(lastUsed, now) {
+		_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", now, info.ID)
+	}
 	return &u, info, nil
+}
+
+// LastUseInterval is how often a token's or app password's last-use time is
+// written at most (SEC-7): every request reads it, but one write a minute is
+// precise enough for the settings lists and spares the single database
+// connection a write per request.
+const LastUseInterval = time.Minute
+
+// lastUseStale reports whether a stored last-use time should be refreshed.
+func lastUseStale(last sql.NullInt64, now int64) bool {
+	return !last.Valid || now-last.Int64 >= LastUseInterval.Milliseconds()
 }
 
 // TokenName returns the name of a token owned by userID, or "" when the token

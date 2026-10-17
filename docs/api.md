@@ -58,7 +58,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
 | GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, setupCodeRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, outgoingEmail, mfa?, encryption?, minClientVersion?, demo?}`; `outgoingEmail` is `{enabled}`, true when [outgoing email](#outgoing-email) is configured (never on a demo instance); `mfa`, `encryption` and `minClientVersion` only when signed in; `setupCodeRequired` is true while no account exists, no setup token is configured and the requesting client's address is not loopback, private or link-local; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md) (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?, setupToken?}` → 201 `{user}` + cookie. The first account becomes owner; when `OPENTODO_SETUP_TOKEN` is set (`setupTokenRequired` in the status), it needs `setupToken` with that value, otherwise 403 `setup_token_invalid`; without a token, a client outside the local network (`setupCodeRequired`) sends the one-time setup code from the server log as `setupToken` (case and dashes ignored), otherwise 403 `setup_code_invalid`; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)). With open sign-up and [outgoing email](#outgoing-email), a registration without an invitation answers 202 `{verificationRequired: true}` and mails a link instead of creating the account |
-| POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
+| POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor. A password over 1,024 bytes is refused with 401 `invalid_credentials` without being checked |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
 | POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
@@ -88,7 +88,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/me/email-digest` | session or `full` token | any of `{enabled, weekday, hour, timeZone, language}` → the same shape; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
-| GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
+| GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute |
 | POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, `read` or `agent`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
@@ -676,7 +676,7 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
  "keys": {"p256dh": "BCVx…", "auth": "BTBZ…"}, "includeContent": false}
 ```
 
-It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
+It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. After 20 consecutive failed sends and a day without a delivery (since the last success, or since it was registered) the server stops sending to it; posting it again from the device ("Re-enable") starts it afresh. An account keeps at most 20 subscriptions: registering a new device beyond that replaces the one registered least recently. Reminders are sent for up to 8 accounts at a time, and one account's sends take at most 20 seconds per pass; what is left is sent on the next pass (every 30 seconds) while the reminder is less than an hour overdue. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
 
 **Test push.** `POST /api/v1/push/test` with `{"deviceId": "…"}` sends one real push to the caller's subscription for that device, through the same encryption, VAPID signature and push service as a reminder, and records it in the subscription's delivery status (`lastOkAt`, `failures`, removal when gone). The payload is `{"type":"test","testId":"…","sentAt":…}` and carries no task data; the service worker always shows it as a system notification and reports receipt to the open page. A push-service outcome is a successful diagnostic, so it answers 200:
 
@@ -1314,7 +1314,7 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 
 | Method | Path | Who | Body / result |
 | --- | --- | --- | --- |
-| `GET` | `/api/v1/app-passwords` | any user | `{"appPasswords":[{"id","name","createdAt","lastUsedAt","revokedAt"}]}`, newest first, revoked ones included. Never the secret. |
+| `GET` | `/api/v1/app-passwords` | any user | `{"appPasswords":[{"id","name","createdAt","lastUsedAt","revokedAt"}]}`, newest first, revoked ones included; `lastUsedAt` is updated at most once a minute. Never the secret. |
 | `POST` | `/api/v1/app-passwords` | any user, recent sign-in (`403 reauth_required` otherwise, like token creation) | `{"name":"iPhone"}` → `201 {"appPassword":{…},"secret":"otap_…"}`. The secret is shown only here. |
 | `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
 | `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
@@ -1648,7 +1648,9 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Every write through this API is recorded in the operation log with server time. Connected devices are woken over the event stream and sync within a second or two; devices without a live stream pick the change up on their next poll (within 30 s), or immediately when they next edit or regain focus.
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
-- Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
+- Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB); some routes set a smaller limit. A larger body is refused with 413 `too_large`.
+- A JSON body is exactly one JSON value: anything after it but white space is refused with 400 `bad_request`. A field the route does not define is refused with 400 `bad_request` naming it (`invalid JSON body: unknown field "x"`), except on `POST /api/v1/sync` (ops may carry properties a newer client knows), the push subscription (the browser's `PushSubscription.toJSON()`) and the passkey `credential` (the browser's `PublicKeyCredential.toJSON()`). The entity routes (`/tasks`, `/projects`, …) check their fields themselves and answer 400 `invalid_input` for an unknown one. Error messages describe the problem in plain words, never the server's internal types.
+- Password checks are limited to twice the server's CPU count at a time (at least 2). A sign-in, registration or password change that waits more than a second for one is answered 503 `busy` with `Retry-After`.
 - Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
 
 ### Error codes
@@ -1659,7 +1661,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 
 | Code | Status | Where |
 | --- | --- | --- |
-| `bad_request` | 400 | malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
+| `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
 | `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
@@ -1673,7 +1675,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
-| `too_large` | 413 | `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
+| `too_large` | 413 | a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |
@@ -1685,7 +1687,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `limit_import` | 413 | hosted server: an import file over the tenant's import size |
 | `limit_requests` | 429 | hosted server: more requests per minute than the tenant's limit |
 | `suspended` | 503 | hosted server: the operator suspended this tenant; its data is kept |
-| `busy` | 503 | hosted server: every open tenant is in use; try again shortly |
+| `busy` | 503 | every password-check slot is in use (sign-in, registration, password change or reset); `/sync/events` over 20 streams from one address or 2,000 on the server; hosted server: every open tenant is in use. Try again after `Retry-After` |
 
 **Sign-in, accounts and credentials**
 

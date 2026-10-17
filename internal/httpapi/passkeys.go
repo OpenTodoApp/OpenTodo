@@ -82,8 +82,9 @@ func (s *Server) handlePasskeyRegister(w http.ResponseWriter, r *http.Request) {
 		Name       string              `json:"name"`
 		Credential publicKeyCredential `json:"credential"`
 	}
-	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+	// PublicKeyCredential.toJSON() grows with the WebAuthn spec (jsonbody.go).
+	if err := readJSONLoose(r, &in); err != nil {
+		badBody(w, err)
 		return
 	}
 	fields, msg := decodeFields(map[string]string{
@@ -133,7 +134,7 @@ func (s *Server) handleRenamePasskey(w http.ResponseWriter, r *http.Request) {
 		Name string `json:"name"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	p, err := s.auth.RenamePasskey(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), in.Name)
@@ -207,8 +208,9 @@ func (s *Server) handlePasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Credential publicKeyCredential `json:"credential"`
 	}
-	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+	// PublicKeyCredential.toJSON() grows with the WebAuthn spec (jsonbody.go).
+	if err := readJSONLoose(r, &in); err != nil {
+		badBody(w, err)
 		return
 	}
 	credID, err := in.Credential.rawID()

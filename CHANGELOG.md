@@ -6,6 +6,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Security
 
+- **A server can no longer turn end-to-end encryption off on your devices.** If the server says it has no encryption key record (for example after it was restored from an older backup), your devices keep encrypting and pause syncing instead of uploading your content in plaintext. A screen lets you restore the key record from the device, turn encryption off on that device, or sign out. When you turn encryption off on one device, each of your other devices now asks once before following. ([End-to-end encryption](docs/e2ee.md))
+- **Encryption key records with unusual settings are refused.** A device only unlocks with a key record whose key derivation strength is within the expected range; otherwise it stays locked and says why.
+- **Only the share sheet can hand files to the installed app.** Other websites can no longer store shares in the app through its share target, and a share larger than 100 MB in total is not stored. ([Capture](docs/capture.md))
+- **The encryption threat model now notes that the server can show an older version of an encrypted field.** Content stays unreadable and unforgeable to the server, but the app cannot tell when it is served a previous encrypted value of the same field. ([End-to-end encryption](docs/e2ee.md))
 - **Pasting into notes is safer.** The rich-text editor's ProseMirror view is updated to 1.42.6, which fixes a published issue with pasted content (GHSA-c8x8-7fp4-3x9w).
 - **Links are encrypted with the rest of your data.** Turning end-to-end encryption on now also encrypts the address and name of links you attached before, and turning it off decrypts them again. Each link is replaced by a copy in the new form; the old one moves to the Trash. ([End-to-end encryption](docs/e2ee.md))
 
@@ -42,11 +46,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **A new server cannot be claimed from the internet without a code.** Without `OPENTODO_SETUP_TOKEN`, creating the owner account from a public address now needs a one-time setup code that the server prints in its log when it starts without an owner (`docker logs opentodo`). From the same machine or your local network nothing changes. The code is forgotten once the owner exists. ([The setup code](docs/self-hosting/docker.md#the-setup-code))
 - **Stricter origin check with a base URL.** With `OPENTODO_BASE_URL` set, browser requests must be addressed to its host, so a page under another name that resolves to your server is treated as cross-site.
 - **Secure cookies over https, and HSTS.** Cookies are marked `Secure` whenever the request arrived over https, also without a base URL. With an https `OPENTODO_BASE_URL`, responses send `Strict-Transport-Security` for one year (no `includeSubDomains`, no preload).
+- **Password checks can no longer exhaust a small server.** Registration, project invite links and password resets check the sign-up policy, the invitation or link and the setup token before the password is hashed; at most twice the CPU count of password checks run at once, and a request that waits more than a second gets 503 `busy` with `Retry-After`. Sign-in refuses passwords over 1,024 bytes without checking them. ([API](docs/api.md#behaviour-notes))
+- **Sign-in timing no longer tells accounts without a password apart** (single sign-on and demo accounts): they cost the same check as an unknown address.
+- **Live-update streams are capped:** 10 per account (a new one closes the oldest), 20 per client address and 2,000 per server; beyond the last two the stream is refused with 503 `busy` and the app keeps syncing by polling. ([Sync](docs/sync.md#live-updates))
+- **One account's push endpoints cannot hold back everyone's reminders.** Reminders are sent for 8 accounts at a time with a 20 s budget per account and pass, an account keeps at most 20 push subscriptions (a new one replaces the least recently registered), and a subscription that failed 20 times in a row and delivered nothing for a day is no longer sent to until the device re-enables notifications. ([API](docs/api.md#reminders-and-push))
 
 ### Changed
 
 - **Separate rate limits per purpose.** Sign-in, registration, password resets, invitation links, public links, MCP token failures and passkey sign-in each have their own window of 10 a minute per address, and successful sign-ins no longer count, so guessing one kind of link no longer blocks signing in.
 - **Operator notes for the address change.** Proxies on loopback, private or container networks, and `OPENTODO_TRUSTED_PROXIES=cloudflare`, need nothing. If you set `OPENTODO_TRUSTED_PROXIES` to your own addresses, the list now replaces the default: add the new keyword `private` if a reverse proxy on the machine or a container network also connects (for example `private, 203.0.113.10`); a list without any local address shows a configuration warning. A reverse proxy on a public address must be listed, otherwise every visitor shares its address. Behind `OPENTODO_BASE_URL`, open the app at the base URL's host.
+- **Request bodies are checked strictly.** A field a route does not define is refused with 400 `bad_request` naming it (the sync exchange, push subscriptions and passkey credentials still accept extra fields), data after the JSON value is refused, a body over the size limit gets 413 `too_large`, and error messages no longer show the server's internal decoder text. The app and the `ot` CLI send only defined fields. ([API](docs/api.md#behaviour-notes))
+- The last-use time of API tokens and app passwords is updated at most once a minute, which saves a database write on every request.
 
 ### Security
 

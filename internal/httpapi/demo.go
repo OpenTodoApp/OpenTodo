@@ -38,7 +38,7 @@ func (s *Server) handleDemoSandbox(w http.ResponseWriter, r *http.Request) {
 		Token string `json:"token"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	u, err := s.demo.CreateSandbox(r.Context(), in.Token, addrKey(clientIP(r)))

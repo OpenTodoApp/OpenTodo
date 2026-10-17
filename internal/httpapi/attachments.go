@@ -162,7 +162,7 @@ func (s *Server) handlePutAttachmentSettings(w http.ResponseWriter, r *http.Requ
 	}
 	in := before
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", "body must be {enabled, max_file_mb, quota_mb}")
+		badBodyWith(w, err, "invalid_input", "body must be {enabled, max_file_mb, quota_mb}")
 		return
 	}
 	if err := store.SetAttachments(r.Context(), in); err != nil {
@@ -404,7 +404,7 @@ func (s *Server) handleRenameAttachment(w http.ResponseWriter, r *http.Request) 
 		Name *string `json:"name"`
 	}
 	if err := readJSON(r, &in); err != nil || in.Name == nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", `body must be {"name": "…"}`)
+		badBodyWith(w, err, "invalid_input", `body must be {"name": "…"}`)
 		return
 	}
 	if idOf(a["author_id"]) != userFrom(r.Context()).ID {
@@ -519,7 +519,7 @@ func (s *Server) handleCreateAttachment(w http.ResponseWriter, r *http.Request) 
 			URL  string `json:"url"`
 		}
 		if err := readJSON(r, &in); err != nil || in.URL == "" {
-			writeError(w, http.StatusBadRequest, "invalid_input", `body must be a multipart "file", or {"url": "https://…", "name"?: "…"}`)
+			badBodyWith(w, err, "invalid_input", `body must be a multipart "file", or {"url": "https://…", "name"?: "…"}`)
 			return
 		}
 		name := strings.TrimSpace(in.Name)

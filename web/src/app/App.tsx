@@ -9,7 +9,7 @@ import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { clearLocalData } from '../lib/db'
 import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { clearInbox } from '../lib/shareInbox'
-import { UnlockScreen } from './UnlockScreen'
+import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
 import { unsubscribeOnSignOut } from '../lib/push'
 import { startSync, stopSync, useSyncStatus } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
@@ -247,6 +247,10 @@ export function App() {
       // On /share the payload waits in memory; after sign-in the route is still /share.
       const notice = route.view === 'share' ? t('Sign in to add the shared page to OpenTodo. It is kept on this screen until then.') : signInNotice
       return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
+    }
+    // The server lost the key record of an encrypted account (encryption-state-integrity).
+    if (enc.enabled && enc.recordMissing) {
+      return <RecordMissingScreen unlocked={enc.unlocked} onLogout={() => void logout()} />
     }
     // Encrypted account without the key on this device (OpenSpec e2ee, design D5).
     if (enc.enabled && !enc.unlocked) {
