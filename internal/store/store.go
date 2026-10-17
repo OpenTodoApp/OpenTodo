@@ -34,7 +34,52 @@ func Open(dataDir string) (*sql.DB, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := Optimize(context.Background(), db); err != nil {
+		slog.Warn("database optimize failed", "err", err)
+	}
 	return db, nil
+}
+
+// OptimizeInterval is how often RunOptimizer refreshes the query planner's
+// statistics.
+const OptimizeInterval = 24 * time.Hour
+
+// Optimize refreshes the query planner's statistics (PRAGMA optimize) for the
+// tables whose size changed a lot since they were last analysed, reading at
+// most a bounded sample of each so it stays fast on a large database
+// (database-concurrency). Without statistics SQLite guesses index
+// selectivity, and the guess grows worse as the op log grows.
+func Optimize(ctx context.Context, db *sql.DB) error {
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("optimize: %w", err)
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, "PRAGMA analysis_limit = 1000"); err != nil {
+		return fmt.Errorf("optimize: %w", err)
+	}
+	// 0x10002: consider every table, not only those this connection queried
+	// (reads run on the reader pool).
+	if _, err := conn.ExecContext(ctx, "PRAGMA optimize = 0x10002"); err != nil {
+		return fmt.Errorf("optimize: %w", err)
+	}
+	return nil
+}
+
+// RunOptimizer runs Optimize every interval until ctx ends.
+func RunOptimizer(ctx context.Context, db *sql.DB, interval time.Duration, log *slog.Logger) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if err := Optimize(ctx, db); err != nil && ctx.Err() == nil {
+				log.Warn("database optimize failed", "err", err)
+			}
+		}
+	}
 }
 
 // DBFile is the database file name inside the data directory.
@@ -43,9 +88,34 @@ const DBFile = "opentodo.db"
 // DBPath returns the database path for a data directory.
 func DBPath(dataDir string) string { return filepath.Join(dataDir, DBFile) }
 
-// OpenFile opens a database file with the server's pragmas without migrating it.
+// Connections (OpenSpec change database-concurrency). The database is used
+// through two handles:
+//
+//   - the writer, from Open or OpenFile: one connection, so this process never
+//     contends with itself for SQLite's single write lock. Every transaction on
+//     it that is not read-only starts with BEGIN IMMEDIATE (_txlock), taking the
+//     write lock up front and waiting busy_timeout for it, so a second process on
+//     the same file (a rolling update, `opentodo reset-owner-password`) makes it
+//     wait instead of failing with SQLITE_BUSY halfway through.
+//   - the reader pool, from OpenReader: ReaderConns query-only connections. In
+//     WAL mode they read a consistent snapshot while the writer commits, so
+//     lists, pulls and exports do not queue behind a slow write.
+//
+// The rule: a pure read (no write in the same transaction) may use the reader;
+// anything that reads and then writes in one transaction stays on the writer.
+// A reader sees every transaction committed before its own read began, so a
+// read after the caller's own write sees that write. The reader is opened after
+// the writer migrated the file and is closed with it; a restore replaces the
+// file only while neither is open (before the tenant opens, or with the server
+// stopped).
+
+// ReaderConns is the size of the reader pool.
+const ReaderConns = 4
+
+// OpenFile opens a database file with the server's pragmas without migrating
+// it: the writer handle.
 func OpenFile(path string) (*sql.DB, error) {
-	dsn := "file:" + path + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(NORMAL)"
+	dsn := "file:" + path + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(NORMAL)&_txlock=immediate"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
@@ -54,6 +124,25 @@ func OpenFile(path string) (*sql.DB, error) {
 	// and keeps memory flat on small hosts.
 	db.SetMaxOpenConns(1)
 	db.SetConnMaxLifetime(0)
+	return db, nil
+}
+
+// OpenReader opens the reader pool of a data directory's database, which the
+// writer (Open) must already have created and migrated. Its connections refuse
+// writes (query_only).
+func OpenReader(dataDir string) (*sql.DB, error) {
+	dsn := "file:" + DBPath(dataDir) + "?_pragma=busy_timeout(5000)&_query_only=1"
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("open database reader: %w", err)
+	}
+	db.SetMaxOpenConns(ReaderConns)
+	db.SetMaxIdleConns(ReaderConns)
+	db.SetConnMaxLifetime(0)
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("open database reader: %w", err)
+	}
 	return db, nil
 }
 

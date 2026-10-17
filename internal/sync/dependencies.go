@@ -23,8 +23,9 @@ const (
 )
 
 // checkBlockedBy applies the scope and cycle rules to a task's blocked_by op.
-// The graph is read from scope_fields inside the transaction, so it already holds
-// every op of this batch accepted before this one.
+// The graph is read from scope_fields once per scope and batch, then kept up to
+// date in memory as the batch's blocked_by ops are stored (noteBlockedBy), so it
+// holds every op of this batch accepted before this one.
 func (r *resolver) checkBlockedBy(op Op, scope string) (string, error) {
 	list := idList(op.Value)
 	if len(list) == 0 {
@@ -46,13 +47,21 @@ func (r *resolver) checkBlockedBy(op Op, scope string) (string, error) {
 			return ReasonNotInScope, nil
 		}
 	}
-	graph, err := r.blockedGraph(scope)
+	g, err := r.blockedGraph(scope)
 	if err != nil {
 		return "", err
 	}
-	graph[op.EntityID] = list
+	stored, had := g.edges[op.EntityID]
+	g.edges[op.EntityID] = list
+	defer func() {
+		if had {
+			g.edges[op.EntityID] = stored
+		} else {
+			delete(g.edges, op.EntityID)
+		}
+	}()
 	for _, id := range list {
-		if reaches(graph, []string{id}, op.EntityID) {
+		if reaches(g.edges, []string{id}, op.EntityID) {
 			r.detail = id
 			return ReasonCycle, nil
 		}
@@ -60,24 +69,69 @@ func (r *resolver) checkBlockedBy(op Op, scope string) (string, error) {
 	return "", nil
 }
 
-// blockedGraph is every task's blocked_by list in scope, as stored now.
-func (r *resolver) blockedGraph(scope string) (map[string][]string, error) {
-	rows, err := r.tx.QueryContext(r.ctx, `SELECT entity_id, value FROM scope_fields WHERE scope_id = ? AND entity = 'task' AND field = 'blocked_by'`, scope)
+// depGraph is a scope's blocked_by lists as stored, with the clock of each
+// stored value so the batch's own writes follow last-writer-wins.
+type depGraph struct {
+	edges map[string][]string // task id -> non-empty blocked_by list
+	clock map[string]depClock // task id -> (ts, device) of the stored value
+}
+
+type depClock struct {
+	ts     int64
+	device string
+}
+
+// blockedGraph is every task's blocked_by list in scope, read once per batch.
+func (r *resolver) blockedGraph(scope string) (*depGraph, error) {
+	if g, ok := r.graphs[scope]; ok {
+		return g, nil
+	}
+	rows, err := r.tx.QueryContext(r.ctx, `SELECT entity_id, value, ts, device FROM scope_fields WHERE scope_id = ? AND entity = 'task' AND field = 'blocked_by'`, scope)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	g := map[string][]string{}
+	g := &depGraph{edges: map[string][]string{}, clock: map[string]depClock{}}
 	for rows.Next() {
-		var id, value string
-		if err := rows.Scan(&id, &value); err != nil {
+		var id, value, device string
+		var ts int64
+		if err := rows.Scan(&id, &value, &ts, &device); err != nil {
 			return nil, err
 		}
+		g.clock[id] = depClock{ts, device}
 		if l := idList(json.RawMessage(value)); len(l) > 0 {
-			g[id] = l
+			g.edges[id] = l
 		}
 	}
-	return g, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if r.graphs == nil {
+		r.graphs = map[string]*depGraph{}
+	}
+	r.graphs[scope] = g
+	return g, nil
+}
+
+// noteBlockedBy records a stored op in the batch's graph of its scope, when it
+// wins over the value stored so far (the same rule as writeOp).
+func (r *resolver) noteBlockedBy(op Op, scope string) {
+	if op.Entity != "task" || op.Field != "blocked_by" {
+		return
+	}
+	g, ok := r.graphs[scope]
+	if !ok {
+		return // not read yet: the first read sees the stored row
+	}
+	if c, ok := g.clock[op.EntityID]; ok && !Wins(op.TS, op.Device, c.ts, c.device) {
+		return
+	}
+	g.clock[op.EntityID] = depClock{op.TS, op.Device}
+	if l := idList(op.Value); len(l) > 0 {
+		g.edges[op.EntityID] = l
+	} else {
+		delete(g.edges, op.EntityID)
+	}
 }
 
 // reaches reports whether target is reachable from any of start along graph edges.

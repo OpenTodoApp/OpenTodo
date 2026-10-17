@@ -8792,6 +8792,9 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
+  "This server is set up for {host}. Open https://{host} and try again.": [
+    "web/src/lib/origin.ts"
+  ],
   "This server no longer sends email. Turn off “Send by email” to create a link to share yourself.": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx"

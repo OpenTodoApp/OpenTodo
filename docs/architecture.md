@@ -87,7 +87,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | Package | Responsibility |
 | --- | --- |
 | `config` | `OPENTODO_*` environment variables with defaults and validation; nothing is mandatory |
-| `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL, single connection) and applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
+| `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL): one writer connection whose write transactions begin `IMMEDIATE`, and a pool of query-only reader connections (`OpenReader`) for pure reads such as `sync` List, Get and Pull; applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; runs `PRAGMA optimize` at open and daily; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
 | `settings` | Owner-level key/value settings (`settings` table, JSON values) and 0600 secret files under `<data>/secrets/` |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW, per-op authorisation and refusal reasons) and `ApplyStrict` (REST), `Pull` (cursor, member backfill), materialised reads, sharing scopes (`scope.go`) and membership (`members.go`), trash, history and purge, the post-commit observer and sinks, `Notifier` (per-user live wake-ups) |
 | `auth` | Users and roles, argon2id passwords, sessions, API tokens and their scopes, CalDAV app passwords, invitations, password resets, user administration, TOTP and recovery codes, step-up, passkeys storage, provider identities (subject-first matching, verified-email linking, provisioning, the SSO-only rule) |
@@ -148,7 +148,7 @@ Files in the data directory: `opentodo.db` (plus WAL files), `opentodo.lock`, `p
 | `public/push-sw.js` | Imported by the generated service worker: `push`, `notificationclick` (snooze and dismiss written as ops into the outbox), `notificationclose` |
 | `app/` | Router, auth screens, shell, views (lists, board, calendar, filters, dashboards, feed, trash), detail panel, settings panels, Vim layer (`app/vim/`, lazy) |
 
-The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; local edits and remote ops surface through the same path. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.
+The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; local edits and remote ops surface through the same path. Views that need the whole task list share one live snapshot (`web/src/lib/liveTasks.ts`) instead of each scanning the tasks table on every change. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.
 
 ## Build and packaging
 

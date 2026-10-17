@@ -94,10 +94,31 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	for i := range out {
-		if out[i].Members, err = members(ctx, s.db, out[i].ProjectID); err != nil {
+	if len(out) == 0 {
+		return out, nil
+	}
+	// Every project's members in one query rather than one per project.
+	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role FROM project_members m
+		LEFT JOIN users u ON u.id = m.user_id
+		WHERE m.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?) ORDER BY m.project_id, m.user_id`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	byProject := map[string][]Member{}
+	for rows.Next() {
+		var pid string
+		var m Member
+		if err := rows.Scan(&pid, &m.UserID, &m.Name, &m.Email, &m.Role); err != nil {
 			return nil, err
 		}
+		byProject[pid] = append(byProject[pid], m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for i := range out {
+		out[i].Members = sortMembers(byProject[out[i].ProjectID])
 	}
 	return out, nil
 }
@@ -119,13 +140,21 @@ func members(ctx context.Context, q querier, projectID string) ([]Member, error)
 		}
 		out = append(out, m)
 	}
+	return sortMembers(out), rows.Err()
+}
+
+// sortMembers orders a project's members by role (owner first), then email.
+func sortMembers(out []Member) []Member {
+	if out == nil {
+		out = []Member{}
+	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if roleOrder[out[i].Role] != roleOrder[out[j].Role] {
 			return roleOrder[out[i].Role] < roleOrder[out[j].Role]
 		}
 		return out[i].Email < out[j].Email
 	})
-	return out, rows.Err()
+	return out
 }
 
 // projectRole is the actor's role on a project: from project_members once the

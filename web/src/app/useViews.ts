@@ -7,7 +7,7 @@ import { db } from '../lib/db'
 import { onViewerZoneChange, todayISO, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
-import { visibleTasks } from '../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { useFieldDefs } from './useFields'
 
 /**
@@ -53,7 +53,7 @@ export function useViewData(): ViewData {
   const views = useViews()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const tasks = useLiveTasks() ?? NO_TASKS
   const zone = useViewerZone()
   // A new context on a zone change re-groups zoned dues (absolute-datetimes).
   const fields = useFieldDefs()

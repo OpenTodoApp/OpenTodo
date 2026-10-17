@@ -22,6 +22,7 @@ import { CommentAttachments } from './AttachmentsRow'
 import { Composer } from './Composer'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
+import { appendTo } from '../../lib/collections'
 
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
@@ -193,7 +194,7 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   const attachments = useLiveQuery(async () => {
     const byComment = new Map<string, Attachment[]>()
     const rows = (await db.attachments.where('task_id').equals(task.id).toArray()).filter((a) => a.comment_id && !a.deleted_at)
-    for (const a of rows.sort((x, y) => x.created_at - y.created_at)) byComment.set(a.comment_id!, [...(byComment.get(a.comment_id!) ?? []), a])
+    for (const a of rows.sort((x, y) => x.created_at - y.created_at)) appendTo(byComment, a.comment_id!, a)
     return byComment
   }, [task.id], new Map<string, Attachment[]>())
   const demo = useDemo()

@@ -25,12 +25,14 @@ export const SAMPLE_PROJECT_NAME = msg('Show me around')
 /** Whether the first-run card belongs on screen: a fresh account (no row, or not marked done) with nothing in it yet. */
 export function useFirstRun(): boolean {
   const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
-  const taskCount = useLiveQuery(() => db.tasks.filter((task) => !task.deleted_at).count(), [], undefined)
+  // Only "is there any task" matters: the scan stops at the first live task instead of
+  // counting the whole table on every write (large-list-performance).
+  const hasTask = useLiveQuery(async () => !!(await db.tasks.filter((task) => !task.deleted_at).first()), [], undefined)
   // Once shown, the card stays through the first task (step one adds it) until it is marked done.
   const shown = useRef(false)
-  if (row === undefined || taskCount === undefined) return false
+  if (row === undefined || hasTask === undefined) return false
   if (firstRunDone(row)) { shown.current = false; return false }
-  if (taskCount === 0) shown.current = true
+  if (!hasTask) shown.current = true
   return shown.current
 }
 

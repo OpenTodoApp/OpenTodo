@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, OIDC_START_URL } from '../lib/api'
 import { conditionalMediationAvailable, getPasskey, isCancellation, PasskeyDomainError, passkeysSupported } from '../lib/passkeys'
 import { sandboxErrorMessage, startSandbox } from '../lib/demo'
+import { wrongHostMessage } from '../lib/origin'
 import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
 import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -134,7 +135,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         afterFirstFactor(await api.login(email, password))
       }
     } catch (err) {
-      setError(describeAuthError(err))
+      setError(wrongHostMessage(err, status.passkeyDomain) ?? describeAuthError(err))
     } finally {
       setBusy(false)
     }
@@ -148,7 +149,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
       await api.register(email, name, password)
       setResent(true)
     } catch (err) {
-      setError(describeAuthError(err))
+      setError(wrongHostMessage(err, status.passkeyDomain) ?? describeAuthError(err))
     } finally {
       setBusy(false)
     }
@@ -164,7 +165,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
       await startSandbox(status.demo.token)
       onAuthenticated()
     } catch (err) {
-      setError(sandboxErrorMessage(err))
+      setError(wrongHostMessage(err, status.passkeyDomain) ?? sandboxErrorMessage(err))
     } finally {
       setBusy(false)
     }
