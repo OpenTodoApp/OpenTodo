@@ -28,6 +28,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      # The path filter's table of cases, the shared Go toolchain and the compose
+      # defaults (OpenSpec release-hygiene).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node --test scripts/repo-checks.test.mjs
       - id: filter
         env:
           EVENT: ${{ github.event_name }}
@@ -83,13 +89,20 @@ jobs:
         with:
           name: web-dist
           path: internal/web/dist
+      - name: Toolchain matches go.mod (patched release toolchain)
+        run: |
+          want=$(sed -n 's/^toolchain //p' go.mod)
+          go version | grep -q " $want " || { go version; echo "expected the go.mod toolchain $want"; exit 1; }
       - run: go vet ./...
+      # Fails on vulnerabilities the code can reach (OpenSpec release-hygiene).
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
       - run: go test ./...
       - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
       - name: Smoke test the binary
         run: |
           OPENTODO_DATA_DIR=/tmp/ot ./bin/opentodo &
-          sleep 1
+          for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           ./bin/opentodo healthcheck
           curl -fsS localhost:8080/ | grep -q '<div id="root">'
           kill %1
@@ -274,6 +287,10 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - name: Toolchain matches go.mod (patched release toolchain)
+        run: |
+          want=$(sed -n 's/^toolchain //p' go.mod)
+          go version | grep -q " $want " || { go version; echo "expected the go.mod toolchain $want"; exit 1; }
       - name: Cross-compile ot
         env:
           GOOS: ${{ matrix.goos }}

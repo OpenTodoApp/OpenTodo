@@ -17,12 +17,12 @@ cp .env.example .env        # optional
 docker compose up -d
 ```
 
-Open <http://localhost:8080>. The first visitor creates the owner account. On a server that is reachable from the internet before you open it, set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`: the setup screen then asks for it, so nobody else can claim the server first. It has no effect once the owner exists.
+Open <http://localhost:8080>. The compose file publishes the port on `127.0.0.1` only, so the server is reachable from this machine and from a reverse proxy running on it. To open it from other devices on your network (a NAS or home server reached as `http://192.168.1.10:8080`), set `OPENTODO_BIND=0.0.0.0` in `.env`; leave the default on a server whose reverse proxy is the way in. The first visitor creates the owner account. On a server that is reachable from the internet before you open it, set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`: the setup screen then asks for it, so nobody else can claim the server first. It has no effect once the owner exists.
 
 To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
 
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
-- Change the host port with `OPENTODO_PORT` in `.env`.
+- Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `127.0.0.1`, `0.0.0.0` for every interface).
 - Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
 - The compose file pulls `ghcr.io/pixari/opentodo:stable`, which every release moves. To stay on one release line use `:0.6` (its fixes only), to pin one version `:0.6.1`; `:latest` follows the main branch and carries unreleased changes.
 - To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:stable` with `build: .`.

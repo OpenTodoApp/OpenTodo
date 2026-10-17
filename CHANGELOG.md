@@ -12,6 +12,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
 - **A `stable` image tag, used by every template.** Each release now also publishes `ghcr.io/pixari/opentodo:stable` (release candidates never move it), and the Unraid and Coolify templates, `docker-compose.yml` and the README examples use it: every release, minor versions included, arrives through the platform's update button, with migrations applied on start. Installs on `:0.6` keep their tag and its fixes; switch to `stable` once to follow every release. A **Promote stable** workflow points `stable` at an earlier release to roll back. ([Docker](docs/self-hosting/docker.md), [Unraid](docs/self-hosting/unraid.md#updates-and-backups), [Coolify](docs/self-hosting/coolify.md))
+- **`docker-compose.yml` publishes the port on `127.0.0.1` by default.** `docker compose up` and <http://localhost:8080> work as before, and a reverse proxy on the same host reaches it, but nobody can reach the server around the proxy. To open it to other devices on your network (a NAS or home server without a proxy), set `OPENTODO_BIND=0.0.0.0` in `.env` after updating. Coolify deploys are unaffected. ([Docker](docs/self-hosting/docker.md))
+
+### Fixed
+
+- `SECURITY.md` now says, as the server does, that the audit log takes the client address from the last `X-Forwarded-For` hop (the one your proxy appended), with `OPENTODO_TRUSTED_PROXIES` for proxies in front of it.
+
+### Security
+
+- **Release binaries are built with Go 1.26.9**, which fixes standard-library vulnerabilities (net/http, crypto/tls, crypto/x509 and others) present in the 1.26.0 toolchain used so far. `go.mod` names the toolchain, the Docker image uses the same version, and CI now fails when the code can reach a known vulnerability (`govulncheck`).
 
 ## [0.6.1] - 2026-10-17
 

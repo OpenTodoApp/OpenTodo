@@ -2,6 +2,8 @@ module github.com/pixari/opentodo
 
 go 1.26.0
 
+toolchain go1.26.9
+
 require (
 	github.com/anthropics/anthropic-sdk-go v1.80.0
 	github.com/fxamacker/cbor/v2 v2.9.4
