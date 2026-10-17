@@ -15,6 +15,7 @@ import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
+import { act, reportActionError } from './actionError'
 
 const ROW_PX = 32
 const ZOOM_KEY = 'ot.timeline.zoom'
@@ -112,7 +113,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   }, [ax.from, px, today])
 
   const write = useCallback((id: string, patch: Partial<Task>) => {
-    if (Object.keys(patch).length) void updateTask(id, patch)
+    if (Object.keys(patch).length) act(updateTask(id, patch))
   }, [])
   // Keyboard edits run one after another on the freshest row, so three quick
   // presses move a task three days even before the view has re-rendered.
@@ -123,7 +124,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
       if (!item || item.deleted_at) return
       const patch = fn(item)
       if (patch && Object.keys(patch).length) await updateTask(id, patch)
-    }).catch(() => undefined)
+    }).catch(reportActionError)
   }, [])
 
   // Keyboard date moves on the selected row, as the `timeline` scope of the

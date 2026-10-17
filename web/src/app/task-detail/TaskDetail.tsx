@@ -25,6 +25,7 @@ import { ConversationTabs } from './ConversationTabs'
 import { FieldsGroup } from './FieldsGroup'
 import { Properties } from './Properties'
 import { t } from '../../lib/i18n'
+import { act } from '../actionError'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
 // note is first opened (collaborative-rich-text, task 3.1).
@@ -69,8 +70,17 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   // Comments tab is shown, so it is in view without scrolling (ux-overhaul).
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
 
+  // The stored title the draft started from, and whether the field has focus: a
+  // change from another device does not overwrite a title being typed
+  // (client-sync-robustness); the draft is committed on blur as usual.
+  const titleBase = useRef('')
+  const titleField = useRef<HTMLInputElement>(null)
   useEffect(() => {
-    if (task) setTitle(task.title)
+    if (!task) return
+    const focused = !!titleField.current && titleField.current === document.activeElement
+    if (focused && title !== titleBase.current) return
+    titleBase.current = task.title
+    setTitle(task.title)
   }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setCopied(false), [taskId])
   // Opening a task reads its notifications (task-assignment); works offline.
@@ -83,11 +93,11 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   useShortcutScope('panel', {
     'panel.priority': (e) => {
       if (!task || readOnly) return false
-      void updateTask(task.id, { priority: Number(e.key) as Priority })
+      act(updateTask(task.id, { priority: Number(e.key) as Priority }))
     },
     'panel.skip': () => {
       if (!task || readOnly || !task.recurrence) return false
-      void skipOccurrence(task.id)
+      act(skipOccurrence(task.id))
     },
   }, { within: () => panel.current })
 
@@ -107,11 +117,12 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 
   const commitTitle = () => {
     const x1 = title.trim()
-    if (x1 && x1 !== task.title) void updateTask(task.id, { title: x1 })
+    titleBase.current = x1 && x1 !== task.title ? x1 : task.title
+    if (x1 && x1 !== task.title) act(updateTask(task.id, { title: x1 }))
     else setTitle(task.title)
   }
-  const toggle = (task: Task) => (onToggleComplete ? onToggleComplete(task) : void completeWithUndo(task.id, !task.completed_at))
-  const remove = () => { void deleteWithUndo(task.id); onClose() }
+  const toggle = (task: Task) => (onToggleComplete ? onToggleComplete(task) : act(completeWithUndo(task.id, !task.completed_at)))
+  const remove = () => { act(deleteWithUndo(task.id)); onClose() }
   const copyLink = () => {
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
@@ -139,6 +150,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           value={title}
           readOnly={readOnly}
           onChange={(e) => setTitle(e.target.value)}
+          ref={titleField}
           onBlur={commitTitle}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
           aria-label={t('Title')}
@@ -280,7 +292,7 @@ function PlainNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
       disabled={readOnly}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => {
-        if (text !== task.description) void updateTask(task.id, { description: text })
+        if (text !== task.description) act(updateTask(task.id, { description: text }))
       }}
       aria-label={t('Notes')}
     />

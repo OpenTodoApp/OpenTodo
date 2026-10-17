@@ -37,6 +37,7 @@ import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
 import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
@@ -258,7 +259,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         if (!d || !row) return
         const entry = dropTarget({ id: row.id, parent: row.parent, expanded: row.children.length > 0 && !collapsedRef.current.has(row.id) }, d.zone)
         if (entry.parent_id) void toggleCollapsedProject(entry.parent_id, false)
-        void moveProjectTo(n.id, entry)
+        act(moveProjectTo(n.id, entry))
       },
       onEnd: () => show(null),
     })
@@ -272,7 +273,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
       e.stopPropagation()
       const up = e.key === 'ArrowUp'
       refocus.current = n.id
-      void moveProjectBy(n.id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1)
+      act(moveProjectBy(n.id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1))
       return
     }
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return

@@ -27,6 +27,7 @@ import { HUES, hueFor } from '../ui'
 import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
 import { hueName } from '../lib/colourNames'
+import { act } from './actionError'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -64,7 +65,7 @@ function ColourSwatches({ project }: { project: Project }) {
       {HUES.map((h) => (
         <button key={h.name} type="button" role="menuitemradio" aria-checked={h.name === current} aria-label={t('Colour {name}', { name: hueName(h.name) })} data-menu-label={`Colour ${h.name}`}
           className="touch-target inline-flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          onClick={() => void updateProject(project.id, { color: h.hex })}>
+          onClick={() => act(updateProject(project.id, { color: h.hex }))}>
           <span data-hue={h.name} className={`block h-5 w-5 rounded-full bg-hue-solid ${h.name === current ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`} />
         </button>
       ))}
@@ -97,7 +98,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         title: t('Move to'), placeholder: t('Find a project…'), emptyText: t('No other project can hold this one'),
         source: targets, getKey: (item: MoveTarget) => item.id || '__top__', getLabel: (entry: MoveTarget) => entry.name, getPath: (x1: MoveTarget) => x1.path,
         selected: [project.parent_id ?? '__top__'], rankContext: 'project-move',
-        onPick: (item: MoveTarget) => { void moveProject(project.id, item.id || null) },
+        onPick: (item: MoveTarget) => { act(moveProject(project.id, item.id || null)) },
       } },
       { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename },
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
@@ -128,7 +129,7 @@ export const PROJECT_ICONS: readonly IconName[] = [
 /** Icon choices with radio semantics, inside the menu (they keep the menu open); "none" is the colour dot. */
 function IconSwatches({ project }: { project: Project }) {
   const current = project.icon && isIconName(project.icon) ? project.icon : null
-  const pick = (icon: string | null) => void updateProject(project.id, { icon })
+  const pick = (icon: string | null) => act(updateProject(project.id, { icon }))
   return (
     <div role="group" aria-label={t('Icon')} className="flex flex-wrap gap-0.5 border-t border-default px-1.5 py-1.5" data-project-icons>
       <button type="button" role="menuitemradio" aria-checked={current === null} aria-label={t('No icon')} data-menu-label="No icon"

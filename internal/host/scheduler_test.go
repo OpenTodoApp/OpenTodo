@@ -14,6 +14,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/push"
+	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/tenant"
 )
 
@@ -138,7 +139,7 @@ func TestReminderInClosedTenant(t *testing.T) {
 	found := false
 	for _, o := range got {
 		m := o.(map[string]any)
-		if m["entity"] == "reminder" && m["field"] == "delivered_at" && m["device"] == "server" {
+		if m["entity"] == "reminder" && m["field"] == "delivered_at" && opsync.IsServerDevice(fmt.Sprint(m["device"])) {
 			found = true
 		}
 	}

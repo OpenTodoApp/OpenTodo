@@ -4,3 +4,6 @@ package backup
 
 // freeBytes cannot tell the free space here: restores run without a cap.
 func freeBytes(string) (int64, bool) { return 0, false }
+
+// sameFilesystem cannot tell here; free space is unknown anyway.
+func sameFilesystem(string, string) bool { return true }

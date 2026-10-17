@@ -136,11 +136,28 @@ func run() error {
 
 	// Background jobs run in one server process only: during a rolling update the
 	// new container serves beside the old one and takes them over when it stops.
-	workerDone := make(chan struct{})
+	var stopJobs func()
 	jobsStarted, releaseJobs := runJobsWhenLeader(ctx, cfg.DataDir, log, jobsRetry, func() {
-		t.StartJobs(ctx, workerDone, func(ctx context.Context, d *demo.Service) { resetOnSignal(ctx, d, log) })
+		stopJobs = t.StartJobs(ctx, func(ctx context.Context, d *demo.Service) { resetOnSignal(ctx, d, log) })
 	})
 	defer releaseJobs()
+	// waitJobs stops the background jobs and waits for them (bounded), so the
+	// database is closed only after the last of them has recorded its outcome.
+	waitJobs := func() {
+		if !jobsStarted() {
+			return
+		}
+		done := make(chan struct{})
+		go func() {
+			stopJobs()
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(jobsStopTimeout):
+			log.Warn("background jobs did not stop in time; closing the database anyway", "waited", jobsStopTimeout)
+		}
+	}
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -153,9 +170,7 @@ func run() error {
 	select {
 	case err := <-errCh:
 		stop()
-		if jobsStarted() {
-			<-workerDone
-		}
+		waitJobs()
 		return err
 	case <-ctx.Done():
 	}
@@ -163,15 +178,10 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = srv.Shutdown(shutdownCtx)
-	// Let the delivery pass in progress finish (each send is capped at 10 s) so its
-	// outcome is recorded; anything still queued is sent after the next start.
-	if jobsStarted() {
-		select {
-		case <-workerDone:
-		case <-time.After(15 * time.Second):
-			log.Warn("webhook worker did not stop in time")
-		}
-	}
+	// Let the jobs in progress finish (a webhook delivery is capped at 10 s, a
+	// backup is cancelled) so their outcome is recorded; anything still queued
+	// runs after the next start.
+	waitJobs()
 	return err
 }
 

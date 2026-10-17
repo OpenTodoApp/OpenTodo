@@ -11,7 +11,8 @@ const readNotification = vi.fn(async (id: string) => {
   serverNotifications.value = serverNotifications.value.map((n) => (n.id === id ? { ...n, readAt: 99 } : n))
 })
 const calendarEvents = vi.fn(async () => ({ events: [], subscriptions: [] }))
-vi.mock('./api', () => ({
+vi.mock('./api', async (orig) => ({
+  ...(await orig<typeof import('./api')>()),
   api: {
     sync: (...args: unknown[]) => syncCalls(...(args as [])),
     calendarEvents: () => calendarEvents(),
@@ -25,13 +26,14 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { db, getMeta, setMeta } from './db'
+import { clearLocalData, db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
 import { applyOps, mutate, resetDeviceId } from './ops'
 import { ApiError } from './api'
 import { markTaskNotificationsRead, unreadCount, unreadNotifications } from './notifications'
 import { describeRejected } from './sharing'
-import { dismissRejected, startSync, stopSync, syncNow, syncSnapshot } from './sync'
+import { dismissRejected, startSync, stopSync, stopSyncAndWait, syncNow, syncSnapshot } from './sync'
+import { NetworkError, RequestTimeoutError } from './http'
 
 /** Minimal stand-in for the browser's EventSource with manual event injection. */
 class FakeEventSource {
@@ -730,5 +732,101 @@ describe('malformed answers (client-data-safety)', () => {
     const sent = syncCalls.mock.calls.at(-1) as unknown as [string, number, { field: string }[]]
     expect(sent[2].map((o) => o.field)).toContain('title')
     expect(await db.outbox.count()).toBe(0)
+  })
+})
+
+describe('sign-out during an exchange (client-sync-robustness)', () => {
+  it('an exchange still waiting for the server writes nothing after sign-out', async () => {
+    await mutate('task', 't1', { title: 'Mine' })
+    let answer!: (v: unknown) => void
+    let signal: AbortSignal | undefined
+    syncCalls.mockImplementationOnce(((...args: unknown[]) => {
+      signal = args[5] as AbortSignal
+      return new Promise((r) => { answer = r })
+    }) as never)
+    const run = syncNow()
+    await until(() => syncCalls.mock.calls.length === 1, 'the request')
+    // Sign-out: stop, wait for the exchange, clear (App's clearDeviceData).
+    const stopped = stopSyncAndWait()
+    expect(signal?.aborted).toBe(true)
+    // The previous account's answer arrives anyway (a fetch that ignores the abort).
+    answer({ applied: 1, ops: [{ id: 'r1', entity: 'task', entityId: 'theirs', field: 'title', value: 'Previous account', ts: 5, device: 'x', seq: 9 }], cursor: 99, hasMore: false, serverTime: Date.now() })
+    await stopped
+    await run
+    await clearLocalData()
+    await settle()
+    expect(await db.tasks.get('theirs')).toBeUndefined()
+    expect(await getMeta('cursor', -1)).toBe(-1)
+    expect(await db.tasks.count()).toBe(0)
+    expect(syncSnapshot().state).toBe('idle')
+  })
+
+  it('the device id is read again after the local data was cleared', async () => {
+    await syncNow()
+    const first = (syncCalls.mock.calls[0] as unknown as [string])[0]
+    await stopSyncAndWait()
+    await clearLocalData()
+    syncCalls.mockClear()
+    await syncNow()
+    const second = (syncCalls.mock.calls[0] as unknown as [string])[0]
+    expect(second).not.toBe(first)
+    expect(await getMeta('device', null)).toBe(second)
+  })
+})
+
+describe('what counts as offline (client-sync-robustness)', () => {
+  it('a TypeError from our own code is an error, not offline', async () => {
+    syncCalls.mockImplementationOnce((async () => { throw new TypeError('x is not a function') }) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('error')
+    expect(syncSnapshot().error).toBe('x is not a function')
+  })
+
+  it('a network failure is offline and the exchange is retried with backoff', async () => {
+    startSync()
+    await tick(0)
+    await until(() => syncCalls.mock.calls.length >= 1, 'the first exchange')
+    await settle()
+    syncCalls.mockClear()
+    syncCalls.mockImplementationOnce((async () => { throw new NetworkError() }) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('offline')
+    expect(syncCalls).toHaveBeenCalledTimes(1)
+    // Backoff: 1 s for the first failure (jitter fixed at 1.0), then the retry runs.
+    await tick(1_100)
+    await until(() => syncCalls.mock.calls.length === 2, 'the retry')
+    await settle()
+    expect(syncSnapshot().state).toBe('idle')
+  })
+
+  it('a timed-out request does not block the next exchange', async () => {
+    syncCalls.mockImplementationOnce((async () => { throw new RequestTimeoutError() }) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('offline')
+    await syncNow()
+    expect(syncCalls).toHaveBeenCalledTimes(2)
+    expect(syncSnapshot().state).toBe('idle')
+  })
+})
+
+describe('listeners (client-sync-robustness)', () => {
+  it('stopSync removes the window and document listeners; starting again adds them once', async () => {
+    const win = globalThis.window as unknown as EventTarget
+    const doc = globalThis.document as unknown as EventTarget
+    const added = { win: vi.spyOn(win, 'addEventListener'), doc: vi.spyOn(doc, 'addEventListener') }
+    const removed = { win: vi.spyOn(win, 'removeEventListener'), doc: vi.spyOn(doc, 'removeEventListener') }
+    startSync()
+    startSync()
+    expect(added.win).toHaveBeenCalledTimes(1)
+    expect(added.doc).toHaveBeenCalledTimes(1)
+    stopSync()
+    expect(removed.win).toHaveBeenCalledWith('online', added.win.mock.calls[0][1])
+    expect(removed.doc).toHaveBeenCalledWith('visibilitychange', added.doc.mock.calls[0][1])
+    await settle()
+    // A visibility change after stop no longer starts an exchange.
+    syncCalls.mockClear()
+    doc.dispatchEvent(new Event('visibilitychange'))
+    await tick(1_000)
+    expect(syncCalls).not.toHaveBeenCalled()
   })
 })

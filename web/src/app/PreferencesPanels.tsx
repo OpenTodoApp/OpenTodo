@@ -16,13 +16,14 @@ import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
 import { Kbd } from './shortcuts/Kbd'
 import { resolveLanguage, t } from '../lib/i18n'
+import { act } from './actionError'
 
 /** Settings → General → Language (OpenSpec app-localization, design D9): synced, applied without a reload. */
 export function LanguageSection() {
   const row = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
   const status = useLanguageStatus()
   return <LanguageView value={readLanguage(row)} system={nativeName(resolveLanguage('system'))} status={status}
-    onChange={(v) => void setUserPref('language', v)} />
+    onChange={(v) => act(setUserPref('language', v))} />
 }
 
 /** Presentational part of the Language panel, rendered without effects for tests and stories. */
@@ -55,7 +56,7 @@ export function LanguageView({ value, system, status = 'ready', onChange }: {
 export function StartViewSection() {
   const views = useViews()
   const startView = useStartView()
-  return <StartViewView views={views} startView={startView} onChange={(v) => void setStartView(v)} />
+  return <StartViewView views={views} startView={startView} onChange={(v) => act(setStartView(v))} />
 }
 
 /** Presentational part of the start view setting, rendered without effects for tests and stories. */

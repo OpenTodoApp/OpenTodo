@@ -5,9 +5,11 @@
 import { useSyncExternalStore } from 'react'
 import { forgetActivity } from './activity'
 import { api, ApiError } from './api'
-import { db, entityTables, getMeta, setMeta, tableOf } from './db'
+import { isTransientNetworkError } from './http'
+import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
 import { hlcObserveServerTime } from './hlc'
+import { restampSkewed, splitClockSkew } from './clockSkew'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
@@ -17,7 +19,7 @@ import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
-import { isEnabled, refreshFromServer, syncBlocked } from './e2ee'
+import { isEnabled, loadEncryptionState, refreshFromServer, syncBlocked } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
@@ -59,6 +61,19 @@ let lastHeldRetry = 0
 /** The last server limit that held ops back in this session. */
 let heldReason: string | null = null
 
+/** The exchange running now (syncNow), so a sign-out can wait for it to stop. */
+let current: Promise<void> | null = null
+/** Aborts the in-flight request of this session's exchange when sync stops (sign-out). */
+let controller: AbortController | null = null
+/** Failed exchanges in a row without an answer (offline, timeout): the retry backs off. */
+let failures = 0
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+/** Removes the window and document listeners startSync added. */
+let removeListeners: (() => void) | null = null
+
+/** The session's local data went away while an exchange waited (client-sync-robustness). */
+class SessionEnded extends Error {}
+
 // Live channel state.
 let source: EventSource | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -68,6 +83,8 @@ let attempts = 0
 function publish(patch: Partial<Snapshot>) {
   snapshot = { ...snapshot, ...patch }
   for (const fn of listeners) fn()
+  // The tabs that do not sync show the leader's status (one tab syncs).
+  if (leader && channel) post({ type: 'status', snapshot })
 }
 
 export function useSyncStatus(): Snapshot {
@@ -105,24 +122,34 @@ function addRejected(n: RejectedNotice): void {
 }
 
 export function requestSync(delay = 250): void {
+  // Another tab runs the sync loop: ask it (one tab syncs).
+  if (started && !leader && channel) {
+    post({ type: 'sync' })
+    return
+  }
   if (debounce) clearTimeout(debounce)
   debounce = setTimeout(() => void syncNow(), delay)
 }
 
-export async function syncNow(): Promise<void> {
+export function syncNow(): Promise<void> {
+  if (started && !leader && channel) return syncViaLeader()
   if (running) {
     again = true
-    return
+    return current ?? Promise.resolve()
   }
   running = true
-  try {
-    do {
-      again = false
-      await runOnce()
-    } while (again)
-  } finally {
-    running = false
-  }
+  current = (async () => {
+    try {
+      do {
+        again = false
+        await runOnce()
+      } while (again)
+    } finally {
+      running = false
+      current = null
+    }
+  })()
+  return current
 }
 
 function isOffline(): boolean {
@@ -137,12 +164,31 @@ function isSyncResponse(v: unknown): v is SyncResponse {
   return Array.isArray(r.ops) && r.ops.every((o) => typeof o === 'object' && o !== null)
     && typeof r.cursor === 'number' && Number.isFinite(r.cursor) && typeof r.hasMore === 'boolean'
     && (r.serverTime === undefined || typeof r.serverTime === 'number')
+    && (r.backfillSeq === undefined || typeof r.backfillSeq === 'number')
     && list(r.rejected) && list(r.memberships) && list(r.purged)
     && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
 }
 
 async function runOnce(): Promise<void> {
+  // Sign-out (or stop) starts a new local epoch: from then on this exchange
+  // writes nothing, so the previous account's data never lands in the cleared
+  // database (client-sync-robustness). Checked after every await that precedes a write.
+  const epoch = localEpoch()
+  const signal = (controller ??= new AbortController()).signal
+  const alive = () => {
+    if (localEpoch() !== epoch) throw new SessionEnded()
+  }
+  try {
+    await exchange(alive, signal)
+  } catch (err) {
+    if (err instanceof SessionEnded || localEpoch() !== epoch) return
+    throw err
+  }
+}
+
+async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
   const pending = (await db.outbox.count()) + (await heldCount())
+  alive()
   publish({ pending })
   if (isOffline()) {
     publish({ state: 'offline' })
@@ -151,37 +197,49 @@ async function runOnce(): Promise<void> {
   // End-to-end encryption (OpenSpec e2ee, design D5): a device without the key
   // of an encrypted account neither pulls nor pushes.
   // The same while the server has lost the key record (encryption-state-integrity).
-  if (await syncBlocked()) {
+  const blocked = await syncBlocked()
+  alive()
+  if (blocked) {
     publish({ state: 'locked', error: null })
     return
   }
   publish({ state: 'syncing', error: null })
   try {
     const device = await getDeviceId()
+    alive()
     // Ops a server limit held back (multi-tenant-host D5) are offered again
     // now and then; the server refuses them again while the limit holds.
     const sinceRetry = Date.now() - lastHeldRetry
     if (sinceRetry >= HELD_RETRY_MS || sinceRetry < 0) {
       lastHeldRetry = Date.now()
       await requeueHeld()
+      alive()
     }
     // Notifications are refreshed after the first exchange of a session and after
     // any exchange that brought changes (an assignment arrives as an op).
     let received = needNotifications
+    let skewRounds = 0
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
       const sent = batch.map(({ local: _local, ...op }) => op)
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
-      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
+      const backfillAck = await getMeta<number>('backfillAck', 0)
+      alive()
+      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset(), backfillAck, signal)
+      alive()
       // A proxy or captive portal can answer 200 with a page of its own: nothing
       // was synced, so the outbox stays as it is (client-data-safety).
       if (!isSyncResponse(res)) throw new Error(t('The server sent an answer this app does not understand. Your changes stay on this device.'))
       hlcObserveServerTime(res.serverTime)
       // A server limit (multi-tenant-host) refuses ops without judging them: the
       // device keeps them, unsynced, and sends them again later.
-      const { limited, refused } = splitRejected(res.rejected ?? [])
+      // A clock refusal (sync-convergence) keeps the change: it is stamped again
+      // with the corrected clock and sent in the next round of this loop.
+      const { skewed, rest } = splitClockSkew(res.rejected ?? [])
+      if (skewed.length > 0 && ++skewRounds > 3) throw new Error(t('This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.'))
+      const { limited, refused } = splitRejected(rest)
       // The sent batch leaves the outbox in the same transaction that holds the
       // ops a limit refused and forgets the clocks of refused ones (project-sharing:
       // the server's values, which travel in res.ops, then win), so no path
@@ -194,6 +252,7 @@ async function runOnce(): Promise<void> {
           await markSent(sent, wireOps)
         }
         if (limited.length > 0) await holdOps(sent, limited)
+        await restampSkewed(sent, skewed, res.serverTime)
         ;({ keys, notice } = await forgetRejected(sent, refused))
         // A refused op never happened: drop it from the local activity log too.
         await forgetActivity(refused.map((r) => r.id))
@@ -201,7 +260,10 @@ async function runOnce(): Promise<void> {
       if (limited.length > 0) heldReason = limited[0].reason
       if (notice) addRejected(notice)
       const incoming = await decryptIncoming(res.ops)
-      if ((await reconcileMode(incoming)) === 'locked') {
+      alive()
+      const mode = await reconcileMode(incoming)
+      alive()
+      if (mode === 'locked') {
         // Encryption was enabled elsewhere and this device has no key: keep the
         // cursor so the batch is pulled again after unlocking. Rows that only
         // existed here and were refused go now; the server's values come later.
@@ -210,18 +272,27 @@ async function runOnce(): Promise<void> {
         return
       }
       await applyOps(incoming.ops, { wire: incoming.wire })
+      alive()
       if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
+      alive()
       if (res.memberships) await storeMemberships(res.memberships)
+      alive()
       // Purged on the server (trash-and-history D5): drop the rows and queued ops.
       if (res.purged?.length) await removeLocally(res.purged)
+      alive()
       if (typeof res.trashRetentionDays === 'number') await setMeta(RETENTION_KEY, res.trashRetentionDays)
+      alive()
       // Reminders are personal: another member moving a shared task does not move ours.
       await followSharedDueChanges(res.ops)
+      alive()
       // Encrypt-on-sight (OpenSpec e2ee, design D7): queued re-writes upload in
       // the next round of this loop.
       await normalizeOnSight(incoming)
-      if (await generationChanged(res.generation)) {
+      alive()
+      const restored = await generationChanged(res.generation)
+      alive()
+      if (restored) {
         // The server was restored from a backup: its log went back in time, so our
         // cursor means nothing there and it may lack edits we hold. Re-send every
         // local field with its original clock, then pull everything from zero.
@@ -230,17 +301,23 @@ async function runOnce(): Promise<void> {
         // (locked) instead of going out in plaintext (encryption-state-integrity).
         if (await isEnabled()) {
           await refreshFromServer()
+          alive()
           if (await syncBlocked()) {
             publish({ state: 'locked', error: null, pending: (await db.outbox.count()) + (await heldCount()) })
             return
           }
         }
         publish({ state: 'reseeding' })
+        alive()
         await reseedAfterRestore(res.generation as string)
+        alive()
         publish({ pending: await db.outbox.count() })
         continue
       }
+      alive()
       await setMeta('cursor', res.cursor)
+      // Confirms a page of a joined project's history once it was applied (sync-convergence).
+      await setMeta('backfillAck', res.backfillSeq ?? 0)
       const left = await db.outbox.count()
       publish({ pending: left })
       if (!res.hasMore && left === 0) break
@@ -248,13 +325,18 @@ async function runOnce(): Promise<void> {
     if (received) {
       needNotifications = false
       await refreshNotifications()
+      alive()
     }
     // Permanent deletions requested while offline go out once we are connected.
     await flushPendingPurges()
+    alive()
     // Shared projects seen for the first time on this device start with everything
     // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
     await ensureFeedBaselines()
+    alive()
+    failures = 0
     const held = await heldCount()
+    alive()
     if (held > 0) {
       // Everything else is synced; the held changes wait for the limit.
       publish({ state: 'limited', lastSyncedAt: Date.now(), error: limitMessage(heldReason ?? ''), pending: (await db.outbox.count()) + held })
@@ -267,6 +349,9 @@ async function runOnce(): Promise<void> {
     // An encryption change stopped while re-uploading files continues here.
     void resumeFileMigration().catch(() => undefined)
   } catch (err) {
+    // The session ended meanwhile (an aborted request lands here): report nothing.
+    if (err instanceof SessionEnded) throw err
+    alive()
     if (err instanceof ApiError && err.status === 401) {
       publish({ state: 'unauthenticated' })
       return
@@ -287,9 +372,12 @@ async function runOnce(): Promise<void> {
       publish({ state: 'locked', error: null })
       return
     }
-    if (err instanceof TypeError) {
-      // fetch() rejects with TypeError when the network is unreachable.
+    if (isTransientNetworkError(err) || isOffline()) {
+      // No answer (the network failed, or the request timed out): offline, and
+      // the exchange is tried again with backoff. Any other TypeError is a bug
+      // and shows as an error, not as "offline" (client-sync-robustness).
       publish({ state: 'offline' })
+      scheduleRetry()
       return
     }
     publish({ state: 'error', error: err instanceof Error ? err.message : String(err) })
@@ -368,7 +456,19 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
 
 // ---- periodic fallback ----
 
+/** After an exchange without an answer: try again soon, backing off up to the cap. */
+function scheduleRetry(): void {
+  if (!started || retryTimer) return
+  const delay = backoffMs(failures)
+  failures = Math.min(failures + 1, 10)
+  retryTimer = setTimeout(() => {
+    retryTimer = null
+    requestSync(0)
+  }, delay)
+}
+
 function armTimer(): void {
+  if (!leader) return
   if (timer) clearInterval(timer)
   timer = setInterval(() => void syncNow(), snapshot.live ? LIVE_INTERVAL_MS : INTERVAL_MS)
 }
@@ -425,7 +525,8 @@ function failLive(es: EventSource): void {
 }
 
 function connectLive(): void {
-  if (!started || source || typeof EventSource === 'undefined') return
+  // Only the tab that syncs listens for wake-ups (one tab syncs).
+  if (!started || !leader || source || typeof EventSource === 'undefined') return
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
@@ -434,7 +535,7 @@ function connectLive(): void {
   if (isOffline()) return
   void getDeviceId().then(
     (device) => {
-      if (!started || source || isOffline()) return
+      if (!started || !leader || source || isOffline()) return
       const es = new EventSource(`${EVENTS_PATH}?device=${encodeURIComponent(device)}`)
       source = es
       openTimer = setTimeout(() => failLive(es), OPEN_TIMEOUT_MS)
@@ -491,20 +592,22 @@ export function startSync(): void {
   void refreshLimits()
   // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
   void sweepInbox().catch(() => undefined)
-  onLocalMutation(() => {
+  const offMutation = onLocalMutation(() => {
     // Reflect the pending edit immediately so the indicator never claims "Synced"
     // while an op is still waiting in the debounce window.
     if (snapshot.state === 'idle') publish({ state: 'syncing', pending: snapshot.pending + 1 })
     requestSync()
   })
+  const offs: (() => void)[] = [offMutation, () => onUploadRequest(null)]
   if (typeof window !== 'undefined') {
-    window.addEventListener('online', () => {
+    const onOnline = () => {
       requestSync(0)
       attempts = 0
+      failures = 0
       connectLive()
       void refreshEvents()
-    })
-    document.addEventListener('visibilitychange', () => {
+    }
+    const onVisible = () => {
       if (document.visibilityState === 'visible') {
         requestSync(0)
         // Mobile browsers drop the stream silently in the background; reconnect now
@@ -514,8 +617,21 @@ export function startSync(): void {
           connectLive()
         }
       }
-    })
+    }
+    const win = window
+    const doc = document
+    win.addEventListener('online', onOnline)
+    doc.addEventListener('visibilitychange', onVisible)
+    offs.push(() => win.removeEventListener('online', onOnline), () => doc.removeEventListener('visibilitychange', onVisible))
   }
+  removeListeners = () => offs.forEach((off) => off())
+  electLeader()
+}
+
+/** This tab runs the sync loop now: the timer, the live channel, the first exchange. */
+function lead(): void {
+  if (!started) return
+  leader = true
   armTimer()
   requestSync(0)
   connectLive()
@@ -524,14 +640,190 @@ export function startSync(): void {
 }
 
 export function stopSync(): void {
+  // A new epoch: the running exchange stops at its next step and its request is
+  // aborted, so nothing more is written for this session (client-sync-robustness).
+  bumpLocalEpoch()
+  controller?.abort()
+  controller = null
+  again = false
   if (timer) clearInterval(timer)
   timer = null
   if (debounce) clearTimeout(debounce)
   debounce = null
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
+  failures = 0
+  removeListeners?.()
+  removeListeners = null
   started = false
   needNotifications = true
   clearLiveTimers()
   closeSource()
   attempts = 0
+  resign()
   publish({ state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null })
+}
+
+/**
+ * stopSync, then wait until the exchange that was running has stopped. Sign-out
+ * awaits this before clearing the local data.
+ */
+export async function stopSyncAndWait(): Promise<void> {
+  const running = current
+  stopSync()
+  await running?.catch(() => undefined)
+}
+
+// ---- one tab syncs (client-sync-robustness) ----
+//
+// Every tab of the app shares one database and one device id. Only the tab that
+// holds the Web Lock runs the loop (exchanges, timer, live channel); the others
+// ask it to sync over a BroadcastChannel and show the status it broadcasts.
+// When the leader closes, the lock passes to another tab. Without Web Locks or
+// BroadcastChannel every tab syncs on its own, as before.
+
+const LOCK_NAME = 'opentodo-sync'
+const CHANNEL_NAME = 'opentodo-sync'
+/** A follower's syncNow() resolves after the leader answers, or after this long. */
+const FOLLOWER_WAIT_MS = 15_000
+
+type Message =
+  | { type: 'sync'; id?: string }
+  | { type: 'done'; id: string }
+  | { type: 'status'; snapshot: Snapshot }
+  | { type: 'signout' }
+
+/** True while this tab runs the sync loop (always, without coordination). */
+let leader = false
+let channel: BroadcastChannel | null = null
+let lockAbort: AbortController | null = null
+let releaseLock: (() => void) | null = null
+const waiting = new Map<string, () => void>()
+const signOutListeners = new Set<() => void>()
+
+function coordination(): LockManager | null {
+  if (typeof navigator === 'undefined' || typeof BroadcastChannel === 'undefined') return null
+  return typeof navigator.locks?.request === 'function' ? navigator.locks : null
+}
+
+function post(msg: Message): void {
+  try {
+    channel?.postMessage(msg)
+  } catch {
+    // A closed channel: nothing to tell.
+  }
+}
+
+function onMessage(ev: MessageEvent<Message>): void {
+  const msg = ev.data
+  if (msg.type === 'signout') {
+    for (const fn of signOutListeners) fn()
+    return
+  }
+  if (leader) {
+    if (msg.type === 'sync') {
+      const run = () => {
+        if (msg.id) {
+          const id = msg.id
+          void syncNow().finally(() => post({ type: 'done', id }))
+        } else requestSync(0)
+      }
+      // The key may have been entered in the asking tab: read it again from the
+      // shared database before syncing for it (end-to-end encryption).
+      if (snapshot.state === 'locked') void loadEncryptionState().then(run, run)
+      else run()
+    }
+    return
+  }
+  if (msg.type === 'status') {
+    snapshot = msg.snapshot
+    for (const fn of listeners) fn()
+  } else if (msg.type === 'done') {
+    waiting.get(msg.id)?.()
+  }
+}
+
+function electLeader(): void {
+  const locks = coordination()
+  if (!locks) {
+    lead()
+    return
+  }
+  leader = false
+  channel = new BroadcastChannel(CHANNEL_NAME)
+  channel.onmessage = onMessage
+  const abort = new AbortController()
+  lockAbort = abort
+  locks.request(LOCK_NAME, { signal: abort.signal }, () => new Promise<void>((resolve) => {
+    if (abort.signal.aborted || !started) return resolve()
+    releaseLock = resolve
+    lead()
+  })).catch(() => undefined)
+  // Until the lock is ours, the leader (if any) syncs for this tab too.
+  post({ type: 'sync' })
+}
+
+/** Gives up leadership and the channel; the lock is released once the running exchange stopped. */
+function resign(): void {
+  leader = false
+  lockAbort?.abort()
+  lockAbort = null
+  const release = releaseLock
+  releaseLock = null
+  if (release) void (current ?? Promise.resolve()).catch(() => undefined).finally(release)
+  if (channel) {
+    channel.onmessage = null
+    channel.close()
+    channel = null
+  }
+  for (const done of waiting.values()) done()
+  waiting.clear()
+}
+
+/** A follower's syncNow: the leader runs the exchange and says when it is done. */
+function syncViaLeader(): Promise<void> {
+  const id = uuid()
+  return new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timeout)
+      waiting.delete(id)
+      resolve()
+    }
+    const timeout = setTimeout(done, FOLLOWER_WAIT_MS)
+    waiting.set(id, done)
+    post({ type: 'sync', id })
+  })
+}
+
+/** Whether this tab runs the sync loop (tests and diagnostics). */
+export function isSyncLeader(): boolean {
+  return leader
+}
+
+/** Tells the other tabs that this browser signed out: they stop syncing and reload. */
+export function announceSignOut(): void {
+  if (channel) {
+    post({ type: 'signout' })
+    return
+  }
+  if (typeof BroadcastChannel === 'undefined') return
+  const c = new BroadcastChannel(CHANNEL_NAME)
+  c.postMessage({ type: 'signout' } satisfies Message)
+  c.close()
+}
+
+/** Subscribes to sign-outs in other tabs; returns an unsubscribe function. */
+export function onSignOutElsewhere(fn: () => void): () => void {
+  signOutListeners.add(fn)
+  return () => signOutListeners.delete(fn)
+}
+
+/**
+ * Runs fn while holding the sync lock, so no tab's exchange runs at the same
+ * time (sign-out clears the local data in it). Runs fn directly without Web Locks.
+ */
+export async function withSyncLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = coordination()
+  if (!locks) return fn()
+  return locks.request(LOCK_NAME, fn) as Promise<T>
 }

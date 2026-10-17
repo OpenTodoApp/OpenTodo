@@ -37,14 +37,20 @@ export function splitRejected(rejected: Rejection[]): { limited: Rejection[]; re
   return { limited, refused }
 }
 
-/** Keeps the sent ops a limit refused; returns how many are held now. */
+/**
+ * Keeps the sent ops a limit refused; returns how many are held now. The read
+ * and the write of the held list are one transaction, so a requeue running at
+ * the same time (another call, another tab) cannot lose ops (client-sync-robustness).
+ */
 export async function holdOps(sent: Op[], limited: Rejection[]): Promise<number> {
   const ids = new Set(limited.map((r) => r.id))
-  const held = await getMeta<Op[]>(HELD_KEY, [])
-  const known = new Set(held.map((o) => o.id))
-  for (const op of sent) if (ids.has(op.id) && !known.has(op.id)) held.push(op)
-  await setMeta(HELD_KEY, held)
-  return held.length
+  return db.transaction('rw', db.meta, async () => {
+    const held = await getMeta<Op[]>(HELD_KEY, [])
+    const known = new Set(held.map((o) => o.id))
+    for (const op of sent) if (ids.has(op.id) && !known.has(op.id)) held.push(op)
+    await setMeta(HELD_KEY, held)
+    return held.length
+  })
 }
 
 export async function heldCount(): Promise<number> {
@@ -53,11 +59,13 @@ export async function heldCount(): Promise<number> {
 
 /** Moves the held ops back into the outbox (their original clocks), to be sent again. */
 export async function requeueHeld(): Promise<number> {
-  const held = await getMeta<Op[]>(HELD_KEY, [])
-  if (held.length === 0) return 0
-  await db.transaction('rw', db.outbox, db.meta, async () => {
+  // Read inside the transaction: ops held between a read outside it and the
+  // clear below would otherwise be dropped without ever being sent.
+  return db.transaction('rw', db.outbox, db.meta, async () => {
+    const held = await getMeta<Op[]>(HELD_KEY, [])
+    if (held.length === 0) return 0
     await db.outbox.bulkAdd(held)
     await setMeta(HELD_KEY, [])
+    return held.length
   })
-  return held.length
 }

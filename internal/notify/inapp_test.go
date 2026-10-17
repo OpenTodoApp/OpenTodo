@@ -66,3 +66,50 @@ func TestInAppStoresUnblocked(t *testing.T) {
 		t.Fatalf("payload = %s", list[0].Payload)
 	}
 }
+
+// reliable-background-jobs: a self-hosted server applies the 90-day retention
+// periodically, not only when it starts; every kind is stored by one helper.
+func TestInAppRunSweeperAppliesRetention(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`INSERT INTO users(id,email,password_hash,created_at) VALUES('u','u@example.com','h',1)`); err != nil {
+		t.Fatal(err)
+	}
+	n := NewInApp(db, nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	n.Mentioned(ctx, Mentioned{RecipientID: "u", ActorID: "x", TaskID: "t"})
+	if list, _, _ := n.List(ctx, "u"); len(list) != 1 || list[0].Kind != KindMentioned {
+		t.Fatalf("mentioned not stored: %+v", list)
+	}
+	old := time.Now().Add(-Retention - time.Hour).UnixMilli()
+	if _, err := db.Exec(`INSERT INTO notifications(id,user_id,kind,payload,created_at,read_at) VALUES('old-read','u','assigned','{}',?,?)`, old, old); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan struct{})
+	go func() {
+		n.RunSweeper(ctx, 10*time.Millisecond)
+		close(done)
+	}()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		var c int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM notifications WHERE id = 'old-read'`).Scan(&c); err != nil {
+			t.Fatal(err)
+		}
+		if c == 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the sweeper never removed the expired notification")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancel()
+	<-done
+	if list, _, _ := n.List(context.Background(), "u"); len(list) != 1 {
+		t.Fatalf("unread notification removed: %+v", list)
+	}
+}

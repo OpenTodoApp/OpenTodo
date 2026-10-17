@@ -292,61 +292,82 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	return nil
 }
 
-// StartJobs starts the background jobs of a self-hosted server: they stop
-// when ctx is cancelled. done is closed once the webhook worker has finished
-// its last delivery pass, so shutdown can record its outcome.
-func (t *Tenant) StartJobs(ctx context.Context, done chan<- struct{}, demoSignal func(context.Context, *demo.Service)) {
+// StartJobs starts the background jobs of a self-hosted server. They stop when
+// ctx is cancelled or stop is called; stop cancels them and returns once every
+// goroutine StartJobs started (and any backup in progress) has finished, so
+// the database can be closed after it (reliable-background-jobs). A delivery
+// or send in progress records its outcome first; each is bounded by its own
+// timeout.
+func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context, *demo.Service)) (stop func()) {
 	cfg := t.Cfg
+	ctx, cancel := context.WithCancel(ctx)
+	var wg sync.WaitGroup
+	spawn := func(f func(context.Context)) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			f(ctx)
+		}()
+	}
 	// Prune audit events past the owner's retention at startup and hourly.
 	// Expired pending sign-ups (outgoing-email) go on the same tick.
 	t.Auth.Audit().AlsoPrune(t.Auth.PruneSignups)
-	go t.Auth.Audit().RunPruner(ctx, audit.PruneInterval)
+	spawn(func(ctx context.Context) { t.Auth.Audit().RunPruner(ctx, audit.PruneInterval) })
+	// Read notifications past the 90-day retention: swept on open and daily.
+	spawn(func(ctx context.Context) { t.Inbox.RunSweeper(ctx, notify.SweepInterval) })
 	if !cfg.Demo {
+		// The backup service counts its own goroutines (scheduler, restore
+		// housekeeping, a run started from the web app); stop waits for them.
 		t.Backups.Start(ctx)
 	}
 	if t.Push != nil {
-		go t.Push.Run(ctx)
+		spawn(t.Push.Run)
 	}
 	if t.Digest != nil {
 		// Weekly digests: a pass every 5 minutes; it sends nothing while
 		// outgoing email is not configured.
-		go t.Digest.Run(ctx)
+		spawn(t.Digest.Run)
 	}
 	if t.Demo != nil {
 		// Expired-sandbox cleanup every 5 minutes and the nightly reset.
-		go t.Demo.Run(ctx)
+		spawn(t.Demo.Run)
 		if demoSignal != nil {
 			// The operator (or a test) can force a reset with SIGUSR1; there is no route.
-			go demoSignal(ctx, t.Demo)
+			spawn(func(ctx context.Context) { demoSignal(ctx, t.Demo) })
 		}
 	} else {
-		go t.Email.Run(ctx)
+		spawn(t.Email.Run)
 	}
 	// Purge items that outlived the Trash retention at startup and daily
 	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
-	go t.Sync.RunRetention(ctx, cfg.TrashRetentionDays, t.log)
+	spawn(func(ctx context.Context) { t.Sync.RunRetention(ctx, cfg.TrashRetentionDays, t.log) })
 	if !cfg.Demo {
 		// No outbound calendar fetches on a demo instance.
-		go t.Calendar.Run(ctx)
+		spawn(t.Calendar.Run)
+		// No outbound webhook deliveries on a demo instance.
+		spawn(t.Hooks.Run)
 	}
-	go func() {
-		defer close(done)
-		if cfg.Demo {
-			// No outbound webhook deliveries on a demo instance.
-			<-ctx.Done()
-			return
+	return func() {
+		cancel()
+		wg.Wait()
+		if !cfg.Demo {
+			t.Backups.Stop()
 		}
-		t.Hooks.Run(ctx)
-	}()
+	}
 }
 
 // Hosted reports the host's settings for this tenant; nil when self-hosted.
 func (t *Tenant) Hosted() *Hosted { return t.hosted }
 
-// Close ends live event streams, closes the database and releases the data
+// Close stops the backup service, ends live event streams, closes the database and releases the data
 // directory. It is safe to call more than once.
 func (t *Tenant) Close() error {
 	t.closeOnce.Do(func() {
+		// A backup started from the web app runs even where this process does
+		// not lead the jobs: cancel it and wait for its outcome first.
+		if t.Backups != nil {
+			t.Backups.Stop()
+		}
 		if t.Sync != nil {
 			t.Sync.Notifier().CloseAll()
 		}

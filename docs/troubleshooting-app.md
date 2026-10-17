@@ -27,8 +27,12 @@ If a word was read as a date, project or priority by mistake, select the **×** 
 
 ## The app looks out of date
 
-The app updates itself when your server is updated. If something still looks old, close it completely (all tabs or the installed window) and open it again.
+The app updates itself when your server is updated. An open tab shows **A new version of OpenTodo is ready** with a **Reload to update** button; a screen whose code changed in the update reloads on its own. If something still looks old, close it completely (all tabs or the installed window) and open it again.
+
+If a tab says **A newer version of OpenTodo is open in another tab**, reload it: the other tab updated the data stored on this device, and the older tab can no longer save changes.
 
 ## Something went wrong on screen
 
-If a part of the app fails to display, you see a message with a **Reload** button. Your tasks are stored on the device and aren't lost by reloading.
+If a part of the app fails to display, you see a message with a **Reload** button in its place; the sidebar and other screens keep working. Your tasks are stored on the device and aren't lost by reloading.
+
+If a change can't be made (for example moving a task under one of its own subtasks), a message at the bottom of the screen says why.

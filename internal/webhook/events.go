@@ -59,8 +59,12 @@ func EventFor(c opsync.Change) string {
 // SourceFor names where a change came from: "server" (REST API), "import",
 // "caldav", or "device" for any syncing client (the device id is sent separately).
 func SourceFor(origin string) string {
+	// The server's device carries a per-process suffix (server:<boot id>).
+	if opsync.IsServerDevice(origin) {
+		return "server"
+	}
 	switch origin {
-	case "server", "import", "caldav":
+	case "import", "caldav":
 		return origin
 	}
 	return "device"

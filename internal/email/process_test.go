@@ -76,7 +76,7 @@ func TestProcessCreatesTaskOnce(t *testing.T) {
 		t.Fatalf("project_id = %s", v)
 	}
 	// The ops carry device "server".
-	if n := h.count(`SELECT COUNT(*) FROM ops WHERE user_id = 'alice' AND device = 'server' AND entity_id = ?`, TaskID("alice", "<once@example.org>")); n != 5 {
+	if n := h.count(`SELECT COUNT(*) FROM ops WHERE user_id = 'alice' AND device = ? AND entity_id = ?`, Device, TaskID("alice", "<once@example.org>")); n != 5 {
 		t.Fatalf("server ops = %d", n)
 	}
 	if len(h.tasks("bob")) != 0 {

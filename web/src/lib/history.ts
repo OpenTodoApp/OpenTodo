@@ -33,7 +33,7 @@ export async function fetchHistory(entity: 'task' | 'project', id: string, befor
 export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_label'>, myDevice: string, myUserId?: string, memberships: Membership[] = []): string {
   const base = set.device === myDevice ? t('this device')
     : set.device_label ? set.device_label
-    : set.device === 'server' ? 'API'
+    : set.device === 'server' || set.device.startsWith('server:') ? 'API'
     : set.device.startsWith('agent:') ? t('AI assistant')
     : set.device.startsWith('caldav:') ? t('a calendar app (CalDAV)')
     : set.device.startsWith('public:') ? t('a public link')

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	gosync "sync"
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
@@ -35,6 +36,9 @@ type Service struct {
 	// quota refuses single ops once a hosted tenant reached a limit
 	// (multi-tenant-host D5); nil elsewhere.
 	quota Quota
+	// clockMu guards lastTS, the last timestamp ServerTS issued (sync-convergence).
+	clockMu gosync.Mutex
+	lastTS  int64
 }
 
 // Quota bounds what a hosted tenant may store (OpenSpec `multi-tenant-host`,
@@ -172,6 +176,9 @@ type ApplyResult struct {
 type Rejection struct {
 	ID     string `json:"id"`
 	Reason string `json:"reason"`
+	// ServerTime is the server's clock (Unix ms) when it refused an op with
+	// ReasonClockSkew, so the device can correct its clock (sync-convergence).
+	ServerTime int64 `json:"serverTime,omitempty"`
 }
 
 // Rejection reasons.
@@ -186,7 +193,23 @@ const (
 	// not a current member of the shared project, or not the author for a task in
 	// a personal scope.
 	ReasonNotAMember = "not_a_member"
+	// ReasonClockSkew: the op's timestamp is more than MaxFutureSkewMs ahead of
+	// the server's clock (OpenSpec change sync-convergence). Only devices that
+	// announce support get it (see WithClockSkewRefusal); the device corrects
+	// its clock, stamps the op again and re-sends it, so no edit is lost.
+	ReasonClockSkew = "clock_skew"
 )
+
+type skewKey struct{}
+
+// WithClockSkewRefusal marks ctx so Apply refuses ops stamped too far in the
+// future with ReasonClockSkew instead of clamping them (sync-convergence). The
+// sync route sets it for devices that announce the "clock_skew" feature: older
+// clients drop an op refused for a reason they do not know, so they keep the
+// clamping behaviour.
+func WithClockSkewRefusal(ctx context.Context) context.Context {
+	return context.WithValue(ctx, skewKey{}, true)
+}
 
 // RejectedError is returned by ApplyStrict when any op of the batch is refused.
 type RejectedError struct {
@@ -203,7 +226,8 @@ func (e *RejectedError) Error() string {
 
 // Apply validates and records a batch of ops for one user atomically.
 // Duplicate op ids are ignored, so clients can retry safely. Timestamps far in the
-// future are clamped so a misconfigured clock cannot freeze a field forever.
+// future are refused with ReasonClockSkew when ctx carries WithClockSkewRefusal,
+// and clamped otherwise, so a misconfigured clock cannot freeze a field forever.
 // Each op is authorized against the author's memberships at receipt time; refused
 // ops are reported in Rejected and never stored, the rest of the batch is applied.
 func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResult, error) {
@@ -308,9 +332,13 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	touched := map[string]bool{}
 	var refused, rewritten []Op
 	var storedBytes int64 // value bytes of the stored ops, for the write guard
+	refuseSkew := ctx.Value(skewKey{}) != nil
 	for _, op := range ops {
-		if op.TS > nowMs+MaxFutureSkewMs {
+		skewed := op.TS > nowMs+MaxFutureSkewMs
+		if skewed && !refuseSkew {
+			// Older clients: clamp, as before sync-convergence.
 			op.TS = nowMs + MaxFutureSkewMs
+			skewed = false
 		}
 		// A retried op that was stored earlier stays a duplicate even if the
 		// author's role changed since: it is already part of the log.
@@ -329,6 +357,16 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			return res, err
 		} else if gone {
 			res.Duplicates++
+			continue
+		}
+		if skewed {
+			// Not a verdict on the value: the device keeps its change, corrects
+			// its clock and sends it again with a new timestamp, so nothing is
+			// restored here (sync-convergence).
+			if strict {
+				return ApplyResult{}, &RejectedError{Op: op, Reason: ReasonClockSkew}
+			}
+			res.Rejected = append(res.Rejected, Rejection{ID: op.ID, Reason: ReasonClockSkew, ServerTime: nowMs})
 			continue
 		}
 		scope, reason, err := rs.resolve(op)
@@ -401,13 +439,16 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if s.quota != nil && res.Applied > 0 {
 		s.quota.Stored(res.Applied)
 	}
+	// The batch is committed: what follows must happen even if the client
+	// disconnected and the request's context was cancelled (sync-convergence).
+	post := context.WithoutCancel(ctx)
 	changes := tracker.changes()
 	if s.observer != nil && len(changes) > 0 {
-		s.observer(ctx, changes)
+		s.observer(post, changes)
 	}
-	s.emitAssignments(ctx, userID, nowMs, changes)
-	s.emitMentions(ctx, userID, nowMs, changes)
-	s.emitUnblocked(ctx, userID, nowMs, changes)
+	s.emitAssignments(post, userID, nowMs, changes)
+	s.emitMentions(post, userID, nowMs, changes)
+	s.emitUnblocked(post, userID, nowMs, changes)
 	return res, nil
 }
 
@@ -590,22 +631,42 @@ type PullResult struct {
 	Purged []PurgedEntity
 	Cursor int64
 	More   bool
+	// BackfillSeq names a served page of a joined project's history when the
+	// device confirms pages (PullOptions.ConfirmBackfill): the device echoes it
+	// as PullOptions.BackfillAck once it applied the page. 0 otherwise.
+	BackfillSeq int64
+}
+
+// PullOptions tune one pull for what the device supports.
+type PullOptions struct {
+	// ConfirmBackfill: the device echoes BackfillSeq after applying a page of a
+	// joined project's history (OpenSpec change sync-convergence). Progress then
+	// advances only on that echo, so a page lost in transit is served again.
+	// Without it (older clients) progress advances when the page is served.
+	ConfirmBackfill bool
+	// BackfillAck is the BackfillSeq of the last page the device applied (0: none).
+	BackfillAck int64
 }
 
 // PullAll is Pull plus purge markers. Markers share the ops sequence, so the
 // cursor also advances past markers; ops and markers are read in one snapshot.
 func (s *Service) PullAll(ctx context.Context, userID string, cursor int64, device string, limit int) (PullResult, error) {
+	return s.PullWith(ctx, userID, cursor, device, limit, PullOptions{})
+}
+
+// PullWith is PullAll with options for what the device supports.
+func (s *Service) PullWith(ctx context.Context, userID string, cursor int64, device string, limit int, opt PullOptions) (PullResult, error) {
 	res := PullResult{Ops: []Op{}, Cursor: cursor}
 	if limit <= 0 || limit > MaxOpsPerRequest {
 		limit = MaxOpsPerRequest
 	}
 	if device != "" {
-		ops, err := s.backfillPage(ctx, userID, device, cursor, limit)
+		ops, served, err := s.backfillPage(ctx, userID, device, cursor, limit, opt)
 		if err != nil {
 			return res, err
 		}
 		if len(ops) > 0 {
-			res.Ops, res.More = ops, true
+			res.Ops, res.More, res.BackfillSeq = ops, true, served
 			return res, nil
 		}
 	}
@@ -684,18 +745,31 @@ func scanOp(rows *sql.Rows) (Op, error) {
 // sync after joining (later ops arrive through the regular pull). It returns nil
 // once every joined project has been replayed for the device. Ops this device
 // authored are included: a device that was removed purged them locally.
-func (s *Service) backfillPage(ctx context.Context, userID, device string, cursor int64, limit int) ([]Op, error) {
+//
+// With opt.ConfirmBackfill the page's end is kept as served_seq
+// (member_backfill_served) and returned;
+// done_seq moves there only when the device echoes it (opt.BackfillAck), so a
+// page that never arrived is served again from done_seq (sync-convergence).
+func (s *Service) backfillPage(ctx context.Context, userID, device string, cursor int64, limit int, opt PullOptions) ([]Op, int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer tx.Rollback()
+	if opt.ConfirmBackfill && opt.BackfillAck > 0 {
+		if _, err := tx.ExecContext(ctx, `UPDATE member_backfills SET done_seq = ?
+			WHERE user_id = ? AND device = ? AND done_seq < ? AND project_id IN
+			(SELECT project_id FROM member_backfill_served WHERE user_id = ? AND device = ? AND served_seq = ?)`,
+			opt.BackfillAck, userID, device, opt.BackfillAck, userID, device, opt.BackfillAck); err != nil {
+			return nil, 0, fmt.Errorf("confirm backfill page: %w", err)
+		}
+	}
 	rows, err := tx.QueryContext(ctx, `SELECT m.project_id, b.upto_seq, b.done_seq FROM project_members m
 		LEFT JOIN member_backfills b ON b.project_id = m.project_id AND b.user_id = m.user_id AND b.device = ?
 		WHERE m.user_id = ? AND m.backfill = 1 AND (b.project_id IS NULL OR b.done_seq < b.upto_seq)
 		ORDER BY m.project_id`, device, userID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	type pending struct {
 		project    string
@@ -708,7 +782,7 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 		var upto, done sql.NullInt64
 		if err := rows.Scan(&p.project, &upto, &done); err != nil {
 			rows.Close()
-			return nil, err
+			return nil, 0, err
 		}
 		p.fresh = !upto.Valid
 		p.upto, p.done = upto.Int64, done.Int64
@@ -719,15 +793,16 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	var page []Op
+	var served int64
 	size, full := 0, false
 	for _, p := range list {
 		if p.fresh {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO member_backfills(project_id,user_id,device,upto_seq,done_seq) VALUES(?,?,?,?,0)`,
 				p.project, userID, device, p.upto); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 		if p.done < p.upto {
@@ -735,13 +810,13 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 				FROM op_scopes s JOIN ops o ON o.seq = s.seq
 				WHERE s.scope_id = ? AND s.seq > ? AND s.seq <= ? ORDER BY s.seq LIMIT ?`, ProjectScope(p.project), p.done, p.upto, limit)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			for r.Next() {
 				op, err := scanOp(r)
 				if err != nil {
 					r.Close()
-					return nil, err
+					return nil, 0, err
 				}
 				if len(page) > 0 && size+len(op.Value) > s.pullBytes() {
 					// Byte budget reached: the rest of this history is the next page.
@@ -753,25 +828,33 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 			}
 			r.Close()
 			if err := r.Err(); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 		done := p.upto
 		if full || len(page) == limit {
 			done = page[len(page)-1].Seq
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE member_backfills SET done_seq = ? WHERE project_id = ? AND user_id = ? AND device = ?`,
+		if opt.ConfirmBackfill && len(page) > 0 {
+			// Confirmed by the device's next exchange (see above).
+			served = done
+			if _, err := tx.ExecContext(ctx, `INSERT INTO member_backfill_served(project_id,user_id,device,served_seq) VALUES(?,?,?,?)
+				ON CONFLICT(project_id,user_id,device) DO UPDATE SET served_seq = excluded.served_seq`,
+				p.project, userID, device, done); err != nil {
+				return nil, 0, err
+			}
+		} else if _, err := tx.ExecContext(ctx, `UPDATE member_backfills SET done_seq = ? WHERE project_id = ? AND user_id = ? AND device = ?`,
 			done, p.project, userID, device); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if len(page) > 0 {
 			break
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return page, nil
+	return page, served, nil
 }
 
 // Entity is a materialized record: id plus every field that has a value.

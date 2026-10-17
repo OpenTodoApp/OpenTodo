@@ -11,10 +11,6 @@ import (
 	"github.com/pixari/opentodo/internal/ids"
 )
 
-// ServerDevice is the device id of ops the server writes itself: REST writes and
-// the unassignments that follow a member's departure.
-const ServerDevice = "server"
-
 // Membership management (OpenSpec change `project-sharing`, design D5).
 // Membership is authorization data that lives outside the op log: it changes only
 // through these methods, called from authenticated REST routes, so two offline
@@ -205,7 +201,8 @@ func (s *Service) membershipTx(ctx context.Context, actorID, projectID string, f
 		return MemberChange{}, err
 	}
 	if s.observer != nil && len(ch.changes) > 0 {
-		s.observer(ctx, ch.changes)
+		// Committed: tell observers even if the request was cancelled meanwhile.
+		s.observer(context.WithoutCancel(ctx), ch.changes)
 	}
 	return ch, nil
 }
@@ -580,7 +577,7 @@ func (s *Service) unassignDeparted(ctx context.Context, tx *sql.Tx, actorID, pro
 	out := make([]string, 0, len(hits))
 	for _, h := range hits {
 		op := Op{ID: ids.New(), Entity: "task", EntityID: h.id, Field: "assignee_id", Value: json.RawMessage("null"),
-			TS: max(nowMs, h.ts+1), Device: ServerDevice}
+			TS: s.ServerTSAt(max(nowMs, h.ts+1)), Device: ServerDevice}
 		if _, err := writeOp(ctx, tx, actorID, op, scope, nowMs, tracker); err != nil {
 			return nil, nil, err
 		}

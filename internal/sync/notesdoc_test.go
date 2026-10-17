@@ -147,7 +147,6 @@ func TestProjectNotesDocValidation(t *testing.T) {
 	}
 }
 
-
 // TestProjectNoteHistory (project-notes 1.5): a project's note change set lists
 // description and never notes_doc.
 func TestProjectNoteHistory(t *testing.T) {

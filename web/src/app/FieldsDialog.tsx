@@ -15,6 +15,7 @@ import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea
 import { Dialog } from './overlay'
 import { HelpLink } from './help/HelpLink'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.label ?? item
 
@@ -33,7 +34,7 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
   const onHandleKey = (e: KeyboardEvent, id: string) => {
     if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault()
-      void move(id, e.key === 'ArrowUp' ? -1 : 1)
+      act(move(id, e.key === 'ArrowUp' ? -1 : 1))
     }
   }
   const onDrop = async (e: DragEvent, target: string) => {
@@ -58,7 +59,7 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
           <ul ref={listRef} className="divide-y divide-default rounded-card border border-default" aria-label={t('Fields')}>
             {live.map((d, i) => (
               <FieldItem key={d.id} def={d} first={i === 0} last={i === live.length - 1} dragging={dragId === d.id}
-                onMove={(delta) => void move(d.id, delta)} onHandleKey={(e) => onHandleKey(e, d.id)}
+                onMove={(delta) => act(move(d.id, delta))} onHandleKey={(e) => onHandleKey(e, d.id)}
                 onDragStart={() => setDragId(d.id)} onDrop={(e) => void onDrop(e, d.id)}
                 onDelete={() => setRemoving(d)} tasks={tasks} />
             ))}

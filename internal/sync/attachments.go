@@ -117,7 +117,7 @@ func (r *resolver) attachment(id string) (*attachmentState, error) {
 // rules above.
 func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 	// Only the server says a file is stored; a device may create the row with null.
-	if op.Field == "uploaded_at" && op.Device != ServerDevice && string(op.Value) != "null" {
+	if op.Field == "uploaded_at" && !IsServerDevice(op.Device) && string(op.Value) != "null" {
 		return "", ReasonForbidden, nil
 	}
 	st, err := r.attachment(op.EntityID)

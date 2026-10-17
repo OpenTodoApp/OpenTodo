@@ -31,6 +31,7 @@ import { DisplayColumn, type DisplayRowData } from './DisplayColumn'
 import { defaultDays, type DisplayTarget } from './displayOptions'
 import { useDisplayKeys, useRootPresentation, useWakeLock } from './displayHooks'
 import { t } from '../../lib/i18n'
+import { act } from '../actionError'
 
 export type DisplayRoute = Extract<Route, { view: 'display' }>
 
@@ -168,7 +169,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   // ---- keyboard and focus (design D5): one roving focus across groups and columns ----
   const rows = useMemo(() => (content ? [...content.groups, ...content.columns].flatMap((g) => g.rows) : []), [content])
   const toggle = useCallback((row: DisplayRowData) => {
-    if (row.editable) void setTaskCompleted(row.id, !row.done)
+    if (row.editable) act(setTaskCompleted(row.id, !row.done))
   }, [])
   const exit = useCallback(() => navigate(normalRoute(target)), [target])
   const { focusKey: current, setFocusKey } = useDisplayKeys(rows, toggle, exit)
@@ -217,7 +218,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
           </p>
           <div className="flex items-center gap-1 text-faint">
             <Menu kind="menu" label={t('Display options')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--md min-h-11 min-w-11 px-2" width="sm:w-72">
-              <MenuItem label={t('Make this the start view on this device')} icon="house" checked={isStart} onSelect={() => void setStartView(`display:${path}`)} />
+              <MenuItem label={t('Make this the start view on this device')} icon="house" checked={isStart} onSelect={() => act(setStartView(`display:${path}`))} />
               <MenuItem label={t('Exit display mode')} icon="log-out" onSelect={exit} />
             </Menu>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--md min-h-11 min-w-11 px-3" onClick={exit} data-display-exit>

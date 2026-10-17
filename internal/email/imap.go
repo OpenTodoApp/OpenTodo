@@ -43,7 +43,8 @@ const MaxPerPoll = 100
 
 // IMAPSource is a minimal IMAP4rev1 client (RFC 3501) built on the standard
 // library: implicit TLS on port 993, STARTTLS on any other port, LOGIN, SELECT,
-// UID SEARCH/FETCH/STORE and MOVE (RFC 6851) or COPY+EXPUNGE. It never sends
+// UID SEARCH/FETCH/STORE and MOVE (RFC 6851) or COPY+UID EXPUNGE (RFC 4315;
+// without UIDPLUS processed messages are only flagged \Deleted). It never sends
 // credentials over an unencrypted connection and connects only to Addr.
 type IMAPSource struct {
 	Addr     string // host:port
@@ -291,12 +292,16 @@ func (c *imapConn) Done(ctx context.Context, uids []uint32) error {
 	return c.expunge(set)
 }
 
+// expunge removes our flagged messages with UID EXPUNGE (RFC 4315). Without
+// UIDPLUS it does nothing: a bare EXPUNGE would also remove messages another
+// client flagged \Deleted, so ours stay in the mailbox flagged \Seen and
+// \Deleted (never handled again) until the mail server or a client expunges
+// it (docs/email.md).
 func (c *imapConn) expunge(set string) error {
-	if c.caps["UIDPLUS"] {
-		_, err := c.run("UID EXPUNGE " + set)
-		return err
+	if !c.caps["UIDPLUS"] {
+		return nil
 	}
-	_, err := c.run("EXPUNGE")
+	_, err := c.run("UID EXPUNGE " + set)
 	return err
 }
 

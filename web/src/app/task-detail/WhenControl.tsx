@@ -15,6 +15,7 @@ import { RemindersField } from '../RemindersField'
 import { parkWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
+import { act } from '../actionError'
 
 export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
@@ -62,22 +63,22 @@ export function WhenControl({ task, readOnly = false, focus = 'due', onDone, onO
           <Button variant="ghost" size="sm" aria-pressed={!task.start} onClick={() => void unparkTask(task.id)}>{t('Anytime')}</Button>
           <DateField label={t('Start date')} hideLabel className="min-w-44 flex-1" value={task.start && task.start !== 'someday' ? task.start : null}
             validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
-            onChange={(start) => void updateTask(task.id, { start })} />
-          <Button variant="ghost" size="sm" icon="archive" aria-pressed={task.start === 'someday'} onClick={() => void parkWithUndo(task.id)}>{t('Someday')}</Button>
+            onChange={(start) => act(updateTask(task.id, { start }))} />
+          <Button variant="ghost" size="sm" icon="archive" aria-pressed={task.start === 'someday'} onClick={() => act(parkWithUndo(task.id))}>{t('Someday')}</Button>
         </div>
       </Segment>
 
       <Segment id="deadline" icon="hourglass" label={t('Deadline')}>
         <div className="flex flex-wrap items-start gap-2">
           <DateField label={t('Deadline')} hideLabel className="min-w-44 flex-1" value={task.deadline ?? null}
-            onChange={(deadline) => void updateTask(task.id, { deadline })} />
-          {task.deadline && <IconButton icon="x" label={t('Clear deadline')} onClick={() => void updateTask(task.id, { deadline: null })} />}
+            onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
+          {task.deadline && <IconButton icon="x" label={t('Clear deadline')} onClick={() => act(updateTask(task.id, { deadline: null }))} />}
         </div>
       </Segment>
 
       <Segment id="evening" icon="moon" label={t('Evening')}>
         <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
-          onChange={(on) => void updateTask(task.id, { evening: on })} />
+          onChange={(on) => act(updateTask(task.id, { evening: on }))} />
       </Segment>
 
       <Segment id="repeat" icon="repeat" label={t('Repeat')}>

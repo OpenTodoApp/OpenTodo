@@ -14,6 +14,7 @@ import { SettingRow, SettingsSection, Switch } from '../ui'
 import { ACCENTS, type AccentId } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
+import { act } from './actionError'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
@@ -127,12 +128,12 @@ function usePrefsRow(): Partial<UserPrefs> | null {
 export function AppearanceSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
-  return <AppearanceView value={value} onMode={(m) => void setAppearance('theme_mode', m)} onAccent={(a) => void setAppearance('theme_accent', a)}
-    onDensity={(d) => void setAppearance('density', d)} />
+  return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
+    onDensity={(d) => act(setAppearance('density', d))} />
 }
 
 export function SidebarSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
-  return <SidebarView promoted={value.sidebar ?? []} onPromote={(id, on) => void setPromoted(row, id, on)} />
+  return <SidebarView promoted={value.sidebar ?? []} onPromote={(id, on) => act(setPromoted(row, id, on))} />
 }

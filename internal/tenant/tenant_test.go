@@ -188,11 +188,10 @@ func TestStartJobsRunsDigest(t *testing.T) {
 	uid := me["user"].(map[string]any)["id"].(string)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{})
-	tn.StartJobs(ctx, done, nil)
+	stop := tn.StartJobs(ctx, nil)
 	defer func() {
 		cancel()
-		<-done
+		stop()
 	}()
 	deadline := time.Now().Add(10 * time.Second)
 	for len(sink.Messages()) == 0 {

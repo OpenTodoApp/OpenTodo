@@ -7,6 +7,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -72,30 +73,28 @@ func LatestVersion() int {
 	return latest
 }
 
-// Migrate applies every embedded migration that has not run yet.
+// Migrate applies every embedded migration that has not run yet: those numbered
+// above PRAGMA user_version. Each applied file's name is recorded in
+// schema_migrations (OpenSpec change sync-convergence), so a file numbered at or
+// below user_version that was never applied (a migration merged after a higher
+// one already ran) is reported with an error log instead of passing silently.
 func Migrate(ctx context.Context, db *sql.DB) error {
 	var current int
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&current); err != nil {
 		return fmt.Errorf("read schema version: %w", err)
 	}
-	entries, err := fs.ReadDir(migrations, "migrations")
+	names, err := migrationNames()
 	if err != nil {
 		return err
 	}
-	names := make([]string, 0, len(entries))
-	for _, e := range entries {
-		names = append(names, e.Name())
+	if err := recordPastMigrations(ctx, db, names, current); err != nil {
+		return err
 	}
-	sort.Strings(names)
-	for _, name := range names {
-		version, err := strconv.Atoi(strings.SplitN(name, "_", 2)[0])
-		if err != nil {
-			return fmt.Errorf("migration %s: bad version prefix", name)
-		}
-		if version <= current {
+	for _, m := range names {
+		if m.version <= current {
 			continue
 		}
-		body, err := migrations.ReadFile("migrations/" + name)
+		body, err := migrations.ReadFile("migrations/" + m.name)
 		if err != nil {
 			return err
 		}
@@ -105,16 +104,101 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		}
 		if _, err := tx.ExecContext(ctx, string(body)); err != nil {
 			tx.Rollback()
-			return fmt.Errorf("apply migration %s: %w", name, err)
+			return fmt.Errorf("apply migration %s: %w", m.name, err)
 		}
-		if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", version)); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO schema_migrations(name, applied_at) VALUES(?, ?)`, m.name, NowMillis()); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("record migration %s: %w", m.name, err)
+		}
+		if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
 			tx.Rollback()
 			return err
 		}
 		if err := tx.Commit(); err != nil {
 			return err
 		}
-		current = version
+		current = m.version
+	}
+	return nil
+}
+
+type migration struct {
+	name    string
+	version int
+}
+
+// migrationNames lists the embedded migrations in order. Two files with one
+// number are refused: only one of them could ever run.
+func migrationNames() ([]migration, error) {
+	entries, err := fs.ReadDir(migrations, "migrations")
+	if err != nil {
+		return nil, err
+	}
+	out := make([]migration, 0, len(entries))
+	seen := map[int]string{}
+	for _, e := range entries {
+		version, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+		if err != nil {
+			return nil, fmt.Errorf("migration %s: bad version prefix", e.Name())
+		}
+		if other, dup := seen[version]; dup {
+			return nil, fmt.Errorf("migrations %s and %s share version %d", other, e.Name(), version)
+		}
+		seen[version] = e.Name()
+		out = append(out, migration{name: e.Name(), version: version})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].version < out[j].version })
+	return out, nil
+}
+
+// recordPastMigrations keeps schema_migrations: it creates the table, records
+// as applied every file a binary without the table applied (numbered at or
+// below user_version and above every recorded one: on an existing database the
+// first time, all files up to user_version) and logs an error for each file at
+// or below the highest recorded number that was never applied.
+func recordPastMigrations(ctx context.Context, db *sql.DB, names []migration, current int) error {
+	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
+		name TEXT PRIMARY KEY,
+		applied_at INTEGER NOT NULL
+	)`); err != nil {
+		return fmt.Errorf("create schema_migrations: %w", err)
+	}
+	applied := map[string]bool{}
+	rows, err := db.QueryContext(ctx, `SELECT name FROM schema_migrations`)
+	if err != nil {
+		return fmt.Errorf("read schema_migrations: %w", err)
+	}
+	for rows.Next() {
+		var n string
+		if err := rows.Scan(&n); err != nil {
+			rows.Close()
+			return err
+		}
+		applied[n] = true
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	highest := 0
+	for _, m := range names {
+		if applied[m.name] {
+			highest = max(highest, m.version)
+		}
+	}
+	for _, m := range names {
+		if m.version > current || applied[m.name] {
+			continue
+		}
+		if m.version > highest {
+			// Applied by a binary that did not record names yet.
+			if _, err := db.ExecContext(ctx, `INSERT OR IGNORE INTO schema_migrations(name, applied_at) VALUES(?, 0)`, m.name); err != nil {
+				return fmt.Errorf("record migration %s: %w", m.name, err)
+			}
+			continue
+		}
+		slog.Error("database migration was never applied: it is numbered below a migration that already ran; renumber it above the latest and release again",
+			"migration", m.name, "schema_version", current)
 	}
 	return nil
 }

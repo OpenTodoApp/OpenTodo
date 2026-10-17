@@ -31,6 +31,7 @@ import { PropertyChip } from './PropertyChip'
 import { WhenControl } from './WhenControl'
 import { ZoneControl } from './ZoneControl'
 import { t } from '../../lib/i18n'
+import { act, reportActionError } from '../actionError'
 
 /** Chips whose editor is the When control (it has its own zone control). */
 const WHEN_CHIPS = new Set(['due', 'deadline', 'when', 'evening', 'reminders', 'repeat'])
@@ -211,12 +212,12 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   const offers: { id: Optional; label: string; icon: IconName; shortcut?: string; when?: boolean; run?: () => void }[] = [
     { id: 'deadline', label: t('Deadline'), icon: 'hourglass', shortcut: keysOf('list.deadline') },
     { id: 'when', label: t('Start'), icon: 'calendar-range', shortcut: keysOf('list.defer') },
-    { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => void updateTask(task.id, { evening: true }) },
+    { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, { evening: true })) },
     { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock' },
     { id: 'estimate', label: t('Estimate'), icon: 'clock', shortcut: keysOf('list.estimate') },
     { id: 'repeat', label: t('Repeat'), icon: 'repeat' },
     { id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels') },
-    { id: 'assignee', label: solo ? t('Show in Assigned to me') : t('Assignee'), icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => void updateTask(task.id, { assignee_id: userId }) : undefined },
+    { id: 'assignee', label: solo ? t('Show in Assigned to me') : t('Assignee'), icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => act(updateTask(task.id, { assignee_id: userId })) : undefined },
     { id: 'blocked-by', label: t('Blocked by'), icon: 'lock', shortcut: keysOf('list.blocked-by') },
     { id: 'parent', label: t('Parent task'), icon: 'corner-down-right' },
     { id: 'section', label: t('Section'), icon: 'kanban', when: offerSection },
@@ -251,7 +252,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
               editor={(close) => (
                 <ComboboxPanel<PickerItem> label={t('Section')} placeholder={t('Find a section…')} source={sectionSource(sections, projectId)}
                   getKey={itemKey} getLabel={itemLabel} pinned={[NONE_KEY]} selected={[sectionId ?? NONE_KEY]} rankContext="task.section"
-                  onPick={async (i) => { await moveTaskToSection(task.id, i.value).catch(() => undefined); close() }} onClose={close} />
+                  onPick={async (i) => { await moveTaskToSection(task.id, i.value).catch(reportActionError); close() }} onClose={close} />
               )} />
           </>
         )}
@@ -294,7 +295,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
               {PRIORITIES.map(({ p, label, cls }) => (
                 <button key={p} type="button" aria-pressed={task.priority === p}
                   className={`min-w-11 rounded-control border px-2.5 py-1 text-meta ${cls} ${task.priority === p ? 'bg-sunken font-semibold dark:bg-raised' : 'border-dashed hover:bg-sunken dark:hover:bg-raised'}`}
-                  onClick={() => { void updateTask(task.id, { priority: p }); close() }}>{label}</button>
+                  onClick={() => { act(updateTask(task.id, { priority: p })); close() }}>{label}</button>
               ))}
             </div>
           )} />
@@ -304,7 +305,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
             empty={!task.deadline} placeholder={t('Deadline')}
             tone={task.deadline && describeDeadline(task.deadline, undefined, local?.date ?? null)?.tone === 'overdue' ? 'text-danger' : ''}
             value={task.deadline && <span className="truncate">{dt.formatDate(task.deadline, 'long')}<span className="ml-1 text-faint">{countdownWords(task.deadline, local?.date ?? null)}</span></span>}
-            onClear={task.deadline ? () => void updateTask(task.id, { deadline: null }) : undefined}
+            onClear={task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined}
             editorLabel={t('When')} editor={(close) => <WhenControl task={task} readOnly={readOnly} focus="deadline" onDone={close} onOpen={onOpen} />} />
         )}
 
@@ -318,7 +319,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
 
         {visible('evening') && (
           <PropertyChip id="evening" icon="moon" label={t('Evening')} readOnly={readOnly} {...chipProps('evening')}
-            value="This Evening" onClear={() => void updateTask(task.id, { evening: false })}
+            value="This Evening" onClear={() => act(updateTask(task.id, { evening: false }))}
             editorLabel={t('When')} editor={(close) => <WhenControl task={task} readOnly={readOnly} focus="evening" onDone={close} onOpen={onOpen} />} />
         )}
 
@@ -333,7 +334,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
           <PropertyChip id="estimate" icon="clock" label={t('Estimate')} readOnly={readOnly} {...chipProps('estimate')}
             empty={task.estimate_minutes === null} placeholder={t('Estimate')}
             value={task.estimate_minutes !== null ? formatMinutes(task.estimate_minutes) : null}
-            onClear={task.estimate_minutes !== null ? () => void updateTask(task.id, { estimate_minutes: null }) : undefined}
+            onClear={task.estimate_minutes !== null ? () => act(updateTask(task.id, { estimate_minutes: null })) : undefined}
             editor={() => <EstimateField task={task} />} />
         )}
 
@@ -350,7 +351,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
             editor={(close) => (
               <div className="space-y-2">
                 {labels.length > 0 && (
-                  <div className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} onRemove={() => void removeLabel(task.id, l.id)} />)}</div>
+                  <div className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} onRemove={() => act(removeLabel(task.id, l.id))} />)}</div>
                 )}
                 <LabelPicker taskId={task.id} onClose={close} />
               </div>
@@ -360,10 +361,10 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
         {userId && visible('assignee') && (solo ? (
           <PropertyChip id="assignee" icon="user-check" label={t('Assignee')} readOnly={readOnly} {...chipProps('assignee')}
             value={<span className="flex items-center gap-1.5"><Avatar id={userId} name="You" size="sm" />{t('You')}</span>}
-            onClear={task.assignee_id === userId ? () => void updateTask(task.id, { assignee_id: null }) : undefined}
+            onClear={task.assignee_id === userId ? () => act(updateTask(task.id, { assignee_id: null })) : undefined}
             editor={() => (
               <Switch label={t('Show in Assigned to me')} checked={task.assignee_id === userId} disabled={readOnly}
-                onChange={(on) => void updateTask(task.id, { assignee_id: on ? userId : null })} />
+                onChange={(on) => act(updateTask(task.id, { assignee_id: on ? userId : null }))} />
             )} />
         ) : (
           <PropertyChip id="assignee" icon="user-check" label={t('Assignee')} readOnly={readOnly} {...chipProps('assignee')}

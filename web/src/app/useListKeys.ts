@@ -9,6 +9,7 @@ import { isActivationTarget, isTypingTarget, type ShortcutHandler, useShortcutSc
 import { registerListState } from './listActions'
 import type { BulkList } from './bulk/useBulkList'
 import { runBulk } from './bulk/BulkActions'
+import { act } from './actionError'
 
 export interface KeyRow {
   key: string
@@ -93,13 +94,13 @@ export function useListKeys(opts: ListKeys): void {
     'list.complete': () => {
       if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'complete' }); return }
       if (!row) return false
-      void setTaskCompleted(row.id, !row.completed_at)
+      act(setTaskCompleted(row.id, !row.completed_at))
     },
     'list.priority': (e) => {
       const priority = Number(e.key) as Priority
       if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'priority', priority }); return }
       if (!row) return false
-      void updateTask(row.id, { priority })
+      act(updateTask(row.id, { priority }))
     },
     'list.labels': () => {
       if (b?.ticked.length) { b.openActions('labels'); return }
@@ -109,7 +110,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.delete': () => {
       if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'trash' }); return }
       if (!row) return false
-      void deleteTask(row.id)
+      act(deleteTask(row.id))
       o.setSelected(o.rows[idx + 1]?.key ?? o.rows[idx - 1]?.key ?? null)
     },
     'list.estimate': openWith(estimateFocus),
@@ -118,7 +119,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row) return false; void (row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
-    'list.evening': () => { if (!row) return false; void updateTask(row.id, { evening: !row.evening }) },
+    'list.evening': () => { if (!row) return false; act(updateTask(row.id, { evening: !row.evening })) },
     ...o.extra,
   }, { paused: o.paused })
 }
