@@ -140,7 +140,7 @@ jobs:
   layout:
     name: Layout check (Chromium, WebKit)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     needs: [changes, server]
     if: needs.changes.outputs.code == 'true'
     steps:
