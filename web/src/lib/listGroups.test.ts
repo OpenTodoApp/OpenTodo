@@ -1,0 +1,162 @@
+// The task list's rows and groups as pure functions (OpenSpec change
+// web-component-structure): what TaskListView renders, tested without a DOM.
+import { describe, expect, it } from 'vitest'
+import { currentDateTime } from './dates'
+import { BLOCKED_OPEN_KEY, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { buildTaskTree } from './subtasks'
+import type { Project, Section, Task } from './types'
+
+const TODAY = '2026-10-14'
+let n = 0
+function task(over: Partial<Task> = {}): Task {
+  n++
+  return {
+    id: over.id ?? `t${n}`, title: over.title ?? `Task ${n}`, notes: '', project_id: null, section_id: null, parent_id: null, position: n,
+    priority: 4, due: null, deadline: null, start: null, labels: [], completed_at: null, deleted_at: null, created_at: n, updated_at: n,
+    assignee_id: null, ...over,
+  } as Task
+}
+const project = (id: string, position: number, over: Partial<Project> = {}) => ({ id, name: id.toUpperCase(), position, archived: false, deleted_at: null, ...over }) as Project
+const section = (id: string, projectId: string, position: number) => ({ id, project_id: projectId, name: id, position, deleted_at: null }) as Section
+
+function input(over: Partial<GroupInput>): GroupInput {
+  return {
+    view: 'inbox', tasks: [], laterTasks: [], tree: null, today: TODAY, resolved: currentDateTime(), collapsed: new Set(), blocked: new Set(),
+    taskMap: new Map(), projects: [], projectMap: new Map(), board: false, columns: [], buckets: null, sectionCount: 0, collapsedSections: [], logbook: null,
+    ...over,
+  }
+}
+const titles = (g: { rows: { task: Task }[] }) => g.rows.map((r) => r.task.title)
+
+describe('tasksForView', () => {
+  it('keeps archived projects out of cross-project views but shows the project itself', () => {
+    const archived = project('a', 1, { archived: true })
+    const inArchived = task({ title: 'Archived', project_id: 'a', labels: ['l1'] })
+    const inbox = task({ title: 'Inbox', labels: ['l1'] })
+    const all = [inArchived, inbox]
+    expect(tasksForView({ view: 'label', id: 'l1' }, all, [archived], TODAY).map((t) => t.title)).toEqual(['Inbox'])
+    expect(tasksForView({ view: 'project', id: 'a' }, all, [archived], TODAY).map((t) => t.title)).toEqual(['Archived'])
+    expect(tasksForView({ view: 'inbox' }, all, [archived], TODAY).map((t) => t.title)).toEqual(['Inbox'])
+  })
+
+  it('Completed is newest first and leaves out skipped habit occurrences; Assigned needs a user', () => {
+    const older = task({ title: 'Older', completed_at: 1 })
+    const newer = task({ title: 'Newer', completed_at: 2 })
+    const skipped = task({ title: 'Skipped', completed_at: 3, skipped: true })
+    const mine = task({ title: 'Mine', assignee_id: 'u1' })
+    expect(tasksForView({ view: 'completed' }, [older, skipped, newer], [], TODAY).map((t) => t.title)).toEqual(['Newer', 'Older'])
+    expect(tasksForView({ view: 'assigned' }, [mine], [], TODAY, 'u1').map((t) => t.title)).toEqual(['Mine'])
+    expect(tasksForView({ view: 'assigned' }, [mine], [], TODAY)).toEqual([])
+  })
+})
+
+describe('listGroups', () => {
+  it('Today: overdue, the day, This Evening, then a Blocked group that is folded until opened', () => {
+    const late = task({ title: 'Late', due: { date: '2026-10-12' } })
+    const day = task({ title: 'Day', due: { date: TODAY } })
+    const eve = task({ title: 'Eve', due: { date: TODAY }, evening: true })
+    const wait = task({ title: 'Wait', due: { date: TODAY } })
+    const base = input({ view: 'today', tasks: [late, day, eve, wait], blocked: new Set([wait.id]) })
+    const folded = listGroups(base)
+    expect(folded.map((g) => g.key)).toEqual(['overdue', 'today', 'evening', 'blocked'])
+    expect(folded.map(titles)).toEqual([['Late'], ['Day'], ['Eve'], []])
+    expect(folded[3]).toMatchObject({ folded: true, count: 1 })
+    const open = listGroups({ ...base, collapsed: new Set([BLOCKED_OPEN_KEY]) })
+    expect(open[3]).toMatchObject({ folded: false, count: 1 })
+    expect(titles(open[3])).toEqual(['Wait'])
+  })
+
+  it('a today without overdue or evening tasks has no heading', () => {
+    const g = listGroups(input({ view: 'today', tasks: [task({ due: { date: TODAY } })] }))
+    expect(g).toHaveLength(1)
+    expect(g[0].heading).toBeNull()
+  })
+
+  it('label views group by project: Inbox first, then projects in sidebar order', () => {
+    const b = project('b', 2), a = project('a', 1)
+    const inB = task({ title: 'In B', project_id: 'b' })
+    const inA = task({ title: 'In A', project_id: 'a' })
+    const inbox = task({ title: 'In Inbox' })
+    const g = listGroups(input({ view: 'label', tasks: [inB, inA, inbox], projects: [b, a], projectMap: new Map([[a.id, a], [b.id, b]]) }))
+    expect(g.map((x) => x.key)).toEqual(['inbox', 'a', 'b'])
+    expect(g.map((x) => x.heading)).toEqual(['Inbox', 'A', 'B'])
+  })
+
+  it('a tree view flattens the tree, skips collapsed children and puts Later last', () => {
+    const parent = task({ title: 'Parent' })
+    const child = task({ title: 'Child', parent_id: parent.id })
+    const later = task({ title: 'Later', start: 'someday' })
+    const tree = buildTaskTree([parent, child])
+    const open = listGroups(input({ tree, laterTasks: [later] }))
+    expect(open.map((g) => g.key)).toEqual(['all', 'later'])
+    expect(titles(open[0])).toEqual(['Parent', 'Child'])
+    expect(open[0].rows.map((r) => [r.depth, r.parent, r.hasChildren])).toEqual([[0, null, true], [1, parent.id, false]])
+    const closed = listGroups(input({ tree, collapsed: new Set([parent.id]) }))
+    expect(titles(closed[0])).toEqual(['Parent'])
+    expect(closed[0].rows[0].collapsed).toBe(true)
+  })
+
+  it('a sectioned project lists "No section" first, then sections by position; a folded section keeps its count', () => {
+    const s1 = section('s1', 'p', 1), s2 = section('s2', 'p', 2)
+    const loose = task({ title: 'Loose', project_id: 'p' })
+    const one = task({ title: 'One', project_id: 'p', section_id: 's1' })
+    const two = task({ title: 'Two', project_id: 'p', section_id: 's2' })
+    const tree = buildTaskTree([loose, one, two])
+    const buckets = sectionBuckets('p', tree, [s2, s1])
+    const g = listGroups(input({ view: 'project', tree, buckets, sectionCount: 2, collapsedSections: ['s2'] }))
+    expect(g.map((x) => x.key)).toEqual(['section:', 'section:s1', 'section:s2'])
+    expect(g.map(titles)).toEqual([['Loose'], ['One'], []])
+    expect(g[2]).toMatchObject({ sectionCollapsed: true, count: 1 })
+    expect(sectionOfRows(false, [], g)).toEqual(new Map([[loose.id, ''], [one.id, 's1']]))
+  })
+
+  it('the board has a column per section and "No section" only while it has cards', () => {
+    const s1 = section('s1', 'p', 1)
+    const one = task({ title: 'One', project_id: 'p', section_id: 's1' })
+    const columns = boardColumns(sectionBuckets('p', buildTaskTree([one]), [s1]))
+    expect(columns.map((c) => c.key)).toEqual(['s1'])
+    const g = listGroups(input({ view: 'project', board: true, columns }))
+    expect(g).toEqual([{ key: 's1', heading: null, rows: [flatRow(one)] }])
+    expect(sectionOfRows(true, columns, g)).toEqual(new Map([[one.id, 's1']]))
+  })
+
+  it('the logbook has one group per day with a "done" note', () => {
+    const done = task({ title: 'Done', completed_at: 1 })
+    const g = listGroups(input({ view: 'completed', tasks: [done], logbook: { groups: [{ date: TODAY, tasks: [done] }] } }))
+    expect(g).toHaveLength(1)
+    expect(g[0]).toMatchObject({ key: TODAY, note: '1 done' })
+    expect(titles(g[0])).toEqual(['Done'])
+  })
+
+  it('a flat row whose parent is elsewhere names it in the breadcrumb', () => {
+    const parent = task({ title: 'Parent' })
+    const child = task({ title: 'Child', parent_id: parent.id, labels: ['l'] })
+    const g = listGroups(input({ view: 'assigned', tasks: [child], taskMap: new Map([[parent.id, parent], [child.id, child]]) }))
+    expect(g[0].rows[0].breadcrumb).toContain('Parent')
+  })
+})
+
+describe('row positions and section counts', () => {
+  it('siblingPositions numbers each row among its visible siblings', () => {
+    const parent = task({ title: 'Parent' })
+    const a = task({ title: 'A', parent_id: parent.id })
+    const b = task({ title: 'B', parent_id: parent.id })
+    const other = task({ title: 'Other' })
+    const g = listGroups(input({ tree: buildTaskTree([parent, a, b, other]) }))
+    const pos = siblingPositions(g)
+    expect(pos.get(parent.id)).toEqual({ pos: 1, size: 2 })
+    expect(pos.get(other.id)).toEqual({ pos: 2, size: 2 })
+    expect(pos.get(b.id)).toEqual({ pos: 2, size: 2 })
+  })
+
+  it('completedBySection buckets completed tasks of the project, not skipped occurrences', () => {
+    const s1 = section('s1', 'p', 1)
+    const done = task({ project_id: 'p', section_id: 's1', completed_at: 1 })
+    const skipped = task({ project_id: 'p', section_id: 's1', completed_at: 1, skipped: true })
+    const elsewhere = task({ project_id: 'q', completed_at: 1 })
+    const m = completedBySection([done, skipped, elsewhere], 'p', new Map([[s1.id, s1]]))
+    expect([...m.keys()]).toEqual(['s1'])
+    expect(m.get('s1')).toEqual([done])
+    expect(completedBySection([done], null, new Map()).size).toBe(0)
+  })
+})
