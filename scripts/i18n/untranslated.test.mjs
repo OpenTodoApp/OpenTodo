@@ -20,6 +20,11 @@ test('SettingRow labels and conditional children are checked', () => {
   assert.deepEqual(untranslatedProblems(file, src).map((p) => p.split(': ')[1]), ['Status', 'Running', 'Stopped'])
 })
 
+test('a phrase without a two-letter word and a template under a shown key fail (ui-correctness)', () => {
+  const src = "export const X = ({ n }) => <input placeholder=\"e.g. 45m, 1h30\" />\nconst g = (n) => ({ key: `k${n}`, note: `${n} done` })\nconst h = (n) => ({ note: t('{n} done', { n }), label: 'list', id: `x-${n}` })"
+  assert.deepEqual(untranslatedProblems(file, src).map((p) => p.split(': ')[1]), ['e.g. 45m, 1h30', 'done'])
+})
+
 test('t(), t.rich() and <T> pass', () => {
   const src = `export const X = () => <div title={t('Save')}>{t('Save')}{t.rich('Read the <a>guide</a>', { a: (c) => <a>{c}</a>, code: <code>extension/</code> })}<T>{'Hi'}</T></div>`
   assert.deepEqual(untranslatedProblems(file, src), [])

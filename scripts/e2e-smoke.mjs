@@ -83,7 +83,7 @@ await page.keyboard.press('Escape')
 await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
 await page.keyboard.press('j'); await page.keyboard.press('j'); await page.keyboard.press('j')
 await page.keyboard.press('c')
-await page.getByRole('button', { name: 'Reopen task' }).first().waitFor({ state: 'detached', timeout: 2000 }).catch(() => {})
+await page.getByRole('button', { name: /^Reopen / }).first().waitFor({ state: 'detached', timeout: 2000 }).catch(() => {})
 
 step('today view')
 await page.keyboard.press('g'); await page.keyboard.press('t')

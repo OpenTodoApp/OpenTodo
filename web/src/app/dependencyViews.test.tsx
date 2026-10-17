@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { setBlockedBy } from '../lib/dependencies'
 import { createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
 import { PanelHost } from './PanelHost'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -47,7 +47,7 @@ describe('rows (3.1)', () => {
     mounted.push(r)
     await waitFor(() => !!row('Book flights')?.querySelector('[data-blocked]'))
     const marker = row('Book flights')!.querySelector('[data-blocked]')!
-    expect(marker.getAttribute('aria-label')).toBe('Blocked by 2')
+    expect(spokenText(marker)).toBe('Blocked by 2')
     expect(row('Confirm dates')!.querySelector('[data-blocked]')).toBeNull()
     // c completes it anyway, leaving the blockers alone.
     row('Book flights')!.querySelector<HTMLElement>('button[aria-label^="Complete"], [role="checkbox"]')
@@ -72,7 +72,7 @@ describe('Today (3.2)', () => {
     const group = document.querySelector<HTMLElement>('[data-group="blocked"]')!
     const toggle = group.querySelector('button[aria-expanded]')!
     expect(toggle.textContent).toContain('Blocked')
-    expect(toggle.querySelector('[data-group-count]')?.textContent).toBe('1')
+    expect(visibleText(toggle.querySelector('[data-group-count]')!)).toBe('1')
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(row('Book flights')).toBeUndefined()
     await click(toggle)

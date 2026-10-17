@@ -16,7 +16,7 @@ OpenTodo's interface is friendly and roomy, in the spirit of TickTick, Todoist a
 1. **Content first.** Chrome is neutral, and colour is reserved for meaning: priority, project and label colours, status.
 2. **Roomy, not sparse.** Generous padding, one idea per row, state before forms.
 3. **One way to do a thing.** Every control comes from a primitive and every value from a token.
-4. **Accessible by construction.** AA contrast, a visible focus ring, 44 px touch targets and reduced motion are enforced by tests, not left to review.
+4. **Accessible by construction.** AA contrast, a visible focus ring, 44 px touch targets and reduced motion are enforced by tests, not left to review. A phrase for screen readers ("3 comments" for a chip showing "3") is visually hidden text inside the element (`ReadAs` in `web/src/ui/Chips.tsx`), never an `aria-label` on a `span` or `div` without a role, which screen readers ignore; `npm run lint` refuses that.
 5. **Calm motion.** Short transitions, nothing bouncing in the way.
 
 | | Keep (identity) | Evolve (craft) |
@@ -52,7 +52,7 @@ Tokens are defined once in `web/src/index.css`:
 
 Rules for code under `web/src/ui/`:
 
-- Use token utilities only, in shared components, screens (`web/src/app`) and the component classes of `index.css`. A raw palette class (`bg-slate-200`), a fixed `bg-white`/`text-black` or a hex literal fails `src/ui/tokens/lint.test.ts`, which names the file and line. A hex passed as `color=` is stored data and allowed. Screens that an open change is rewriting sit on the lint's named allow-list, which may only shrink.
+- Use token utilities only, in shared components, screens (`web/src/app`) and the component classes of `index.css`. A raw palette class (`bg-slate-200`), a fixed `bg-white`/`text-black`, a hex literal or a literal colour function (`rgb(148 163 184 / 0.35)`, `hsl()`, `oklch()`; `color-mix()` over tokens is fine) fails `src/ui/tokens/lint.test.ts`, which names the file and line. A hex passed as `color=` is stored data and allowed. Screens that an open change is rewriting sit on the lint's named allow-list, which may only shrink.
 - Choose a token by what the colour **means**, not by its hue today. Emerald is both the accent and the success colour, and only the meaning keeps them apart when a theme changes the accent:
 
 | Meaning | Tokens |
@@ -150,7 +150,7 @@ Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `
 
 ### Surfaces and patterns
 
-`Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with an optional Help link) and `SettingRow` (label and state beside the control, stacked on phones). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside), and `ListRow` is the focusable row for lists with a trailing menu.
+`Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with an optional Help link) and `SettingRow` (label and state beside the control, stacked on phones). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside); the app never uses the browser's `confirm()` or `prompt()`, and code never finds elements by translated text (use a `data-*` attribute), and `ListRow` is the focusable row for lists with a trailing menu.
 
 ## The workbench
 

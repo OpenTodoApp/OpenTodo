@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { flush, key, render, type } from '../ui/test-utils'
+import { flush, key, render, type, spokenText, visibleText } from '../ui/test-utils'
 import { PanelHost } from './PanelHost'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -48,10 +48,10 @@ describe('row countdown (2.2)', () => {
   ])('deadline %s shows %s', async (deadline, label, tone) => {
     const r = await render(<ul><TaskRow task={task({ deadline })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
     const chip = r.container.querySelector('[data-deadline]') as HTMLElement
-    expect(chip.textContent).toBe(label)
+    expect(visibleText(chip)).toBe(label)
     expect(chip.className).toContain(tone)
     expect(chip.querySelector('svg')).not.toBeNull()
-    expect(chip.getAttribute('aria-label')).toMatch(/^Deadline /)
+    expect(spokenText(chip)).toMatch(/^Deadline /)
   })
   it('no chip without a deadline or once completed', async () => {
     const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /><TaskRow task={task({ id: 'u', deadline: '2026-10-12', completed_at: 1 })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)

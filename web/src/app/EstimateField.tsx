@@ -63,7 +63,7 @@ export function EstimateField({ task }: { task: Task }) {
           ref={ref}
           className="ui-input w-32"
           aria-label={t('Estimate')}
-          placeholder="e.g. 45m, 1h30"
+          placeholder={t('e.g. 45m, 1h30')}
           value={draft}
           onChange={(e) => { setDraft(e.target.value); setError(null) }}
           onFocus={() => (cancelled.current = false)}

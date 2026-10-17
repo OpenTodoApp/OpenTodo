@@ -154,6 +154,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           onBlur={commitTitle}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
           aria-label={t('Title')}
+          data-task-title
           placeholder={t('Untitled')}
         />
         {progress.total > 0 && <Badge hue="slate" title={t('Completed subtasks')}>{progress.done}/{progress.total}</Badge>}

@@ -6,7 +6,7 @@
 // tick), the title, and a metadata line only when there is metadata, built from
 // three styles: ToneText for the date and the deadline, LabelChip, NeutralChip
 // for counts and the project. The board card is the same data as a card.
-import { Icon, LabelChip, NeutralChip, ToneText, type Tone } from '../ui'
+import { Icon, LabelChip, NeutralChip, ReadAs, ToneText, type Tone } from '../ui'
 import { memo, useEffect, useRef, useState } from 'react'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
@@ -91,6 +91,13 @@ export interface TaskRowProps {
   dragging?: boolean
   /** The columns layout shows field values in cells, so the row leaves out their badges (custom-fields). */
   hideFieldBadges?: boolean
+  /**
+   * Position among the visible rows with the same parent (assistive-tech-semantics):
+   * with `depth`, the row's aria-level, aria-posinset and aria-setsize, so the
+   * subtask hierarchy is announced and not only indented.
+   */
+  posInSet?: number
+  setSize?: number
 }
 
 /**
@@ -98,7 +105,7 @@ export interface TaskRowProps {
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
  */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize }: TaskRowProps) {
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -120,6 +127,8 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const shared = useSharedProject(task.project_id, enc.enabled)
   const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
   const undecryptable = !!task._e2ee?.raw?.title
+  // The name controls read for the task ("Complete Buy milk"); ciphertext is never read out.
+  const name = undecryptable || !task.title ? t('Untitled') : task.title
   // Evening and repeat are suffixes of the date text, never separate glyphs; with no
   // date they stand on their own in the date tone.
   const date = dateText(due?.label ?? (task.evening && !done ? t('This evening') : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
@@ -200,6 +209,10 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       data-ticked={ticked || undefined}
       data-completing={completing || undefined}
       data-dragging={dragging || undefined}
+      aria-current={selected || undefined}
+      aria-level={card || setSize === undefined ? undefined : depth + 1}
+      aria-posinset={card ? undefined : posInSet}
+      aria-setsize={card ? undefined : setSize}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'bg-sunken dark:bg-raised ring-1 ring-accent/50') : card ? '' : 'hover:bg-canvas dark:hover:bg-raised'} ${completing ? 'opacity-50' : ''} ${lift}`}
@@ -234,7 +247,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
         <button
           type="button"
-          aria-label={done ? t('Reopen task') : t('Complete task')}
+          aria-label={done ? t('Reopen {title}', { title: name }) : t('Complete {title}', { title: name })}
           onClick={toggle}
           disabled={readOnly}
           className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
@@ -245,23 +258,23 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
         </button>
         {onTick && !readOnly && (
           <label className={`absolute inset-0 cursor-pointer items-center justify-center ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
-            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: task.title || t('Untitled') })} data-tick
+            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>
         )}
       </span>
-      <button type="button" className="min-w-0 flex-1 text-left"
+      <button type="button" className="min-w-0 flex-1 text-left" data-row-open
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
         <div className={`user-text text-body ${card ? '' : 'truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
-          {undecryptable ? <span className="italic text-faint" aria-label={t('This title could not be decrypted with this device\'s key')}>{task.title}</span>
+          {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
             : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (
-            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft" aria-label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>
-              {t('not yet encrypted')}
+            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
+              <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
             </span>
           )}
         </div>

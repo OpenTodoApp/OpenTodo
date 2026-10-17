@@ -8,7 +8,7 @@ import { db } from '../lib/db'
 import { occurrenceId } from '../lib/ids'
 import { completeTask, createTask, resetDeviceId, skipOccurrence, updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
 import { HabitHistory } from './HabitHistory'
 import { RecurrenceField } from './RecurrenceField'
 import { TaskListView } from './TaskListView'
@@ -151,13 +151,13 @@ describe('rows and views', () => {
     const t = task({ id: 'h', title: 'Read', recurrence: 'every day', due: { date: '2026-10-14' }, habit: true })
     const r = await render(<ul><TaskRow task={t} selected={false} showProject={false} habit={{ current: 12, best: 30, pending: true, atRisk: false }} onToggle={() => {}} onOpen={() => {}} /></ul>)
     const chip = r.container.querySelector<HTMLElement>('[data-streak]')!
-    expect(chip.getAttribute('aria-label')).toBe('12-day streak')
-    expect(chip.textContent).toBe('12')
+    expect(spokenText(chip)).toBe('12-day streak')
+    expect(visibleText(chip)).toBe('12')
     expect(chip.querySelector('[data-icon="flame"]')).toBeTruthy()
     expect(r.container.querySelector('[data-recurring]')).toBeTruthy()
     await r.unmount()
     const r2 = await render(<ul><TaskRow task={t} selected={false} showProject={false} habit={{ current: 3, best: 3, pending: true, atRisk: true }} onToggle={() => {}} onOpen={() => {}} /></ul>)
-    expect(r2.container.querySelector('[data-streak]')!.getAttribute('aria-label')).toBe('3-day streak, at risk')
+    expect(spokenText(r2.container.querySelector('[data-streak]')!)).toBe('3-day streak, at risk')
     await r2.unmount()
   })
 
@@ -167,7 +167,7 @@ describe('rows and views', () => {
     for (const d of ['2026-10-11', '2026-10-12', '2026-10-13']) await completeTask(id, { today: d })
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => !!r.container.querySelector('[data-streak]'))
-    expect(r.container.querySelector('[data-streak]')!.getAttribute('aria-label')).toBe('3-day streak')
+    expect(spokenText(r.container.querySelector('[data-streak]')!)).toBe('3-day streak')
     await r.unmount()
   })
 

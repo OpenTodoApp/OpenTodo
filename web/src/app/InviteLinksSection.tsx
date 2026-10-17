@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { Select } from '../ui'
+import { ConfirmDialog, Select } from '../ui'
 import { Tooltip } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -167,6 +167,7 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
   const [unreachable, setUnreachable] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [revoking, setRevoking] = useState<ProjectInvite | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -211,7 +212,6 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
   }
 
   async function revoke(inv: ProjectInvite) {
-    if (!window.confirm(inv.email ? t('Revoke the {role} link for {email}? It will stop working.', { role: roleName(inv.role), email: inv.email }) : t('Revoke the {role} link? It will stop working.', { role: roleName(inv.role) }))) return
     setError(null)
     try {
       await api.revokeProjectInvite(projectId, inv.id)
@@ -224,12 +224,19 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
   }
 
   return (
+    <>
     <InviteLinksView
       roles={roles} open={open} role={role} email={email} hours={hours} mail={mail} send={send} onSend={setSend} invites={invites} created={created} copied={copied}
       offline={!online || unreachable} busy={busy} error={error}
       onToggle={() => setOpen((o) => !o)} onRole={setRole} onEmail={setEmail} onHours={setHours}
-      onCreate={() => void create()} onCopy={() => void copy()} onRevoke={(inv) => void revoke(inv)}
+      onCreate={() => void create()} onCopy={() => void copy()} onRevoke={setRevoking}
     />
+    {revoking && (
+      <ConfirmDialog title={t('Revoke this invite link?')} confirmLabel={t('Revoke')}
+        consequence={revoking.email ? t('The {role} link for {email} will stop working.', { role: roleName(revoking.role), email: revoking.email }) : t('The {role} link will stop working.', { role: roleName(revoking.role) })}
+        onConfirm={() => revoke(revoking)} onCancel={() => setRevoking(null)} />
+    )}
+    </>
   )
 }
 
