@@ -46,7 +46,7 @@
     "eslint": "10.11.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "fake-indexeddb": "6.2.5",
-    "happy-dom": "20.14.5",
+    "happy-dom": "21.0.1",
     "marked": "18.0.14",
     "storybook": "10.6.1",
     "tailwindcss": "4.3.3",
