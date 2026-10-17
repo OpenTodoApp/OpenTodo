@@ -2,10 +2,10 @@ import { ConfirmDialog, PageBody, PageHeader } from '../ui'
 import { Skeleton } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
-import { db } from '../lib/db'
+import { useProjects } from '../lib/localData'
+import { visibleProjects } from '../lib/projects'
 import { applyImportViewHints } from '../lib/sections'
 import { useOnline } from '../lib/online'
 import { syncNow, useSyncStatus } from '../lib/sync'
@@ -299,10 +299,8 @@ export function ImportScreen() {
   const online = useOnline()
   const sync = useSyncStatus()
   const offline = !online || sync.state === 'offline'
-  const projects = useLiveQuery(
-    () => db.projects.filter((pr) => !pr.deleted_at && !pr.archived).toArray().then((l) => l.sort((a, b) => a.name.localeCompare(b.name))),
-    [], [] as Project[],
-  )
+  const live = useProjects()
+  const projects = useMemo(() => visibleProjects(live).sort((a, b) => a.name.localeCompare(b.name)), [live])
   const [file, setFile] = useState<File | null>(null)
   const [format, setFormat] = useState<ImportFormat | ''>('')
   const [options, setOptions] = useState<ImportViewProps['options']>({ ...DEFAULT_OPTIONS, timeZone: browserTimeZone(), targetProject: '' })

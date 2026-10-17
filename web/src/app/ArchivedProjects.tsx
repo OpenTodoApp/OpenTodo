@@ -1,10 +1,9 @@
 // Settings → Data → Archived projects (OpenSpec `unarchive-projects`): every
 // archived project with a Restore button. Restore is one op through `mutate()`
 // (archive.ts), so it applies at once offline and converges like any edit.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useRef } from 'react'
 import { archivedProjects, unarchiveProject, type ArchivedProject } from '../lib/archive'
-import { db } from '../lib/db'
+import { useMembershipMap, useProjects, useTaskRowsOfProjects } from '../lib/localData'
 import { Button } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
@@ -12,12 +11,12 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 
 export function ArchivedProjectsSection() {
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [])
-  const ids = useMemo(() => projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id), [projects])
+  const projects = useProjects()
+  const ids = useMemo(() => projects.filter((p) => p.archived).map((p) => p.id), [projects])
   // Open counts need only the archived projects' tasks.
-  const tasks = useLiveQuery(() => (ids.length ? db.tasks.where('project_id').anyOf(ids).toArray() : []), [ids.join()], [])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
-  const rows = useMemo(() => archivedProjects(projects, tasks, new Map(memberships.map((m) => [m.projectId, m]))), [projects, tasks, memberships])
+  const tasks = useTaskRowsOfProjects(ids)
+  const memberMap = useMembershipMap()
+  const rows = useMemo(() => archivedProjects(projects, tasks, memberMap), [projects, tasks, memberMap])
   const listRef = useRef<HTMLUListElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
 

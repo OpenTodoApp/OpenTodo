@@ -3,11 +3,11 @@ import { Tooltip } from '../ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, fetchActivity, isPending, isPublicEvent, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity, PUBLIC_ACTOR_LABEL } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
-import { db } from '../lib/db'
+import { useAllProjects, useProjectTaskRows } from '../lib/localData'
 import { markSeen } from '../lib/feed'
 import { useOnline } from '../lib/online'
 import { currentUserId, memberName, membershipMap } from '../lib/sharing'
-import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
+import type { ActivityEvent, Membership, Project } from '../lib/types'
 import { openTask } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useFieldDefs } from './useFields'
@@ -32,8 +32,8 @@ function ActivityList({ project }: { project: Project }) {
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
   const local = useLiveQuery(() => projectActivity(project.id), [project.id], [] as ActivityEvent[])
   const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
-  const tasks = useLiveQuery(() => db.tasks.where('project_id').equals(project.id).toArray(), [project.id], [] as Task[])
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [] as Project[])
+  const tasks = useProjectTaskRows(project.id)
+  const projects = useAllProjects()
   const [older, setOlder] = useState<ActivityEvent[]>([])
   const [cursor, setCursor] = useState<string | undefined>()
   const [more, setMore] = useState(true)

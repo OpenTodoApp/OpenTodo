@@ -1,6 +1,6 @@
+import { Dialog } from '../ui'
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { api, ApiError, setReauthHandler } from '../lib/api'
-import { Dialog } from './overlay'
 import { t } from '../lib/i18n'
 
 // Step-up re-authentication (OpenSpec `mfa-totp`). Sensitive actions answer

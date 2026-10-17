@@ -1,4 +1,4 @@
-import { Icon } from '../../ui'
+import { Icon } from '../Icon'
 import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { place } from './position'

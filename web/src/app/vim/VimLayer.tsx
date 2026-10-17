@@ -2,12 +2,11 @@
 // the per-device switch is on, loaded as its own chunk. It installs one capturing
 // keydown listener (dispatch.ts), derives Insert mode from focus, renders the mode
 // indicator and the `:` command line, and hands its help section to the `?` overlay.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { db } from '../../lib/db'
+import { useProjects } from '../../lib/localData'
+import { visibleProjects } from '../../lib/projects'
 import { todayISO } from '../../lib/dates'
 import { syncNow } from '../../lib/sync'
-import type { Project } from '../../lib/types'
 import { navigate, useRoute } from '../router'
 import type { HelpSection } from '../ShortcutHelp'
 import { isGPending, setGPending } from '../signals'
@@ -40,7 +39,8 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
   onHelpSection: (section: HelpSection | null) => void
 }) {
   const route = useRoute()
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [] as Project[])
+  const all = useProjects()
+  const projects = useMemo(() => visibleProjects(all), [all])
   const [pending, setPending] = useState('')
   const [typing, setTyping] = useState(() => isTextField(document.activeElement))
   const [cmdOpen, setCmdOpen] = useState(false)

@@ -1,7 +1,6 @@
 // Settings → General panels (OpenSpec settings-navigation, settings-redesign D3).
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../lib/db'
-import { readLanguage, setUserPref, USER_PREFS_ID } from '../lib/userPrefs'
+import { useUserPrefsRow } from '../lib/localData'
+import { readLanguage, setUserPref } from '../lib/userPrefs'
 import type { LanguagePref } from '../lib/types'
 import { SHIPPED, nativeName } from '../locales'
 import { Notice } from '../ui'
@@ -20,7 +19,7 @@ import { act } from './actionError'
 
 /** Settings → General → Language (OpenSpec app-localization, design D9): synced, applied without a reload. */
 export function LanguageSection() {
-  const row = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const row = useUserPrefsRow()
   const status = useLanguageStatus()
   return <LanguageView value={readLanguage(row)} system={nativeName(resolveLanguage('system'))} status={status}
     onChange={(v) => act(setUserPref('language', v))} />

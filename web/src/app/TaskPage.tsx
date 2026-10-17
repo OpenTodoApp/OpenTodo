@@ -1,10 +1,9 @@
 // The expanded task (OpenSpec change ux-overhaul, app-shell "Panel width and
 // expansion"): the same detail as the panel, filling the content column at
 // /task/<id>, with Back returning to the task's list with the panel open.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect } from 'react'
-import { db } from '../lib/db'
-import type { Task, User } from '../lib/types'
+import { useTask } from '../lib/localData'
+import type { User } from '../lib/types'
 import { PageBody, Skeleton } from '../ui'
 import { closePanel } from './panel'
 import { openTaskInList } from './signals'
@@ -15,7 +14,7 @@ import { t } from '../lib/i18n'
 
 export function TaskPage({ id, user }: { id: string; user?: Pick<User, 'id'> }) {
   const data = useTaskDetailData()
-  const task = useLiveQuery<Task | null | undefined>(() => db.tasks.get(id).then((tk) => tk ?? null), [id])
+  const task = useTask(id)
   // The page replaces the panel; nothing stays open in the slot behind it.
   useEffect(() => closePanel(), [id])
 

@@ -5,10 +5,9 @@
 // same functions the list screen uses. Presentation options come from the URL;
 // high contrast and no motion are attributes on the document root, set while
 // the display is shown and removed when it leaves (design D4).
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useMemo } from 'react'
-import { Icon, MenuItem } from '../../ui'
-import { db } from '../../lib/db'
+import { Icon, MenuItem, Menu } from '../../ui'
+import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useViewRowsLoaded } from '../../lib/localData'
 import { completedOn, groupToday, nextDays, projectOpenList, todayList, withoutArchived } from '../../lib/dayLists'
 import { describeDue, formatTime, localDueOf, todayISO } from '../../lib/dates'
 import { blockedMap } from '../../lib/dependencies'
@@ -19,11 +18,10 @@ import { breadcrumbOf, buildTaskTree } from '../../lib/subtasks'
 import { useSyncStatus } from '../../lib/sync'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { flattenTree, type TreeNode } from '../../lib/tree'
-import type { Label, Membership, Project, Section, Task, View } from '../../lib/types'
+import type { Task } from '../../lib/types'
 import { inLater, isDashboard, runView, setStartView } from '../../lib/views'
 import { useOnline } from '../../lib/online'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { Menu } from '../overlay/Menu'
 import { navigate, routePath, type Route } from '../router'
 import { useStartView, useViewerZone } from '../useViews'
 import { Clock, useNow } from './Clock'
@@ -81,22 +79,20 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   useRootPresentation(options)
   useWakeLock()
 
-  const projects = useLiveQuery(() => db.projects.toArray(), [], undefined as Project[] | undefined)
+  const projects = useProjectsLoaded()
   const tasks = useLiveTasks() ?? NO_TASKS
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const views = useLiveQuery(() => db.views.toArray(), [], undefined as View[] | undefined)
+  const memberships = useMemberships()
+  const labels = useAllLabels()
+  const views = useViewRowsLoaded()
   const projectId = target.kind === 'project' ? target.id : null
-  const sections = useLiveQuery(
-    () => (projectId ? db.sections.where('project_id').equals(projectId).toArray() : Promise.resolve([] as Section[])), [projectId], [] as Section[],
-  )
+  const sections = useSectionRows(projectId)
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
   const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
 
   const content = useMemo<Content | null>(() => {
     if (!projects) return null
-    const live = projects.filter((p) => !p.deleted_at)
+    const live = projects
     const all = withoutArchived(tasks, live, projectId ?? undefined)
 
     /** A due label without what the heading already says (today in Today, the column's day). */

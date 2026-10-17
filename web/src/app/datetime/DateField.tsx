@@ -8,10 +8,9 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { addDaysISO, formatDate, todayISO, weekStartOf, type ResolvedDateTime, dateLocaleOf } from '../../lib/dates'
 import { addMonths } from '../../lib/nlp/dates'
 import { loadQuickAddSettings, resolveLanguages } from '../../lib/nlp/settings'
-import { IconButton } from '../../ui'
+import { IconButton, Popover } from '../../ui'
 import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { Popover } from '../overlay/Popover'
 import { parseDateInput } from './parse'
 import { t, preferredLanguages } from '../../lib/i18n'
 

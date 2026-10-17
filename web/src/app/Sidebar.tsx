@@ -1,10 +1,9 @@
-import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, Menu } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
 /** The `g` key of each destination, from the registry's `go.*` rows. */
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
-import { Menu } from './overlay/Menu'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -12,13 +11,12 @@ import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect
 import { readAppearance, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
-import { db } from '../lib/db'
+import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
-import { USER_PREFS_ID } from '../lib/userPrefs'
-import { REVIEW_ID, reviewAgo, reviewDue } from '../lib/review'
+import { reviewAgo, reviewDue } from '../lib/review'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
-import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
+import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Project, User } from '../lib/types'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
@@ -72,8 +70,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
-  const prefsRow = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
-  const review = useLiveQuery(() => db.review.get(REVIEW_ID), [])
+  const prefsRow = useUserPrefsRow()
+  const review = useReviewRow()
   const appearance = useMemo(() => readAppearance(prefsRow), [prefsRow])
   const [moreOpen, setMoreOpenState] = useState(() => readOpen(MORE_KEY, false))
   const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeOpen(MORE_KEY, open) }
@@ -83,10 +81,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   }))
   const setGroupOpen = (id: GroupId, open: boolean) => { setGroupOpenState((s) => ({ ...s, [id]: open })); writeOpen(groupKey(id), open) }
   const toggleGroup = (id: GroupId) => setGroupOpen(id, !groupOpen[id])
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
+  // Live projects (archived included) for saved views; the tree shows the visible ones.
+  const allProjects = useProjects()
+  const projects = useMemo(() => visibleProjects(allProjects), [allProjects])
   // Shared projects carry a badge (project-sharing); read from the cached memberships.
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
-  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const memberMap = useMembershipMap()
   const sharedIds = useMemo(() => new Set(memberMap.keys()), [memberMap])
   // Manual ordering (OpenSpec `manual-ordering`): a project's position is a project
   // field, so only its owner or an admin may move it (project-sharing roles).
@@ -139,7 +138,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     const prev = lastRoute.current
     lastRoute.current = key ?? ''
     if (key === null || prev === null || prev === key) return
-    void db.projects.toArray().then((all) => expandAncestorsOf(key, all))
+    void allProjectRows().then((all) => expandAncestorsOf(key, all))
   }, [route])
 
   const [adding, setAdding] = useState(false)
@@ -151,7 +150,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // query runs over the open tasks this sidebar already observes, in one pass.
   const views = useViews()
   const pinnedViews = useMemo(() => views.filter((v) => v.pinned), [views])
-  const allProjects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const viewCounts = useMemo(
     () => evaluateViews(pinnedViews, { today, labels, projects: allProjects, tasks: openTasks }, 0),
     [pinnedViews, labels, allProjects, openTasks, today],

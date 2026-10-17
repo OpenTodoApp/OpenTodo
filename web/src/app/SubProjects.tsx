@@ -1,8 +1,6 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
-import { db } from '../lib/db'
+import { useProjects } from '../lib/localData'
 import { buildProjectTree, subtreeOpenCounts } from '../lib/projects'
-import type { Project } from '../lib/types'
 import { ListGroupHeader } from '../ui'
 import { navigate } from './router'
 import { ProjectMark } from './Sidebar'
@@ -25,7 +23,7 @@ function writeCollapsed(set: Set<string>): void {
  * offline. Renders nothing for a leaf project.
  */
 export function SubProjects({ projectId }: { projectId: string }) {
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const projects = useProjects()
   const open = useOpenTasks()
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const children = tree.nodes.get(projectId)?.children ?? []

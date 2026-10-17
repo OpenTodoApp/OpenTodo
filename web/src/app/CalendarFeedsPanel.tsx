@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Badge, Button, ConfirmDialog, Field, HUES, hueFor, Icon, Input, ListRow, MenuItem, Notice, Select, SettingRow, SettingsSection, Switch } from '../ui'
+import { Badge, Button, ConfirmDialog, Field, HUES, hueFor, Icon, Input, ListRow, MenuItem, Notice, Select, SettingRow, SettingsSection, Switch, Dialog, Menu } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { refreshEvents } from '../lib/calendarFeeds'
-import { db } from '../lib/db'
+import { cachedCalendarSubscriptions } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
 import type { CalendarFeed, CalendarSubscription } from '../lib/types'
-import { Dialog } from './overlay/Dialog'
-import { Menu } from './overlay/Menu'
 import { SecretReveal } from './TokensSection'
 import { t } from '../lib/i18n'
 
@@ -238,7 +236,7 @@ export function CalendarFeedsPanel({ isOwner }: { isOwner: boolean }) {
 
   // Offline: the subscriptions the device cached with the last event refresh.
   useEffect(() => {
-    void db.calendarSubscriptions.toArray().then((cached) => {
+    void cachedCalendarSubscriptions().then((cached) => {
       if (cached.length) {
         setSubscriptions((cur) => cur ?? cached)
         setEnabled((cur) => cur ?? true)

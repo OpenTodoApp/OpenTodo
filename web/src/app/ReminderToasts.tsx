@@ -1,14 +1,13 @@
-import { Icon } from '../ui'
+import { Icon, ToastRegion } from '../ui'
 import { useEffect, useRef, useState } from 'react'
-import { db, getMeta } from '../lib/db'
+import { getTask, touchReminders } from '../lib/localData'
 import { hlcSeed } from '../lib/hlc'
-import { swRegistration } from '../lib/push'
+import { pushEnabledHere, swRegistration } from '../lib/push'
 import { dismissReminder, snoozeReminder } from '../lib/reminders'
 import { markShown, startReminderWatcher, type DueReminder, type Watcher } from '../lib/reminderWatcher'
 import type { SnoozeChoice } from '../lib/reminderTime'
 import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
-import { ToastRegion } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 
@@ -106,7 +105,7 @@ export function ReminderToasts() {
 async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promise<void> {
   if (typeof document === 'undefined' || document.visibilityState !== 'hidden') return
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  if (await getMeta<boolean>('push:enabled', false)) return // the push path covers this device
+  if (await pushEnabledHere()) return // the push path covers this device
   const reg = await swRegistration(1000)
   for (const d of list) {
     const key = `${d.reminder.id}@${d.reminder.fire_at}`
@@ -143,17 +142,14 @@ async function handleWorkerMessage(data: WorkerMessage, w: Watcher): Promise<voi
       // The service worker wrote reminder ops straight into IndexedDB. Re-put the rows so
       // live queries notice, keep our clock ahead of its timestamp, and upload them.
       if (typeof data.ts === 'number') hlcSeed(data.ts)
-      for (const id of data.reminderIds ?? []) {
-        const r = await db.reminders.get(id)
-        if (r) await db.reminders.put(r)
-      }
+      await touchReminders(data.reminderIds ?? [])
       requestSync(0)
       w.poke()
       return
     }
     case 'reminders:open': {
       if (!data.taskId) return
-      const task = await db.tasks.get(data.taskId)
+      const task = await getTask(data.taskId)
       if (task) openTaskInList(task)
       return
     }

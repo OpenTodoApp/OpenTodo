@@ -4,13 +4,12 @@
 // swaps the items for a Combobox inside the same overlay; a confirm item closes the
 // menu and opens a confirmation dialog.
 import { useContext, useEffect, useState, type ReactNode } from 'react'
-import { Icon, type IconName } from '../../ui'
+import { Icon, type IconName, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
 import { MenuCloseContext, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
 import { ComboboxPanel } from '../../ui'
 import type { ComboboxConfig } from '../../ui'
 import { ConfirmDialog } from '../../ui'
-import { Menu } from '../overlay'
 import { t } from '../../lib/i18n'
 
 interface ItemBase {

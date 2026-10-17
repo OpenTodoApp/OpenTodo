@@ -10,7 +10,7 @@ import { useAttachmentLimits } from '../../lib/attachments'
 import {
   canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, type Thread, threadOrder, threadVisible,
 } from '../../lib/comments'
-import { db } from '../../lib/db'
+import { useCommentAttachments, useCommentRows } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
 import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
 import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task } from '../../lib/types'
@@ -22,7 +22,6 @@ import { CommentAttachments } from './AttachmentsRow'
 import { Composer } from './Composer'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
-import { appendTo } from '../../lib/collections'
 
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
@@ -189,14 +188,9 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
-  const comments = useLiveQuery(() => db.comments.where('task_id').equals(task.id).toArray(), [task.id], [] as Comment[])
+  const comments = useCommentRows(task.id)
   // Comment attachments (OpenSpec attachments): a deleted comment's are hidden with it.
-  const attachments = useLiveQuery(async () => {
-    const byComment = new Map<string, Attachment[]>()
-    const rows = (await db.attachments.where('task_id').equals(task.id).toArray()).filter((a) => a.comment_id && !a.deleted_at)
-    for (const a of rows.sort((x, y) => x.created_at - y.created_at)) appendTo(byComment, a.comment_id!, a)
-    return byComment
-  }, [task.id], new Map<string, Attachment[]>())
+  const attachments = useCommentAttachments(task.id)
   const demo = useDemo()
   const limits = useAttachmentLimits()
   const [error, setError] = useState<string | null>(null)

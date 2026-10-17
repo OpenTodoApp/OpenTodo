@@ -1,23 +1,22 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
-import { db } from '../../lib/db'
+import { useSubtasks, useTask } from '../../lib/localData'
 import { markTaskNotificationsRead } from '../../lib/notifications'
 import { createSubtask, updateTask, skipOccurrence } from '../../lib/ops'
 import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
-import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
+import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
 import { Badge } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
 import { Markdown } from '../Markdown'
-import { Menu } from '../overlay/Menu'
 import { useShortcutScope } from '../shortcuts'
 import { keysOf } from '../../lib/shortcuts'
-import { openHelp } from '../help/store'
+import { openHelp } from '../../lib/helpRequest'
 import { navigate } from '../router'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { AttachmentsRow } from './AttachmentsRow'
@@ -53,16 +52,13 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   onToggleComplete?: (task: Task) => void
 }) {
   const assistant = useAssistantStatus()
-  const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
+  const task = useTask(taskId)
   const [title, setTitle] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const children = useLiveQuery(
-    () => db.tasks.where('parent_id').equals(taskId).filter((tk) => !tk.deleted_at).sortBy('position'),
-    [taskId], [] as Task[],
-  )
-  const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
-  const series = useLiveQuery(() => (task?.series_id ? db.tasks.get(task.series_id) : undefined), [task?.series_id])
+  const children = useSubtasks(taskId)
+  const parent = useTask(task?.parent_id)
+  const series = useTask(task?.series_id)
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
   const memberships = useLiveQuery(() => membershipMap(), [])
   const panel = useRef<HTMLElement>(null)
@@ -201,7 +197,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           </NotesBoundary>
 
           <Properties task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
-            parent={parent} childCount={children.length} onOpen={onOpen} />
+            parent={parent ?? undefined} childCount={children.length} onOpen={onOpen} />
 
           {/* Custom field values of the task's project (custom-fields). */}
           <FieldsGroup task={task} readOnly={readOnly} />

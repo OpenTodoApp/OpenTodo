@@ -5,13 +5,13 @@
 // rule, sentence chunks for the live region, and the device-local threads.
 // The server never applies a proposal; this module does, after review.
 import { ApiError } from './api'
-import { db, getMeta, setMeta, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
+import { db, getMeta, setMeta, tableOf, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
 import { syncNow } from './sync'
 import type { FieldDef, FieldValue, Label, Project, Section, Task } from './types'
 import { formatValue } from './fields'
 import { fieldValueId, readField } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
-import { applyBatch, tableOf, undoBatch, type UndoResult } from './undo'
+import { applyBatch, undoBatch, type UndoResult } from './undo'
 import { t } from './i18n'
 import { uuid } from './ids'
 export { UNDO_KEEP } from './undo'

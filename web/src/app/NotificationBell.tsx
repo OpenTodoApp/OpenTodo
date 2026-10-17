@@ -1,12 +1,10 @@
-import { Icon } from '../ui'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { Icon, Popover } from '../ui'
 import { useRef, useState } from 'react'
-import { db } from '../lib/db'
+import { getProject, useNotifications } from '../lib/localData'
 import { markTaskNotificationsRead } from '../lib/notifications'
 import type { AppNotification } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { openTask } from './signals'
-import { Popover } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 
@@ -18,7 +16,7 @@ import { t } from '../lib/i18n'
  */
 export function NotificationBell({ compact = false }: { compact?: boolean } = {}) {
   const dt = useDateTimeFormat()
-  const list = useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(50).toArray(), [], [] as AppNotification[])
+  const list = useNotifications(50)
   const unread = list.filter((n) => n.readAt === null).length
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
@@ -26,7 +24,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
   async function choose(n: AppNotification) {
     setOpen(false)
     await markTaskNotificationsRead(n.payload.taskId)
-    const project = n.payload.projectId ? await db.projects.get(n.payload.projectId) : undefined
+    const project = n.payload.projectId ? await getProject(n.payload.projectId) : undefined
     const target: Route = project && !project.deleted_at ? { view: 'project', id: project.id } : { view: 'assigned' }
     if (routePath(target) === location.pathname) openTask.request(n.payload.taskId)
     else {

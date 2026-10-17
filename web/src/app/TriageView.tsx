@@ -5,19 +5,18 @@
 // toast, so it applies locally first, works offline and converges like any edit.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader } from '../ui'
+import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader, Dialog } from '../ui'
 import { formatDate, todayISO } from '../lib/dates'
-import { db } from '../lib/db'
+import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
 import { moveTaskAcrossScopes } from '../lib/ops'
 import { currentUserId } from '../lib/sharing'
 import { advance, advanceQueue, back, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
 import { useLiveTasks } from '../lib/liveTasks'
-import type { Label, Membership, Project, Reminder, Task } from '../lib/types'
+import type { Membership, Project, Task } from '../lib/types'
 import { DateField } from './datetime/DateField'
 import { LabelPicker } from './LabelPicker'
 import { registerListState } from './listActions'
 import { Markdown } from './Markdown'
-import { Dialog } from './overlay/Dialog'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
@@ -56,9 +55,9 @@ export function delegateEntries(memberships: readonly Membership[], projects: re
 
 export function TriageView() {
   const tasks = useLiveTasks()
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
+  const projects = useProjects()
+  const labels = useAllLabels()
+  const memberships = useMemberships()
   const me = useLiveQuery(() => currentUserId(), [], null)
   const openId = usePanelTaskId()
   const [state, setState] = useState<TriageState | null>(null)
@@ -88,7 +87,7 @@ export function TriageView() {
   const task = curId ? byId.get(curId) : undefined
   const p = state ? progress(state) : { n: 0, total: 0, done: true }
   const delegates = useMemo(() => delegateEntries(memberships, projects, me), [memberships, projects, me])
-  const reminders = useLiveQuery(() => (curId ? db.reminders.where('task_id').equals(curId).toArray() : Promise.resolve([] as Reminder[])), [curId], [] as Reminder[])
+  const reminders = useReminderRows(curId)
 
   // A position whose task is gone (trashed this session) is passed over in the direction of travel.
   const dir = useRef<1 | -1>(1)

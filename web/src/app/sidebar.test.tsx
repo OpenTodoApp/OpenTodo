@@ -268,8 +268,8 @@ describe('tree defaults and bulk toggles (sidebar-groups 2.2)', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 9)
     expect(projectRows(r.container)).toEqual(['Work', 'Home', 'Health', 'Finances', 'Reading list', 'Side project', 'Travel', 'Family', 'Someday maybe'])
-    // "Work" counts its whole subtree while collapsed.
-    expect(r.container.querySelector(`[data-project-id="${ids.Work}"] [data-count]`)?.textContent).toBe('2')
+    // "Work" counts its whole subtree while collapsed (the counts follow the tasks, read on their own).
+    await waitFor(() => r.container.querySelector(`[data-project-id="${ids.Work}"] [data-count]`)?.textContent === '2')
     // Expand all, then Collapse all, from the Projects header menu.
     await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
     await waitFor(() => !!menuItem('Expand all'))

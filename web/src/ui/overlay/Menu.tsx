@@ -1,5 +1,5 @@
 import { type ReactNode, useRef, useState } from 'react'
-import { MenuCloseContext, useRovingMenu } from '../../ui'
+import { MenuCloseContext, useRovingMenu } from '../Menu'
 import { Popover } from './Popover'
 
 /**

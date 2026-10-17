@@ -20,6 +20,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **The quick add sheet treats archived projects like the views' quick add.** Typing `#name` of an archived project no longer behaves differently in the sheet and in a list; every screen now reads projects, labels and shared-project roles from one shared live copy, so they agree with each other and update together after a sync.
 - **Screen readers hear what the chips say.** Counts, "Has notes", deadlines, group counts and the warning on a title that could not be decrypted were silent or read as bare numbers; they are now read as full phrases ("3 comments", "4 open tasks").
 - **Screen readers follow the list.** Moving with <kbd>j</kbd> / <kbd>k</kbd> moves focus to the selected task, subtasks are read with their level and position, and each complete button names its task ("Complete Buy milk"). ([Keyboard shortcuts](docs/keyboard.md))
 - **Page changes are announced.** The browser tab names the page ("Today – OpenTodo"), going to another page moves focus to its heading, and a "Skip to content" link jumps past the sidebar. ([Keyboard shortcuts](docs/keyboard.md))

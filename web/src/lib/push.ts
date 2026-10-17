@@ -76,6 +76,11 @@ export async function loadPushState(): Promise<PushState> {
   }
 }
 
+/** Whether this device receives reminders through push (then the push path shows them). */
+export function pushEnabledHere(): Promise<boolean> {
+  return getMeta<boolean>(META_ENABLED, false)
+}
+
 export class PushPermissionError extends Error {}
 
 /**

@@ -1,12 +1,10 @@
-import { Icon } from '../../ui'
+import { Icon, trapTab, isolate, useOverlay } from '../../ui'
 import { EnglishGuideNote } from './EnglishGuideNote'
 import { Skeleton } from '../../ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { loadHelp, type HelpBundle } from '../../lib/help'
 import { navigate } from '../router'
-import { trapTab } from '../overlay/stack'
-import { isolate, useOverlay } from '../overlay/useOverlay'
 import { HelpContent } from './HelpContent'
 import { t } from '../../lib/i18n'
 

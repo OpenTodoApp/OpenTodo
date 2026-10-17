@@ -5,7 +5,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { PageBody, PageHeader } from '../../ui'
-import { db } from '../../lib/db'
+import { useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
 import { formatDate, dateLocaleOf } from '../../lib/dates'
 import { currentUserId } from '../../lib/sharing'
 import { compute, periodFor, PERIOD_KINDS, PERIOD_LABELS, sharedIds, type PeriodKind, type Stats } from '../../lib/stats'
@@ -149,10 +149,10 @@ function TaskList({ title, empty, tasks, projectOf }: { title: string; empty: st
 export function StatsView() {
   const today = useToday()
   const weekStart = useDateTimeFormat().resolved.weekStart
-  const tasks = useLiveQuery(() => db.tasks.toArray(), [], [] as Task[])
+  const tasks = useAllTaskRows()
   // Deleted projects too: their tasks are in the Trash with them and must not count.
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [] as Project[])
-  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
+  const projects = useAllProjects()
+  const memberships = useMemberships()
   const me = useLiveQuery(() => currentUserId(), [], null)
   const [period, setPeriod] = useState<PeriodKind>(readPeriod)
   const title = useRef<HTMLHeadingElement>(null)

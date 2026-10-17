@@ -2,14 +2,12 @@
 // navigation", "Add from anywhere"): opened by the floating add button, its field
 // focused with the keyboard up, the view's defaults applied (Today's date in Today,
 // tomorrow in Upcoming, the project in a project), the list visible above it.
-import { useLiveQuery } from 'dexie-react-hooks'
+import { Popover } from '../ui'
 import type { RefObject } from 'react'
-import { db } from '../lib/db'
+import { useLabels, useProjects } from '../lib/localData'
 import { todayISO } from '../lib/dates'
 import { createTask } from '../lib/ops'
-import type { Label, Project } from '../lib/types'
 import { taskDefaults } from './listActions'
-import { Popover } from './overlay/Popover'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { t } from '../lib/i18n'
@@ -21,8 +19,10 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   route: Route
   userId?: string
 }) {
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [] as Project[])
-  const labels = useLiveQuery(() => db.labels.filter((l) => !l.deleted_at).toArray(), [], [] as Label[])
+  // Live projects, archived included, as in the views' quick add: the parser and the
+  // pickers leave archived ones out themselves (web-layering, one visibility rule).
+  const projects = useProjects()
+  const labels = useLabels()
   // The same defaults as the view's own quick add line; attributes typed in the line override them.
   const onAdd = async ({ labels: typed, ...rest }: QuickAddInput) => {
     const { labels: viewLabels, ...defaults } = taskDefaults(route, todayISO(), userId)

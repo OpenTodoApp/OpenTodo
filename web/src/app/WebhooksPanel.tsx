@@ -1,5 +1,4 @@
-import { useLiveQuery } from 'dexie-react-hooks'
-import { Skeleton } from '../ui'
+import { Skeleton, Dialog, Menu } from '../ui'
 import { Tooltip } from '../ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button } from '../ui'
@@ -14,11 +13,9 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Checkbox, Switch } from '../ui'
 import type { HueName } from '../ui'
-import { Dialog } from './overlay/Dialog'
-import { Menu } from './overlay/Menu'
 import { SecretReveal } from './TokensSection'
 import { api, isNetworkError } from '../lib/api'
-import { db } from '../lib/db'
+import { useProjects } from '../lib/localData'
 import { useOnline } from '../lib/online'
 import type { Webhook, WebhookDelivery, WebhookEvent } from '../lib/types'
 import {
@@ -220,10 +217,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   const [deleting, setDeleting] = useState<Webhook | null>(null)
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; text: string }>>({})
   const [log, setLog] = useState<{ webhookId: string; deliveries: WebhookDelivery[] | null } | null>(null)
-  const projects = useLiveQuery(
-    () => db.projects.filter((pr) => !pr.deleted_at).sortBy('position'),
-    [], [],
-  )
+  const projects = useProjects()
 
   const fail = useCallback((err: unknown) => {
     if (isNetworkError(err)) setUnreachable(true)

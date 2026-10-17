@@ -1,5 +1,5 @@
+import { Dialog } from '../ui'
 import { type FormEvent, useState } from 'react'
-import { Dialog } from './overlay'
 import { t } from '../lib/i18n'
 
 /** A small dialog asking for a name: Enter confirms, Esc cancels. Errors from onSubmit are shown inline. */

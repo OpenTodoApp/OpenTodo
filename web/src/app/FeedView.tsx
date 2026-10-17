@@ -2,11 +2,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, isPending, isPublicEvent, mergeOlder, pendingOpIds, PUBLIC_ACTOR_LABEL } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
-import { db } from '../lib/db'
+import { useAllProjects, useTasksById } from '../lib/localData'
 import { dayOf, FEED_KINDS, feedEvents, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, sharedProjectIds, type FeedKind } from '../lib/feed'
 import { useOnline } from '../lib/online'
 import { currentUserId, memberName, membershipMap } from '../lib/sharing'
-import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
+import type { ActivityEvent, Membership } from '../lib/types'
 import { navigate } from './router'
 import { openTaskInList } from './signals'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
@@ -32,9 +32,9 @@ export function FeedView() {
   const shared = useLiveQuery(() => sharedProjectIds(), [], null as string[] | null)
   const local = useLiveQuery(() => feedEvents(), [], null as ActivityEvent[] | null)
   const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
-  const projects = useLiveQuery(() => db.projects.toArray(), [], [] as Project[])
+  const projects = useAllProjects()
   const taskIds = useMemo(() => [...new Set((local ?? []).map((e) => e.taskId).filter((id): id is string => !!id))], [local])
-  const tasks = useLiveQuery(async () => (await db.tasks.bulkGet(taskIds)).filter((task): task is Task => !!task), [taskIds], [] as Task[])
+  const tasks = useTasksById(taskIds)
   // Seen times as they were when the feed opened: those entries keep their dot.
   const [seenAtOpen, setSeenAtOpen] = useState<Map<string, number> | null>(null)
   useEffect(() => {

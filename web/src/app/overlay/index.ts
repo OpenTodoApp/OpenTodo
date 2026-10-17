@@ -1,8 +1,4 @@
-// The one overlay module (OpenSpec change `mobile-layout`). Every menu, popover,
-// picker, dialog and toast goes through it; see CONTRIBUTING.md.
-export { Dialog } from './Dialog'
-export { Menu } from './Menu'
-export { Popover } from './Popover'
-export { ToastRegion } from './Toasts'
-export { place } from './position'
-export { useOverlayDepth, useFinePointer, useWide, watchVisualViewport } from './stack'
+// Kept only for the four screens that OpenSpec change web-component-structure is
+// splitting (TaskListView, Properties, CalendarView, AssistantPanel); the overlay
+// lives in src/ui/overlay (web-layering). Remove once they import from the ui barrel.
+export { Dialog, Menu, useFinePointer, useWide } from '../../ui'

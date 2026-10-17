@@ -6,15 +6,14 @@
 // ordinary preference op (`first_run`) that syncs to the account's other devices.
 // "Show me around" creates one sample project with six tasks as ordinary ops.
 import { Button, Icon, type IconName } from '../ui'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useRef, useState } from 'react'
 import { readAppearance, setAppearance, THEME_MODES } from '../lib/appearance'
 import { todayISO } from '../lib/dates'
-import { db } from '../lib/db'
+import { useHasTask, useTopLevelTaskCount, useUserPrefsRow } from '../lib/localData'
 import { createLabel, findLabelByName } from '../lib/labels'
 import { createProject, createSubtask, createTask } from '../lib/ops'
 import type { ThemeModePref } from '../lib/types'
-import { firstRunDone, setFirstRunDone, USER_PREFS_ID } from '../lib/userPrefs'
+import { firstRunDone, setFirstRunDone } from '../lib/userPrefs'
 import { installPrompt, useInstallPrompt } from './installPrompt'
 import { navigate } from './router'
 import { t, msg } from '../lib/i18n'
@@ -24,10 +23,10 @@ export const SAMPLE_PROJECT_NAME = msg('Show me around')
 
 /** Whether the first-run card belongs on screen: a fresh account (no row, or not marked done) with nothing in it yet. */
 export function useFirstRun(): boolean {
-  const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
+  const row = useUserPrefsRow()
   // Only "is there any task" matters: the scan stops at the first live task instead of
   // counting the whole table on every write (large-list-performance).
-  const hasTask = useLiveQuery(async () => !!(await db.tasks.filter((task) => !task.deleted_at).first()), [], undefined)
+  const hasTask = useHasTask()
   // Once shown, the card stays through the first task (step one adds it) until it is marked done.
   const shown = useRef(false)
   if (row === undefined || hasTask === undefined) return false
@@ -68,10 +67,10 @@ const STEPS: { id: 'task' | 'appearance' | 'install'; title: string; icon: IconN
 export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void }) {
   const [step, setStep] = useState(0)
   const [sampleOffered, setSampleOffered] = useState(true)
-  const row = useLiveQuery(async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null, [])
+  const row = useUserPrefsRow()
   const mode = readAppearance(row ?? null).mode
   const canInstall = useInstallPrompt()
-  const taskCount = useLiveQuery(() => db.tasks.filter((task) => !task.deleted_at && !task.parent_id).count(), [], 0)
+  const taskCount = useTopLevelTaskCount()
   // The first step keeps quick add focused, with one example; the first task added moves on.
   useEffect(() => { if (step === 0) onFocusQuickAdd() }, [step, onFocusQuickAdd])
   useEffect(() => { if (step === 0 && taskCount > 0) setStep(1) }, [step, taskCount])

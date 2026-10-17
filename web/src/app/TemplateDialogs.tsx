@@ -5,7 +5,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { todayISO } from '../lib/dates'
-import { db } from '../lib/db'
+import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { mutateMany } from '../lib/ops'
 import {
@@ -13,10 +13,9 @@ import {
   treeFromFile, treeFromProject, type TemplateTree,
 } from '../lib/templates'
 import type { Project } from '../lib/types'
-import { Button, Field, Input, Notice } from '../ui'
+import { Button, Field, Input, Notice, Dialog } from '../ui'
 import { DateField } from './datetime/DateField'
 import { HelpLink } from './help/HelpLink'
-import { Dialog } from './overlay/Dialog'
 import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
@@ -53,7 +52,7 @@ function Summary({ tree }: { tree: TemplateTree }) {
 
 /** Duplicate… : a personal copy, optionally under a parent and with dates moved to a start day. */
 export function DuplicateProjectDialog({ project, shared, onClose }: { project: Project; shared: boolean; onClose: () => void }) {
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const projects = useProjects()
   const tree = useLiveQuery(() => treeFromProject(project.id), [project.id])
   const [name, setName] = useState(`${project.name} copy`)
   const [parentId, setParentId] = useState<string | null>(project.parent_id ?? null)
@@ -123,7 +122,7 @@ export function SaveTemplateDialog({ project, onClose }: { project: Project; onC
 
 /** From a template… : a fresh copy of a template file, dates counted from a start day. */
 export function TemplateDialog({ onClose }: { onClose: () => void }) {
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const projects = useProjects()
   const [tree, setTree] = useState<TemplateTree | null>(null)
   const [fileName, setFileName] = useState('')
   const [startDay, setStartDay] = useState<string | null>(todayISO())
@@ -152,7 +151,7 @@ export function TemplateDialog({ onClose }: { onClose: () => void }) {
     setBusy(true)
     setError(null)
     try {
-      const plan = planTree(tree, { labels: await db.labels.toArray(), projects: await db.projects.toArray(), parentId, startDay })
+      const plan = planTree(tree, { ...(await projectsAndLabels()), parentId, startDay })
       await mutateMany(plan.changes)
       onClose()
       if (plan.projectIds[0]) navigate({ view: 'project', id: plan.projectIds[0] })

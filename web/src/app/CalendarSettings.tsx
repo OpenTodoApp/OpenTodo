@@ -1,7 +1,7 @@
-import { setMeta } from '../lib/db'
+import { saveGridPrefs } from '../lib/localData'
 import { keysOf } from '../lib/shortcuts'
 import { Kbd } from './shortcuts/Kbd'
-import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from '../lib/calendar'
+import { type GridPrefs } from '../lib/calendar'
 import { formatMinutes } from '../lib/duration'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -15,7 +15,7 @@ const hour = (h: number) => `${String(h).padStart(2, '0')}:00`
 /** Day and Week view preferences (OpenSpec `time-blocking`, design D7): this device only, never synced. */
 export function CalendarSettingsSection() {
   const prefs = useGridPrefs()
-  return <CalendarSettingsView prefs={prefs} onSave={(patch) => void setMeta(GRID_PREFS_META_KEY, normalizeGridPrefs({ ...prefs, ...patch }))} />
+  return <CalendarSettingsView prefs={prefs} onSave={(patch) => void saveGridPrefs({ ...prefs, ...patch })} />
 }
 
 export function CalendarSettingsView({ prefs, onSave }: { prefs: GridPrefs; onSave: (patch: Partial<GridPrefs>) => void }) {
