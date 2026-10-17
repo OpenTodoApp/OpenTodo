@@ -25,6 +25,34 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
 - **A `stable` image tag, used by every template.** Each release now also publishes `ghcr.io/pixari/opentodo:stable` (release candidates never move it), and the Unraid and Coolify templates, `docker-compose.yml` and the README examples use it: every release, minor versions included, arrives through the platform's update button, with migrations applied on start. Installs on `:0.6` keep their tag and its fixes; switch to `stable` once to follow every release. A **Promote stable** workflow points `stable` at an earlier release to roll back. ([Docker](docs/self-hosting/docker.md), [Unraid](docs/self-hosting/unraid.md#updates-and-backups), [Coolify](docs/self-hosting/coolify.md))
+- **Choose the address `docker-compose.yml` publishes on** with the optional `OPENTODO_BIND` in `.env`. The default stays every interface, so existing installs reached from your network keep working; behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice. ([Docker](docs/self-hosting/docker.md))
+
+### Fixed
+
+- `SECURITY.md` now says, as the server does, that the audit log takes the client address from the last `X-Forwarded-For` hop (the one your proxy appended), with `OPENTODO_TRUSTED_PROXIES` for proxies in front of it.
+
+### Security
+
+- **Release binaries are built with Go 1.26.9**, which fixes standard-library vulnerabilities (net/http, crypto/tls, crypto/x509 and others) present in the 1.26.0 toolchain used so far. `go.mod` names the toolchain, the Docker image uses the same version, and CI now fails when the code can reach a known vulnerability (`govulncheck`).
+
+### Security
+
+- **Calendar data, MCP batches and calendar subscriptions are bounded.** Reading iCalendar data (CalDAV writes and subscribed calendars) takes time in proportion to its size, and one content line may be at most 64 KB. The MCP endpoint refuses JSON-RPC batches under protocol revisions that no longer have them (2025-06-18 and later), accepts at most 20 messages per batch otherwise, and stops running a batch once its answer reaches 4 MB. Expanding a subscribed calendar's repeating events starts at the shown period, shares one work budget and a 5-second deadline per calendar, and keeps what it found with a warning when it runs out. ([CalDAV](docs/caldav.md), [MCP](docs/mcp.md#limits-and-security), [Other calendars](docs/other-calendars.md#limits))
+
+### Fixed
+
+- **Old repeating events in subscribed calendars.** A daily event that started decades ago (before about 1972) showed no occurrences; it now shows every day of the period.
+
+### Security
+
+- **Emailed links always use the server's public address.** Password resets, sign-up confirmations and invitations sent by email are built only from `OPENTODO_BASE_URL`, never from the request, so nobody can make the server mail a link to another site. Without `OPENTODO_BASE_URL` these emails are not sent: the screen says the owner must set it, links to copy keep working, and the owner sees a configuration warning while outgoing email is set up. ([Outgoing email](docs/self-hosting/outgoing-email.md#set-the-base-url-first))
+- **Forwarded host headers count only from trusted proxies.** `X-Forwarded-Host` and `X-Forwarded-Proto` are used only when the request comes from an address in `OPENTODO_TRUSTED_PROXIES`. Behind a TLS proxy, set `OPENTODO_BASE_URL` (or list the proxy) so the links the app shows start with `https://`. ([Docker](docs/self-hosting/docker.md#behind-a-reverse-proxy))
+- **A shared project's id cannot be taken over.** Sharing a project is refused when another account has a project with the same id, so nobody can lock the owner out of their own project. ([Sync](docs/sync.md))
+- **Entity ids are limited to safe characters.** Letters, digits and `. _ : @ + = ~ -`, which covers every id the apps create, so a malformed id can no longer break the lists of a shared project's members. ([Sync](docs/sync.md#operation))
+
+### Fixed
+
+- **Attachments move with a project when it is shared.** Files added to a project's tasks before sharing it stayed visible only to the owner. Sharing now moves them with the tasks, and on upgrade the server moves the files of projects shared earlier; members' devices fetch them on their next sync.
 
 ## [0.6.1] - 2026-10-17
 

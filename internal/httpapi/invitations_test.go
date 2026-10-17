@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
@@ -230,6 +231,14 @@ func TestInvitationLinkUsesRequestOrigin(t *testing.T) {
 	if link := out["link"].(string); !strings.HasPrefix(link, e.srv.URL+"/invite/oti_") {
 		t.Fatalf("link = %q, want prefix %s/invite/oti_", link, e.srv.URL)
 	}
+	// Forwarded headers count only from a trusted proxy (harden-links-and-sharing).
+	resp, out = e.do("POST", "/api/v1/invitations", map[string]any{}, "X-Forwarded-Host", "todo.example.com", "X-Forwarded-Proto", "https")
+	e.mustStatus(resp, 201, out)
+	if link := out["link"].(string); !strings.HasPrefix(link, e.srv.URL+"/invite/oti_") {
+		t.Fatalf("untrusted proxied link = %q", link)
+	}
+	t.Cleanup(func() { setTrustedProxies(nil, false) })
+	setTrustedProxies([]netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}, false)
 	resp, out = e.do("POST", "/api/v1/invitations", map[string]any{}, "X-Forwarded-Host", "todo.example.com", "X-Forwarded-Proto", "https")
 	e.mustStatus(resp, 201, out)
 	if link := out["link"].(string); !strings.HasPrefix(link, "https://todo.example.com/invite/oti_") {

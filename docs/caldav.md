@@ -103,7 +103,7 @@ Alarms set in a calendar app stay in that app's data (`ical_extra`) and fire the
 - Every change from a calendar app is applied with server time under the device id `caldav:<app password id>`, one operation per property that actually changed. The task history shows such changes as "a calendar app (CalDAV)".
 - **ETags** change whenever anything the client sees changes, on any device. A write with a stale `If-Match` is refused with 412 and changes nothing; the client re-reads and retries. A write without preconditions is merged field by field like a REST `PATCH`.
 - **CTag and sync token** (`urn:opentodo:sync:<n>`) are the position of your op log, shared by all your lists; incremental `sync-collection` reports list changed tasks and the removed ones (deleted, purged or moved away). Tokens never expire; a token from a future position (after restoring an older backup) is refused so the client starts over.
-- Supported: `PROPFIND` (Depth 0 and 1), `REPORT` `calendar-query` (VTODO, `time-range`, `prop-filter` with `is-not-defined` and `text-match`), `calendar-multiget` and `sync-collection`, `GET`, `HEAD`, `PUT`, `DELETE`, `MKCALENDAR`, `PROPPATCH`, `OPTIONS` (`DAV: 1, 3, calendar-access`). A resource is at most 1 MB and its preserved properties at most about 60 KB.
+- Supported: `PROPFIND` (Depth 0 and 1), `REPORT` `calendar-query` (VTODO, `time-range`, `prop-filter` with `is-not-defined` and `text-match`), `calendar-multiget` and `sync-collection`, `GET`, `HEAD`, `PUT`, `DELETE`, `MKCALENDAR`, `PROPPATCH`, `OPTIONS` (`DAV: 1, 3, calendar-access`). A resource is at most 1 MB and its preserved properties at most about 60 KB; one content line may be at most 64 KB after unfolding.
 
 ## Limits
 

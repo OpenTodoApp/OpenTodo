@@ -69,6 +69,15 @@ describe('Forgot password', () => {
     expect(r.container.querySelector('input')).toBeNull()
     await r.unmount()
   })
+
+  it('explains the administrator route when the server has no base URL for links', async () => {
+    serve({ 'POST /api/v1/auth/password-reset': [409, { error: { code: 'base_url_required', message: 'emailed links need the server’s public address' } }] })
+    const r = await render(<ForgotScreen enabled user={null} />)
+    await type(r.container.querySelector<HTMLInputElement>('input[type="email"]')!, 'me@example.com')
+    await click(button(r.container, 'Send reset link'))
+    await waitFor(() => r.container.textContent!.includes('Password resets go through an administrator'))
+    await r.unmount()
+  })
 })
 
 describe('Verified sign-up', () => {

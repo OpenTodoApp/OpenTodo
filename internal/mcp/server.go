@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -107,13 +108,39 @@ type response struct {
 
 var nullID = json.RawMessage("null")
 
+// Batch limits (OpenSpec change bound-hostile-input). JSON-RPC batches exist
+// only in protocol revision 2025-03-26; later revisions removed them, so a batch
+// sent under one of those is refused. MaxBatch bounds the messages in one batch
+// and maxBatchResponseBytes the answer to it: once the replies so far reach the
+// budget, the remaining requests are not run and get an error asking the client
+// to send them on their own (the answer is at most the budget plus one reply,
+// itself bounded by MaxItems).
+const (
+	MaxBatch = 20
+	// batchVersion is the only revision with JSON-RPC batching, and the one a
+	// request without MCP-Protocol-Version is assumed to speak.
+	batchVersion = "2025-03-26"
+)
+
+var maxBatchResponseBytes = 4 << 20 // a variable so tests can lower it
+
 // Handle processes one POST body for the caller. It returns the JSON body to send
 // (nil when the message carried only notifications or responses, which the
 // transport answers with 202) and whether the body was malformed at the top
-// level (the transport then answers 400).
+// level (the transport then answers 400). It treats the request as protocol
+// revision 2025-03-26; HandleVersion takes the MCP-Protocol-Version header.
 func (s *Server) Handle(ctx context.Context, c agenttools.Caller, body []byte) (out []byte, malformed bool) {
+	return s.HandleVersion(ctx, c, "", body)
+}
+
+// HandleVersion is Handle for a request that declared protocolVersion in its
+// MCP-Protocol-Version header ("" when absent, which means 2025-03-26).
+func (s *Server) HandleVersion(ctx context.Context, c agenttools.Caller, protocolVersion string, body []byte) (out []byte, malformed bool) {
 	body = bytes.TrimSpace(body)
 	if len(body) > 0 && body[0] == '[' {
+		if protocolVersion != "" && protocolVersion != batchVersion {
+			return encode(response{JSONRPC: "2.0", ID: nullID, Error: &rpcError{Code: CodeInvalidRequest, Message: "invalid request: protocol version " + protocolVersion + " does not support batches; send one message per request"}}), true
+		}
 		var batch []json.RawMessage
 		if err := json.Unmarshal(body, &batch); err != nil {
 			return encode(response{JSONRPC: "2.0", ID: nullID, Error: &rpcError{Code: CodeParseError, Message: "parse error: " + err.Error()}}), true
@@ -121,10 +148,22 @@ func (s *Server) Handle(ctx context.Context, c agenttools.Caller, body []byte) (
 		if len(batch) == 0 {
 			return encode(response{JSONRPC: "2.0", ID: nullID, Error: &rpcError{Code: CodeInvalidRequest, Message: "invalid request: empty batch"}}), true
 		}
-		var replies []response
+		if len(batch) > MaxBatch {
+			return encode(response{JSONRPC: "2.0", ID: nullID, Error: &rpcError{Code: CodeInvalidRequest, Message: fmt.Sprintf("invalid request: a batch holds at most %d messages", MaxBatch)}}), true
+		}
+		var replies []json.RawMessage
+		size := 0
 		for _, msg := range batch {
-			if r := s.handleOne(ctx, c, msg); r != nil {
-				replies = append(replies, *r)
+			var r *response
+			if size >= maxBatchResponseBytes {
+				r = overBudget(msg)
+			} else {
+				r = s.handleOne(ctx, c, msg)
+			}
+			if r != nil {
+				b := encode(r)
+				size += len(b)
+				replies = append(replies, b)
 			}
 		}
 		if len(replies) == 0 {
@@ -149,6 +188,19 @@ func encode(v any) []byte {
 		b, _ = json.Marshal(response{JSONRPC: "2.0", ID: nullID, Error: &rpcError{Code: CodeInternalError, Message: "internal error"}})
 	}
 	return b
+}
+
+// overBudget answers a batch request that was not run because the batch
+// response budget is spent (nil for notifications and client responses).
+func overBudget(raw json.RawMessage) *response {
+	var msg struct {
+		ID     json.RawMessage `json:"id"`
+		Method *string         `json:"method"`
+	}
+	if json.Unmarshal(raw, &msg) != nil || msg.Method == nil || len(msg.ID) == 0 || !validID(msg.ID) {
+		return nil
+	}
+	return &response{JSONRPC: "2.0", ID: msg.ID, Error: &rpcError{Code: CodeInternalError, Message: "batch response too large: send this request on its own"}}
 }
 
 // handleOne answers one message, or returns nil for notifications and for

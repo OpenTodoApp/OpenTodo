@@ -805,7 +805,7 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 		}
 		e, ok := byID[id]
 		if !ok {
-			e = Entity{"id": json.RawMessage(fmt.Sprintf("%q", id))}
+			e = Entity{"id": json.RawMessage(QuoteJSON(id))}
 			byID[id] = e
 			scopeOf[id] = scope
 			order = append(order, id)
@@ -866,7 +866,7 @@ func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, e
 		}
 		e := byScope[scope]
 		if e == nil {
-			e = Entity{"id": json.RawMessage(fmt.Sprintf("%q", id))}
+			e = Entity{"id": json.RawMessage(QuoteJSON(id))}
 			byScope[scope] = e
 		}
 		e[field] = json.RawMessage(value)

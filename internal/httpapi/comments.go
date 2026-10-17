@@ -113,7 +113,7 @@ func (s *Server) handleCreateComment(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "invalid_input", "comment.parent_id must be a comment on the same task")
 			return
 		}
-		parent = json.RawMessage(strconv.Quote(pid))
+		parent = json.RawMessage(opsync.QuoteJSON(pid))
 	}
 	mentions := []string{}
 	if in.Mentions != nil {
@@ -124,7 +124,7 @@ func (s *Server) handleCreateComment(w http.ResponseWriter, r *http.Request) {
 	id := ids.New()
 	now := time.Now().UnixMilli()
 	body := map[string]json.RawMessage{
-		"task_id": json.RawMessage(strconv.Quote(taskID)), "author_id": json.RawMessage(strconv.Quote(uid)),
+		"task_id": json.RawMessage(opsync.QuoteJSON(taskID)), "author_id": json.RawMessage(opsync.QuoteJSON(uid)),
 		"body": b, "parent_id": parent, "mentions": m, "created_at": json.RawMessage(strconv.FormatInt(now, 10)),
 		"edited_at": json.RawMessage("null"), "deleted_at": json.RawMessage("null"),
 	}

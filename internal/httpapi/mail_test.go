@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime/quotedprintable"
 	"net"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -31,11 +32,26 @@ func withTestMail(srv *smtptest.Server) Option {
 	}
 }
 
-// mailEnv is an owner-signed-in environment with outgoing email wired (not yet configured).
-func mailEnv(t *testing.T, allowSignup bool) (*env, *smtptest.Server) {
+// testBaseURL is the OPENTODO_BASE_URL of mailEnv: emailed links are built from it only.
+const testBaseURL = "http://todo.example.test"
+
+// withBaseURL sets OPENTODO_BASE_URL.
+func withBaseURL(raw string) Option {
+	return func(s *Server) {
+		u, err := url.Parse(raw)
+		if err != nil {
+			panic(err)
+		}
+		s.cfg.BaseURL = u
+	}
+}
+
+// mailEnv is an owner-signed-in environment with outgoing email wired (not yet
+// configured) and a base URL, so emailed links can be built.
+func mailEnv(t *testing.T, allowSignup bool, opts ...Option) (*env, *smtptest.Server) {
 	t.Helper()
 	srv := smtptest.New(t, smtptest.Options{User: "todo", Pass: "hunter2"})
-	e := newEnvWith(t, allowSignup, withTestMail(srv))
+	e := newEnvWith(t, allowSignup, append([]Option{withTestMail(srv), withBaseURL(testBaseURL)}, opts...)...)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
 	return e, srv
@@ -393,7 +409,7 @@ func TestPasswordResetSSOOnlySendsNothing(t *testing.T) {
 	defer func() { resetMinDuration = 200 * time.Millisecond }()
 	ssoOnly := false
 	srv := smtptest.New(t, smtptest.Options{User: "todo", Pass: "hunter2"})
-	e := newEnvWith(t, false, withTestMail(srv), func(s *Server) {
+	e := newEnvWith(t, false, withTestMail(srv), withBaseURL(testBaseURL), func(s *Server) {
 		s.oidc = oidc.New(settings.New(s.sync.DB()), s.cfg.DataDir, oidc.Options{Env: oidc.Env{Issuer: "https://idp.example", ClientID: "c", SSOOnly: &ssoOnly}})
 	})
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})

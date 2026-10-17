@@ -43,6 +43,6 @@ Events are cached on each device, so Day and Week still show them offline, as of
 
 - Up to 10 calendars per person.
 - A calendar may be up to 2 MB. Events from 30 days ago to a year ahead are kept, up to 5,000 per calendar.
-- Repeating events are expanded on the server. A repeat rule OpenTodo doesn't understand shows its first occurrence only, and the calendar's row gets a warning.
+- Repeating events are expanded on the server. A repeat rule OpenTodo doesn't understand shows its first occurrence only, and the calendar's row gets a warning. A calendar whose events repeat so much that expanding them would take more than a few seconds keeps the occurrences found so far, with a warning that some events are left out.
 - **Refresh now**, adding a calendar and changing its address count toward 12 fetches per person per hour.
 - Calendars on a private network (your NAS, a home server) are refused unless the server owner allows private network targets for [webhooks](webhooks.md#private-network-protection). The same switch applies to both.

@@ -35,6 +35,10 @@ var (
 	ErrInvalidMember = errors.New("invalid member")
 	// ErrAlreadyMember: the account is already a member of the project.
 	ErrAlreadyMember = errors.New("already a member")
+	// ErrProjectIDConflict: the project's id also names a project in another
+	// account's personal scope, so sharing it would hand one account's project
+	// to the other (harden-links-and-sharing).
+	ErrProjectIDConflict = errors.New("another account has a project with the same id")
 )
 
 // Member is one person on a shared project.
@@ -368,11 +372,22 @@ func projectStatus(ctx context.Context, q querier, projectID string) (string, bo
 	return name, found && !deleted, nil
 }
 
-// share creates the project's scope and moves the project, its tasks and sections from the
-// owner's personal scope into it (design D2). Only scope labels change: seq, op_id
-// and op content stay as they are, so the owner's devices keep their cursor.
+// share creates the project's scope and moves the project, its tasks, sections,
+// fields, and the tasks' comments and attachments from the owner's personal
+// scope into it (design D2). Only scope labels change: seq, op_id and op content
+// stay as they are, so the owner's devices keep their cursor. It refuses with
+// ErrProjectIDConflict when another account's personal scope holds a project
+// with the same id: whoever shared first would otherwise own both.
 func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID string) error {
 	personal, scope := PersonalScope(ownerID), ProjectScope(projectID)
+	var others int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM scope_fields WHERE entity = 'project' AND entity_id = ? AND scope_id LIKE 'user:%' AND scope_id != ?`,
+		projectID, personal).Scan(&others); err != nil {
+		return err
+	}
+	if others > 0 {
+		return ErrProjectIDConflict
+	}
 	// Tasks and sections (board-view) of the project move with it.
 	rows, err := tx.QueryContext(ctx, `SELECT entity, entity_id, value FROM scope_fields WHERE scope_id = ? AND entity IN ('task','section','field') AND field = 'project_id'`, personal)
 	if err != nil {
@@ -420,6 +435,17 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 		}
 		for _, cid := range cids {
 			if err := relabel("comment", cid); err != nil {
+				return err
+			}
+		}
+		// So do attachments (resolveAttachment); before harden-links-and-sharing
+		// they stayed behind, out of the members' sight.
+		aids, err := childIDsWhere(ctx, tx, personal, "attachment", "task_id", c.id, false)
+		if err != nil {
+			return err
+		}
+		for _, aid := range aids {
+			if err := relabel("attachment", aid); err != nil {
 				return err
 			}
 		}

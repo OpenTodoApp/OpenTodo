@@ -17,6 +17,19 @@ OpenTodo works without email. When you give it an SMTP server, it can also send:
 
 Nothing else is ever sent: no newsletters, no notifications of task changes, no tracking. Messages are plain text, carry one link, and never contain task, project, label or comment content. Without a configuration the server opens no mail connection at all.
 
+## Set the base URL first
+
+Links in these emails always start with `OPENTODO_BASE_URL`, the address people open OpenTodo at, such as `https://todo.example.com`. The server never builds a mailed link from the request: anyone can send a request with a made-up host name, and a reset link pointing to their site would hand them the account.
+
+Without `OPENTODO_BASE_URL`, outgoing email stays configured, the test message and weekly digests still go out, but password resets, sign-up confirmations and invitations are not sent by email:
+
+- "Forgot password?" tells the visitor to ask an administrator for a reset link.
+- **Send by email** on an invitation, an invite link or a reset fails with "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL)". Nothing is created; turn **Send by email** off to get a link to copy instead.
+- With open sign-up, registering fails with the same message and no account is created.
+- The owner sees a **Server configuration warning** naming `OPENTODO_BASE_URL` at the top of **Settings**.
+
+Set the variable (see [Running with Docker](docker.md#behind-a-reverse-proxy)) and restart; the warning goes away and emails are sent again.
+
 ## Configure in Settings
 
 As the owner, open **Settings → Server → Outgoing email** and choose **Configure**:
@@ -99,6 +112,7 @@ Every message sent or refused is recorded in **Settings → Server → Audit log
 
 ## Security notes
 
+- Mailed links are built from `OPENTODO_BASE_URL` only, never from the request's `Host` or `X-Forwarded-Host` (see [Set the base URL first](#set-the-base-url-first)).
 - Credentials are only ever sent over an encrypted connection. With STARTTLS, if the server does not offer the upgrade, nothing is sent.
 - The forgot-password form answers the same way, after the same time, whether or not an account exists.
 - Confirmation links create the account only when the person presses the button on the page, so mail scanners that open links cannot complete a sign-up.

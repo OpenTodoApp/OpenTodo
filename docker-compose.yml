@@ -1,6 +1,8 @@
 # OpenTodo — one container, one volume.
 #
 # Plain Docker:   cp .env.example .env && docker compose up -d   → http://localhost:8080
+#                 Behind a reverse proxy on the same machine, OPENTODO_BIND=127.0.0.1
+#                 in .env is the safer choice: nobody can reach the server around it.
 # Coolify:        New resource → Docker Compose → point at this repository.
 #                 Coolify reads SERVICE_URL_OPENTODO / SERVICE_FQDN_OPENTODO below,
 #                 assigns the domain and provisions HTTPS. No variables are required.
@@ -81,7 +83,9 @@ services:
       - opentodo-data:/data
     ports:
       # Only used outside Coolify; Coolify routes through its proxy to port 8080.
-      - "${OPENTODO_PORT:-8080}:8080"
+      # Every interface by default (reachable on your LAN, e.g. a NAS). Behind a reverse
+      # proxy on this host, set OPENTODO_BIND=127.0.0.1 in .env so only the proxy reaches it.
+      - "${OPENTODO_BIND:-0.0.0.0}:${OPENTODO_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD", "/opentodo", "healthcheck"]
       interval: 30s

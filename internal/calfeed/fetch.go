@@ -121,7 +121,9 @@ func (f *Fetcher) Fetch(ctx context.Context, sub *Subscription) (*Result, error)
 	if f.now != nil {
 		now = f.now
 	}
-	occ, warns := Expand(cal.Events, StoreWindow(now()), MaxOccurrences)
+	ectx, cancel := context.WithTimeout(ctx, MaxExpandTime)
+	occ, warns := ExpandContext(ectx, cal.Events, StoreWindow(now()), MaxOccurrences)
+	cancel()
 	r := &Result{Replaced: true, Occurrences: occ, Warnings: append(cal.Warnings, warns...), ETag: resp.Header.Get("ETag"),
 		LastModified: resp.Header.Get("Last-Modified"), Name: cal.Name}
 	if cal.Refresh > 0 {
