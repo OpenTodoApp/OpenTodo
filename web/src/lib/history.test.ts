@@ -41,6 +41,8 @@ describe('history', () => {
   it('labels devices and fetches pages', async () => {
     expect(deviceLabel({ device: 'mine', userId: 'u' }, 'mine')).toBe('this device')
     expect(deviceLabel({ device: 'server', userId: 'u' }, 'mine')).toBe('API')
+    // The server's device carries a per-process suffix (sync-convergence).
+    expect(deviceLabel({ device: 'server:1a2b3c4d', userId: 'u' }, 'mine')).toBe('API')
     // AI assistant writes use the server's label, or a generic one without it.
     expect(deviceLabel({ device: 'agent:t1', userId: 'u', device_label: 'AI assistant (Desk assistant)' }, 'mine')).toBe('AI assistant (Desk assistant)')
     expect(deviceLabel({ device: 'public:l1', userId: 'alice' }, 'mine', 'bob', [{ projectId: 'p', role: 'editor', ownerId: 'alice', members: [{ userId: 'alice', name: 'Alice', email: 'a@x', role: 'owner' }] }])).toBe('a public link')

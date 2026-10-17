@@ -3,7 +3,9 @@ package sync
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
+	"time"
 )
 
 // DeleteAccountData removes an account's server data inside the account
@@ -22,7 +24,43 @@ import (
 //   - Shared projects owned by someone else: only the membership goes. Ops the
 //     account authored there are kept; they are part of the project's history
 //     that other members (and future members' backfill) rely on to converge.
+//     Tasks assigned to the account there are unassigned by server ops
+//     authored by the project's owner, as when a member leaves (task-assignment
+//     "Unassign on departure", sync-convergence).
+//
+// This form has no service: its unassignments are stamped with the wall clock
+// and observers are not told. The server wires Service.DeleteAccountData.
 func DeleteAccountData(ctx context.Context, tx *sql.Tx, userID string) ([]string, error) {
+	return (&Service{now: time.Now}).DeleteAccountData(ctx, tx, userID)
+}
+
+type deletionKey struct{}
+
+// AccountDeletion collects the winning changes Service.DeleteAccountData wrote
+// inside the deletion transaction, for the observer once it committed.
+type AccountDeletion struct{ changes []Change }
+
+// WithAccountDeletion returns a context for an account deletion whose changes
+// are collected in the returned value; pass it to ObserveAccountDeletion after
+// the deletion committed.
+func WithAccountDeletion(ctx context.Context) (context.Context, *AccountDeletion) {
+	d := &AccountDeletion{}
+	return context.WithValue(ctx, deletionKey{}, d), d
+}
+
+// ObserveAccountDeletion hands the unassignments of a committed account
+// deletion to the post-commit observer (webhooks), like RemoveMember does.
+func (s *Service) ObserveAccountDeletion(ctx context.Context, d *AccountDeletion) {
+	if d == nil || s.observer == nil || len(d.changes) == 0 {
+		return
+	}
+	s.observer(context.WithoutCancel(ctx), d.changes)
+}
+
+// DeleteAccountData is the account deletion hook (see the package function of
+// the same name): its unassignments use the service's server clock, and their
+// changes are collected when ctx comes from WithAccountDeletion.
+func (s *Service) DeleteAccountData(ctx context.Context, tx *sql.Tx, userID string) ([]string, error) {
 	notify := map[string]bool{}
 
 	owned, err := stringColumn(ctx, tx, `SELECT project_id FROM project_scopes WHERE owner_id = ?`, userID)
@@ -62,6 +100,17 @@ func DeleteAccountData(ctx context.Context, tx *sql.Tx, userID string) ([]string
 		}
 		for _, u := range users {
 			notify[u] = true
+		}
+		var owner string
+		if err := tx.QueryRowContext(ctx, `SELECT owner_id FROM project_scopes WHERE project_id = ?`, pid).Scan(&owner); err != nil {
+			return nil, fmt.Errorf("owner of project %s: %w", pid, err)
+		}
+		_, changes, err := s.unassignDeparted(ctx, tx, owner, pid, userID)
+		if err != nil {
+			return nil, fmt.Errorf("unassign deleted account: %w", err)
+		}
+		if d, ok := ctx.Value(deletionKey{}).(*AccountDeletion); ok {
+			d.changes = append(d.changes, changes...)
 		}
 	}
 	for _, q := range []string{

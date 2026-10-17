@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
@@ -176,9 +175,6 @@ type Registry struct {
 	log      *slog.Logger
 	// today is the calendar date of server-side completions (REST parity).
 	today0 func() string
-
-	clockMu sync.Mutex
-	lastTS  int64
 }
 
 // Options configure a Registry.

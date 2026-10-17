@@ -74,9 +74,6 @@ type Service struct {
 
 	keyMu sync.Mutex
 	keys  *Keys
-	// lastTS keeps the server's delivered_at op timestamps strictly increasing.
-	tsMu   sync.Mutex
-	lastTS int64
 }
 
 // New wires a Service. Keys are created on first need, not here.
@@ -545,13 +542,6 @@ func (s *Service) tickUser(ctx context.Context, now time.Time, userID string, du
 	return recorded, nil
 }
 
-func (s *Service) opTS(nowMs int64) int64 {
-	s.tsMu.Lock()
-	defer s.tsMu.Unlock()
-	s.lastTS = max(nowMs, s.lastTS+1)
-	return s.lastTS
-}
-
 // recordDelivered writes delivered_at as a server op. Its timestamp must beat the
 // stored one even when a device's clock runs ahead (its "delivered_at: null" from
 // creation would otherwise win and the reminder would be pushed on every tick),
@@ -586,13 +576,13 @@ func (s *Service) recordReminderField(ctx context.Context, userID, reminderID, f
 	}
 	ts = max(ts, prev+1)
 	op := opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: reminderID, Field: field,
-		Value: json.RawMessage(fmt.Sprint(nowMs)), TS: s.opTS(ts), Device: "server"}
+		Value: json.RawMessage(fmt.Sprint(nowMs)), TS: s.sync.ServerTSAt(ts), Device: opsync.ServerDevice}
 	res, err := s.sync.Apply(ctx, userID, []opsync.Op{op})
 	if err != nil {
 		return err
 	}
 	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, "server")
+		s.sync.NotifyApplied(res, opsync.ServerDevice)
 	}
 	return nil
 }

@@ -226,7 +226,7 @@ func TestSchedulerDeliversOnceAcrossRestart(t *testing.T) {
 	ops, _, _, _ := e.sync.Pull(ctx, "u1", 0, "", 1000)
 	var server int
 	for _, o := range ops {
-		if o.Device == "server" && o.Field == "delivered_at" && o.EntityID == "r-due" {
+		if o.Device == opsync.ServerDevice && o.Field == "delivered_at" && o.EntityID == "r-due" {
 			server++
 		}
 	}

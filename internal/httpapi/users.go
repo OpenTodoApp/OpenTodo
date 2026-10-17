@@ -11,6 +11,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/mail"
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // User administration routes (OpenSpec change `user-management`, design D8).
@@ -158,11 +159,15 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	notify, err := s.auth.DeleteUser(r.Context(), actor.ID, id, in.ConfirmEmail)
+	// The deletion unassigns the account's tasks in other owners' projects;
+	// observers (webhooks) learn those changes once it committed.
+	ctx, deletion := opsync.WithAccountDeletion(r.Context())
+	notify, err := s.auth.DeleteUser(ctx, actor.ID, id, in.ConfirmEmail)
 	if err != nil {
 		s.userError(w, err)
 		return
 	}
+	s.sync.ObserveAccountDeletion(ctx, deletion)
 	s.sync.Notifier().CloseUser(id)
 	// Their own assistant keys go with the account (in-app-assistant D4).
 	if s.assistant != nil {

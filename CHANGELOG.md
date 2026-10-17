@@ -34,6 +34,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Changes held back by a server limit are no longer lost or sent twice** when they are offered again at the moment another change is held.
 - **A title you are typing stays as you type it** when another device renames the task at the same time; leaving the field saves your title.
 - **The browser is asked to keep the app's data**, so it is not deleted when space runs low or after weeks without a visit.
+- **A device with a wrong clock no longer freezes a field.** When a device's clock runs more than five minutes fast, the server now asks it to correct its clock; the app stamps the change again and uploads it, so the edit is kept and later edits from other devices win as they should. The app also stops correcting its clock once the system clock is right again. Older apps keep the previous behaviour. ([sync](docs/sync.md#clocks))
+- **Two server writes in the same millisecond no longer cancel each other.** Every change the server makes itself (API, assistant, reminders, imports, email) now uses one clock, and the server's device id carries a suffix per server process (`server:<id>`; webhooks still report the source `server`).
+- **History of a newly joined project is resent when a page is lost.** The app confirms each page of a shared project's history it applied, and the server sends a page again until it is confirmed.
+- **Deleting an account unassigns its tasks in other people's projects**, as when a member leaves, so no task keeps a deleted person as its assignee.
+- **Notifications and webhooks are no longer lost when the app disconnects during a sync.** Once a change is saved, its notifications and webhook deliveries are recorded even if the request was cut off.
+- **Impossible due dates are refused.** A due date that does not exist (such as 31 February) or a time outside 00:00–23:59 is no longer accepted, so it cannot break recurring tasks and reminders.
+- **A database migration that would have been skipped is reported.** The server records which migration files it applied and logs an error at startup for a file it never ran; the repository checks refuse a new migration not numbered above those on the main branch.
 
 ### Added
 

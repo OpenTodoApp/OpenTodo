@@ -842,8 +842,8 @@ func TestProjectNoteInListProjects(t *testing.T) {
 	out := f.mustCall(c, "list_projects", map[string]any{})
 	raw, _ := json.Marshal(out["projects"])
 	var ps []struct {
-		ID        string `json:"id"`
-		Encrypted bool   `json:"encrypted"`
+		ID        string                             `json:"id"`
+		Encrypted bool                               `json:"encrypted"`
 		Untrusted struct{ Name, Description string } `json:"untrusted_text"`
 	}
 	_ = json.Unmarshal(raw, &ps)

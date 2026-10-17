@@ -25,7 +25,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
   "ts": 1760060000123,           // hybrid logical clock, unix ms
-  "device": "3c54…",             // id of the producing device ("server" for REST writes)
+  "device": "3c54…",             // id of the producing device ("server:<boot id>" for the server's own writes)
   "actor": "a1b2…"               // served ops only: the author's account id (ignored on input)
 }
 ```
@@ -46,7 +46,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `title`, `description` | string |
 | task | `project_id`, `parent_id` | string or null |
 | task | `priority` | integer 1–4 (1 highest) |
-| task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}` or null; `tz` (a known IANA zone, at most 64 characters) only together with `time`, see [Zoned due values](#zoned-due-values) |
+| task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}` or null; the date must exist and the time be 00:00–23:59; `tz` (a known IANA zone, at most 64 characters) only together with `time`, see [Zoned due values](#zoned-due-values) |
 | task | `labels` | array of strings (label ids, see below) |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
@@ -273,15 +273,25 @@ The same comparison runs in Go (`internal/sync.Wins`) and TypeScript (`web/src/l
 
 ## Clocks
 
-Each device stamps ops with `max(Date.now() + offset, last + 1)`, so its own timestamps are strictly increasing even if the system clock jumps back. After every exchange the client compares `serverTime` with its clock and adopts the offset when the skew is over two seconds. The server clamps any `ts` more than five minutes ahead of its own clock.
+Each device stamps ops with `max(Date.now() + offset, last + 1)`, so its own timestamps are strictly increasing even if the system clock jumps back. After every exchange the client compares `serverTime` with its clock: it adopts the difference as `offset` when the skew is over two seconds and sets `offset` back to zero when it is not, and a `last` (also the seed persisted on the device) more than five minutes ahead of `serverTime` is brought back to `serverTime`.
+
+An op stamped more than five minutes ahead of the server's clock (`sync.MaxFutureSkewMs`) is not stored as it is (OpenSpec `sync-convergence`):
+
+- A device that sends `"features": ["clock_skew", …]` gets it refused in `rejected` with reason `clock_skew` and the server's clock as `serverTime`. It is not a verdict on the value, so no server value is sent back: the device corrects its clock, restarts `last` from `serverTime`, stamps the refused ops again (ops that shared a timestamp share the new one, the row's clock follows) and re-sends them with the same ids in the next round of the same exchange. Every device then orders the edit by the corrected time, so a device whose clock ran fast cannot freeze a field.
+- Older clients, which do not send the feature, would drop an op refused for a reason they do not know, so for them the server clamps `ts` to five minutes ahead of its clock, as before. Such a device keeps its own (unclamped) timestamp locally; upgrading the app ends that.
+
+Server-side writers (REST, assistant tools, CalDAV, public links, push delivery records, imports, email, unassignments) take their timestamps from one strictly increasing clock per server process (`Service.ServerTS`) and write as device `server:<boot id>`, a suffix chosen at start, so two server writes to one field never tie on (`ts`, `device`). Ops stored by older releases carry the bare `server`; both forms are the server's (reserved on `/api/v1/sync`, trusted for `uploaded_at`, shown as "API" in history, reported as source `server` to webhooks).
 
 ## Exchange
 
 `POST /api/v1/sync`
 
 ```json
-{ "device": "3c54…", "cursor": 140, "ops": [ …pending ops… ] }
+{ "device": "3c54…", "cursor": 140, "ops": [ …pending ops… ],
+  "features": ["clock_skew", "backfill_ack"], "backfillAck": 0 }
 ```
+
+`features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)) and `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
 
 Response:
 
@@ -299,7 +309,7 @@ Response:
 }
 ```
 
-`rejected` and `memberships` are additive (see [Sharing scopes](#sharing-scopes)); so are `purged` and `trashRetentionDays` (see [Purge](#purge)). Older clients ignore them.
+`rejected` and `memberships` are additive (see [Sharing scopes](#sharing-scopes)); so are `purged` and `trashRetentionDays` (see [Purge](#purge)), and `backfillSeq`, present only on a replay page served to a device that sent `backfill_ack`. Older clients ignore them.
 
 Client loop (`web/src/lib/sync.ts`):
 
@@ -331,9 +341,9 @@ Every op and every materialized field belongs to one scope (OpenSpec `project-sh
 - **A task never changes scope.** A `project_id` that would move a task into another scope is refused with reason `scope_change`. Clients move across scopes by copying the task (new id) into the destination and tombstoning the original; deleting a shared project tombstones the project and its tasks and the owner's device copies the open tasks into the owner's Inbox.
 - **First share.** Sharing a project relabels the project and its tasks (with their sections, custom field definitions, comments and attachments) from the owner's personal scope to the project scope in one transaction. It is refused with 409 `project_id_conflict` when another account's personal scope holds a project with the same id. Only the scope label changes; `seq`, op ids and content stay, so the owner's devices keep their cursor.
 - **Authorization at receipt.** Each op is checked against the author's membership when the server receives it, never against `op.ts`: viewer → nothing (except comments, see [Comments](#comments)); editor → tasks; admin → tasks and project fields except `deleted_at`; owner → everything; non-members → nothing. A refused op is not stored and is listed in `rejected` with its id and reason (`forbidden`, `scope_change` or `not_a_member`) in a 200 response; the rest of the batch is applied. The response's `ops` also carry the current winning op of every refused field the caller can see, so the device drops its local change and shows the server's value without another round trip. Resending an already refused op gives the same answer.
-- **Catch-up for a new member.** A device whose cursor is past part of a project's history when its user joins receives that history first: pages of the project's ops up to the device's cursor at its first exchange after joining, with `cursor` unchanged and `hasMore: true`, then the regular pull. Progress is kept per device (`member_backfills`), so each of the member's devices replays the history once. A replay page lost in transit is not resent; re-syncing from cursor 0 recovers it.
+- **Catch-up for a new member.** A device whose cursor is past part of a project's history when its user joins receives that history first: pages of the project's ops up to the device's cursor at its first exchange after joining, with `cursor` unchanged and `hasMore: true`, then the regular pull. Progress is kept per device (`member_backfills`), so each of the member's devices replays the history once. A device that sends the `backfill_ack` feature gets each replay page with a `backfillSeq` and echoes it as `backfillAck` in its next exchange, once it applied the page; progress advances only on that echo, so a page lost in transit is served again (OpenSpec `sync-convergence`). For older clients progress advances when the page is served, and a page lost in transit is not resent; re-syncing from cursor 0 recovers it.
 - **Membership** lives outside the op log (`project_members`) and changes only through the REST routes, so offline devices cannot race on it. Every exchange returns the caller's `memberships`; a device purges a project (and its tasks) that it knew as shared and that is no longer listed. A membership change wakes the affected devices with an event that carries no cursor (`data: {}`), so they always run the exchange.
-- **Assignment** (OpenSpec `task-assignment`). A non-null `task.assignee_id` must name a current member of the task's shared project, or the author for a task in a personal scope; otherwise the op is refused with reason `not_a_member` (plus the server's value in `ops`, as for `forbidden`). Viewers are refused with `forbidden` like any other write. When a member leaves or is removed, the server writes `assignee_id: null` ops (device `server`, author = whoever removed them) for every task of that project assigned to them, in the same transaction as the membership change and stamped later than the value they replace, so every device converges on "unassigned" without client logic. An assignment to someone other than its author that wins on the server emits an internal assignment event after commit (`internal/notify`), which becomes an in-app notification (`GET /api/v1/notifications`).
+- **Assignment** (OpenSpec `task-assignment`). A non-null `task.assignee_id` must name a current member of the task's shared project, or the author for a task in a personal scope; otherwise the op is refused with reason `not_a_member` (plus the server's value in `ops`, as for `forbidden`). Viewers are refused with `forbidden` like any other write. When a member leaves or is removed, or their account is deleted, the server writes `assignee_id: null` ops (device `server:<boot id>`, author = whoever removed them, or the project's owner for a deleted account) for every task of that project assigned to them, in the same transaction as the membership change and stamped later than the value they replace, so every device converges on "unassigned" without client logic. An assignment to someone other than its author that wins on the server emits an internal assignment event after commit (`internal/notify`), which becomes an in-app notification (`GET /api/v1/notifications`).
 - **Older clients** keep syncing their personal data unchanged. They drop refused ops from the outbox like any acknowledged op but only show the server's value once a newer value arrives.
 
 ## Live updates
@@ -433,7 +443,7 @@ REST answers both refusals with `400 invalid_input` and names the offending id. 
 
 ## REST writes
 
-REST handlers translate request bodies into ops stamped with server time and `device: "server"`, then call the same `Apply`. There is exactly one write path.
+REST handlers translate request bodies into ops stamped with the server clock (`Service.ServerTS`) and the server's device (`server:<boot id>`), then call the same `Apply`. There is exactly one write path.
 
 ## CalDAV
 

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -96,9 +97,6 @@ type Server struct {
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
 	hooks *webhook.Service
 
-	clockMu sync.Mutex
-	lastTS  int64
-
 	// backups is nil when the server runs without the backup service (tests).
 	backups *backup.Service
 	// push is nil when web push is not wired (tests); see push.go.
@@ -155,16 +153,10 @@ type Server struct {
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
 func WithBackups(b *backup.Service) Option { return func(s *Server) { s.backups = b } }
 
-// opTS stamps REST-originated ops. They all carry device "server", so two writes
-// to one field within the same millisecond would tie under the winner rule and the
-// second would be silently dropped; like the client HLC, issue strictly increasing
-// timestamps instead.
-func (s *Server) opTS() int64 {
-	s.clockMu.Lock()
-	defer s.clockMu.Unlock()
-	s.lastTS = max(time.Now().UnixMilli(), s.lastTS+1)
-	return s.lastTS
-}
+// opTS stamps REST-originated ops with the sync service's server clock
+// (sync-convergence), shared with every other server-side writer, so two writes
+// to one field within the same millisecond never tie under the winner rule.
+func (s *Server) opTS() int64 { return s.sync.ServerTS() }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
@@ -230,7 +222,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	}
 	// Deleting an account removes its synced data in the same transaction
 	// (user-management D4; the project-sharing hook lives in the sync package).
-	authSvc.SetBeforeDelete(opsync.DeleteAccountData)
+	authSvc.SetBeforeDelete(syncSvc.DeleteAccountData)
 	// Every route declares its access policy (route-authorization-policy); see policy.go.
 	mux := &routes{s: s, mux: http.NewServeMux()}
 	s.registerAttachmentRoutes(mux)
@@ -1114,6 +1106,17 @@ type syncRequest struct {
 	// TZOffset is the device's zone offset in minutes east of UTC (optional,
 	// additive); REST writes that move a due date recompute relative reminders in it.
 	TZOffset *int `json:"tzOffset,omitempty"`
+	// Features names the protocol additions the device supports (optional,
+	// additive; OpenSpec change sync-convergence): "clock_skew" (refuse ops
+	// stamped too far ahead with reason clock_skew instead of clamping them)
+	// and "backfill_ack" (confirm member backfill pages with BackfillAck).
+	Features []string `json:"features,omitempty"`
+	// BackfillAck echoes the backfillSeq of the last backfill page applied.
+	BackfillAck int64 `json:"backfillAck,omitempty"`
+}
+
+func (in syncRequest) supports(feature string) bool {
+	return slices.Contains(in.Features, feature)
 }
 
 func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
@@ -1141,7 +1144,11 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	}
 	uid := userFrom(r.Context()).ID
 	s.recordTZOffset(r.Context(), uid, in.TZOffset)
-	res, err := s.sync.Apply(r.Context(), uid, in.Ops)
+	applyCtx := r.Context()
+	if in.supports("clock_skew") {
+		applyCtx = opsync.WithClockSkewRefusal(applyCtx)
+	}
+	res, err := s.sync.Apply(applyCtx, uid, in.Ops)
 	if errors.Is(err, opsync.ErrInvalidOp) {
 		writeError(w, http.StatusBadRequest, "invalid_op", err.Error())
 		return
@@ -1158,7 +1165,8 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		// learns the cursor from the response.
 		s.sync.NotifyApplied(res, in.Device)
 	}
-	pull, err := s.sync.PullAll(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest)
+	pull, err := s.sync.PullWith(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest,
+		opsync.PullOptions{ConfirmBackfill: in.supports("backfill_ack"), BackfillAck: in.BackfillAck})
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -1185,7 +1193,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	out := map[string]any{
 		"applied":    res.Applied,
 		"duplicates": res.Duplicates,
 		"ops":        ops,
@@ -1201,12 +1209,17 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		// devices delete locally, and the Trash retention in days (0 = never).
 		"purged":             purged,
 		"trashRetentionDays": s.cfg.TrashRetentionDays,
-	})
+	}
+	if pull.BackfillSeq > 0 {
+		// Additive (sync-convergence): echoed as backfillAck once applied.
+		out["backfillSeq"] = pull.BackfillSeq
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // ---- handlers: REST collections (write-through to the op log) ----
 
-const serverDevice = opsync.ServerDevice
+var serverDevice = opsync.ServerDevice
 
 func collection(r *http.Request) (string, bool) {
 	e, ok := opsync.Plural[r.PathValue("collection")]

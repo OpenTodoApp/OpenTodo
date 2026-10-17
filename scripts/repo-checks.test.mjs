@@ -1,6 +1,7 @@
 // Repository checks for CI and release hygiene (OpenSpec change release-hygiene):
 // the CI path filter, the patched Go toolchain shared by go.mod, CI and the
-// Dockerfile, and the root docker-compose.yml publishing on loopback by default.
+// Dockerfile, the root docker-compose.yml publishing on loopback by default, and
+// migration numbering against the base branch (sync-convergence).
 // Run: node --test scripts/repo-checks.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -75,4 +76,33 @@ test('SECURITY.md names the X-Forwarded-For hop the code uses (the nearest untru
   assert.doesNotMatch(s, /first `X-Forwarded-For`/)
   assert.match(s, /nearest untrusted `X-Forwarded-For` hop/)
   assert.match(s, /OPENTODO_TRUSTED_PROXIES/)
+})
+
+// Schema migrations (OpenSpec change sync-convergence): the store runs only
+// files numbered above the database's version, so a file added on a branch with
+// a number at or below one already on main would never run on an upgraded
+// server. (Duplicate numbers are refused by internal/store's tests.)
+const migrationsDir = 'internal/store/migrations'
+const migrationNumber = (name) => Number.parseInt(name.split('_')[0], 10)
+
+function git(...args) {
+  return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+}
+
+test('migrations added on a branch are numbered above every migration on the base branch', (t) => {
+  const base = process.env.MIGRATIONS_BASE || 'origin/main'
+  try {
+    git('rev-parse', '--verify', '--quiet', `${base}^{commit}`)
+  } catch {
+    t.skip(`${base} is not available (shallow clone)`)
+    return
+  }
+  const onBase = git('ls-tree', '--name-only', base, `${migrationsDir}/`).split('\n').filter((p) => p.endsWith('.sql'))
+  const highest = Math.max(0, ...onBase.map((p) => migrationNumber(path.basename(p))))
+  const added = git('diff', '--name-only', '--diff-filter=A', `${base}...HEAD`, '--', `${migrationsDir}/`)
+    .split('\n').filter((p) => p.endsWith('.sql'))
+  for (const p of added) {
+    const v = migrationNumber(path.basename(p))
+    assert.ok(v > highest, `${p} must be numbered above ${highest}, the highest migration on ${base}: renumber it`)
+  }
 })

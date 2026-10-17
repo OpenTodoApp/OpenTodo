@@ -999,7 +999,7 @@ func TestAddRepeatAndRemind(t *testing.T) {
 	// A bad reminder phrase is a usage error before any request.
 	if code, _, errb := h.run("add", "x", "--remind", "whenever"); code != ExitUsage || !strings.Contains(errb, "--remind") {
 		t.Fatalf("bad phrase: %d %q", code, errb)
-	}	// The server refuses the reminder (over a year) after creating the task: exit 1, the task id named.
+	} // The server refuses the reminder (over a year) after creating the task: exit 1, the task id named.
 	code, stdout, stderr = h.run("add", "Far away", "--due", "2026-11-03", "--remind", "60 weeks before")
 	if code != ExitServer || !strings.Contains(stderr, "the task was created: ") {
 		t.Fatalf("failed reminder: %d %q %q", code, stdout, stderr)

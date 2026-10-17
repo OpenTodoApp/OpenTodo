@@ -79,15 +79,11 @@ func applyError(err error) error {
 	return err
 }
 
-// opTS issues strictly increasing timestamps for agent writes from the wall
-// clock, like the REST clock: two calls within one millisecond must not tie
-// under last-writer-wins. (Registry.now only decides calendar dates.)
-func (r *Registry) opTS() int64 {
-	r.clockMu.Lock()
-	defer r.clockMu.Unlock()
-	r.lastTS = max(time.Now().UnixMilli(), r.lastTS+1)
-	return r.lastTS
-}
+// opTS issues timestamps for agent writes from the sync service's server clock,
+// shared with REST and every other server writer: two calls within one
+// millisecond must not tie under last-writer-wins. (Registry.now only decides
+// calendar dates.)
+func (r *Registry) opTS() int64 { return r.sync.ServerTS() }
 
 // stamp is a wall-clock Unix millisecond value for created_at, completed_at
 // and deleted_at fields.
