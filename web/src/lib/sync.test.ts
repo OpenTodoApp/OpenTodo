@@ -741,7 +741,7 @@ describe('sign-out during an exchange (client-sync-robustness)', () => {
     let answer!: (v: unknown) => void
     let signal: AbortSignal | undefined
     syncCalls.mockImplementationOnce(((...args: unknown[]) => {
-      signal = args[4] as AbortSignal
+      signal = args[5] as AbortSignal
       return new Promise((r) => { answer = r })
     }) as never)
     const run = syncNow()
