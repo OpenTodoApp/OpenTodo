@@ -79,12 +79,12 @@ test('unraid: the template repository copy', () => {
 test('a platform folder without a checker fails', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'deploy-check-'))
   try {
-    for (const p of ['deploy', 'internal/config', 'scripts/deploy', 'scripts/coolify-template-check.mjs', 'web/public', 'CHANGELOG.md']) cpSync(join(ROOT, p), join(dir, p), { recursive: true })
-    mkdirSync(join(dir, 'deploy/truenas'))
-    writeFileSync(join(dir, 'deploy/truenas/app.yaml'), 'x: 1\n')
+    for (const p of ['deploy', 'internal/config', 'internal/httpapi', 'scripts/deploy', 'scripts/coolify-template-check.mjs', 'web/public', 'CHANGELOG.md']) cpSync(join(ROOT, p), join(dir, p), { recursive: true })
+    mkdirSync(join(dir, 'deploy/example-platform'))
+    writeFileSync(join(dir, 'deploy/example-platform/app.yaml'), 'x: 1\n')
     const results = await run(dir)
-    const r = results.find((x) => x.name === 'deploy/truenas')
-    has(r.errors, /no checker: add scripts\/deploy\/truenas\.mjs/)
+    const r = results.find((x) => x.name === 'deploy/example-platform')
+    has(r.errors, /no checker: add scripts\/deploy\/example-platform\.mjs/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

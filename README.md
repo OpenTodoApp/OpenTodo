@@ -191,6 +191,10 @@ Or paste the one-click template [`deploy/coolify/opentodo.yaml`](deploy/coolify/
 
 OpenTodo is in Community Applications: open **Apps**, search for **OpenTodo** and click **Install**, then open the WebUI and create the owner account. The template lives in [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid), published from [`deploy/unraid/`](deploy/unraid/). Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
 
+### Other platforms
+
+Templates for CasaOS and ZimaOS, Cosmos Cloud, Dokploy, Easypanel, Portainer, Runtipi, TrueNAS and Umbrel are in [`deploy/`](deploy/), each with a guide: [CasaOS](docs/self-hosting/casaos.md) · [Cosmos](docs/self-hosting/cosmos.md) · [Dokploy](docs/self-hosting/dokploy.md) · [Easypanel](docs/self-hosting/easypanel.md) · [Portainer](docs/self-hosting/portainer.md) · [Runtipi](docs/self-hosting/runtipi.md) · [TrueNAS](docs/self-hosting/truenas.md) · [Umbrel](docs/self-hosting/umbrel.md). Until a platform's catalog lists OpenTodo, the guide shows how to install it as a custom app.
+
 ### Single binary
 
 Download `opentodo-<os>-<arch>` from the [latest release](https://github.com/pixari/opentodo/releases/latest) (Linux, macOS and Windows; check it with `SHA256SUMS`), or build it yourself:
@@ -284,7 +288,7 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 
 - **Start here**: [getting started](docs/getting-started.md) · [installing the app](docs/install-app.md) · [all user guides](docs/README.md#using-opentodo)
 - **Reference**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
-- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [Unraid](docs/self-hosting/unraid.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
+- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [Unraid](docs/self-hosting/unraid.md) · [CasaOS](docs/self-hosting/casaos.md) · [Cosmos](docs/self-hosting/cosmos.md) · [Dokploy](docs/self-hosting/dokploy.md) · [Easypanel](docs/self-hosting/easypanel.md) · [Portainer](docs/self-hosting/portainer.md) · [Runtipi](docs/self-hosting/runtipi.md) · [TrueNAS](docs/self-hosting/truenas.md) · [Umbrel](docs/self-hosting/umbrel.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
 - **AI**: [overview: which option to pick](docs/ai-and-agents.md) · [assistant in the app](docs/assistant.md) · [MCP](docs/mcp.md) · [`ot` for agents](docs/cli.md#using-ot-from-an-agent)
 - **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistant in the app](docs/assistant.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)

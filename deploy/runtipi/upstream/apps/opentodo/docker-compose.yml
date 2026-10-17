@@ -1,0 +1,33 @@
+services:
+  opentodo:
+    image: ghcr.io/pixari/opentodo:0.6.1
+    restart: unless-stopped
+    environment:
+      OPENTODO_BASE_URL: ${OPENTODO_BASE_URL:-}
+      OPENTODO_SETUP_TOKEN: ${OPENTODO_SETUP_TOKEN:-}
+      OPENTODO_ALLOW_SIGNUP: ${OPENTODO_ALLOW_SIGNUP:-false}
+      OPENTODO_TRUSTED_PROXIES: ${OPENTODO_TRUSTED_PROXIES:-}
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    depends_on:
+      opentodo-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/opentodo", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    x-runtipi:
+      is_main: true
+      internal_port: 8080
+  # Runtipi creates the data folder owned by root and makes it writable only after the first
+  # start, but OpenTodo runs as user 65532: hand the folder to that user before it starts.
+  opentodo-init:
+    image: busybox:1.37.0
+    command: ["chown", "-R", "65532:65532", "/data"]
+    restart: "no"
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+x-runtipi:
+  schema_version: 2

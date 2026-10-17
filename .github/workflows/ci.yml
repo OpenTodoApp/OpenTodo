@@ -345,7 +345,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: node --test scripts/coolify-template-check.test.mjs scripts/deploy/deploy.test.mjs
+      - run: node --test scripts/coolify-template-check.test.mjs scripts/deploy/*.test.mjs
       # Every platform template against deploy/deploy.json (OpenSpec change unraid-template).
       - run: node scripts/deploy-check.mjs
       - run: node scripts/coolify-template-check.mjs --smoke

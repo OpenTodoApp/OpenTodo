@@ -1,0 +1,56 @@
+{
+  "name": "OpenTodo",
+  "id": "opentodo",
+  "available": true,
+  "exposable": true,
+  "dynamic_config": true,
+  "port": 8400,
+  "tipi_version": 1,
+  "version": "0.6.1",
+  "categories": [
+    "utilities"
+  ],
+  "short_desc": "A to-do app that runs on your own server, even offline.",
+  "description": "OpenTodo is an open-source, local-first task manager. Plan your day, keep projects in order, set reminders and share lists with your family or your team, from your phone and your computer. The first person to open it creates the owner account; after that the owner invites people. One small container with its data in one folder, no required settings.",
+  "author": "pixari",
+  "source": "https://github.com/pixari/opentodo",
+  "website": "https://open-todo.app",
+  "form_fields": [
+    {
+      "type": "url",
+      "label": "Base URL",
+      "hint": "The https address people open, for example https://todo.example.com. Leave empty when you open OpenTodo by the server's address.",
+      "required": false,
+      "env_variable": "OPENTODO_BASE_URL"
+    },
+    {
+      "type": "password",
+      "label": "Setup token",
+      "hint": "Optional, at least 16 characters. When set, creating the owner account asks for it, so a stranger cannot claim a server reachable from the internet.",
+      "required": false,
+      "env_variable": "OPENTODO_SETUP_TOKEN"
+    },
+    {
+      "type": "boolean",
+      "label": "Open sign-up",
+      "hint": "Lets anyone who can reach the server create an account. Otherwise the owner invites people.",
+      "required": false,
+      "default": false,
+      "env_variable": "OPENTODO_ALLOW_SIGNUP"
+    },
+    {
+      "type": "text",
+      "label": "Trusted proxies",
+      "hint": "Reverse proxies whose X-Forwarded-For is trusted for the visitor's address, such as cloudflare or 192.0.2.0/24. Leave empty unless every request comes through them.",
+      "required": false,
+      "env_variable": "OPENTODO_TRUSTED_PROXIES"
+    }
+  ],
+  "supported_architectures": [
+    "arm64",
+    "amd64"
+  ],
+  "created_at": 1792195200000,
+  "updated_at": 1792195200000,
+  "min_tipi_version": "4.7.0"
+}

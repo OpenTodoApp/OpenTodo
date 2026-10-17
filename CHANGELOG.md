@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Templates for eight more platforms.** CasaOS and ZimaOS, Cosmos Cloud, Dokploy, Easypanel, Portainer, Runtipi, TrueNAS Community Edition and Umbrel each get a template in their own format, checked by `make check`, with a guide covering install, settings, data permissions, https, updates and backups. Until a platform's catalog lists OpenTodo, the guide shows how to install it as a custom app; Portainer and Dokploy can already load the templates from this repository by URL. Stores that refuse moving tags name the release version (Umbrel also its digest, refreshed by `scripts/deploy/pin.mjs`); the others use `stable`. ([CasaOS](docs/self-hosting/casaos.md), [Cosmos](docs/self-hosting/cosmos.md), [Dokploy](docs/self-hosting/dokploy.md), [Easypanel](docs/self-hosting/easypanel.md), [Portainer](docs/self-hosting/portainer.md), [Runtipi](docs/self-hosting/runtipi.md), [TrueNAS](docs/self-hosting/truenas.md), [Umbrel](docs/self-hosting/umbrel.md))
+
 ### Changed
 
 - **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
