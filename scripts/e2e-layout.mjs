@@ -745,21 +745,43 @@ function overlayGeometry(el) {
 // is run once more from a fresh browser; a second loss is reported as usual.
 const ENGINE_DB_LOST = /Connection to Indexed Database server lost|unknown transient reason/i
 
+// A combination that stops making progress (WebKit's web process can stall inside an
+// evaluate or a close under load, which no Playwright timeout covers) is stopped after
+// COMBO_TIMEOUT_MS and reported with the step it was on, instead of holding the job
+// until CI cancels it with no report. WebKit gets one more run, as above.
+const COMBO_TIMEOUT_MS = Number(process.env.COMBO_TIMEOUT_MS ?? 8 * 60 * 1000)
+
 async function runCombo(engine, width, theme, ids, attempt = 1) {
   const mine = []
-  const crashed = await runComboOnce(engine, width, theme, ids, mine)
-  if (crashed && attempt === 1) {
+  const run = { browser: null, step: 'launching the browser' }
+  let timer
+  const stalled = new Promise((resolve) => { timer = setTimeout(() => resolve('stalled'), COMBO_TIMEOUT_MS) })
+  const outcome = await Promise.race([runComboOnce(engine, width, theme, ids, mine, run), stalled])
+  clearTimeout(timer)
+  if (outcome === 'stalled') {
+    const tag = `${engine} ${width}px ${theme}`
+    run.browser?.close().catch(() => {})
+    if (engine === 'webkit' && attempt === 1) {
+      log(`  ${tag}: stalled at ${run.step} for ${COMBO_TIMEOUT_MS / 60000} min; running this combination again`)
+      return runCombo(engine, width, theme, ids, 2)
+    }
+    failures.push(`[${tag}] stalled for ${COMBO_TIMEOUT_MS / 60000} min at ${run.step}`)
+    return
+  }
+  if (outcome && attempt === 1) {
     log(`  ${engine} ${width}px ${theme}: WebKit lost its IndexedDB server; running this combination again`)
     return runCombo(engine, width, theme, ids, 2)
   }
   failures.push(...mine)
 }
 
-async function runComboOnce(engine, width, theme, ids, failures) {
+async function runComboOnce(engine, width, theme, ids, failures, run) {
   const tag = `${engine} ${width}px ${theme}`
   const launcher = pw[engine]
   const exe = engine === 'chromium' ? process.env.CHROMIUM_PATH : engine === 'webkit' ? process.env.WEBKIT_PATH : undefined
   const browser = await launcher.launch(exe ? { executablePath: exe } : {})
+  run.browser = browser
+  run.step = 'signing in'
   // bypassCSP lets the check inject axe-core into the app's strict Content-Security-Policy.
   const ctxOpts = { viewport: { width, height: HEIGHTS[width] ?? 900 }, colorScheme: theme, hasTouch: true, isMobile: true, deviceScaleFactor: 1, locale: 'en-GB', timezoneId: 'UTC', bypassCSP: true }
   const fail = async (page, screen, overlay, msg) => {
@@ -788,6 +810,7 @@ async function runComboOnce(engine, width, theme, ids, failures) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
       if (s.widths && !s.widths.includes(width)) continue
+      run.step = `screen ${s.name}`
       const p = s.anon ? await anonCtx.newPage() : page
       // A screen that does not load is retried once (a slow CI machine); the second
       // failure is reported with whether the session was still valid.
@@ -833,6 +856,7 @@ async function runComboOnce(engine, width, theme, ids, failures) {
       }
       await shot(p, s.name)
       for (const o of s.overlays ?? []) {
+        run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()
           const res = await OVERLAYS[o](p, { width })
@@ -869,6 +893,7 @@ async function runComboOnce(engine, width, theme, ids, failures) {
   } catch (e) {
     failures.push(`[${tag}] aborted: ${e.message.split('\n')[0]}`)
   } finally {
+    run.step = 'closing the browser'
     await browser.close()
   }
   log(`  ${tag}: ${checked} screens and overlays checked`)
@@ -1002,3 +1027,5 @@ if (failures.length) {
   process.exit(1)
 }
 log('\nLAYOUT OK')
+// A stalled browser that was given up on above can keep the event loop alive.
+process.exit(0)
