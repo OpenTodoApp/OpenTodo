@@ -28,14 +28,14 @@ const oidcCallbackPath = "/api/v1/auth/oidc/callback"
 // default one from the configuration when it is absent.
 func WithOIDC(svc *oidc.Service) Option { return func(s *Server) { s.oidc = svc } }
 
-func (s *Server) registerOIDCRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/auth/oidc/start", s.handleOIDCStart)
-	mux.HandleFunc("GET "+oidcCallbackPath, s.handleOIDCCallback)
-	mux.Handle("GET /api/v1/settings/oidc", s.requireAuth(s.handleGetOIDCSettings))
-	mux.Handle("PUT /api/v1/settings/oidc", s.requireAuth(s.requireFresh(s.handlePutOIDCSettings)))
-	mux.Handle("POST /api/v1/settings/oidc/test", s.requireAuth(s.handleTestOIDC))
-	mux.Handle("GET /api/v1/me/identities", s.requireAuth(s.handleListIdentities))
-	mux.Handle("DELETE /api/v1/me/identities/{id}", s.requireAuth(s.handleUnlinkIdentity))
+func (s *Server) registerOIDCRoutes(mux *routes) {
+	mux.handle("GET /api/v1/auth/oidc/start", public("single sign-on starts before there is a session").demoDenied(), s.handleOIDCStart)
+	mux.handle("GET "+oidcCallbackPath, public("the provider redirects the browser back here").demoDenied(), s.handleOIDCCallback)
+	mux.handle("GET /api/v1/settings/oidc", ownerOnly("manage single sign-on"), s.handleGetOIDCSettings)
+	mux.handle("PUT /api/v1/settings/oidc", ownerOnly("manage single sign-on").sensitive().demoDenied(), s.handlePutOIDCSettings)
+	mux.handle("POST /api/v1/settings/oidc/test", ownerOnly("manage single sign-on").demoDenied(), s.handleTestOIDC)
+	mux.handle("GET /api/v1/me/identities", signedIn, s.handleListIdentities)
+	mux.handle("DELETE /api/v1/me/identities/{id}", signedIn.credential().demoDenied(), s.handleUnlinkIdentity)
 }
 
 // oidcRedirectURI is the callback URL registered at the provider (design D5):
@@ -181,8 +181,14 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		s.finishOIDCLink(w, r, c, f, id)
 		return
 	}
-	u, _, _, err := s.auth.MatchOrProvision(ctx, id, c.AllowProvision, c.Name())
+	u, _, linked, err := s.auth.MatchOrProvision(ctx, id, c.AllowProvision, c.Name())
 	switch {
+	case errors.Is(err, auth.ErrLinkRequiresSession):
+		// The owner, admins and accounts with a second factor or passkeys link
+		// only from Settings while signed in (route-authorization-policy).
+		s.audit.Record(ctx, audit.LoginFailed("", "", "oidc_link_required"))
+		s.oidcFail(w, r, "/", "oidc_link_required")
+		return
 	case errors.Is(err, auth.ErrEmailUnverified):
 		s.audit.Record(ctx, audit.LoginFailed("", "", "oidc_email_unverified"))
 		s.oidcFail(w, r, "/", "oidc_email_unverified")
@@ -204,6 +210,22 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	// second factor, so an enrolled account is not asked for a code (mfa-totp
 	// D5, oidc-login task 5.1). The owner's enrolment policy still applies to
 	// the session like any other (requireAuth restricts it until enrolment).
+	// An identity linked by email in this very sign-in never stands in for an
+	// account's own factor: MatchOrProvision refuses such accounts, and should
+	// one have gained a factor meanwhile, the sign-in is refused here too
+	// (route-authorization-policy).
+	if linked {
+		has, err := s.auth.HasLocalMFA(ctx, u.ID)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if has {
+			s.audit.Record(ctx, audit.LoginFailed(u.ID, u.Email, "oidc_link_required"))
+			s.oidcFail(w, r, "/", "oidc_link_required")
+			return
+		}
+	}
 	secret, ok := s.issueSession(w, r, u, true)
 	if !ok {
 		return
@@ -270,15 +292,6 @@ func (s *Server) providerLogoutURL(r *http.Request, idToken string) string {
 
 // ---- owner settings ----
 
-func (s *Server) requireOIDCOwner(w http.ResponseWriter, r *http.Request) *auth.User {
-	u := userFrom(r.Context())
-	if !s.auth.IsOwner(u) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage single sign-on")
-		return nil
-	}
-	return u
-}
-
 func (s *Server) oidcSettingsJSON(r *http.Request, c oidc.Config) map[string]any {
 	return map[string]any{
 		"enabled":           c.Enabled(),
@@ -298,9 +311,6 @@ func (s *Server) oidcSettingsJSON(r *http.Request, c oidc.Config) map[string]any
 }
 
 func (s *Server) handleGetOIDCSettings(w http.ResponseWriter, r *http.Request) {
-	if s.requireOIDCOwner(w, r) == nil {
-		return
-	}
 	c, err := s.oidc.Config(r.Context())
 	if err != nil {
 		s.internal(w, err)
@@ -310,10 +320,7 @@ func (s *Server) handleGetOIDCSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
-	u := s.requireOIDCOwner(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	var in struct {
 		Issuer         *string `json:"issuer"`
 		ClientID       *string `json:"clientId"`
@@ -356,9 +363,6 @@ func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleTestOIDC(w http.ResponseWriter, r *http.Request) {
-	if s.requireOIDCOwner(w, r) == nil {
-		return
-	}
 	var in struct {
 		Issuer string `json:"issuer"`
 	}

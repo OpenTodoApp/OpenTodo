@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/mail"
 	"strings"
 
@@ -21,6 +22,10 @@ var (
 	ErrEmailUnverified = errors.New("the provider did not confirm a verified email address for this identity")
 	ErrLastCredential  = errors.New("this is the last way to sign in to the account; add another before removing it")
 	ErrSSORequired     = errors.New("this server requires signing in with single sign-on")
+	// ErrLinkRequiresSession refuses to link an identity by email to an owner,
+	// an admin or an account with a second factor or passkeys: such an account
+	// links only from a signed-in session (route-authorization-policy, SEC-4).
+	ErrLinkRequiresSession = errors.New("this account links single sign-on only from Settings while signed in")
 )
 
 // ExternalIdentity is what a verified identity token says about the user.
@@ -77,7 +82,9 @@ func identityUser(ctx context.Context, q rowQuerier, issuer, subject string) (*U
 
 // MatchOrProvision maps a verified identity to an account (design D3):
 //  1. a linked (issuer, subject) signs in to its account, whatever its email is now;
-//  2. otherwise a verified email equal to an account's email links to it;
+//  2. otherwise a verified email equal to an account's email links to it, unless
+//     the account is the owner or an admin or has a second factor or passkeys
+//     (ErrLinkRequiresSession: it links only from a signed-in session);
 //  3. otherwise a member account is created when open sign-up or allowProvision allows it;
 //  4. otherwise ErrSignupClosed.
 //
@@ -115,6 +122,13 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		Scan(&existing.ID, &existing.Email, &existing.Name, &existing.Role, &existing.CreatedAt)
 	switch {
 	case err == nil:
+		guarded, gerr := linkGuarded(ctx, tx, &existing)
+		if gerr != nil {
+			return nil, false, false, gerr
+		}
+		if guarded {
+			return nil, false, false, ErrLinkRequiresSession
+		}
 		u = &existing
 	case errors.Is(err, sql.ErrNoRows):
 		if !s.allowSignup && !allowProvision {
@@ -142,6 +156,32 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		return nil, false, false, err
 	}
 	return u, created, true, tx.Commit()
+}
+
+// linkGuarded reports whether an account must never be linked to an identity
+// by its email alone: the owner and admins, and accounts with a confirmed
+// second factor or a passkey, whose sign-in would otherwise skip that factor.
+func linkGuarded(ctx context.Context, q rowQuerier, u *User) (bool, error) {
+	if u.Role == RoleOwner || u.Role == RoleAdmin {
+		return true, nil
+	}
+	return hasLocalMFA(ctx, q, u.ID)
+}
+
+// hasLocalMFA reports whether the account has a confirmed TOTP factor or a passkey.
+func hasLocalMFA(ctx context.Context, q rowQuerier, userID string) (bool, error) {
+	var n int
+	err := q.QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM mfa_totp WHERE user_id = ? AND confirmed_at IS NOT NULL)
+		+ (SELECT COUNT(*) FROM passkeys WHERE user_id = ?)`, userID, userID).Scan(&n)
+	if err != nil {
+		return false, fmt.Errorf("local factors: %w", err)
+	}
+	return n > 0, nil
+}
+
+// HasLocalMFA reports whether the account has a confirmed TOTP factor or a passkey.
+func (s *Service) HasLocalMFA(ctx context.Context, userID string) (bool, error) {
+	return hasLocalMFA(ctx, s.db, userID)
 }
 
 func (s *Service) insertIdentity(ctx context.Context, tx *sql.Tx, userID string, id ExternalIdentity, now int64, provider string) error {

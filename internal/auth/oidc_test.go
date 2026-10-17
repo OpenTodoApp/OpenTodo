@@ -17,9 +17,16 @@ func TestOIDCSubjectFirstMatching(t *testing.T) {
 	s, db := newService(t, false)
 	owner := mustOwner(t, s)
 
-	// First time: the verified email links the identity to the owner.
+	// First time: the verified email never links to the owner
+	// (route-authorization-policy); the owner links from a signed-in session.
+	if _, _, _, err := s.MatchOrProvision(ctx, ext("sub-owner", "OWNER@example.com", true), false, "Home SSO"); !errors.Is(err, ErrLinkRequiresSession) {
+		t.Fatalf("first sign-in of the owner by email: %v", err)
+	}
+	if already, err := s.LinkIdentity(ctx, owner.ID, ext("sub-owner", "OWNER@example.com", true), "Home SSO"); err != nil || already {
+		t.Fatalf("link from the session = %v %v", already, err)
+	}
 	u, created, linked, err := s.MatchOrProvision(ctx, ext("sub-owner", "OWNER@example.com", true), false, "Home SSO")
-	if err != nil || u.ID != owner.ID || created || !linked {
+	if err != nil || u.ID != owner.ID || created || linked {
 		t.Fatalf("first sign-in = %+v created=%v linked=%v err=%v", u, created, linked, err)
 	}
 	if n := countRows(t, db, "SELECT COUNT(*) FROM audit_events WHERE name = 'identity.linked' AND actor_id = ?", owner.ID); n != 1 {
@@ -53,6 +60,46 @@ func TestOIDCSubjectFirstMatching(t *testing.T) {
 	}
 	if already, err := s.LinkIdentity(ctx, owner.ID, ext("sub-owner-2", "", false), "Home SSO"); err != nil || already {
 		t.Fatalf("link second identity = %v %v", already, err)
+	}
+}
+
+// TestOIDCEmailNeverLinksGuardedAccounts (route-authorization-policy, SEC-4):
+// a verified email links a plain member, but never the owner, an admin or an
+// account with a second factor or a passkey; nothing is written for those.
+func TestOIDCEmailNeverLinksGuardedAccounts(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	owner := mustOwner(t, s)
+	admin := invited(t, s, owner, "admin@example.com")
+	if _, err := db.Exec("UPDATE users SET role = 'admin' WHERE id = ?", admin.ID); err != nil {
+		t.Fatal(err)
+	}
+	totp := invited(t, s, owner, "totp@example.com")
+	if _, err := db.Exec("INSERT INTO mfa_totp(user_id, secret, created_at, confirmed_at) VALUES(?, 'x', 1, 1)", totp.ID); err != nil {
+		t.Fatal(err)
+	}
+	pk := invited(t, s, owner, "passkey@example.com")
+	if _, err := db.Exec("INSERT INTO passkeys(id, user_id, name, credential_id, public_key, alg, created_at) VALUES('pk1', ?, 'key', x'01', x'02', -7, 1)", pk.ID); err != nil {
+		t.Fatal(err)
+	}
+	plain := invited(t, s, owner, "plain@example.com")
+	for _, email := range []string{"owner@example.com", "admin@example.com", "totp@example.com", "passkey@example.com"} {
+		if _, _, _, err := s.MatchOrProvision(ctx, ext("sub-"+email, email, true), true, "SSO"); !errors.Is(err, ErrLinkRequiresSession) {
+			t.Errorf("%s linked by email: %v", email, err)
+		}
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM identities"); n != 0 {
+		t.Fatalf("identities written for guarded accounts: %d", n)
+	}
+	u, created, linked, err := s.MatchOrProvision(ctx, ext("sub-plain", "plain@example.com", true), false, "SSO")
+	if err != nil || u.ID != plain.ID || created || !linked {
+		t.Fatalf("plain member = %+v %v %v %v", u, created, linked, err)
+	}
+	if has, err := s.HasLocalMFA(ctx, plain.ID); err != nil || has {
+		t.Fatalf("plain member local factors = %v %v", has, err)
+	}
+	if has, err := s.HasLocalMFA(ctx, pk.ID); err != nil || !has {
+		t.Fatalf("passkey member local factors = %v %v", has, err)
 	}
 }
 
@@ -153,7 +200,7 @@ func TestUnlinkRules(t *testing.T) {
 	}
 	// The owner has a password: unlinking is fine outside SSO-only and, as
 	// break-glass, inside it too.
-	if _, _, _, err := s.MatchOrProvision(ctx, ext("o", owner.Email, true), false, "SSO"); err != nil {
+	if _, err := s.LinkIdentity(ctx, owner.ID, ext("o", owner.Email, true), "SSO"); err != nil {
 		t.Fatal(err)
 	}
 	sso = true

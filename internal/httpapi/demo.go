@@ -20,11 +20,11 @@ func WithDemo(d *demo.Service) Option { return func(s *Server) { s.demo = d } }
 // unauthenticated by design (the visitor has no account yet); a single-use
 // creation token from auth/status, the same-origin check and the limits in
 // demo.CreateSandbox guard it (demo-sandboxes D2, D3).
-func (s *Server) registerDemoRoutes(mux *http.ServeMux) {
+func (s *Server) registerDemoRoutes(mux *routes) {
 	if s.demo == nil {
 		return
 	}
-	mux.HandleFunc("POST /api/v1/demo/sandbox", s.handleDemoSandbox)
+	mux.handle("POST /api/v1/demo/sandbox", public("demo visitors have no account yet; a single-use token and the origin check guard it"), s.handleDemoSandbox)
 }
 
 func (s *Server) handleDemoSandbox(w http.ResponseWriter, r *http.Request) {
@@ -146,6 +146,7 @@ var demoRules = []demoRule{
 	{"Password resets", false, prefix("/api/v1/auth/password-reset")},
 	{"Sign-up", false, prefix("/api/v1/auth/verify")},
 	{"Changing the password", true, exact("/api/v1/me/password")},
+	{"Signing out everywhere", true, exact("/api/v1/me/sign-out-everywhere")},
 	{"Linked accounts", true, prefix("/api/v1/me/identities")},
 	{"API tokens", true, prefix("/api/v1/tokens")},
 	{"Passkeys", true, prefix("/api/v1/passkeys")},

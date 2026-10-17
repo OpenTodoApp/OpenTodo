@@ -20,17 +20,17 @@ func WithWebhooks(svc *webhook.Service) Option {
 
 // registerWebhookRoutes adds the webhook routes. Every route requires
 // authentication and is scoped to the caller; the policy route is owner-only.
-func (s *Server) registerWebhookRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/webhooks", s.requireAuth(s.withHooks(s.handleListWebhooks)))
-	mux.Handle("POST /api/v1/webhooks", s.requireAuth(s.withHooks(s.handleCreateWebhook)))
-	mux.Handle("GET /api/v1/webhooks/{id}", s.requireAuth(s.withHooks(s.handleGetWebhook)))
-	mux.Handle("PATCH /api/v1/webhooks/{id}", s.requireAuth(s.withHooks(s.handlePatchWebhook)))
-	mux.Handle("DELETE /api/v1/webhooks/{id}", s.requireAuth(s.withHooks(s.handleDeleteWebhook)))
-	mux.Handle("POST /api/v1/webhooks/{id}/test", s.requireAuth(s.withHooks(s.handleTestWebhook)))
-	mux.Handle("GET /api/v1/webhooks/{id}/deliveries", s.requireAuth(s.withHooks(s.handleListDeliveries)))
-	mux.Handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", s.requireAuth(s.withHooks(s.handleRedeliver)))
-	mux.Handle("GET /api/v1/settings/webhooks", s.requireAuth(s.withHooks(s.handleGetWebhookPolicy)))
-	mux.Handle("PUT /api/v1/settings/webhooks", s.requireAuth(s.withHooks(s.handlePutWebhookPolicy)))
+func (s *Server) registerWebhookRoutes(mux *routes) {
+	mux.handle("GET /api/v1/webhooks", signedIn, s.withHooks(s.handleListWebhooks))
+	mux.handle("POST /api/v1/webhooks", signedIn.demoDenied(), s.withHooks(s.handleCreateWebhook))
+	mux.handle("GET /api/v1/webhooks/{id}", signedIn, s.withHooks(s.handleGetWebhook))
+	mux.handle("PATCH /api/v1/webhooks/{id}", signedIn.demoDenied(), s.withHooks(s.handlePatchWebhook))
+	mux.handle("DELETE /api/v1/webhooks/{id}", signedIn.demoDenied(), s.withHooks(s.handleDeleteWebhook))
+	mux.handle("POST /api/v1/webhooks/{id}/test", signedIn.demoDenied(), s.withHooks(s.handleTestWebhook))
+	mux.handle("GET /api/v1/webhooks/{id}/deliveries", signedIn, s.withHooks(s.handleListDeliveries))
+	mux.handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", signedIn.demoDenied(), s.withHooks(s.handleRedeliver))
+	mux.handle("GET /api/v1/settings/webhooks", ownerOnly("manage the webhook policy"), s.withHooks(s.handleGetWebhookPolicy))
+	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").demoDenied(), s.withHooks(s.handlePutWebhookPolicy))
 }
 
 func (s *Server) withHooks(next http.HandlerFunc) http.HandlerFunc {
@@ -190,26 +190,11 @@ func (s *Server) handleRedeliver(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, map[string]any{"delivery": d})
 }
 
-// requireOwner answers 403 unless the signed-in user is the owner.
-func requireOwner(w http.ResponseWriter, r *http.Request, what string) bool {
-	if u := userFrom(r.Context()); u == nil || u.Role != "owner" {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage "+what)
-		return false
-	}
-	return true
-}
-
 func (s *Server) handleGetWebhookPolicy(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the webhook policy") {
-		return
-	}
 	writeJSON(w, http.StatusOK, map[string]any{"allowPrivate": s.hooks.AllowPrivate(r.Context())})
 }
 
 func (s *Server) handlePutWebhookPolicy(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the webhook policy") {
-		return
-	}
 	var in struct {
 		AllowPrivate *bool `json:"allowPrivate"`
 	}

@@ -25,11 +25,11 @@ const MinClientVersion = 1
 const purgeNotice = "Superseded content operations were deleted from the server. Backups made before this point, " +
 	"and copies of the database taken earlier, may still contain plaintext; delete them if that matters to you."
 
-func (s *Server) registerEncryptionRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/encryption/keys", s.requireAuth(s.handleGetEncryptionKeys))
-	mux.Handle("PUT /api/v1/encryption/keys", s.requireAuth(s.handlePutEncryptionKeys))
-	mux.Handle("DELETE /api/v1/encryption/keys", s.requireAuth(s.requireFresh(s.handleDeleteEncryptionKeys)))
-	mux.Handle("POST /api/v1/encryption/purge-history", s.requireAuth(s.handlePurgeEncryptionHistory))
+func (s *Server) registerEncryptionRoutes(mux *routes) {
+	mux.handle("GET /api/v1/encryption/keys", signedIn, s.handleGetEncryptionKeys)
+	mux.handle("PUT /api/v1/encryption/keys", signedIn.credential().demoDenied(), s.handlePutEncryptionKeys)
+	mux.handle("DELETE /api/v1/encryption/keys", signedIn.sensitive().demoDenied(), s.handleDeleteEncryptionKeys)
+	mux.handle("POST /api/v1/encryption/purge-history", signedIn.demoDenied(), s.handlePurgeEncryptionHistory)
 }
 
 func (s *Server) keys() *e2ee.Store { return e2ee.NewStore(s.sync.DB()) }

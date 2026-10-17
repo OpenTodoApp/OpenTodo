@@ -17,7 +17,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 ## Account
 
 - **Profile**: your initials, name, email and role.
-- **Session**: **Sign out of this device** removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm.
+- **Session**: **Sign out of this device** removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm. **Sign out everywhere** signs out every device and revokes your API tokens and app passwords.
 - **Password**: **Change password** opens the form. See [Account security](account-security.md#change-your-password).
 - **Two-factor authentication**: a code from your phone on top of your password. The badge shows whether it's on, and the card warns when only a few recovery codes remain. See [Two-factor authentication](two-factor.md).
 - **Passkeys**: sign in with your fingerprint, face or device PIN. See [Account security](account-security.md#sign-in-with-a-passkey).

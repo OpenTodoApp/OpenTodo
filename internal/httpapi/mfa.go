@@ -17,25 +17,25 @@ import (
 const trustCookie = "ot_trust"
 
 // FreshWindow is how recently a cookie session must have proved identity to use
-// a sensitive route (design D4).
+// a sensitive route (design D4); routes ask for it with routePolicy.recent.
 const FreshWindow = 10 * time.Minute
 
-func (s *Server) registerMFARoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v1/auth/mfa", s.handleMFALogin)
-	mux.Handle("POST /api/v1/auth/reauth", s.requireAuth(s.handleReauth))
+func (s *Server) registerMFARoutes(mux *routes) {
+	mux.handle("POST /api/v1/auth/mfa", public("the second sign-in step carries its challenge"), s.handleMFALogin)
+	mux.handle("POST /api/v1/auth/reauth", signedIn, s.handleReauth)
 
-	mux.Handle("GET /api/v1/mfa", s.requireAuth(s.handleMFAStatus))
-	mux.Handle("POST /api/v1/mfa/totp/enroll", s.requireAuth(s.handleMFAEnroll))
-	mux.Handle("POST /api/v1/mfa/totp/confirm", s.requireAuth(s.handleMFAConfirm))
-	mux.Handle("DELETE /api/v1/mfa/totp", s.requireAuth(s.requireFresh(s.handleMFADisable)))
-	mux.Handle("POST /api/v1/mfa/recovery-codes/regenerate", s.requireAuth(s.requireFresh(s.handleMFARegenerate)))
-	mux.Handle("GET /api/v1/mfa/trusted-devices", s.requireAuth(s.handleListTrustedDevices))
-	mux.Handle("DELETE /api/v1/mfa/trusted-devices", s.requireAuth(s.handleForgetTrustedDevices))
-	mux.Handle("DELETE /api/v1/mfa/trusted-devices/{id}", s.requireAuth(s.handleForgetTrustedDevice))
+	mux.handle("GET /api/v1/mfa", signedIn, s.handleMFAStatus)
+	mux.handle("POST /api/v1/mfa/totp/enroll", signedIn.credential().demoDenied(), s.handleMFAEnroll)
+	mux.handle("POST /api/v1/mfa/totp/confirm", signedIn.credential().demoDenied(), s.handleMFAConfirm)
+	mux.handle("DELETE /api/v1/mfa/totp", signedIn.sensitive().demoDenied(), s.handleMFADisable)
+	mux.handle("POST /api/v1/mfa/recovery-codes/regenerate", signedIn.sensitive().demoDenied(), s.handleMFARegenerate)
+	mux.handle("GET /api/v1/mfa/trusted-devices", signedIn, s.handleListTrustedDevices)
+	mux.handle("DELETE /api/v1/mfa/trusted-devices", signedIn.demoDenied(), s.handleForgetTrustedDevices)
+	mux.handle("DELETE /api/v1/mfa/trusted-devices/{id}", signedIn.demoDenied(), s.handleForgetTrustedDevice)
 
-	mux.Handle("GET /api/v1/settings/mfa", s.requireAuth(s.handleGetMFAPolicy))
-	mux.Handle("PUT /api/v1/settings/mfa", s.requireAuth(s.requireFresh(s.handlePutMFAPolicy)))
-	mux.Handle("POST /api/v1/members/{id}/mfa/reset", s.requireAuth(s.requireFresh(s.handleMFAReset)))
+	mux.handle("GET /api/v1/settings/mfa", ownerOnly("manage the two-factor policy and resets"), s.handleGetMFAPolicy)
+	mux.handle("PUT /api/v1/settings/mfa", ownerOnly("manage the two-factor policy and resets").sensitive().demoDenied(), s.handlePutMFAPolicy)
+	mux.handle("POST /api/v1/members/{id}/mfa/reset", ownerOnly("manage the two-factor policy and resets").sensitive().demoDenied(), s.handleMFAReset)
 }
 
 // allowedWhileRestricted lists what an enrolment-restricted session may still
@@ -51,19 +51,6 @@ func allowedWhileRestricted(r *http.Request) bool {
 		return true
 	}
 	return false
-}
-
-// requireFresh wraps a sensitive route: a cookie session must have proved its
-// identity within FreshWindow, otherwise 403 reauth_required. Bearer-token
-// requests have no session and are never challenged.
-func (s *Server) requireFresh(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if sess := sessionFrom(r.Context()); sess != nil && !sess.FreshWithin(FreshWindow, s.auth.Now()) {
-			writeError(w, http.StatusForbidden, "reauth_required", "confirm your password or a code to continue")
-			return
-		}
-		next(w, r)
-	}
 }
 
 // secondStep handles an enrolled account after its first factor: a remembered
@@ -336,20 +323,7 @@ func (s *Server) handleForgetTrustedDevice(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// requireMFAOwner answers 403 unless the signed-in user is the owner.
-func (s *Server) requireMFAOwner(w http.ResponseWriter, r *http.Request) *auth.User {
-	u := userFrom(r.Context())
-	if !s.auth.IsOwner(u) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage the two-factor policy and resets")
-		return nil
-	}
-	return u
-}
-
 func (s *Server) handleGetMFAPolicy(w http.ResponseWriter, r *http.Request) {
-	if s.requireMFAOwner(w, r) == nil {
-		return
-	}
 	p, err := s.auth.MFAPolicy(r.Context())
 	if err != nil {
 		s.internal(w, err)
@@ -359,10 +333,7 @@ func (s *Server) handleGetMFAPolicy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutMFAPolicy(w http.ResponseWriter, r *http.Request) {
-	u := s.requireMFAOwner(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	var in struct {
 		Required string `json:"required"`
 	}
@@ -384,10 +355,7 @@ func (s *Server) handlePutMFAPolicy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleMFAReset(w http.ResponseWriter, r *http.Request) {
-	u := s.requireMFAOwner(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	err := s.auth.ResetMFA(r.Context(), u.ID, r.PathValue("id"))
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "member not found")

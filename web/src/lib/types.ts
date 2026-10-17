@@ -1026,6 +1026,7 @@ export const AUDIT_EVENT_NAMES = [
   'backup.created', 'backup.restored', 'backup.restore_requested', 'backup.restore_failed', 'backup.safety_copy_deleted',
   'user.deactivated', 'user.reactivated', 'user.deleted',
   'password.reset_issued', 'password.reset_completed', 'password.changed',
+  'sessions.revoked',
   'owner.transferred',
   'agent.write',
   'email.sent',

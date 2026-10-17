@@ -22,9 +22,13 @@ Two options:
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
 - **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
-A token has a **scope**: `full` (the default), `read` or `agent`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
+A token has a **scope**: `full` (the default), `read`, `agent` or `admin`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
 An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, labels and comments) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+
+### Token scopes
+
+A `full` token can do everything its account can **except** the *credential* routes (marked **credential** in the tables below): turning the second factor on or off, recovery codes, passkeys, creating API tokens and app passwords, unlinking a single sign-on identity, the own password, invitations, user administration (roles, deactivation, deletion, reset links, ownership transfer, second-factor resets), the two-factor policy, single sign-on settings, the encryption key record, and the server settings that hold secrets (outgoing email, backups, the assistant's provider key). There a `full` token gets 403 `insufficient_scope`; a session (recently confirmed where the route is also *fresh*) or an **`admin`** token is accepted. Reading those settings and lists, revoking tokens and app passwords, and forgetting remembered browsers stay open to `full` tokens. An `admin` token can do everything a `full` token can plus the credential routes, and is never challenged for freshness. It can only be created from a signed-in session that confirmed the password or a code in the last ten minutes (Settings → Integrations → API tokens → **New token**, access **Admin**, or `POST /api/v1/tokens` with `{"scope":"admin"}` from that session); a token, even an `admin` one, cannot create an `admin` token (403 `session_required`). Like `agent`, it is stored as a `read` scope plus a marker, so a downgraded server treats it as read-only. Tokens created before this rule keep their scope: a `full` script that changed credentials or administered users needs an `admin` token now.
 
 `GET /api/v1/me` tells a client which credential it is using: see [Credential introspection](#credential-introspection).
 
@@ -49,7 +53,7 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 
 ### Endpoints
 
-Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route (see [Two-factor authentication](#two-factor-authentication)); **cookie** = a browser session. Every `/api/v1` route not listed as public requires authentication.
+Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route for sessions (see [Two-factor authentication](#two-factor-authentication)); **credential** = a session or an `admin` token, never a `full` one (see [token scopes](#token-scopes)); **cookie** = a browser session. Every route's policy is declared where it is registered (`internal/httpapi/policy.go`) and checked by a test. Every `/api/v1` route not listed as public requires authentication.
 
 #### Health and authentication
 
@@ -80,33 +84,34 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
-| POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
+| POST | `/api/v1/me/password` | credential, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
 | PUT | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes: boolean}` → same shape; recorded as `settings.changed` (`agent.writes`); anything else → 400 `invalid_input`; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/email-digest` | session or `full` token | your weekly email digest settings, see [Weekly digest](#weekly-digest); `read` and `agent` tokens → 403 `insufficient_scope` |
 | PUT | `/api/v1/me/email-digest` | session or `full` token | any of `{enabled, weekday, hour, timeZone, language}` → the same shape; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
-| DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
+| DELETE | `/api/v1/me/identities/{id}` | credential | 204, or 409 `last_credential` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
-| POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, `read` or `agent`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
+| POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
-| POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
-| POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
+| POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; a token gets 403 `session_required` |
+| POST | `/api/v1/passkeys/register/options` | credential | → `{publicKey}` creation options |
+| POST | `/api/v1/passkeys/register` | credential | `{name, credential}` → 201 `{passkey}` |
 | GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
-| PATCH | `/api/v1/passkeys/{id}` | yes | `{name}` → `{passkey}` |
-| DELETE | `/api/v1/passkeys/{id}` | yes | 204 |
+| PATCH | `/api/v1/passkeys/{id}` | credential | `{name}` → `{passkey}` |
+| DELETE | `/api/v1/passkeys/{id}` | credential | 204 |
 | GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
-| POST | `/api/v1/mfa/totp/enroll` | yes | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
-| POST | `/api/v1/mfa/totp/confirm` | yes | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
-| DELETE | `/api/v1/mfa/totp` | yes, fresh | turn the second factor off → 204 |
-| POST | `/api/v1/mfa/recovery-codes/regenerate` | yes, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
+| POST | `/api/v1/mfa/totp/enroll` | credential | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
+| POST | `/api/v1/mfa/totp/confirm` | credential | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
+| DELETE | `/api/v1/mfa/totp` | credential, fresh | turn the second factor off → 204 |
+| POST | `/api/v1/mfa/recovery-codes/regenerate` | credential, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
 | GET | `/api/v1/mfa/trusted-devices` | yes | `{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}` |
 | DELETE | `/api/v1/mfa/trusted-devices` | yes | forget every remembered browser → 204 |
 | DELETE | `/api/v1/mfa/trusted-devices/{id}` | yes | forget one → 204 |
 | GET | `/api/v1/encryption/keys` | yes | `{keys}`: the wrapped key record, or 404 `encryption_disabled`; see [End-to-end encryption](#end-to-end-encryption) |
-| PUT | `/api/v1/encryption/keys` | yes (fresh when replacing) | create (`version: 1`) or replace (`version` = stored + 1) the key record → 201/200 `{keys}`; 409 `encryption_conflict` |
-| DELETE | `/api/v1/encryption/keys` | yes, fresh | 204; turns encryption off for the account (404 `encryption_disabled` without a record) |
+| PUT | `/api/v1/encryption/keys` | credential (fresh when replacing) | create (`version: 1`) or replace (`version` = stored + 1) the key record → 201/200 `{keys}`; 409 `encryption_conflict` |
+| DELETE | `/api/v1/encryption/keys` | credential, fresh | 204; turns encryption off for the account (404 `encryption_disabled` without a record) |
 | POST | `/api/v1/encryption/purge-history` | yes | → `{purged, notice}`; deletes superseded content operations; 409 `encryption_disabled` |
 | GET | `/api/v1/notifications` | yes | your in-app notifications and the unread count, see [Assignment and notifications](#assignment-and-notifications) |
 | POST | `/api/v1/notifications/{id}/read` | yes | mark one read → 204 |
@@ -177,7 +182,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/webhooks/{id}/deliveries` | yes | `{deliveries:[…]}`, newest 100 |
 | POST | `/api/v1/webhooks/{id}/deliveries/{did}/redeliver` | yes | queue the same body with a new id → 202 `{delivery}` |
 | GET | `/api/v1/app-passwords` | yes | `{appPasswords:[…]}`, see [CalDAV and app passwords](#caldav-and-app-passwords) |
-| POST | `/api/v1/app-passwords` | yes, fresh | `{name}` → 201 `{appPassword, secret}` (secret shown once) |
+| POST | `/api/v1/app-passwords` | credential, fresh | `{name}` → 201 `{appPassword, secret}` (secret shown once) |
 | DELETE | `/api/v1/app-passwords/{id}` | yes | revoke → 204 |
 | GET | `/api/v1/email-inbox` | yes | your email-to-task address and settings, see [Email to task](#email-to-task) |
 | PATCH | `/api/v1/email-inbox` | yes | `{enabled?, allowlist?}` → the same shape |
@@ -190,23 +195,23 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/invitations` | owner, admin | `{invitations:[…]}`, see [Invitations](#invitations) |
-| POST | `/api/v1/invitations` | owner, admin, fresh | `{email?, expiresInHours?, send?}` → 201 `{invitation, link, sent?}` (link shown once; `send` mails it to `email`) |
-| DELETE | `/api/v1/invitations/{id}` | owner, admin | revoke a pending invitation → 204 |
+| POST | `/api/v1/invitations` | owner, admin, credential, fresh | `{email?, expiresInHours?, send?}` → 201 `{invitation, link, sent?}` (link shown once; `send` mails it to `email`) |
+| DELETE | `/api/v1/invitations/{id}` | owner, admin, credential | revoke a pending invitation → 204 |
 | GET | `/api/v1/users` | owner, admin | `{users:[…]}`, see [User administration](#user-administration) |
-| PUT | `/api/v1/users/{id}/role` | owner, fresh | `{role: "admin"\|"member"}` → `{user}` |
-| POST | `/api/v1/users/{id}/deactivate` | owner, admin, fresh | → `{user}`; revokes sessions, tokens, pending invitations and reset links |
-| POST | `/api/v1/users/{id}/reactivate` | owner, admin, fresh | → `{user}` |
-| DELETE | `/api/v1/users/{id}` | owner, admin, fresh | `{confirmEmail}` → 204; deletes the account and its data |
-| POST | `/api/v1/users/{id}/password-reset` | owner, admin, fresh | `{expiresInHours?, send?}` → 201 `{expiresAt, link}` (link shown once), or with `send: true` 201 `{expiresAt, sent: true}` and the link mailed to the account |
-| GET | `/api/v1/settings/smtp` | owner (session) | the [outgoing email](#outgoing-email) configuration without the password |
-| PUT | `/api/v1/settings/smtp` | owner (session), fresh | `{host?, port?, security?, username?, password?, from?}` → the same shape |
+| PUT | `/api/v1/users/{id}/role` | owner, credential, fresh | `{role: "admin"\|"member"}` → `{user}` |
+| POST | `/api/v1/users/{id}/deactivate` | owner, admin, credential, fresh | → `{user}`; revokes sessions, tokens, pending invitations and reset links |
+| POST | `/api/v1/users/{id}/reactivate` | owner, admin, credential, fresh | → `{user}` |
+| DELETE | `/api/v1/users/{id}` | owner, admin, credential, fresh | `{confirmEmail}` → 204; deletes the account and its data |
+| POST | `/api/v1/users/{id}/password-reset` | owner, admin, credential, fresh | `{expiresInHours?, send?}` → 201 `{expiresAt, link}` (link shown once), or with `send: true` 201 `{expiresAt, sent: true}` and the link mailed to the account |
+| GET | `/api/v1/settings/smtp` | owner, credential | the [outgoing email](#outgoing-email) configuration without the password |
+| PUT | `/api/v1/settings/smtp` | owner, credential, fresh | `{host?, port?, security?, username?, password?, from?}` → the same shape |
 | POST | `/api/v1/settings/smtp/test` | owner | sends a test message to the owner → `{outcome: "sent"\|"failed", stage?, reply?}` |
-| POST | `/api/v1/users/{id}/transfer-ownership` | owner, fresh | `{password}` → `{user}` |
-| POST | `/api/v1/members/{id}/mfa/reset` | owner, fresh | remove a member's second factor, recovery codes and remembered browsers → 204 |
+| POST | `/api/v1/users/{id}/transfer-ownership` | owner, credential, fresh | `{password}` → `{user}` |
+| POST | `/api/v1/members/{id}/mfa/reset` | owner, credential, fresh | remove a member's second factor, recovery codes and remembered browsers → 204 |
 | GET | `/api/v1/settings/mfa` | owner | `{required: "none"\|"owner"\|"all"}` |
-| PUT | `/api/v1/settings/mfa` | owner, fresh | `{required}` → `{required}` |
+| PUT | `/api/v1/settings/mfa` | owner, credential, fresh | `{required}` → `{required}` |
 | GET | `/api/v1/settings/oidc` | owner | provider configuration, secret masked, see [Single sign-on](#single-sign-on) |
-| PUT | `/api/v1/settings/oidc` | owner, fresh | change the provider configuration |
+| PUT | `/api/v1/settings/oidc` | owner, credential, fresh | change the provider configuration |
 | POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
 | GET | `/api/v1/settings/mcp` | yes | `{enabled, writes_enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on, whether assistants may make changes, and its URL |
 | PUT | `/api/v1/settings/mcp` | owner | `{enabled?, writes_enabled?}` (at least one) → `{enabled, writes_enabled, endpoint}`; each change is recorded as `settings.changed` (`mcp.enabled`, `mcp.writes`) |
@@ -220,7 +225,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/audit` | owner | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
 | GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
 | GET | `/api/v1/backups/settings` | owner | `{settings, secrets}` (secret presence flags only) |
-| PUT | `/api/v1/backups/settings` | owner | `{settings, secrets?}` → `{settings, secrets}` |
+| PUT | `/api/v1/backups/settings` | owner, credential | `{settings, secrets?}` → `{settings, secrets}` |
 | POST | `/api/v1/backups/run` | owner | start a backup now → 202, or 409 `conflict` while one runs |
 | POST | `/api/v1/backups/test` | owner | write and delete a probe object at the saved destination → 200 `{ok:true}` or 502 `destination_error` |
 | GET | `/api/v1/backups/archives` | owner | archives in the destination, newest first, see [Restore](#restore-from-the-web-app) |
@@ -292,7 +297,7 @@ curl -sS -c jar -X POST "$OT/api/v1/auth/mfa" -H 'Content-Type: application/json
 
 A challenge lasts five minutes and allows five wrong codes. Each wrong code gets `401 mfa_code_invalid`; after the fifth, the challenge is gone and the next attempt gets `401 mfa_challenge_invalid`, which means "enter the password again". `remember: true` sets `ot_trust`, an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on https) limited to `/api/v1/auth` and valid for a fixed 30 days. While that cookie is present, the password step starts the session directly for that account on that browser. A passkey sign-in whose authenticator reports user verification (biometric or PIN) counts as two factors and is never asked for a code. A passkey without user verification answers with the same challenge as a password.
 
-**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged.
+**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged, but on *credential* routes only an `admin` token is accepted (see [token scopes](#token-scopes)).
 
 **Owner policy.** `PUT /settings/mfa {"required":"none"|"owner"|"all"}`. When the policy covers an account that has no second factor, sign-in still works. Every route except `GET /me`, `/mfa/*`, `/auth/reauth` and `/auth/logout` then answers `403 mfa_enrolment_required` until the account enrols. That includes `/sync`, so a device keeps its changes queued and uploads them after enrolment. An account the policy covers cannot turn its second factor off (`403 mfa_required_by_policy`).
 
@@ -324,12 +329,13 @@ The owner can connect one OpenID Connect provider (Authentik, Keycloak, Authelia
 
 **Sign-in** is a browser navigation, not an API call: `GET /api/v1/auth/oidc/start` redirects to the provider with the authorization-code flow, PKCE (S256), a single-use `state` and a `nonce`, and sets a 10-minute `HttpOnly`, `SameSite=Lax` cookie `ot_oidc` (path `/api/v1/auth/oidc`) holding the signed flow state. The provider returns to `GET /api/v1/auth/oidc/callback`, which exchanges the code, verifies the identity token (RS256, PS256, ES256 or EdDSA signature from the provider's JWKS; issuer, audience, expiry, issued-at and nonce, with 60 seconds of clock leeway) and answers `303` to `/` with the usual `opentodo_session` cookie. The session counts as having passed the second factor: the provider applies its own policy, so an account with TOTP is not asked for a code. The owner's two-factor enrolment policy still applies to the session like any other.
 
-The identity is matched by issuer and subject first; a first-time identity whose **verified** email equals an account's email is linked to that account; otherwise a `member` account is created only if open sign-up is on or the owner enabled `allowProvision`. Failures redirect to the sign-in screen with `?error=`:
+The identity is matched by issuer and subject first; a first-time identity whose **verified** email equals an account's email is linked to that account, except when that account is the owner or an admin or has a second factor or a passkey: such an account links only from Settings while signed in (below), and the sign-in is refused with `oidc_link_required`; otherwise a `member` account is created only if open sign-up is on or the owner enabled `allowProvision`. Failures redirect to the sign-in screen with `?error=`:
 
 | `error` | When |
 | --- | --- |
 | `oidc_failed` | the provider refused, the code exchange failed or the identity token failed a check (details only in the server log) |
 | `oidc_email_unverified` | a first-time identity without an email marked verified |
+| `oidc_link_required` | a first-time identity whose email belongs to the owner, an admin or an account with a second factor or passkey: sign in locally and link it from Settings → Account first |
 | `signup_closed` | no matching account and provisioning is not allowed |
 
 `start` while signed in **links** the provider identity to the current account instead (Settings → Account → Linked accounts) and returns to `/settings/account?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings/account?reauthenticated=1`.
@@ -372,7 +378,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 Optional SMTP, configured by the owner in **Settings → Server → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`. Links in reset, sign-up and invitation emails are built from `OPENTODO_BASE_URL` only: without it those flows answer 409 `base_url_required` (open sign-up included) and send nothing, and the owner's `config_warnings` names `OPENTODO_BASE_URL`.
 
-**Configuration** — `GET /api/v1/settings/smtp` (the owner's session; API tokens get 403) →
+**Configuration** — `GET /api/v1/settings/smtp` (the owner's session or an `admin` token; other tokens get 403) →
 
 ```json
 {"configured": true, "host": "smtp.example.com", "port": 587, "security": "starttls", "username": "todo",
@@ -431,7 +437,7 @@ curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempot
 | Field | When | Value |
 | --- | --- | --- |
 | `method` | always | `session` or `token` |
-| `scope` | always | `full`, `read` or `agent` (a session is `full`) |
+| `scope` | always | `full`, `read`, `agent` or `admin` (a session is `full`) |
 | `token_id`, `token_name` | tokens | the token in use, as listed by `GET /api/v1/tokens` |
 | `writes_allowed` | `agent` tokens | whether both assistant switches are on right now |
 | `writes_denied` | `agent` tokens with writes off | `writes_disabled_by_owner` or `writes_disabled_by_user` |
@@ -745,7 +751,7 @@ The owner, and admins within narrower limits, administer the accounts on the ser
 | change role (`admin` ↔ `member`), transfer ownership | yes | no | no |
 | change own password | yes | yes | yes |
 
-Checks run in this order: acting on your own account gives 409 `self_action`; a role that does not allow the action gives 403 `forbidden` (a member gets 403 on every mutating `/users` route); a target in the wrong state gives 409 `account_deactivated` or `account_active`; an unknown id gives 404 `not_found`. Every mutating `/users` route and `/me/password` is *fresh*: a cookie session must have proved its identity in the last ten minutes (`403 reauth_required`, see [Two-factor authentication](#two-factor-authentication)); bearer tokens are never challenged.
+Checks run in this order: acting on your own account gives 409 `self_action`; a role that does not allow the action gives 403 `forbidden` (a member gets 403 on every mutating `/users` route); a target in the wrong state gives 409 `account_deactivated` or `account_active`; an unknown id gives 404 `not_found`. Every mutating `/users` route and `/me/password` is *fresh*: a cookie session must have proved its identity in the last ten minutes (`403 reauth_required`, see [Two-factor authentication](#two-factor-authentication)). They are *credential* routes too: a bearer token needs the `admin` scope (a `full` token gets `403 insufficient_scope`) and is never challenged.
 
 **List** — `GET /api/v1/users` → oldest first, never a credential:
 
@@ -774,7 +780,7 @@ Checks run in this order: acting on your own account gives 409 `self_action`; a 
 
 The link is returned once (only its hash is stored) and uses the same origin rules as invitation links. Nothing is emailed; the administrator copies it. A new link revokes earlier unused ones. A deactivated target is 409 `account_deactivated`; a bad expiry 400 `invalid_input`. The owner is never a target: on the server, `opentodo reset-owner-password` prints an owner reset link (see [docs/self-hosting/docker.md](self-hosting/docker.md#recovering-owner-access)).
 
-`GET /api/v1/password-resets/{token}` (no authentication) → `{email, expiresAt}`. `POST /api/v1/password-resets/{token}` with `{"password":"…"}` → 204: the password is replaced, the link is spent and every session of the account is deleted in one transaction; API tokens are kept and no session is started. Used, expired, revoked and unknown tokens all give the same 404 `reset_invalid`; a password under 10 characters is 400 `invalid_input` and the link stays pending. Both routes share the per-address sign-in limit (10 per minute).
+`GET /api/v1/password-resets/{token}` (no authentication) → `{email, expiresAt}`. `POST /api/v1/password-resets/{token}` with `{"password":"…"}` → 204: the password is replaced, the link is spent, and every session and remembered browser (`ot_trust`) of the account is deleted in one transaction, so the second factor is asked again everywhere; API tokens are kept and no session is started. To revoke tokens and app passwords as well, use `POST /api/v1/me/sign-out-everywhere` after signing in. Used, expired, revoked and unknown tokens all give the same 404 `reset_invalid`; a password under 10 characters is 400 `invalid_input` and the link stays pending. Both routes share the per-address sign-in limit (10 per minute).
 
 **Own password** — `POST /api/v1/me/password` with `{"currentPassword":"…","newPassword":"…"}` → 204. Your other sessions are signed out, the current one stays (a bearer-token request signs out every session), API tokens are kept. A wrong current password is 403 `invalid_credentials`; a short new one 400 `invalid_input`. Limited to 10 per hour per account.
 
@@ -783,7 +789,7 @@ The link is returned once (only its hash is stored) and uses the same origin rul
 Mutating `/users` requests are limited to 60 per hour per acting account (429 `rate_limited`).
 
 ```bash
-# Issue a reset link for a member (token-authenticated script: never challenged)
+# Issue a reset link for a member (a script with an admin token: never challenged)
 curl -sS -X POST "$OT/api/v1/users/$ID/password-reset" -H "Authorization: Bearer $TOKEN"
 # 201 {"expiresAt":1760086400000,"link":"https://todo.example.com/reset/otr_…"}
 
@@ -828,7 +834,7 @@ Scheduled backups of the whole server (see [backups.md](backups.md)). Every rout
 | `compress` | gzip the archive (default true) |
 | `scheduleSince` | read-only: when the current schedule was set |
 
-**Update** — `PUT /api/v1/backups/settings` replaces the settings. Secrets go in an optional `secrets` object: a key that is absent keeps the stored value, an empty string removes it, any other value replaces it.
+**Update** — `PUT /api/v1/backups/settings` (a session or an `admin` token: it holds the destination's secrets) replaces the settings. Secrets go in an optional `secrets` object: a key that is absent keeps the stored value, an empty string removes it, any other value replaces it.
 
 ```bash
 curl -sS -X PUT "$OT/api/v1/backups/settings" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{
@@ -925,7 +931,7 @@ The server records security-relevant events in its own database (never synced to
 | `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`, `oidc`, or a two-step method such as `password+totp`) |
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
-| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read` or `agent`) |
+| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read`, `agent` or `admin`) |
 | `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
@@ -955,6 +961,7 @@ The server records security-relevant events in its own database (never synced to
 | `public_link.created` | success | actor = creator | `public_link_id`, `shared_project_id`, `link_rights` (`view` or `tick`); never the secret or the name |
 | `public_link.revoked` | success | actor = owner or admin of the project | `public_link_id`, `shared_project_id` |
 | `password.changed` | success | actor = user | |
+| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`: what "Sign out everywhere" ended |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
 | `backup.restored` | success | none after `opentodo restore`; the owner who confirmed a web restore | `backup_id` (the archive file name), recorded on the first start after the restore |
@@ -1459,7 +1466,7 @@ The [in-app assistant](assistant.md) (OpenSpec `in-app-assistant`). Every route 
 
 `cap_member_keys` (default `false`): whether turns on a member's own key count toward `monthly_token_cap_per_user`; off, they are recorded but neither counted nor blocked. `member_providers` lists what members may choose for their own key (never `compatible`); `own_key_members` counts accounts whose turns use their own provider and key right now.
 
-Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT` (owner only, 403 `forbidden` otherwise) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
+Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT` (owner only, 403 `forbidden` otherwise; a session or an `admin` token, since it holds provider keys) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
 
 ```bash
 curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \

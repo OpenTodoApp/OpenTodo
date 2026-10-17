@@ -207,7 +207,7 @@ func specOutput(t *testing.T, name string) any {
 
 func TestOutputsMatchSchemas(t *testing.T) {
 	h := newHarness(t)
-	h.login()
+	h.loginAdmin()
 	h.seedViews()
 	schemas := loadSchemas(t)
 	for _, want := range []string{"task", "project", "label", "comment", "token", "task_result", "error", "dry_run"} {
@@ -506,7 +506,7 @@ func TestVersionJson(t *testing.T) {
 
 func TestDestructiveRequiresYesOffTerminal(t *testing.T) {
 	h := newHarness(t)
-	h.login()
+	h.loginAdmin()
 	h.seedViews()
 	h.mustRun("token", "create", "victim")
 	cfgBefore, _ := os.ReadFile(h.configPath)
@@ -572,7 +572,7 @@ func TestDestructiveRequiresYesOffTerminal(t *testing.T) {
 
 func TestDryRunSendsNoWrites(t *testing.T) {
 	h := newHarness(t)
-	h.login()
+	h.loginAdmin()
 	h.seedViews()
 	h.mustRun("token", "create", "victim")
 	cfgBefore, _ := os.ReadFile(h.configPath)
@@ -903,9 +903,14 @@ func TestAuthStatusShowsScope(t *testing.T) {
 	if out = h.mustRun("auth", "status"); !strings.Contains(out, "Scope:    read") || strings.Contains(out, "Writes:") {
 		t.Fatalf("read token status = %q", out)
 	}
-	h.setToken(h.apiToken)
-	if out = h.mustRun("auth", "status"); !strings.Contains(out, "Scope:    full") || !strings.Contains(out, "Token:    seed") {
+	_, full := h.apiToken2("full")
+	h.setToken(full)
+	if out = h.mustRun("auth", "status"); !strings.Contains(out, "Scope:    full") || !strings.Contains(out, "Token:    full token") {
 		t.Fatalf("full token status = %q", out)
+	}
+	h.setToken(h.apiToken)
+	if out = h.mustRun("auth", "status"); !strings.Contains(out, "Scope:    admin") || !strings.Contains(out, "Token:    seed") {
+		t.Fatalf("admin token status = %q", out)
 	}
 }
 

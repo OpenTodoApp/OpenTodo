@@ -30,7 +30,7 @@ const mcpMaxBody = 1 << 20
 // OPENTODO_MCP preset through it). Without it New builds its own.
 func WithMCPSettings(m *mcp.Settings) Option { return func(s *Server) { s.mcpSettings = m } }
 
-func (s *Server) registerMCPRoutes(mux *http.ServeMux) {
+func (s *Server) registerMCPRoutes(mux *routes) {
 	if s.mcpSettings == nil {
 		s.mcpSettings = mcp.NewSettings(s.sync.DB())
 	}
@@ -50,15 +50,15 @@ func (s *Server) registerMCPRoutes(mux *http.ServeMux) {
 	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools})
 	// Every method reaches the handler so a disabled endpoint is 404 for all of
 	// them and an enabled one can answer 405 for anything but POST.
-	mux.HandleFunc("/mcp", s.handleMCP)
+	mux.handle("/mcp", public("assistants authenticate with a bearer token in the handler").demoDenied(), s.handleMCP)
 	// Status for every signed-in user (the AI assistants section shows it to
 	// members too); changing it is owner only.
-	mux.Handle("GET /api/v1/settings/mcp", s.requireAuth(s.handleGetMCPSettings))
-	mux.Handle("PUT /api/v1/settings/mcp", s.requireAuth(s.handlePutMCPSettings))
+	mux.handle("GET /api/v1/settings/mcp", signedIn, s.handleGetMCPSettings)
+	mux.handle("PUT /api/v1/settings/mcp", ownerOnly("manage the AI assistants (MCP) setting").demoDenied(), s.handlePutMCPSettings)
 	// The user's own "Allow AI assistants to make changes" switch: sessions and
 	// full tokens only, so an assistant can never flip it (mcp-write-tools D3).
-	mux.Handle("GET /api/v1/me/agent-access", s.requireAuth(s.handleGetAgentAccess))
-	mux.Handle("PUT /api/v1/me/agent-access", s.requireAuth(s.handlePutAgentAccess))
+	mux.handle("GET /api/v1/me/agent-access", signedIn.fullTokens(), s.handleGetAgentAccess)
+	mux.handle("PUT /api/v1/me/agent-access", signedIn.fullTokens().demoDenied(), s.handlePutAgentAccess)
 }
 
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
@@ -181,9 +181,6 @@ func (s *Server) handleGetMCPSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutMCPSettings(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the AI assistants (MCP) setting") {
-		return
-	}
 	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
@@ -233,27 +230,7 @@ func (s *Server) agentAccessStatus(r *http.Request, allow bool) map[string]any {
 		"mcp_enabled": s.mcpSettings.Enabled(r.Context())}
 }
 
-// requireSessionOrFull refuses read and agent tokens even on reads: the switch
-// is managed by the person, never by an assistant (mcp-write-tools D3).
-func (s *Server) requireSessionOrFull(w http.ResponseWriter, r *http.Request) bool {
-	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-		_, scope, err := s.auth.UserByTokenScope(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
-		if err != nil && !errors.Is(err, auth.ErrNotFound) {
-			s.internal(w, err)
-			return false
-		}
-		if scope != auth.ScopeFull {
-			writeError(w, http.StatusForbidden, "insufficient_scope", "only you can change this, signed in or with a full-access token")
-			return false
-		}
-	}
-	return true
-}
-
 func (s *Server) handleGetAgentAccess(w http.ResponseWriter, r *http.Request) {
-	if !s.requireSessionOrFull(w, r) {
-		return
-	}
 	allow, err := s.agentAccess.AllowsWrites(r.Context(), userFrom(r.Context()).ID)
 	if err != nil {
 		s.internal(w, err)
@@ -263,9 +240,6 @@ func (s *Server) handleGetAgentAccess(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutAgentAccess(w http.ResponseWriter, r *http.Request) {
-	if !s.requireSessionOrFull(w, r) {
-		return
-	}
 	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())

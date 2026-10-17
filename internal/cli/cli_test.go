@@ -86,7 +86,8 @@ func newHarness(t *testing.T) *harness {
 	t.Cleanup(srv.Close)
 	hs.srv = srv
 
-	// Owner setup through the API, then a token for seeding fixtures.
+	// Owner setup through the API, then an admin token for seeding fixtures
+	// (it also creates tokens, a credential route: route-authorization-policy).
 	resp := hs.api("POST", "/api/v1/auth/register", map[string]string{"email": ownerEmail, "name": "Owner", "password": ownerPassword}, "")
 	if resp.StatusCode != 201 {
 		t.Fatalf("register: %d", resp.StatusCode)
@@ -97,7 +98,7 @@ func newHarness(t *testing.T) *harness {
 			cookie = c.Value
 		}
 	}
-	req, _ := http.NewRequest("POST", srv.URL+"/api/v1/tokens", strings.NewReader(`{"name":"seed"}`))
+	req, _ := http.NewRequest("POST", srv.URL+"/api/v1/tokens", strings.NewReader(`{"name":"seed","scope":"admin"}`))
 	req.AddCookie(&http.Cookie{Name: "opentodo_session", Value: cookie})
 	req.Header.Set("Content-Type", "application/json")
 	r, err := http.DefaultClient.Do(req)
@@ -206,6 +207,15 @@ func (h *harness) login() {
 	h.stdin = ownerPassword + "\n"
 	h.mustRun("login", h.srv.URL, "--email", ownerEmail)
 	h.stdin = ""
+}
+
+// loginAdmin signs in, then runs ot with the seed admin token: creating
+// tokens is a credential route that a full token may not use
+// (route-authorization-policy).
+func (h *harness) loginAdmin() {
+	h.t.Helper()
+	h.login()
+	h.setToken(h.apiToken)
 }
 
 func (h *harness) tokens() []map[string]any {
@@ -712,7 +722,7 @@ func TestProjectCommands(t *testing.T) {
 
 func TestTokenAndExport(t *testing.T) {
 	h := newHarness(t)
-	h.login()
+	h.loginAdmin()
 
 	code, out, errb := h.run("token", "create", "backup-script")
 	secret := strings.TrimSpace(out)
@@ -880,9 +890,22 @@ func TestLabelFlagResolvesNamesToIDs(t *testing.T) {
 	}
 }
 
-func TestTokenCreateScope(t *testing.T) {
+// TestTokenCreateNeedsAdminToken: the full token ot login stores cannot
+// create tokens (route-authorization-policy); the error names the admin scope.
+func TestTokenCreateNeedsAdminToken(t *testing.T) {
 	h := newHarness(t)
 	h.login()
+	code, _, errb := h.run("token", "create", "minted")
+	if code != ExitNotPermitted || !strings.Contains(errb, "admin API token") {
+		t.Fatalf("token create with a full token: %d %q", code, errb)
+	}
+	// Everything else keeps working with it.
+	h.mustRun("token", "list")
+}
+
+func TestTokenCreateScope(t *testing.T) {
+	h := newHarness(t)
+	h.loginAdmin()
 	code, out, errb := h.run("token", "create", "desk-assistant", "--scope", "agent")
 	if code != 0 || !strings.HasPrefix(strings.TrimSpace(out), "ot_") || !strings.Contains(errb, "scope agent") || !strings.Contains(errb, "both assistant switches") {
 		t.Fatalf("agent token: %d %q %q", code, out, errb)

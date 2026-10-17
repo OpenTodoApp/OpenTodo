@@ -47,6 +47,7 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'password.reset_issued': msg('Password reset link issued'),
   'password.reset_completed': msg('Password reset through a link'),
   'password.changed': msg('Password changed'),
+  'sessions.revoked': msg('Signed out everywhere'),
   'owner.transferred': msg('Ownership transferred'),
   'agent.write': msg('AI assistant made changes'),
   'email.sent': msg('Email sent'),
@@ -104,7 +105,10 @@ export function eventSummary(ev: AuditEvent): string {
   if (d.email_kind) parts.push(t('{kind} to {email}', { kind: EMAIL_KINDS[d.email_kind] ?? d.email_kind.replace(/_/g, ' '), email: d.email ?? '?' }))
   if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? t('new account') : t('via {method}', { method: d.method }))
   if (d.tool) parts.push(d.tool)
-  if (d.token_name) parts.push(d.token_scope === 'read' ? t('“{name}” (read-only)', { name: d.token_name }) : d.token_scope === 'agent' ? t('“{name}” (assistant, can make changes)', { name: d.token_name }) : `“${d.token_name}”`)
+  if (d.token_name) parts.push(d.token_scope === 'read' ? t('“{name}” (read-only)', { name: d.token_name }) : d.token_scope === 'agent' ? t('“{name}” (assistant, can make changes)', { name: d.token_name }) : d.token_scope === 'admin' ? t('“{name}” (admin)', { name: d.token_name }) : `“${d.token_name}”`)
+  if (d.session_count) parts.push(t('{n, plural, one {# session} other {# sessions}}', { n: Number(d.session_count) }))
+  if (d.token_count && d.token_count !== '0') parts.push(t('{n, plural, one {# API token} other {# API tokens}}', { n: Number(d.token_count) }))
+  if (d.app_password_count && d.app_password_count !== '0') parts.push(t('{n, plural, one {# app password} other {# app passwords}}', { n: Number(d.app_password_count) }))
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
   if (d.project_role) parts.push(t('as {role}', { role: roleName(d.project_role) }))
   if (d.link_rights) parts.push(d.link_rights === 'tick' ? t('can tick off tasks') : t('view only'))

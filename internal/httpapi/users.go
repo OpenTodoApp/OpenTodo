@@ -16,22 +16,26 @@ import (
 
 // User administration routes (OpenSpec change `user-management`, design D8).
 // Every /users and /me/password route requires a session or token and, for
-// cookie sessions, a fresh re-authentication (requireFresh, carried over from
-// mfa-totp); the two reset-link routes are public, rate limited per address
+// cookie sessions, a fresh re-authentication (carried over from mfa-totp); a
+// token needs the admin scope on the changes (route-authorization-policy). The
+// route policies are declared below (policy.go); the two reset-link routes are public, rate limited per address
 // and check the origin on POST like registration. All of this is server-side
 // account data: never written to the op log, never synced.
-func (s *Server) registerUserRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/users", s.requireAuth(s.handleListUsers))
-	mux.Handle("PUT /api/v1/users/{id}/role", s.requireAuth(s.requireFresh(s.handleSetRole)))
-	mux.Handle("POST /api/v1/users/{id}/deactivate", s.requireAuth(s.requireFresh(s.handleDeactivate)))
-	mux.Handle("POST /api/v1/users/{id}/reactivate", s.requireAuth(s.requireFresh(s.handleReactivate)))
-	mux.Handle("DELETE /api/v1/users/{id}", s.requireAuth(s.requireFresh(s.handleDeleteUser)))
-	mux.Handle("POST /api/v1/users/{id}/password-reset", s.requireAuth(s.requireFresh(s.handleIssueReset)))
-	mux.Handle("POST /api/v1/users/{id}/transfer-ownership", s.requireAuth(s.requireFresh(s.handleTransferOwnership)))
-	mux.Handle("POST /api/v1/me/password", s.requireAuth(s.requireFresh(s.handleChangePassword)))
-	mux.HandleFunc("POST /api/v1/auth/password-reset", s.handleRequestPasswordReset)
-	mux.HandleFunc("GET /api/v1/password-resets/{token}", s.handlePreviewReset)
-	mux.HandleFunc("POST /api/v1/password-resets/{token}", s.handleUseReset)
+func (s *Server) registerUserRoutes(mux *routes) {
+	mux.handle("GET /api/v1/users", adminsOnly("list accounts"), s.handleListUsers)
+	mux.handle("PUT /api/v1/users/{id}/role", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleSetRole)
+	mux.handle("POST /api/v1/users/{id}/deactivate", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleDeactivate)
+	mux.handle("POST /api/v1/users/{id}/reactivate", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleReactivate)
+	mux.handle("DELETE /api/v1/users/{id}", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleDeleteUser)
+	mux.handle("POST /api/v1/users/{id}/password-reset", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleIssueReset)
+	mux.handle("POST /api/v1/users/{id}/transfer-ownership", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleTransferOwnership)
+	mux.handle("POST /api/v1/me/password", signedIn.sensitive().demoDenied(), s.handleChangePassword)
+	// Sign out everywhere (route-authorization-policy): a person's own decision,
+	// from a recently confirmed session; it revokes API tokens too.
+	mux.handle("POST /api/v1/me/sign-out-everywhere", signedIn.sessionOnly().recent().demoDenied(), s.handleSignOutEverywhere)
+	mux.handle("POST /api/v1/auth/password-reset", public("the forgotten-password request comes from someone signed out").demoDenied(), s.handleRequestPasswordReset)
+	mux.handle("GET /api/v1/password-resets/{token}", public("the holder of a reset link is signed out").demoDenied(), s.handlePreviewReset)
+	mux.handle("POST /api/v1/password-resets/{token}", public("the holder of a reset link is signed out").demoDenied(), s.handleUseReset)
 }
 
 // userError maps the auth package's administration errors onto the envelope.
@@ -64,15 +68,11 @@ func (s *Server) userError(w http.ResponseWriter, err error) {
 	}
 }
 
-// adminActor answers 403 for members, then 429 once the acting account used
-// its hourly budget of mutating administration requests (design D9). It
-// returns nil when it answered.
+// adminActor answers 429 once the acting account used its hourly budget of
+// mutating administration requests (design D9); the route policy already
+// refused members. It returns nil when it answered.
 func (s *Server) adminActor(w http.ResponseWriter, r *http.Request) *auth.User {
 	u := userFrom(r.Context())
-	if !s.auth.CanListUsers(u) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner and admins can manage accounts")
-		return nil
-	}
 	if !s.adminLimiter.allow(u.ID) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many administrative actions, try again later")
 		return nil
@@ -89,10 +89,6 @@ func readOptionalJSON(r *http.Request, dst any) error {
 }
 
 func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
-	if !s.auth.CanListUsers(userFrom(r.Context())) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner and admins can list accounts")
-		return
-	}
 	list, err := s.auth.ListUsers(r.Context())
 	if err != nil {
 		s.internal(w, err)
@@ -289,6 +285,21 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		s.userError(w, err)
 		return
 	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleSignOutEverywhere ends every session of the account (this one too),
+// forgets its remembered browsers and revokes its API tokens and app
+// passwords, then closes its open event streams so devices learn it at once.
+func (s *Server) handleSignOutEverywhere(w http.ResponseWriter, r *http.Request) {
+	u := userFrom(r.Context())
+	if err := s.auth.SignOutEverywhere(r.Context(), u.ID); err != nil {
+		s.internal(w, err)
+		return
+	}
+	s.sync.Notifier().CloseUser(u.ID)
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: trustCookie, Value: "", Path: "/api/v1/auth", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
 	w.WriteHeader(http.StatusNoContent)
 }
 

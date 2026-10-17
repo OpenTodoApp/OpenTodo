@@ -18,9 +18,9 @@ func WithNotifications(inbox *notify.InApp) Option {
 	return func(s *Server) { s.inbox = inbox }
 }
 
-func (s *Server) registerNotificationRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/notifications", s.requireAuth(s.handleListNotifications))
-	mux.Handle("POST /api/v1/notifications/{id}/read", s.requireAuth(s.handleReadNotification))
+func (s *Server) registerNotificationRoutes(mux *routes) {
+	mux.handle("GET /api/v1/notifications", signedIn, s.handleListNotifications)
+	mux.handle("POST /api/v1/notifications/{id}/read", signedIn, s.handleReadNotification)
 }
 
 func (s *Server) handleListNotifications(w http.ResponseWriter, r *http.Request) {

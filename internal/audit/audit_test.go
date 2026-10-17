@@ -72,6 +72,7 @@ func allConstructors() []Event {
 		PasswordResetIssued("o", "u", "r1"),
 		PasswordResetCompleted("u", "r1"),
 		PasswordChanged("u"),
+		SignedOutEverywhere("u", 2, 1, 3, 1),
 		OwnerTransferred("o", "u"),
 	}
 }

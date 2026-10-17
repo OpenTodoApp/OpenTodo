@@ -56,14 +56,14 @@ const (
 	// Public links (OpenSpec `public-links`).
 	PublicLinkCreatedName Name = "public_link.created"
 	PublicLinkRevokedName Name = "public_link.revoked"
-	RoleChangedName           Name = "role.changed"
-	SettingsChangedName       Name = "settings.changed"
-	IdentityLinkedName        Name = "identity.linked"
-	IdentityUnlinkedName      Name = "identity.unlinked"
-	ExportRequestedName       Name = "export.requested"
-	AuditExportedName         Name = "audit.exported"
-	BackupCreatedName         Name = "backup.created"
-	BackupRestoredName        Name = "backup.restored"
+	RoleChangedName       Name = "role.changed"
+	SettingsChangedName   Name = "settings.changed"
+	IdentityLinkedName    Name = "identity.linked"
+	IdentityUnlinkedName  Name = "identity.unlinked"
+	ExportRequestedName   Name = "export.requested"
+	AuditExportedName     Name = "audit.exported"
+	BackupCreatedName     Name = "backup.created"
+	BackupRestoredName    Name = "backup.restored"
 	// Web restore (backup-restore-web).
 	BackupRestoreRequestedName  Name = "backup.restore_requested"
 	BackupRestoreFailedName     Name = "backup.restore_failed"
@@ -75,7 +75,10 @@ const (
 	PasswordResetIssuedName    Name = "password.reset_issued"
 	PasswordResetCompletedName Name = "password.reset_completed"
 	PasswordChangedName        Name = "password.changed"
-	OwnerTransferredName       Name = "owner.transferred"
+	// SignedOutEverywhereName: the account ended every session and revoked its
+	// tokens and app passwords (route-authorization-policy).
+	SignedOutEverywhereName Name = "sessions.revoked"
+	OwnerTransferredName    Name = "owner.transferred"
 	// A write tool call made with an `agent` token (mcp-write-tools D6): the
 	// one deliberate exception to "task edits are not events", without content.
 	AgentWriteName Name = "agent.write"
@@ -104,6 +107,7 @@ var Names = []Name{
 	BackupRestoreRequestedName, BackupRestoreFailedName, BackupSafetyCopyDeletedName,
 	UserDeactivatedName, UserReactivatedName, UserDeletedName,
 	PasswordResetIssuedName, PasswordResetCompletedName, PasswordChangedName,
+	SignedOutEverywhereName,
 	OwnerTransferredName,
 	AgentWriteName,
 	EmailSentName, EmailFailedName,
@@ -121,6 +125,7 @@ var PersonalNames = []Name{
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
+	SignedOutEverywhereName,
 	AgentWriteName,
 }
 
@@ -163,7 +168,7 @@ var allowedDetailKeys = map[string]bool{
 	"reason":            true, // short failure reason code
 	"token_id":          true,
 	"token_name":        true,
-	"token_scope":       true, // full | read | agent (mcp-server, mcp-write-tools)
+	"token_scope":       true, // full | read | agent | admin (mcp-server, mcp-write-tools, route-authorization-policy)
 	"tool":              true, // name of an AI assistant write tool (mcp-write-tools)
 	"app_password_id":   true,
 	"app_password_name": true,
@@ -188,6 +193,11 @@ var allowedDetailKeys = map[string]bool{
 	"email_kind":        true, // kind of an outgoing message: verify_signup, password_reset, invitation, project_invite, test
 	"public_link_id":    true, // id of a public link (never its secret)
 	"link_rights":       true, // view | tick
+	// Sign out everywhere (route-authorization-policy): how much it ended.
+	"session_count":      true,
+	"device_count":       true,
+	"token_count":        true,
+	"app_password_count": true,
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -502,6 +512,14 @@ func PasswordResetCompleted(targetID, resetID string) Event {
 // PasswordChanged records a user changing their own password.
 func PasswordChanged(userID string) Event {
 	return ev(PasswordChangedName, Success, userID, "")
+}
+
+// SignedOutEverywhere records "Sign out everywhere" with how many sessions,
+// remembered browsers, API tokens and app passwords it ended.
+func SignedOutEverywhere(userID string, sessions, devices, tokens, appPasswords int64) Event {
+	n := func(v int64) string { return strconv.FormatInt(v, 10) }
+	return ev(SignedOutEverywhereName, Success, userID, "", "session_count", n(sessions), "device_count", n(devices),
+		"token_count", n(tokens), "app_password_count", n(appPasswords))
 }
 
 // OwnerTransferred records the owner handing ownership to another account; the

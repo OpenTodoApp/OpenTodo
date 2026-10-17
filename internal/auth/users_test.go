@@ -519,6 +519,10 @@ func TestResetKeepsTokensDropsSessions(t *testing.T) {
 	m := invited(t, s, owner, "m@example.com")
 	sec := session(t, s, m)
 	_, tok, _ := s.CreateToken(ctx, m.ID, "script")
+	device, _, err := s.CreateTrustedDevice(ctx, m.ID, "browser")
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, secret, _ := s.IssuePasswordReset(ctx, owner.ID, m.ID, 0)
 	if err := s.ResetPassword(ctx, secret, "a brand new password"); err != nil {
 		t.Fatal(err)
@@ -526,11 +530,80 @@ func TestResetKeepsTokensDropsSessions(t *testing.T) {
 	if _, err := s.UserBySession(ctx, sec); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("session survived: %v", err)
 	}
+	// Remembered browsers no longer skip the second factor (route-authorization-policy).
+	if ok, err := s.TrustedDeviceValid(ctx, m.ID, device); err != nil || ok {
+		t.Fatalf("trusted device survived the reset: %v %v", ok, err)
+	}
 	if _, err := s.UserByToken(ctx, tok); err != nil {
 		t.Fatalf("token revoked: %v", err)
 	}
 	if _, err := s.Authenticate(ctx, "m@example.com", "a brand new password"); err != nil {
 		t.Fatalf("new password: %v", err)
+	}
+}
+
+// TestSelfServiceResetForgetsTrustedDevices: the emailed "Forgot password?"
+// link ends sessions and remembered browsers like an administrator's link.
+func TestSelfServiceResetForgetsTrustedDevices(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newService(t, false)
+	owner := mustOwner(t, s)
+	m := invited(t, s, owner, "m@example.com")
+	device, _, err := s.CreateTrustedDevice(ctx, m.ID, "browser")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, secret, err := s.RequestPasswordReset(ctx, "m@example.com")
+	if err != nil || secret == "" {
+		t.Fatalf("request reset: %q %v", secret, err)
+	}
+	if err := s.ResetPassword(ctx, secret, "a brand new password"); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.TrustedDeviceValid(ctx, m.ID, device); err != nil || ok {
+		t.Fatalf("trusted device survived the reset: %v %v", ok, err)
+	}
+}
+
+// TestSignOutEverywhere ends sessions and remembered browsers and revokes API
+// tokens and app passwords of that account only, with one audit event.
+func TestSignOutEverywhere(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	owner := mustOwner(t, s)
+	m := invited(t, s, owner, "m@example.com")
+	sec := session(t, s, m)
+	ownerSec := session(t, s, owner)
+	_, tok, _ := s.CreateToken(ctx, m.ID, "script")
+	_, ownerTok, _ := s.CreateToken(ctx, owner.ID, "owner script")
+	_, app, err := s.CreateAppPassword(ctx, m.ID, "phone")
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, _, _ := s.CreateTrustedDevice(ctx, m.ID, "browser")
+	if err := s.SignOutEverywhere(ctx, m.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.UserBySession(ctx, sec); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("session survived: %v", err)
+	}
+	if _, err := s.UserByToken(ctx, tok); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("token survived: %v", err)
+	}
+	if _, _, err := s.UserByAppPassword(ctx, "m@example.com", app); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("app password survived: %v", err)
+	}
+	if ok, _ := s.TrustedDeviceValid(ctx, m.ID, device); ok {
+		t.Fatal("trusted device survived")
+	}
+	if _, err := s.UserBySession(ctx, ownerSec); err != nil {
+		t.Fatalf("another account's session ended: %v", err)
+	}
+	if _, err := s.UserByToken(ctx, ownerTok); err != nil {
+		t.Fatalf("another account's token revoked: %v", err)
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM audit_events WHERE name = 'sessions.revoked' AND actor_id = ?", m.ID); n != 1 {
+		t.Fatalf("sessions.revoked events = %d", n)
 	}
 }
 

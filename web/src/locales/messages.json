@@ -585,6 +585,9 @@
   "Admin: edits tasks and the project, manages viewers and editors": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Admin: full access plus credentials and administration": [
+    "web/src/app/TokensSection.tsx"
+  ],
   "Admins can invite people and manage members.": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -696,6 +699,9 @@
   ],
   "An account with this email already exists. Sign in instead.": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.": [
+    "web/src/app/TokensSection.tsx"
   ],
   "An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.": [
     "web/src/app/RestoreSection.tsx"
@@ -2806,6 +2812,9 @@
   "Every day at {time}": [
     "web/src/lib/backups.ts"
   ],
+  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": [
+    "web/src/app/AccountSettings.tsx"
+  ],
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
   ],
@@ -3242,6 +3251,9 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Full access": [
+    "web/src/app/TokensSection.tsx"
+  ],
+  "Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": [
     "web/src/app/TokensSection.tsx"
   ],
   "Full quick add syntax": [
@@ -6113,9 +6125,6 @@
   "Read-only access for an AI assistant, or a token that can make changes": [
     "web/src/app/settingsIndex.ts"
   ],
-  "Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": [
-    "web/src/app/TokensSection.tsx"
-  ],
   "Read-only events next to your tasks in Day and Week. Paste a calendar's iCal (.ics) address.": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
@@ -7251,6 +7260,9 @@
   "Sign in with your fingerprint, face or device PIN": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Sign in with your password first, then link single sign-on in Settings → Account.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Sign in with {name}": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -7267,6 +7279,12 @@
     "web/src/app/EmailScreens.tsx",
     "web/src/app/InviteScreen.tsx",
     "web/src/app/ResetScreen.tsx"
+  ],
+  "Sign out everywhere": [
+    "web/src/app/AccountSettings.tsx"
+  ],
+  "Sign out everywhere?": [
+    "web/src/app/AccountSettings.tsx"
   ],
   "Sign out first to accept it, or keep using your current account.": [
     "web/src/app/InviteScreen.tsx"
@@ -7328,11 +7346,17 @@
     "web/src/app/SyncStatus.tsx",
     "web/src/app/auditFormat.ts"
   ],
+  "Signed out everywhere": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Signing in did not work. Please try again.": [
     "web/src/app/sso.ts"
   ],
   "Signing in with {provider} did not work. Try again; if it keeps failing, ask the server owner to check the single sign-on settings.": [
     "web/src/app/sso.ts"
+  ],
+  "Signs out every device and browser, including this one, and revokes your API tokens and app passwords.": [
+    "web/src/app/AccountSettings.tsx"
   ],
   "Single occurrence of {title}": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -8369,6 +8393,9 @@
   ],
   "This account is deactivated. Reactivate it first.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "This account is not linked to {provider} yet. Sign in with your password (and code) first, then link {provider} in Settings → Account.": [
+    "web/src/app/sso.ts"
   ],
   "This account no longer exists.": [
     "web/src/app/UsersPanel.tsx"
@@ -9941,6 +9968,7 @@
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "admin": [
+    "web/src/lib/assistants.ts",
     "web/src/lib/roleNames.ts"
   ],
   "after": [
@@ -11028,11 +11056,17 @@
   "{n, number} on your own key, not counted toward the limit": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "{n, plural, one {# API token} other {# API tokens}}": [
+    "web/src/app/auditFormat.ts"
+  ],
   "{n, plural, one {# account} other {# accounts}}": [
     "web/src/app/UsersPanel.tsx"
   ],
   "{n, plural, one {# admin} other {# admins}}": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "{n, plural, one {# app password} other {# app passwords}}": [
+    "web/src/app/auditFormat.ts"
   ],
   "{n, plural, one {# attachment} other {# attachments}}": [
     "web/src/app/TaskRow.tsx"
@@ -11151,6 +11185,9 @@
   ],
   "{n, plural, one {# section} other {# sections}}": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "{n, plural, one {# session} other {# sessions}}": [
+    "web/src/app/auditFormat.ts"
   ],
   "{n, plural, one {# shortcut} other {# shortcuts}}": [
     "web/src/app/ShortcutHelp.tsx"
@@ -11457,6 +11494,9 @@
   ],
   "· joined as {name}": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "“{name}” (admin)": [
+    "web/src/app/auditFormat.ts"
   ],
   "“{name}” (assistant, can make changes)": [
     "web/src/app/auditFormat.ts"

@@ -42,19 +42,31 @@ type Token struct {
 // MCP write tools (behind the owner's and the user's switches). It is stored
 // as a `read` scope row plus a marker row in api_token_agent, so a binary that
 // does not know the marker treats it as read-only (downgrades fail safe).
+//
+// An `admin` token (OpenSpec change `route-authorization-policy`) can do
+// everything a `full` token can and is the only scope accepted on the
+// credential and administration routes (second factor, passkeys, tokens, app
+// passwords, user administration, single sign-on, encryption key records and
+// settings that hold secrets). It is stored like an agent token: a `read` row
+// plus a marker row in api_token_admin.
 const (
 	ScopeFull  = "full"
 	ScopeRead  = "read"
 	ScopeAgent = "agent"
+	ScopeAdmin = "admin"
 )
 
 // ValidScope reports whether scope can be given to a new token.
 func ValidScope(scope string) bool {
-	return scope == ScopeFull || scope == ScopeRead || scope == ScopeAgent
+	return scope == ScopeFull || scope == ScopeRead || scope == ScopeAgent || scope == ScopeAdmin
 }
 
+// FullAccess reports whether a token scope may use every regular route that
+// writes: `full` and `admin`.
+func FullAccess(scope string) bool { return scope == ScopeFull || scope == ScopeAdmin }
+
 // ErrInvalidScope is returned by CreateTokenScoped for an unknown scope.
-var ErrInvalidScope = errors.New("scope must be full, read or agent")
+var ErrInvalidScope = errors.New("scope must be full, read, agent or admin")
 
 // TokenInfo identifies the API token a request was authenticated with.
 type TokenInfo struct {
@@ -64,9 +76,13 @@ type TokenInfo struct {
 }
 
 // scopeExpr reads a token's effective scope from api_tokens t, api_token_scopes
-// sc and api_token_agent ag: a missing scope row is full, a read row with the
-// agent marker is agent.
-const scopeExpr = `CASE WHEN ag.token_id IS NOT NULL AND sc.scope = 'read' THEN 'agent' ELSE COALESCE(sc.scope,'full') END`
+// sc, api_token_agent ag and api_token_admin ad (joined by scopeJoins): a
+// missing scope row is full, a read row with the agent marker is agent and one
+// with the admin marker is admin.
+const scopeExpr = `CASE WHEN ad.token_id IS NOT NULL AND sc.scope = 'read' THEN 'admin' WHEN ag.token_id IS NOT NULL AND sc.scope = 'read' THEN 'agent' ELSE COALESCE(sc.scope,'full') END`
+
+// scopeJoins are the side tables scopeExpr reads.
+const scopeJoins = ` LEFT JOIN api_token_scopes sc ON sc.token_id = t.id LEFT JOIN api_token_agent ag ON ag.token_id = t.id LEFT JOIN api_token_admin ad ON ad.token_id = t.id `
 
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -433,7 +449,7 @@ func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope str
 		return nil, "", err
 	}
 	stored := scope
-	if scope == ScopeAgent {
+	if scope == ScopeAgent || scope == ScopeAdmin {
 		stored = ScopeRead // plus the marker below: read-only to older binaries
 	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_scopes(token_id,scope) VALUES(?,?)", t.ID, stored); err != nil {
@@ -441,6 +457,11 @@ func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope str
 	}
 	if scope == ScopeAgent {
 		if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_agent(token_id) VALUES(?)", t.ID); err != nil {
+			return nil, "", err
+		}
+	}
+	if scope == ScopeAdmin {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_admin(token_id) VALUES(?)", t.ID); err != nil {
 			return nil, "", err
 		}
 	}
@@ -477,8 +498,7 @@ func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, Tok
 	var u User
 	var info TokenInfo
 	err := s.db.QueryRowContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
-		JOIN users u ON u.id = t.user_id LEFT JOIN api_token_scopes sc ON sc.token_id = t.id
-		LEFT JOIN api_token_agent ag ON ag.token_id = t.id WHERE t.token_hash = ?
+		JOIN users u ON u.id = t.user_id`+scopeJoins+`WHERE t.token_hash = ?
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
 		Scan(&info.ID, &info.Name, &info.Scope, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -504,8 +524,7 @@ func (s *Service) TokenName(ctx context.Context, userID, tokenID string) (string
 
 // ListTokens returns a user's tokens with their scopes.
 func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.created_at,t.last_used_at FROM api_tokens t
-		LEFT JOIN api_token_scopes sc ON sc.token_id = t.id LEFT JOIN api_token_agent ag ON ag.token_id = t.id
+	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.created_at,t.last_used_at FROM api_tokens t`+scopeJoins+`
 		WHERE t.user_id = ? ORDER BY t.created_at DESC`, userID)
 	if err != nil {
 		return nil, err

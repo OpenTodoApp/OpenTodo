@@ -442,7 +442,9 @@ func TestReauthRequiredOnStaleSession(t *testing.T) {
 
 func TestBearerTokenNeverChallenged(t *testing.T) {
 	m := newMFAEnv(t)
-	resp, out := m.do("POST", "/api/v1/tokens", map[string]string{"name": "script"})
+	// Minting tokens is a credential route: a script needs an admin token
+	// (route-authorization-policy), which is never challenged either.
+	resp, out := m.do("POST", "/api/v1/tokens", map[string]string{"name": "script", "scope": "admin"})
 	m.mustStatus(resp, 201, out)
 	bearer := "Bearer " + out["secret"].(string)
 	m.member("member@example.com", "203.0.113.51")
