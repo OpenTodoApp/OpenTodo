@@ -203,11 +203,15 @@ func (s *Server) handleIssueReset(w http.ResponseWriter, r *http.Request) {
 		ttl = time.Duration(h) * time.Hour
 	}
 	var msg mail.Message
+	origin := s.publicOrigin(r)
 	if in.Send {
 		// Sending by email (OpenSpec `outgoing-email` D6): the administrator never
 		// handles the secret; a failure leaves no link pending.
 		if !s.mailEnabled(r.Context()) {
 			writeError(w, http.StatusConflict, "smtp_disabled", "outgoing email is not configured")
+			return
+		}
+		if origin = s.mailLinkOrigin(w); origin == "" {
 			return
 		}
 		target, err := s.auth.UserByID(r.Context(), r.PathValue("id"))
@@ -216,7 +220,7 @@ func (s *Server) handleIssueReset(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		msg = mail.Message{Kind: mail.KindPasswordReset, To: target.Email, Lang: mail.LangFrom(r.Header.Get("Accept-Language")),
-			Origin: s.publicOrigin(r), UserID: target.ID, ActorID: actor.ID, Vars: mail.Vars{Expiry: ttl}}
+			Origin: origin, UserID: target.ID, ActorID: actor.ID, Vars: mail.Vars{Expiry: ttl}}
 		if s.mail.Limited(r.Context(), msg) {
 			s.mailSendError(w, mail.ErrRateLimited)
 			return
@@ -227,7 +231,7 @@ func (s *Server) handleIssueReset(w http.ResponseWriter, r *http.Request) {
 		s.userError(w, err)
 		return
 	}
-	link := s.publicOrigin(r) + "/reset/" + secret
+	link := origin + "/reset/" + secret
 	if in.Send {
 		msg.Vars.Link = link
 		if err := s.mail.Send(r.Context(), msg); err != nil {
@@ -338,6 +342,10 @@ func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusNotFound, "smtp_disabled", "password reset by email is not available on this server")
 		return
 	}
+	origin := s.mailLinkOrigin(w)
+	if origin == "" {
+		return
+	}
 	if !s.originAllowed(r) {
 		writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
 		return
@@ -370,7 +378,7 @@ func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Reque
 	}
 	ctx := context.WithoutCancel(r.Context())
 	msg := mail.Message{Kind: mail.KindPasswordReset, To: strings.ToLower(addr.Address), Lang: mail.LangFrom(r.Header.Get("Accept-Language")),
-		Origin: s.publicOrigin(r), Vars: mail.Vars{Expiry: auth.DefaultResetTTL}}
+		Origin: origin, Vars: mail.Vars{Expiry: auth.DefaultResetTTL}}
 	if s.mail.Limited(ctx, msg) {
 		return
 	}
@@ -382,7 +390,7 @@ func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Reque
 	if u == nil {
 		return
 	}
-	msg.To, msg.UserID, msg.Vars.Link = u.Email, u.ID, s.publicOrigin(r)+"/reset/"+secret
+	msg.To, msg.UserID, msg.Vars.Link = u.Email, u.ID, origin+"/reset/"+secret
 	if err := s.mail.Send(ctx, msg); err != nil {
 		if rerr := s.auth.RevokePasswordReset(ctx, pr.ID); rerr != nil {
 			s.log.Error("revoke unsent reset link", "err", rerr)

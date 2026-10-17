@@ -123,7 +123,7 @@ func (s *Server) handleCreateProjectInvite(w http.ResponseWriter, r *http.Reques
 		s.internal(w, err)
 		return
 	}
-	link := s.publicOrigin(r) + "/invite/p/" + secret
+	link := s.inviteLinkOrigin(r, msg) + "/invite/p/" + secret
 	out := map[string]any{
 		"invite":      inv,
 		"link":        link,
@@ -268,7 +268,8 @@ func (s *Server) projectJoiner(ctx context.Context, tx *sql.Tx, inviterID, proje
 // changed between the preview and the acceptance answer the uniform 404.
 func (s *Server) projectInviteError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, auth.ErrInvitationInvalid), errors.Is(err, opsync.ErrForbidden), errors.Is(err, opsync.ErrNotFound), errors.Is(err, opsync.ErrInvalidMember):
+	case errors.Is(err, auth.ErrInvitationInvalid), errors.Is(err, opsync.ErrForbidden), errors.Is(err, opsync.ErrNotFound), errors.Is(err, opsync.ErrInvalidMember),
+		errors.Is(err, opsync.ErrProjectIDConflict):
 		writeError(w, http.StatusNotFound, "invitation_invalid", auth.ErrInvitationInvalid.Error())
 	case errors.Is(err, auth.ErrInvitationEmailMismatch):
 		writeError(w, http.StatusForbidden, "invitation_email_mismatch", "this invite link was issued for a different email address")

@@ -69,7 +69,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
 | GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
-| POST | `/api/v1/auth/password-reset` | none | `{email}` → always 202 `{ok: true}`; mails a reset link to an active account's address, see [Outgoing email](#outgoing-email); 404 `smtp_disabled` without outgoing email |
+| POST | `/api/v1/auth/password-reset` | none | `{email}` → always 202 `{ok: true}`; mails a reset link to an active account's address, see [Outgoing email](#outgoing-email); 404 `smtp_disabled` without outgoing email, 409 `base_url_required` without `OPENTODO_BASE_URL` |
 | GET | `/api/v1/auth/verify/{token}` | none | pending sign-up `{email, expiresAt}` or 404 `verification_invalid` |
 | POST | `/api/v1/auth/verify/{token}` | none | creates the account of a pending sign-up → 201 `{user}` + cookie; 404 `verification_invalid`, 403 `signup_closed`, 409 `email_taken` |
 | GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
@@ -79,7 +79,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry), empty when there are none; admins, members and tokens never get the field |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
 | POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -370,7 +370,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 ### Outgoing email
 
-Optional SMTP, configured by the owner in **Settings → Server → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`.
+Optional SMTP, configured by the owner in **Settings → Server → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`. Links in reset, sign-up and invitation emails are built from `OPENTODO_BASE_URL` only: without it those flows answer 409 `base_url_required` (open sign-up included) and send nothing, and the owner's `config_warnings` names `OPENTODO_BASE_URL`.
 
 **Configuration** — `GET /api/v1/settings/smtp` (the owner's session; API tokens get 403) →
 
@@ -715,7 +715,7 @@ Response (201):
 }
 ```
 
-The `link` contains the secret and is returned exactly once; the server stores only a hash. The link uses `OPENTODO_BASE_URL` when set, otherwise the request's origin (honouring `X-Forwarded-Host` / `X-Forwarded-Proto`). Bad input (`expiresInHours` outside 1–720, a malformed `email`) is a 400 `invalid_input`. Creation is limited to 20 per hour per account (429 `rate_limited`).
+The `link` contains the secret and is returned exactly once; the server stores only a hash. The link uses `OPENTODO_BASE_URL` when set, otherwise the request's origin (`X-Forwarded-Host` / `X-Forwarded-Proto` only from an address in `OPENTODO_TRUSTED_PROXIES`). A link sent by email (`send: true`) always uses `OPENTODO_BASE_URL`; without it the answer is 409 `base_url_required` and nothing is created. Bad input (`expiresInHours` outside 1–720, a malformed `email`) is a 400 `invalid_input`. Creation is limited to 20 per hour per account (429 `rate_limited`).
 
 **List** — `GET /api/v1/invitations` → `{invitations: [...]}` with the same shape as above, newest first. `status` is one of `pending`, `accepted`, `expired`, `revoked`; an accepted entry carries `acceptedBy: {id, email, name}`. Secrets and links never appear in the list.
 
@@ -1660,7 +1660,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
@@ -1719,6 +1719,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `smtp_disabled` | 404/409 | 404 on routes that only send (`auth/password-reset`, the SMTP test) and `/settings/smtp` on a server without outgoing email; 409 for a `send` flag while outgoing email is not configured |
 | `email_failed` | 502 | the SMTP server refused or could not be reached while sending an invitation, project invite or reset by email; nothing was left pending |
 | `managed_by_env` | 409 | changing an outgoing email field that an `OPENTODO_SMTP_*` variable sets |
+| `base_url_required` | 409 | a password reset, open sign-up, invitation, project invite or reset sent by email on a server without `OPENTODO_BASE_URL`; nothing was created or sent |
 
 **Data, sharing and features**
 
@@ -1730,6 +1731,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `user_not_found` | 404 | adding a project member by an email that has no account |
 | `already_member` | 409 | adding an account that is already a member of the project, or accepting a project invite link as one |
 | `owner_must_transfer` | 409 | the project owner leaving the project |
+| `project_id_conflict` | 409 | sharing a project for the first time while another account has a project with the same id |
 | `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |

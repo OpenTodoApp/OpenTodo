@@ -360,7 +360,7 @@ func (s *Service) TaskComments(ctx context.Context, userID, taskID string) ([]En
 	rows, err := s.db.QueryContext(ctx, `SELECT c.entity_id, c.field, c.value FROM scope_fields c
 		WHERE c.scope_id = ? AND c.entity = 'comment' AND c.entity_id IN
 		  (SELECT entity_id FROM scope_fields WHERE scope_id = ? AND entity = 'comment' AND field = 'task_id' AND value = ?)`,
-		scope, scope, quoteID(taskID))
+		scope, scope, QuoteJSON(taskID))
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (s *Service) TaskComments(ctx context.Context, userID, taskID string) ([]En
 		}
 		e := byID[id]
 		if e == nil {
-			e = Entity{"id": json.RawMessage(quoteID(id))}
+			e = Entity{"id": json.RawMessage(QuoteJSON(id))}
 			byID[id] = e
 		}
 		e[field] = json.RawMessage(value)
@@ -455,9 +455,4 @@ func (e Entity) str(field string) string {
 		_ = json.Unmarshal(raw, &v)
 	}
 	return v
-}
-
-func quoteID(id string) string {
-	b, _ := json.Marshal(id)
-	return string(b)
 }

@@ -86,3 +86,18 @@ func clientIP(r *http.Request) string {
 	}
 	return hops[0]
 }
+
+// fromTrustedProxy reports whether the connection itself comes from an address
+// in OPENTODO_TRUSTED_PROXIES, the only peers whose X-Forwarded-Host and
+// X-Forwarded-Proto are believed.
+func fromTrustedProxy(r *http.Request) bool {
+	t := trustedProxies.Load()
+	if t == nil || len(t.prefixes) == 0 {
+		return false
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	return within(host, t.prefixes)
+}

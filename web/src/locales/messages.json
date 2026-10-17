@@ -8649,6 +8649,9 @@
   "This project already has a field named “{name}”.": [
     "web/src/lib/fields.ts"
   ],
+  "This project cannot be shared: another account has a project with the same id. Duplicate it and share the copy.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This project has no open tasks": [
     "web/src/app/TaskListView.tsx"
   ],
@@ -8673,6 +8676,9 @@
   ],
   "This server asks for the token its operator configured. Find it in your hosting panel, for example Coolify, this service, Environment Variables, {variable}.": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.": [
     "web/src/app/EmailScreens.tsx"
