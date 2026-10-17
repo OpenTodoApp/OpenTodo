@@ -28,7 +28,7 @@ import { ViewMenu, viewIcon } from './ViewsView'
 import { useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
-import { visibleTasks } from '../lib/trash'
+import { useOpenTasks } from '../lib/liveTasks'
 import { beginDrag } from '../lib/dnd'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, roleOf } from '../lib/sharing'
@@ -112,7 +112,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // activity log and the synced seen markers, so it moves with every sync.
   const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
 
-  const openTasks = useLiveQuery(() => visibleTasks().then((l) => l.filter((task) => !task.completed_at)), [], [])
+  const openTasks = useOpenTasks()
   const zone = useViewerZone()
   const counts = useMemo(() => {
     const today = todayISO()

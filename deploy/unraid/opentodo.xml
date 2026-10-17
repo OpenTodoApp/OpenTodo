@@ -18,7 +18,7 @@
   <CPUset/>
   <DonateText/>
   <DonateLink/>
-  <Requires>Nothing else. Data is one SQLite file in the appdata folder.</Requires>
+  <Requires>Nothing else. Data is one SQLite file in the appdata folder. Leave Use Tailscale off: the image has no shell, so Unraid's Tailscale script cannot run in it and the container would not start. For an https address on your tailnet, use Tailscale Serve on the Unraid server: https://github.com/pixari/opentodo/blob/main/docs/self-hosting/unraid.md#tailscale</Requires>
   <Config Name="Web UI port" Target="8080" Default="8080" Mode="tcp" Description="The port the app and API answer on." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
   <Config Name="Data" Target="/data" Default="/mnt/user/appdata/opentodo" Mode="rw" Description="Everything OpenTodo stores: the database, attachments and backups. Back up this folder." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/opentodo</Config>
   <Config Name="Base URL" Target="OPENTODO_BASE_URL" Default="" Mode="" Description="The address people open, for example https://todo.example.com. Needed behind a reverse proxy for passkeys, secure cookies and links in emails. Include the port if there is one. Leave empty when you open OpenTodo by the server's address." Type="Variable" Display="always" Required="false" Mask="false"></Config>

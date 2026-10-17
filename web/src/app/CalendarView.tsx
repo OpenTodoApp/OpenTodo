@@ -33,7 +33,7 @@ import { PanelFrame } from './PanelFrame'
 import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { useToday, useViewerZone } from './useViews'
-import { visibleTasks } from '../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
 
@@ -107,7 +107,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
-  const rawTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const rawTasks = useLiveTasks() ?? NO_TASKS
   // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
   // are converted here and edits are converted back with dueFromView.
   const zone = useViewerZone()
@@ -763,7 +763,7 @@ interface PlanActions {
 function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
   const today = useToday()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const tasks = useLiveTasks() ?? NO_TASKS
   const [source, setSource] = useState<string>(readTray)
   const choose = (v: string) => {
     setSource(v)
