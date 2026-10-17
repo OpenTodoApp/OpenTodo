@@ -1,6 +1,6 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
-import { db, entityTables, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './db'
 import { dueToInstant, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { hlcNow, hlcSeed, wins } from './hlc'
@@ -41,23 +41,6 @@ export function getDeviceId(): Promise<string> {
 /** Test hook: forget the memoized device id (the database was swapped). */
 export function resetDeviceId(): void {
   devicePromise = null
-}
-
-function tableFor(entity: Entity) {
-  switch (entity) {
-    case 'project': return db.projects
-    case 'label': return db.labels
-    case 'view': return db.views
-    case 'reminder': return db.reminders
-    case 'section': return db.sections
-    case 'field': return db.fields
-    case 'comment': return db.comments
-    case 'project_prefs': return db.prefs
-    case 'user_prefs': return db.userPrefs
-    case 'attachment': return db.attachments
-    case 'review': return db.review
-    default: return db.tasks
-  }
 }
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
@@ -144,7 +127,7 @@ export async function applyOps(
     const rows = new Map<string, Record<string, unknown>>()
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
-      const table = tableFor(entity)
+      const table = tableOf(entity)
       const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
@@ -190,7 +173,7 @@ export async function applyOps(
       rows.set(`${entity}:${entityId}`, row)
       if (changed) {
         row._clock = clock
-        await (table as unknown as { put(v: unknown): Promise<unknown> }).put(row)
+        await table.put(row as EntityRow)
       }
       if (rt && merged !== undefined && NOTE_ENTITIES.has(entity)) {
         const patch = reconcileNote(rt, row as unknown as Task, merged)
@@ -388,7 +371,7 @@ async function richTextFor(changes: Change[]): Promise<RichText | null> {
   if (notes.length === 0) return null
   if (notes.some((c) => 'notes_doc' in c.patch)) return loadRichText()
   for (const c of notes) {
-    const row = (await tableFor(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
+    const row = (await tableOf(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
     if (row?.notes_doc) return loadRichText()
   }
   return null
@@ -408,7 +391,7 @@ async function withNotePairs(rt: RichText, changes: Change[], ts: number, device
       out.push(c)
       continue
     }
-    const row = (await tableFor(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
+    const row = (await tableOf(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
     const stored = row?.notes_doc ?? ''
     const patch = { ...c.patch }
     if ('notes_doc' in patch) {
@@ -442,7 +425,7 @@ export async function foldNote(entityOrTaskId: string, id?: string): Promise<boo
   const entityId = id ?? entityOrTaskId
   if (!NOTE_ENTITIES.has(entity)) return false
   const rt = await loadRichText()
-  const row = (await tableFor(entity).get(entityId)) as Pick<Task, 'notes_doc' | 'description' | '_clock' | 'deleted_at'> | undefined
+  const row = (await tableOf(entity).get(entityId)) as Pick<Task, 'notes_doc' | 'description' | '_clock' | 'deleted_at'> | undefined
   if (!row || row.deleted_at) return false
   if (!row.notes_doc) {
     if (!row.description) return false
