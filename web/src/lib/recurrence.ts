@@ -377,7 +377,7 @@ export function previewOccurrences(rule: Rule | string, due: string | null, toda
 
 /** Example rules offered as suggestions in the detail panel (all documented in docs/recurrence.md). */
 export const RULE_SUGGESTIONS = [
-  'every day', 'every weekday', 'every week', 'every 2 weeks', 'every month', 'every year',
+  'every day', 'every weekday', 'every week', 'every 2 weeks', 'every month', 'every 3 months', 'every year',
   'every monday', 'every mon, wed, fri', 'every 15th', 'every last day', 'every last weekday',
   'every 2nd tuesday', 'every last friday', 'every 3 days after completion', 'every week for 10 times',
 ]

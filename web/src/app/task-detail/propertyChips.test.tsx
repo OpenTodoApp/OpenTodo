@@ -97,6 +97,24 @@ describe('property chips', () => {
     await unmount()
   })
 
+  // Issue #100: the zone control sits beside a timed due only, and once while the When editor is open.
+  it('shows the zone control beside a timed due only, and once while the When editor is open', async () => {
+    const zones = (root: ParentNode) => root.querySelectorAll('button[aria-label^="Time zone"]').length
+    const untimed = await createTask({ title: 'Brush head', due: { date: '2026-11-07' } })
+    let view = await open(untimed)
+    expect(zones(view.row('due'))).toBe(0)
+    await view.unmount()
+
+    const timed = await createTask({ title: 'Call', due: { date: '2026-11-07', time: '09:00' } })
+    view = await open(timed)
+    expect(zones(view.row('due'))).toBe(1)
+    await click(view.valueButton('due'))
+    await settle()
+    expect(view.row('due').querySelector('[data-property-editor="due"]')).toBeTruthy()
+    expect(zones(view.row('due'))).toBe(1)
+    await view.unmount()
+  })
+
   it('the breadcrumb reads project › section', async () => {
     const p = await createProject({ name: 'Home' })
     const { createSection, moveTaskToSection } = await import('../../lib/sections')

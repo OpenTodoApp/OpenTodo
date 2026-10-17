@@ -32,6 +32,9 @@ import { WhenControl } from './WhenControl'
 import { ZoneControl } from './ZoneControl'
 import { t } from '../../lib/i18n'
 
+/** Chips whose editor is the When control (it has its own zone control). */
+const WHEN_CHIPS = new Set(['due', 'deadline', 'when', 'evening', 'reminders', 'repeat'])
+
 export const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   // Priority colours come from the p1–p4 tokens (borders, 3:1); the labels use the
   // matching palette hue's text step so they stay readable (4.5:1) in both themes.
@@ -278,7 +281,9 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
               {hint && <span className="ml-1 text-faint">{hint}</span>}
             </span>
           )}
-          aside={task.due ? <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} /> : undefined}
+          // Beside the chip only for a timed due (an untimed one has no zone to fix), and not
+          // while a When editor is open: its Do on segment shows the same control (GitHub issue 100).
+          aside={task.due?.time && !(editing && WHEN_CHIPS.has(editing)) ? <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} /> : undefined}
           editorLabel={t('When')} editor={(close) => <WhenControl task={task} readOnly={readOnly} focus="due" onDone={close} onOpen={onOpen} />} />
 
         {/* Priority: always present, one chip that opens the four options. */}
