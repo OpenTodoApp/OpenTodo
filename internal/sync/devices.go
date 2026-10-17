@@ -43,7 +43,7 @@ func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentD
 // The server's own device (REST writes, attachment uploads: uploaded_at is
 // trusted only from it) is reserved too (OpenSpec change attachments, design D3).
 func ReservedDevice(device string) bool {
-	return device == ServerDevice || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
+	return IsServerDevice(device) || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
 		strings.HasPrefix(device, PublicDevicePrefix)
 }
 

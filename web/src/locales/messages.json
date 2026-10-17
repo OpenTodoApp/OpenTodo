@@ -8516,6 +8516,9 @@
   "This device is signed in to your server.": [
     "web/src/app/AccountSettings.tsx"
   ],
+  "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": [
+    "web/src/lib/sync.ts"
+  ],
   "This device’s sync state": [
     "web/src/app/settingsIndex.ts"
   ],

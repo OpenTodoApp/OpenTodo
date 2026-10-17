@@ -226,7 +226,7 @@ func TestEmailToTaskEndToEnd(t *testing.T) {
 		op := o.(map[string]any)
 		if op["entityId"] == task["id"] {
 			found++
-			if op["device"] != "server" {
+			if op["device"] != opsync.ServerDevice {
 				t.Fatalf("op device = %v", op["device"])
 			}
 		}

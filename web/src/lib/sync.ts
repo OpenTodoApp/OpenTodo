@@ -8,6 +8,7 @@ import { api, ApiError } from './api'
 import { db, entityTables, getMeta, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
 import { hlcObserveServerTime } from './hlc'
+import { restampSkewed, splitClockSkew } from './clockSkew'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
@@ -137,6 +138,7 @@ function isSyncResponse(v: unknown): v is SyncResponse {
   return Array.isArray(r.ops) && r.ops.every((o) => typeof o === 'object' && o !== null)
     && typeof r.cursor === 'number' && Number.isFinite(r.cursor) && typeof r.hasMore === 'boolean'
     && (r.serverTime === undefined || typeof r.serverTime === 'number')
+    && (r.backfillSeq === undefined || typeof r.backfillSeq === 'number')
     && list(r.rejected) && list(r.memberships) && list(r.purged)
     && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
 }
@@ -168,20 +170,25 @@ async function runOnce(): Promise<void> {
     // Notifications are refreshed after the first exchange of a session and after
     // any exchange that brought changes (an assignment arrives as an op).
     let received = needNotifications
+    let skewRounds = 0
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
       const sent = batch.map(({ local: _local, ...op }) => op)
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
-      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
+      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset(), await getMeta<number>('backfillAck', 0))
       // A proxy or captive portal can answer 200 with a page of its own: nothing
       // was synced, so the outbox stays as it is (client-data-safety).
       if (!isSyncResponse(res)) throw new Error(t('The server sent an answer this app does not understand. Your changes stay on this device.'))
       hlcObserveServerTime(res.serverTime)
       // A server limit (multi-tenant-host) refuses ops without judging them: the
       // device keeps them, unsynced, and sends them again later.
-      const { limited, refused } = splitRejected(res.rejected ?? [])
+      // A clock refusal (sync-convergence) keeps the change: it is stamped again
+      // with the corrected clock and sent in the next round of this loop.
+      const { skewed, rest } = splitClockSkew(res.rejected ?? [])
+      if (skewed.length > 0 && ++skewRounds > 3) throw new Error(t('This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.'))
+      const { limited, refused } = splitRejected(rest)
       // The sent batch leaves the outbox in the same transaction that holds the
       // ops a limit refused and forgets the clocks of refused ones (project-sharing:
       // the server's values, which travel in res.ops, then win), so no path
@@ -194,6 +201,7 @@ async function runOnce(): Promise<void> {
           await markSent(sent, wireOps)
         }
         if (limited.length > 0) await holdOps(sent, limited)
+        await restampSkewed(sent, skewed, res.serverTime)
         ;({ keys, notice } = await forgetRejected(sent, refused))
         // A refused op never happened: drop it from the local activity log too.
         await forgetActivity(refused.map((r) => r.id))
@@ -241,6 +249,8 @@ async function runOnce(): Promise<void> {
         continue
       }
       await setMeta('cursor', res.cursor)
+      // Confirms a page of a joined project's history once it was applied (sync-convergence).
+      await setMeta('backfillAck', res.backfillSeq ?? 0)
       const left = await db.outbox.count()
       publish({ pending: left })
       if (!res.hasMore && left === 0) break

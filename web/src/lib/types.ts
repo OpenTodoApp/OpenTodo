@@ -1190,6 +1190,8 @@ export interface Membership {
 export interface Rejection {
   id: string
   reason: string
+  /** The server's clock when it refused an op as stamped too far ahead (`clock_skew`, sync-convergence). */
+  serverTime?: number
 }
 
 /** POST /api/v1/sync response. Every field after `serverTime` is optional (older servers). */
@@ -1206,6 +1208,8 @@ export interface SyncResponse {
   purged?: { entity: Entity; entityId: string }[]
   /** Days an item stays in the Trash before the server purges it; 0 = never (additive). */
   trashRetentionDays?: number
+  /** A served page of a joined project's history; echoed as `backfillAck` once applied (sync-convergence). */
+  backfillSeq?: number
 }
 
 /** One field write in a history change set (trash-and-history). */
@@ -1218,7 +1222,7 @@ export interface HistoryChange {
   lost?: boolean
 }
 
-/** Writes made at one timestamp by one device ("server" = REST API). */
+/** Writes made at one timestamp by one device ("server" or "server:<boot id>" = REST API). */
 export interface ChangeSet {
   ts: number
   device: string

@@ -481,7 +481,7 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `project_id` | string or null | null = Inbox |
 | `parent_id` | string or null | parent task for subtasks, any depth; see [Subtasks](#subtasks) |
 | `priority` | 1–4 | 1 highest, 4 default |
-| `due` | `{date:"YYYY-MM-DD", time?:"HH:MM", tz?:"Area/City"}` or null | floating date by default; with `tz` (an IANA zone, only together with `time`) a zoned time, the instant at that wall time in that zone. `400 invalid_input` for `tz` without `time` or an unknown zone. See [sync.md](sync.md#zoned-due-values) |
+| `due` | `{date:"YYYY-MM-DD", time?:"HH:MM", tz?:"Area/City"}` or null | floating date by default; with `tz` (an IANA zone, only together with `time`) a zoned time, the instant at that wall time in that zone. `400 invalid_input` for a date that does not exist (`2026-02-31`), a time outside 00:00–23:59, `tz` without `time` or an unknown zone. See [sync.md](sync.md#zoned-due-values) |
 | `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
 | `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length |
 | `deadline` | `"YYYY-MM-DD"` or null | the day the task must be finished by, separate from the planned `due` date; a bare date that exists, so `"next friday"`, `"2026-02-30"` or a time are refused with `invalid_input`. Editing `due` never changes it |
@@ -1101,7 +1101,7 @@ The `link` carries the secret and is returned only here; the server keeps a hash
 
 A task's `assignee_id` (OpenSpec `task-assignment`) is an ordinary task field: set it with `POST /api/v1/tasks` or `PATCH /api/v1/tasks/{id}`, clear it with `null`. In a shared project the assignee must be a current member; for a task in your Inbox or an unshared project it must be you. Viewers cannot assign (`403 forbidden`, like any write). A refused assignment answers `400 not_a_member` and stores nothing; the sync endpoint refuses the same operation individually with `rejected: [{"id":"…","reason":"not_a_member"}]`.
 
-When a member leaves or is removed, the server clears `assignee_id` on every task of that project assigned to them with operations of its own (device `server`), so every member's devices see the tasks unassigned after their next sync.
+When a member leaves or is removed, or their account is deleted, the server clears `assignee_id` on every task of that project assigned to them with operations of its own (device `server:<boot id>`), so every member's devices see the tasks unassigned after their next sync.
 
 Assigning a task to someone other than yourself creates an in-app notification for the assignee. Notifications are server-side account data: they are not part of the op log or the export. Read notifications older than 90 days are removed when the server starts. Both routes require a session or token (`401 unauthorized`).
 
@@ -1133,7 +1133,7 @@ curl -X POST -H "Authorization: Bearer $BOB" $BASE/api/v1/notifications/$N/read
 
 Deleting (`DELETE /api/v1/{tasks|projects}/{id}`) is a tombstone: the item goes to the Trash and can be restored by writing `deleted_at: null` (`PATCH` accepts deleted items). Deleting a project leaves its tasks' `project_id` alone; clients hide those tasks until the project is restored or purged.
 
-History is read from the operation log. Each change set groups the field writes made at one timestamp by one device (`server` for REST writes, `caldav:<id>` for calendar apps, `agent:<token-id>` for AI assistants); a change set written by an AI assistant also carries `device_label`: `"AI assistant (<token name>)"` when you own the token and it still exists, `"AI assistant"` otherwise. `from` is the previous value in timestamp order, and `lost: true` marks a write that arrived after a newer one and never became the stored value. Members of a shared project see the history of its tasks; nobody sees another account's personal items (404 `not_found`, as for unknown ids and purged items). Restoring an old value is an ordinary write, so it appears in the history too.
+History is read from the operation log. Each change set groups the field writes made at one timestamp by one device (`server:<boot id>` for REST writes, `server` for those stored by older releases, `caldav:<id>` for calendar apps, `agent:<token-id>` for AI assistants); a change set written by an AI assistant also carries `device_label`: `"AI assistant (<token name>)"` when you own the token and it still exists, `"AI assistant"` otherwise. `from` is the previous value in timestamp order, and `lost: true` marks a write that arrived after a newer one and never became the stored value. Members of a shared project see the history of its tasks; nobody sees another account's personal items (404 `not_found`, as for unknown ids and purged items). Restoring an old value is an ordinary write, so it appears in the history too.
 
 ```sh
 curl -sS "$OT/api/v1/tasks/$ID/history" -H "Authorization: Bearer $TOKEN"
@@ -1344,7 +1344,7 @@ curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application
 # 400 {"error":{"code":"invalid_input","message":"allowlist: allowlist must be a list of at most 50 email addresses"}}
 ```
 
-Tasks created from mail are ordinary operations with device `server` (title, description, priority 4, created_at, position; no project, no due date), so they arrive through `POST /api/v1/sync` like any other change.
+Tasks created from mail are ordinary operations with the server's device `server:<boot id>` (title, description, priority 4, created_at, position; no project, no due date), so they arrive through `POST /api/v1/sync` like any other change.
 
 ### Webhooks
 

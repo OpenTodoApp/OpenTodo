@@ -24,7 +24,7 @@ func TestHistoryRequiresAuthAnd404(t *testing.T) {
 	if len(sets) != 3 {
 		t.Fatalf("change sets = %v", sets)
 	}
-	for i, want := range []string{"laptop", "phone", "server"} {
+	for i, want := range []string{"laptop", "phone", serverDevice} {
 		if d := sets[i].(map[string]any)["device"]; d != want {
 			t.Fatalf("set %d device = %v, want %s", i, d, want)
 		}

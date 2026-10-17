@@ -49,17 +49,19 @@ The writers are:
 | Writer | Path | Device id |
 | --- | --- | --- |
 | Web app on each device | `POST /api/v1/sync` → `sync.Apply` (refused ops reported per op, never block the outbox) | the device's id |
-| REST API, CLI | handler turns body fields into ops → `sync.ApplyStrict` (all or nothing) | `server` |
+| REST API, CLI | handler turns body fields into ops → `sync.ApplyStrict` (all or nothing) | `server:<boot id>` (`server` in ops from older releases) |
 | CalDAV clients | `/dav/` PUT, PROPPATCH, MKCALENDAR, DELETE → one op per changed property | `caldav:<app password id>` |
-| Email to task | IMAP poller → `ApplyStrict`, ids derived from account and Message-ID | `server` |
+| Email to task | IMAP poller → `ApplyStrict`, ids derived from account and Message-ID | `server:<boot id>` |
 | Import | background job, batches of 1,000 ops | `import` |
-| Server itself | reminder delivery (`delivered_at`), unassigning people who leave a project, recurring completion via REST | `server` |
+| Server itself | reminder delivery (`delivered_at`), unassigning people who leave a project or whose account is deleted, recurring completion via REST | `server:<boot id>` |
+
+Every server-side writer takes its timestamps from one strictly increasing clock (`sync.Service.ServerTS`), and the boot id is chosen when the process starts, so two server writes never tie under last-writer-wins.
 
 Membership, accounts, tokens, settings, webhooks, audit events and backup runs are **not** ops: they are server-side account data in ordinary tables, changed only through authenticated REST routes.
 
 ### Request flow for a REST write
 
-`POST /api/v1/tasks` → auth middleware resolves the user (session cookie with origin check, or bearer token with its scope) → body fields become ops with `ts = now`, `device = "server"` → `sync.ApplyStrict` resolves each op's scope and checks the caller's role → after commit the observer queues webhook deliveries for genuine changes (for every member who can see the scope) and notification sinks record assignments and mentions → `sync.NotifyApplied` wakes the open event streams of everyone who can see the change → the entity is re-read from `scope_fields` → JSON response. Devices receive the ops on their next sync, which the wake-up triggers at once.
+`POST /api/v1/tasks` → auth middleware resolves the user (session cookie with origin check, or bearer token with its scope) → body fields become ops with `ts = Service.ServerTS()`, `device = "server:<boot id>"` → `sync.ApplyStrict` resolves each op's scope and checks the caller's role → after commit the observer queues webhook deliveries for genuine changes (for every member who can see the scope) and notification sinks record assignments and mentions → `sync.NotifyApplied` wakes the open event streams of everyone who can see the change → the entity is re-read from `scope_fields` → JSON response. Devices receive the ops on their next sync, which the wake-up triggers at once.
 
 ### Reads
 

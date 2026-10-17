@@ -61,6 +61,9 @@ function reauthenticate(): Promise<boolean> {
   return reauthInFlight
 }
 
+/** Sync protocol additions this client supports (POST /api/v1/sync `features`). */
+export const SYNC_FEATURES = ['clock_skew', 'backfill_ack']
+
 async function request<T>(method: string, path: string, body?: unknown, retried = false): Promise<T> {
   try {
     return await send<T>(method, path, body)
@@ -221,8 +224,13 @@ export const api = {
   listIdentities: () => request<{ identities: LinkedIdentity[]; provider: OidcStatus }>('GET', '/api/v1/me/identities'),
   unlinkIdentity: (id: string) => request<void>('DELETE', `/api/v1/me/identities/${encodeURIComponent(id)}`),
   /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
-  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number) =>
-    request<SyncResponse>('POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset }),
+  // `features` tells the server which protocol additions this client handles
+  // (sync-convergence): `clock_skew` refusals and confirmed backfill pages.
+  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number, backfillAck = 0) =>
+    request<SyncResponse>('POST', '/api/v1/sync', {
+      device, cursor, ops, ...(tzOffset === undefined ? {} : { tzOffset }),
+      features: SYNC_FEATURES, ...(backfillAck > 0 ? { backfillAck } : {}),
+    }),
   // Project sharing: membership is server-side authorization data, changed only through these routes.
   listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
   addMember: (projectId: string, email: string, role: ProjectRole) =>

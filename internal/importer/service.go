@@ -75,9 +75,6 @@ type Service struct {
 	// onSummary receives one Summary per finished job or undo (guarded by mu).
 	onSummary func(context.Context, Summary)
 
-	clockMu sync.Mutex
-	lastTS  int64
-
 	wg sync.WaitGroup
 	// beforeBatch, when set by tests, runs before each batch of a job is written.
 	beforeBatch func(jobID string)
@@ -140,13 +137,10 @@ func (s *Service) failInterrupted(ctx context.Context) error {
 	return nil
 }
 
-// opTS issues strictly increasing timestamps for import ops, like the REST clock,
-// so two imports touching one field within a millisecond never tie.
+// opTS issues import op timestamps from the sync service's server clock, shared
+// with REST and every other server writer, so no two server writes tie.
 func (s *Service) opTS() int64 {
-	s.clockMu.Lock()
-	defer s.clockMu.Unlock()
-	s.lastTS = max(s.now().UnixMilli(), s.lastTS+1)
-	return s.lastTS
+	return s.sync.ServerTSAt(s.now().UnixMilli())
 }
 
 func (s *Service) acquire(uid, jobID string) error {

@@ -33,8 +33,8 @@ const (
 )
 
 // Device is the op device of tasks created from email: like every other
-// server-side write it is "server" (spec: Message becomes a task).
-const Device = opsync.ServerDevice
+// server-side write it is the server's (spec: Message becomes a task).
+var Device = opsync.ServerDevice
 
 // Processor turns one raw message into at most one task.
 type Processor struct {
@@ -99,7 +99,7 @@ func (p *Processor) Process(ctx context.Context, raw []byte) (Outcome, error) {
 	} else if n >= p.cap {
 		return RateLimited, nil
 	}
-	ops := taskOps(in.UserID, msg, now)
+	ops := taskOps(in.UserID, msg, now, p.sync.ServerTSAt(now.UnixMilli()))
 	res, err := p.sync.ApplyStrict(ctx, in.UserID, ops)
 	if errors.Is(err, opsync.ErrInvalidOp) {
 		return Malformed, nil // never retried: the same message would fail again
@@ -136,7 +136,7 @@ func TaskID(userID, messageID string) string {
 // syncs re-writes title and description as ciphertext (encrypt-on-sight) and
 // POST /api/v1/encryption/purge-history removes the plaintext ops afterwards.
 // See docs/e2ee.md, "Server-side integrations".
-func taskOps(userID string, msg *Parsed, now time.Time) []opsync.Op {
+func taskOps(userID string, msg *Parsed, now time.Time, ts int64) []opsync.Op {
 	id := TaskID(userID, msg.MessageID)
 	ms := now.UnixMilli()
 	str := func(s string) json.RawMessage { b, _ := json.Marshal(s); return b }
@@ -159,7 +159,7 @@ func taskOps(userID string, msg *Parsed, now time.Time) []opsync.Op {
 			EntityID: id,
 			Field:    f.name,
 			Value:    f.value,
-			TS:       ms,
+			TS:       ts,
 			Device:   Device,
 		}
 	}

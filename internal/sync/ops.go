@@ -639,6 +639,16 @@ func checkKind(k kind, raw json.RawMessage) error {
 		if err := json.Unmarshal(raw, &d); err != nil || !isDate(d.Date) || (d.Time != nil && !isClock(*d.Time)) {
 			return errors.New(`must be null or {"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}`)
 		}
+		// The date must exist and the time be a clock reading 00:00-23:59
+		// (sync-convergence): recurrence and reminders compute from them.
+		if _, err := time.Parse("2006-01-02", d.Date); err != nil {
+			return errors.New(`must be null or a due whose date "YYYY-MM-DD" exists`)
+		}
+		if d.Time != nil {
+			if _, err := time.Parse("15:04", *d.Time); err != nil {
+				return errors.New(`must be null or a due whose time "HH:MM" is between 00:00 and 23:59`)
+			}
+		}
 		// A zoned due (OpenSpec change absolute-datetimes) names a known IANA
 		// zone and always has a time.
 		if d.TZ != nil {
