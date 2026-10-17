@@ -80,6 +80,11 @@ export default defineConfig({
   test: {
     environment: 'node',
     setupFiles: ['./src/test-setup.ts'],
+    // Interaction tests seed IndexedDB and render whole screens; with every core
+    // busy (parallel workers) a few take seconds. Conditions are awaited with
+    // waitFor (ui/test-utils, 10 s), so the cap only has to catch a hang
+    // (web-lint-and-test-hygiene).
+    testTimeout: 30_000,
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     // Token tests read index.css as text (src/ui/tokens); other CSS stays stubbed.
     css: { include: [/index\.css/] },

@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png _locales
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint i18n-check repo-check
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check
 
 all: build
 
@@ -173,12 +173,17 @@ deploy-check:
 repo-check:
 	node --test scripts/repo-checks.test.mjs
 
-check: lint test ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
+check: lint web-lint test ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
 
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
 ui-lint:
 	node scripts/ui-check.mjs
+
+## React hooks lint (web-lint-and-test-hygiene): Rules of Hooks and effect
+## dependencies as errors; every remaining suppression carries its reason.
+web-lint:
+	cd web && npm run lint
 
 ## Translation catalogs (app-localization): every shipped catalog complete, no stale
 ## or malformed entries, placeholders as in the source; script tests included.

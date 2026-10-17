@@ -67,7 +67,7 @@ export function ReviewView({ userId }: { userId?: string }) {
   useEffect(() => { if (selected) chosen.current = true }, [selected])
 
   const current = step ?? 'clear'
-  const taskRows = !steps ? [] : current === 'clear' ? steps.inbox : current === 'back' ? steps.overdue : current === 'ahead' ? steps.ahead : []
+  const taskRows = useMemo(() => !steps ? [] : current === 'clear' ? steps.inbox : current === 'back' ? steps.overdue : current === 'ahead' ? steps.ahead : [], [steps, current])
   const keyRows = useMemo(() => taskRows.map((tk) => ({ key: tk.id, task: tk })), [taskRows])
   useListKeys({
     rows: keyRows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor,

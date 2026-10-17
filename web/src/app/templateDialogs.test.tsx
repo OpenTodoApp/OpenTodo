@@ -7,10 +7,14 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createProject, createSubtask, createTask, resetDeviceId } from '../lib/ops'
 import { createSection } from '../lib/sections'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, mockFetch, noPublicLinks } from '../ui/test-utils'
 import { ProjectHeader } from './ProjectHeader'
 import { TaskListView } from './TaskListView'
 import { TemplateDialog } from './TemplateDialogs'
+
+// The project header asks the server for its public links.
+beforeEach(() => mockFetch(noPublicLinks))
+afterEach(() => { vi.unstubAllGlobals() })
 
 let n = 0
 beforeEach(() => {

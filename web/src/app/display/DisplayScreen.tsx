@@ -164,6 +164,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         return { title: view.name, groups, columns: [] }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }, [projects, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days])
 
   // ---- keyboard and focus (design D5): one roving focus across groups and columns ----

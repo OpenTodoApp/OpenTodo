@@ -2,12 +2,16 @@
 // Sub-projects as a collapsible group at the top of a project (OpenSpec change
 // ux-overhaul, project-organization "Sub-projects inside a project view").
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
 import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
+
+// The project header asks the server for its public links.
+beforeEach(() => mockFetch(noPublicLinks))
+afterEach(() => { vi.unstubAllGlobals() })
 
 beforeEach(async () => {
   await db.delete()

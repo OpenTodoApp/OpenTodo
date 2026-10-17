@@ -126,9 +126,14 @@
       const meta = tx.objectStore('meta')
       const deviceRow = await req(meta.get('device'))
       const hlcRow = await req(meta.get('hlc'))
+      // The app's correction towards server time (src/lib/hlc.ts CLOCK_OFFSET_META):
+      // stamps follow the same clock as the app's, so a device clock that is off
+      // neither loses these changes nor gets them refused as too far ahead.
+      const offsetRow = await req(meta.get('hlc_offset'))
       if (!deviceRow || !deviceRow.value) throw new Error('no device id')
       const device = deviceRow.value
-      const ts = Math.max(Date.now(), ((hlcRow && hlcRow.value) || 0) + 1)
+      const offset = offsetRow && Number.isFinite(offsetRow.value) ? offsetRow.value : 0
+      const ts = Math.max(Date.now() + offset, ((hlcRow && hlcRow.value) || 0) + 1)
       const store = tx.objectStore('reminders')
       const row = await req(store.get(reminderId))
       const ops = []
@@ -172,11 +177,17 @@
         body: JSON.stringify({ device, cursor: Number.MAX_SAFE_INTEGER, ops }),
       })
       if (!res.ok) return
+      // Refused ops (a clock refusal among them) stay queued: the app's next sync
+      // sends them again and handles the refusal (stamps them again, or reverts).
+      // An answer that is not the server's (a captive portal's 200 page) keeps them all.
+      const answer = await res.json().catch(() => null)
+      if (!answer || !Array.isArray(answer.ops) || (answer.rejected !== undefined && !Array.isArray(answer.rejected))) return
+      const refused = new Set((answer.rejected || []).map((r) => r && r.id))
       const db = await openDB()
       try {
         const tx = db.transaction(['outbox'], 'readwrite')
         const outbox = tx.objectStore('outbox')
-        const ids = new Set(ops.map((o) => o.id))
+        const ids = new Set(ops.filter((o) => !refused.has(o.id)).map((o) => o.id))
         const all = await req(outbox.getAll())
         for (const o of all) if (ids.has(o.id)) outbox.delete(o.local)
         await done(tx)

@@ -549,8 +549,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     if (pickedSkillId && !skill) return // wait for the skill list
     setAutoSend(false)
     void send()
-    // send reads the latest state; this runs when a prefilled send can go.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- send reads the latest state; this runs when a prefilled send can go, not on every streaming change
   }, [autoSend, ready, connected, threadState, skill, pickedSkillId])
   // Focus the composer once it can take input (after consent or a slow status),
   // unless the person already moved focus to something else in the panel.

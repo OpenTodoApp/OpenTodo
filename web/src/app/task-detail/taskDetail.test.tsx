@@ -88,6 +88,10 @@ describe('entity pickers (3.1–3.4)', () => {
     await settle()
     await type(row('project').querySelector('input[role="combobox"]') as HTMLInputElement, 'Garden')
     await pick('project', 'Create “Garden”')
+    await waitFor(async () => {
+      const made = (await db.projects.toArray()).find((p) => p.name === 'Garden')
+      return !!made && (await db.tasks.get(id))!.project_id === made.id
+    }, 'the task moved into Garden')
     const garden = (await db.projects.toArray()).find((p) => p.name === 'Garden')!
     expect(garden).toBeTruthy()
     expect((await db.tasks.get(id))!.project_id).toBe(garden.id)
@@ -104,6 +108,7 @@ describe('entity pickers (3.1–3.4)', () => {
     await click(first.valueButton('project'))
     await settle()
     await first.pick('project', 'Family')
+    await waitFor(() => onOpen.mock.calls.length > 0, 'the panel follows the copy')
     expect(onOpen).toHaveBeenCalledWith(expect.not.stringMatching(new RegExp(`^${id}$`)))
     await first.unmount()
 
@@ -181,11 +186,12 @@ describe('entity pickers (3.1–3.4)', () => {
     expect(v.row('labels')).toBeNull()
     await v.add('Labels')
     await v.pick('labels', 'errand')
+    await waitFor(async () => (await db.tasks.get(id))!.labels.length === 1, 'the label added')
     expect((await db.tasks.get(id))!.labels).toEqual([errand])
-    const remove = () => v.row('labels').querySelector(`button[aria-label="Remove label errand"]`)
-    if (!remove()) { await click(v.valueButton('labels')); await settle() }
+    const remove = () => v.row('labels')?.querySelector(`button[aria-label="Remove label errand"]`)
+    if (!remove()) { await click(v.valueButton('labels')); await waitFor(() => !!remove(), 'the remove control') }
     await click(remove()!)
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.labels.length === 0, 'the label removed')
     expect((await db.tasks.get(id))!.labels).toEqual([])
     expect((await db.labels.toArray().then(activeLabels)).length).toBe(1)
 

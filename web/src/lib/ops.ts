@@ -3,7 +3,7 @@
 import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow } from './db'
 import { dueToInstant, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
-import { hlcNow, hlcSeed, wins } from './hlc'
+import { CLOCK_OFFSET_META, hlcNow, hlcSeed, hlcSeedOffset, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
@@ -38,6 +38,7 @@ export function getDeviceId(): Promise<string> {
         await setMeta('device', id)
       }
       hlcSeed(await getMeta<number>('hlc', 0))
+      hlcSeedOffset(await getMeta<number>(CLOCK_OFFSET_META, 0))
       return id
     })()
     devicePromise.catch(() => (devicePromise = null))

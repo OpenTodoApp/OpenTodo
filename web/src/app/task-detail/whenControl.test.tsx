@@ -7,7 +7,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createTask } from '../../lib/ops'
-import { click, flush, key, render, type } from '../../ui/test-utils'
+import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { setupTaskDetailTests, settle } from './taskDetail.testkit'
 import { WhenControl } from './WhenControl'
 
@@ -148,10 +148,11 @@ describe('WhenControl', () => {
     const start = seg('start').querySelector('input') as HTMLInputElement
     await type(start, '2026-10-16')
     await key(start, 'Enter')
+    await waitFor(async () => (await db.tasks.get(id))!.start === '2026-10-16', 'the start date written')
     const deadline = seg('deadline').querySelector('input') as HTMLInputElement
     await type(deadline, '2026-10-22')
     await key(deadline, 'Enter')
-    await flush(40)
+    await waitFor(async () => (await db.tasks.get(id))!.deadline === '2026-10-22', 'the deadline written')
     expect(await db.tasks.get(id)).toMatchObject({ start: '2026-10-16', deadline: '2026-10-22' })
     expect(await queuedFields(id, from)).toEqual({ start: '2026-10-16', deadline: '2026-10-22' })
     vi.unstubAllGlobals()

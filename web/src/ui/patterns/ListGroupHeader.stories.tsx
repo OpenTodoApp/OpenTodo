@@ -23,7 +23,7 @@ export const Tones: StoryObj = {
 
 /** Collapsible groups toggle from the heading; trailing actions appear on hover or focus. */
 export const Collapsible: StoryObj = {
-  render: () => {
+  render: function CollapsibleStory() {
     const [collapsed, setCollapsed] = useState(false)
     return (
       <div className="w-[28rem]">
@@ -37,7 +37,7 @@ export const Collapsible: StoryObj = {
 
 /** A section with only completed tasks keeps its header with a note and a reveal. */
 export const CompletedOnly: StoryObj = {
-  render: () => {
+  render: function CompletedOnlyStory() {
     const [revealed, setRevealed] = useState(false)
     return (
       <div className="w-[28rem]">

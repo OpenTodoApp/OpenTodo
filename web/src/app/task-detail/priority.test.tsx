@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createTask } from '../../lib/ops'
 import { click, key } from '../../ui/test-utils'
-import { open, settle, setupTaskDetailTests } from './taskDetail.testkit'
+import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
 
@@ -36,7 +36,7 @@ describe('priority chip', () => {
     const { row, valueButton, unmount } = await open(id)
     valueButton('project').focus()
     await key(document.activeElement!, '3')
-    await settle()
+    await waitFor(() => row('priority').querySelector('[data-priority-value]')?.textContent === 'P3', 'the chip reads P3')
     expect((await db.tasks.get(id))!.priority).toBe(3)
     expect(row('priority').querySelector('[data-priority-value]')?.textContent).toBe('P3')
     await unmount()

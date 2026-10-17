@@ -4,13 +4,17 @@
 // its new project's fields, and the columns layout ("Switch to columns",
 // "Narrow screen").
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createField, setFieldValue } from '../lib/fields'
 import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { loadListColumns, saveViewMode } from '../lib/sections'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
+
+// The project header asks the server for its public links.
+beforeEach(() => mockFetch(noPublicLinks))
+afterEach(() => { vi.unstubAllGlobals() })
 
 const original = window.matchMedia
 let width = 1280

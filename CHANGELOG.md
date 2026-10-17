@@ -41,6 +41,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Notifications and webhooks are no longer lost when the app disconnects during a sync.** Once a change is saved, its notifications and webhook deliveries are recorded even if the request was cut off.
 - **Impossible due dates are refused.** A due date that does not exist (such as 31 February) or a time outside 00:00–23:59 is no longer accepted, so it cannot break recurring tasks and reminders.
 - **A database migration that would have been skipped is reported.** The server records which migration files it applied and logs an error at startup for a file it never ran; the repository checks refuse a new migration not numbered above those on the main branch.
+- **Snooze and Dismiss from a notification follow the corrected clock.** On a device whose clock is off, the notification actions now stamp their change with the same server-corrected time as the app, so the change is neither overwritten by an older edit nor refused; a change the server does refuse stays queued for the app's next sync instead of being dropped.
+- **Clearing a property you just added removes its chip.** After adding Estimate (or another property) from the Add menu and setting a value, clearing it again now removes the chip instead of leaving an empty one.
+- **For contributors: the web app is linted for React hook mistakes.** `make check` now runs ESLint with the Rules of Hooks and effect dependencies (`make web-lint`), and the web tests fail on any network request they did not mock.
 
 ### Added
 

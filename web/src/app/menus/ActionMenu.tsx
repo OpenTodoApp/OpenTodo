@@ -50,7 +50,7 @@ export type ActionItem =
   | (ItemBase & { kind: 'action'; onSelect: () => unknown })
   | (ItemBase & { kind: 'check'; checked: boolean; onSelect: () => unknown })
   // The picker's item type is erased here; each hook builds it with a concrete T.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // `any`: a menu mixes pickers of different item types.
   | (ItemBase & { kind: 'picker'; picker: PickerSpec<any> })
   | (ItemBase & { kind: 'confirm'; confirm: ConfirmSpec })
 
@@ -74,7 +74,7 @@ function NoClose({ children }: { children: ReactNode }) {
 
 function Items({ groups, onPicker, onConfirm }: {
   groups: ActionGroup[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // `any`: a menu mixes pickers of different item types.
   onPicker: (p: PickerSpec<any>) => void
   onConfirm: (c: ConfirmSpec) => void
 }) {
@@ -108,7 +108,7 @@ function Items({ groups, onPicker, onConfirm }: {
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// `any`: a menu mixes pickers of different item types.
 function PickerStep({ picker, onBack, onDone, onConfirm }: { picker: PickerSpec<any>; onBack: () => void; onDone: () => void; onConfirm: (c: ConfirmSpec) => void }) {
   const { title, placeholder, emptyText, renderLeading, onPick, ...cfg } = picker
   return (
@@ -169,7 +169,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
 }) {
   const [ownOpen, setOwnOpen] = useState(false)
   const open = openProp ?? ownOpen
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // `any`: a menu mixes pickers of different item types.
   const [picker, setPicker] = useState<PickerSpec<any> | null>(null)
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
   const setOpen = (v: boolean) => {
@@ -181,8 +181,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
     if (!open || !startPicker) return
     const item = groups.flatMap((g) => g.items).find((i) => i.kind === 'picker' && i.id === startPicker && !i.disabled)
     if (item && item.kind === 'picker') setPicker(item.picker)
-    // Only when the menu opens with a requested picker.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the menu opens with a requested picker; groups is rebuilt every render
   }, [open, startPicker])
   const current = picker
   return (
