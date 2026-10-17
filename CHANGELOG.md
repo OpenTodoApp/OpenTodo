@@ -12,6 +12,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **The encryption threat model now notes that the server can show an older version of an encrypted field.** Content stays unreadable and unforgeable to the server, but the app cannot tell when it is served a previous encrypted value of the same field. ([End-to-end encryption](docs/e2ee.md))
 - **Pasting into notes is safer.** The rich-text editor's ProseMirror view is updated to 1.42.6, which fixes a published issue with pasted content (GHSA-c8x8-7fp4-3x9w).
 - **Links are encrypted with the rest of your data.** Turning end-to-end encryption on now also encrypts the address and name of links you attached before, and turning it off decrypts them again. Each link is replaced by a copy in the new form; the old one moves to the Trash. ([End-to-end encryption](docs/e2ee.md))
+- **A damaged or tampered backup archive cannot fill the disk during a restore.** Every file in the archive must have exactly the size its manifest lists, nothing more is written, and the server checks that the listed files fit before it extracts anything. ([Backups](docs/backups.md))
 
 ### Fixed
 
@@ -19,6 +20,11 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.
 - **Custom fields survive a server restore.** After the server is restored from a backup, devices now send their custom field definitions back with everything else.
 - **Refused custom field and link changes are handled.** A custom field change the server refused now shows the server's value, and a refused attachment no longer stops syncing.
+- **Stopping the server no longer interrupts its background work halfway.** On shutdown the server now waits (up to 20 seconds) for its background jobs before closing the database: a backup in progress is cancelled and recorded as failed instead of failing with "database is closed", and a weekly digest or reminder that went out just before shutdown is recorded, so it is not sent a second time after the restart.
+- **Backups no longer fill the disk.** A backup checks the free space first and fails at once with "not enough free disk space for a backup" and the space it needs. Snapshots and partial archives left by a crash are removed when the server starts, and backups to a folder on the server are written straight into that folder instead of being copied there from the data directory. ([Backups](docs/backups.md))
+- **Email to task leaves other mail clients' deleted messages alone.** On a mail server without the UIDPLUS extension, OpenTodo no longer expunges the mailbox (which removed every message marked for deletion, not just its own); processed messages stay marked read and deleted until the mail server or your client removes them. ([Email to task](docs/email.md))
+- **Reminders on completed tasks no longer slow the server down over time.** The server records them as dismissed once instead of checking them again every 30 seconds, and reads due reminders in pages. ([Reminders](docs/reminders.md))
+- **Old read notifications are removed while the server runs.** Read notifications older than 90 days are now removed daily, not only when the server starts.
 
 ### Added
 
