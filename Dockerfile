@@ -9,7 +9,7 @@
 # ---- 1. web app -------------------------------------------------------------
 # Build stages run on the builder's native platform; Go cross-compiles for the
 # target, so a multi-arch build never emulates a compiler under QEMU.
-FROM --platform=$BUILDPLATFORM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS web
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
