@@ -50,10 +50,31 @@ export function checkFacts(facts, configVars) {
   return errors
 }
 
-/** The image every template names: <image>:<tag> from deploy.json, `stable` (OpenSpec stable-image-tag). */
-export function checkImage(image, facts) {
-  const want = `${facts.image}:${facts.tag}`
-  return image === want ? [] : [`image must be ${want} (the tag every release moves), got: ${image}`]
+/**
+ * The image a template names (OpenSpec changes stable-image-tag and platform-catalogs).
+ * policy 'stable' (default): <image>:<tag from deploy.json>, the tag every release moves.
+ * policy 'release': <image>:<latest release in CHANGELOG.md>, for stores that refuse moving tags.
+ * policy 'release-digest': the same plus @sha256:<digest> of that release (Umbrel); the digest itself
+ * is refreshed after a release by `node scripts/deploy/pin.mjs` and only its shape is checked here.
+ */
+export function checkImage(image, facts, policy = 'stable', changelog = null) {
+  if (policy === 'stable') {
+    const want = `${facts.image}:${facts.tag}`
+    return image === want ? [] : [`image must be ${want} (the tag every release moves), got: ${image}`]
+  }
+  if (!changelog) return ['CHANGELOG.md is needed to check a pinned image']
+  const rel = latestRelease(changelog)
+  const version = `${rel.major}.${rel.minor}.${rel.patch}`
+  const want = `${facts.image}:${version}`
+  if (policy === 'release') {
+    return image === want ? [] : [`image must be ${want}, the latest release in CHANGELOG.md (this store refuses moving tags), got: ${image}`]
+  }
+  if (policy === 'release-digest') {
+    return new RegExp(`^${want.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}@sha256:[0-9a-f]{64}$`).test(image ?? '')
+      ? []
+      : [`image must be ${want}@sha256:<index digest>, the latest release pinned by digest (run node scripts/deploy/pin.mjs after the release), got: ${image}`]
+  }
+  return [`unknown image policy ${policy}`]
 }
 
 /** The release job must keep publishing the tag the templates name. */
@@ -70,7 +91,7 @@ export function checkPublishesTag(ciWorkflow, facts) {
  * for catalogue entries without platformDefault.
  */
 export function checkShared(found, { facts, changelog, configVars }) {
-  const errors = [...checkImage(found.image, facts)]
+  const errors = [...checkImage(found.image, facts, found.policy, changelog)]
   if (String(found.port) !== String(facts.port)) errors.push(`the container port must be ${facts.port}, got ${found.port}`)
   if (found.dataTarget !== facts.dataDir) errors.push(`the data must be mounted on ${facts.dataDir}, got ${found.dataTarget}`)
   const catalogue = new Map((facts.variables ?? []).map((v) => [v.name, v]))
