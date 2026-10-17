@@ -214,7 +214,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"GET /api/v1/backups":                                 "auth owner",
 		"POST /api/v1/backups/restore":                        "auth owner session-only fresh demo",
 		"DELETE /api/v1/backups/restore/safety-copies/{name}": "auth owner session-only fresh demo",
-		"GET /api/v1/export/archive":                          "auth owner full-tokens fresh demo",
+		"GET /api/v1/export/archive":                          "auth owner admin-token fresh demo",
 		// Switches only a person flips.
 		"GET /api/v1/me/agent-access":    "auth full-tokens",
 		"PUT /api/v1/me/agent-access":    "auth full-tokens demo",

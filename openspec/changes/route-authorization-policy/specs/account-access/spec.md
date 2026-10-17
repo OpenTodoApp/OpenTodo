@@ -60,6 +60,10 @@ The credential and administration routes SHALL accept a session or an `admin` to
 - **WHEN** a `full` token reads or changes the outgoing-email settings, or changes the backup or assistant settings
 - **THEN** the response is a 403 `insufficient_scope` error, while reading the other settings and lists, revoking tokens and app passwords and forgetting remembered browsers keep working with it
 
+#### Scenario: Whole-server archive
+- **WHEN** the owner of a hosted tenant downloads `GET /api/v1/export/archive` with a `full` token, an `admin` token, or a recently confirmed session
+- **THEN** the `full` token gets a 403 `insufficient_scope` error and the other two get the archive, because it holds every account's credentials
+
 #### Scenario: Anonymous request
 - **WHEN** a request without credentials reaches a credential route
 - **THEN** the response is a 401 `unauthorized` error

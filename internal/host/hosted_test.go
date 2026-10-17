@@ -85,16 +85,24 @@ func TestOwnerTakesDataAway(t *testing.T) {
 	c := f.client("leaver")
 	c.register("leaver@example.com", f.create("leaver", config.Limits{}))
 	c.sync("dev", taskOps("t1", "Moving out"))
-	// A read token cannot download (the archive holds credentials); the owner can.
-	code, tok := c.do("POST", "/api/v1/tokens", map[string]any{"name": "reader", "scope": "read"})
-	if code != http.StatusCreated && code != http.StatusOK {
-		t.Fatalf("token: %d %v", code, tok)
-	}
+	// Read and full tokens cannot download (the archive holds credentials);
+	// an admin token and the owner's session can (route-authorization-policy).
 	anon := f.client("leaver")
-	req := anon.request("GET", "/api/v1/export/archive", nil)
-	req.Header.Set("Authorization", "Bearer "+tok["secret"].(string))
-	if resp, err := anon.send(req); err != nil || resp.StatusCode != http.StatusForbidden {
-		t.Fatalf("read token download: %v %v", resp, err)
+	for _, scope := range []string{"read", "full", "admin"} {
+		code, tok := c.do("POST", "/api/v1/tokens", map[string]any{"name": scope, "scope": scope})
+		if code != http.StatusCreated && code != http.StatusOK {
+			t.Fatalf("%s token: %d %v", scope, code, tok)
+		}
+		req := anon.request("GET", "/api/v1/export/archive", nil)
+		req.Header.Set("Authorization", "Bearer "+tok["secret"].(string))
+		resp, err := anon.send(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if want := map[string]int{"read": 403, "full": 403, "admin": 200}[scope]; resp.StatusCode != want {
+			t.Fatalf("%s token download: %d, want %d", scope, resp.StatusCode, want)
+		}
 	}
 	resp, err := c.send(c.request("GET", "/api/v1/export/archive", nil))
 	if err != nil {

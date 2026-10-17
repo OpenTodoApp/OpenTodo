@@ -10,7 +10,7 @@
 
 `admin` ⊇ `full`. Stored like `agent` (D2 of mcp-write-tools): a `read` row in `api_token_scopes` (whose CHECK stays `('full','read')`) plus a row in the new `api_token_admin`; a binary that does not know the marker sees a read-only token. `auth.FullAccess(scope)` replaces `scope == full` where "may write" is meant. `POST /api/v1/tokens` with scope `admin` is refused for any bearer token (`session_required`); the route itself is `sensitive`, so the session must be fresh. MCP write tools still need `agent`.
 
-Which routes are credential routes: the mutating routes of the second factor, passkeys, token and app password creation, identity unlinking, own password, invitations, `/users`, two-factor policy and resets, single sign-on settings, the encryption key record, and the settings that hold secrets (SMTP read and write, backups, assistant provider keys). Revocations (tokens, app passwords, trusted devices) stay open to full tokens: they only remove access, and `ot logout` revokes its own token.
+Which routes are credential routes: the mutating routes of the second factor, passkeys, token and app password creation, identity unlinking, own password, invitations, `/users`, two-factor policy and resets, single sign-on settings, the encryption key record, the settings that hold secrets (SMTP read and write, backups, assistant provider keys), and the hosted tenant's archive download, which holds every account's credentials. Revocations (tokens, app passwords, trusted devices) stay open to full tokens: they only remove access, and `ot logout` revokes its own token.
 
 ## D3. Single sign-on linking
 

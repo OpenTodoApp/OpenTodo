@@ -1546,7 +1546,7 @@ In `usage`, `month_total` is what counts toward the cap and `cap` is `0` for a t
 
 A tenant of a host (see [host mode](self-hosting/host-mode.md)) answers like any server, with these differences. `GET /api/v1/auth/status` adds `"hosted": true`. Settings that belong to the operator answer `403 host_managed` before authentication: `/api/v1/settings/smtp*`, `/api/v1/settings/oidc*` and `/api/v1/backups*` for every method, and writes to `/api/v1/settings/mcp`, `/api/v1/settings/assistant*`, `/api/v1/settings/webhooks` and `/api/v1/settings/attachments`.
 
-`GET /api/v1/export/archive` (owner, session or `full` token; a stale session gets `403 reauth_required`) streams the whole server as a backup archive (`application/gzip`, the format `opentodo restore` reads) and records `export.requested` with format `archive`. Read and agent tokens get `403 insufficient_scope`. The route does not exist on a self-hosted server.
+`GET /api/v1/export/archive` (owner, a session or an `admin` token, since the archive holds every account's credentials; a stale session gets `403 reauth_required`, a `full` token `403 insufficient_scope`) streams the whole server as a backup archive (`application/gzip`, the format `opentodo restore` reads) and records `export.requested` with format `archive`. Read and agent tokens get `403 insufficient_scope`. The route does not exist on a self-hosted server.
 
 A tenant's limits refuse changes one at a time. On `/api/v1/sync` a refused op appears in `rejected` with reason `limit_storage`, `limit_ops_hour` or `limit_ops_total`; the rest of the batch is applied, and the server does not send its own value back for it, so the device keeps the change and sends it again later. A REST write answers `403` with the reason as code.
 
