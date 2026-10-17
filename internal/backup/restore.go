@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,6 +111,14 @@ func (st Staged) DBPath() string { return filepath.Join(st.Dir, stagedDBName) }
 // decryption, checksums, schema version and SQLite integrity. Memory stays
 // constant; the database is streamed to disk while it is hashed.
 func Stage(dir string, r io.Reader, passphrase, archiveName string) (Staged, error) {
+	return stage(dir, r, passphrase, archiveName, freeBytes)
+}
+
+// stage is Stage with the free-space probe given (tests). Before extracting
+// anything it checks that dir's filesystem holds every file the manifest
+// lists; each entry must then have exactly its listed size and is copied with
+// that bound, so a crafted archive cannot fill the disk.
+func stage(dir string, r io.Reader, passphrase, archiveName string, freeFn func(string) (int64, bool)) (Staged, error) {
 	st := Staged{Dir: dir, Archive: archiveName}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return st, err
@@ -133,6 +142,13 @@ func Stage(dir string, r io.Reader, passphrase, archiveName string) (Staged, err
 	if want == nil {
 		return st, fmt.Errorf("%w: manifest lists no %s", ErrIntegrity, store.DBFile)
 	}
+	need, err := manifestBytes(m)
+	if err != nil {
+		return st, err
+	}
+	if err := ensureFreeSpaceWith(freeFn, dir, need); err != nil {
+		return st, err
+	}
 
 	// 2. Extract the database, hashing as we go.
 	h, err := tr.Next()
@@ -142,12 +158,15 @@ func Stage(dir string, r io.Reader, passphrase, archiveName string) (Staged, err
 	if h.Name != store.DBFile {
 		return st, fmt.Errorf("%w: unexpected entry %q", ErrIntegrity, h.Name)
 	}
+	if h.Size != want.Size {
+		return st, fmt.Errorf("%w: %s size does not match the manifest", ErrIntegrity, store.DBFile)
+	}
 	out, err := os.OpenFile(st.DBPath(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return st, err
 	}
 	sum := sha256.New()
-	n, err := io.Copy(io.MultiWriter(out, sum), tr)
+	n, err := io.CopyN(io.MultiWriter(out, sum), tr, want.Size)
 	if err != nil {
 		out.Close()
 		return st, fmt.Errorf("%w: %v", ErrIntegrity, err)
@@ -467,6 +486,9 @@ func readExtras(tr *tar.Reader, m Manifest, dir string) (map[string][]byte, erro
 			return nil, fmt.Errorf("%w: %v", ErrIntegrity, err)
 		}
 		want, ok := listed[h.Name]
+		if ok && h.Size != want.Size {
+			return nil, fmt.Errorf("%w: %s size does not match the manifest", ErrIntegrity, h.Name)
+		}
 		if ok && validAttachmentEntry(h.Name) {
 			if err := stageAttachment(tr, filepath.Join(dir, filepath.FromSlash(h.Name)), want); err != nil {
 				return nil, err
@@ -488,6 +510,19 @@ func readExtras(tr *tar.Reader, m Manifest, dir string) (map[string][]byte, erro
 	}
 }
 
+// manifestBytes is the disk space the files a manifest lists take once
+// extracted; a negative or overflowing size makes the manifest invalid.
+func manifestBytes(m Manifest) (int64, error) {
+	var total int64
+	for _, f := range m.Files {
+		if f.Size < 0 || total > math.MaxInt64-f.Size {
+			return 0, fmt.Errorf("%w: %s has an invalid size in the manifest", ErrIntegrity, f.Name)
+		}
+		total += f.Size
+	}
+	return total, nil
+}
+
 // stageAttachment streams one attachment entry to path, verifying its size and
 // digest; a mismatch aborts the restore before anything is swapped.
 func stageAttachment(r io.Reader, path string, want ManifestFile) error {
@@ -499,7 +534,7 @@ func stageAttachment(r io.Reader, path string, want ManifestFile) error {
 		return err
 	}
 	sum := sha256.New()
-	n, err := io.Copy(io.MultiWriter(out, sum), r)
+	n, err := io.CopyN(io.MultiWriter(out, sum), r, want.Size)
 	if cerr := out.Close(); err == nil {
 		err = cerr
 	}

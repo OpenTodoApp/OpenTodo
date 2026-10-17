@@ -470,7 +470,7 @@ func (s *Service) stageFromFile(r StagedRestore, passphrase, ownerID string) (St
 	if err := ensureFreeSpaceWith(s.freeSpace, s.dataDir, 2*fileSize(store.DBPath(s.dataDir))); err != nil {
 		return StagedRestore{}, err
 	}
-	st, err := Stage(dir, f, passphrase, r.Archive)
+	st, err := stage(dir, f, passphrase, r.Archive, s.freeSpace)
 	if err != nil {
 		os.Remove(st.DBPath())
 		os.RemoveAll(filepath.Join(dir, stagedExtrasDir))
