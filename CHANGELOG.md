@@ -4,6 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-17
+
+OpenTodo 0.6.1 makes plain-http installs work: opened by a home server's or NAS's address (`http://192.168.1.10:8080`), the app no longer shows **Offline** with nothing saved. It adds an **Unraid template**, and fixes encryption turning off part-way, settings pages scrolling away, and two small things in the task panel.
+
+### Upgrade notes
+
+- **No migration, no new environment variables, no sync or API change.** Replace the image or the binary and restart.
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.6.1` and moves `:0.6`, so installs that follow `:0.6` (Coolify, Unraid) get it from their usual update.
+
 ### Added
 
 - **Unraid template.** A Community Applications template sets up the container on Unraid: the release image, the Web UI on port 8080, the appdata folder on `/data`, and the optional settings with descriptions; nothing is required. Until it is listed in **Apps**, add it from the template URL. The template is published in its own template repository, [pixari/opentodo-unraid](https://github.com/pixari/opentodo-unraid), from a checked copy in `deploy/unraid/upstream/`. The guide covers appdata permissions (the image ignores `PUID` and `PGID`), https behind a reverse proxy, updates and backups. ([Unraid](docs/self-hosting/unraid.md))
@@ -371,7 +380,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/pixari/opentodo/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/pixari/opentodo/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/pixari/opentodo/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/pixari/opentodo/compare/v0.3.0...v0.4.0
