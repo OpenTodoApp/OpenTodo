@@ -166,7 +166,7 @@ coolify-smoke:
 ## Every platform template in deploy/ against deploy/deploy.json and its platform's rules
 ## (Coolify, Unraid); see deploy/README.md.
 deploy-check:
-	node --test scripts/coolify-template-check.test.mjs scripts/deploy/deploy.test.mjs scripts/site-bundle.test.mjs
+	node --test scripts/coolify-template-check.test.mjs scripts/deploy/*.test.mjs scripts/site-bundle.test.mjs
 	node scripts/deploy-check.mjs
 
 check: lint test ui-lint i18n-check docs-check openspec-validate deploy-check
