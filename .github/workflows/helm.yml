@@ -1,0 +1,91 @@
+name: Helm chart
+
+# The Kubernetes chart in deploy/helm/opentodo (docs/self-hosting/kubernetes.md).
+# Pull requests that touch it: lint and render it. Release tags (v*, not release
+# candidates): publish it as an OCI artifact at oci://ghcr.io/pixari/charts/opentodo,
+# with the Artifact Hub metadata beside it. The chart's version and appVersion are the
+# release; node scripts/deploy-check.mjs keeps them on the latest release in CHANGELOG.md.
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "deploy/helm/**"
+      - "scripts/deploy/helm.mjs"
+      - ".github/workflows/helm.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and render
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: helm lint --strict deploy/helm/opentodo
+      - run: helm template opentodo deploy/helm/opentodo > /dev/null
+      - name: Render with an Ingress, an existing Secret and claim
+        run: >-
+          helm template opentodo deploy/helm/opentodo
+          --set ingress.enabled=true --set ingress.host=todo.example.com
+          --set 'ingress.tls[0].secretName=opentodo-tls' --set 'ingress.tls[0].hosts[0]=todo.example.com'
+          --set setupToken.existingSecret=opentodo --set persistence.existingClaim=opentodo > /dev/null
+      # The checker also runs helm lint and helm template when helm is installed.
+      - run: node --test scripts/deploy/helm.test.mjs
+
+  publish:
+    name: Publish to ghcr.io/pixari/charts
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      CHART: deploy/helm/opentodo
+      REGISTRY: ghcr.io/${{ github.repository_owner }}/charts
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+      - uses: oras-project/setup-oras@v1
+      - name: The chart names this release
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          grep -qx "version: ${version}" "$CHART/Chart.yaml" || { echo "::error::$CHART/Chart.yaml version is not ${version}"; exit 1; }
+          grep -qx "appVersion: \"${version}\"" "$CHART/Chart.yaml" || { echo "::error::$CHART/Chart.yaml appVersion is not \"${version}\""; exit 1; }
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+      - run: helm lint --strict "$CHART"
+      - name: Log in to GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          printf '%s' "$TOKEN" | helm registry login ghcr.io --username "$ACTOR" --password-stdin
+          printf '%s' "$TOKEN" | oras login ghcr.io --username "$ACTOR" --password-stdin
+      # The CI workflow builds the image from the same tag; the chart is only pushed once it names a published image.
+      - name: Wait for the release image
+        run: |
+          image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]'):${VERSION}
+          for i in $(seq 1 90); do
+            if docker manifest inspect "$image" > /dev/null 2>&1; then echo "$image is published"; exit 0; fi
+            sleep 60
+          done
+          echo "::error::$image was not published within 90 minutes"; exit 1
+      - name: Package and push
+        run: |
+          registry=$(printf '%s' "$REGISTRY" | tr '[:upper:]' '[:lower:]')
+          helm package "$CHART" --destination dist
+          helm push "dist/opentodo-${VERSION}.tgz" "oci://${registry}"
+      - name: Artifact Hub metadata
+        run: |
+          registry=$(printf '%s' "$REGISTRY" | tr '[:upper:]' '[:lower:]')
+          cd deploy/helm
+          oras push "${registry}/opentodo:artifacthub.io" \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
