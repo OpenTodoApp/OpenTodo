@@ -15,6 +15,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **A damaged or tampered backup archive cannot fill the disk during a restore.** Every file in the archive must have exactly the size its manifest lists, nothing more is written, and the server checks that the listed files fit before it extracts anything. ([Backups](docs/backups.md))
 - **Images and release files can be verified.** The container image is signed with cosign (keyless, tied to the release workflow) and carries an SBOM and build provenance; every file on a GitHub release has a build provenance attestation for `gh attestation verify`. ([Running with Docker](docs/self-hosting/docker.md#verifying-the-image-and-downloads))
 - **A release is published only when every check passed.** The image, its `stable` tag and the GitHub release now wait for the layout, interface, docs website and template checks too; the image is built, scanned for known vulnerabilities (a critical one with a fix available stops it) and smoke-tested before it is pushed. Build tools and base images are pinned to exact versions, and Dependabot proposes updates weekly.
+- **Release binaries and the image are built with Go 1.27.2** (the `go.mod` toolchain, the Docker build stage and CI use the same version), and the image's web app is built on Node 25. People building from source still need Go 1.26 or newer; the `go` command downloads 1.27.2 for them.
 - **Security reports go through GitHub's private vulnerability reporting.** See `SECURITY.md`.
 
 ### Fixed

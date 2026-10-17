@@ -9,7 +9,7 @@
 # ---- 1. web app -------------------------------------------------------------
 # Build stages run on the builder's native platform; Go cross-compiles for the
 # target, so a multi-arch build never emulates a compiler under QEMU.
-FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS web
+FROM --platform=$BUILDPLATFORM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -23,7 +23,7 @@ COPY internal/sync/testdata/schema_fixture.json /src/internal/sync/testdata/sche
 RUN mkdir -p /src/internal/web && npm run build
 
 # ---- 2. server --------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM golang:1.26.9-alpine@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec66b295eff4dd87ade AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
 ARG VERSION=dev
 ARG TARGETOS
 ARG TARGETARCH
