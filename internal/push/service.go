@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pixari/opentodo/internal/e2ee"
@@ -35,6 +36,12 @@ const (
 	RetryWindow = time.Hour
 	// batchLimit bounds the reminders pushed in one tick.
 	batchLimit = 500
+	// SendWorkers is how many accounts' reminders are sent at the same time, so
+	// one account's slow push endpoints do not hold back everyone (INT-4).
+	SendWorkers = 8
+	// UserSendBudget bounds the time one account's sends take in one tick; the
+	// rest wait for the next tick.
+	UserSendBudget = 20 * time.Second
 	// DefaultSubject is the VAPID contact when no base URL is configured.
 	DefaultSubject = "https://github.com/pixari/opentodo"
 )
@@ -62,6 +69,8 @@ type Service struct {
 	allowHTTP bool
 	now       func() time.Time
 	log       *slog.Logger
+	// userBudget is UserSendBudget; tests shorten it.
+	userBudget time.Duration
 
 	keyMu sync.Mutex
 	keys  *Keys
@@ -69,7 +78,8 @@ type Service struct {
 
 // New wires a Service. Keys are created on first need, not here.
 func New(db *sql.DB, syncSvc *opsync.Service, dataDir string, o Options) *Service {
-	s := &Service{db: db, sync: syncSvc, dataDir: dataDir, subject: o.Subject, client: o.Client, allowHTTP: o.AllowHTTP, now: o.Now, log: o.Log}
+	s := &Service{db: db, sync: syncSvc, dataDir: dataDir, subject: o.Subject, client: o.Client, allowHTTP: o.AllowHTTP, now: o.Now, log: o.Log,
+		userBudget: UserSendBudget}
 	if s.subject == "" {
 		s.subject = DefaultSubject
 	}
@@ -410,34 +420,82 @@ func jsonString(raw json.RawMessage) string {
 
 // Tick pushes every due reminder once and records its delivery as an op
 // authored by the server. It returns the number of reminders recorded.
+// Accounts are served by SendWorkers workers at once, each account's
+// reminders in order (INT-4); an error stops that account's pass and the first
+// one is returned once every worker is done.
 func (s *Service) Tick(ctx context.Context) (int, error) {
 	now := s.now()
 	due, err := s.dueReminders(ctx, now.UnixMilli())
 	if err != nil {
 		return 0, err
 	}
-	subsByUser := map[string][]*Subscription{}
+	var users []string
+	byUser := map[string][]dueReminder{}
+	for _, d := range due {
+		if _, ok := byUser[d.UserID]; !ok {
+			users = append(users, d.UserID)
+		}
+		byUser[d.UserID] = append(byUser[d.UserID], d)
+	}
+	var (
+		recorded atomic.Int64
+		errOnce  sync.Once
+		firstErr error
+		wg       sync.WaitGroup
+	)
+	work := make(chan string)
+	for range min(SendWorkers, len(users)) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for uid := range work {
+				n, err := s.tickUser(ctx, now, uid, byUser[uid])
+				recorded.Add(int64(n))
+				if err != nil {
+					errOnce.Do(func() { firstErr = err })
+				}
+			}
+		}()
+	}
+	for _, uid := range users {
+		work <- uid
+	}
+	close(work)
+	wg.Wait()
+	return int(recorded.Load()), firstErr
+}
+
+// tickUser pushes one account's due reminders to its enabled subscriptions and
+// records each delivery. Once the account's sends took UserSendBudget, the
+// remaining reminders wait for the next tick like failed ones.
+func (s *Service) tickUser(ctx context.Context, now time.Time, userID string, due []dueReminder) (int, error) {
+	subs, err := s.ListByUser(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	start := time.Now()
 	recorded := 0
 	for _, d := range due {
-		subs, ok := subsByUser[d.UserID]
-		if !ok {
-			if subs, err = s.ListByUser(ctx, d.UserID); err != nil {
-				return recorded, err
-			}
-			subsByUser[d.UserID] = subs
-		}
-		title := d.Title
-		attempted, transient := 0, 0
+		attempted, transient, deferred := 0, 0, false
 		for _, sub := range subs {
+			if sub.Disabled(now) {
+				continue
+			}
+			if time.Since(start) >= s.userBudget {
+				deferred = true
+				break
+			}
 			attempted++
-			res, err := s.Send(ctx, sub, BuildPayload(d.ID, d.TaskID, d.FireAt, title, sub.IncludeContent), topicFor(d.ID))
+			res, err := s.Send(ctx, sub, BuildPayload(d.ID, d.TaskID, d.FireAt, d.Title, sub.IncludeContent), topicFor(d.ID))
 			if res == Failed {
 				transient++
 				s.log.Warn("push send failed", "subscription", sub.ID, "err", err)
 			}
 		}
-		// Every send failed: try again on the next tick while the reminder is fresh.
-		if attempted > 0 && transient == attempted && now.Sub(time.UnixMilli(d.FireAt)) < RetryWindow {
+		// Out of budget, or every send failed: try again on the next tick while
+		// the reminder is fresh.
+		retry := deferred || (attempted > 0 && transient == attempted)
+		if retry && now.Sub(time.UnixMilli(d.FireAt)) < RetryWindow {
 			continue
 		}
 		if err := s.recordDelivered(ctx, d.UserID, d.ID, now.UnixMilli()); err != nil {

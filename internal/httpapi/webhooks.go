@@ -116,7 +116,7 @@ func (s *Server) handleListWebhooks(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleCreateWebhook(w http.ResponseWriter, r *http.Request) {
 	p, err := decodeWebhookPatch(r)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	hook, err := s.hooks.Create(r.Context(), userFrom(r.Context()).ID, p)
@@ -140,7 +140,7 @@ func (s *Server) handleGetWebhook(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlePatchWebhook(w http.ResponseWriter, r *http.Request) {
 	p, err := decodeWebhookPatch(r)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	hook, err := s.hooks.Update(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), p)
@@ -214,7 +214,7 @@ func (s *Server) handlePutWebhookPolicy(w http.ResponseWriter, r *http.Request) 
 		AllowPrivate *bool `json:"allowPrivate"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	if in.AllowPrivate == nil {

@@ -158,11 +158,8 @@ func (s *Server) handlePutAssistantSettings(w http.ResponseWriter, r *http.Reque
 	for k, v := range cur.Providers {
 		in.Settings.Providers[k] = v
 	}
-	body := http.MaxBytesReader(w, r.Body, 64<<10)
-	dec := json.NewDecoder(body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", "invalid JSON body: "+strings.TrimPrefix(err.Error(), "json: "))
+	if err := readJSONLimit(r, &in, 64<<10); err != nil {
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	actor := userFrom(r.Context()).ID
@@ -201,7 +198,7 @@ func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
 		AllowPrivateEndpoint *bool   `json:"allow_private_endpoint"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	res := s.assistant.TestConnection(r.Context(), in.Provider, s.assistantSettings(r.Context()),
@@ -314,11 +311,8 @@ func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {
 		OwnProvider *string `json:"own_provider"`
 		OwnModel    *string `json:"own_model"`
 	}
-	body := http.MaxBytesReader(w, r.Body, 16<<10)
-	dec := json.NewDecoder(body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", "invalid JSON body: "+strings.TrimPrefix(err.Error(), "json: "))
+	if err := readJSONLimit(r, &in, 16<<10); err != nil {
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	set := s.assistantSettings(ctx)
@@ -479,7 +473,7 @@ func (s *Server) handleTestMyAssistant(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.ContentLength != 0 {
 		if err := readJSON(r, &in); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+			badBodyWith(w, err, "invalid_input", err.Error())
 			return
 		}
 	}

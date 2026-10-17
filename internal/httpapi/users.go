@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -111,7 +110,7 @@ func (s *Server) handleSetRole(w http.ResponseWriter, r *http.Request) {
 		Role string `json:"role"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	u, err := s.auth.SetRole(r.Context(), actor.ID, r.PathValue("id"), in.Role)
@@ -160,7 +159,7 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		ConfirmEmail string `json:"confirmEmail"`
 	}
 	if err := readOptionalJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	id := r.PathValue("id")
@@ -195,7 +194,7 @@ func (s *Server) handleIssueReset(w http.ResponseWriter, r *http.Request) {
 		Send           bool     `json:"send"`
 	}
 	if err := readOptionalJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	ttl := auth.DefaultResetTTL
@@ -261,7 +260,7 @@ func (s *Server) handleTransferOwnership(w http.ResponseWriter, r *http.Request)
 		Password string `json:"password"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	u, err := s.auth.TransferOwnership(r.Context(), actor.ID, r.PathValue("id"), in.Password)
@@ -283,7 +282,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		NewPassword     string `json:"newPassword"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	keep := ""
@@ -324,8 +323,8 @@ func (s *Server) handleUseReset(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Password string `json:"password"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", "invalid JSON body")
+	if err := readJSONLimit(r, &in, 1<<16); err != nil {
+		badBody(w, err)
 		return
 	}
 	if err := s.auth.ResetPassword(r.Context(), r.PathValue("token"), in.Password); err != nil {
@@ -359,7 +358,7 @@ func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Reque
 		Email string `json:"email"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", "a JSON body with an email is required")
+		badBodyWith(w, err, "invalid_input", "a JSON body with an email is required")
 		return
 	}
 	addr, err := netmail.ParseAddress(strings.TrimSpace(in.Email))

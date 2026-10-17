@@ -737,6 +737,7 @@
   "Display: Upcoming": "Affichage : À venir",
   "Do on": "À faire le",
   "Does not repeat (e.g. {example})": "Ne se répète pas (p. ex. {example})",
+  "The server is busy. Try again in a moment.": "Le serveur est occupé. Réessayez dans un instant.",
   "Encryption key record missing": "Enregistrement de clé de chiffrement manquant",
   "Enter your encryption passphrase to restore the key record.": "Saisissez votre phrase secrète de chiffrement pour restaurer l’enregistrement de clé.",
   "Re-enter your passphrase to restore the key record from this device": "Saisissez à nouveau votre phrase secrète pour restaurer l’enregistrement de clé depuis cet appareil",
