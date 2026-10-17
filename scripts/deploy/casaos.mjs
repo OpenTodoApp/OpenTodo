@@ -84,6 +84,7 @@ export function scalar(s, no) {
   if (s === '{}') return {}
   if (/^[{&*!|>%@`]/.test(s)) throw new Error(`line ${no}: not in the supported YAML subset: ${s}`)
   if (/:\s/.test(s) || s.endsWith(':')) throw new Error(`line ${no}: a plain scalar may not contain ": " (quote it): ${s}`)
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) throw new Error(`line ${no}: quote dates, other parsers read them as timestamps: ${s}`)
   if (/^(true|false)$/.test(s)) return s === 'true'
   if (/^(null|~)$/.test(s)) return null
   if (/^[-+]?\d+$/.test(s)) return Number(s)
