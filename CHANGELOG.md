@@ -13,6 +13,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
 - **A `stable` image tag, used by every template.** Each release now also publishes `ghcr.io/pixari/opentodo:stable` (release candidates never move it), and the Unraid and Coolify templates, `docker-compose.yml` and the README examples use it: every release, minor versions included, arrives through the platform's update button, with migrations applied on start. Installs on `:0.6` keep their tag and its fixes; switch to `stable` once to follow every release. A **Promote stable** workflow points `stable` at an earlier release to roll back. ([Docker](docs/self-hosting/docker.md), [Unraid](docs/self-hosting/unraid.md#updates-and-backups), [Coolify](docs/self-hosting/coolify.md))
 
+### Security
+
+- **Calendar data, MCP batches and calendar subscriptions are bounded.** Reading iCalendar data (CalDAV writes and subscribed calendars) takes time in proportion to its size, and one content line may be at most 64 KB. The MCP endpoint refuses JSON-RPC batches under protocol revisions that no longer have them (2025-06-18 and later), accepts at most 20 messages per batch otherwise, and stops running a batch once its answer reaches 4 MB. Expanding a subscribed calendar's repeating events starts at the shown period, shares one work budget and a 5-second deadline per calendar, and keeps what it found with a warning when it runs out. ([CalDAV](docs/caldav.md), [MCP](docs/mcp.md#limits-and-security), [Other calendars](docs/other-calendars.md#limits))
+
+### Fixed
+
+- **Old repeating events in subscribed calendars.** A daily event that started decades ago (before about 1972) showed no occurrences; it now shows every day of the period.
+
 ## [0.6.1] - 2026-10-17
 
 OpenTodo 0.6.1 makes plain-http installs work: opened by a home server's or NAS's address (`http://192.168.1.10:8080`), the app no longer shows **Offline** with nothing saved. It adds an **Unraid template**, and fixes encryption turning off part-way, settings pages scrolling away, and two small things in the task panel.

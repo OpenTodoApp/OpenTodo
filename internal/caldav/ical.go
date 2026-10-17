@@ -20,7 +20,17 @@ const (
 	maxDepth      = 8
 	maxProps      = 5000
 	maxLineOctets = 75 // folding width (RFC 5545 3.1), excluding CRLF
+
+	// MaxLineBytes bounds one unfolded content line; a long DESCRIPTION is a
+	// few kilobytes, an inline attachment more, so 64 KB leaves ample room.
+	MaxLineBytes = 64 << 10
+	// physicalPerProp bounds the physical lines before unfolding, as a multiple
+	// of the content-line limit (a 64 KB line folded at 75 octets is about 870
+	// physical lines, but a whole calendar averages a handful per property).
+	physicalPerProp = 8
 )
+
+func physicalLines(props int) int { return props * physicalPerProp }
 
 // ErrInvalid wraps every parse failure of calendar data.
 var ErrInvalid = errors.New("invalid calendar data")
@@ -68,21 +78,75 @@ func (c *Component) Prop(name string) *Prop {
 
 // Unfold joins folded lines (a CRLF or LF followed by a space or tab continues
 // the previous line) and returns the logical content lines without terminators.
+// It runs in time linear in the input and applies no limits; Parse bounds its
+// input with unfoldLimited.
 func Unfold(data []byte) []string {
-	s := strings.ReplaceAll(string(data), "\r\n", "\n")
-	s = strings.ReplaceAll(s, "\r", "\n")
-	var out []string
-	for _, line := range strings.Split(s, "\n") {
-		if len(line) > 0 && (line[0] == ' ' || line[0] == '\t') && len(out) > 0 {
-			out[len(out)-1] += line[1:]
-			continue
-		}
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		out = append(out, line)
-	}
+	out, _ := unfoldLimited(data, unfoldLimits{})
 	return out
+}
+
+// unfoldLimits bounds unfolding; a zero field means no bound.
+type unfoldLimits struct {
+	Lines     int // logical content lines
+	Physical  int // physical lines before unfolding
+	LineBytes int // octets in one logical line
+}
+
+// unfoldLimited is Unfold with bounds: it stops with an error wrapping
+// ErrInvalid as soon as one is exceeded (OpenSpec change bound-hostile-input).
+// Continuation lines are appended to a single builder, so a long chain of folds
+// costs linear time instead of re-copying the line for every fold.
+func unfoldLimited(data []byte, lim unfoldLimits) ([]string, error) {
+	var out []string
+	var cur strings.Builder
+	have := false // cur holds a logical line
+	physical := 0
+	flush := func() {
+		if have {
+			out = append(out, cur.String())
+			cur.Reset()
+			have = false
+		}
+	}
+	for len(data) > 0 {
+		i := bytes.IndexAny(data, "\r\n")
+		var line []byte
+		if i < 0 {
+			line, data = data, nil
+		} else {
+			line = data[:i]
+			if data[i] == '\r' && i+1 < len(data) && data[i+1] == '\n' {
+				i++
+			}
+			data = data[i+1:]
+		}
+		physical++
+		if lim.Physical > 0 && physical > lim.Physical {
+			return nil, fmt.Errorf("%w: too many lines", ErrInvalid)
+		}
+		// A continuation (also one after skipped blank lines) extends cur.
+		if len(line) > 0 && (line[0] == ' ' || line[0] == '\t') && have {
+			if lim.LineBytes > 0 && cur.Len()+len(line)-1 > lim.LineBytes {
+				return nil, fmt.Errorf("%w: content line longer than %d bytes", ErrInvalid, lim.LineBytes)
+			}
+			cur.Write(line[1:])
+			continue
+		}
+		if len(bytes.TrimSpace(line)) == 0 {
+			continue
+		}
+		flush()
+		if lim.Lines > 0 && len(out) >= lim.Lines {
+			return nil, fmt.Errorf("%w: too many lines", ErrInvalid)
+		}
+		if lim.LineBytes > 0 && len(line) > lim.LineBytes {
+			return nil, fmt.Errorf("%w: content line longer than %d bytes", ErrInvalid, lim.LineBytes)
+		}
+		cur.Write(line)
+		have = true
+	}
+	flush()
+	return out, nil
 }
 
 // ParseLine splits one unfolded content line into name, parameters and value.
@@ -183,9 +247,9 @@ func ParseWithLimits(data []byte, lim Limits) (*Component, error) {
 		return nil, fmt.Errorf("%w: not UTF-8", ErrInvalid)
 	}
 	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
-	lines := Unfold(data)
-	if len(lines) > lim.Props {
-		return nil, fmt.Errorf("%w: too many lines", ErrInvalid)
+	lines, err := unfoldLimited(data, unfoldLimits{Lines: lim.Props, Physical: physicalLines(lim.Props), LineBytes: MaxLineBytes})
+	if err != nil {
+		return nil, err
 	}
 	var root *Component
 	var stack []*Component

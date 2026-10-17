@@ -124,7 +124,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	out, malformed := s.mcp.Handle(r.Context(), caller, body)
+	out, malformed := s.mcp.HandleVersion(r.Context(), caller, r.Header.Get("MCP-Protocol-Version"), body)
 	if out == nil {
 		w.WriteHeader(http.StatusAccepted)
 		return
