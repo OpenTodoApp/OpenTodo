@@ -27,7 +27,7 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 - Manual smoke: `./bin/opentodo` then open http://localhost:8080; first visit creates the owner account.
 
 ## Conventions
-- Go: stdlib `net/http` mux with method patterns, JSON error envelope `{error:{code,message}}`, `slog` logging, errors wrapped with context.
+- Go: stdlib `net/http` mux with method patterns, JSON error envelope `{error:{code,message}}`, `slog` logging, errors wrapped with context. Functions stay under 150 lines and files under 1,100 (`internal/codesize`, a test-only package); HTTP handlers live by area in `internal/httpapi` (`router.go` registers every route, then `middleware.go`, `auth_handlers.go`, `collections.go`, `sync_handlers.go`, …).
 - TS: strict, function components, Tailwind classes, data access only via `src/lib`. Custom CSS classes live in `@layer components` so utilities can override them.
 - Design: colours, type, radius, elevation and motion come from the tokens in `web/src/index.css` (no raw palette classes or hex in `web/src/ui`); shared UI is built and checked in the Storybook workbench (`make storybook`, `make ui-check`). Screens use primitives from `web/src/ui`, never emoji or glyphs as icons (`<Icon>`, enforced by `make ui-lint`), and choose entities (people, labels, projects, tasks) with the Combobox. See `docs/design-system.md`.
 - Dates: `due` is a floating `{date: "YYYY-MM-DD", time?: "HH:MM"}`; timestamps are Unix milliseconds.

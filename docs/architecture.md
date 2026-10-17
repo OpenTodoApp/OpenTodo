@@ -87,6 +87,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | Package | Responsibility |
 | --- | --- |
 | `config` | `OPENTODO_*` environment variables with defaults and validation; nothing is mandatory |
+| `codesize` | Test only: `go test ./...` fails when a function under `internal/` is longer than 150 lines or a file longer than 1,100 lines; exceptions need a reason, and the list can only shrink |
 | `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL): one writer connection whose write transactions begin `IMMEDIATE`, and a pool of query-only reader connections (`OpenReader`) for pure reads such as `sync` List, Get and Pull; applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; runs `PRAGMA optimize` at open and daily; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
 | `tenant` | Builds one server around one data directory: the database and its lock, the services, the notifier, the HTTP handler and the background jobs. A self-hosted server opens exactly one tenant |
 | `host` | Optional multi-tenant host, built only with `OPENTODO_HOST_URL`: a registry of tenants beside their data directories, host-name routing, lazy open and idle close, one scheduler for every tenant's background work, per-tenant limits and the operator interface a control plane drives |
