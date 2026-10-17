@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createField, setFieldValue } from '../lib/fields'
 import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { loadListColumns, saveViewMode } from '../lib/sections'
-import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 
 // The project header asks the server for its public links.
@@ -73,8 +73,8 @@ describe('field badges', () => {
     await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-field-more]`))
     expect(badgesOf(r.container, id)).toEqual(['Cost 120', 'Status Ordered', 'Paid'])
     const more = r.container.querySelector(`[data-task-id="${id}"] [data-field-more]`)!
-    expect(more.textContent).toBe('+2')
-    expect(more.getAttribute('aria-label')).toBe('2 more fields: Client Acme, Note Grey')
+    expect(visibleText(more)).toBe('+2')
+    expect(spokenText(more)).toBe('2 more fields: Client Acme, Note Grey')
     await r.unmount()
   })
 
@@ -104,7 +104,7 @@ describe('columns layout', () => {
     expect([...row.querySelectorAll('[data-cell]')].map((e) => e.textContent)).toEqual(['120', 'Ordered', 'Yes', ''])
     // Cells replace the badges; the row keeps its controls.
     expect(badgesOf(r.container, id)).toEqual([])
-    expect(row.querySelector('button[aria-label="Complete task"]')).not.toBeNull()
+    expect(row.querySelector('button[aria-label^="Complete "]')).not.toBeNull()
     expect(await loadListColumns(pid)).toBe(true)
     expect(await db.outbox.filter((o) => o.field.startsWith('list-columns')).count()).toBe(0)
     await r.unmount()

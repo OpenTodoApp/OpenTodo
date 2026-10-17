@@ -19,9 +19,12 @@ import { createDispatcher, isTextField, type Mode } from './dispatch'
 import { VIM_HELP } from './help'
 import { t } from '../../lib/i18n'
 
-/** `i`: the panel renders on the next commit; focus its title once it is there. */
-function focusTitle(id: string, tries = 20): void {
-  const el = document.querySelector<HTMLInputElement>(`[data-detail-for="${CSS.escape(id)}"] input[aria-label="Title"]`)
+/**
+ * `i`: the panel renders on the next commit; focus its title once it is there.
+ * Found by a data attribute, not the translated label, so it works in every language.
+ */
+export function focusTitle(id: string, tries = 20): void {
+  const el = document.querySelector<HTMLInputElement>(`[data-detail-for="${CSS.escape(id)}"] input[data-task-title]`)
   if (el && !el.disabled) {
     el.focus()
     const end = el.value.length
@@ -137,7 +140,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           />
           {message
             ? <span role="alert" className="text-danger">{message}</span>
-            : <span className="truncate text-faint" aria-label={t('Completions')}>{completions.slice(0, 6).join('  ')}</span>}
+            : <span className="truncate text-faint"><span className="sr-only">{t('Completions')} </span>{completions.slice(0, 6).join('  ')}</span>}
         </form>
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">

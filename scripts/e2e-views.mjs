@@ -188,7 +188,8 @@ for (const n of ['Today p1', 'Waiting', 'Errands']) {
   await pageA.getByLabel('Add panel').selectOption({ label: n })
   await pageA.locator(`section[aria-label="${n}"]`).waitFor()
 }
-const panelText = async (n) => pageA.locator(`section[aria-label="${n}"] h2 + span`).textContent()
+// The visible count; the full phrase beside it is for screen readers (assistive-tech-semantics).
+const panelText = async (n) => pageA.locator(`section[aria-label="${n}"] h2 + span [aria-hidden="true"]`).textContent()
 assert(await panelText('Today p1') === '2', 'Today p1 count ' + await panelText('Today p1'))
 assert(await panelText('Waiting') === '2', 'Waiting count')
 assert(await panelText('Errands') === '2', 'Errands count')
@@ -208,7 +209,7 @@ step('Live update: completing a task through the API updates the panel')
 const tasks = (await get('tasks')).tasks
 const parcel = tasks.find((t) => t.title === 'Pick up parcel')
 await api.patch(`${base}/api/v1/tasks/${parcel.id}`, { data: { completed_at: Date.now() } })
-await pageA.waitForFunction(() => document.querySelector('section[aria-label="Errands"] h2 + span')?.textContent === '1', null, { timeout: 15000 })
+await pageA.waitForFunction(() => document.querySelector('section[aria-label="Errands"] h2 + span [aria-hidden="true"]')?.textContent === '1', null, { timeout: 15000 })
 await shot(pageA, 'views-dashboard.png')
 const dashId = (await get('views')).views.find((v) => v.name === 'Morning').id
 await pageB.goto(`${base}/view/${dashId}`)

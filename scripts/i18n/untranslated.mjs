@@ -7,8 +7,13 @@
 //   - a string literal (or a template literal with words) given to a prop that
 //     people read or hear: aria-label, title, placeholder, label, description, alt
 //     and the other props in PROPS, including the label/description of
-//     SettingRow and SettingsSection,
-//   - a string literal with words rendered as a JSX child ({'Save'}, {ok ? 'Yes' : 'No'}).
+//     SettingRow and SettingsSection; a value that reads as a phrase counts even
+//     without a two-letter word ("e.g. 45m, 1h30"),
+//   - a string literal with words rendered as a JSX child ({'Save'}, {ok ? 'Yes' : 'No'}),
+//   - a template literal with words given to a key of an object literal that views
+//     show as is (SHOWN_KEYS: a group's `note: \`${n} done\``). Plain string literals
+//     under those keys are not reported: most are identifiers ('label', 'cyan'),
+//     not text, and module-level text already goes through msg().
 // scripts/i18n/allow.txt lists permanent exceptions by file and literal.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -22,6 +27,11 @@ export const PROPS = new Set([
 
 const WORD = /\p{L}{3,}/u
 const TEXT_PROPS_WORD = /\p{L}{2,}/u
+/** A prop value that reads as a phrase even without a two-letter word ("e.g. 45m, 1h30"). */
+const PHRASE = /\p{L}.*\s|\s.*\p{L}/u
+const isText = (s) => TEXT_PROPS_WORD.test(s) || PHRASE.test(s.trim())
+/** Object keys whose string value a view shows as is (a group's `note`, a row's `label`). */
+export const SHOWN_KEYS = new Set(['note', 'heading', 'label', 'title', 'description', 'placeholder', 'hint', 'empty', 'caption', 'subtitle'])
 
 /** Allow-list entries: "path: literal" (path relative to the repository, or `*` for any file). */
 export function loadAllow(file = join(repo, 'scripts/i18n/allow.txt')) {
@@ -75,10 +85,16 @@ export function untranslatedProblems(path, text, allow = new Set()) {
     }
     if (ts.isJsxAttribute(n) && n.initializer && PROPS.has(n.name.getText(sf))) {
       const init = n.initializer
-      if (ts.isStringLiteral(init)) { if (TEXT_PROPS_WORD.test(init.text)) report(init, init.text) }
+      if (ts.isStringLiteral(init)) { if (isText(init.text)) report(init, init.text) }
       else if (ts.isJsxExpression(init)) {
-        for (const [node, s] of shownLiterals(init.expression)) if (TEXT_PROPS_WORD.test(s) && !inMessageCall(node)) report(node, s)
+        for (const [node, s] of shownLiterals(init.expression)) if (isText(s) && !inMessageCall(node)) report(node, s)
       }
+    }
+    // A template literal with words given to a shown key of an object literal
+    // (\`note: \`${n} done\`\`): text assembled outside JSX that a view renders.
+    if (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && SHOWN_KEYS.has(n.name.text) && ts.isTemplateExpression(n.initializer) && !inMessageCall(n.initializer)) {
+      const s = [n.initializer.head.text, ...n.initializer.templateSpans.map((x) => x.literal.text)].join(' ')
+      if (WORD.test(s)) report(n.initializer, s)
     }
     if (ts.isJsxExpression(n) && n.expression && (ts.isJsxElement(n.parent) || ts.isJsxFragment(n.parent))) {
       for (const [node, s] of shownLiterals(n.expression)) if (WORD.test(s) && !inMessageCall(node)) report(node, s)

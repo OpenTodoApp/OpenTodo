@@ -117,10 +117,12 @@ lint:
 	cd web && npm run typecheck
 
 ## Static analysis of the Go code (test-integrity), pinned so CI and laptops agree.
-## Needs the web build in internal/web/dist (make web), like go test.
-STATICCHECK_VERSION := v0.8.1
+## Needs the web build in internal/web/dist (make web), like go test. The tool is built
+## with the go.mod toolchain (not the minimum Go it asks for), because it must read the
+## standard library of the Go that compiles the code.
+STATICCHECK_VERSION := v0.8.2
 staticcheck:
-	go run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./...
+	GOTOOLCHAIN=$$(go env GOVERSION) go run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./...
 
 ## The OpenSpec CLI at an exact version (CI runs it through this target; Dependabot does not
 ## see npx, so bump it by hand).

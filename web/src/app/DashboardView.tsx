@@ -3,7 +3,7 @@
 // first tasks; all panels are evaluated in one pass. Tab / Shift+Tab move between
 // panels, j / k move inside one.
 import { blockedMap } from '../lib/dependencies'
-import { Button, Icon, PageBody, PageHeader } from '../ui'
+import { Button, Icon, PageBody, PageHeader, ReadAs } from '../ui'
 import { useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
@@ -152,7 +152,7 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFo
       <div className="mb-2 flex items-center gap-2">
         <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
         <h2 className="truncate text-body font-semibold">{view.name}</h2>
-        {summary.ok && <span className="text-body text-faint" aria-label={t('{count} open tasks', { count: summary.count })}>{summary.count}</span>}
+        {summary.ok && <span className="text-body text-faint"><ReadAs label={t('{count} open tasks', { count: summary.count })}>{summary.count}</ReadAs></span>}
         <span className="flex-1" />
         <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>{t('Open view')}</button>
       </div>

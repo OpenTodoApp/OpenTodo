@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { Label, Project, Task } from '../lib/types'
-import { flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
+import { flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 
@@ -36,7 +36,7 @@ const task = (over: Partial<Task>): Task => ({
 function anatomy(li: Element): string[] {
   const out: string[] = []
   for (const child of li.children) {
-    if (child.querySelector('button[aria-label="Complete task"], button[aria-label="Reopen task"]') || child.matches('button[aria-label="Complete task"]')) break
+    if (child.querySelector('button[aria-label^="Complete "], button[aria-label^="Reopen "]') || child.matches('button[aria-label^="Complete "]')) break
     if (child.hasAttribute('data-drop-indicator')) continue
     out.push(child.hasAttribute('data-leading-slot') ? 'slot' : child.tagName.toLowerCase())
   }
@@ -101,7 +101,7 @@ describe('metadata language (ux-overhaul 8.1)', () => {
     try {
       const r = await row({ due: { date: '2026-10-14' }, evening: true, recurrence: 'every day' })
       const date = r.container.querySelector('[data-date]')!
-      expect(date.textContent).toBe('Today · evening · repeats')
+      expect(visibleText(date)).toBe('Today · evening · repeats')
       expect(date.className).toContain('text-success')
       expect(date.querySelector('svg')).toBeNull()
       expect(r.container.querySelector('[data-evening]')).toBe(date)
@@ -113,12 +113,12 @@ describe('metadata language (ux-overhaul 8.1)', () => {
   it('counts are neutral chips with tabular figures, never a monospace face; the project is a chip with its colour', async () => {
     const r = await row({ estimate_minutes: 90, description: 'notes' }, { progress: { done: 1, total: 3 }, showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project })
     const estimate = r.container.querySelector('[data-estimate]')!
-    expect(estimate.textContent).toBe('1h 30m')
+    expect(visibleText(estimate)).toBe('1h 30m')
     expect(estimate.className).toContain('tabular-nums')
     expect(estimate.className).not.toContain('font-mono')
-    expect(r.container.querySelector('[data-progress]')!.textContent).toBe('1/3')
+    expect(visibleText(r.container.querySelector('[data-progress]')!)).toBe('1/3')
     expect(r.container.querySelector('[data-project]')!.textContent).toBe('Home')
-    expect(r.container.querySelector('[data-notes]')!.getAttribute('aria-label')).toBe('Has notes')
+    expect(spokenText(r.container.querySelector('[data-notes]')!)).toBe('Has notes')
     expect(r.container.querySelector('[title]')).toBeNull()
     await r.unmount()
   })
@@ -149,7 +149,7 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
       let toggled = 0
       const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} /></ul>)
       const li = r.container.querySelector('[data-task-id]')!
-      await click(li.querySelector('button[aria-label="Complete task"]')!)
+      await click(li.querySelector('button[aria-label="Complete Task"]')!)
       expect(li.hasAttribute('data-completing')).toBe(true)
       expect(li.className).toContain('opacity-50')
       expect(li.querySelector('[data-check-mark]')!.className).toContain('row-check-pop')
@@ -160,7 +160,7 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
       restore = stubMotion(true)
       toggled = 0
       const q = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} /></ul>)
-      await click(q.container.querySelector('button[aria-label="Complete task"]')!)
+      await click(q.container.querySelector('button[aria-label="Complete Task"]')!)
       expect(toggled).toBe(1)
       expect(q.container.querySelector('[data-completing]')).toBeNull()
       await q.unmount()
@@ -171,7 +171,7 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
   it('without a selection in progress the circle is the only box: hover and focus never swap in the selection box', async () => {
     let toggled = 0
     const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} onTick={() => {}} /></ul>)
-    const complete = r.container.querySelector('button[aria-label="Complete task"]')!
+    const complete = r.container.querySelector('button[aria-label="Complete Task"]')!
     expect(complete.className).not.toMatch(/invisible/)
     const tickLabel = r.container.querySelector('[data-tick]')!.closest('label')!
     expect(tickLabel.className).toMatch(/\bhidden\b/)
@@ -179,7 +179,7 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     expect(tickLabel.className).not.toMatch(/inline-flex/)
     expect(tickLabel.className).not.toMatch(/group-hover|group-focus-within/)
     await r.rerender(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} onTick={() => {}} showCheckbox /></ul>)
-    expect(r.container.querySelector('button[aria-label="Complete task"]')!.className).toMatch(/invisible/)
+    expect(r.container.querySelector('button[aria-label="Complete Task"]')!.className).toMatch(/invisible/)
     expect(r.container.querySelector('[data-tick]')!.closest('label')!.className).toMatch(/inline-flex/)
     expect(r.container.querySelector('[data-tick]')!.closest('label')!.className).not.toMatch(/\bhidden\b/)
     expect(toggled).toBe(0)
@@ -190,7 +190,7 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} /></ul>)
     const li = r.container.querySelector('[data-task-id]')!
     const slot = li.querySelector('[data-row-controls]')!
-    expect(slot.querySelector('button[aria-label="Complete task"]')).toBeTruthy()
+    expect(slot.querySelector('button[aria-label="Complete Task"]')).toBeTruthy()
     expect(slot.querySelector('[data-tick]')).toBeTruthy()
     // Leading slot, the one control slot, then the title: nothing is inserted on hover or tick.
     const children = [...li.children].map((c) => (c.hasAttribute('data-leading-slot') ? 'slot' : c.hasAttribute('data-row-controls') ? 'controls' : c.tagName.toLowerCase()))

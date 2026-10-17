@@ -15,7 +15,7 @@ In the task panel, **Notes** sits under the title. Below the property chips are 
 
 ## Write notes
 
-The notes field formats as you type. Start a line with `- ` for a bullet list, `1. ` for a numbered list, `[ ] ` for a checklist or `# ` for a heading. Select text and press <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold or <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link (<kbd>⌘</kbd> on a Mac). If two of your devices edit the same note at the same time, both sets of changes are kept.
+The notes field formats as you type. Start a line with `- ` for a bullet list, `1. ` for a numbered list, `[ ] ` for a checklist or `# ` for a heading. Select text and press <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold or <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link (<kbd>⌘</kbd> on a Mac): enter an address starting with `https://`, `http://` or `mailto:`, or clear it to remove the link. If two of your devices edit the same note at the same time, both sets of changes are kept.
 
 ## Break a task into subtasks
 

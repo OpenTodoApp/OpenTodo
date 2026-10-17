@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { completeTask, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createSection } from '../lib/sections'
-import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
 import { isGroupCollapsed, resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
 
@@ -45,7 +45,8 @@ describe('generated groups', () => {
     const r = await render(<TaskListView route={{ view: 'upcoming' }} />)
     await waitFor(() => r.container.textContent!.includes('Taxes'))
     expect(headers(r.container)).toHaveLength(2)
-    expect(headers(r.container).map((h) => h.querySelector('[data-group-count]')?.textContent)).toEqual(['1', '2'])
+    expect(headers(r.container).map((h) => visibleText(h.querySelector('[data-group-count]')!))).toEqual(['1', '2'])
+    expect(headers(r.container).map((h) => spokenText(h.querySelector('[data-group-count]')!))).toEqual(['1 open task', '2 open tasks'])
     expect(headers(r.container).every((h) => h.querySelector('h2'))).toBe(true)
 
     await click(headers(r.container)[0].querySelector('[data-group-toggle]')!)

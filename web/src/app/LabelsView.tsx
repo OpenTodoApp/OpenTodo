@@ -13,7 +13,7 @@ import {
 } from '../lib/labels'
 import { useOpenTasks } from '../lib/liveTasks'
 import type { Label } from '../lib/types'
-import { Badge, Button, PageBody, PageHeader } from '../ui'
+import { Badge, Button, PageBody, PageHeader, ReadAs } from '../ui'
 import { ComboboxPanel } from '../ui'
 import { Icon } from '../ui'
 import { EmptyState } from '../ui'
@@ -320,7 +320,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}
-            {count ? <span className="text-meta text-faint" aria-label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</span> : null}
+            {count ? <span className="text-meta text-faint"><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
           </button>
         )}
         <ActionMenu label={t('Menu for label {name}', { name: label.name })} title={label.name} groups={groups} open={menuOpen} onOpenChange={setMenuOpen}

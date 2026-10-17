@@ -4,6 +4,7 @@
 // groups, project groups, "Later" and "Sub-projects" all render through it.
 import type { ReactNode } from 'react'
 import { Icon } from '../Icon'
+import { ReadAs } from '../Chips'
 import { t } from '../../lib/i18n'
 
 export interface ListGroupHeaderProps {
@@ -33,7 +34,7 @@ export function ListGroupHeader({ title, count, tone = 'default', collapsed, onT
   const text = (
     <>
       <span className={`min-w-0 truncate text-body font-semibold ${color}`}>{title}</span>
-      {count !== undefined && <span className="text-meta tabular-nums text-faint" data-group-count aria-label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</span>}
+      {count !== undefined && <span className="text-meta tabular-nums text-faint" data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
     </>
   )
   return (

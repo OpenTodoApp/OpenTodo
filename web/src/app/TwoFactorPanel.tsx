@@ -473,6 +473,8 @@ export function MfaPolicyPanel() {
   const [enrolled, setEnrolled] = useState<boolean | null>(readCachedMfa()?.enrolled ?? null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // A policy that binds the owner too waits for an in-app confirmation.
+  const [pending, setPending] = useState<MfaPolicy | null>(null)
   useEffect(() => {
     if (!online) return
     void (async () => {
@@ -484,16 +486,22 @@ export function MfaPolicyPanel() {
       }
     })()
   }, [online])
+  const apply = (p: MfaPolicy) => {
+    setBusy(true)
+    setError(null)
+    void api.setMfaPolicy(p).then((r) => setPolicy(r.required), (err) => {
+      if (!(err instanceof ApiError && err.code === 'reauth_required')) setError(mfaMessage(err))
+    }).finally(() => setBusy(false))
+  }
   return (
-    <MfaPolicyPanelView policy={policy} online={online} busy={busy} error={error}
-      onPolicy={(p) => {
-        if (p !== 'none' && enrolled === false &&
-          !window.confirm(t('You have not set up two-factor authentication yourself. After this change you must set it up before you can continue. Continue?'))) return
-        setBusy(true)
-        setError(null)
-        void api.setMfaPolicy(p).then((r) => setPolicy(r.required), (err) => {
-          if (!(err instanceof ApiError && err.code === 'reauth_required')) setError(mfaMessage(err))
-        }).finally(() => setBusy(false))
-      }} />
+    <>
+      <MfaPolicyPanelView policy={policy} online={online} busy={busy} error={error}
+        onPolicy={(p) => { if (p !== 'none' && enrolled === false) setPending(p); else apply(p) }} />
+      {pending && (
+        <ConfirmDialog title={t('Require two-factor authentication?')} confirmLabel={t('Continue')} tone="default"
+          consequence={t('You have not set up two-factor authentication yourself. After this change you must set it up before you can continue.')}
+          onConfirm={() => apply(pending)} onCancel={() => setPending(null)} />
+      )}
+    </>
   )
 }

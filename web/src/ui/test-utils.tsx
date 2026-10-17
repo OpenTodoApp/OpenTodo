@@ -86,3 +86,17 @@ export async function waitFor(ok: () => boolean | Promise<boolean>, what = 'cond
     await flush(10)
   }
 }
+
+/** Text as a screen reader reads it (assistive-tech-semantics): aria-hidden parts left out, visually hidden text kept. */
+export function spokenText(el: Element): string {
+  const copy = el.cloneNode(true) as Element
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove())
+  return (copy.textContent ?? '').replace(/\s+/g, ' ').trim()
+}
+
+/** Text as it is shown: visually hidden (sr-only) parts left out. */
+export function visibleText(el: Element): string {
+  const copy = el.cloneNode(true) as Element
+  copy.querySelectorAll('.sr-only').forEach((n) => n.remove())
+  return copy.textContent ?? ''
+}

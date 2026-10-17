@@ -40,6 +40,7 @@ import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from './help/store'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
+import { SkipLink, usePageFocus } from './pageFocus'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
@@ -175,9 +176,15 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
   const helpRequest = useHelpRequest()
+  // Page changes are announced (assistive-tech-semantics): the tab title names the
+  // page and a navigation moves focus to its heading; the skip link jumps there too.
+  const frame = useRef<HTMLElement>(null)
+  const content = useRef<HTMLDivElement>(null)
+  usePageFocus(route, frame, content)
 
   return (
     <div className="flex h-full">
+      <SkipLink frame={frame} content={content} />
       {sidebarOpen && <div className="fixed inset-0 z-[45] bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell). */}
       <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
@@ -189,7 +196,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col md:!pb-0" data-app-frame data-phone-chrome={phoneChrome || undefined}
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0" data-app-frame data-phone-chrome={phoneChrome || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
@@ -208,7 +215,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
+        <div ref={content} id="content" className="relative min-h-0 flex-1 overflow-y-auto">
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (

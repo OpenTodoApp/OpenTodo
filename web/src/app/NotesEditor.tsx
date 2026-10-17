@@ -11,6 +11,7 @@ import { foldNote, mutate } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
 import { applyBody, createState, markdownSlice, pmToModel, remoteKey, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import type { Clock } from '../lib/types'
+import { LinkDialog } from './LinkDialog'
 import { Markdown } from './Markdown'
 import { t } from '../lib/i18n'
 
@@ -66,6 +67,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   // While focused the notes read as an editor; at rest they are a quiet block of
   // text, or one placeholder line when empty (ux-overhaul, "Task panel layout").
   const [editing, setEditing] = useState(false)
+  // Mod-k asks for the address in the app's link dialog; the editor applies the answer.
+  const [linkAsk, setLinkAsk] = useState<{ current: string; answer: (href: string | null) => void } | null>(null)
 
   // Lazy upgrade of a legacy note and folding of plain-text writes (REST, older
   // clients) happen when the note is opened, and again whenever its text changes
@@ -104,7 +107,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     bodyName.current = activeBodyName(doc)
     size.current = 0
     const hooks: EditorHooks = {
-      askLink: (current) => window.prompt(t('Link address (empty to remove)'), current || 'https://'),
+      askLink: (current) => new Promise<string | null>((answer) => setLinkAsk({ current, answer })),
       onEscape: () => { view.current?.dom.blur(); onEscapeRef.current?.() },
       size: () => size.current,
       placeholder: readOnly ? '' : t('Add notes…'),
@@ -224,6 +227,11 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       <div ref={host} className="notes-host" data-notes-editing={editing || undefined} />
       {sizeNote && <p role="status" className="text-meta text-warning">{sizeNote}</p>}
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
+      {linkAsk && (
+        <LinkDialog current={linkAsk.current}
+          onSubmit={(href) => { linkAsk.answer(href); setLinkAsk(null) }}
+          onCancel={() => { linkAsk.answer(null); setLinkAsk(null) }} />
+      )}
     </div>
   )
 }

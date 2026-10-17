@@ -15,10 +15,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **A damaged or tampered backup archive cannot fill the disk during a restore.** Every file in the archive must have exactly the size its manifest lists, nothing more is written, and the server checks that the listed files fit before it extracts anything. ([Backups](docs/backups.md))
 - **Images and release files can be verified.** The container image is signed with cosign (keyless, tied to the release workflow) and carries an SBOM and build provenance; every file on a GitHub release has a build provenance attestation for `gh attestation verify`. ([Running with Docker](docs/self-hosting/docker.md#verifying-the-image-and-downloads))
 - **A release is published only when every check passed.** The image, its `stable` tag and the GitHub release now wait for the layout, interface, docs website and template checks too; the image is built, scanned for known vulnerabilities (a critical one with a fix available stops it) and smoke-tested before it is pushed. Build tools and base images are pinned to exact versions, and Dependabot proposes updates weekly.
+- **Release binaries and the image are built with Go 1.27.2** (the `go.mod` toolchain, the Docker build stage and CI use the same version), and the image's web app is built on Node 25. People building from source still need Go 1.26 or newer; the `go` command downloads 1.27.2 for them.
 - **Security reports go through GitHub's private vulnerability reporting.** See `SECURITY.md`.
 
 ### Fixed
 
+- **Screen readers hear what the chips say.** Counts, "Has notes", deadlines, group counts and the warning on a title that could not be decrypted were silent or read as bare numbers; they are now read as full phrases ("3 comments", "4 open tasks").
+- **Screen readers follow the list.** Moving with <kbd>j</kbd> / <kbd>k</kbd> moves focus to the selected task, subtasks are read with their level and position, and each complete button names its task ("Complete Buy milk"). ([Keyboard shortcuts](docs/keyboard.md))
+- **Page changes are announced.** The browser tab names the page ("Today – OpenTodo"), going to another page moves focus to its heading, and a "Skip to content" link jumps past the sidebar. ([Keyboard shortcuts](docs/keyboard.md))
 - **The log says which level it uses.** The startup line now ends with `log_level=`, and with `OPENTODO_LOG_LEVEL=debug` a first debug line says what debug adds (one line per API request). Before, a log read right after a restart looked the same at `debug` as at `info`, so the setting seemed to be ignored. (#128)
 - **Project pickers no longer list projects twice.** With only a few projects, a picker (such as "Tasks without a project go to" when importing) showed the ones picked before under "Recent" and then again in the full list. Short lists now show each project once; longer lists keep "Recent" on top and head the full list "All". (#136)
 - **Buttons and menu items are named by the text they show** (WCAG 2.5.3 Label in Name), so voice control finds them by what is on screen: menu items no longer repeat their shortcut or note in the name, group headers are named by their title and count (collapsed or expanded is announced as a state), calendar items, month days and the project's member list read their full description without hiding the visible text, and "Make owner" and "Restore this value" start with their visible words.
@@ -63,6 +67,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Long lists stay fast.** Moving through a list with `j` and `k` now redraws only the two rows involved instead of every row (in a 2,000-task project, 2 rows per key press instead of 2,000).
 - **Edits and syncs read your tasks once, not once per panel.** The list, the sidebar counts, the project header, labels, calendars and the task panel now share one live copy of your tasks, so each change or sync reads the stored tasks once instead of about six times with a project open.
 - **Large lists group and encrypt in linear time.** Grouping a list by project and showing a section's completed tasks no longer slow down sharply with thousands of tasks, rows no longer each open their own lookup when encryption is on, and turning encryption on or off no longer re-reads all your data for every batch of 200 items.
+- **Commands work the same in every language.** In German, French, Spanish, Italian and Portuguese, the Vim `i` command now puts the caret in the task's title, and moving through the list with `j` and `k` releases a project left focused in the sidebar.
+- **Viewers of a shared project can no longer skip, detach, schedule or estimate its tasks by keyboard.** Shift+K, Shift+O, `s` and `e` now do nothing on a task you can only view, like the other editing keys, instead of making a change the server then undid.
+- **Today and the sidebar counts move to the new day at midnight** while the app stays open.
+- **Confirmations are the app's own dialogs.** Making someone the owner, leaving a project, revoking an invite link, undoing an import and requiring two-factor authentication ask in the app instead of the browser's pop-up. Adding a link to a note (Ctrl/Cmd+K) opens a small dialog that accepts only `https://`, `http://` and `mailto:` addresses, instead of silently dropping anything else.
+- **The Logbook's "done" count and the estimate field's example are translated.**
+- **The calendar's hour lines follow the theme**, including high contrast and dark.
+- **More list actions say why they failed.** Bulk keys, park, duplicate, "this occurrence only", adding a subtask and completing from the panel now show a message when the change cannot be saved.
 
 ### Added
 

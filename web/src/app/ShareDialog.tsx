@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Tooltip } from '../ui'
+import { ConfirmDialog, Tooltip } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { HelpLink } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
@@ -48,6 +48,8 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   const [role, setRole] = useState<ProjectRole>('editor')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Handing over the project and leaving it are confirmed in the app's own dialog.
+  const [asking, setAsking] = useState<{ kind: 'transfer'; userId: string; name: string } | { kind: 'leave' } | null>(null)
   const emailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -123,13 +125,13 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
                 )}
                 {!locked && myRole === 'owner' && !self && (
                   <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={t('Make owner: {name}', { name: m.name || m.email })}
-                    onClick={() => { if (confirm(t('Make {name} the owner of “{project}”? You become an admin.', { name: m.name || m.email, project: project.name }))) void run(() => api.transferProject(project.id, m.userId)) }}>
+                    onClick={() => setAsking({ kind: 'transfer', userId: m.userId, name: m.name || m.email })}>
                     {t('Make owner')}
                   </button>
                 )}
                 {!locked && self && m.role !== 'owner' && (
                   <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy}
-                    onClick={() => { if (confirm(t('Leave “{project}”? It disappears from your devices.', { project: project.name }))) void run(() => api.removeMember(project.id, 'me'), onClose) }}>
+                    onClick={() => setAsking({ kind: 'leave' })}>
                     {t('Leave')}
                   </button>
                 )}
@@ -142,6 +144,16 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
           <HelpLink screen="share-dialog" topic={t('Sharing projects')} />
         </p>
         <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={onClose}>{t('Close')} <Kbd k="Esc" only className="ml-1" /></button>
+        {asking?.kind === 'transfer' && (
+          <ConfirmDialog title={t('Make {name} the owner?', { name: asking.name })} confirmLabel={t('Make owner')}
+            consequence={t('Make {name} the owner of “{project}”? You become an admin.', { name: asking.name, project: project.name })}
+            onConfirm={() => run(() => api.transferProject(project.id, asking.userId))} onCancel={() => setAsking(null)} />
+        )}
+        {asking?.kind === 'leave' && (
+          <ConfirmDialog title={t('Leave “{project}”?', { project: project.name })} confirmLabel={t('Leave')}
+            consequence={t('It disappears from your devices.')}
+            onConfirm={() => run(() => api.removeMember(project.id, 'me'), onClose)} onCancel={() => setAsking(null)} />
+        )}
     </Dialog>
   )
 }

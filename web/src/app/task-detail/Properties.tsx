@@ -201,7 +201,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
       // so clearing the value later removes it (web-lint-and-test-hygiene).
       const kept = hasRef.current[id]
       setShown((s) => { const n = new Set(s); n.delete(id); return n })
-      if (!kept) section.current?.querySelector<HTMLElement>(`button[aria-label="${t('Add a property')}"]`)?.focus()
+      if (!kept) section.current?.querySelector<HTMLElement>('[data-add-property] button[aria-haspopup]')?.focus()
     }, 50)
   }
   const chipProps = (id: Optional) => ({
@@ -411,16 +411,18 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
         )}
 
         {!readOnly && remaining.length > 0 && (
-          <Menu kind="menu" label={t('Add a property')} title={t('Add')} width="sm:w-64"
-            trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />{t('Add')}</span>}
-            triggerClassName="inline-flex min-h-8 items-center rounded-control border border-dashed border-input px-2.5 py-1 text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised">
-            {remaining.map((o, i) => (
-              <span key={o.id} className="contents">
-                {i > 0 && o.id === 'blocked-by' && <MenuSeparator />}
-                <MenuItem label={o.label} icon={o.icon} shortcut={o.shortcut} onSelect={() => (o.run ? o.run() : reveal(o.id))} />
-              </span>
-            ))}
-          </Menu>
+          <span data-add-property className="contents">
+            <Menu kind="menu" label={t('Add a property')} title={t('Add')} width="sm:w-64"
+              trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />{t('Add')}</span>}
+              triggerClassName="inline-flex min-h-8 items-center rounded-control border border-dashed border-input px-2.5 py-1 text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised">
+              {remaining.map((o, i) => (
+                <span key={o.id} className="contents">
+                  {i > 0 && o.id === 'blocked-by' && <MenuSeparator />}
+                  <MenuItem label={o.label} icon={o.icon} shortcut={o.shortcut} onSelect={() => (o.run ? o.run() : reveal(o.id))} />
+                </span>
+              ))}
+            </Menu>
+          </span>
         )}
       </div>
     </section>
