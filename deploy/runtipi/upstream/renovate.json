@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "automerge": false,
+  "addLabels": [
+    "renovate"
+  ],
+  "enabledManagers": [
+    "custom.regex"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps/[^/]+/docker-compose\\.yml$/"
+      ],
+      "matchStrings": [
+        "image:\\s+[\"']?(?<depName>[^\"'\\s]+):(?<currentValue>[^\"'\\s:@]+)[\"']?"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "postUpgradeTasks": {
+    "commands": [
+      "bun ./scripts/update-config.ts {{packageFile}} {{newVersion}} {{depName}}",
+      "bun install && bun run test"
+    ],
+    "fileFilters": [
+      "**/*"
+    ],
+    "executionMode": "update"
+  }
+}
