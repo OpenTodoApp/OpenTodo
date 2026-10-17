@@ -142,6 +142,7 @@ func TestImportTooLarge413(t *testing.T) {
 		t.Fatalf("row limit message = %v", out)
 	}
 	resp, out = e2.do("GET", "/api/v1/import/jobs", nil)
+	e2.mustStatus(resp, 200, out)
 	if len(out["jobs"].([]any)) != 0 {
 		t.Fatalf("a job was created: %v", out)
 	}
@@ -224,11 +225,13 @@ func TestUndoForeignJob404(t *testing.T) {
 	resp, out = other.do("GET", "/api/v1/import/jobs/"+id, nil)
 	other.mustStatus(resp, 404, out)
 	resp, out = other.do("GET", "/api/v1/import/jobs", nil)
+	other.mustStatus(resp, 200, out)
 	if len(out["jobs"].([]any)) != 0 {
 		t.Fatalf("other user sees jobs: %v", out)
 	}
 	// The owner's data is untouched; the owner can undo, twice.
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["tasks"].([]any)) != 1 {
 		t.Fatalf("tasks = %v", out)
 	}
@@ -240,10 +243,12 @@ func TestUndoForeignJob404(t *testing.T) {
 		}
 	}
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["tasks"].([]any)) != 0 {
 		t.Fatalf("tasks after undo = %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["tasks"].([]any)) != 1 {
 		t.Fatalf("undone task must stay in the export: %v", out)
 	}
@@ -401,6 +406,7 @@ func TestImportCSVPreviewAndCommit(t *testing.T) {
 	}
 	// Nothing was written by the preview.
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["tasks"].([]any)) != 0 {
 		t.Fatal("preview wrote tasks")
 	}
@@ -409,15 +415,18 @@ func TestImportCSVPreviewAndCommit(t *testing.T) {
 		t.Fatalf("job = %v", job)
 	}
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	tasks := out["tasks"].([]any)
 	if len(tasks) != 97 {
 		t.Fatalf("tasks = %d", len(tasks))
 	}
 	resp, out = e.do("GET", "/api/v1/projects", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["projects"].([]any)) != 1 {
 		t.Fatalf("projects = %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/labels", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["labels"].([]any)) != 2 {
 		t.Fatalf("labels = %v", out)
 	}
@@ -428,6 +437,7 @@ func TestImportCSVPreviewAndCommit(t *testing.T) {
 	}
 	// Repeating the preview reports every imported row as already imported.
 	resp, out = e.upload("/api/v1/import/preview", "tasks.csv", csv, nil)
+	e.mustStatus(resp, 200, out)
 	totals = out["totals"].(map[string]any)
 	if totals["create"] != float64(0) || totals["skip"] != float64(97) {
 		t.Fatalf("re-preview = %v", totals)
@@ -453,6 +463,7 @@ func TestImportGenericJSONOverHTTP(t *testing.T) {
 		t.Fatalf("job = %v", job)
 	}
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	byTitle := map[string]map[string]any{}
 	for _, t := range out["tasks"].([]any) {
 		byTitle[t.(map[string]any)["title"].(string)] = t.(map[string]any)
@@ -519,6 +530,7 @@ func TestImportLinearOverHTTP(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	assigned := 0
 	for _, task := range out["tasks"].([]any) {
 		if task.(map[string]any)["assignee_id"] != nil {

@@ -8,9 +8,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { completeTask, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createSection } from '../lib/sections'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
 import { isGroupCollapsed, resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
+
+// The project header asks the server for its public links.
+beforeEach(() => mockFetch(noPublicLinks))
+afterEach(() => { vi.unstubAllGlobals() })
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })

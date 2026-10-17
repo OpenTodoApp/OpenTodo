@@ -11,3 +11,17 @@ docs
 !README.md
 .env
 .env.*
+# Not used by the image build (OpenSpec ci-release-gates): visual baselines, reports,
+# deploy templates, scripts, the extension and the agent skill. The Dockerfile copies
+# only web/, cmd/, internal/ and go.mod/go.sum (scripts/repo-checks.test.mjs checks it).
+web/src/ui/__screenshots__
+web/storybook-static
+web/test-results
+web/playwright-report
+dist
+layout-report
+docs-report
+scripts
+deploy
+extension
+skills

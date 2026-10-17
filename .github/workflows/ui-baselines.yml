@@ -9,13 +9,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   baselines:
     name: Generate UI baselines
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.56.1-noble
+    timeout-minutes: 30
+    # The image the UI check job runs in (pinned by digest; same as PLAYWRIGHT_IMAGE in the Makefile).
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: npm i -g --no-audit --no-fund @playwright/test@1.56.1
       - run: npm ci --no-audit --no-fund
         working-directory: web
@@ -24,7 +30,7 @@ jobs:
       - name: Write baselines
         working-directory: scripts/ui-check
         run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=all
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ui-baselines
           path: web/src/ui/__screenshots__

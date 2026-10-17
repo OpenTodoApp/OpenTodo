@@ -1,0 +1,40 @@
+# Dependency updates (OpenSpec ci-release-gates): weekly, one grouped pull request per
+# ecosystem, so pinned versions, action SHAs and base-image digests do not go stale.
+# Every update is a normal pull request: CI runs in full and the maintainer merges.
+# Not covered: deploy/*/upstream (copies of third-party store files), extension/ (no
+# dependencies), Playwright 1.56.1 (pinned in the workflows, the Makefile and the UI
+# baselines, bumped together with new baselines) and the OpenSpec CLI (Makefile).
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      web-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      base-images:
+        patterns: ["*"]

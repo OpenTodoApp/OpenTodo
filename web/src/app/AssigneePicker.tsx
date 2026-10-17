@@ -44,6 +44,7 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
     { id: NONE, name: t('Unassigned'), email: '' },
     ...assigneeOptions(task?.project_id, memberships, { id: userId, name: t('You'), email: '' })
       .map((p) => ({ id: p.userId, name: p.userId === userId ? t('You') : p.name || p.email, email: p.userId === userId ? '' : p.email })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lang: t() reads the interface language, so a switch re-translates the names
   ], [task?.project_id, memberships, userId, lang])
 
   if (!task) return null

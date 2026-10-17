@@ -15,7 +15,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 
 /** The whole structure: pinned top, a scrolling middle with sticky group headings, a pinned footer; Filters folded with its count. */
 export const Structure: StoryObj = {
-  render: () => {
+  render: function StructureStory() {
     const [labelsOpen, setLabelsOpen] = useState(true)
     const [filtersOpen, setFiltersOpen] = useState(false)
     return (

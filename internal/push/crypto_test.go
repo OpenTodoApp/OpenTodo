@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
@@ -187,7 +188,10 @@ func TestVapidHeader(t *testing.T) {
 	}
 	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
 	pubBytes := b64(t, k.PublicKey())
-	pub := &ecdsa.PublicKey{Curve: k.priv.Curve, X: new(big.Int).SetBytes(pubBytes[1:33]), Y: new(big.Int).SetBytes(pubBytes[33:])}
+	pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), pubBytes)
+	if err != nil {
+		t.Fatalf("advertised public key: %v", err)
+	}
 	if !ecdsa.Verify(pub, digest[:], new(big.Int).SetBytes(sig[:32]), new(big.Int).SetBytes(sig[32:])) {
 		t.Fatal("JWT signature does not verify with the advertised public key")
 	}

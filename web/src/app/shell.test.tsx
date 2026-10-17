@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { createView } from '../lib/views'
-import { flush, key, render } from '../ui/test-utils'
+import { flush, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -30,10 +30,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const panels = () => document.querySelectorAll('aside[data-detail-for]')
 const panelFor = () => panels()[0]?.getAttribute('data-detail-for') ?? null
 const rowOf = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id]')].find((r) => r.textContent?.includes(title))!

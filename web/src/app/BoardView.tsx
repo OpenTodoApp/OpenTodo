@@ -51,7 +51,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
     if (wide || !onCurrentColumn) return
     onCurrentColumn(names[current] ?? null)
     return () => onCurrentColumn(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- names is keyed by its content; onCurrentColumn is an inline parent callback
   }, [wide, current, names.join('\u0000')])
   const goTo = (i: number) => scroller.current?.querySelectorAll<HTMLElement>('[data-column]')[i]?.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' })
   return (

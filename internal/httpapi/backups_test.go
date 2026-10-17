@@ -156,6 +156,7 @@ func TestSettingsResponseHasNoSecrets(t *testing.T) {
 		}
 	}
 	resp, out = e.do("GET", "/api/v1/backups/settings", nil)
+	e.mustStatus(resp, 200, out)
 	flags := out["secrets"].(map[string]any)
 	if flags["hasWebdavPassword"] != true || flags["hasPassphrase"] != true || flags["hasS3SecretKey"] != false {
 		t.Fatalf("flags = %v", flags)
@@ -168,6 +169,7 @@ func TestSettingsResponseHasNoSecrets(t *testing.T) {
 		t.Fatalf("flags after clear = %v", flags)
 	}
 	resp, out = e.do("GET", "/api/v1/backups", nil)
+	e.mustStatus(resp, 200, out)
 	if out["encrypted"] != false {
 		t.Fatalf("status = %v", out)
 	}

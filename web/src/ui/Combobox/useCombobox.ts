@@ -88,14 +88,14 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       }, () => { if (req === requestId.current) setLoading(false) })
     }, ASYNC_DEBOUNCE_MS)
     return () => { clearTimeout(entry); ctl.abort() }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cfg is a fresh object every render; only a new async source (or query) restarts the search
   }, [query, isAsync(cfg.source) ? cfg.source : null])
 
   const fullItems = isAsync(cfg.source) ? asyncItems : cfg.source
   const items = !query.trim() && cfg.emptySource ? cfg.emptySource : fullItems
   // Fold each option's text once per source, not on every keystroke.
   const prepared = useMemo(() => items.map((i) => prepare(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getLabel/getSecondary/getKeywords are inline callbacks; the folded text changes only with the items
     [items])
 
   const allOptions = useMemo<ComboOption<T>[]>(() => {
@@ -147,7 +147,7 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       out = [...out, { kind: 'create', key: `create:${q}`, query: q }]
     }
     return out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cfg is a fresh object every render; the fields the options depend on are listed one by one
   }, [items, prepared, query, scores, cfg.pinned, cfg.prefix, cfg.suffix])
   const more = cfg.limit !== undefined ? Math.max(0, allOptions.length - cfg.limit) : 0
   const options = more ? allOptions.slice(0, cfg.limit) : allOptions

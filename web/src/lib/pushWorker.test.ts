@@ -2,13 +2,16 @@
 // IndexedDB as the app. These tests load the script into a stubbed worker scope
 // over fake-indexeddb and check the push and notification-click paths.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { db, getMeta, useDatabase } from './db'
+import { db, getMeta, setMeta, useDatabase } from './db'
+import { CLOCK_OFFSET_META } from './hlc'
 import { createTask, getDeviceId, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
 import { formatDate, formatTime, resolveDateTime } from './dates'
 import { setUserPref, type DateTimePrefs } from './userPrefs'
 import source from '../../public/push-sw.js?raw'
+
+const HOUR = 3_600_000
 
 interface Scope {
   listeners: Record<string, (ev: unknown) => void>
@@ -18,7 +21,7 @@ interface Scope {
   opened: string[]
 }
 
-function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean } = {}): Scope {
+function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean; answer?: (body: { ops: { id: string; field: string }[] }) => unknown } = {}): Scope {
   const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [], opened: [] }
   const windows = (opts.windows ?? []).map((w) => ({
     focused: w.focused, visibilityState: w.focused ? 'visible' : 'hidden',
@@ -31,8 +34,10 @@ function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean 
     registration: { showNotification: async (title: string, options: Record<string, unknown>) => scope.shown.push({ title, options }) },
   }
   const fetchStub = async (url: string, init: { body: string }) => {
-    scope.fetches.push({ url, body: JSON.parse(init.body) })
-    return { ok: opts.fetchOk ?? true, status: 200 }
+    const body = JSON.parse(init.body)
+    scope.fetches.push({ url, body })
+    const answer = opts.answer ? opts.answer(body) : { ops: [], cursor: 0, hasMore: false, rejected: [] }
+    return { ok: opts.fetchOk ?? true, status: 200, json: async () => answer }
   }
   // The app database name is the default one in production; tests use per-test names.
   const code = source.replace("const DB_NAME = 'opentodo'", `const DB_NAME = ${JSON.stringify(db.name)}`)
@@ -122,6 +127,39 @@ describe('service worker reminder handlers', () => {
     expect((await db.reminders.get(reminderId))?.dismissed_at).not.toBeNull()
     const queued = await db.outbox.toArray()
     expect(queued.map((o) => [o.entity, o.field])).toEqual([['reminder', 'dismissed_at']])
+  })
+
+  it('stamps its ops with the app’s stored offset to server time', async () => {
+    const { taskId, reminderId } = await setup()
+    // The app found this device's clock an hour slow (src/lib/hlc.ts, sync.ts).
+    await setMeta(CLOCK_OFFSET_META, HOUR)
+    const before = Date.now()
+    const sw = loadWorker({ fetchOk: false })
+    await dispatch(sw, 'notificationclick', { action: 'dismiss', notification: { data: { reminderId, taskId, fireAt: 1 }, close: () => undefined } })
+    const [op] = await db.outbox.toArray()
+    expect(op.ts).toBeGreaterThanOrEqual(before + HOUR)
+    expect(op.ts).toBeLessThan(Date.now() + HOUR + 1000)
+    expect((await db.reminders.get(reminderId))!._clock.dismissed_at.ts).toBe(op.ts)
+    expect(await getMeta<number>('hlc', 0)).toBe(op.ts)
+  })
+
+  it('keeps ops the server refused queued for the app’s next sync', async () => {
+    const { taskId, reminderId } = await setup()
+    const sw = loadWorker({
+      answer: (body) => ({ ops: [], cursor: 0, hasMore: false, rejected: body.ops.filter((o) => o.field === 'fire_at').map((o) => ({ id: o.id, reason: 'clock_skew', serverTime: Date.now() })) }),
+    })
+    await dispatch(sw, 'notificationclick', { action: 'snooze10', notification: { data: { reminderId, taskId, fireAt: 1 }, close: () => undefined } })
+    expect(sw.fetches).toHaveLength(1)
+    const fireAt = (sw.fetches[0].body as { ops: { id: string; field: string }[] }).ops.find((o) => o.field === 'fire_at')!
+    expect((await db.outbox.toArray()).map((o) => o.id)).toEqual([fireAt.id])
+  })
+
+  it('keeps every op queued when the answer is not the server’s', async () => {
+    const { taskId, reminderId } = await setup()
+    const sw = loadWorker({ answer: () => null })
+    await dispatch(sw, 'notificationclick', { action: 'dismiss', notification: { data: { reminderId, taskId, fireAt: 1 }, close: () => undefined } })
+    expect(sw.fetches).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(1)
   })
 
   it('with a window open, asks it to sync instead of fetching', async () => {

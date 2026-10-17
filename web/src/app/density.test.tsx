@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { applyAppearance, readAppearance, setAppearance } from '../lib/appearance'
 import { db } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { AppearanceProvider } from './AppearanceProvider'
 import { AppearanceSection } from './AppearanceSection'
 import css from '../index.css?raw'
@@ -59,17 +59,14 @@ describe('preference', () => {
 describe('Appearance → Density', () => {
   it('Compact applies at once on this device and arrives on another device through sync', async () => {
     const r = await render(<AppearanceProvider><AppearanceSection /></AppearanceProvider>)
-    await flush(30)
     const option = (label: string) => [...document.querySelectorAll('[data-testid="appearance-density"] [role="radio"]')].find((b) => b.textContent === label)!
-    expect(option('Comfortable').getAttribute('aria-checked')).toBe('true')
+    await waitFor(() => option('Comfortable')?.getAttribute('aria-checked') === 'true', 'Comfortable selected')
     await click(option('Compact'))
-    await flush(40)
-    expect(option('Compact').getAttribute('aria-checked')).toBe('true')
+    await waitFor(() => option('Compact').getAttribute('aria-checked') === 'true', 'Compact selected')
     expect(root().getAttribute('data-density')).toBe('compact')
     // The other device: the op arrives by sync and the root follows without any local write.
     await applyOps([{ id: 'd2', entity: 'user_prefs', entityId: 'me', field: 'density', value: 'comfortable', ts: Date.now() + 1000, device: 'tablet' }] as never)
-    await flush(40)
-    expect(root().hasAttribute('data-density')).toBe(false)
+    await waitFor(() => !root().hasAttribute('data-density'), 'the synced density applied')
     expect(option('Comfortable').getAttribute('aria-checked')).toBe('true')
     await r.unmount()
   })

@@ -101,6 +101,7 @@ func TestAuditNoModifyOrDeleteRoutes(t *testing.T) {
 		}
 	}
 	resp, out = e.do("GET", "/api/v1/audit", nil)
+	e.mustStatus(resp, 200, out)
 	after := eventsOf(t, out)
 	if after[len(after)-1]["id"] != before[len(before)-1]["id"] || after[len(after)-1]["outcome"] != "success" {
 		t.Fatal("event changed or vanished")

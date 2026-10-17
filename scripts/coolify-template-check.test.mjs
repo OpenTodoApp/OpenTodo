@@ -1,7 +1,7 @@
 // node --test scripts/coolify-template-check.test.mjs
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { checkLogo, checkTemplate, loadInputs, parseHeader, parseYaml, splitComment } from './coolify-template-check.mjs'
+import { checkLogo, checkTemplate, loadInputs, parseHeader, parseYaml, smokeOverride, splitComment } from './coolify-template-check.mjs'
 
 const base = loadInputs()
 
@@ -68,4 +68,15 @@ test('parser: comments, flow arrays, strictness', () => {
   assert.throws(() => parseYaml('a: &anchor x\n'), /unsupported/)
   assert.throws(() => parseYaml('a:\n  - b: c\n'), /maps inside sequences/)
   assert.deepEqual(parseHeader('# port: 8080\n# logo: svgs/x.svg\n').map(([k]) => k), ['port', 'logo'])
+})
+
+// CI smoke-tests the image it is about to publish (OpenSpec ci-release-gates), not the published one.
+test('smoke override: a local image replaces the template image and is never pulled', () => {
+  const plain = parseYaml(smokeOverride(18080))
+  assert.equal(plain.services.opentodo.image, undefined)
+  assert.deepEqual(plain.services.opentodo.ports, ['127.0.0.1:18080:8080'])
+  const local = parseYaml(smokeOverride(18080, 'opentodo:ci'))
+  assert.equal(local.services.opentodo.image, 'opentodo:ci')
+  assert.equal(local.services.opentodo.pull_policy, 'never')
+  assert.deepEqual(local.services.opentodo.ports, ['127.0.0.1:18080:8080'])
 })

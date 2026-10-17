@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please do not open public issues for security problems. Email **raffaele.pizzari@gmail.com** with a description, reproduction steps and the version or commit you tested. You will get an acknowledgement within a few days. Fixes are released as soon as they are ready and credited to the reporter unless you prefer otherwise.
+Please do not open public issues for security problems. Report them privately through GitHub: **[Report a vulnerability](https://github.com/pixari/opentodo/security/advisories/new)** (the repository's Security tab, private vulnerability reporting), with a description, reproduction steps and the version or commit you tested. If you cannot use GitHub, email **raffaele.pizzari@gmail.com** instead. You will get an acknowledgement within a few days. Fixes are released as soon as they are ready and credited to the reporter unless you prefer otherwise.
 
 ## Scope
 

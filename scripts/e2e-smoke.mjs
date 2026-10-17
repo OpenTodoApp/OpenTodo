@@ -14,7 +14,11 @@ const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, c
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message))
-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()) })
+// Failed requests are reported with their URL by the response listener below. A project's
+// public links are asked for as soon as its header shows, possibly before the new project
+// has synced; the header then shows none (ProjectHeader), so that 404 is expected.
+page.on('console', (m) => { if (m.type() === 'error' && !/^Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()) })
+page.on('response', (r) => { if (r.status() >= 400 && !(r.status() === 404 && /\/public-links$/.test(new URL(r.url()).pathname))) errors.push(`HTTP ${r.status()} ${r.request().method()} ${r.url()}`) })
 
 const step = (s) => console.log('·', s)
 const snap = async (p, name) => { if (shots) await p.screenshot({ path: `${shots}/${name}.png` }) }
@@ -51,7 +55,7 @@ await row(page, 'Water the plants').waitFor()
 
 step('project via sidebar')
 // The sidebar's + is a menu (ux-overhaul); its first item adds a project.
-await page.getByRole('button', { name: 'New project' }).first().click()
+await page.getByRole('button', { name: 'Add or fold projects' }).first().click()
 await page.getByRole('menuitem', { name: 'New project' }).click()
 await page.getByPlaceholder('Project name').fill('Home renovation')
 await page.getByPlaceholder('Project name').press('Enter')
@@ -173,7 +177,8 @@ await page.locator('[data-triage-start]').waitFor()
 step('settings + export')
 await page.keyboard.press('Escape')
 await page.keyboard.press('g'); await page.keyboard.press('s')
-await page.getByRole('heading', { name: 'Settings' }).waitFor()
+// Settings opens on its first section (settings-navigation).
+await page.getByRole('heading', { name: 'Account', exact: true }).waitFor()
 // API tokens live in Settings → Integrations (settings-redesign); "New token" opens the form.
 await page.goto(`${base}/settings/integrations`)
 await page.getByRole('button', { name: 'New token' }).click()

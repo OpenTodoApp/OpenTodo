@@ -3,6 +3,9 @@
 //
 //   node scripts/coolify-template-check.mjs           static checks, plus `docker compose config` when Docker is available
 //   node scripts/coolify-template-check.mjs --smoke   also starts the image the way Coolify does and probes it
+//   node scripts/coolify-template-check.mjs --smoke --image opentodo:ci
+//                                                    the same smoke test with a locally built image in place of
+//                                                    the template's (CI tests the image it is about to publish)
 //
 // Static checks: Coolify's header fields and their order, one `opentodo` service with no build/ports/
 // container_name/restart, the stable image tag (deploy/deploy.json), SERVICE_URL_OPENTODO_8080 and
@@ -371,11 +374,16 @@ async function waitFor(fn, timeoutMs, what) {
  * with a host port added by an override file, and checks: healthy, /healthz, owner setup on first visit, closed
  * sign-up afterwards, the https base URL (passkeys, Secure cookie), and data surviving a recreate.
  */
-export async function smoke(file = join(ROOT, PATHS.template)) {
+/** The compose override the smoke test adds: a loopback host port, the named volume and, optionally, another image. */
+export function smokeOverride(port, image) {
+  return `services:\n  ${SERVICE}:\n${image ? `    image: ${JSON.stringify(image)}\n    pull_policy: never\n` : ''}    ports:\n      - "127.0.0.1:${port}:8080"\n${VOLUMES_OVERRIDE}`
+}
+
+export async function smoke(file = join(ROOT, PATHS.template), { image } = {}) {
   const port = await freePort()
   const dir = mkdtempSync(join(tmpdir(), 'opentodo-coolify-'))
   const override = join(dir, 'override.yaml')
-  writeFileSync(override, `services:\n  ${SERVICE}:\n    ports:\n      - "127.0.0.1:${port}:8080"\n${VOLUMES_OVERRIDE}`)
+  writeFileSync(override, smokeOverride(port, image))
   const project = `opentodo-coolify-check-${process.pid}`
   const env = coolifyEnv({ OPENTODO_TRUSTED_PROXIES: 'cloudflare' })
   const compose = (...args) => execFileSync('docker', ['compose', '-p', project, '-f', file, '-f', override, ...args], { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
@@ -384,7 +392,7 @@ export async function smoke(file = join(ROOT, PATHS.template)) {
   const steps = []
   const ok = (msg) => { steps.push(msg); console.log(`  ok  ${msg}`) }
   try {
-    compose('up', '-d', '--force-recreate', '--quiet-pull')
+    compose('up', '-d', '--force-recreate', ...(image ? [] : ['--quiet-pull']))
     const id = compose('ps', '-q', SERVICE).trim()
     const t0 = Date.now()
     await waitFor(() => execFileSync('docker', ['inspect', '-f', '{{.State.Health.Status}}', id], { encoding: 'utf8' }).trim() === 'healthy', 60000, 'the container to become healthy')
@@ -438,6 +446,9 @@ export async function smoke(file = join(ROOT, PATHS.template)) {
 
 async function main() {
   const wantSmoke = process.argv.includes('--smoke')
+  const imageArg = process.argv.indexOf('--image')
+  const localImage = imageArg > 0 ? process.argv[imageArg + 1] : undefined
+  if (imageArg > 0 && !localImage) { console.error('--image needs an image reference'); process.exit(1) }
   const errors = checkTemplate(loadInputs())
   if (errors.length) {
     console.error(`Coolify template check failed (${PATHS.template}):`)
@@ -456,7 +467,14 @@ async function main() {
     process.exit(1)
   }
   console.log('docker compose config: valid; base URL from the service URL, operator override and pass-through ok')
-  if (wantSmoke) {
+  if (wantSmoke && localImage) {
+    if (spawnSync('docker', ['image', 'inspect', localImage], { stdio: 'ignore' }).status !== 0) {
+      console.error(`--image ${localImage}: no such local image (build it first)`)
+      process.exit(1)
+    }
+    console.log(`Smoke test (local image ${localImage} in place of the template's):`)
+    await smoke(undefined, { image: localImage })
+  } else if (wantSmoke) {
     // On a release commit the template already names the new line before CI has published its image.
     const image = parseYaml(readFileSync(join(ROOT, PATHS.template), 'utf8')).services[SERVICE].image
     if (spawnSync('docker', ['manifest', 'inspect', image], { stdio: 'ignore' }).status !== 0 &&

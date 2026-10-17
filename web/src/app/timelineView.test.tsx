@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { completeTask, createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
-import { flush, key, render } from '../ui/test-utils'
+import { flush, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 
@@ -29,10 +29,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 async function timeline() {
   const project = await createProject({ name: 'Trip' })
@@ -93,11 +89,17 @@ describe('timeline', () => {
     const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
     await waitFor(() => r.container.querySelector(`[data-bar="${id}"]`) !== null)
     await key(document.body, 'j')
-    for (let i = 0; i < 3; i++) await key(document.body, 'ArrowRight')
-    await flush(50)
+    // One step at a time: each move starts from the rendered (live) due, so the
+    // next key waits until the bar has moved.
+    const left = () => r.container.querySelector<HTMLElement>(`[data-bar="${id}"]`)?.style.left
+    for (const date of ['2026-11-11', '2026-11-12', '2026-11-13']) {
+      const before = left()
+      await key(document.body, 'ArrowRight')
+      await waitFor(async () => (await db.tasks.get(id))!.due?.date === date && left() !== before, `due moved to ${date}`)
+    }
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-13', time: '09:00' })
     await key(document.body, 'ArrowRight', { shiftKey: true })
-    await flush(50)
+    await waitFor(async () => (await db.tasks.get(id))!.deadline === '2026-11-14', 'deadline set')
     expect((await db.tasks.get(id))!.deadline).toBe('2026-11-14')
     await r.unmount()
   })

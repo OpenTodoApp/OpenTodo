@@ -109,7 +109,7 @@ export function TriageView() {
     setAnnounce(`${outcome.current ? `${outcome.current} ` : ''}${positionText(state, task.title || t('Untitled'))}`)
     outcome.current = ''
     card.current?.focus()
-  }, [curId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [curId]) // eslint-disable-line react-hooks/exhaustive-deps -- announce once per advance, not on every edit of the task
 
   const next = useCallback((said?: string) => {
     if (said) { setAnnounce(said); outcome.current = said }

@@ -99,6 +99,7 @@ func TestViewsCrud(t *testing.T) {
 	resp, out = e.do("GET", "/api/v1/views/"+id, nil)
 	e.mustStatus(resp, 404, out)
 	resp, out = e.do("GET", "/api/v1/views?include_deleted=true", nil)
+	e.mustStatus(resp, 200, out)
 	if n := len(out["views"].([]any)); n != 2 {
 		t.Fatalf("views including deleted = %d", n)
 	}
@@ -163,6 +164,7 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 	}
 	// Nothing was created by the rejected requests.
 	resp, out = e.do("GET", "/api/v1/views?include_deleted=true", nil)
+	e.mustStatus(resp, 200, out)
 	if n := len(out["views"].([]any)); n != 2 {
 		t.Fatalf("views after rejected creates = %d", n)
 	}
@@ -187,6 +189,7 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		}
 	}
 	resp, out = e.do("GET", "/api/v1/views/"+list, nil)
+	e.mustStatus(resp, 200, out)
 	if out["group_by"] != "project" || out["query"] != "p1" || out["kind"] != "list" {
 		t.Fatalf("list changed by rejected patches: %v", out)
 	}
