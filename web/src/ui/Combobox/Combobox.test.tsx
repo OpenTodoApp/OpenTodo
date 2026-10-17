@@ -97,6 +97,35 @@ describe('ComboboxPanel', () => {
     await unmount()
   })
 
+  it('a short project tree lists each project once: no Recent group (issue #136)', async () => {
+    useDatabase(`cb-${Date.now()}-9`)
+    const tree: Item[] = ['RV', 'Gardening', 'Reno', 'Shopping'].map((name) => ({ id: name, name }))
+    await recordPick('import.target', 'Reno')
+    await recordPick('import.target', 'RV')
+    const { container, unmount } = await render(
+      <ComboboxPanel {...base} label="Project" source={tree} getPath={(i) => i.path ?? []} rankContext="import.target" onPick={() => {}} />,
+    )
+    await flush(20)
+    expect(labels(container)).toEqual(['RV', 'Gardening', 'Reno', 'Shopping'])
+    expect(container.textContent).not.toContain('Recent')
+    await unmount()
+  })
+
+  it('a long project tree offers Recent on top and heads the full list "All"', async () => {
+    useDatabase(`cb-${Date.now()}-10`)
+    const tree: Item[] = Array.from({ length: 15 }, (_, i) => ({ id: `p${i}`, name: `Project ${i}` }))
+    await recordPick('import.target', 'p7')
+    const { container, unmount } = await render(
+      <ComboboxPanel {...base} label="Project" source={tree} getPath={(i) => i.path ?? []} rankContext="import.target" onPick={() => {}} />,
+    )
+    await flush(20)
+    const headings = [...container.querySelectorAll('li[role="presentation"]')].map((h) => h.textContent)
+    expect(headings).toEqual(['Recent', 'All'])
+    expect(labels(container)[0]).toBe('Project 7')
+    expect(labels(container)).toHaveLength(16)
+    await unmount()
+  })
+
   it('shows a nested match with its path', async () => {
     useDatabase(`cb-${Date.now()}-7`)
     const tree: Item[] = [{ id: 'w', name: 'Work' }, { id: 'q', name: 'Q3 plan', path: ['Work'] }]
