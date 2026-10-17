@@ -42,7 +42,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
   docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.6
   ```
 
-  Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
+  Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Unraid, Compose and plain binaries are in [Quick start](#quick-start).
 
 Questions, ideas and bug reports are welcome in [issues](https://github.com/pixari/opentodo/issues).
 
@@ -189,7 +189,7 @@ Or paste the one-click template [`deploy/coolify/opentodo.yaml`](deploy/coolify/
 
 ### Unraid
 
-Add the Community Applications template from [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid) (to be listed in **Apps**; until then install it from the template URL; the source is [`deploy/unraid/`](deploy/unraid/)), open the WebUI and create the owner account. Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
+OpenTodo is in Community Applications: open **Apps**, search for **OpenTodo** and click **Install**, then open the WebUI and create the owner account. The template lives in [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid), published from [`deploy/unraid/`](deploy/unraid/). Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
 
 ### Single binary
 
@@ -284,7 +284,7 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 
 - **Start here**: [getting started](docs/getting-started.md) · [installing the app](docs/install-app.md) · [all user guides](docs/README.md#using-opentodo)
 - **Reference**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
-- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
+- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [Unraid](docs/self-hosting/unraid.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
 - **AI**: [overview: which option to pick](docs/ai-and-agents.md) · [assistant in the app](docs/assistant.md) · [MCP](docs/mcp.md) · [`ot` for agents](docs/cli.md#using-ot-from-an-agent)
 - **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistant in the app](docs/assistant.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)

@@ -101,7 +101,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | --- | --- |
 | [Running with Docker](self-hosting/docker.md) | Compose, `docker run`, reverse proxies, push, bind mounts, recovery commands |
 | [Deploying on Coolify](self-hosting/coolify.md) | One-click deployment from the compose file, environment variables, troubleshooting |
-| [Running on Unraid](self-hosting/unraid.md) | The Community Applications template, settings, appdata permissions, https, updates and backups |
+| [Running on Unraid](self-hosting/unraid.md) | Install from Community Applications, settings, appdata permissions, https, updates and backups |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Single sign-on](self-hosting/sso.md) | Connecting an OpenID Connect provider, linking, SSO-only mode, break-glass |

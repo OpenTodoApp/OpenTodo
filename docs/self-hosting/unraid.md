@@ -1,6 +1,6 @@
 ---
 title: Running on Unraid
-summary: Install from the Community Applications template, the settings, appdata permissions, https and reverse proxies, updates and backups.
+summary: Install from Community Applications (Apps), the settings, appdata permissions, https and reverse proxies, updates and backups.
 audience: admin
 specs: [self-hosting]
 screens: []
@@ -12,14 +12,16 @@ OpenTodo is one container with one appdata folder and no required settings. The 
 
 ## Install
 
-Once OpenTodo is listed in **Apps** (Community Applications), search for it and click **Install**. Until then, add the template by hand. In Unraid's terminal (**>_** in the top bar):
+OpenTodo is listed in Community Applications. Open the **Apps** tab, search for **OpenTodo**, click **Install**, check the settings below and click **Apply**.
+
+Without the Apps tab (Community Applications not installed), add the template by hand. In Unraid's terminal (**>_** in the top bar):
 
 ```bash
 wget -O /boot/config/plugins/dockerMan/templates-user/my-OpenTodo.xml \
   https://raw.githubusercontent.com/pixari/opentodo-unraid/main/templates/opentodo.xml
 ```
 
-Then open **Docker → Add Container**, choose **OpenTodo** under *User templates*, check the settings below and click **Apply**.
+Then open **Docker → Add Container**, choose **OpenTodo** under *User templates* and continue as above.
 
 Open the **WebUI** from the container's menu. The first visitor creates the owner account; after that, the owner invites people (sign-up is closed).
 
