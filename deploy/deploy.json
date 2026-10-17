@@ -7,6 +7,7 @@
   "support": "https://github.com/pixari/opentodo/issues",
   "docs": "https://open-todo.app/docs/self-hosting/",
   "image": "ghcr.io/pixari/opentodo",
+  "tag": "stable",
   "port": 8080,
   "dataDir": "/data",
   "user": "65532:65532",

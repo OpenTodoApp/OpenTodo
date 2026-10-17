@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>OpenTodo</Name>
-  <Repository>ghcr.io/pixari/opentodo:0.6</Repository>
+  <Repository>ghcr.io/pixari/opentodo:stable</Repository>
   <Registry>https://github.com/pixari/opentodo/pkgs/container/opentodo</Registry>
   <Network>bridge</Network>
   <MyIP/>

@@ -11,7 +11,7 @@ One folder per platform, each with its template in that platform's own format. T
 
 `make check` (and CI) runs `node scripts/deploy-check.mjs`. For every folder here it loads `scripts/deploy/<folder>.mjs`, which parses that platform's format and applies the shared rules in `scripts/deploy/common.mjs`:
 
-- the image is `ghcr.io/pixari/opentodo:<major.minor>` and matches the latest release in `CHANGELOG.md`;
+- the image is `ghcr.io/pixari/opentodo:stable` (`tag` in `deploy.json`), and the release job in `.github/workflows/ci.yml` still publishes that tag;
 - the container port is 8080 and the data is mounted on `/data`;
 - every `OPENTODO_*` variable is in the catalogue and read by `internal/config`, with the catalogue's default, and none is required;
 - the essential variables (base URL, setup token, sign-up, trusted proxies) are offered.
@@ -27,4 +27,4 @@ A folder without a checker fails the run. Tests: `node --test scripts/deploy/*.t
 
 ## On a release
 
-Preparing a minor release (for example `0.7.0`) makes the check fail until every template names the new line. Bump the tag in each template (and in the `upstream/` copies of Coolify and Unraid), then follow each folder's README for the upstream update.
+Nothing to change in the templates. Every template names `stable`, which the release job moves to the new version (release candidates leave it alone), so every install gets the release through its platform's update button. The **Promote stable** workflow (Actions → Promote stable → Run workflow, with a version such as `0.6.1`) points `stable` at an older release to roll back, without rebuilding.

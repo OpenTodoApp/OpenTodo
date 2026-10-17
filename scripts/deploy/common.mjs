@@ -50,16 +50,17 @@ export function checkFacts(facts, configVars) {
   return errors
 }
 
-/** The release image line a template must name: ghcr.io/pixari/opentodo:<major>.<minor>[.<patch>]. */
-export function checkImage(image, facts, changelog) {
-  const esc = facts.image.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
-  const m = new RegExp(`^${esc}:(\\d+)\\.(\\d+)(?:\\.(\\d+))?$`).exec(image ?? '')
-  if (!m) return [`image must be ${facts.image}:<major.minor> or :<major.minor.patch> (no latest or floating tags), got: ${image}`]
-  const rel = latestRelease(changelog)
-  if (m[1] !== rel.major || m[2] !== rel.minor || (m[3] !== undefined && m[3] !== rel.patch)) {
-    return [`image tag ${image.split(':')[1]} does not match the latest release ${rel.major}.${rel.minor}.${rel.patch} in CHANGELOG.md`]
-  }
-  return []
+/** The image every template names: <image>:<tag> from deploy.json, `stable` (OpenSpec stable-image-tag). */
+export function checkImage(image, facts) {
+  const want = `${facts.image}:${facts.tag}`
+  return image === want ? [] : [`image must be ${want} (the tag every release moves), got: ${image}`]
+}
+
+/** The release job must keep publishing the tag the templates name. */
+export function checkPublishesTag(ciWorkflow, facts) {
+  if (ciWorkflow === null) return ['.github/workflows/ci.yml is missing']
+  const re = new RegExp(`type=raw,value=${facts.tag},enable=\\$\\{\\{[^}]*refs/tags/v`)
+  return re.test(ciWorkflow) ? [] : [`the image job in .github/workflows/ci.yml no longer publishes the "${facts.tag}" tag on releases, but every template names it`]
 }
 
 /**
@@ -69,7 +70,7 @@ export function checkImage(image, facts, changelog) {
  * for catalogue entries without platformDefault.
  */
 export function checkShared(found, { facts, changelog, configVars }) {
-  const errors = [...checkImage(found.image, facts, changelog)]
+  const errors = [...checkImage(found.image, facts)]
   if (String(found.port) !== String(facts.port)) errors.push(`the container port must be ${facts.port}, got ${found.port}`)
   if (found.dataTarget !== facts.dataDir) errors.push(`the data must be mounted on ${facts.dataDir}, got ${found.dataTarget}`)
   const catalogue = new Map((facts.variables ?? []).map((v) => [v.name, v]))

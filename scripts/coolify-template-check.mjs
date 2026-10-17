@@ -5,7 +5,7 @@
 //   node scripts/coolify-template-check.mjs --smoke   also starts the image the way Coolify does and probes it
 //
 // Static checks: Coolify's header fields and their order, one `opentodo` service with no build/ports/
-// container_name/restart, an image tag on the latest release line in CHANGELOG.md, SERVICE_URL_OPENTODO_8080 and
+// container_name/restart, the stable image tag (deploy/deploy.json), SERVICE_URL_OPENTODO_8080 and
 // OPENTODO_BASE_URL from SERVICE_URL_OPENTODO, every OPENTODO_* optional and read by internal/config, the /data
 // volume, the `/opentodo healthcheck` health check, the logo, and identical upstream copies
 // (deploy/coolify/upstream/). No dependencies: the template is parsed by a strict parser for the YAML subset it uses.
@@ -16,7 +16,7 @@ import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { configVariables, latestRelease } from './deploy/common.mjs'
+import { checkImage, configVariables, latestRelease, loadFacts } from './deploy/common.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const PATHS = {
@@ -29,7 +29,6 @@ export const PATHS = {
   configDir: 'internal/config',
 }
 const HEADER_ORDER = ['documentation', 'slogan', 'category', 'tags', 'logo', 'port']
-const IMAGE = 'ghcr.io/pixari/opentodo'
 const SERVICE = 'opentodo'
 const PORT = '8080'
 // Coolify's PR quality check (.github/workflows/pr-quality.yaml, max-added-comments) closes PRs adding more.
@@ -154,6 +153,7 @@ export function loadInputs(root = ROOT) {
     docsLogo: read(PATHS.docsLogo, root),
     changelog: read(PATHS.changelog, root),
     configVars: configVariables(root),
+    facts: loadFacts(root),
   }
 }
 
@@ -209,13 +209,8 @@ export function checkTemplate(input) {
   }
 
   // Image
-  const rel = input.changelog ? latestRelease(input.changelog) : null
-  const im = /^ghcr\.io\/pixari\/opentodo:(\d+)\.(\d+)(?:\.(\d+))?$/.exec(svc.image ?? '')
-  if (!im) {
-    err(`image must be ${IMAGE}:<major.minor> or :<major.minor.patch> (no latest or floating tags), got: ${svc.image}`)
-  } else if (rel && (im[1] !== rel.major || im[2] !== rel.minor || (im[3] !== undefined && im[3] !== rel.patch))) {
-    err(`image tag ${svc.image.split(':')[1]} does not match the latest release ${rel.major}.${rel.minor}.${rel.patch} in CHANGELOG.md; bump ${PATHS.template} and ${PATHS.upstreamTemplate}`)
-  }
+  // The stable tag every release moves (OpenSpec stable-image-tag), the same rule as every platform template.
+  for (const e of checkImage(svc.image, input.facts ?? loadFacts())) err(e)
 
   // Environment
   const env = svc.environment

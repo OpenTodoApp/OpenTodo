@@ -135,4 +135,4 @@ export function check(ctx, root = ROOT) {
   ]
 }
 
-export const summary = 'release tag, port, appdata path, Web UI, icon, variables and upstream copy'
+export const summary = 'stable tag, port, appdata path, Web UI, icon, variables and upstream copy'
