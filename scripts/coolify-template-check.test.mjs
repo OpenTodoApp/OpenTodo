@@ -1,7 +1,7 @@
 // node --test scripts/coolify-template-check.test.mjs
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { checkLogo, checkTemplate, latestRelease, loadInputs, parseHeader, parseYaml, splitComment } from './coolify-template-check.mjs'
+import { checkLogo, checkTemplate, loadInputs, parseHeader, parseYaml, splitComment } from './coolify-template-check.mjs'
 
 const base = loadInputs()
 
@@ -17,11 +17,9 @@ test('the committed template passes', () => {
   assert.deepEqual(checkTemplate(base), [])
 })
 
-test('floating or stale image tags fail', () => {
-  has(check((t) => t.replace(/opentodo:[\d.]+/, 'opentodo:latest')), /no latest or floating tags/)
-  has(check((t) => t.replace(/opentodo:[\d.]+/, 'opentodo:0.1')), /does not match the latest release/)
-  const rel = latestRelease(base.changelog)
-  assert.deepEqual(check((t) => t.replace(/opentodo:[\d.]+/, `opentodo:${rel.major}.${rel.minor}.${rel.patch}`)), [])
+test('any image tag but stable fails', () => {
+  has(check((t) => t.replace('opentodo:stable', 'opentodo:latest')), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(check((t) => t.replace('opentodo:stable', 'opentodo:0.6')), /image must be ghcr\.io\/pixari\/opentodo:stable/)
 })
 
 test('a missing or different health check fails', () => {

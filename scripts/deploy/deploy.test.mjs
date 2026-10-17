@@ -5,16 +5,22 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { run } from '../deploy-check.mjs'
-import { checkFacts, checkShared, configVariables, latestRelease, loadFacts, readText, ROOT } from './common.mjs'
+import { checkFacts, checkPublishesTag, checkShared, configVariables, loadFacts, readText, ROOT } from './common.mjs'
 import { checkTemplate as checkUnraid, checkUpstream, PROFILE, TEMPLATE } from './unraid.mjs'
 
 const facts = loadFacts()
 const configVars = configVariables()
 const changelog = readText('CHANGELOG.md')
 const ctx = { facts, configVars, changelog }
-const rel = latestRelease(changelog)
 const unraid = readText(TEMPLATE)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
+
+test('the release job publishes the tag the templates name', () => {
+  const ci = readText('.github/workflows/ci.yml')
+  assert.deepEqual(checkPublishesTag(ci, facts), [])
+  has(checkPublishesTag(ci.replace(/ *type=raw,value=stable,.*\n/, ''), facts), /no longer publishes the "stable" tag/)
+  has(checkPublishesTag(null, facts), /ci\.yml is missing/)
+})
 
 test('every catalogue variable is read by the server', () => {
   assert.deepEqual(checkFacts(facts, configVars), [])
@@ -27,14 +33,15 @@ test('the committed templates pass', async () => {
 
 test('shared rules: tag, port, data, variables', () => {
   const ok = () => ({
-    image: `${facts.image}:${rel.major}.${rel.minor}`,
+    image: `${facts.image}:stable`,
     port: facts.port,
     dataTarget: facts.dataDir,
     variables: new Map(facts.variables.filter((v) => v.essential).map((v) => [v.name, { default: v.default, required: false }])),
   })
   assert.deepEqual(checkShared(ok(), ctx), [])
-  has(checkShared({ ...ok(), image: `${facts.image}:latest` }, ctx), /no latest or floating/)
-  has(checkShared({ ...ok(), image: `${facts.image}:0.1` }, ctx), /does not match the latest release/)
+  // Every template names the stable tag (OpenSpec stable-image-tag): not latest (main), not a release line.
+  has(checkShared({ ...ok(), image: `${facts.image}:latest` }, ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(checkShared({ ...ok(), image: `${facts.image}:0.6` }, ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(checkShared({ ...ok(), port: 3000 }, ctx), /port must be 8080/)
   has(checkShared({ ...ok(), dataTarget: '/config' }, ctx), /mounted on \/data/)
   const unknown = ok(); unknown.variables.set('OPENTODO_NOPE', { default: '', required: false })
@@ -56,7 +63,7 @@ test('unraid: path, port, required, shell, description', () => {
   has(checkUnraid(unraid.replace(/(Target="OPENTODO_LOG_LEVEL"[^>]*)Required="false"/, '$1Required="true"'), ctx), /must not be required/)
   has(checkUnraid(unraid.replace('  <Privileged>', '  <Shell>sh</Shell>\n  <Privileged>'), ctx), /image has no shell/)
   has(checkUnraid(unraid.replace(/(Target="OPENTODO_SESSION_DAYS" Default="90" Mode="" Description=")[^"]*/, '$1Something else'), ctx), /must be the catalogue's/)
-  has(checkUnraid(unraid.replace(':0.', ':9.'), ctx), /does not match the latest release/)
+  has(checkUnraid(unraid.replace('opentodo:stable', 'opentodo:0.6'), ctx), /image must be .*:stable/)
   has(checkUnraid(unraid.replace('<Privileged>false', '<Privileged>true'), ctx), /Privileged/)
   has(checkUnraid(unraid.replace('pixari/opentodo-unraid/main/templates', 'pixari/opentodo/main/deploy/unraid'), ctx), /TemplateURL/)
 })

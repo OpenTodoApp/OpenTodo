@@ -40,4 +40,4 @@ export function check(ctx, root = ROOT) {
   return [...errors, ...shared.filter((e) => !errors.includes(e))]
 }
 
-export const summary = `conventions, release tag, variables, health check, volume, logo and upstream copies (${PATHS.template})`
+export const summary = `conventions, stable tag, variables, health check, volume, logo and upstream copies (${PATHS.template})`

@@ -12,7 +12,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { checkFacts, configVariables, loadFacts, readText, ROOT } from './deploy/common.mjs'
+import { checkFacts, checkPublishesTag, configVariables, loadFacts, readText, ROOT } from './deploy/common.mjs'
 
 export function platforms(root = ROOT) {
   return readdirSync(join(root, 'deploy')).filter((d) => statSync(join(root, 'deploy', d)).isDirectory()).sort()
@@ -22,7 +22,11 @@ export async function run(root = ROOT) {
   const facts = loadFacts(root)
   const configVars = configVariables(root)
   const ctx = { facts, configVars, changelog: readText('CHANGELOG.md', root) }
-  const results = [{ name: 'deploy/deploy.json', errors: checkFacts(facts, configVars), summary: 'variable catalogue' }]
+  const results = [{
+    name: 'deploy/deploy.json',
+    errors: [...checkFacts(facts, configVars), ...checkPublishesTag(readText('.github/workflows/ci.yml', root), facts)],
+    summary: `variable catalogue, "${facts.tag}" tag published on releases`,
+  }]
   for (const p of platforms(root)) {
     const checker = join(root, 'scripts/deploy', `${p}.mjs`)
     if (!existsSync(checker)) {

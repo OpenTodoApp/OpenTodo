@@ -1,6 +1,6 @@
 # Unraid Community Applications template
 
-[`opentodo.xml`](opentodo.xml) is an Unraid Community Applications (CA) template: the `0.6` image line, the web port 8080, the appdata folder `/mnt/user/appdata/opentodo` on `/data`, the Web UI link and icon, and the optional settings with their descriptions (base URL and setup token shown, the rest under **Show more settings**). No setting is required. The facts it shares with the other templates are in [`../deploy.json`](../deploy.json); `make check` keeps them in line ([`../README.md`](../README.md)).
+[`opentodo.xml`](opentodo.xml) is an Unraid Community Applications (CA) template: the `stable` image (every release moves it), the web port 8080, the appdata folder `/mnt/user/appdata/opentodo` on `/data`, the Web UI link and icon, and the optional settings with their descriptions (base URL and setup token shown, the rest under **Show more settings**). No setting is required. The facts it shares with the other templates are in [`../deploy.json`](../deploy.json); `make check` keeps them in line ([`../README.md`](../README.md)).
 
 **Status: listed in Community Applications.** Unraid users install OpenTodo from the **Apps** tab; the steps are in [docs/self-hosting/unraid.md](../../docs/self-hosting/unraid.md).
 
@@ -38,4 +38,4 @@ Done: the template repository was submitted and approved. One submission covers 
 
 ## After a release
 
-When a new minor line is released (for example `0.7`), change `<Repository>` to `ghcr.io/pixari/opentodo:0.7` in `opentodo.xml`, copy it to `upstream/templates/opentodo.xml` (the check fails until both name the new line) and publish. Unraid users get patch releases of their line from **Check for Updates**; a new line arrives as a template update, then **Update** in their Docker tab.
+Nothing to do. The template names `ghcr.io/pixari/opentodo:stable`, which every release moves; Unraid users see the release in **Check for Updates** and install it with **Update**. Republish the template repository only when the template itself changes.

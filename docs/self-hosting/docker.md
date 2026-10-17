@@ -24,7 +24,8 @@ To add more people, keep sign-up closed and create single-use invitation links i
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`.
 - Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
-- To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:latest` with `build: .`.
+- The compose file pulls `ghcr.io/pixari/opentodo:stable`, which every release moves. To stay on one release line use `:0.6` (its fixes only), to pin one version `:0.6.1`; `:latest` follows the main branch and carries unreleased changes.
+- To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:stable` with `build: .`.
 
 ## Plain `docker run`
 
@@ -33,7 +34,7 @@ docker run -d --name opentodo \
   -p 8080:8080 \
   -v opentodo-data:/data \
   -e OPENTODO_BASE_URL=https://todo.example.com \
-  ghcr.io/pixari/opentodo:latest
+  ghcr.io/pixari/opentodo:stable
 ```
 
 ## Behind a reverse proxy

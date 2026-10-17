@@ -96,4 +96,4 @@ Open the PR on GitHub (so the template is filled in), against `coollabsio/coolif
 ## 5. After it is merged
 
 - Nothing to regenerate. Coolify's maintainers rebuild the template index and publish it to their CDN.
-- A new OpenTodo release line (for example `0.3`) needs a small PR: change the tag in `templates/compose/opentodo.yaml` (bump `../opentodo.yaml` here first; `make check` reminds you), titled `feat(service): update opentodo to 0.3`. Existing installations keep their compose file. Their owners change the image tag in **Edit Compose file** and click **Deploy**.
+- New OpenTodo releases need no PR: the template names `ghcr.io/pixari/opentodo:stable`, which every release moves (release candidates never do), and **Deploy** pulls it. If Coolify's reviewers ask for a versioned tag instead, that needs a Coolify-only exception to the shared image rule (`scripts/deploy/common.mjs`).
