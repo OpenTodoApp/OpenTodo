@@ -701,7 +701,7 @@ func (s *Service) CheckPassword(ctx context.Context, userID, password string) (b
 	if err != nil {
 		return false, err
 	}
-	return VerifyPassword(hash, password), nil
+	return VerifyPassword(hash, password)
 }
 
 func (s *Service) userByID(ctx context.Context, id string) (*User, error) {

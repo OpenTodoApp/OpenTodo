@@ -78,7 +78,7 @@ func (s *Server) handleCreateProjectInvite(w http.ResponseWriter, r *http.Reques
 		Send           bool     `json:"send"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	if !opsync.ValidMemberRole(in.Role) {
@@ -337,7 +337,7 @@ func (s *Server) handlePutProjectInviteSettings(w http.ResponseWriter, r *http.R
 		MembersCanInviteNewPeople *bool `json:"membersCanInviteNewPeople"`
 	}
 	if err := readJSON(r, &in); err != nil || in.MembersCanInviteNewPeople == nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", `body must be {"membersCanInviteNewPeople": true|false}`)
+		badBodyWith(w, err, "invalid_input", `body must be {"membersCanInviteNewPeople": true|false}`)
 		return
 	}
 	before := s.membersMayInvite(r.Context())

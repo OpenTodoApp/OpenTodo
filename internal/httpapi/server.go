@@ -137,6 +137,9 @@ type Server struct {
 	hosted bool
 	// routeTable records every registered route with its policy (policy.go).
 	routeTable []routeEntry
+	// streams counts open live-update streams per client address and in all
+	// (SEC-6); see events.go.
+	streams streamCounter
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -631,7 +634,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	var c credentials
 	if err := readJSON(r, &c); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	// In SSO-only mode new accounts come from the provider, never a password
@@ -704,7 +707,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	var c credentials
 	if err := readJSON(r, &c); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	u, err := s.auth.Authenticate(r.Context(), c.Email, c.Password)
@@ -871,7 +874,7 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 		Scope string `json:"scope"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	// An admin token is minted only by a person in a recently confirmed session
@@ -928,7 +931,7 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 		Send           bool     `json:"send"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	msg, ok := s.inviteMessage(w, r, in.Send, in.Email, mail.KindInvitation, u, "")
@@ -1066,8 +1069,9 @@ type syncRequest struct {
 
 func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	var in syncRequest
-	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+	// Op batches accept fields this server does not know (jsonbody.go).
+	if err := readJSONLoose(r, &in); err != nil {
+		badBody(w, err)
 		return
 	}
 	if in.Device == "" {
@@ -1230,7 +1234,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	var body map[string]json.RawMessage
 	if err := readJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	key, keyed, handled := idempotencyKey(w, r)
@@ -1530,7 +1534,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	}
 	var body map[string]json.RawMessage
 	if err := readJSON(r, &body); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	delete(body, "id")
@@ -1823,17 +1827,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 // ---- helpers ----
 
 func (s *Server) internal(w http.ResponseWriter, err error) {
+	if errors.Is(err, auth.ErrBusy) {
+		// Every password-hashing slot is taken (SEC-5): a retry soon succeeds.
+		w.Header().Set("Retry-After", "1")
+		writeError(w, http.StatusServiceUnavailable, "busy", "the server is busy, try again in a moment")
+		return
+	}
 	s.log.Error("request failed", "err", err)
 	writeError(w, http.StatusInternalServerError, "internal", "internal error")
-}
-
-func readJSON(r *http.Request, dst any) error {
-	r.Body = http.MaxBytesReader(nil, r.Body, 4<<20)
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(dst); err != nil {
-		return fmt.Errorf("invalid JSON body: %w", err)
-	}
-	return nil
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

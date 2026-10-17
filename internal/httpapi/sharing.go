@@ -95,7 +95,7 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 		Role  string `json:"role"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	// Check the caller's rights before looking the email up, so neither a
@@ -143,7 +143,7 @@ func (s *Server) handleSetMemberRole(w http.ResponseWriter, r *http.Request) {
 		Role string `json:"role"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	target := r.PathValue("userId")
@@ -176,7 +176,7 @@ func (s *Server) handleTransferProject(w http.ResponseWriter, r *http.Request) {
 		UserID string `json:"userId"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	actor := userFrom(r.Context()).ID

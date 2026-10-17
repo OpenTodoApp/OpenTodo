@@ -73,7 +73,7 @@ func (s *Server) handlePatchEmailInbox(w http.ResponseWriter, r *http.Request) {
 		Allowlist json.RawMessage `json:"allowlist"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	var allow []string

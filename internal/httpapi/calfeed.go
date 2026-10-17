@@ -120,7 +120,7 @@ func (s *Server) handlePutCalendarFeedsSetting(w http.ResponseWriter, r *http.Re
 		Enabled *bool `json:"enabled"`
 	}
 	if err := readJSON(r, &in); err != nil || in.Enabled == nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", `body must be {"enabled": true|false}`)
+		badBodyWith(w, err, "invalid_input", `body must be {"enabled": true|false}`)
 		return
 	}
 	before := s.calendarFeedsEnabled(r.Context())
@@ -186,7 +186,7 @@ func (s *Server) handleCreateSubscription(w http.ResponseWriter, r *http.Request
 	uid := userFrom(r.Context()).ID
 	var in subscriptionInput
 	if err := readJSON(r, &in); err != nil || in.URL == nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", `body must be {"url": "...", "name"?: "...", "color"?: "..."}`)
+		badBodyWith(w, err, "invalid_input", `body must be {"url": "...", "name"?: "...", "color"?: "..."}`)
 		return
 	}
 	target, code, msg := s.checkSubscriptionURL(r.Context(), *in.URL)
@@ -235,7 +235,7 @@ func (s *Server) handlePatchSubscription(w http.ResponseWriter, r *http.Request)
 	uid := userFrom(r.Context()).ID
 	var in subscriptionInput
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", "body must be a JSON object")
+		badBodyWith(w, err, "invalid_input", "body must be a JSON object")
 		return
 	}
 	p := calfeed.Patch{Enabled: in.Enabled}

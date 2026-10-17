@@ -5,7 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import { forgetActivity } from './activity'
 import { api, ApiError } from './api'
-import { db, entityTables, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
@@ -16,8 +16,8 @@ import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
-import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
-import { currentKey, isEnabled } from './e2ee'
+import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
+import { isEnabled, refreshFromServer, syncBlocked } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
@@ -129,6 +129,18 @@ function isOffline(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine === false
 }
 
+/** The shape every sync answer has; anything else did not come from the sync endpoint. */
+function isSyncResponse(v: unknown): v is SyncResponse {
+  if (typeof v !== 'object' || v === null) return false
+  const r = v as Record<string, unknown>
+  const list = (x: unknown) => x === undefined || Array.isArray(x)
+  return Array.isArray(r.ops) && r.ops.every((o) => typeof o === 'object' && o !== null)
+    && typeof r.cursor === 'number' && Number.isFinite(r.cursor) && typeof r.hasMore === 'boolean'
+    && (r.serverTime === undefined || typeof r.serverTime === 'number')
+    && list(r.rejected) && list(r.memberships) && list(r.purged)
+    && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
+}
+
 async function runOnce(): Promise<void> {
   const pending = (await db.outbox.count()) + (await heldCount())
   publish({ pending })
@@ -138,7 +150,8 @@ async function runOnce(): Promise<void> {
   }
   // End-to-end encryption (OpenSpec e2ee, design D5): a device without the key
   // of an encrypted account neither pulls nor pushes.
-  if ((await isEnabled()) && !(await currentKey())) {
+  // The same while the server has lost the key record (encryption-state-integrity).
+  if (await syncBlocked()) {
     publish({ state: 'locked', error: null })
     return
   }
@@ -161,35 +174,44 @@ async function runOnce(): Promise<void> {
       const sent = batch.map(({ local: _local, ...op }) => op)
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
-      const res = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
+      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
+      // A proxy or captive portal can answer 200 with a page of its own: nothing
+      // was synced, so the outbox stays as it is (client-data-safety).
+      if (!isSyncResponse(res)) throw new Error(t('The server sent an answer this app does not understand. Your changes stay on this device.'))
       hlcObserveServerTime(res.serverTime)
-      if (batch.length > 0) {
-        await db.outbox.bulkDelete(batch.map((o) => o.local as number))
-        await markSent(sent, wireOps)
-      }
-      const incoming = await decryptIncoming(res.ops)
-      if ((await reconcileMode(incoming)) === 'locked') {
-        // Encryption was enabled elsewhere and this device has no key: keep the
-        // cursor so the batch is pulled again after unlocking.
-        publish({ state: 'locked', error: null, pending: await db.outbox.count() })
-        return
-      }
       // A server limit (multi-tenant-host) refuses ops without judging them: the
       // device keeps them, unsynced, and sends them again later.
       const { limited, refused } = splitRejected(res.rejected ?? [])
-      if (limited.length > 0) {
-        await holdOps(sent, limited)
-        heldReason = limited[0].reason
+      // The sent batch leaves the outbox in the same transaction that holds the
+      // ops a limit refused and forgets the clocks of refused ones (project-sharing:
+      // the server's values, which travel in res.ops, then win), so no path
+      // drops a change without handling its refusal (client-data-safety).
+      let keys: string[] = []
+      let notice: RejectedNotice | null = null
+      await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
+        if (batch.length > 0) {
+          await db.outbox.bulkDelete(batch.map((o) => o.local as number))
+          await markSent(sent, wireOps)
+        }
+        if (limited.length > 0) await holdOps(sent, limited)
+        ;({ keys, notice } = await forgetRejected(sent, refused))
+        // A refused op never happened: drop it from the local activity log too.
+        await forgetActivity(refused.map((r) => r.id))
+      })
+      if (limited.length > 0) heldReason = limited[0].reason
+      if (notice) addRejected(notice)
+      const incoming = await decryptIncoming(res.ops)
+      if ((await reconcileMode(incoming)) === 'locked') {
+        // Encryption was enabled elsewhere and this device has no key: keep the
+        // cursor so the batch is pulled again after unlocking. Rows that only
+        // existed here and were refused go now; the server's values come later.
+        await dropUnconfirmed(keys)
+        publish({ state: 'locked', error: null, pending: (await db.outbox.count()) + (await heldCount()) })
+        return
       }
-      // Refused ops (project-sharing): forget their local clocks so the server's
-      // values, which travel in res.ops, win; drop rows that only existed here.
-      const { keys, notice } = await forgetRejected(sent, refused)
-      // A refused op never happened: drop it from the local activity log too.
-      await forgetActivity(refused.map((r) => r.id))
       await applyOps(incoming.ops, { wire: incoming.wire })
       if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
-      if (notice) addRejected(notice)
       if (res.memberships) await storeMemberships(res.memberships)
       // Purged on the server (trash-and-history D5): drop the rows and queued ops.
       if (res.purged?.length) await removeLocally(res.purged)
@@ -203,6 +225,16 @@ async function runOnce(): Promise<void> {
         // The server was restored from a backup: its log went back in time, so our
         // cursor means nothing there and it may lack edits we hold. Re-send every
         // local field with its original clock, then pull everything from zero.
+        // A restored server may have lost the key record too: confirm it before
+        // re-sending anything, so the re-seed of an encrypted account waits
+        // (locked) instead of going out in plaintext (encryption-state-integrity).
+        if (await isEnabled()) {
+          await refreshFromServer()
+          if (await syncBlocked()) {
+            publish({ state: 'locked', error: null, pending: (await db.outbox.count()) + (await heldCount()) })
+            return
+          }
+        }
         publish({ state: 'reseeding' })
         await reseedAfterRestore(res.generation as string)
         publish({ pending: await db.outbox.count() })
@@ -293,6 +325,8 @@ async function generationChanged(generation: string | undefined): Promise<boolea
  * Entity ids are unchanged, so nothing is duplicated.
  */
 export async function reseedAfterRestore(generation: string): Promise<number> {
+  // Never re-send an encrypted account's content while it cannot be encrypted.
+  if (await syncBlocked()) throw new LockedError()
   let emitted = 0
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
     let chunk: Op[] = []
@@ -302,19 +336,10 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       emitted += chunk.length
       chunk = []
     }
-    // Every synced entity kind (keep in step with ENTITIES / entityTables()).
-    const tables: [Entity, unknown][] = [
-      ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views], ['reminder', db.reminders],
-      ['section', db.sections],
-      ['comment', db.comments],
-      ['project_prefs', db.prefs],
-      ['user_prefs', db.userPrefs],
-      ['review', db.review],
-      ['attachment', db.attachments],
-    ]
     const me = (await db.meta.get('userId'))?.value
-    for (const [entity, table] of tables) {
-      const rows = (await (table as unknown as { toArray(): Promise<Record<string, unknown>[]> }).toArray())
+    // Every synced entity kind, from the one registry (client-data-safety).
+    for (const entity of ENTITIES) {
+      const rows = await tableOf(entity).toArray()
       for (const row of rows) {
         // Only the author may write a comment (comments-and-activity): other
         // members' comments come back from their own devices.

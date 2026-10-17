@@ -53,7 +53,7 @@ func (s *Server) handlePushTest(w http.ResponseWriter, r *http.Request) {
 		DeviceID string `json:"deviceId"`
 	}
 	if err := readJSON(r, &in); err != nil || strings.TrimSpace(in.DeviceID) == "" {
-		writeError(w, http.StatusBadRequest, "bad_request", "deviceId is required")
+		badBodyWith(w, err, "bad_request", "deviceId is required")
 		return
 	}
 	uid := userFrom(r.Context()).ID
@@ -123,8 +123,9 @@ func (s *Server) handlePushKey(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handlePushSubscribe(w http.ResponseWriter, r *http.Request) {
 	var in push.SubscriptionInput
-	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+	// The browser's PushSubscription.toJSON() carries more than is stored.
+	if err := readJSONLoose(r, &in); err != nil {
+		badBody(w, err)
 		return
 	}
 	// Tie a browser subscription to its session, so signing out or revoking the

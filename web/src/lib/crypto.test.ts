@@ -4,6 +4,7 @@
 // browser code and the documented format agree byte for byte.
 import { describe, expect, it } from 'vitest'
 import {
+  ITERATION_LIMITS, KeyRecordParamsError,
   decryptFile, encryptFile,
   b64url, createKeyRecord, decryptValue, DecryptError, derivePassphraseKey, deriveRecoveryKey, encryptValue, formatRecoveryKey, fromB64url,
   isCiphertext, isEnvelope, parseRecoveryKey, RecoveryKeyFormatError, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase,
@@ -15,6 +16,8 @@ const hex = (s: string) => new Uint8Array(s.match(/../g)!.map((h) => parseInt(h,
 const toHex = (b: ArrayBuffer | Uint8Array) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')
 const gcmKey = (raw: Uint8Array, extractable = false) => crypto.subtle.importKey('raw', raw as Uint8Array<ArrayBuffer>, { name: 'AES-GCM' }, extractable, ['encrypt', 'decrypt'])
 const FAST = { iterations: 1000 }
+// Fast derivations in tests: lower the accepted minimum (restored where a test checks the range).
+ITERATION_LIMITS.min = 1000
 
 describe('known-answer vectors', () => {
   it('AES-256-GCM content values match the Go implementation and open again', async () => {
@@ -103,6 +106,21 @@ describe('tamper detection and binding', () => {
 })
 
 describe('key record lifecycle', () => {
+  it('refuses iteration counts outside 100,000 to 10,000,000 from a key record (encryption-state-integrity)', async () => {
+    const { record } = await createKeyRecord('correct horse battery', FAST)
+    const saved = ITERATION_LIMITS.min
+    ITERATION_LIMITS.min = 100_000
+    try {
+      for (const iterations of [1, 99_999, 10_000_001, Number.NaN]) {
+        await expect(unlockWithPassphrase({ ...record, iterations }, 'correct horse battery')).rejects.toBeInstanceOf(KeyRecordParamsError)
+      }
+      // In range, the count is used (here it is simply the wrong derivation).
+      await expect(unlockWithPassphrase({ ...record, iterations: 100_000 }, 'correct horse battery')).rejects.not.toBeInstanceOf(KeyRecordParamsError)
+    } finally {
+      ITERATION_LIMITS.min = saved
+    }
+  })
+
   it('unlocks with the passphrase or the recovery key; the device key is non-extractable', async () => {
     const { record, key, recoveryKey } = await createKeyRecord('correct horse battery', FAST)
     expect(key.extractable).toBe(false)

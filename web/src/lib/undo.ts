@@ -4,7 +4,7 @@
 // the Trash for created entities) and the clock each field got are stored, so it
 // can be undone in one step, skipping fields changed again since. The device keeps
 // the last 20 batches, from the assistant and from bulk actions alike.
-import { db, type AssistantUndo } from './db'
+import { db, tableOf, type AssistantUndo } from './db'
 import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
@@ -12,23 +12,8 @@ import { uuid } from './ids'
 
 export const UNDO_KEEP = 20
 
-/** The Dexie table of an entity kind. */
-export function tableOf(entity: Entity) {
-  switch (entity) {
-    case 'project': return db.projects
-    case 'label': return db.labels
-    case 'section': return db.sections
-    case 'field': return db.fields
-    case 'comment': return db.comments
-    case 'reminder': return db.reminders
-    case 'view': return db.views
-    case 'project_prefs': return db.prefs
-    case 'user_prefs': return db.userPrefs
-    case 'attachment': return db.attachments
-    case 'review': return db.review
-    default: return db.tasks
-  }
-}
+/** The Dexie table of an entity kind (the registry in db.ts). */
+export { tableOf }
 
 const norm = (v: unknown) => (v === undefined ? null : v)
 

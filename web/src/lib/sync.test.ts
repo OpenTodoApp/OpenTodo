@@ -656,3 +656,79 @@ describe('server limits (multi-tenant-host)', () => {
     expect(syncSnapshot().pending).toBe(0)
   })
 })
+
+describe('every entity kind (client-data-safety)', () => {
+  type SentOp = { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }
+  function server(extra: (sent: SentOp[]) => Record<string, unknown>) {
+    syncCalls.mockImplementation((async (...args: unknown[]) => {
+      const sentOps = args[2] as SentOp[]
+      return { applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now(), ...extra(sentOps) }
+    }) as never)
+  }
+
+  it('re-seeds custom field definitions after a restore', async () => {
+    await applyOps([
+      { id: 'p', entity: 'project', entityId: 'p1', field: 'name', value: 'Home', ts: 100, device: 'devA' },
+      { id: 'f1', entity: 'field', entityId: 'fd1', field: 'name', value: 'Effort', ts: 110, device: 'devA' },
+      { id: 'f2', entity: 'field', entityId: 'fd1', field: 'project_id', value: 'p1', ts: 111, device: 'devA' },
+    ])
+    await setMeta('generation', 'gen-before')
+    await setMeta('cursor', 42)
+    syncCalls.mockImplementation((async (...args: unknown[]) => {
+      const cursor = args[1] as number
+      return { applied: 0, ops: [], cursor: cursor === 0 ? 2 : cursor, hasMore: false, serverTime: Date.now(), generation: 'gen-after' }
+    }) as never)
+    await syncNow()
+    const ops = syncCalls.mock.calls.slice(1).flatMap((c) => (c as unknown as [string, number, SentOp[]])[2])
+    expect(ops.map((o) => `${o.entity}:${o.entityId}:${o.field}`).sort()).toEqual(['field:fd1:name', 'field:fd1:project_id', 'project:p1:name'])
+    expect(ops.find((o) => o.field === 'name' && o.entity === 'field')).toMatchObject({ value: 'Effort', ts: 110, device: 'devA' })
+  })
+
+  it('a refused custom field change is forgotten and takes the server value', async () => {
+    await applyOps([
+      { id: 'p', entity: 'project', entityId: 'p1', field: 'name', value: 'Home', ts: 1, device: 'alice-dev' },
+      { id: 'f1', entity: 'field', entityId: 'fd1', field: 'name', value: 'Effort', ts: 1, device: 'alice-dev' },
+      { id: 'f2', entity: 'field', entityId: 'fd1', field: 'project_id', value: 'p1', ts: 1, device: 'alice-dev' },
+    ])
+    await mutate('field', 'fd1', { name: 'Mine' })
+    await mutate('field', 'local-field', { name: 'Draft', project_id: 'p1' })
+    server((sentOps) => ({
+      rejected: sentOps.map((o) => ({ id: o.id, reason: 'forbidden' })),
+      ops: [{ id: 'f1', entity: 'field', entityId: 'fd1', field: 'name', value: 'Effort', ts: 1, device: 'alice-dev', seq: 3 }],
+    }))
+    await syncNow()
+    expect(syncSnapshot().state).not.toBe('error')
+    expect((await db.fields.get('fd1'))?.name).toBe('Effort')
+    expect(await db.fields.get('local-field')).toBeUndefined()
+    expect(await db.tasks.get('fd1')).toBeUndefined()
+  })
+
+  it('a refused attachment is dropped without an error', async () => {
+    await applyOps([{ id: 'w1', entity: 'task', entityId: 't1', field: 'title', value: 'Milk', ts: 1, device: 'alice-dev' }])
+    await mutate('attachment', 'a1', { task_id: 't1', name: 'example.org', url: 'https://example.org/', mime: 'text/uri-list', size: 0 })
+    server((sentOps) => ({ rejected: sentOps.map((o) => ({ id: o.id, reason: 'forbidden' })) }))
+    await syncNow()
+    expect(syncSnapshot().state).not.toBe('error')
+    expect(syncSnapshot().rejected?.count).toBeGreaterThan(0)
+    expect(await db.attachments.get('a1')).toBeUndefined()
+    expect(await db.outbox.count()).toBe(0)
+  })
+})
+
+describe('malformed answers (client-data-safety)', () => {
+  it('a 200 answer that is not a sync response keeps the queued edits', async () => {
+    await mutate('task', 't1', { title: 'Offline edit' })
+    expect(await db.outbox.count()).toBe(1)
+    // What api.parse yields for a proxy's HTML page with status 200.
+    syncCalls.mockImplementationOnce((async () => ({})) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('error')
+    expect(await db.outbox.count()).toBe(1)
+    expect(await getMeta('cursor', -1)).toBe(-1)
+    // The next real exchange uploads it.
+    await syncNow()
+    const sent = syncCalls.mock.calls.at(-1) as unknown as [string, number, { field: string }[]]
+    expect(sent[2].map((o) => o.field)).toContain('title')
+    expect(await db.outbox.count()).toBe(0)
+  })
+})

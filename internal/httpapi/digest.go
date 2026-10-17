@@ -81,7 +81,7 @@ func (s *Server) handlePutDigest(w http.ResponseWriter, r *http.Request) {
 		Language *string `json:"language"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	if !s.mailEnabled(ctx) {

@@ -103,7 +103,7 @@ func (s *Server) handleRestorePrepare(w http.ResponseWriter, r *http.Request) {
 		Passphrase string               `json:"passphrase"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	n := 0
@@ -143,7 +143,7 @@ func (s *Server) handleRestoreConfirm(w http.ResponseWriter, r *http.Request) {
 		Confirm string `json:"confirm"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	if in.Confirm != backup.ConfirmWord {

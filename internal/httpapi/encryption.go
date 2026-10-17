@@ -72,7 +72,7 @@ func (s *Server) handlePutEncryptionKeys(w http.ResponseWriter, r *http.Request)
 	uid := userFrom(ctx).ID
 	var in e2ee.KeyRecord
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	if err := in.Validate(); err != nil {

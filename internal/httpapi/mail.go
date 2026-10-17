@@ -102,7 +102,7 @@ func (s *Server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
 		From     *string `json:"from"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	changes, err := s.mail.Save(r.Context(), mail.Update{Host: in.Host, Port: in.Port, Security: in.Security, User: in.Username, Password: in.Password, From: in.From})

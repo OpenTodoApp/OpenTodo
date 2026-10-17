@@ -14,14 +14,15 @@
 import {
   decryptValue, encryptValue, isEnvelope,
 } from './crypto'
-import { db, entityTables, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta, tableOf } from './db'
 import {
-  CONTENT_FIELDS, currentKey, isContentField, isEnabled, K_DISCARD, publishEncryption, refreshFromServer, UNDECRYPTABLE,
+  CONTENT_FIELDS, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
 } from './e2ee'
 import { getDeviceId, mutateMany, mutationTables, readField, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
-import type { Clock, Entity, Op, RowEncryption } from './types'
+import type { Entity, Op, RowEncryption } from './types'
 import { t } from './i18n'
+import { uuid } from './ids'
 
 export type Wire = 'p' | 'c' | 'x'
 export interface WireInfo {
@@ -35,17 +36,6 @@ export class LockedError extends Error {
   constructor() {
     super(t('This device is locked. Unlock it to sync.'))
   }
-}
-
-type Row = Record<string, unknown> & { _clock?: Clock; _e2ee?: RowEncryption }
-type AnyTable = { get(id: string): Promise<Row | undefined>; put(v: Row): Promise<unknown>; toArray(): Promise<Row[]> }
-
-function tableOf(entity: Entity): AnyTable {
-  const tk = {
-    project: db.projects, task: db.tasks, label: db.labels, view: db.views, reminder: db.reminders, section: db.sections,
-    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments, field: db.fields, review: db.review,
-  }[entity]
-  return tk as unknown as AnyTable
 }
 
 /**
@@ -91,12 +81,14 @@ function encryptable(op: Op): op is Op & { value: string } {
  * Encrypt the content fields of an outgoing batch for an encrypted account.
  * Empty strings and null stay as they are (their emptiness is visible anyway);
  * an envelope this device could not decrypt is passed through unchanged.
- * Throws LockedError when the account encrypts and the device has no key.
+ * Throws LockedError when the account encrypts and the device has no key, or
+ * the server lost the key record (encryption-state-integrity): nothing is
+ * uploaded until the user restores the record or turns encryption off here.
  */
 export async function prepareOutgoing(ops: Op[]): Promise<Op[]> {
   if (ops.length === 0 || !(await isEnabled())) return ops
   const key = await currentKey()
-  if (!key) throw new LockedError()
+  if (!key || (await isRecordMissing())) throw new LockedError()
   const personal = await personalResolver(ops)
   const out: Op[] = []
   for (const op of ops) {
@@ -179,7 +171,7 @@ export async function reconcileMode(inc: Incoming): Promise<'ok' | 'locked'> {
       // Offline or transient: keep the local mode; the next exchange retries.
     }
   }
-  if ((await isEnabled()) && !(await currentKey())) return 'locked'
+  if (await syncBlocked()) return 'locked'
   return 'ok'
 }
 
@@ -254,7 +246,10 @@ export async function normalizeOnSight(inc: Incoming): Promise<number> {
 // ---- migration job (design D7) ----
 
 const K_MIGRATION = 'e2ee.migration'
-const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'field', 'task', 'comment']
+// New kinds go at the end: a stored job's `entity` is an index into this list.
+const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'field', 'task', 'comment', 'attachment']
+/** The content fields a link attachment carries; the server fixes url and mime at creation. */
+const LINK_FIELDS = ['task_id', 'author_id', 'comment_id', 'name', 'mime', 'size', 'sha256', 'url', 'encrypted', 'created_at']
 /** Entities re-written per batch (one mutateMany each). */
 export const MIGRATION_BATCH = 200
 
@@ -278,6 +273,16 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
   for (const row of rows) {
     // Only the author may write a comment.
     if (entity === 'comment' && row.author_id !== me) continue
+    if (entity === 'attachment') {
+      // Links only: files are re-uploaded by the file phase (attachments D8). The
+      // server fixes a link's url and mime at creation, so it moves to the other
+      // form as a new attachment that replaces it (client-data-safety).
+      if (!row.url || row.deleted_at || row.author_id !== me) continue
+      const wire = row._e2ee?.wire?.url
+      if (mode === 'encrypt' ? wire === 'c' || wire === 'x' : wire !== 'c') continue
+      if (await personal(entity, row.id)) out.push({ id: row.id, patch: Object.fromEntries(LINK_FIELDS.map((f) => [f, row[f] ?? null])) })
+      continue
+    }
     const patch: Record<string, unknown> = {}
     // A task's custom field values are content too (custom-fields D4): one entry each.
     const keys = entity === 'task' ? [...fields, ...Object.keys((row.fields ?? {}) as object).map((id) => FIELD_VALUE_PREFIX + id)] : fields
@@ -296,6 +301,26 @@ async function countPending(mode: MigrationState['mode'], me: string): Promise<n
   let n = 0
   for (const e of MIGRATION_ORDER) n += (await pending(e, mode, '', me)).length
   return n
+}
+
+/**
+ * Replace each link with a new one carrying the same fields, uploaded in the
+ * account's current form, and move the old one to the Trash, in one batch. The
+ * new row is marked with the target form so a resumed run skips it.
+ */
+async function replaceLinks(list: { id: string; patch: Record<string, unknown> }[], mode: MigrationState['mode']): Promise<void> {
+  const target: Wire = mode === 'encrypt' ? 'c' : 'p'
+  const now = Date.now()
+  const fresh = list.map((r) => ({ old: r.id, id: uuid(), patch: r.patch }))
+  await mutateMany(fresh.flatMap((r): Change[] => [
+    { entity: 'attachment', entityId: r.id, patch: { ...r.patch, uploaded_at: null, deleted_at: null } },
+    { entity: 'attachment', entityId: r.old, patch: { deleted_at: now } },
+  ]))
+  const table = tableOf('attachment')
+  for (const r of fresh) {
+    const row = await table.get(r.id)
+    if (row) await table.put({ ...row, _e2ee: { ...row._e2ee, wire: { ...row._e2ee?.wire, url: target, name: target, mime: target } } })
+  }
 }
 
 /** Start the re-write job (enable: 'encrypt'; disable: 'decrypt') and run it to the end. */
@@ -329,7 +354,8 @@ export async function runMigration(opts: { failAfterBatches?: number } = {}): Pr
     if (opts.failAfterBatches !== undefined && batches >= opts.failAfterBatches) throw new Error('migration interrupted (test)')
     const next: MigrationState = { ...state, lastId: list[list.length - 1].id, done: state.done + list.length }
     await db.transaction('rw', mutationTables(), async () => {
-      await mutateMany(list.map((r) => ({ entity, entityId: r.id, patch: r.patch })))
+      if (entity === 'attachment') await replaceLinks(list, state!.mode)
+      else await mutateMany(list.map((r) => ({ entity, entityId: r.id, patch: r.patch })))
       await db.meta.put({ key: K_MIGRATION, value: next })
     })
     state = next

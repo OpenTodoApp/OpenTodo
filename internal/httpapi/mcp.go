@@ -183,7 +183,7 @@ func (s *Server) handleGetMCPSettings(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlePutMCPSettings(w http.ResponseWriter, r *http.Request) {
 	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	var enabled, writes *bool
@@ -242,7 +242,7 @@ func (s *Server) handleGetAgentAccess(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlePutAgentAccess(w http.ResponseWriter, r *http.Request) {
 	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	var allow bool

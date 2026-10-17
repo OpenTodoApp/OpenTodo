@@ -511,6 +511,11 @@ func (s *Service) ResetPassword(ctx context.Context, secret, password string) er
 	if err := CheckPasswordPolicy(password); err != nil {
 		return err
 	}
+	// An unusable link is refused before paying for a hash (SEC-5); the
+	// conditional update below decides.
+	if _, err := s.PreviewPasswordReset(ctx, secret); err != nil {
+		return err
+	}
 	hash, err := HashPassword(password)
 	if err != nil {
 		return err

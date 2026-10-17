@@ -12,6 +12,7 @@
   "bad_origin",
   "bad_request",
   "base_url_required",
+  "busy",
   "confirmation_mismatch",
   "conflict",
   "consent_required",

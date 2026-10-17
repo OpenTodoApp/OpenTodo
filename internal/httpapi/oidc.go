@@ -332,7 +332,7 @@ func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
 		ProviderLogout *bool   `json:"providerLogout"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	// The masked value the GET returned means "keep".
@@ -368,7 +368,7 @@ func (s *Server) handleTestOIDC(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.ContentLength != 0 {
 		if err := readJSON(r, &in); err != nil {
-			writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+			badBody(w, err)
 			return
 		}
 	}

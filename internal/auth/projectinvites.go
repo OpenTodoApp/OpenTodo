@@ -258,6 +258,14 @@ func (s *Service) RegisterWithProjectInvite(ctx context.Context, email, name, pa
 	if err := CheckPasswordPolicy(password); err != nil {
 		return nil, nil, nil, err
 	}
+	// Refuse a link that cannot create an account before paying for a hash
+	// (SEC-5); the write transaction checks again.
+	if err := s.readTx(ctx, func(tx *sql.Tx) error {
+		_, err := s.admitProjectInvite(ctx, tx, email, secret, membersAllowed, s.clock().UnixMilli())
+		return err
+	}); err != nil {
+		return nil, nil, nil, err
+	}
 	hash, err := HashPassword(password)
 	if err != nil {
 		return nil, nil, nil, err
@@ -267,23 +275,9 @@ func (s *Service) RegisterWithProjectInvite(ctx context.Context, email, name, pa
 		return nil, nil, nil, err
 	}
 	defer tx.Rollback()
-	var n int
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
-		return nil, nil, nil, err
-	}
-	if n == 0 {
-		// The first account is the owner and is created by setup, never by a link.
-		return nil, nil, nil, ErrInvitationInvalid
-	}
 	now := s.clock().UnixMilli()
-	inv, err := s.checkProjectInvite(ctx, tx, secret, email, now)
+	inv, err := s.admitProjectInvite(ctx, tx, email, secret, membersAllowed, now)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-	if !s.MayCreateAccount(inv.CreatorRole, membersAllowed) {
-		return nil, nil, nil, ErrProjectInviteNotAllowed
-	}
-	if err := s.checkMemberLimit(ctx, tx); err != nil {
 		return nil, nil, nil, err
 	}
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: now}
@@ -308,6 +302,31 @@ func (s *Service) RegisterWithProjectInvite(ctx context.Context, email, name, pa
 		return nil, nil, nil, err
 	}
 	return u, inv, audience, nil
+}
+
+// admitProjectInvite checks inside tx that a project invite link may create
+// the account: an owner exists, the link is pending and matches the email, its
+// creator may invite new people, and the member limit has room.
+func (s *Service) admitProjectInvite(ctx context.Context, tx *sql.Tx, email, secret string, membersAllowed bool, now int64) (*PendingProjectInvite, error) {
+	var n int
+	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		// The first account is the owner and is created by setup, never by a link.
+		return nil, ErrInvitationInvalid
+	}
+	inv, err := s.checkProjectInvite(ctx, tx, secret, email, now)
+	if err != nil {
+		return nil, err
+	}
+	if !s.MayCreateAccount(inv.CreatorRole, membersAllowed) {
+		return nil, ErrProjectInviteNotAllowed
+	}
+	if err := s.checkMemberLimit(ctx, tx); err != nil {
+		return nil, err
+	}
+	return inv, nil
 }
 
 // checkProjectInvite validates a secret inside an acceptance transaction: the
