@@ -13,7 +13,6 @@ import { readAppearance, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
 import { db } from '../lib/db'
-import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { REVIEW_ID, reviewAgo, reviewDue } from '../lib/review'
@@ -25,7 +24,7 @@ import type { Project, User } from '../lib/types'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
-import { useViewerZone, useViews } from './useViews'
+import { useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
 import { useOpenTasks } from '../lib/liveTasks'
@@ -114,8 +113,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
 
   const openTasks = useOpenTasks()
   const zone = useViewerZone()
+  // Re-read every minute, so the counts move to the new day at midnight.
+  const today = useToday()
   const counts = useMemo(() => {
-    const today = todayISO()
     let inbox = 0
     let due = 0
     let assigned = 0
@@ -128,7 +128,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     for (const item of openTasks) if (inToday(item, today)) due++
     return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [openTasks, tree, collapsed_, user.id, zone])
+  }, [openTasks, tree, collapsed_, user.id, zone, today])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
   // Only on a real route change, not on mount or on project edits, so a reload (or a
@@ -153,8 +153,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const pinnedViews = useMemo(() => views.filter((v) => v.pinned), [views])
   const allProjects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const viewCounts = useMemo(
-    () => evaluateViews(pinnedViews, { today: todayISO(), labels, projects: allProjects, tasks: openTasks }, 0),
-    [pinnedViews, labels, allProjects, openTasks],
+    () => evaluateViews(pinnedViews, { today, labels, projects: allProjects, tasks: openTasks }, 0),
+    [pinnedViews, labels, allProjects, openTasks, today],
   )
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')

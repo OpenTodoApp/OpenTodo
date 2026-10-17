@@ -4,7 +4,7 @@ import { type FormEvent, Fragment, memo, useCallback, useEffect, useMemo, useRef
 import { blockedMap } from '../lib/dependencies'
 import { duplicateTask } from '../lib/templates'
 import { db } from '../lib/db'
-import { formatDateHeading, todayISO } from '../lib/dates'
+import { formatDateHeading } from '../lib/dates'
 import { inAnytime, inLater, isSomeday } from '../lib/views'
 import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, withoutArchived } from '../lib/dayLists'
 import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/ordering'
@@ -46,7 +46,7 @@ import { keysOf } from '../lib/shortcuts'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { appendTo, groupBy } from '../lib/collections'
 import { LOGBOOK_PAGE, logbookGroups, logbookHeading } from '../lib/logbook'
-import { useViewerZone } from './useViews'
+import { useToday, useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
 import { useSelection } from './selection'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
@@ -119,7 +119,8 @@ function saveCollapsed(set: Set<string>) {
 
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const dt = useDateTimeFormat()
-  const today = todayISO()
+  // Re-read every minute: Today, Upcoming and the Logbook roll over at midnight.
+  const today = useToday()
   // Zoned dues (absolute-datetimes) are grouped in the viewer zone; re-group when it changes.
   const zone = useViewerZone()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
@@ -312,7 +313,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (logbook) {
       // Completed as a logbook: one group per local completion day, newest first.
       return logbook.groups.map((g) => ({
-        key: g.date, heading: logbookHeading(g.date, today, dt.resolved), note: `${g.tasks.length} done`, rows: g.tasks.map(flatRow),
+        key: g.date, heading: logbookHeading(g.date, today, dt.resolved), note: t('{n, plural, one {# done} other {# done}}', { n: g.tasks.length }), rows: g.tasks.map(flatRow),
       }))
     }
     if (route.view === 'upcoming') {
@@ -568,7 +569,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const leaveSidebar = () => {
     // Selecting tasks moves keyboard attention to the list: a sidebar project left
     // focused by a click must not take the next Alt+Up/Down (manual-ordering).
-    if ((document.activeElement as HTMLElement | null)?.closest?.('nav[aria-label="Projects"]')) (document.activeElement as HTMLElement).blur()
+    // A data attribute, not the translated group name, so it holds in every language.
+    if ((document.activeElement as HTMLElement | null)?.closest?.('[data-project-row]')) (document.activeElement as HTMLElement).blur()
   }
   const openFor = (focus: { request(id: string): void }) => () => {
     if (!row || !writable) return false
@@ -634,13 +636,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     'list.indent': () => { if (!row || !writable || !treeView) return false; indent(row, idx) },
     'list.outdent': () => { if (!row || !writable || !treeView) return false; outdent(row) },
     'list.complete': () => {
-      if (ticked.length) { void runBulk(ticked, { kind: 'complete' }); return }
+      if (ticked.length) { act(runBulk(ticked, { kind: 'complete' })); return }
       if (!row || !writable) return false
       act(toggleComplete(row.task.id, !row.task.completed_at))
     },
     'list.priority': (e) => {
       const priority = Number(e.key) as Priority
-      if (ticked.length) { void runBulk(ticked, { kind: 'priority', priority }); return }
+      if (ticked.length) { act(runBulk(ticked, { kind: 'priority', priority })); return }
       if (!selectedId || (row && !writable)) return false
       act(updateTask(selectedId, { priority }))
     },
@@ -655,7 +657,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       setAssignFor(row.task.id)
     },
     'list.delete': () => {
-      if (ticked.length) { void runBulk(ticked, { kind: 'trash' }); return }
+      if (ticked.length) { act(runBulk(ticked, { kind: 'trash' })); return }
       if (!selectedId || (row && !writable)) return false
       act(deleteWithUndo(selectedId))
       setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
@@ -663,31 +665,31 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     'list.skip': () => {
       // Skip the current occurrence of the selected (or open) recurring task.
       const id = row?.task.id ?? openId
-      if (!id) return false
+      if (!id || isReadOnly(row?.task ?? taskMap.get(id))) return false
       act(skipOccurrence(id))
     },
     'list.detach': () => {
       // "This occurrence only": detach a standalone copy and open it.
       const id = row?.task.id ?? openId
-      if (!id) return false
-      void detachOccurrence(id).then((copy) => {
+      if (!id || isReadOnly(row?.task ?? taskMap.get(id))) return false
+      act(detachOccurrence(id).then((copy) => {
         if (copy) {
           setSelectedId(copy)
           setOpenId(copy)
         }
-      })
+      }))
     },
     // Placement mode in the Day view (OpenSpec `time-blocking`).
-    'list.schedule': () => { if (!row || row.task.completed_at) return false; placeInDay(row.task, todayISO()) },
-    'list.estimate': () => { if (!row) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
+    'list.schedule': () => { if (!row || !writable || row.task.completed_at) return false; placeInDay(row.task, today) },
+    'list.estimate': () => { if (!row || !writable) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
     'list.deadline': openFor(deadlineFocus),
     'list.defer': openFor(deferFocus),
     'list.blocked-by': openFor(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
-    'list.park': () => { if (!row || !writable) return false; void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
+    'list.park': () => { if (!row || !writable) return false; act(row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
     'list.evening': () => { if (!row || !writable) return false; act(updateTask(row.task.id, { evening: !row.task.evening })) },
     // Duplicate the task and its open subtasks right below it (project-templates D6).
-    'list.duplicate': () => { if (!row || !writable) return false; void duplicateTask(row.task.id).then((id) => setSelectedId(id)) },
+    'list.duplicate': () => { if (!row || !writable) return false; act(duplicateTask(row.task.id).then((id) => setSelectedId(id))) },
   })
   const col = board ? columns.findIndex((c) => c.cards.some((task) => task.id === selectedId)) : -1
   const pos = col >= 0 ? columns[col].cards.findIndex((task) => task.id === selectedId) : -1
@@ -724,7 +726,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions })
   live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions }
   // Complete / reopen from the panel goes through this list, so the "complete parent too?" prompt and the archive offer follow.
-  useEffect(() => registerPanelHandlers({ toggleComplete: (task) => void live.current.toggleComplete(task.id, !task.completed_at) }), [])
+  useEffect(() => registerPanelHandlers({ toggleComplete: (task) => act(live.current.toggleComplete(task.id, !task.completed_at)) }), [])
   // Opening another task from the panel (a subtask, the parent) selects it here when it is listed.
   useEffect(() => {
     if (openId && live.current.rows.some((r) => r.task.id === openId)) setSelectedId(openId)
@@ -1101,7 +1103,7 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
     ref.current?.focus()
   }
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+    <form onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
       <span className="text-accent">+</span>
       <input
         ref={ref}

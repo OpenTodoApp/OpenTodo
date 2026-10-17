@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { TextSelection, type EditorState } from 'prosemirror-state'
+import { TextSelection, type EditorState, type Transaction } from 'prosemirror-state'
+import type { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
 import { activeBody, DEFAULT_BODY, encodeDoc, insertModel, MAX_DOC_CHARS, newDoc, renderMarkdown, toModel, type RNode } from './richtext'
-import { applyBody, createState, markdownSlice, modelToPm, pmToModel, schema, toggleCheck, wrapInCheckList, writeBody, type EditorHooks } from './richtextEditor'
+import { applyBody, createState, linkCommand, markdownSlice, modelToPm, pmToModel, schema, toggleCheck, wrapInCheckList, writeBody, type EditorHooks } from './richtextEditor'
 
 const p = (text: string): RNode => ({ type: 'paragraph', attrs: {}, runs: [{ text, marks: {} }] })
 const hooks = (size = () => 0): EditorHooks => ({ askLink: () => null, onEscape: () => {}, size })
@@ -152,5 +153,24 @@ describe('notes editor core', () => {
     const slice = markdownSlice('# Title\n\n- **a**\n- b')
     expect(slice.content.firstChild?.type).toBe(schema.nodes.heading)
     expect(slice.content.childCount).toBe(2)
+  })
+})
+
+describe('link command (ui-correctness)', () => {
+  it('applies an answer that arrives later to the selection the editor holds then', async () => {
+    let state = createState([p('Read the guide')], hooks())
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, after(state, 'Read the '), after(state, 'guide'))))
+    // The editor view, as far as the command uses it.
+    const view = { get state() { return state }, dispatch: (tr: Transaction) => { state = state.apply(tr) }, isDestroyed: false, focus: () => {} }
+    let answer: (href: string | null) => void = () => {}
+    const command = linkCommand((current) => { expect(current).toBe(''); return new Promise((r) => { answer = r }) })
+    expect(command(state, view.dispatch, view as unknown as EditorView)).toBe(true)
+    // A remote merge inserts text before the selection while the dialog is open.
+    view.dispatch(state.tr.insertText('Please ', 1))
+    answer('https://example.com')
+    await new Promise((r) => setTimeout(r, 0))
+    const linked: string[] = []
+    state.doc.descendants((n) => { if (n.isText && n.marks.some((m) => m.type.name === 'link')) linked.push(n.text ?? '') })
+    expect(linked).toEqual(['guide'])
   })
 })

@@ -19,9 +19,12 @@ import { createDispatcher, isTextField, type Mode } from './dispatch'
 import { VIM_HELP } from './help'
 import { t } from '../../lib/i18n'
 
-/** `i`: the panel renders on the next commit; focus its title once it is there. */
-function focusTitle(id: string, tries = 20): void {
-  const el = document.querySelector<HTMLInputElement>(`[data-detail-for="${CSS.escape(id)}"] input[aria-label="Title"]`)
+/**
+ * `i`: the panel renders on the next commit; focus its title once it is there.
+ * Found by a data attribute, not the translated label, so it works in every language.
+ */
+export function focusTitle(id: string, tries = 20): void {
+  const el = document.querySelector<HTMLInputElement>(`[data-detail-for="${CSS.escape(id)}"] input[data-task-title]`)
   if (el && !el.disabled) {
     el.focus()
     const end = el.value.length
