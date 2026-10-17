@@ -66,10 +66,10 @@ func (s *Server) oidcStatus(ctx context.Context) map[string]any {
 	return map[string]any{"enabled": true, "displayName": c.Name(), "ssoOnly": c.SSOOnly}
 }
 
-func (s *Server) setStateCookie(w http.ResponseWriter, value string, maxAge int) {
+func (s *Server) setStateCookie(w http.ResponseWriter, r *http.Request, value string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
 		Name: oidcStateCookie, Value: value, Path: "/api/v1/auth/oidc", MaxAge: maxAge,
-		HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode,
+		HttpOnly: true, Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -119,7 +119,7 @@ func (s *Server) handleOIDCStart(w http.ResponseWriter, r *http.Request) {
 		mode, userID = oidc.ModeLink, sess.User.ID
 	}
 	f := s.oidc.States().New(mode, userID, c.Issuer)
-	s.setStateCookie(w, s.oidc.States().Encode(f), int(oidc.FlowTTL.Seconds()))
+	s.setStateCookie(w, r, s.oidc.States().Encode(f), int(oidc.FlowTTL.Seconds()))
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, oidc.AuthCodeURL(m, c.ClientID, s.oidcRedirectURI(r), c.Scopes, f.State, f.Nonce, f.Verifier), http.StatusFound)
 }
@@ -136,7 +136,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	// The state cookie is single-use: cleared whatever happens next.
-	s.setStateCookie(w, "", -1)
+	s.setStateCookie(w, r, "", -1)
 	ck, err := r.Cookie(oidcStateCookie)
 	var f *oidc.FlowState
 	if err == nil {

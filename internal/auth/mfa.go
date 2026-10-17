@@ -666,6 +666,14 @@ func (s *Service) StartMFAChallenge(userID, first string) string {
 	return s.mfaChallenges.issue(userID, first, s.clock())
 }
 
+// MFAChallengeUser returns the account a pending second-step challenge belongs
+// to, without counting an attempt (the per-account failure limit is checked
+// before the code; OpenSpec change trusted-client-identity).
+func (s *Service) MFAChallengeUser(challenge string) (string, bool) {
+	userID, _, ok := s.mfaChallenges.user(challenge, s.clock())
+	return userID, ok
+}
+
 // CompleteMFAChallenge finishes the second sign-in step. An unknown, expired or
 // exhausted challenge returns ErrMFAChallengeInvalid; a wrong code counts an
 // attempt and returns an *MFAFailure. On success the challenge is consumed and

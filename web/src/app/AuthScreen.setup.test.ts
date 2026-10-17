@@ -33,6 +33,20 @@ describe('AuthScreen setup token', () => {
     expect(render({ ...setup, setupRequired: false, setupTokenRequired: true })).not.toContain('Setup token')
   })
 
+  it('asks for the setup code from the log outside the local network', () => {
+    const html = render({ ...setup, setupCodeRequired: true })
+    expect(html).toContain('Setup code')
+    expect(html).toContain('docker logs opentodo')
+    expect(html).not.toContain('OPENTODO_SETUP_TOKEN')
+    // A configured token wins over the code.
+    expect(render({ ...setup, setupCodeRequired: true, setupTokenRequired: true })).toContain('Setup token')
+  })
+
+  it('explains a wrong setup code and a locked account', () => {
+    expect(describeAuthError(new ApiError(403, 'setup_code_invalid', 'x'))).toContain('server log')
+    expect(describeAuthError(new ApiError(429, 'account_locked', 'x'))).toContain('15 minutes')
+  })
+
   it('explains a wrong token', () => {
     const msg = describeAuthError(new ApiError(403, 'setup_token_invalid', 'the setup token is missing or wrong'))
     expect(msg).toContain('OPENTODO_SETUP_TOKEN')

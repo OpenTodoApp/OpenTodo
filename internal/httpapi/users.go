@@ -292,9 +292,9 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // handlePreviewReset is public: the holder of a reset link is not signed in.
-// It shares the sign-in limiter and every failure is the same 404.
+// It has the reset limiter and every failure is the same 404.
 func (s *Server) handlePreviewReset(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.resetLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -307,7 +307,7 @@ func (s *Server) handlePreviewReset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUseReset(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.resetLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -361,7 +361,7 @@ func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusBadRequest, "invalid_input", "email: enter one valid address")
 		return
 	}
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.resetLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again in a minute")
 		return
 	}

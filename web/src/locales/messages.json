@@ -7108,6 +7108,9 @@
   "Settings: {section}": [
     "web/src/app/palette/index.ts"
   ],
+  "Setup code": [
+    "web/src/app/AuthScreen.tsx"
+  ],
   "Setup token": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -7837,6 +7840,10 @@
   ],
   "That password is not correct.": [
     "web/src/app/ReauthDialog.tsx"
+  ],
+  "That setup code is not right. Copy it from the server log and try again.": [
+    "web/src/app/AuthScreen.tsx",
+    "web/src/lib/i18n/errors.ts"
   ],
   "That setup token is not right. Copy OPENTODO_SETUP_TOKEN from your hosting panel and try again.": [
     "web/src/app/AuthScreen.tsx"
@@ -8981,6 +8988,11 @@
   "Too many changes at once. Wait a moment and try again.": [
     "web/src/app/PublicListScreen.tsx"
   ],
+  "Too many failed attempts for this account. Wait 15 minutes and try again.": [
+    "web/src/app/AuthScreen.tsx",
+    "web/src/app/ReauthDialog.tsx",
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Too many invitations created recently. Try again later.": [
     "web/src/app/MembersPanel.tsx"
   ],
@@ -9737,6 +9749,9 @@
   ],
   "You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "You are setting up this server from outside its local network, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.": [
+    "web/src/app/AuthScreen.tsx"
   ],
   "You are signed in": [
     "web/src/app/EmailScreens.tsx"

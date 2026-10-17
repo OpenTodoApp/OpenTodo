@@ -9,12 +9,13 @@ import (
 
 // TestClientAddressBehindTrustedProxies: with OPENTODO_TRUSTED_PROXIES the
 // trailing hops of the listed proxies are skipped, and "cloudflare" lets a
-// request from a Cloudflare edge name the client with CF-Connecting-IP.
+// request from a Cloudflare edge name the client with CF-Connecting-IP. The
+// connection itself must come from a listed proxy (trusted-client-identity).
 func TestClientAddressBehindTrustedProxies(t *testing.T) {
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	req := func(xff, cf string) string {
 		r := httptest.NewRequest("GET", "/", nil)
-		r.RemoteAddr = "10.0.1.5:4000"
+		r.RemoteAddr = "192.0.2.50:4000"
 		if xff != "" {
 			r.Header.Set("X-Forwarded-For", xff)
 		}
@@ -24,10 +25,17 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 		return clientIP(r)
 	}
 
-	// Default: the nearest hop, even when it is a CDN edge.
+	// Default (loopback and private peers trusted): the nearest untrusted hop,
+	// even when it is a CDN edge.
 	setTrustedProxies(nil, false)
-	if got := req("198.51.100.7, 172.70.1.1", "198.51.100.7"); got != "172.70.1.1" {
-		t.Fatalf("default: %q", got)
+	if got := req("198.51.100.7, 172.70.1.1", "198.51.100.7"); got != "192.0.2.50" {
+		t.Fatalf("default, public peer: %q", got)
+	}
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "10.0.1.5:4000"
+	r.Header.Set("X-Forwarded-For", "198.51.100.7, 172.70.1.1")
+	if got := clientIP(r); got != "172.70.1.1" {
+		t.Fatalf("default, private peer: %q", got)
 	}
 
 	tp := config.ParseTrustedProxies("cloudflare, 192.0.2.0/24")
@@ -42,7 +50,7 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 		{"proxy dropped the chain", "172.70.1.1", "198.51.100.7", "198.51.100.7"},
 		{"edge vouches over a forged chain", "6.6.6.6, 172.70.1.1", "198.51.100.9", "198.51.100.9"},
 		{"header ignored without an edge hop", "203.0.113.4", "6.6.6.6", "203.0.113.4"},
-		{"no header", "", "6.6.6.6", "10.0.1.5"},
+		{"no header", "", "6.6.6.6", "192.0.2.50"},
 		{"all trusted", "192.0.2.1, 192.0.2.2", "", "192.0.2.1"},
 	}
 	for _, c := range cases {
@@ -68,7 +76,7 @@ func TestInvalidTrustedProxyEntriesNeverWidenTrust(t *testing.T) {
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	req := func(xff, cf string) string {
 		r := httptest.NewRequest("GET", "/", nil)
-		r.RemoteAddr = "10.0.1.5:4000"
+		r.RemoteAddr = "192.0.2.50:4000"
 		r.Header.Set("X-Forwarded-For", xff)
 		if cf != "" {
 			r.Header.Set("CF-Connecting-IP", cf)

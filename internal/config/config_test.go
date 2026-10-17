@@ -240,29 +240,29 @@ func TestTrustedProxiesLenient(t *testing.T) {
 			t.Errorf("%q: warning %v", c.raw, warn)
 		}
 	}
-	if n := len(ParseTrustedProxies("cloudflare cloudflare").Prefixes); n != len(CloudflareRanges) {
+	if n := len(ParseTrustedProxies("cloudflare cloudflare private").Prefixes); n != len(CloudflareRanges)+len(PrivateRanges) {
 		t.Errorf("keyword twice: %d prefixes", n)
 	}
 
 	// Load: the server starts, keeps the valid entries and records one warning.
-	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflar, 192.0.2.0/24")
+	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflar, 10.2.0.0/16")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("invalid entry stopped startup: %v", err)
 	}
-	if c.TrustCloudflare || len(c.TrustedProxies) != 1 || c.TrustedProxies[0].String() != "192.0.2.0/24" {
+	if c.TrustCloudflare || len(c.TrustedProxies) != 1 || c.TrustedProxies[0].String() != "10.2.0.0/16" {
 		t.Fatalf("applied: %v %v", c.TrustCloudflare, c.TrustedProxies)
 	}
 	if len(c.Warnings) != 1 || c.Warnings[0].Variable != "OPENTODO_TRUSTED_PROXIES" ||
 		!strings.Contains(c.Warnings[0].Message, `"cloudflar"`) || !strings.Contains(c.Warnings[0].Message, `did you mean "cloudflare"?`) ||
-		!strings.Contains(c.Warnings[0].Message, "Still applied: 192.0.2.0/24") {
+		!strings.Contains(c.Warnings[0].Message, "Still applied: 10.2.0.0/16") {
 		t.Fatalf("warnings: %+v", c.Warnings)
 	}
 	var buf bytes.Buffer
 	c.LogWarnings(slog.New(slog.NewTextHandler(&buf, nil)))
 	line := buf.String()
 	if strings.Count(line, "\n") != 1 || !strings.Contains(line, "level=ERROR") || !strings.Contains(line, "invalid=cloudflar") ||
-		!strings.Contains(line, "applied=192.0.2.0/24") || !strings.Contains(line, "cloudflare") {
+		!strings.Contains(line, "applied=10.2.0.0/16") || !strings.Contains(line, "cloudflare") {
 		t.Fatalf("log: %s", line)
 	}
 
@@ -275,6 +275,41 @@ func TestTrustedProxiesLenient(t *testing.T) {
 	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflare")
 	if c, err = Load(); err != nil || len(c.Warnings) != 0 || !c.TrustCloudflare {
 		t.Fatalf("valid: %v %+v", err, c.Warnings)
+	}
+}
+
+// TestTrustedProxiesPrivateKeyword (trusted-client-identity): "private" names
+// the default set, and a list without any local proxy is warned about, since
+// it replaces the default.
+func TestTrustedProxiesPrivateKeyword(t *testing.T) {
+	tp := ParseTrustedProxies("Private, 192.0.2.1")
+	if !tp.Private || len(tp.Prefixes) != len(PrivateRanges)+1 || fmt.Sprint(tp.Applied) != "[private 192.0.2.1]" {
+		t.Fatalf("private: %+v", tp)
+	}
+	if _, warn := tp.NoLocalProxyWarning(); warn {
+		t.Fatal("warning with private listed")
+	}
+	if tp := ParseTrustedProxies("privat"); tp.Hint != `did you mean "private"?` {
+		t.Fatalf("hint: %+v", tp)
+	}
+	for raw, want := range map[string]bool{"cloudflare": false, "192.0.2.0/24": true, "192.0.2.0/24, private": false, "172.18.0.0/16": false, "127.0.0.1": false, "nope": false} {
+		if _, warn := ParseTrustedProxies(raw).NoLocalProxyWarning(); warn != want {
+			t.Errorf("%q: no-local-proxy warning %v, want %v", raw, warn, want)
+		}
+	}
+	// "cloudflare" keeps the default, so the documented setting needs nothing more.
+	if tp := ParseTrustedProxies("cloudflare"); !tp.Private || len(tp.Prefixes) != len(CloudflareRanges)+len(PrivateRanges) {
+		t.Fatalf("cloudflare: %+v", tp)
+	}
+	t.Setenv("OPENTODO_TRUSTED_PROXIES", "203.0.113.10")
+	c, err := Load()
+	if err != nil || len(c.Warnings) != 1 || !strings.Contains(c.Warnings[0].Message, `add "private"`) {
+		t.Fatalf("public proxy only: %v %+v", err, c.Warnings)
+	}
+	var buf bytes.Buffer
+	c.LogWarnings(slog.New(slog.NewTextHandler(&buf, nil)))
+	if !strings.Contains(buf.String(), "no local proxy is trusted") {
+		t.Fatalf("log: %s", buf.String())
 	}
 }
 

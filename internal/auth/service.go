@@ -108,6 +108,9 @@ type Service struct {
 	// setupToken, when non-empty, must accompany the first registration
 	// (OPENTODO_SETUP_TOKEN, OpenSpec change owner-bootstrap).
 	setupToken string
+	// setupCode is the one-time code a first registration from a public address
+	// must carry when no setup token is configured (setupcode.go).
+	setupCode setupCode
 	// maxMembers caps active accounts on a hosted tenant (limits.go); 0: none.
 	maxMembers int
 }
@@ -173,6 +176,13 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 // RegisterWithSetupToken is Register with the setup token a first registration
 // must carry when one is configured. After the first account it is ignored.
 func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, password, invitation, setupToken string) (*User, error) {
+	return s.RegisterFrom(ctx, email, name, password, invitation, setupToken, true)
+}
+
+// RegisterFrom is RegisterWithSetupToken for a client that is (local) or is not
+// on a loopback or private network. Without a setup token, a first
+// registration from a public address must carry the setup code instead.
+func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invitation, setupToken string, local bool) (*User, error) {
 	email = normalizeEmail(email)
 	if _, err := mail.ParseAddress(email); err != nil || email == "" {
 		return nil, ErrInvalidEmail
@@ -184,7 +194,7 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 	// Refuse what the policy refuses before paying for a hash (SEC-5). The
 	// write transaction checks again, so a change in between is still caught.
 	if err := s.readTx(ctx, func(tx *sql.Tx) error {
-		_, _, _, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, time.Now().UnixMilli())
+		_, _, _, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, time.Now().UnixMilli())
 		return err
 	}); err != nil {
 		return nil, err
@@ -199,7 +209,7 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 	}
 	defer tx.Rollback()
 	now := time.Now().UnixMilli()
-	n, role, invitationID, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, now)
+	n, role, invitationID, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, now)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +232,14 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 			return nil, err
 		}
 	}
-	return u, tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		// The owner exists: the setup code has done its job.
+		s.setupCode.discard()
+	}
+	return u, nil
 }
 
 // admitRegistration applies the registration policy inside tx and returns the
@@ -230,7 +247,7 @@ func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, passw
 // The first account needs the setup token when one is configured and becomes
 // the owner; after that an invitation admits one member even while sign-up is
 // closed, and otherwise the open sign-up policy and the member limit apply.
-func (s *Service) admitRegistration(ctx context.Context, tx *sql.Tx, email, invitation, setupToken string, now int64) (int, string, string, error) {
+func (s *Service) admitRegistration(ctx context.Context, tx *sql.Tx, email, invitation, setupToken string, local bool, now int64) (int, string, string, error) {
 	var n int
 	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
 		return 0, "", "", err
@@ -240,6 +257,11 @@ func (s *Service) admitRegistration(ctx context.Context, tx *sql.Tx, email, invi
 	case n == 0:
 		if s.setupToken != "" && !s.setupTokenMatches(strings.TrimSpace(setupToken)) {
 			return 0, "", "", ErrSetupTokenInvalid
+		}
+		// Without a setup token, a first registration from a public address must
+		// carry the setup code the server printed in its log (SEC-9).
+		if s.setupToken == "" && !local && !s.setupCode.matches(setupToken) {
+			return 0, "", "", ErrSetupCodeInvalid
 		}
 		return 0, "owner", "", nil
 	case invitation != "":

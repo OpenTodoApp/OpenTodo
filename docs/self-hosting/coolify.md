@@ -101,7 +101,7 @@ Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files
 
 ## Audit log
 
-**Settings → Account → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address is the last hop of Traefik's `X-Forwarded-For` header (the one Traefik appended), which Coolify sets for you; do not publish the container port directly, or clients could bypass the proxy and forge that header. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
+**Settings → Account → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address is the hop Traefik appended to `X-Forwarded-For`, which Coolify sets for you; the header is believed only because Traefik connects from Coolify's private Docker network, so a client that reaches the container port directly is recorded with its own address. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
 
 ## Updating
 
@@ -115,7 +115,7 @@ Click **Deploy**. The new version applies database migrations on startup, and yo
 
 ## Behind Cloudflare
 
-When the domain's DNS record is proxied by Cloudflare (orange cloud), every request reaches Coolify's proxy from a Cloudflare address. Set `OPENTODO_TRUSTED_PROXIES=cloudflare` in the environment tab and redeploy, so rate limits and the audit log see visitors' addresses (from `CF-Connecting-IP`) instead of one shared Cloudflare address. With a Cloudflare Tunnel instead, requests arrive from the `cloudflared` container on Coolify's Docker network; add that network's range, for example `OPENTODO_TRUSTED_PROXIES=10.0.0.0/8` (Coolify's default address pool), and check **Settings → Account → Audit log** with addresses enabled to confirm it shows your own address. See [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
+When the domain's DNS record is proxied by Cloudflare (orange cloud), every request reaches Coolify's proxy from a Cloudflare address. Set `OPENTODO_TRUSTED_PROXIES=cloudflare` in the environment tab and redeploy, so rate limits and the audit log see visitors' addresses (from `CF-Connecting-IP`) instead of one shared Cloudflare address. With a Cloudflare Tunnel instead, requests arrive from the `cloudflared` container on Coolify's Docker network, a private address that OpenTodo trusts by default, so nothing needs setting; check **Settings → Account → Audit log** with addresses enabled to confirm it shows your own address. See [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
 
 The server sends the service worker with `Cache-Control: no-store`, so phones pick up a new version on their next visit. Keep Cloudflare's **Caching → Configuration → Browser Cache TTL** at *Respect Existing Headers*, and do not add a Cache Rule that caches everything, or Cloudflare may serve an old app shell for hours.
 

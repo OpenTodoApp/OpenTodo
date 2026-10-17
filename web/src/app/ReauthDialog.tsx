@@ -61,6 +61,8 @@ export function reauthMessage(err: unknown): string {
       return t('That code is not valid. Type the newest code from your app.')
     case 'rate_limited':
       return t('Too many attempts. Wait a minute and try again.')
+    case 'account_locked':
+      return t('Too many failed attempts for this account. Wait 15 minutes and try again.')
     default:
       return err.message
   }

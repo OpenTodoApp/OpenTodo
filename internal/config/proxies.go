@@ -19,9 +19,20 @@ var CloudflareRanges = []string{
 	"2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
 }
 
+// PrivateRanges are loopback, private and link-local networks: the proxies
+// trusted when OPENTODO_TRUSTED_PROXIES is unset (OpenSpec change
+// trusted-client-identity), what the keyword "private" expands to (and
+// "cloudflare" includes), and the addresses from which a first registration
+// needs no setup code.
+var PrivateRanges = []string{
+	"127.0.0.0/8", "::1/128",
+	"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7",
+	"169.254.0.0/16", "fe80::/10",
+}
+
 // trustedProxiesAccepted names what an OPENTODO_TRUSTED_PROXIES entry may be,
 // for the startup log and the owner's warning.
-const trustedProxiesAccepted = `IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keyword "cloudflare", separated by commas or spaces`
+const trustedProxiesAccepted = `IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keywords "private" and "cloudflare", separated by commas or spaces`
 
 // TrustedProxies is a parsed OPENTODO_TRUSTED_PROXIES (OpenSpec
 // `trusted-proxies-lenient`). Invalid entries are not an error: they are left
@@ -31,13 +42,14 @@ const trustedProxiesAccepted = `IP addresses, CIDR prefixes (such as 192.0.2.0/2
 type TrustedProxies struct {
 	Prefixes   []netip.Prefix
 	Cloudflare bool     // the keyword was present
+	Private    bool     // PrivateRanges are included ("private" or "cloudflare")
 	Applied    []string // the valid entries as written, for the log
 	Invalid    []string // entries that are none of the accepted forms
 	Hint       string   // "did you mean …?" for a near miss, else empty
 }
 
 // ParseTrustedProxies parses OPENTODO_TRUSTED_PROXIES: IP addresses, CIDR
-// prefixes and the keyword "cloudflare" (any case), separated by commas and/or
+// prefixes and the keywords "private" and "cloudflare" (any case), separated by commas and/or
 // whitespace. It never fails; see TrustedProxies.
 func ParseTrustedProxies(raw string) TrustedProxies {
 	var t TrustedProxies
@@ -45,13 +57,20 @@ func ParseTrustedProxies(raw string) TrustedProxies {
 	for _, item := range items {
 		switch {
 		case strings.EqualFold(item, "cloudflare"):
+			// Cloudflare's edges reach the server through a local reverse proxy
+			// or tunnel almost always, so the keyword keeps the default
+			// (trusted-client-identity).
 			if !t.Cloudflare {
 				t.Cloudflare = true
 				for _, r := range CloudflareRanges {
 					t.Prefixes = append(t.Prefixes, netip.MustParsePrefix(r))
 				}
 			}
+			t.addPrivate()
 			t.Applied = append(t.Applied, "cloudflare")
+		case strings.EqualFold(item, "private"):
+			t.addPrivate()
+			t.Applied = append(t.Applied, "private")
 		case strings.Contains(item, "/"):
 			p, err := netip.ParsePrefix(item)
 			if err != nil {
@@ -75,8 +94,23 @@ func ParseTrustedProxies(raw string) TrustedProxies {
 			t.Hint = `did you mean "cloudflare"?`
 			break
 		}
+		if editDistance(strings.ToLower(bad), "private") <= 2 {
+			t.Hint = `did you mean "private"?`
+			break
+		}
 	}
 	return t
+}
+
+// addPrivate adds PrivateRanges once.
+func (t *TrustedProxies) addPrivate() {
+	if t.Private {
+		return
+	}
+	t.Private = true
+	for _, r := range PrivateRanges {
+		t.Prefixes = append(t.Prefixes, netip.MustParsePrefix(r))
+	}
 }
 
 // Warning returns the configuration warning for the invalid entries, or false
@@ -99,12 +133,12 @@ func (t TrustedProxies) Warning() (Warning, bool) {
 	}
 	msg += ". Accepted: " + trustedProxiesAccepted + "."
 	if len(t.Applied) == 0 {
-		msg += " No entry is valid, so only the nearest proxy is trusted, as when the variable is unset."
+		msg += " No entry is valid, so the default applies (loopback and private networks), as when the variable is unset."
 	} else {
 		msg += " Still applied: " + strings.Join(t.Applied, ", ") + "."
 	}
 	msg += " Fix the value in the server's environment and restart it."
-	applied := "none (only the nearest proxy is trusted, as when unset)"
+	applied := "none (loopback and private networks are trusted, as when unset)"
 	if len(t.Applied) > 0 {
 		applied = strings.Join(t.Applied, ",")
 	}
@@ -114,6 +148,27 @@ func (t TrustedProxies) Warning() (Warning, bool) {
 	}
 	attrs = append(attrs, "accepted", trustedProxiesAccepted, "applied", applied)
 	return Warning{Variable: "OPENTODO_TRUSTED_PROXIES", Message: msg, Ignored: t.Invalid, logAttrs: attrs}, true
+}
+
+// NoLocalProxyWarning warns when the valid entries name no loopback or private
+// address. The list replaces the default, so a reverse proxy on this machine or
+// a container network that is not listed is no longer believed: every request
+// would then be attributed to the proxy. "private" and "cloudflare" both keep
+// the default.
+func (t TrustedProxies) NoLocalProxyWarning() (Warning, bool) {
+	if len(t.Applied) == 0 {
+		return Warning{}, false
+	}
+	for _, p := range t.Prefixes {
+		for _, r := range PrivateRanges {
+			if p.Overlaps(netip.MustParsePrefix(r)) {
+				return Warning{}, false
+			}
+		}
+	}
+	msg := `The list replaces the default (loopback and private networks), and it names no such address, so X-Forwarded-For from a reverse proxy on this machine or a container network is ignored and every visitor shares the proxy's address. If such a proxy connects to OpenTodo, add "private" (for example "private, 203.0.113.10") and restart.`
+	return Warning{Variable: "OPENTODO_TRUSTED_PROXIES", Message: msg, logMsg: "OPENTODO_TRUSTED_PROXIES: no local proxy is trusted",
+		logAttrs: []any{"applied", strings.Join(t.Applied, ","), "hint", `add "private" when a reverse proxy on this machine or network connects to OpenTodo`}}, true
 }
 
 // editDistance is the Levenshtein distance between a and b (bytes; the

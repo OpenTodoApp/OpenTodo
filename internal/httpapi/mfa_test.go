@@ -500,10 +500,13 @@ func TestReauthRateLimited(t *testing.T) {
 	if resp.StatusCode != http.StatusTooManyRequests || errCode(out) != "rate_limited" {
 		t.Fatalf("11th attempt = %d %v", resp.StatusCode, out)
 	}
-	// Another address is unaffected.
+	// Another address is past the per-address window, but ten failures also lock
+	// the account (trusted-client-identity, TestReauthAccountLockout).
 	m.ip = "203.0.113.61"
 	resp, out = m.do("POST", "/api/v1/auth/reauth", map[string]string{"password": "correct horse battery"})
-	m.mustStatus(resp, 200, out)
+	if resp.StatusCode != http.StatusTooManyRequests || errCode(out) != "account_locked" {
+		t.Fatalf("other address = %d %v", resp.StatusCode, out)
+	}
 }
 
 func TestPolicyRestrictsUnenrolledSessions(t *testing.T) {

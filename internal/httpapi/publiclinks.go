@@ -186,8 +186,8 @@ func (s *Server) resolvePublic(w http.ResponseWriter, r *http.Request, perLink *
 	}
 	l, err := s.auth.LookupPublicLink(r.Context(), r.PathValue("token"))
 	if errors.Is(err, auth.ErrPublicLinkInvalid) {
-		// Guessing links costs as much as guessing passwords (the sign-in window).
-		if !s.limiter.allow(ip) {
+		// Guessing links costs as much as guessing passwords (10 misses a minute).
+		if !s.publicLinkLimiter.allow(ip) {
 			writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 			return nil, opsync.PublicProject{}, errPublicAnswered
 		}
