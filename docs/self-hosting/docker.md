@@ -222,6 +222,32 @@ The command needs only the data volume: shell access to the host is the proof of
 
 **Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose up -d` already stops the old container first and needs nothing special. With an orchestrator that starts the new container first, stop the old one for this one upgrade (`docker compose down && docker compose up -d`, or **Stop** then **Deploy** in Coolify); from 0.2.0 on, updates roll without stopping. If you pinned a tag such as `ghcr.io/pixari/opentodo:0.1`, change it to `0.2` (or `0.2.0`).
 
+## Verifying the image and downloads
+
+Releases built after 0.6.1 are signed and carry their build record. The image is signed with [cosign](https://docs.sigstore.dev/) without a long-lived key: the signature names the GitHub workflow and tag that built it. Check it before you deploy a new version:
+
+```bash
+cosign verify ghcr.io/pixari/opentodo:<version> \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/pixari/opentodo/\.github/workflows/ci\.yml@refs/(tags/v|heads/main)'
+```
+
+The image also carries a software bill of materials (SBOM) and SLSA build provenance. To read them:
+
+```bash
+docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .Provenance }}'
+```
+
+Every file on a GitHub release (server and `ot` binaries, the extension and agent skill zips, the site bundle) has a build provenance attestation. Verify a download with the GitHub CLI, and compare it with `SHA256SUMS`:
+
+```bash
+gh attestation verify opentodo-linux-amd64 --repo pixari/opentodo
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+Before an image is published, CI starts it the way Coolify does (health check, owner setup, closed sign-up, data surviving a recreate) and scans it for known vulnerabilities; a critical one with a fixed version stops the release.
+
 ## Health
 
 `GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.

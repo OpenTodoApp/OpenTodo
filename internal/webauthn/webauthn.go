@@ -221,8 +221,9 @@ func ParseCOSEKey(raw []byte) (crypto.PublicKey, int64, error) {
 		if len(x) != 32 || len(y) != 32 {
 			return nil, 0, fmt.Errorf("%w: P-256 coordinates must be 32 bytes", ErrMalformed)
 		}
-		pub := &ecdsa.PublicKey{Curve: elliptic.P256(), X: new(big.Int).SetBytes(x), Y: new(big.Int).SetBytes(y)}
-		if !pub.Curve.IsOnCurve(pub.X, pub.Y) {
+		// ParseUncompressedPublicKey refuses a point that is not on the curve.
+		pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{4}, x...), y...))
+		if err != nil {
 			return nil, 0, fmt.Errorf("%w: point not on curve", ErrMalformed)
 		}
 		return pub, alg, nil

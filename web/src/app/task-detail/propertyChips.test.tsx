@@ -68,14 +68,14 @@ describe('property chips', () => {
     await waitFor(() => (row('estimate')?.textContent ?? '').includes('45'))
     // Enter commits and leaves the field; Escape anywhere in the editor closes it.
     await key(row('estimate').querySelector('[data-property-editor]')!, 'Escape')
-    await flush(80)
-    expect((await db.tasks.get(id))!.estimate_minutes).toBe(45)
+    // The stored value first, then the DOM read in the same turn (the chip re-renders as the save arrives).
+    await waitFor(async () => (await db.tasks.get(id))!.estimate_minutes === 45 && !!row('estimate')?.textContent?.includes('45m') && !row('estimate').querySelector('[data-property-editor]'), 'the editor closed on the saved value')
     expect(row('estimate')).toBeTruthy()
     expect(row('estimate').querySelector('[data-property-editor]')).toBeNull()
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(45)
     await click(row('estimate').querySelector('button[aria-label="Clear estimate"]')!)
-    await flush(80)
-    expect((await db.tasks.get(id))!.estimate_minutes).toBeNull()
-    await waitFor(() => !row('estimate'))
+    await waitFor(async () => (await db.tasks.get(id))!.estimate_minutes === null, 'the estimate cleared')
+    await waitFor(() => !row('estimate'), 'the chip removed')
     await unmount()
   })
 

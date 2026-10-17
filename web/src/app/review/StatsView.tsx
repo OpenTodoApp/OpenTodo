@@ -79,9 +79,9 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
   onPeriod: (p: PeriodKind) => void
   chooserRef?: React.Ref<HTMLDivElement>
 }) {
-  const range = periodFor(period, today, weekStart)
+  const range = useMemo(() => periodFor(period, today, weekStart), [period, today, weekStart])
   const stats = useMemo(() => compute({ tasks, projects, shared: sharedIds(memberships), me, today }, range, weekStart),
-    [tasks, projects, memberships, me, today, range.start, range.end, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps
+    [tasks, projects, memberships, me, today, range, weekStart])
   const names = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects])
   const empty = stats.completed === 0 && stats.created === 0
   const wd = (iso: string) => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`))

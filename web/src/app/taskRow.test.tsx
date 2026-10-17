@@ -3,13 +3,17 @@
 // list reserves the same leading slot, so checkboxes align across flat and tree
 // views, and the metadata line exists only when there is metadata.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { Label, Project, Task } from '../lib/types'
-import { flush, render } from '../ui/test-utils'
+import { flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
+
+// The project header asks the server for its public links.
+beforeEach(() => mockFetch(noPublicLinks))
+afterEach(() => { vi.unstubAllGlobals() })
 
 beforeEach(async () => {
   await db.delete()

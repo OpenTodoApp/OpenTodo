@@ -131,6 +131,7 @@ func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
 
 	// Not configured: dormant.
 	resp, out := o.do("GET", "/api/v1/auth/status", nil)
+	o.mustStatus(resp, 200, out)
 	if st := out["oidc"].(map[string]any); st["enabled"] != false {
 		t.Fatalf("status before configuration = %v", st)
 	}

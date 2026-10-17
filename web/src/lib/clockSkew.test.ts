@@ -16,8 +16,8 @@ vi.mock('./api', () => ({
 }))
 
 import { db, getMeta, useDatabase } from './db'
-import { MAX_FUTURE_SKEW_MS, hlcClockRefused, hlcLast, hlcNow, hlcObserveServerTime, hlcReset, hlcSeed } from './hlc'
-import { mutate, resetDeviceId } from './ops'
+import { CLOCK_OFFSET_META, MAX_FUTURE_SKEW_MS, hlcClockRefused, hlcLast, hlcNow, hlcObserveServerTime, hlcReset, hlcSeed } from './hlc'
+import { getDeviceId, mutate, resetDeviceId } from './ops'
 import { syncNow, syncSnapshot } from './sync'
 import type { Op } from './types'
 
@@ -69,6 +69,24 @@ describe('hlc', () => {
     const ts = hlcNow()
     expect(ts).toBeGreaterThan(SERVER)
     expect(ts).toBeLessThanOrEqual(SERVER + MAX_FUTURE_SKEW_MS)
+  })
+})
+
+describe('the stored clock offset', () => {
+  it('is saved after a sync for the service worker and seeds the clock at the next start', async () => {
+    vi.setSystemTime(SERVER - HOUR)
+    syncCalls.mockImplementation(async () => ({ applied: 0, ops: [], cursor: 1, hasMore: false, serverTime: SERVER, rejected: [] }))
+    await syncNow()
+    expect(await getMeta<number>(CLOCK_OFFSET_META, 0)).toBe(HOUR)
+    // A restart: the clock is corrected before the first sync answers.
+    hlcReset()
+    resetDeviceId()
+    await getDeviceId()
+    expect(hlcNow()).toBe(SERVER)
+    // The clock was fixed: the next sync stores no offset.
+    vi.setSystemTime(SERVER)
+    await syncNow()
+    expect(await getMeta<number>(CLOCK_OFFSET_META, -1)).toBe(0)
   })
 })
 

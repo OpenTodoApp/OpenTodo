@@ -27,6 +27,7 @@ export function DateTimePrefsProvider({ children }: { children: ReactNode }) {
   const lang = useLanguageVersion()
   const key = `${prefs.date_format}|${prefs.time_format}|${prefs.week_start}|${lang}`
   // The snapshot is updated during render, before any child formats a date.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- prefs is a new object every render; key holds every field it is made of
   const value = useMemo<DateTimeContextValue>(() => ({ prefs, resolved: setDateTime(prefs) }), [key])
   return <DateTimeContext.Provider value={value}>{children}</DateTimeContext.Provider>
 }

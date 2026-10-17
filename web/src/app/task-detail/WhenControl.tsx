@@ -49,7 +49,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', onDone, onO
     const seg = root.current?.querySelector<HTMLElement>(`[data-when-segment="${focus}"]`)
     // A text field first (the date), else the segment's first control (a switch, Add reminder).
     ;(seg?.querySelector<HTMLElement>('input:not([disabled])') ?? seg?.querySelector<HTMLElement>(FOCUSABLE))?.focus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focus on mount only; focus is the segment the opening chip asked for
   }, [])
 
   return (

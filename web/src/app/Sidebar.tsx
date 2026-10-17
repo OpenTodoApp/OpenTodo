@@ -127,6 +127,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     }
     for (const item of openTasks) if (inToday(item, today)) due++
     return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }, [openTasks, tree, collapsed_, user.id, zone])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.

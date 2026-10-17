@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { AppearanceProvider } from './AppearanceProvider'
 import { AppearanceSection, SidebarSection } from './AppearanceSection'
 
@@ -26,22 +26,19 @@ describe('Appearance panel', () => {
     let renders = 0
     function Probe() { renders++; return null }
     const r = await render(<AppearanceProvider><AppearanceSection /><Probe /></AppearanceProvider>)
-    await flush(30)
+    await waitFor(() => tile('emerald')?.getAttribute('aria-checked') === 'true', 'the default theme')
     const mounts = renders
-    expect(tile('emerald').getAttribute('aria-checked')).toBe('true')
     tile('emerald').focus()
     await key(tile('emerald'), 'ArrowRight')
-    await flush(40)
-    expect(tile('blue').getAttribute('aria-checked')).toBe('true')
+    await waitFor(() => tile('blue').getAttribute('aria-checked') === 'true', 'blue selected')
     expect(document.activeElement).toBe(tile('blue'))
     expect(root().getAttribute('data-accent')).toBe('blue')
     await key(tile('blue'), 'End')
-    await flush(40)
-    expect(root().getAttribute('data-accent')).toBe('graphite')
+    await waitFor(() => root().getAttribute('data-accent') === 'graphite', 'graphite applied')
     // Dark mode on a light system.
     await click([...document.querySelectorAll('[data-appearance-mode] [role="radio"]')].find((b) => b.textContent === 'Dark')!)
-    await flush(40)
-    expect(root().getAttribute('data-theme')).toBe('dark')
+    await waitFor(() => root().getAttribute('data-theme') === 'dark', 'dark mode applied')
+    await waitFor(async () => (await db.outbox.count()) === 3, 'three ops queued')
     expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['theme_accent=blue', 'theme_accent=graphite', 'theme_mode=dark'])
     // The app is not remounted: the probe re-renders but is the same instance.
     expect(renders).toBeGreaterThanOrEqual(mounts)

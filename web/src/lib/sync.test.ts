@@ -735,6 +735,26 @@ describe('malformed answers (client-data-safety)', () => {
   })
 })
 
+describe('server errors (test-integrity)', () => {
+  it('a 5xx answer keeps the queued edits and the cursor; the next exchange uploads them', async () => {
+    await mutate('task', 't1', { title: 'Offline edit' })
+    await setMeta('cursor', 3)
+    syncCalls.mockImplementationOnce((async () => {
+      throw new ApiError(503, 'unavailable', 'the server is restarting')
+    }) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('error')
+    expect(await db.outbox.count()).toBe(1)
+    expect(await getMeta('cursor', -1)).toBe(3)
+    await syncNow()
+    const sent = syncCalls.mock.calls.at(-1) as unknown as [string, number, { field: string }[]]
+    expect(sent[1]).toBe(3)
+    expect(sent[2].map((o) => o.field)).toContain('title')
+    expect(await db.outbox.count()).toBe(0)
+    expect(syncSnapshot().state).toBe('idle')
+  })
+})
+
 describe('sign-out during an exchange (client-sync-robustness)', () => {
   it('an exchange still waiting for the server writes nothing after sign-out', async () => {
     await mutate('task', 't1', { title: 'Mine' })
