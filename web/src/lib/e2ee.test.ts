@@ -464,6 +464,58 @@ describe('migration job (task 2.4)', () => {
   })
 })
 
+describe('link attachments (client-data-safety)', () => {
+  const URL = 'https://example.org/private-plan'
+  /** Ops the server holds for one attachment field, in arrival order. */
+  const opsFor = (id: string, field: string) => server.log.filter((o) => o.entity === 'attachment' && o.entityId === id && o.field === field)
+  /** The live link attachments of task t1 on the server. */
+  const liveLinks = () => [...new Set(server.log.filter((o) => o.entity === 'attachment').map((o) => o.entityId))]
+    .filter((id) => current('attachment', id, 'deleted_at') == null && current('attachment', id, 'task_id') === 't1')
+
+  async function seedLink() {
+    await on('A')
+    await setMeta('userId', 'u1')
+    await seedTasks()
+    await mutate('attachment', 'a1', {
+      task_id: 't1', author_id: 'u1', comment_id: null, name: 'Plan', mime: 'text/uri-list', size: 0, sha256: '', url: URL,
+      encrypted: false, created_at: 1, uploaded_at: null, deleted_at: null,
+    })
+    await syncNow()
+    expect(current('attachment', 'a1', 'url')).toBe(URL)
+  }
+
+  it('enabling encrypts an existing link as a new attachment; disabling decrypts it again', async () => {
+    await seedLink()
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    // The server fixes url at creation: the old link is never re-written, it is replaced.
+    expect(opsFor('a1', 'url')).toHaveLength(1)
+    expect(current('attachment', 'a1', 'deleted_at')).not.toBeNull()
+    const [enc] = liveLinks()
+    expect(liveLinks()).toHaveLength(1)
+    expect(isEnvelope(current('attachment', enc, 'url'))).toBe(true)
+    expect(isEnvelope(current('attachment', enc, 'name'))).toBe(true)
+    const local = await db.attachments.get(enc)
+    expect(local).toMatchObject({ url: URL, name: 'Plan', task_id: 't1', deleted_at: null })
+    // Nothing is left to migrate: a second run queues nothing.
+    await startMigration('encrypt')
+    expect(await db.outbox.count()).toBe(0)
+
+    await disableEncryption()
+    await startMigration('decrypt')
+    await syncNow()
+    expect(opsFor(enc, 'url')).toHaveLength(1)
+    const [plain] = liveLinks()
+    expect(liveLinks()).toHaveLength(1)
+    expect(plain).not.toBe(enc)
+    expect(current('attachment', plain, 'url')).toBe(URL)
+    expect(current('attachment', plain, 'name')).toBe('Plan')
+    await startMigration('decrypt')
+    expect(await db.outbox.count()).toBe(0)
+  })
+})
+
 describe('server reads shown in the UI', () => {
   it('history and activity values are decrypted for display; foreign envelopes show the placeholder', async () => {
     await enableOnA()
