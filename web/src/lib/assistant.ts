@@ -449,3 +449,4 @@ export function usageLine(u: { input: number; output: number; month_total?: numb
 }
 
 export type { Task }
+export type { AssistantMessage, AssistantThread } from './db'

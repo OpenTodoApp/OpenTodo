@@ -27,6 +27,25 @@ export default [
     },
   },
   {
+    // Function size (OpenSpec web-component-structure): a component or hook longer
+    // than 250 lines is split into hooks, pure functions in src/lib and smaller
+    // bodies. Tests, stories and test kits are exempt (a describe block is long).
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.test.{ts,tsx}', 'src/**/*.testkit.{ts,tsx}', 'src/**/*.stories.{ts,tsx}'],
+    rules: { 'max-lines-per-function': ['error', { max: 250, IIFEs: true }] },
+  },
+  // Allow-list: functions that were already longer than 250 lines when the limit
+  // came in. Each entry is a ceiling a little above its size then; lower it as the
+  // function is split and drop the entry once it fits. Never raise one.
+  ...[
+    ['src/app/Sidebar.tsx', 440], // Sidebar (426): projects tree, counts, drag and its menus in one component
+    ['src/app/AuthScreen.tsx', 320], // AuthScreen (309): sign-in, setup, second factor and SSO steps
+    ['src/app/TimelineView.tsx', 270], // TimelineView (263): bars, drag and keyboard of the project timeline
+    ['src/app/App.tsx', 270], // App (256): boot, auth state and routing
+    ['src/app/FilterView.tsx', 260], // FilterView (254): query editor, saved views and results
+    ['src/lib/db.ts', 290], // the Dexie constructor (277): one schema version per release, kept together on purpose
+  ].map(([file, max]) => ({ files: [file], rules: { 'max-lines-per-function': ['error', { max, IIFEs: true }] } })),
+  {
     // Data-layer tests and test kits: useDatabase(name) opens a named Dexie
     // database (lib/db.ts) and `use` is a local test helper; neither is a React hook.
     files: ['src/**/*.test.ts', 'src/**/*.testkit.tsx'],
