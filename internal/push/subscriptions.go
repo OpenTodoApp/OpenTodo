@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
 )
@@ -32,6 +33,32 @@ type Subscription struct {
 // RenewAfterFailures is the number of consecutive failed sends after which the
 // device is asked to re-enable notifications (design D6).
 const RenewAfterFailures = 5
+
+// A subscription is disabled, and no longer sent to, once DisableAfterFailures
+// sends in a row failed and it has delivered nothing for DisableAfter (since its
+// last success, or since it was registered). The time condition keeps a push
+// service outage of a few minutes from disabling devices. Registering the
+// device again (the app's "Re-enable") gives it a fresh start (INT-4).
+const (
+	DisableAfterFailures = 20
+	DisableAfter         = 24 * time.Hour
+)
+
+// MaxSubscriptionsPerUser caps an account's subscriptions; registering one more
+// replaces the one registered least recently (INT-4).
+const MaxSubscriptionsPerUser = 20
+
+// Disabled reports whether the scheduler skips this subscription at now.
+func (s *Subscription) Disabled(now time.Time) bool {
+	if s.Failures < DisableAfterFailures {
+		return false
+	}
+	since := s.UpdatedAt
+	if s.LastOKAt != nil {
+		since = max(since, *s.LastOKAt)
+	}
+	return now.Sub(time.UnixMilli(since)) >= DisableAfter
+}
 
 // PublicSubscription is what the API returns about a subscription.
 type PublicSubscription struct {
@@ -145,19 +172,18 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 	}
 	if existing == nil {
 		id := ids.New()
-		_, err = s.db.ExecContext(ctx, `INSERT INTO push_subscriptions(id,user_id,device_id,session_hash,endpoint,p256dh,auth,include_content,created_at,updated_at)
-			VALUES(?,?,?,?,?,?,?,?,?,?)`, id, userID, in.DeviceID, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, now, now)
-		if err != nil {
-			return nil, false, fmt.Errorf("store push subscription: %w", err)
+		if err := s.insertCapped(ctx, userID, id, session, include, now, in); err != nil {
+			return nil, false, err
 		}
 		sub, err := s.subscription(ctx, userID, id)
 		return sub, true, err
 	}
-	// Same endpoint and keys: keep the delivery history. A new endpoint is a new
-	// subscription as far as the push service is concerned, so it starts clean.
+	// Same endpoint and keys: keep the delivery history, unless the scheduler
+	// had disabled it. A new endpoint is a new subscription as far as the push
+	// service is concerned, so it starts clean.
 	same := existing.Endpoint == in.Endpoint && existing.P256DH == in.Keys.P256DH && existing.Auth == in.Keys.Auth
 	q := `UPDATE push_subscriptions SET session_hash=?, endpoint=?, p256dh=?, auth=?, include_content=?, updated_at=?`
-	if !same {
+	if !same || existing.Disabled(s.now()) {
 		q += `, last_ok_at=NULL, last_error='', failures=0`
 	}
 	if _, err := s.db.ExecContext(ctx, q+` WHERE id=?`, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, now, existing.ID); err != nil {
@@ -165,6 +191,29 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 	}
 	sub, err := s.subscription(ctx, userID, existing.ID)
 	return sub, false, err
+}
+
+// insertCapped stores a new subscription and, in the same transaction, removes
+// the account's least recently registered ones beyond MaxSubscriptionsPerUser.
+func (s *Service) insertCapped(ctx context.Context, userID, id string, session any, include int, now int64, in SubscriptionInput) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("store push subscription: %w", err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `INSERT INTO push_subscriptions(id,user_id,device_id,session_hash,endpoint,p256dh,auth,include_content,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?)`, id, userID, in.DeviceID, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, now, now); err != nil {
+		return fmt.Errorf("store push subscription: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM push_subscriptions WHERE user_id = ? AND id NOT IN
+		(SELECT id FROM push_subscriptions WHERE user_id = ? ORDER BY updated_at DESC, created_at DESC LIMIT ?)`,
+		userID, userID, MaxSubscriptionsPerUser); err != nil {
+		return fmt.Errorf("cap push subscriptions: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("store push subscription: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) subscription(ctx context.Context, userID, id string) (*Subscription, error) {

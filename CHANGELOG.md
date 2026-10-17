@@ -41,6 +41,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Security
 
+- **Password checks can no longer exhaust a small server.** Registration, project invite links and password resets check the sign-up policy, the invitation or link and the setup token before the password is hashed; at most twice the CPU count of password checks run at once, and a request that waits more than a second gets 503 `busy` with `Retry-After`. Sign-in refuses passwords over 1,024 bytes without checking them. ([API](docs/api.md#behaviour-notes))
+- **Sign-in timing no longer tells accounts without a password apart** (single sign-on and demo accounts): they cost the same check as an unknown address.
+- **Live-update streams are capped:** 10 per account (a new one closes the oldest), 20 per client address and 2,000 per server; beyond the last two the stream is refused with 503 `busy` and the app keeps syncing by polling. ([Sync](docs/sync.md#live-updates))
+- **One account's push endpoints cannot hold back everyone's reminders.** Reminders are sent for 8 accounts at a time with a 20 s budget per account and pass, an account keeps at most 20 push subscriptions (a new one replaces the least recently registered), and a subscription that failed 20 times in a row and delivered nothing for a day is no longer sent to until the device re-enables notifications. ([API](docs/api.md#reminders-and-push))
+
+### Changed
+
+- **Request bodies are checked strictly.** A field a route does not define is refused with 400 `bad_request` naming it (the sync exchange, push subscriptions and passkey credentials still accept extra fields), data after the JSON value is refused, a body over the size limit gets 413 `too_large`, and error messages no longer show the server's internal decoder text. The app and the `ot` CLI send only defined fields. ([API](docs/api.md#behaviour-notes))
+- The last-use time of API tokens and app passwords is updated at most once a minute, which saves a database write on every request.
+
+### Security
+
 - **Calendar data, MCP batches and calendar subscriptions are bounded.** Reading iCalendar data (CalDAV writes and subscribed calendars) takes time in proportion to its size, and one content line may be at most 64 KB. The MCP endpoint refuses JSON-RPC batches under protocol revisions that no longer have them (2025-06-18 and later), accepts at most 20 messages per batch otherwise, and stops running a batch once its answer reaches 4 MB. Expanding a subscribed calendar's repeating events starts at the shown period, shares one work budget and a 5-second deadline per calendar, and keeps what it found with a warning when it runs out. ([CalDAV](docs/caldav.md), [MCP](docs/mcp.md#limits-and-security), [Other calendars](docs/other-calendars.md#limits))
 
 ### Fixed

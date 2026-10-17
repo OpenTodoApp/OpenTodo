@@ -4,8 +4,9 @@ import "sync"
 
 // MaxStreamsPerUser caps concurrent live-update subscriptions per account. When a
 // user exceeds it the oldest subscription is closed, so a device reconnecting after
-// a half-closed connection is never locked out.
-const MaxStreamsPerUser = 16
+// a half-closed connection is never locked out. Ten leave room for several
+// tabs and devices while bounding what one account (a demo sandbox, say) holds.
+const MaxStreamsPerUser = 10
 
 // Notifier fans out "new operations recorded" wake-ups to a user's open live-update
 // streams. It is in-memory and process-local: one container is the deployment
