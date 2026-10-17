@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	gosync "sync"
 	"time"
 
@@ -17,7 +18,10 @@ import (
 
 // Service persists ops and materializes current field values.
 type Service struct {
-	db       *sql.DB
+	db *sql.DB
+	// rdb is the reader pool (store.OpenReader) for pure reads; nil uses db
+	// (OpenSpec change database-concurrency).
+	rdb      *sql.DB
 	now      func() time.Time
 	observer Observer
 	notifier *Notifier
@@ -146,6 +150,20 @@ func NewService(db *sql.DB) *Service {
 	s := &Service{db: db, now: time.Now, notifier: NewNotifier()}
 	s.SetCommentRateLimit(CommentRateLimit, CommentRateWindow)
 	return s
+}
+
+// SetReader installs the reader pool (store.OpenReader) that List, Get and
+// Pull read from, so they do not queue behind writes. Call it during wiring.
+func (s *Service) SetReader(db *sql.DB) { s.rdb = db }
+
+// reader is the handle for pure reads: the reader pool when installed, else
+// the writer. Never use it for a read whose result decides a write in the same
+// transaction.
+func (s *Service) reader() *sql.DB {
+	if s.rdb != nil {
+		return s.rdb
+	}
+	return s.db
 }
 
 // DB returns the database the op log lives in, for packages that keep their own
@@ -520,6 +538,15 @@ func maxSeq(ctx context.Context, q querier, scopes []string) (int64, error) {
 	return seq, err
 }
 
+// perScope repeats a single-scope query n times joined by UNION ALL, one arm
+// per visible scope, each searching that scope's index range (CORE-7).
+func perScope(n int, arm string) string {
+	if n <= 0 {
+		return arm
+	}
+	return strings.TrimSuffix(strings.Repeat(arm+" UNION ALL ", n), " UNION ALL ")
+}
+
 // audience resolves the users who can see the touched scopes, author first.
 func audience(ctx context.Context, q querier, author string, touched map[string]bool) ([]string, error) {
 	if len(touched) == 0 {
@@ -670,7 +697,9 @@ func (s *Service) PullWith(ctx context.Context, userID string, cursor int64, dev
 			return res, nil
 		}
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
+	// A read-only snapshot on the reader pool: ops and purge markers agree, and
+	// the pull does not wait for writes in progress (database-concurrency).
+	tx, err := s.reader().BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return res, err
 	}
@@ -680,10 +709,7 @@ func (s *Service) PullWith(ctx context.Context, userID string, cursor int64, dev
 		return res, err
 	}
 	scopes := acc.scopes()
-	args := append(anys(scopes), cursor, limit+1)
-	rows, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id
-		FROM op_scopes s JOIN ops o ON o.seq = s.seq
-		WHERE s.scope_id IN (`+placeholders(len(scopes))+`) AND s.seq > ? ORDER BY s.seq LIMIT ?`, args...)
+	rows, err := tx.QueryContext(ctx, pullQuery(len(scopes)), pullArgs(scopes, cursor, limit+1)...)
 	if err != nil {
 		return res, err
 	}
@@ -730,6 +756,24 @@ func (s *Service) PullWith(ctx context.Context, userID string, cursor int64, dev
 	return res, nil
 }
 
+// pullQuery reads the next ops of n scopes in seq order. Each scope's ops after
+// the cursor come from its own index range, merged in seq order and cut at the
+// limit before the op rows are read; with scope_id IN (...) SQLite instead
+// read and sorted every op of the scopes after the cursor (CORE-7).
+func pullQuery(n int) string {
+	return `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id
+		FROM (SELECT seq FROM (` + perScope(n, `SELECT seq FROM (SELECT seq FROM op_scopes WHERE scope_id = ? AND seq > ? ORDER BY seq LIMIT ?)`) + `) ORDER BY seq LIMIT ?) s
+		JOIN ops o ON o.seq = s.seq ORDER BY s.seq`
+}
+
+func pullArgs(scopes []string, cursor int64, limit int) []any {
+	args := make([]any, 0, 3*len(scopes)+1)
+	for _, sc := range scopes {
+		args = append(args, sc, cursor, limit)
+	}
+	return append(args, limit)
+}
+
 func scanOp(rows *sql.Rows) (Op, error) {
 	var op Op
 	var value string
@@ -751,6 +795,20 @@ func scanOp(rows *sql.Rows) (Op, error) {
 // done_seq moves there only when the device echoes it (opt.BackfillAck), so a
 // page that never arrived is served again from done_seq (sync-convergence).
 func (s *Service) backfillPage(ctx context.Context, userID, device string, cursor int64, limit int, opt PullOptions) ([]Op, int64, error) {
+	if !opt.ConfirmBackfill || opt.BackfillAck <= 0 {
+		// Nearly every pull has no history to replay: find out on the reader
+		// pool so it does not take the write lock (database-concurrency).
+		var one int
+		err := s.reader().QueryRowContext(ctx, `SELECT 1 FROM project_members m
+			LEFT JOIN member_backfills b ON b.project_id = m.project_id AND b.user_id = m.user_id AND b.device = ?
+			WHERE m.user_id = ? AND m.backfill = 1 AND (b.project_id IS NULL OR b.done_seq < b.upto_seq) LIMIT 1`, device, userID).Scan(&one)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, 0, nil
+		}
+		if err != nil {
+			return nil, 0, fmt.Errorf("check backfill: %w", err)
+		}
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, err
@@ -867,13 +925,12 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 	if _, ok := Schema[entity]; !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
 	}
-	acc, err := loadAccess(ctx, s.db, userID)
+	acc, err := loadAccess(ctx, s.reader(), userID)
 	if err != nil {
 		return nil, err
 	}
 	scopes := acc.scopes()
-	rows, err := s.db.QueryContext(ctx, `SELECT scope_id,entity_id,field,value FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? ORDER BY entity_id`,
-		append(anys(scopes), entity)...)
+	rows, err := s.reader().QueryContext(ctx, listQuery(len(scopes)), append(anys(scopes), entity)...)
 	if err != nil {
 		return nil, err
 	}
@@ -907,6 +964,7 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	sort.Strings(order)
 	out := make([]Entity, 0, len(order))
 	for _, id := range order {
 		e := byID[id]
@@ -925,17 +983,25 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 	return out, nil
 }
 
+// listQuery reads one entity kind's fields in n scopes. It has no ORDER BY:
+// sorting by entity_id made SQLite walk the entity index over every user's
+// rows once a user sees more than one scope (CORE-7); the primary key
+// (scope_id, entity, ...) reads only the visible scopes, and List sorts the ids.
+func listQuery(n int) string {
+	return `SELECT scope_id,entity_id,field,value FROM scope_fields WHERE scope_id IN (` + placeholders(n) + `) AND entity = ?`
+}
+
 // Get materializes one entity the user can see or returns nil when it does not exist.
 func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, error) {
 	if _, ok := Schema[entity]; !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
 	}
-	acc, err := loadAccess(ctx, s.db, userID)
+	acc, err := loadAccess(ctx, s.reader(), userID)
 	if err != nil {
 		return nil, err
 	}
 	scopes := acc.scopes()
-	rows, err := s.db.QueryContext(ctx, `SELECT scope_id,field,value FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? AND entity_id = ?`,
+	rows, err := s.reader().QueryContext(ctx, `SELECT scope_id,field,value FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? AND entity_id = ?`,
 		append(anys(scopes), entity, id)...)
 	if err != nil {
 		return nil, err

@@ -41,6 +41,8 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Notifications and webhooks are no longer lost when the app disconnects during a sync.** Once a change is saved, its notifications and webhook deliveries are recorded even if the request was cut off.
 - **Impossible due dates are refused.** A due date that does not exist (such as 31 February) or a time outside 00:00–23:59 is no longer accepted, so it cannot break recurring tasks and reminders.
 - **A database migration that would have been skipped is reported.** The server records which migration files it applied and logs an error at startup for a file it never ran; the repository checks refuse a new migration not numbered above those on the main branch.
+- **Lists and syncs no longer wait for slow writes.** The server reads through a small pool of read-only database connections next to its single writer, so task lists, syncs and exports answer while a large import, purge or backup step is being saved. A second server process on the same data directory (during a rolling update) now waits its turn to write instead of failing with "database is locked".
+- **Joining a shared project no longer slows down your lists and first sync.** On a server with many users, listing tasks and the first sync of a member of a shared project read every user's data; they now read only the projects you can see (on a 300,000-change server, a task list went from about 460 ms to 54 ms, or under 4 ms for a member with little data of their own). The server also refreshes its database statistics at startup and daily.
 
 ### Added
 

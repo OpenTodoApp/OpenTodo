@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/store"
 	"github.com/pixari/opentodo/internal/tenant"
 )
 
@@ -178,6 +179,9 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			}
 			if _, err := t.Inbox.Sweep(ctx); err != nil {
 				log.Warn("notification sweep failed", "err", err)
+			}
+			if err := store.Optimize(ctx, t.DB); err != nil {
+				log.Warn("database optimize failed", "err", err)
 			}
 		}
 	}

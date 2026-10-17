@@ -87,7 +87,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | Package | Responsibility |
 | --- | --- |
 | `config` | `OPENTODO_*` environment variables with defaults and validation; nothing is mandatory |
-| `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL, single connection) and applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
+| `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL): one writer connection whose write transactions begin `IMMEDIATE`, and a pool of query-only reader connections (`OpenReader`) for pure reads such as `sync` List, Get and Pull; applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; runs `PRAGMA optimize` at open and daily; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
 | `settings` | Owner-level key/value settings (`settings` table, JSON values) and 0600 secret files under `<data>/secrets/` |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW, per-op authorisation and refusal reasons) and `ApplyStrict` (REST), `Pull` (cursor, member backfill), materialised reads, sharing scopes (`scope.go`) and membership (`members.go`), trash, history and purge, the post-commit observer and sinks, `Notifier` (per-user live wake-ups) |
 | `auth` | Users and roles, argon2id passwords, sessions, API tokens and their scopes, CalDAV app passwords, invitations, password resets, user administration, TOTP and recovery codes, step-up, passkeys storage, provider identities (subject-first matching, verified-email linking, provisioning, the SSO-only rule) |
