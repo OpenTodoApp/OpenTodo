@@ -91,6 +91,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       // A custom field term its type cannot answer (custom-fields): shown like a syntax error.
       return { ok: false as const, error: (e as Error).message }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }, [good, allTasks, labels, projects, today, zone, weekStart, fieldDefs])
   const result = useMemo(() => {
     if (!compiled || !compiled.ok) return null

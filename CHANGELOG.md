@@ -46,6 +46,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **A database migration that would have been skipped is reported.** The server records which migration files it applied and logs an error at startup for a file it never ran; the repository checks refuse a new migration not numbered above those on the main branch.
 - **A new hosted instance always gets its setup link.** In multi-tenant hosting, creating an instance whose record could not be read back right away replied without its setup token; the reply now keeps the record just created.
 - **More reliable tests and checks (for contributors).** Every API test now checks the status of each response, `make check` and CI run staticcheck, the server and the web app share one list of synced and encrypted fields that both test suites check, and a randomized test with replayable seeds checks that devices with wrong clocks converge after a project is shared. The demo's "busy" API message now starts in lower case like the others; the app shows its own text.
+- **Snooze and Dismiss from a notification follow the corrected clock.** On a device whose clock is off, the notification actions now stamp their change with the same server-corrected time as the app, so the change is neither overwritten by an older edit nor refused; a change the server does refuse stays queued for the app's next sync instead of being dropped.
+- **Clearing a property you just added removes its chip.** After adding Estimate (or another property) from the Add menu and setting a value, clearing it again now removes the chip instead of leaving an empty one.
+- **For contributors: the web app is linted for React hook mistakes.** `make check` now runs ESLint with the Rules of Hooks and effect dependencies (`make web-lint`), and the web tests fail on any network request they did not mock.
 
 ### Added
 

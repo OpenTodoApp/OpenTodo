@@ -175,7 +175,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       ydoc.current = null
     }
     // The editor is created per task; later values arrive through the merge effect below.
-  }, [taskId, unreadable]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [taskId, unreadable]) // eslint-disable-line react-hooks/exhaustive-deps -- one editor per task; later notes_doc/readOnly values arrive through the merge effect
 
   useEffect(() => {
     view.current?.setProps({ editable: () => !readOnly })

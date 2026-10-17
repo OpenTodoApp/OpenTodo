@@ -15,7 +15,7 @@ Thanks for helping build a task manager people can own. This document covers how
 1. Open an issue or pick one up, so the scope is agreed.
 2. Plan the change: `openspec new change <kebab-name>` or, with Claude Code, `/opsx:propose "<idea>"`. Fill `proposal.md`, `specs/<capability>/spec.md`, `design.md` and `tasks.md`. Run `openspec validate <name> --strict`.
 3. Implement, ticking tasks as you go (`/opsx:apply` does this for you).
-4. Run `make check` (vet, staticcheck, typecheck, Go and web tests, OpenSpec validation). A new op field also goes into `internal/sync/testdata/schema_fixture.json`, which the Go and web tests both check.
+4. Run `make check` (vet, staticcheck, typecheck, the React hooks lint, Go and web tests, OpenSpec validation). A new op field also goes into `internal/sync/testdata/schema_fixture.json`, which the Go and web tests both check.
 5. When touching sync or the UI, run the browser smoke test (see `scripts/README.md`). When touching layout or adding a screen or overlay, run the layout check (`make layout-check`, which includes the axe-core accessibility check), and add the new screen or overlay to `scripts/e2e-layout.mjs`.
 6. When touching `web/src/app`, capture the core screens before and after: `OUT_DIR=dist/screens-before make screens` on `main`, then `make screens` on your branch (both write PNGs of the seeded demo fixture, at 1280×800 and 390×844 in light and dark; `node scripts/screens.mjs inbox,task-panel` limits the run to some screens). Attach the before/after pairs of the screens your change affects to the pull request. The maintainer reviews them on the images, not the diff: alignment with the page template (header, spacing, chrome rows), both themes, and the phone width.
 7. Open a pull request. CI must be green. Link the change folder in the description.
@@ -33,7 +33,7 @@ make test           # go test ./... and vitest
 make build          # production binary in bin/opentodo with the web app embedded
 ```
 
-Tests live next to the code: `internal/**/*_test.go` and `web/src/**/*.test.ts`. The sync engine has order-independence and idempotency tests on both sides; keep them passing and extend them when touching merge logic.
+Tests live next to the code: `internal/**/*_test.go` and `web/src/**/*.test.ts`. Web tests never reach the network: `web/src/test-setup.ts` fails a test that calls `fetch` without mocking it (`mockFetch` in `web/src/ui/test-utils.tsx`, or `vi.stubGlobal('fetch', ...)`), and interaction tests wait for what they assert with `waitFor` from the same file rather than a fixed sleep. `make web-lint` (in `make check`) runs ESLint with the Rules of Hooks and effect dependencies as errors; a suppression needs its reason after `--`. The sync engine has order-independence and idempotency tests on both sides; keep them passing and extend them when touching merge logic.
 
 ## Code style
 

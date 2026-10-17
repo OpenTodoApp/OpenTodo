@@ -116,7 +116,6 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
     const offs = subs.map(([ch, id]) => ch.subscribe((item) => { if (item === task.id && ch.take(item)) reveal(id) }))
     offs.push(estimateFocus.subscribe((entry) => { if (entry === task.id) reveal('estimate') }))
     return () => offs.forEach((off) => off())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task.id])
   // Every live task: blockers may sit in any project of the same sharing scope.
   const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
@@ -196,9 +195,12 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   const settleRevealed = (id: Optional) => {
     if (!shownRef.current.has(id)) return
     window.setTimeout(() => {
-      if (hasRef.current[id] || !shownRef.current.has(id)) return
+      if (!shownRef.current.has(id)) return
+      // With a value the chip stays as a set property but is no longer only revealed,
+      // so clearing the value later removes it (web-lint-and-test-hygiene).
+      const kept = hasRef.current[id]
       setShown((s) => { const n = new Set(s); n.delete(id); return n })
-      section.current?.querySelector<HTMLElement>(`button[aria-label="${t('Add a property')}"]`)?.focus()
+      if (!kept) section.current?.querySelector<HTMLElement>(`button[aria-label="${t('Add a property')}"]`)?.focus()
     }, 50)
   }
   const chipProps = (id: Optional) => ({

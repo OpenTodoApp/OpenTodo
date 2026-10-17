@@ -74,6 +74,9 @@ jobs:
         working-directory: web
       - run: npm run typecheck
         working-directory: web
+      - name: React hooks lint (make web-lint)
+        run: npm run lint
+        working-directory: web
       - run: npm test
         working-directory: web
       - name: Docs check (front matter, links, images, spec coverage, generated files current)

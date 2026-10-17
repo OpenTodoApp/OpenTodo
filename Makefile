@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png _locales
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
 all: build
 
@@ -184,7 +184,7 @@ deploy-check:
 repo-check:
 	node --test scripts/repo-checks.test.mjs
 
-check: lint staticcheck test fmt-check ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
+check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
 
 ## The parts of `make check` that CI runs in its Checks job (the others run in the web,
 ## server and extension jobs; scripts/repo-checks.test.mjs keeps the two lists whole).
@@ -208,6 +208,11 @@ e2e:
 ## emoji or glyph icons in web/src/app.
 ui-lint:
 	node scripts/ui-check.mjs
+
+## React hooks lint (web-lint-and-test-hygiene): Rules of Hooks and effect
+## dependencies as errors; every remaining suppression carries its reason.
+web-lint:
+	cd web && npm run lint
 
 ## Translation catalogs (app-localization): every shipped catalog complete, no stale
 ## or malformed entries, placeholders as in the source; script tests included.

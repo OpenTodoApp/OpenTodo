@@ -10,7 +10,7 @@ export type EntryKind = 'command' | 'task' | 'project' | 'label' | 'view' | 'set
 
 /** What a command may ask for after it is picked; the palette shows it in place. */
 export type Step =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // `any`: entries mix pickers of different item types.
   | { kind: 'picker'; picker: PickerSpec<any> }
   | { kind: 'confirm'; confirm: ConfirmSpec }
   | { kind: 'prompt'; title: string; label: string; initial: string; onSubmit: (value: string) => unknown }

@@ -2,11 +2,15 @@
 // Project menu (labels-and-menus 3.2): `m` opens straight into the "Move to" picker,
 // colours are radio items, and the delete confirmation counts open tasks.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { Project } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, mockFetch, noPublicLinks } from '../ui/test-utils'
 import { ProjectHeader } from './ProjectHeader'
+
+// The project header asks the server for its public links.
+beforeEach(() => mockFetch(noPublicLinks))
+afterEach(() => { vi.unstubAllGlobals() })
 
 const p = (id: string, name: string, parent_id: string | null = null): Project =>
   ({ id, name, color: '#22c55e', position: 1, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {} } as Project)

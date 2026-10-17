@@ -8,7 +8,7 @@ import { api, ApiError } from './api'
 import { isTransientNetworkError } from './http'
 import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
-import { hlcObserveServerTime } from './hlc'
+import { CLOCK_OFFSET_META, hlcObserveServerTime, hlcOffset } from './hlc'
 import { restampSkewed, splitClockSkew } from './clockSkew'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
@@ -233,6 +233,8 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       // was synced, so the outbox stays as it is (client-data-safety).
       if (!isSyncResponse(res)) throw new Error(t('The server sent an answer this app does not understand. Your changes stay on this device.'))
       hlcObserveServerTime(res.serverTime)
+      // Stored for the service worker's notification actions (and the next start).
+      if ((await getMeta<number>(CLOCK_OFFSET_META, 0)) !== hlcOffset()) await setMeta(CLOCK_OFFSET_META, hlcOffset())
       // A server limit (multi-tenant-host) refuses ops without judging them: the
       // device keeps them, unsynced, and sends them again later.
       // A clock refusal (sync-convergence) keeps the change: it is stamped again

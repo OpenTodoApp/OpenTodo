@@ -236,6 +236,7 @@ const checkElsewhere = {
   test: ['go test ./...', 'npm test', 'make extension'],
   'docs-check': ['npm run docs:check'],
   staticcheck: ['make staticcheck'],
+  'web-lint': ['npm run lint'],
 }
 
 test('CI runs every part of make check', () => {

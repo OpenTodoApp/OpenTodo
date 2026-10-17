@@ -7,7 +7,7 @@ import { setDateTime } from '../../lib/dates'
 import { resetDeviceId } from '../../lib/ops'
 import { setCurrentUserId } from '../../lib/sharing'
 import type { Label, Membership, Project } from '../../lib/types'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, flush, render, waitFor } from '../../ui/test-utils'
 import { TaskDetail } from './TaskDetail'
 
 export const ME = 'u-me'
@@ -32,15 +32,13 @@ export function setupTaskDetailTests() {
 
 export const settle = () => flush(40)
 /** Live queries resolve in steps (task → project → sections); wait for the condition. */
-export async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
+export { waitFor } from '../../ui/test-utils'
 
 export async function open(taskId: string, opts: { readOnly?: boolean; onClose?: () => void; onOpen?: (id: string) => void } = {}) {
   const projects = (await db.projects.toArray()) as Project[]
   const labels = new Map(((await db.labels.toArray()) as Label[]).map((l) => [l.id, l]))
   const r = await render(<TaskDetail taskId={taskId} userId={ME} projects={projects} labelMap={labels} onClose={opts.onClose ?? (() => {})} onOpen={opts.onOpen} readOnly={opts.readOnly} />)
+  await waitFor(() => !!r.container.querySelector('[data-property-chips]'), 'the task panel')
   await settle()
   /** The property's element (null while the chip is not shown). */
   const row = (name: string) => r.container.querySelector(`[data-property="${name}"]`) as HTMLElement

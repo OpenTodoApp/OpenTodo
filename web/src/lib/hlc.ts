@@ -10,6 +10,12 @@ let offset = 0
 export const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000
 /** Skews up to this size are left alone, so network latency causes no jitter. */
 const SKEW_TOLERANCE_MS = 2000
+/**
+ * The meta row holding the offset to server time, so the service worker
+ * (public/push-sw.js), which writes ops from notification actions, stamps them
+ * with the same corrected clock (web-lint-and-test-hygiene).
+ */
+export const CLOCK_OFFSET_META = 'hlc_offset'
 
 export function hlcNow(): number {
   const now = Date.now() + offset
@@ -48,6 +54,16 @@ export function hlcClockRefused(serverTime: number): void {
 
 export function hlcLast(): number {
   return last
+}
+
+/** The current correction towards server time, in milliseconds. */
+export function hlcOffset(): number {
+  return offset
+}
+
+/** Called at start-up with the stored offset, so stamps before the first sync are corrected too. */
+export function hlcSeedOffset(stored: number): void {
+  if (Number.isFinite(stored)) offset = stored
 }
 
 /** Test hook: forget the clock state. */
