@@ -196,7 +196,7 @@ func (s *Server) handlePutAuditSettings(w http.ResponseWriter, r *http.Request) 
 		LogIP         *bool    `json:"logIp"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	var p audit.SettingsPatch

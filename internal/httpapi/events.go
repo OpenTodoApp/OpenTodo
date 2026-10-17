@@ -3,6 +3,7 @@ package httpapi
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -10,6 +11,48 @@ import (
 // 25 s stays below the default idle timeouts of Traefik, Caddy and nginx. Tests
 // shorten it.
 var heartbeatInterval = 25 * time.Second
+
+// Caps on open live-update streams (SEC-6). Each stream holds a connection and
+// a goroutine for as long as the client stays, so besides the per-account cap
+// (sync.MaxStreamsPerUser, which closes the oldest) one client address may hold
+// maxStreamsPerIP and the server maxLiveStreams; beyond either a new stream is
+// refused with 503 busy and the client retries through its backoff.
+const maxStreamsPerIP = 20
+
+// maxLiveStreams is the server-wide cap; tests lower it.
+var maxLiveStreams = 2000
+
+// streamCounter counts open streams per client address and in all.
+type streamCounter struct {
+	mu    sync.Mutex
+	total int
+	perIP map[string]int
+}
+
+// acquire reserves a stream slot for ip, or reports false when a cap is reached.
+func (c *streamCounter) acquire(ip string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.total >= maxLiveStreams || c.perIP[ip] >= maxStreamsPerIP {
+		return false
+	}
+	if c.perIP == nil {
+		c.perIP = map[string]int{}
+	}
+	c.total++
+	c.perIP[ip]++
+	return true
+}
+
+// release frees a slot taken by acquire.
+func (c *streamCounter) release(ip string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.total--
+	if c.perIP[ip]--; c.perIP[ip] <= 0 {
+		delete(c.perIP, ip)
+	}
+}
 
 // handleEvents serves GET /api/v1/sync/events: a server-sent event stream that
 // wakes a device whenever another device (or the REST API) records operations
@@ -21,6 +64,13 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "device is required")
 		return
 	}
+	ip := clientIP(r)
+	if !s.streams.acquire(ip) {
+		w.Header().Set("Retry-After", "30")
+		writeError(w, http.StatusServiceUnavailable, "busy", "too many live update streams are open, try again later")
+		return
+	}
+	defer s.streams.release(ip)
 	rc := http.NewResponseController(w)
 	// Long-lived response: lift the server's read and write deadlines for this
 	// connection only, otherwise ReadTimeout/WriteTimeout would cut the stream.
