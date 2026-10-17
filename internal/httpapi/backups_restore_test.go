@@ -314,6 +314,9 @@ func TestRestoreConfirmDuringBackup(t *testing.T) {
 	if err := re.bk.StartRun(context.Background(), backup.KindManual, ""); err != nil {
 		t.Fatal(err)
 	}
+	// The run keeps writing under the data directory: cancel it and wait before
+	// the temporary directory is removed (cleanups run last-registered first).
+	t.Cleanup(re.bk.Stop)
 	resp, out = re.do("POST", "/api/v1/backups/restore", map[string]any{"id": id, "confirm": "RESTORE"})
 	if resp.StatusCode == 202 {
 		t.Skip("the backup finished before the confirmation")
