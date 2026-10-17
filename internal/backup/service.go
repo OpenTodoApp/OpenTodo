@@ -5,7 +5,9 @@
 package backup
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 	"net/http"
 	"path/filepath"
@@ -47,7 +49,22 @@ type Service struct {
 	restart   func()
 	// freeSpace reports free bytes on a filesystem; tests replace it.
 	freeSpace func(dir string) (int64, bool)
+	// sameFS reports whether two directories share a filesystem; tests replace it.
+	sameFS func(a, b string) bool
+
+	// Lifecycle (reliable-background-jobs): every goroutine the service starts
+	// is counted in wg, and life is cancelled by Stop (or when Start's context
+	// ends), so shutdown cancels a run in progress and waits for its outcome to
+	// be recorded before the database closes.
+	life     context.Context
+	lifeStop context.CancelFunc
+	lifeMu   sync.Mutex
+	stopped  bool
+	wg       sync.WaitGroup
 }
+
+// ErrStopping is returned for a backup requested while the server shuts down.
+var ErrStopping = errors.New("the server is shutting down")
 
 // Options configure New; zero values pick defaults.
 type Options struct {
@@ -69,6 +86,8 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 		now: o.Now, loc: o.Loc, client: o.Client, audit: o.Audit, startupDelay: 10 * time.Second,
 		wakeCh: make(chan struct{}, 1), freeSpace: o.FreeSpace,
 	}
+	s.life, s.lifeStop = context.WithCancel(context.Background())
+	s.sameFS = sameFilesystem
 	if s.freeSpace == nil {
 		s.freeSpace = freeBytes
 	}
@@ -85,7 +104,9 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 		s.loc = time.Local
 	}
 	if s.client == nil {
-		s.client = &http.Client{Timeout: 30 * time.Minute}
+		// No client-wide timeout: each request has a progress deadline
+		// (requestIdle), so large archives are not cut off at a fixed time.
+		s.client = &http.Client{}
 	}
 	return s
 }
@@ -102,4 +123,31 @@ func (s *Service) wake() {
 	case s.wakeCh <- struct{}{}:
 	default:
 	}
+}
+
+// spawn runs f in a goroutine counted by Stop; it reports false (and runs
+// nothing) once the service is stopping.
+func (s *Service) spawn(f func()) bool {
+	s.lifeMu.Lock()
+	defer s.lifeMu.Unlock()
+	if s.stopped {
+		return false
+	}
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		f()
+	}()
+	return true
+}
+
+// Stop cancels the scheduler, the restore housekeeping and any backup in
+// progress, and waits until they have returned (a cancelled run records itself
+// as failed first). It is safe to call more than once; nothing starts after it.
+func (s *Service) Stop() {
+	s.lifeMu.Lock()
+	s.stopped = true
+	s.lifeMu.Unlock()
+	s.lifeStop()
+	s.wg.Wait()
 }

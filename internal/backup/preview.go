@@ -10,12 +10,16 @@ import (
 	"github.com/pixari/opentodo/internal/store"
 )
 
-// restoreMargin is kept free on top of what a restore needs.
+// restoreMargin is kept free on top of what a restore or a backup needs.
 const restoreMargin = 64 << 20
 
 // ErrInsufficientStorage means the data directory's filesystem cannot hold a
 // restore (archive + extracted database + safety copy).
 var ErrInsufficientStorage = errors.New("not enough free disk space for a restore")
+
+// ErrBackupStorage means the data directory (or the local destination) cannot
+// hold a backup's snapshot and archive while it is written.
+var ErrBackupStorage = errors.New("not enough free disk space for a backup")
 
 // ensureFreeSpace fails when fewer than need + restoreMargin bytes are free on
 // dataDir's filesystem. Where free space is unknown it never fails.
@@ -24,11 +28,17 @@ func ensureFreeSpace(dataDir string, need int64) error {
 }
 
 func ensureFreeSpaceWith(freeFn func(string) (int64, bool), dataDir string, need int64) error {
-	free, ok := freeFn(dataDir)
+	return ensureSpace(freeFn, dataDir, need, ErrInsufficientStorage)
+}
+
+// ensureSpace fails with base when fewer than need + restoreMargin bytes are
+// free on dir's filesystem; it never fails where free space is unknown.
+func ensureSpace(freeFn func(string) (int64, bool), dir string, need int64, base error) error {
+	free, ok := freeFn(dir)
 	if !ok || free >= need+restoreMargin {
 		return nil
 	}
-	return fmt.Errorf("%w: %s needed, %s free", ErrInsufficientStorage, humanBytes(need+restoreMargin), humanBytes(free))
+	return fmt.Errorf("%w: %s needed in %s, %s free", base, humanBytes(need+restoreMargin), dir, humanBytes(free))
 }
 
 // uploadCap is the largest archive the data directory can take for a restore:

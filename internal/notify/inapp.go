@@ -48,41 +48,33 @@ func NewInApp(db *sql.DB, log *slog.Logger) *InApp {
 	return &InApp{db: db, log: log, now: time.Now}
 }
 
-// Assigned stores an "assigned" notification for the assignee.
-func (n *InApp) Assigned(ctx context.Context, e Assigned) {
-	payload, err := json.Marshal(e)
+// insert stores one notification of kind for userID with event as its JSON
+// payload. A failure is logged: notifications never fail the sync that caused them.
+func (n *InApp) insert(ctx context.Context, userID, kind string, event any) {
+	payload, err := json.Marshal(event)
 	if err == nil {
 		_, err = n.db.ExecContext(ctx, `INSERT INTO notifications(id,user_id,kind,payload,created_at) VALUES(?,?,?,?,?)`,
-			ids.New(), e.AssigneeID, KindAssigned, string(payload), n.now().UnixMilli())
+			ids.New(), userID, kind, string(payload), n.now().UnixMilli())
 	}
 	if err != nil {
-		n.log.Error("store notification", "kind", KindAssigned, "err", err)
+		n.log.Error("store notification", "kind", kind, "err", err)
 	}
+}
+
+// Assigned stores an "assigned" notification for the assignee.
+func (n *InApp) Assigned(ctx context.Context, e Assigned) {
+	n.insert(ctx, e.AssigneeID, KindAssigned, e)
 }
 
 // Mentioned stores a "mentioned" notification for the mentioned member
 // (OpenSpec change `comments-and-activity`).
 func (n *InApp) Mentioned(ctx context.Context, e Mentioned) {
-	payload, err := json.Marshal(e)
-	if err == nil {
-		_, err = n.db.ExecContext(ctx, `INSERT INTO notifications(id,user_id,kind,payload,created_at) VALUES(?,?,?,?,?)`,
-			ids.New(), e.RecipientID, KindMentioned, string(payload), n.now().UnixMilli())
-	}
-	if err != nil {
-		n.log.Error("store notification", "kind", KindMentioned, "err", err)
-	}
+	n.insert(ctx, e.RecipientID, KindMentioned, e)
 }
 
 // Unblocked stores an "unblocked" notification for the assignee (task-dependencies).
 func (n *InApp) Unblocked(ctx context.Context, e Unblocked) {
-	payload, err := json.Marshal(e)
-	if err == nil {
-		_, err = n.db.ExecContext(ctx, `INSERT INTO notifications(id,user_id,kind,payload,created_at) VALUES(?,?,?,?,?)`,
-			ids.New(), e.AssigneeID, KindUnblocked, string(payload), n.now().UnixMilli())
-	}
-	if err != nil {
-		n.log.Error("store notification", "kind", KindUnblocked, "err", err)
-	}
+	n.insert(ctx, e.AssigneeID, KindUnblocked, e)
 }
 
 // List returns the user's notifications, newest first, and the number unread.
@@ -133,7 +125,12 @@ func (n *InApp) MarkRead(ctx context.Context, userID, id string) error {
 	return err
 }
 
-// Sweep deletes read notifications older than Retention; it runs at start-up.
+// SweepInterval is how often RunSweeper applies the retention.
+const SweepInterval = 24 * time.Hour
+
+// Sweep deletes read notifications older than Retention. It runs when a
+// tenant opens and then daily (RunSweeper on a self-hosted server, the host's
+// scheduler on a host).
 func (n *InApp) Sweep(ctx context.Context) (int64, error) {
 	cutoff := n.now().Add(-Retention).UnixMilli()
 	r, err := n.db.ExecContext(ctx, `DELETE FROM notifications WHERE read_at IS NOT NULL AND created_at < ?`, cutoff)
@@ -141,4 +138,26 @@ func (n *InApp) Sweep(ctx context.Context) (int64, error) {
 		return 0, fmt.Errorf("sweep notifications: %w", err)
 	}
 	return r.RowsAffected()
+}
+
+// RunSweeper calls Sweep every interval until ctx is cancelled (a self-hosted
+// server's jobs; the start-up sweep happens when the tenant opens).
+func (n *InApp) RunSweeper(ctx context.Context, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if c, err := n.Sweep(ctx); err != nil {
+				if ctx.Err() != nil {
+					return
+				}
+				n.log.Warn("notification sweep failed", "err", err)
+			} else if c > 0 {
+				n.log.Info("old notifications removed", "count", c)
+			}
+		}
+	}
 }

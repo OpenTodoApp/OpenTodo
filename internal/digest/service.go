@@ -268,15 +268,19 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 		return false, err
 	}
 	err = s.mail.Send(ctx, msg)
+	// The outcome is recorded even when shutdown began during the send: a
+	// digest that went out but is not marked sent would go out again after the
+	// restart (reliable-background-jobs).
+	octx := context.WithoutCancel(ctx)
 	switch {
 	case err == nil:
-		return true, s.store.MarkSent(ctx, st.UserID, date)
+		return true, s.store.MarkSent(octx, st.UserID, date)
 	case errors.Is(err, mail.ErrEncrypted):
-		_ = s.store.MarkOutcome(ctx, st.UserID, OutcomeEncrypted, date)
-		_, derr := s.store.Disable(ctx, st.UserID)
+		_ = s.store.MarkOutcome(octx, st.UserID, OutcomeEncrypted, date)
+		_, derr := s.store.Disable(octx, st.UserID)
 		return false, derr
 	case errors.Is(err, mail.ErrRateLimited):
-		return false, s.store.MarkOutcome(ctx, st.UserID, OutcomeLimited, "")
+		return false, s.store.MarkOutcome(octx, st.UserID, OutcomeLimited, "")
 	case errors.Is(err, mail.ErrDisabled):
 		return false, nil
 	}
@@ -286,7 +290,7 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 		stage = se.Stage
 	}
 	// Retried at the next pass until the window closes (mail.Send audited it).
-	return false, s.store.MarkOutcome(ctx, st.UserID, stage, "")
+	return false, s.store.MarkOutcome(octx, st.UserID, stage, "")
 }
 
 // recipient is the account's address and whether it may receive mail

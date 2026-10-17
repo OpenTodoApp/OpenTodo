@@ -14,6 +14,10 @@ import (
 // whether the process that did has stopped.
 const jobsRetry = 2 * time.Second
 
+// jobsStopTimeout bounds how long shutdown waits for the background jobs
+// before the database is closed.
+const jobsStopTimeout = 20 * time.Second
+
 // runJobsWhenLeader calls start once this process holds the jobs lock (OpenSpec
 // `rolling-updates`). During a rolling update the new container serves beside the
 // old one and takes the jobs over when the old one exits. It returns whether the
@@ -39,8 +43,10 @@ func runJobsWhenLeader(ctx context.Context, dataDir string, log *slog.Logger, re
 			return true
 		}
 		unlock, running = rel, true
-		mu.Unlock()
+		// Started under the lock: once started() reports true, whatever start
+		// set up (the jobs' stop function) is in place.
 		start()
+		mu.Unlock()
 		return true
 	}
 	if !try() {

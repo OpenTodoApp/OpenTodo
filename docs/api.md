@@ -1111,7 +1111,7 @@ A task's `assignee_id` (OpenSpec `task-assignment`) is an ordinary task field: s
 
 When a member leaves or is removed, the server clears `assignee_id` on every task of that project assigned to them with operations of its own (device `server`), so every member's devices see the tasks unassigned after their next sync.
 
-Assigning a task to someone other than yourself creates an in-app notification for the assignee. Notifications are server-side account data: they are not part of the op log or the export. Read notifications older than 90 days are removed when the server starts. Both routes require a session or token (`401 unauthorized`).
+Assigning a task to someone other than yourself creates an in-app notification for the assignee. Notifications are server-side account data: they are not part of the op log or the export. Read notifications older than 90 days are removed when the server starts and then once a day. Both routes require a session or token (`401 unauthorized`).
 
 | Method & path | Purpose |
 | --- | --- |
