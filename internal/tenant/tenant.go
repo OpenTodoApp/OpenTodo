@@ -78,6 +78,7 @@ type Hosted struct {
 type Tenant struct {
 	Cfg      config.Config
 	DB       *sql.DB
+	Reader   *sql.DB // query-only pool for pure reads (store.OpenReader)
 	Auth     *auth.Service
 	Sync     *opsync.Service
 	Hooks    *webhook.Service
@@ -133,6 +134,9 @@ func Open(ctx context.Context, cfg config.Config, o Options) (t *Tenant, err err
 			t = nil
 		}
 	}()
+	if t.Reader, err = store.OpenReader(cfg.DataDir); err != nil {
+		return nil, err
+	}
 	if err := t.wire(ctx, o); err != nil {
 		return nil, err
 	}
@@ -149,6 +153,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	authSvc.SetSetupToken(cfg.SetupToken)
 	syncSvc := opsync.NewService(db)
+	syncSvc.SetReader(t.Reader)
 	// Outbound webhooks: events come from the winning changes of each committed
 	// sync batch; the worker sends queued deliveries until shutdown.
 	hooks := webhook.New(db, syncSvc, webhook.Options{Version: o.Version, Log: log})
@@ -341,6 +346,8 @@ func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context,
 	// Purge items that outlived the Trash retention at startup and daily
 	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
 	spawn(func(ctx context.Context) { t.Sync.RunRetention(ctx, cfg.TrashRetentionDays, t.log) })
+	// Query planner statistics: refreshed on open and daily (database-concurrency).
+	spawn(func(ctx context.Context) { store.RunOptimizer(ctx, t.DB, store.OptimizeInterval, t.log) })
 	if !cfg.Demo {
 		// No outbound calendar fetches on a demo instance.
 		spawn(t.Calendar.Run)
@@ -370,6 +377,9 @@ func (t *Tenant) Close() error {
 		}
 		if t.Sync != nil {
 			t.Sync.Notifier().CloseAll()
+		}
+		if t.Reader != nil {
+			t.Reader.Close()
 		}
 		if t.DB != nil {
 			t.closeErr = t.DB.Close()

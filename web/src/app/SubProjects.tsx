@@ -2,11 +2,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { db } from '../lib/db'
 import { buildProjectTree, subtreeOpenCounts } from '../lib/projects'
-import type { Project, Task } from '../lib/types'
+import type { Project } from '../lib/types'
 import { ListGroupHeader } from '../ui'
 import { navigate } from './router'
 import { ProjectMark } from './Sidebar'
-import { visibleTasks } from '../lib/trash'
+import { useOpenTasks } from '../lib/liveTasks'
 import { t } from '../lib/i18n'
 
 const KEY = 'ot.subprojects.collapsed'
@@ -26,7 +26,7 @@ function writeCollapsed(set: Set<string>): void {
  */
 export function SubProjects({ projectId }: { projectId: string }) {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const open = useLiveQuery(() => visibleTasks().then((l) => l.filter((task) => !task.completed_at)), [], [] as Task[])
+  const open = useOpenTasks()
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const children = tree.nodes.get(projectId)?.children ?? []
   const counts = useMemo(() => subtreeOpenCounts(open, tree), [open, tree])

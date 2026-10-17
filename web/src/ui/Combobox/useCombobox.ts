@@ -50,6 +50,8 @@ export type ComboOption<T> =
 export const ASYNC_DEBOUNCE_MS = 120
 const ANNOUNCE_MS = 300
 const RECENT_IN_TREE = 5
+/** A tree this short shows every entry at once, so it gets no "Recent" group (issue #136). */
+const RECENT_TREE_MIN = 12
 
 function isAsync<T>(s: ComboboxConfig<T>['source']): s is AsyncSource<T> {
   return typeof s === 'function'
@@ -117,11 +119,20 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       if (cfg.emptySource) {
         // The caller ordered the empty list itself (context first, then recent picks).
         out = [...pins, ...rest.map((i) => toOption(i, empty))]
+      } else if (cfg.getPath && rest.length < RECENT_TREE_MIN) {
+        // A short tree is shown whole, in its own order.
+        out = [...pins, ...rest.map((i) => toOption(i, empty))]
       } else if (cfg.getPath && scores.size > 0) {
-        // A tree keeps its shape; recent picks are offered on top as their own group.
+        // A long tree keeps its shape; recent picks are offered on top as their own
+        // group, and the tree below gets a heading too, so the repeated entries read
+        // as a shortcut and not as duplicates (issue #136).
         const recent = rankBy(rest.filter((i) => scores.has(cfg.getKey(i))), cfg.getKey, scores).slice(0, RECENT_IN_TREE)
           .map((i) => ({ ...toOption(i, empty, 0), group: t('Recent'), key: `recent:${cfg.getKey(i)}` } as ComboOption<T>))
-        out = [...pins, ...recent, ...rest.map((i) => toOption(i, empty))]
+        const all = t('All')
+        out = [...pins, ...recent, ...rest.map((i) => {
+          const o = toOption(i, empty)
+          return recent.length > 0 && o.kind === 'item' && !o.group ? { ...o, group: all } : o
+        })]
       } else {
         out = [...pins, ...rankBy(rest, cfg.getKey, scores).map((i) => toOption(i, empty))]
       }

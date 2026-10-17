@@ -9,7 +9,7 @@ import (
 	"github.com/pixari/opentodo/internal/store"
 )
 
-func newTestService(t *testing.T) *Service {
+func newTestService(t testing.TB) *Service {
 	t.Helper()
 	db, err := store.Open(t.TempDir())
 	if err != nil {

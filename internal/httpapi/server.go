@@ -49,6 +49,8 @@ type Server struct {
 	web     http.Handler
 	log     *slog.Logger
 	version string
+	// wrongHosts remembers the hosts already reported as not the base URL's.
+	wrongHosts hostWarnings
 	// blobs stores attachment files (attachments D2); nil without a data directory.
 	blobs *blobs.Store
 	// attachmentLimiter caps uploads per account (120/hour, attachments D5).
@@ -517,9 +519,43 @@ func (s *Server) originAllowed(r *http.Request) bool {
 	// under another name that resolves here (DNS rebinding) is cross-site
 	// (trusted-client-identity).
 	if cfgOrigin != "" && !strings.EqualFold(host, s.cfg.BaseURL.Host) {
+		// Same-host pages under another name are refused; say so in the log, as
+		// it is usually a stale OPENTODO_BASE_URL after a domain move (#125).
+		if strings.EqualFold(origin, "http://"+host) || strings.EqualFold(origin, "https://"+host) {
+			s.wrongHosts.warn(s.log, host, s.cfg.BaseURL.String())
+		}
 		return false
 	}
 	return strings.EqualFold(origin, "http://"+host) || strings.EqualFold(origin, "https://"+host)
+}
+
+// hostWarnings logs once per host that a page opened under it was refused
+// because OPENTODO_BASE_URL names another host. At most maxWrongHosts hosts are
+// remembered, so made-up Host headers cannot grow it or flood the log.
+type hostWarnings struct {
+	mu   sync.Mutex
+	seen map[string]bool
+}
+
+const maxWrongHosts = 32
+
+func (h *hostWarnings) warn(log *slog.Logger, host, baseURL string) {
+	h.mu.Lock()
+	host = strings.ToLower(host)
+	if h.seen[host] || len(h.seen) >= maxWrongHosts {
+		h.mu.Unlock()
+		return
+	}
+	if h.seen == nil {
+		h.seen = map[string]bool{}
+	}
+	h.seen[host] = true
+	h.mu.Unlock()
+	if log == nil {
+		log = slog.Default()
+	}
+	log.Warn("refused a browser request for a host that is not OPENTODO_BASE_URL's: open the app at the base URL, or set OPENTODO_BASE_URL to the address people use",
+		"host", host, "base_url", baseURL)
 }
 
 func (s *Server) securityHeaders(next http.Handler) http.Handler {

@@ -1,6 +1,6 @@
 ---
 title: Running on Unraid
-summary: Install from Community Applications (Apps), the settings, appdata permissions, https and reverse proxies, updates and backups.
+summary: Install from Community Applications (Apps), the settings, appdata permissions, https and reverse proxies, Tailscale, updates and backups.
 audience: admin
 specs: [self-hosting]
 screens: []
@@ -48,7 +48,25 @@ or run the container as Unraid's usual `nobody:users`: add `--user 99:100` under
 
 ## https and reverse proxies
 
-On the server's address (`http://192.168.1.10:8080`) tasks, projects, sync, sharing and attachments work. Installing the app on a phone, working offline, push notifications, passkeys and end-to-end encryption need https, because browsers only allow them there. Put OpenTodo behind a reverse proxy with a certificate (Nginx Proxy Manager, SWAG, Caddy, Traefik) or use Tailscale's https, then set **Base URL** to that https address. If the proxy sits behind Cloudflare's proxy, set **Trusted proxies** to `cloudflare`. More on proxies in [Running with Docker](docker.md).
+On the server's address (`http://192.168.1.10:8080`) tasks, projects, sync, sharing and attachments work. Installing the app on a phone, working offline, push notifications, passkeys and end-to-end encryption need https, because browsers only allow them there. Put OpenTodo behind a reverse proxy with a certificate (Nginx Proxy Manager, SWAG, Caddy, Traefik) or use [Tailscale Serve on the Unraid server](#tailscale), then set **Base URL** to that https address. If the proxy sits behind Cloudflare's proxy, set **Trusted proxies** to `cloudflare`. More on proxies in [Running with Docker](docker.md).
+
+## Tailscale
+
+Leave the container's **Use Tailscale** switch off. Unraid adds Tailscale to a container by running a shell script inside it that installs packages and downloads Tailscale at every start; the OpenTodo image has no shell and no package manager (it is built that way to stay small and hard to attack), so with the switch on the container does not start and its log shows `exec /opt/unraid/tailscale: no such file or directory`.
+
+Use Tailscale on the Unraid server itself instead. It gives OpenTodo an https address on your tailnet, with a certificate, without changing the container:
+
+1. Install and sign in to Tailscale on Unraid (see [Unraid's Tailscale guide](https://docs.unraid.net/unraid-os/system-administration/secure-your-server/tailscale/)). In the Tailscale admin console, under **DNS**, turn on MagicDNS and **HTTPS Certificates**.
+2. In Unraid's terminal (**>_** in the top bar), publish the container's Web UI port (here `8080`; use the left side of your **Web UI port** setting) on the tailnet over https:
+
+   ```bash
+   tailscale serve --bg --https=8443 http://localhost:8080
+   ```
+
+   The command prints the address, for example `https://tower.example-tailnet.ts.net:8443`. It stays on after a restart; `tailscale serve --https=8443 off` removes it. Port `8443` keeps Unraid's own web interface free; any free port works.
+3. Set **Base URL** to that address (`https://tower.example-tailnet.ts.net:8443`) and apply.
+
+Open OpenTodo at that address from every device on your tailnet. Installing the app, push notifications, passkeys and end-to-end encryption then work. With **Base URL** set, open OpenTodo only at that address: from newer releases on, a page opened at another address (the server's LAN address, say) cannot sign in.
 
 ## Updates and backups
 
@@ -60,3 +78,4 @@ Back up `/mnt/user/appdata/opentodo` with the Appdata Backup plugin, or turn on 
 
 - **The app says Offline and nothing you add is saved** on a plain-http address: OpenTodo 0.6.0 and earlier needed https for this. Update the container.
 - **The Web UI link opens the wrong port**: Unraid builds it from the Web UI port; check the left side of that setting.
+- **The container does not start and its log says `exec /opt/unraid/tailscale: no such file or directory`**: the container's **Use Tailscale** switch is on. Turn it off and use [Tailscale on the Unraid server](#tailscale) instead.

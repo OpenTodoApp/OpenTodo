@@ -11,7 +11,7 @@ import {
   LabelExistsError, activeLabels, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
   mergeLabels, moveLabelTo, reorderLabel, updateLabel,
 } from '../lib/labels'
-import { visibleTasks } from '../lib/trash'
+import { useOpenTasks } from '../lib/liveTasks'
 import type { Label } from '../lib/types'
 import { Badge, Button, PageBody, PageHeader } from '../ui'
 import { ComboboxPanel } from '../ui'
@@ -29,12 +29,14 @@ import { act } from './actionError'
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
 export function useLabelData() {
   const labels = useLiveQuery(() => db.labels.toArray().then(activeLabels), [], [] as Label[])
-  const counts = useLiveQuery(async () => {
-    // Same rule as TaskListView: tasks of archived projects and of trashed projects are hidden.
-    const hidden = new Set((await db.projects.filter((p) => !p.deleted_at && p.archived).toArray()).map((p) => p.id))
-    const open = (await visibleTasks()).filter((task) => !task.completed_at && (!task.project_id || !hidden.has(task.project_id)))
-    return countOpenByLabel(open)
-  }, [], new Map<string, number>())
+  // Same rule as TaskListView: tasks of archived projects and of trashed projects are
+  // hidden. The tasks come from the shared snapshot (large-list-performance D2).
+  const hidden = useLiveQuery(async () => (await db.projects.filter((p) => !p.deleted_at && p.archived).primaryKeys()).join('\n'), [], '')
+  const openTasks = useOpenTasks()
+  const counts = useMemo(() => {
+    const skip = new Set(hidden ? hidden.split('\n') : [])
+    return countOpenByLabel(openTasks.filter((task) => !task.project_id || !skip.has(task.project_id)))
+  }, [hidden, openTasks])
   return { labels, counts, duplicates: duplicateLabelIds(labels) }
 }
 
