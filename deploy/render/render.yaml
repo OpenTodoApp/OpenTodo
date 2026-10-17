@@ -1,0 +1,33 @@
+# OpenTodo on Render: one web service pulling the released image, with a persistent
+# disk on /data for the SQLite database and attachments. A disk needs a paid instance
+# type (Free web services cannot have one), so plan is the smallest paid one.
+# Guide: https://open-todo.app/docs/self-hosting/render/
+services:
+  - type: web
+    name: opentodo
+    runtime: image
+    image:
+      url: ghcr.io/pixari/opentodo:stable
+    plan: 0.5c-512mb
+    healthCheckPath: /healthz
+    disk:
+      name: opentodo-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      # The port OpenTodo listens on, so Render routes to it.
+      - key: PORT
+        value: "8080"
+      # The https onrender.com address of this service (RENDER_EXTERNAL_URL).
+      - key: OPENTODO_BASE_URL
+        fromService:
+          name: opentodo
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      # Asked when the owner account is created; shown under Environment.
+      - key: OPENTODO_SETUP_TOKEN
+        generateValue: true
+      - key: OPENTODO_ALLOW_SIGNUP
+        value: "false"
+      - key: OPENTODO_TRUSTED_PROXIES
+        value: ""

@@ -1,0 +1,26 @@
+# OpenTodo for Synology DSM 7.2+ Container Manager: Project, path /volume1/docker/opentodo.
+# Before you build: create the folder data in that path (File Station), and set user to the
+# uid:gid of the DSM account that owns it (1026:100 is the first account DSM creates; the
+# guide shows how to check yours). Guide: https://open-todo.app/docs/self-hosting/synology/
+services:
+  opentodo:
+    image: ghcr.io/pixari/opentodo:stable
+    container_name: opentodo
+    pull_policy: always
+    user: "1026:100"
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      OPENTODO_BASE_URL: ""
+      OPENTODO_SETUP_TOKEN: ""
+      OPENTODO_ALLOW_SIGNUP: "false"
+      OPENTODO_TRUSTED_PROXIES: ""
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "/opentodo", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
