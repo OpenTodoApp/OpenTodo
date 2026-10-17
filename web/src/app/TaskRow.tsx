@@ -7,16 +7,14 @@
 // three styles: ToneText for the date and the deadline, LabelChip, NeutralChip
 // for counts and the project. The board card is the same data as a card.
 import { Icon, LabelChip, NeutralChip, ToneText, type Tone } from '../ui'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
 import type { Label, Project, Task } from '../lib/types'
 import { AssigneeChip } from './AssigneePicker'
-import { useAttachmentCount, useCommentCount } from './useCommentCounts'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../lib/db'
+import { useAttachmentCount, useCommentCount, useSharedProject } from './useCommentCounts'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { completionDelay, prefersReducedMotion } from './motion'
@@ -95,7 +93,12 @@ export interface TaskRowProps {
   hideFieldBadges?: boolean
 }
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false }: TaskRowProps) {
+/**
+ * Memoized (large-list-performance D1): a list re-renders a row only when one of its
+ * props changes, so callers pass stable handlers and per-row values (`selected` is a
+ * boolean, not the list's selected id).
+ */
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false }: TaskRowProps) {
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -113,7 +116,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
   // plaintext is marked until an unlocked device has re-written it.
   const enc = useEncryption()
-  const shared = useLiveQuery(async () => (enc.enabled && task.project_id ? !!(await db.memberships.get(task.project_id)) : false), [enc.enabled, task.project_id], false)
+  // One shared membership map for every row, not a live query per row (large-list-performance).
+  const shared = useSharedProject(task.project_id, enc.enabled)
   const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
   const undecryptable = !!task._e2ee?.raw?.title
   // Evening and repeat are suffixes of the date text, never separate glyphs; with no
@@ -265,7 +269,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       </button>
     </li>
   )
-}
+})
 
 /** The board card: the same row data as a card (sections-and-boards "Card content"). */
 export function TaskCard(props: Omit<TaskRowProps, 'card'>) {

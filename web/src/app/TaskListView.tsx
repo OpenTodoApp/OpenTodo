@@ -1,6 +1,6 @@
 import { Button, EmptyState as EmptyStatePattern, Icon, IconButton, type IconName } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { duplicateTask } from '../lib/templates'
 import { db } from '../lib/db'
@@ -33,7 +33,7 @@ import { AssigneePicker } from './AssigneePicker'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { registerPanelHandlers, setPanelTaskId as setOpenId, usePanelTaskId } from './panel'
 import { completeWithUndo, deleteWithUndo, parkWithUndo } from './undoable'
-import { MAX_INDENT, TaskRow } from './TaskRow'
+import { MAX_INDENT, TaskRow, type TaskRowProps } from './TaskRow'
 import { navigate, type Route } from './router'
 import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { ProjectHeader } from './ProjectHeader'
@@ -43,7 +43,8 @@ import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, openTask, pla
 import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { keysOf } from '../lib/shortcuts'
-import { visibleTasks } from '../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { appendTo, groupBy } from '../lib/collections'
 import { LOGBOOK_PAGE, logbookGroups, logbookHeading } from '../lib/logbook'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
@@ -135,8 +136,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const currentLabel = route.view === 'label' ? labelMap.get(route.id) : undefined
 
   // Every live task once; views, breadcrumbs and progress badges derive from this set,
-  // so a remote op that lands in IndexedDB updates all of them without a reload.
-  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  // so a remote op that lands in IndexedDB updates all of them without a reload. The
+  // snapshot is shared with the sidebar and the panel (large-list-performance D2).
+  const allTasks = useLiveTasks() ?? NO_TASKS
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
@@ -318,8 +320,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     }
     if (route.view === 'label' || route.view === 'assigned' || route.view === 'someday' || route.view === 'anytime') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
-      const byProject = new Map<string, Task[]>()
-      for (const tk of tasks) byProject.set(tk.project_id ?? '', [...(byProject.get(tk.project_id ?? '') ?? []), tk])
+      const byProject = groupBy(tasks, (tk) => tk.project_id ?? '')
       const order = ['', ...projects.slice().sort(compareByPosition).map((p) => p.id)]
       return order.filter((id) => byProject.has(id)).map((id) => ({
         key: id || 'inbox', heading: id ? projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: byProject.get(id)!.map(flatRow),
@@ -334,18 +335,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups"); date, project and Later groups collapse per device.
-  const doneInProject = useLiveQuery(
-    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((task) => !!task.completed_at && !task.deleted_at && !task.skipped).toArray() : Promise.resolve([] as Task[])),
-    [projectId], [] as Task[],
-  )
   const doneBySection = useMemo(() => {
     const m = new Map<string, Task[]>()
-    for (const task of doneInProject) {
-      const key = effectiveSection(task, sectionMap) ?? ''
-      m.set(key, [...(m.get(key) ?? []), task])
+    if (!projectId) return m
+    for (const task of allTasks) {
+      if (task.project_id !== projectId || !task.completed_at || task.skipped) continue
+      appendTo(m, effectiveSection(task, sectionMap) ?? '', task)
     }
     return m
-  }, [doneInProject, sectionMap])
+  }, [allTasks, projectId, sectionMap])
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
@@ -758,6 +756,27 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
+  // Row handlers (large-list-performance D1): one object for the life of the list,
+  // reading the latest state through a ref, so a memoized row re-renders only when
+  // its own props change (j/k changes two rows' `selected`, nothing else).
+  const rowLive = useRef({ toggleComplete, toggleCollapsed, startDrag, selection })
+  rowLive.current = { toggleComplete, toggleCollapsed, startDrag, selection }
+  const rowActions = useMemo<RowActions>(() => ({
+    toggle: (task) => act(rowLive.current.toggleComplete(task.id, !task.completed_at)),
+    toggleCollapse: (id) => rowLive.current.toggleCollapsed(id),
+    open: (id) => {
+      setSelectedId(id)
+      setOpenId(id)
+    },
+    tick: (id, range) => {
+      const sel = rowLive.current.selection
+      if (range) sel.extendTo(id)
+      else sel.toggle(id)
+      setSelectedId(id)
+    },
+    drag: (e, task) => rowLive.current.startDrag(e, task),
+  }), [])
+
   /** The list's groups, inside the columns table when that layout is on (custom-fields). */
   const wrapColumns = (nodes: React.ReactNode) => (fieldColumns ? <FieldColumnsTable defs={projectFieldDefs}>{nodes}</FieldColumnsTable> : nodes)
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
@@ -770,38 +789,32 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     : renderLine(r))
   const renderLine = (r: Row) => (
     <Fragment key={r.task.id}>
-      <TaskRow
-        hideFieldBadges={fieldColumns}
+      <ListRow
         task={r.task}
+        depth={r.depth}
+        breadcrumb={r.breadcrumb}
+        hasChildren={r.hasChildren}
+        collapsed={r.collapsed}
         project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
-        labels={resolveLabels(r.task.labels, labelMap)}
+        labelMap={labelMap}
         assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
           ? (r.task.assignee_id === userId ? t('You') : memberName(r.task.assignee_id, memberMap) ?? t('Former member')) : null}
         assignedToMe={!!userId && r.task.assignee_id === userId}
         showProject={route.view !== 'project' && route.view !== 'label' && route.view !== 'inbox'}
         selected={r.task.id === selectedId}
-        depth={r.depth}
         progress={progress.get(r.task.id)}
         blockedBy={blocked.get(r.task.id)}
         habit={habits.get(r.task.id)}
-        breadcrumb={r.breadcrumb}
-        hasChildren={r.hasChildren}
-        collapsed={r.collapsed}
         readOnly={isReadOnly(r.task)}
         card={board}
-        onPointerDown={manual ? (e) => startDrag(e, r.task) : undefined}
-        dropKey={manual ? `task:${r.task.id}` : undefined}
+        draggable={manual}
+        collapsible={treeView && !board}
         dropIndicator={dropAt?.id === r.task.id ? dropAt.zone : null}
         dragging={draggingId === r.task.id}
-        onToggle={() => act(toggleComplete(r.task.id, !r.task.completed_at))}
-        onToggleCollapse={treeView && !board ? () => toggleCollapsed(r.task.id) : undefined}
-        onOpen={() => {
-          setSelectedId(r.task.id)
-          setOpenId(r.task.id)
-        }}
         ticked={selection.ticked.has(r.task.id)}
         showCheckbox={selectMode || selection.ticked.size > 0}
-        onTick={(range) => { if (range) selection.extendTo(r.task.id); else selection.toggle(r.task.id); setSelectedId(r.task.id) }}
+        hideFieldBadges={fieldColumns}
+        actions={rowActions}
       />
       {addingUnder === r.task.id && !board && (
         <li>
@@ -1010,6 +1023,46 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 }
 
 /** Inline "Add subtask" line under a row; stays focused for the next entry, Escape closes. */
+/** The list's row handlers, stable for the life of the list (large-list-performance D1). */
+interface RowActions {
+  toggle: (task: Task) => void
+  toggleCollapse: (id: string) => void
+  open: (id: string) => void
+  tick: (id: string, range: boolean) => void
+  drag: (e: React.PointerEvent, task: Task) => void
+}
+
+type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey'> & {
+  labelMap: Map<string, Label>
+  /** Manually ordered view: the row drags and accepts drops. */
+  draggable: boolean
+  /** Tree list: rows with children get the collapse chevron. */
+  collapsible: boolean
+  actions: RowActions
+}
+
+/**
+ * One list row, memoized: every prop is a primitive, a stable object from the
+ * list's maps, or the stable `actions`, so moving the cursor re-renders only the
+ * rows whose `selected` changed.
+ */
+const ListRow = memo(function ListRow({ task, labelMap, draggable, collapsible, actions, ...rest }: ListRowProps) {
+  const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
+  return (
+    <TaskRow
+      {...rest}
+      task={task}
+      labels={labels}
+      onPointerDown={draggable ? (e) => actions.drag(e, task) : undefined}
+      dropKey={draggable ? `task:${task.id}` : undefined}
+      onToggle={() => actions.toggle(task)}
+      onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
+      onOpen={() => actions.open(task.id)}
+      onTick={(range) => actions.tick(task.id, range)}
+    />
+  )
+})
+
 function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: () => void }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLInputElement>(null)
