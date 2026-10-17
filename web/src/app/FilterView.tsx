@@ -67,7 +67,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  // undefined until the first read: Enter can arrive before the tasks are loaded.
+  const loadedTasks = useLiveQuery(() => visibleTasks(), [])
+  const allTasks = useMemo(() => loadedTasks ?? [], [loadedTasks])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(allTasks.map((tk) => [tk.id, tk])), [allTasks])
@@ -159,12 +161,13 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   // Enter: run now and move to the first result once it is rendered.
   const [focusFirst, setFocusFirst] = useState(false)
   useEffect(() => {
-    if (!focusFirst || debounced !== query || good.src !== query) return
+    // Wait for the tasks as well: with none loaded yet there are no rows to move to.
+    if (!focusFirst || debounced !== query || good.src !== query || loadedTasks === undefined) return
     setFocusFirst(false)
     if (rows.length === 0) return
     setSelectedId(rows[0].id)
     listRef.current?.focus()
-  }, [focusFirst, debounced, query, good, rows])
+  }, [focusFirst, debounced, query, good, rows, loadedTasks])
 
   function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
