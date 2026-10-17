@@ -16,7 +16,7 @@ import {
 } from './crypto'
 import { db, entityTables, getMeta, setMeta, tableOf } from './db'
 import {
-  CONTENT_FIELDS, currentKey, isContentField, isEnabled, K_DISCARD, publishEncryption, refreshFromServer, UNDECRYPTABLE,
+  CONTENT_FIELDS, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
 } from './e2ee'
 import { getDeviceId, mutateMany, mutationTables, readField, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
@@ -81,12 +81,14 @@ function encryptable(op: Op): op is Op & { value: string } {
  * Encrypt the content fields of an outgoing batch for an encrypted account.
  * Empty strings and null stay as they are (their emptiness is visible anyway);
  * an envelope this device could not decrypt is passed through unchanged.
- * Throws LockedError when the account encrypts and the device has no key.
+ * Throws LockedError when the account encrypts and the device has no key, or
+ * the server lost the key record (encryption-state-integrity): nothing is
+ * uploaded until the user restores the record or turns encryption off here.
  */
 export async function prepareOutgoing(ops: Op[]): Promise<Op[]> {
   if (ops.length === 0 || !(await isEnabled())) return ops
   const key = await currentKey()
-  if (!key) throw new LockedError()
+  if (!key || (await isRecordMissing())) throw new LockedError()
   const personal = await personalResolver(ops)
   const out: Op[] = []
   for (const op of ops) {
@@ -169,7 +171,7 @@ export async function reconcileMode(inc: Incoming): Promise<'ok' | 'locked'> {
       // Offline or transient: keep the local mode; the next exchange retries.
     }
   }
-  if ((await isEnabled()) && !(await currentKey())) return 'locked'
+  if (await syncBlocked()) return 'locked'
   return 'ok'
 }
 

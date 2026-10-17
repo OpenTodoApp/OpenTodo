@@ -81,3 +81,30 @@ export function entryFromForm(form: FormData, id: string, now = Date.now()): Inb
   const files = form.getAll('files').filter((f): f is File => typeof f !== 'string')
   return { id, createdAt: now, title: text('title'), text: text('text'), url: text('url'), files: files.map((f) => ({ name: f.name, type: f.type, blob: f })) }
 }
+
+/**
+ * Largest share the service worker stores (encryption-state-integrity): the
+ * files and text of one POST /share together. Several files at the server's
+ * default 25 MB per-file attachment limit fit; anything larger is not stored.
+ */
+export const SHARE_MAX_BYTES = 100 * 1024 * 1024
+
+/**
+ * Whether the service worker may take a POST /share at all, from its headers.
+ * The share sheet's request is a top-level navigation the browser starts itself
+ * (Sec-Fetch-Site `none`) or one from the app's own pages (`same-origin`); a
+ * form on another site (`cross-site`, `same-site`) is refused. Browsers that
+ * send no Sec-Fetch-Site are allowed. A declared Content-Length over the cap is
+ * refused before the body is read.
+ */
+export function shareRequestAllowed(headers: Headers): boolean {
+  const site = headers.get('sec-fetch-site')
+  if (site !== null && site !== 'none' && site !== 'same-origin') return false
+  const length = Number(headers.get('content-length') ?? '')
+  return !(Number.isFinite(length) && length > SHARE_MAX_BYTES)
+}
+
+/** The stored size of an entry: its files and its text fields. */
+export function entrySize(entry: InboxEntry): number {
+  return entry.files.reduce((n, f) => n + f.blob.size, 0) + entry.title.length + entry.text.length + entry.url.length
+}

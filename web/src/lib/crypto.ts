@@ -26,6 +26,13 @@ export const KDF_PBKDF2_SHA256 = 1
 export const PBKDF2_ITERATIONS = 600_000
 export const MIN_PASSPHRASE_LENGTH = 12
 /**
+ * PBKDF2 iteration counts this client accepts from a key record (encryption-state-integrity).
+ * The server stores 600,000 and up; a record outside this range came from a broken
+ * or hostile server (too few: cheap to brute-force; too many: the device hangs).
+ * Mutable only so tests can derive keys quickly.
+ */
+export const ITERATION_LIMITS = { min: 100_000, max: 10_000_000 }
+/**
  * Largest plaintext (UTF-8 bytes) a content field may hold on an encrypted
  * account: its envelope is 64,047 bytes of JSON, under the
  * server's unchanged 64 KiB value limit (design D3).
@@ -54,6 +61,19 @@ export class RecoveryKeyFormatError extends Error {
   constructor(message = t('this is not a valid recovery key; check for typos')) {
     super(message)
   }
+}
+
+/** A key record's derivation parameters are outside what this client accepts. */
+export class KeyRecordParamsError extends Error {
+  constructor(public iterations: number) {
+    super(t('The encryption key record from the server uses {n} key derivation iterations, outside the accepted range. This device stays locked; ask the server operator to check the server.', { n: iterations }))
+  }
+}
+
+/** Throws KeyRecordParamsError when the record's iteration count is out of range or not an integer. */
+export function checkRecordParams(record: KeyRecord): void {
+  const n = record.iterations
+  if (!Number.isInteger(n) || n < ITERATION_LIMITS.min || n > ITERATION_LIMITS.max) throw new KeyRecordParamsError(n)
 }
 
 /** What the server stores: wrapped keys and derivation parameters (design D1). */
@@ -257,6 +277,7 @@ export async function createKeyRecord(passphrase: string, opts: { iterations?: n
 
 export async function unlockWithPassphrase(record: KeyRecord, passphrase: string, extractable = false): Promise<CryptoKey> {
   if (record.kdf !== KDF_PBKDF2_SHA256) throw new Error(t('unsupported key derivation {kdf}; update the app', { kdf: record.kdf }))
+  checkRecordParams(record)
   const kek = await derivePassphraseKey(passphrase, fromB64url(record.salt), record.iterations)
   return unwrapAccountKey(record.wrappedByPassphrase, kek, extractable)
 }
