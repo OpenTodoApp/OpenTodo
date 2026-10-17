@@ -1,0 +1,48 @@
+# OpenTodo on Fly.io. Guide: https://open-todo.app/docs/self-hosting/fly/
+#
+#   fly launch --copy-config --no-deploy --name <app> --region <region>
+#   fly secrets set OPENTODO_SETUP_TOKEN=<16+ characters>
+#   fly deploy
+#
+# fly launch writes the app name and region into this file. Run fly deploy again to update:
+# it resolves the stable tag to the current release each time.
+
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  image = "ghcr.io/pixari/opentodo:stable"
+
+[env]
+  # Set to https://<app>.fly.dev (or your own domain) before the first deploy: passkeys,
+  # push notifications and invitation links use it. Fly serves the app over https only.
+  OPENTODO_BASE_URL = ""
+  OPENTODO_ALLOW_SIGNUP = "false"
+  OPENTODO_TRUSTED_PROXIES = ""
+  # The setup token is a secret, not set here: fly secrets set OPENTODO_SETUP_TOKEN=...
+
+# SQLite in one volume: one machine, never two (Fly does not replicate volumes).
+[mounts]
+  source = "opentodo_data"
+  destination = "/data"
+  initial_size = "1gb"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Keep the machine running: reminders (push), scheduled backups and email to task run on
+  # the server and would not run while it is stopped.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
