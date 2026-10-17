@@ -1,6 +1,7 @@
 package calfeed
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -26,6 +27,34 @@ type Window struct{ From, To time.Time }
 // maxPeriods bounds the expansion loop of one rule, whatever the rule says.
 const maxPeriods = 20000
 
+// Bounds of one whole expansion (OpenSpec change bound-hostile-input):
+// maxExpandWork counts rule periods visited and starts produced across all
+// events of a calendar, MaxExpandTime is the deadline Fetch gives it. Either
+// one stops the expansion with the occurrences found so far and a warning.
+const (
+	maxExpandWork = 500_000
+	MaxExpandTime = 5 * time.Second
+)
+
+// expansion is the shared budget of one Expand call.
+type expansion struct {
+	ctx     context.Context
+	left    int
+	stopped bool
+}
+
+// spend uses one unit of work and reports whether the expansion may go on.
+func (x *expansion) spend() bool {
+	if x.stopped {
+		return false
+	}
+	x.left--
+	if x.left < 0 || x.left%1024 == 0 && x.ctx.Err() != nil {
+		x.stopped = true
+	}
+	return !x.stopped
+}
+
 // Expand turns events into occurrences inside the window: recurrence rules
 // expanded (FREQ DAILY, WEEKLY, MONTHLY, YEARLY with INTERVAL, COUNT, UNTIL,
 // BYDAY with ordinals, BYMONTHDAY, BYMONTH, BYSETPOS and WKST), RDATE added,
@@ -33,6 +62,14 @@ const maxPeriods = 20000
 // at most limit kept (design D3). Rules with other parts keep their first
 // occurrence only, with a warning.
 func Expand(events []Event, win Window, limit int) ([]Occurrence, []string) {
+	return ExpandContext(context.Background(), events, win, limit)
+}
+
+// ExpandContext is Expand that also stops when ctx is done. A stopped
+// expansion (the context, or the work budget shared by all events) keeps the
+// occurrences found so far and says so in a warning.
+func ExpandContext(ctx context.Context, events []Event, win Window, limit int) ([]Occurrence, []string) {
+	x := &expansion{ctx: ctx, left: maxExpandWork}
 	w := warnings{}
 	masters := map[string]*Event{}
 	overrides := map[string][]Event{}
@@ -53,13 +90,16 @@ func Expand(events []Event, win Window, limit int) ([]Occurrence, []string) {
 	}
 	var out []Occurrence
 	for _, uid := range order {
+		if x.stopped {
+			break
+		}
 		m := masters[uid]
 		if m.Cancelled {
 			continue // a cancelled series is gone, its overrides with it
 		}
 		byKey := map[string]Occurrence{}
 		var keys []string
-		for _, start := range starts(*m, win, w) {
+		for _, start := range starts(*m, win, w, x) {
 			o := occurrence(*m, start)
 			k := instanceKey(start)
 			if _, dup := byKey[k]; !dup {
@@ -95,6 +135,9 @@ func Expand(events []Event, win Window, limit int) ([]Occurrence, []string) {
 			o.Instance = k
 			out = append(out, o)
 		}
+	}
+	if x.stopped {
+		w.add("this calendar repeats too much to show completely; some events are left out")
 	}
 	// Overrides whose master is not in the feed stand on their own.
 	for uid, list := range overrides {
@@ -292,14 +335,19 @@ func ints(v string) []int {
 }
 
 // starts lists the occurrence starts of a master event up to the window's end.
-func starts(ev Event, win Window, w warnings) []Point {
+func starts(ev Event, win Window, w warnings, x *expansion) []Point {
 	out := []Point{ev.Start}
-	if ev.RRule != "" {
+	x.spend()
+	if ev.RRule != "" && !x.stopped {
 		r, why, ok := parseRule(ev.RRule, ev.Start)
 		if !ok {
 			w.add(fmt.Sprintf("“%s” repeats in a way that is not supported (%s); only its first occurrence is shown", title(ev), why))
 		} else {
-			out = append(out, expandRule(r, ev.Start, win)...)
+			// An occurrence that starts before the window can still reach
+			// into it: start looking one event length (and slack) earlier.
+			o := occurrence(ev, ev.Start)
+			from := win.From.Add(-o.End.T.Sub(o.Start.T) - 72*time.Hour)
+			out = append(out, expandRule(r, ev.Start, win, from, x)...)
 		}
 	}
 	for _, rd := range ev.RDates {
@@ -309,7 +357,9 @@ func starts(ev Event, win Window, w warnings) []Point {
 }
 
 // expandRule produces the starts after DTSTART (DTSTART is always the first).
-func expandRule(r rule, start Point, win Window) []Point {
+// A rule without COUNT does not need the periods before from: it starts at the
+// last period that begins before from instead of at DTSTART.
+func expandRule(r rule, start Point, win Window, from time.Time, x *expansion) []Point {
 	loc := start.T.Location()
 	h, mi, s := start.T.Clock()
 	at := func(y int, m time.Month, d int) time.Time { return time.Date(y, m, d, h, mi, s, 0, loc) }
@@ -331,10 +381,17 @@ func expandRule(r rule, start Point, win Window) []Point {
 		}
 		produced++
 		out = append(out, Point{T: t, Zone: start.Zone, AllDay: start.AllDay})
-		return true
+		return x.spend()
 	}
 	y, mo, d := start.T.Date()
-	for i := 0; i < maxPeriods; i++ {
+	first := 0
+	if r.count == 0 && from.After(start.T) {
+		first = skipPeriods(r, y, mo, d, from)
+	}
+	for i := first; i < first+maxPeriods; i++ {
+		if !x.spend() {
+			return out
+		}
 		var days []time.Time
 		switch r.freq {
 		case "DAILY":
@@ -389,6 +446,25 @@ func expandRule(r rule, start Point, win Window) []Point {
 		}
 	}
 	return out
+}
+
+// skipPeriods is the index of a period that starts no later than from, at most
+// one period before the one containing it (never negative).
+func skipPeriods(r rule, y int, mo time.Month, d int, from time.Time) int {
+	fy, fm, fd := from.Date()
+	days := int(time.Date(fy, fm, fd, 0, 0, 0, 0, time.UTC).Sub(time.Date(y, mo, d, 0, 0, 0, 0, time.UTC)).Hours() / 24)
+	var n int
+	switch r.freq {
+	case "DAILY":
+		n = days / r.interval
+	case "WEEKLY":
+		n = days / 7 / r.interval
+	case "MONTHLY":
+		n = ((fy-y)*12 + int(fm) - int(mo)) / r.interval
+	default:
+		n = (fy - y) / r.interval
+	}
+	return max(n-1, 0)
 }
 
 func periodStart(r rule, y int, mo time.Month, d, i int, at func(int, time.Month, int) time.Time) time.Time {

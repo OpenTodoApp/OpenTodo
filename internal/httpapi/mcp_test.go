@@ -284,6 +284,14 @@ func TestMcpTransportNegotiation(t *testing.T) {
 	if resp, raw := c.mcpPost(secret, `{"jsonrpc":"2.0","id":1,"method":"ping"}`, "MCP-Protocol-Version", "2025-06-18"); resp.StatusCode != 200 {
 		t.Fatalf("supported protocol header: %d %s", resp.StatusCode, raw)
 	}
+	// bound-hostile-input: revisions after 2025-03-26 removed JSON-RPC batches.
+	batch := `[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"ping"}]`
+	if resp, raw := c.mcpPost(secret, batch, "MCP-Protocol-Version", "2025-06-18"); resp.StatusCode != 400 || !strings.Contains(string(raw), "-32600") {
+		t.Fatalf("batch under 2025-06-18: %d %s", resp.StatusCode, raw)
+	}
+	if resp, raw := c.mcpPost(secret, batch); resp.StatusCode != 200 || !strings.HasPrefix(string(raw), "[") {
+		t.Fatalf("batch without a protocol header: %d %s", resp.StatusCode, raw)
+	}
 	if resp, raw := c.mcpPost(secret, `{"jsonrpc":"2.0","method":"notifications/initialized"}`); resp.StatusCode != 202 || len(raw) != 0 {
 		t.Fatalf("notification: %d %s", resp.StatusCode, raw)
 	}

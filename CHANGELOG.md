@@ -23,6 +23,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Release binaries are built with Go 1.26.9**, which fixes standard-library vulnerabilities (net/http, crypto/tls, crypto/x509 and others) present in the 1.26.0 toolchain used so far. `go.mod` names the toolchain, the Docker image uses the same version, and CI now fails when the code can reach a known vulnerability (`govulncheck`).
 
+### Security
+
+- **Calendar data, MCP batches and calendar subscriptions are bounded.** Reading iCalendar data (CalDAV writes and subscribed calendars) takes time in proportion to its size, and one content line may be at most 64 KB. The MCP endpoint refuses JSON-RPC batches under protocol revisions that no longer have them (2025-06-18 and later), accepts at most 20 messages per batch otherwise, and stops running a batch once its answer reaches 4 MB. Expanding a subscribed calendar's repeating events starts at the shown period, shares one work budget and a 5-second deadline per calendar, and keeps what it found with a warning when it runs out. ([CalDAV](docs/caldav.md), [MCP](docs/mcp.md#limits-and-security), [Other calendars](docs/other-calendars.md#limits))
+
+### Fixed
+
+- **Old repeating events in subscribed calendars.** A daily event that started decades ago (before about 1972) showed no occurrences; it now shows every day of the period.
+
 ## [0.6.1] - 2026-10-17
 
 OpenTodo 0.6.1 makes plain-http installs work: opened by a home server's or NAS's address (`http://192.168.1.10:8080`), the app no longer shows **Offline** with nothing saved. It adds an **Unraid template**, and fixes encryption turning off part-way, settings pages scrolling away, and two small things in the task panel.
