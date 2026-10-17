@@ -55,7 +55,7 @@ docker run -d --name opentodo \
 
 ## Behind a reverse proxy
 
-OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, responses carry `Strict-Transport-Security` (one year, no `includeSubDomains`, no preload), the origin check matches and links point at the public address. With a base URL, a browser request must also be addressed to its host: a page under another name that happens to resolve to your server is treated as cross-site. Emailed links (password resets, sign-up confirmations, invitations) are only ever built from it, so without it [outgoing email](outgoing-email.md#set-the-base-url-first) sends none of them. Without a base URL, the links the app shows you (invite and reset links to copy, the CalDAV address, calendar feeds, public links) use the address of your own request, and cookies are still marked `Secure` whenever the request arrived over https.
+OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, responses carry `Strict-Transport-Security` (one year, no `includeSubDomains`, no preload), the origin check matches and links point at the public address. With a base URL, a browser request must also be addressed to its host: a page under another name that happens to resolve to your server is treated as cross-site. **After moving to a new domain, update `OPENTODO_BASE_URL` too**: until you do, signing in and other requests from the new address are refused with "cross-site request rejected", the sign-in screen names the address the server is set up for, and the log has one warning per refused host (`refused a browser request for a host that is not OPENTODO_BASE_URL's` with `host=` and `base_url=`). Redirect the old domain to the new one at your proxy or DNS provider. Emailed links (password resets, sign-up confirmations, invitations) are only ever built from it, so without it [outgoing email](outgoing-email.md#set-the-base-url-first) sends none of them. Without a base URL, the links the app shows you (invite and reset links to copy, the CalDAV address, calendar feeds, public links) use the address of your own request, and cookies are still marked `Secure` whenever the request arrived over https.
 
 **Which proxies are believed.** `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and Cloudflare's `CF-Connecting-IP` count only when the connection comes from a trusted proxy. By default those are loopback, private and link-local addresses (`127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`, `169.254.0.0/16`, `fe80::/10`), which covers a proxy on the same machine or a container network (Traefik, Caddy, nginx, Coolify, Dokploy, Kubernetes ingress). From any other address the headers are ignored and the connection's address is the client, so a client that reaches the container directly cannot choose its own address. From a trusted proxy the client is the nearest untrusted `X-Forwarded-For` hop, read from the right: the address your proxy appended (Traefik, Caddy, and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` append it). Make sure your proxy appends to or replaces the header rather than passing the client's through. Rate limits, the audit log, the demo sandbox limit and the [setup code](#the-setup-code) all use this address; IPv6 clients share a limit per `/64`.
 
@@ -221,6 +221,32 @@ The command needs only the data volume: shell access to the host is the proof of
 `docker compose pull && docker compose up -d` replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (`restore`, `mfa-reset`, `reset-owner-password` without a running server) still need every server stopped.
 
 **Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose up -d` already stops the old container first and needs nothing special. With an orchestrator that starts the new container first, stop the old one for this one upgrade (`docker compose down && docker compose up -d`, or **Stop** then **Deploy** in Coolify); from 0.2.0 on, updates roll without stopping. If you pinned a tag such as `ghcr.io/pixari/opentodo:0.1`, change it to `0.2` (or `0.2.0`).
+
+## Verifying the image and downloads
+
+Releases built after 0.6.1 are signed and carry their build record. The image is signed with [cosign](https://docs.sigstore.dev/) without a long-lived key: the signature names the GitHub workflow and tag that built it. Check it before you deploy a new version:
+
+```bash
+cosign verify ghcr.io/pixari/opentodo:<version> \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/pixari/opentodo/\.github/workflows/ci\.yml@refs/(tags/v|heads/main)'
+```
+
+The image also carries a software bill of materials (SBOM) and SLSA build provenance. To read them:
+
+```bash
+docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .Provenance }}'
+```
+
+Every file on a GitHub release (server and `ot` binaries, the extension and agent skill zips, the site bundle) has a build provenance attestation. Verify a download with the GitHub CLI, and compare it with `SHA256SUMS`:
+
+```bash
+gh attestation verify opentodo-linux-amd64 --repo pixari/opentodo
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+Before an image is published, CI starts it the way Coolify does (health check, owner setup, closed sign-up, data surviving a recreate) and scans it for known vulnerabilities; a critical one with a fixed version stops the release.
 
 ## Health
 

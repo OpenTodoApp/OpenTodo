@@ -15,6 +15,7 @@ type sharingFixture struct {
 	ctx context.Context
 	s   *Service
 	ts  int64
+	n   int // op ids are unique per fixture, so tests can run in parallel
 }
 
 func newSharing(t *testing.T) *sharingFixture {
@@ -35,12 +36,10 @@ func newSharing(t *testing.T) *sharingFixture {
 	return f
 }
 
-var opCounter int
-
 func (f *sharingFixture) op(entity, id, field, value string) Op {
 	f.ts++
-	opCounter++
-	return Op{ID: fmt.Sprintf("op-%d", opCounter), Entity: entity, EntityID: id, Field: field, Value: []byte(value), TS: f.ts}
+	f.n++
+	return Op{ID: fmt.Sprintf("op-%d", f.n), Entity: entity, EntityID: id, Field: field, Value: []byte(value), TS: f.ts}
 }
 
 func (f *sharingFixture) apply(user, device string, ops ...Op) ApplyResult {
@@ -116,6 +115,7 @@ func rejectedIDs(res ApplyResult) []string {
 }
 
 func TestScopeResolutionForNewAndExistingTasks(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	scopeOf := func(id string) string {
@@ -147,6 +147,7 @@ func TestScopeResolutionForNewAndExistingTasks(t *testing.T) {
 }
 
 func TestProjectIdAcrossScopesIsRejected(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	f.apply("bob", "B", f.op("project", "bp", "name", `"Bob's"`))
@@ -185,6 +186,7 @@ func TestProjectIdAcrossScopesIsRejected(t *testing.T) {
 }
 
 func TestShareRelabelsExistingOpsAndFields(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	type row struct {
 		seq   int64
@@ -248,6 +250,7 @@ func TestShareRelabelsExistingOpsAndFields(t *testing.T) {
 }
 
 func TestViewerWritesAreRejectedPerOp(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleViewer)
 	edit := f.op("task", "t1", "title", `"Oat milk"`)
@@ -273,6 +276,7 @@ func TestViewerWritesAreRejectedPerOp(t *testing.T) {
 }
 
 func TestEditorCannotEditProjectFields(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	f.add("alice", "carol", RoleAdmin)
@@ -299,6 +303,7 @@ func TestEditorCannotEditProjectFields(t *testing.T) {
 }
 
 func TestRejectionIsIdempotentOnRetry(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleViewer)
 	batch := []Op{f.op("task", "t1", "title", `"x"`), f.op("task", "mine", "title", `"Mine"`)}
@@ -316,6 +321,7 @@ func TestRejectionIsIdempotentOnRetry(t *testing.T) {
 }
 
 func TestRejectedFieldsComeBackWithServerValue(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	// Bob edits as editor, then is downgraded; alice edits afterwards.
@@ -343,6 +349,7 @@ func TestRejectedFieldsComeBackWithServerValue(t *testing.T) {
 }
 
 func TestPullIsScopedToMemberships(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.apply("bob", "B", f.op("task", "bobs", "title", `"Bob only"`))
 	f.apply("carol", "C", f.op("task", "carols", "title", `"Carol only"`))
@@ -368,6 +375,7 @@ func TestPullIsScopedToMemberships(t *testing.T) {
 }
 
 func TestNewMemberReplaysHistoryBehindCursor(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	// Bob's two devices are already up to date with his own data.
 	for i := 0; i < 4; i++ {
@@ -411,6 +419,7 @@ func TestNewMemberReplaysHistoryBehindCursor(t *testing.T) {
 }
 
 func TestRemovedMemberReceivesNothing(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	_, cursor := f.pullAll("bob", "B", 0)
@@ -446,6 +455,7 @@ func TestRemovedMemberReceivesNothing(t *testing.T) {
 }
 
 func TestDowngradeWhileOfflineIsDeterministic(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	f.add("alice", "carol", RoleAdmin)
@@ -483,6 +493,7 @@ func TestDowngradeWhileOfflineIsDeterministic(t *testing.T) {
 }
 
 func TestMembershipRules(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	ctx := f.ctx
 	if _, err := f.s.AddMember(ctx, "bob", "p", "carol", RoleViewer); !errors.Is(err, ErrNotFound) {
@@ -539,6 +550,7 @@ func TestMembershipRules(t *testing.T) {
 }
 
 func TestOwnerTransfer(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	if _, err := f.s.TransferOwnership(f.ctx, "alice", "p", "carol"); !errors.Is(err, ErrInvalidMember) {
@@ -568,6 +580,7 @@ func TestOwnerTransfer(t *testing.T) {
 }
 
 func TestSharedChangesReachEveryMember(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	var changes []Change
 	f.s.SetObserver(func(_ context.Context, c []Change) { changes = append(changes, c...) })
@@ -605,6 +618,7 @@ func TestSharedChangesReachEveryMember(t *testing.T) {
 }
 
 func TestApplyStrictRefusesWholeBatch(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleViewer)
 	ops := []Op{f.op("task", "mine", "title", `"x"`), f.op("task", "t1", "title", `"y"`)}
@@ -624,6 +638,7 @@ func TestApplyStrictRefusesWholeBatch(t *testing.T) {
 // TestEditorWritesProjectNote (project-notes D2): an editor may write the
 // project's note and nothing else of the project; a viewer may write neither.
 func TestEditorWritesProjectNote(t *testing.T) {
+	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "bob", RoleEditor)
 	f.add("alice", "carol", RoleViewer)

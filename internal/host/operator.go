@@ -147,7 +147,11 @@ func (h *Host) opCreate(w http.ResponseWriter, r *http.Request) {
 	} else {
 		release()
 	}
-	rec, _ = h.reg.Get(r.Context(), in.Name)
+	// Re-read so the reply shows the state after the first open; keep the
+	// created record (and its setup token) if that read fails.
+	if fresh, err := h.reg.Get(r.Context(), in.Name); err == nil {
+		rec = fresh
+	}
 	// The owner opens setupUrl once: the sign-in screen fills the token in.
 	writeJSON(w, http.StatusCreated, map[string]any{"tenant": h.view(rec), "setupToken": rec.setupToken,
 		"setupUrl": h.hc.TenantURL(rec.Name).String() + "/?setup=" + rec.setupToken})

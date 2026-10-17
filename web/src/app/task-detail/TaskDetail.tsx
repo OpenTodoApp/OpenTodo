@@ -81,7 +81,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     if (focused && title !== titleBase.current) return
     titleBase.current = task.title
     setTitle(task.title)
-  }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the stored title only; the draft is read, not a trigger
   useEffect(() => setCopied(false), [taskId])
   // Opening a task reads its notifications (task-assignment); works offline.
   useEffect(() => {

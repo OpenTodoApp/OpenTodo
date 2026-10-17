@@ -98,6 +98,7 @@ func TestPushRoutesRequireAuth(t *testing.T) {
 	resp, out = e.do("DELETE", "/api/v1/push/subscriptions/"+id, nil)
 	e.mustStatus(resp, 404, out)
 	resp, out = e.do("GET", "/api/v1/push/vapid-key?device=phone", nil)
+	e.mustStatus(resp, 200, out)
 	if v, present := out["subscription"]; !present || v != nil {
 		t.Fatalf("status after delete = %v", out)
 	}

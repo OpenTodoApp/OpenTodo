@@ -30,7 +30,7 @@ export function useOverlay({ panel, onClose, modal = true, trigger }: {
       restore()
     }
     // Mount-only: the overlay is mounted while open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only; modal, panel and trigger are fixed for the overlay's lifetime
   }, [])
 }
 

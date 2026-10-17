@@ -1,0 +1,35 @@
+# Review owners for sensitive paths (OpenSpec ci-release-gates). With branch
+# protection requiring code owner review, changes here wait for the maintainer.
+# Later lines win, so the catch-all comes first.
+*                               @pixari
+
+# CI, release, dependency updates and the image build
+/.github/                       @pixari
+/Dockerfile                     @pixari
+/.dockerignore                  @pixari
+/Makefile                       @pixari
+/go.mod                         @pixari
+/go.sum                         @pixari
+/web/package.json               @pixari
+/web/package-lock.json          @pixari
+/scripts/ci-changes.sh          @pixari
+/scripts/repo-checks.test.mjs   @pixari
+/deploy/                        @pixari
+
+# Authentication, authorization, encryption and the data path
+/internal/auth/                 @pixari
+/internal/httpapi/              @pixari
+/internal/oidc/                 @pixari
+/internal/webauthn/             @pixari
+/internal/e2ee/                 @pixari
+/internal/sync/                 @pixari
+/internal/store/migrations/     @pixari
+/internal/backup/               @pixari
+/internal/outbound/             @pixari
+/internal/settings/             @pixari
+/web/src/lib/crypto.ts          @pixari
+/web/src/lib/e2ee.ts            @pixari
+/web/src/lib/e2eeSync.ts        @pixari
+/web/public/push-sw.js          @pixari
+/extension/manifest.json        @pixari
+/SECURITY.md                    @pixari

@@ -130,6 +130,7 @@ func TestEmailInboxRoutes(t *testing.T) {
 		}
 	}
 	resp, out = e.do("GET", "/api/v1/email-inbox", nil)
+	e.mustStatus(resp, 200, out)
 	if out["enabled"] != true || len(out["allowlist"].([]any)) != 0 {
 		t.Fatalf("settings changed by a refused PATCH: %v", out)
 	}

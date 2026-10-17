@@ -10,7 +10,7 @@ import { setDateTime } from '../lib/dates'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -45,11 +45,6 @@ afterEach(() => {
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
   document.body.innerHTML = ''
 })
-
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 /** Elements that scroll vertically on their own, outside designated regions and overlays. */
 export function scrollers(root: ParentNode): Element[] {

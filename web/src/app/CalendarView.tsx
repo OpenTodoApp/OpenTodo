@@ -180,7 +180,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     }
     take()
     return placementSignal.subscribe(take)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- subscribe once; date/today are read when a placement request arrives
 
   // Start at the grid start hour; the hours before and after stay reachable by scrolling.
   useLayoutEffect(() => {

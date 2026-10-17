@@ -30,6 +30,7 @@ func TestMailedLinksNeedBaseURL(t *testing.T) {
 	}
 	e.configureMail(srv)
 	resp, out = e.do("GET", "/api/v1/me", nil)
+	e.mustStatus(resp, 200, out)
 	ws := out["config_warnings"].([]any)
 	if len(ws) != 1 || ws[0].(map[string]any)["variable"] != "OPENTODO_BASE_URL" {
 		t.Fatalf("warnings = %v", ws)

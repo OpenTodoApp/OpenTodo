@@ -57,6 +57,7 @@ export function useViewData(): ViewData {
   const zone = useViewerZone()
   // A new context on a zone change re-groups zoned dues (absolute-datetimes).
   const fields = useFieldDefs()
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   const ctx = useMemo(() => ({ today, labels, projects, tasks, fields }), [today, labels, projects, tasks, fields, zone])
   return { views, projects, labels, tasks, ctx }
 }

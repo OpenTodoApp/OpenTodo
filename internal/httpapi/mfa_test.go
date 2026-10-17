@@ -284,11 +284,12 @@ func TestTrustedDeviceSkipsSecondStep(t *testing.T) {
 	// A wrong password is still refused on a remembered browser.
 	resp, out = login(c, "owner@example.com", "wrong password!!")
 	if resp.StatusCode != 401 {
-		t.Fatalf("wrong password on trusted device = %d", resp.StatusCode)
+		t.Fatalf("wrong password on trusted device = %d %v", resp.StatusCode, out)
 	}
 	// The trust cookie does not help another account or another browser.
 	other := m.client("203.0.113.21")
 	resp, out = login(other, "owner@example.com", "correct horse battery")
+	other.mustStatus(resp, 200, out)
 	if out["mfaRequired"] != true {
 		t.Fatalf("other browser = %v", out)
 	}
@@ -302,6 +303,7 @@ func TestTrustedDeviceSkipsSecondStep(t *testing.T) {
 	resp, out = c.do("DELETE", "/api/v1/mfa/trusted-devices", nil)
 	c.mustStatus(resp, 204, out)
 	resp, out = login(c, "owner@example.com", "correct horse battery")
+	c.mustStatus(resp, 200, out)
 	if out["mfaRequired"] != true {
 		t.Fatalf("after forget all = %v", out)
 	}
@@ -316,10 +318,12 @@ func TestTrustedDeviceSkipsSecondStep(t *testing.T) {
 	c.mustStatus(resp, 404, out)
 	// Expiry after 30 days.
 	resp, out = login(c, "owner@example.com", "correct horse battery")
+	c.mustStatus(resp, 200, out)
 	resp, out = c.do("POST", "/api/v1/auth/mfa", map[string]any{"challenge": out["challenge"], "code": m.code(secret), "remember": true})
 	c.mustStatus(resp, 200, out)
 	m.clock.advance(auth.TrustedDeviceTTL + time.Minute)
 	resp, out = login(c, "owner@example.com", "correct horse battery")
+	c.mustStatus(resp, 200, out)
 	if out["mfaRequired"] != true {
 		t.Fatalf("expired trust = %v", out)
 	}
@@ -368,14 +372,6 @@ func TestPasskeyUVSatisfiesMFA(t *testing.T) {
 	}
 }
 
-// stale makes every session of the server older than the freshness window.
-func (m *mfaEnv) stale() {
-	m.t.Helper()
-	if _, err := m.db.Exec("UPDATE session_auth SET reauth_at = ?", m.clock.now().Add(-FreshWindow-time.Minute).UnixMilli()); err != nil {
-		m.t.Fatal(err)
-	}
-}
-
 func TestReauthRequiredOnStaleSession(t *testing.T) {
 	m := newMFAEnv(t)
 	// A fresh session (just signed in) creates a token without a prompt.
@@ -415,6 +411,7 @@ func TestReauthRequiredOnStaleSession(t *testing.T) {
 	secret, _ := m.enrol(m.env)
 	m.clock.advance(FreshWindow + time.Second)
 	resp, out = m.do("POST", "/api/v1/mfa/recovery-codes/regenerate", nil)
+	m.mustStatus(resp, 403, out)
 	if errCode(out) != "reauth_required" {
 		t.Fatalf("regenerate stale = %v", out)
 	}
@@ -726,6 +723,7 @@ func TestOwnerResetClearsEverything(t *testing.T) {
 		t.Fatalf("login after reset = %v", out)
 	}
 	resp, out = nc.do("GET", "/api/v1/tasks", nil)
+	nc.mustStatus(resp, 403, out)
 	if errCode(out) != "mfa_enrolment_required" {
 		t.Fatalf("after reset under policy = %v", out)
 	}

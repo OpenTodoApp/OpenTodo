@@ -324,7 +324,7 @@ This repository uses [OpenSpec](https://github.com/Fission-AI/OpenSpec). The cur
 /opsx:archive                                # merge its specs into the live ones
 ```
 
-Validate everything with `npx @fission-ai/openspec validate --all --strict` (also part of `make check` and CI).
+Validate everything with `make openspec-validate` (the OpenSpec CLI at the version pinned in the `Makefile`; also part of `make check` and CI).
 
 ## Privacy
 

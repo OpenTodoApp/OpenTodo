@@ -202,6 +202,19 @@ func TestParseAuthDataAndCOSEKey(t *testing.T) {
 	}
 }
 
+// TestCOSEKeyOffCurveRefused: an ES256 key whose point is not on P-256 is
+// malformed, whatever its coordinates' length.
+func TestCOSEKeyOffCurveRefused(t *testing.T) {
+	coord := bytes.Repeat([]byte{1}, 32)
+	raw := []byte{0xa5, 0x01, 0x02, 0x03, 0x26, 0x20, 0x01, 0x21, 0x58, 0x20}
+	raw = append(raw, coord...)
+	raw = append(raw, 0x22, 0x58, 0x20)
+	raw = append(raw, coord...)
+	if _, _, err := webauthn.ParseCOSEKey(raw); !errors.Is(err, webauthn.ErrMalformed) {
+		t.Fatalf("off-curve key: %v", err)
+	}
+}
+
 func TestChallengeExpiresAndIsSingleUse(t *testing.T) {
 	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	c := webauthn.NewChallenges(webauthn.ChallengeTTL)

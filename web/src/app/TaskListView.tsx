@@ -31,7 +31,7 @@ import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
 import { LabelPicker } from './LabelPicker'
 import { AssigneePicker } from './AssigneePicker'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
-import { registerPanelHandlers, setPanelTaskId, usePanelTaskId } from './panel'
+import { registerPanelHandlers, setPanelTaskId as setOpenId, usePanelTaskId } from './panel'
 import { completeWithUndo, deleteWithUndo, parkWithUndo } from './undoable'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
@@ -181,6 +181,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       case 'assigned':
         return all.filter((task) => !task.completed_at && !!userId && task.assignee_id === userId).sort(compareDueThenPriority)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }, [allTasks, projects, route, today, zone, userId])
 
   const tasks = useMemo(() => {
@@ -325,6 +326,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections, logbook])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
@@ -357,7 +359,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const openActions = useCallback((picker: string | null = null) => { setActionsPicker(picker); setActionsOpen(true) }, [])
   // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
   const openId = usePanelTaskId()
-  const setOpenId = setPanelTaskId
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
   /** Parent whose last open subtask was just completed; Enter completes it too. */
   const [prompt, setPrompt] = useState<Task | null>(null)
@@ -461,7 +462,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     setAddingTo(null)
     selection.clear()
     setSelectMode(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a route change resets the list; selection is a new object on every row change
   }, [route])
   useEffect(() => openTask.subscribe((id) => {
     openTask.take(id)

@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import { act } from 'react'
-import { flush, key, render, type } from '../ui/test-utils'
+import { flush, key, render, type, waitFor } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
 import { PanelHost } from './PanelHost'
 import { resetPanel } from './panel'
@@ -28,10 +28,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const text = (el: HTMLElement) => el.textContent ?? ''
 
 describe('Today groups (2.3)', () => {
@@ -142,16 +138,16 @@ describe('keys (3.3)', () => {
     const input = document.activeElement as HTMLInputElement
     await type(input, '21/10')
     await key(input, 'Enter')
-    await flush(40)
-    expect((await db.tasks.get(id))!.start).toBe('2026-10-21')
+    await waitFor(async () => (await db.tasks.get(id))!.start === '2026-10-21', 'the start date written')
     await key(input, 'Escape'); await key(document.body, 'Escape'); await key(document.body, 'Escape')
     await waitFor(() => text(r.container).includes('Starts 21 Oct'))
     await key(document.body, 'j')
     await key(document.body, 'n')
-    await flush(60)
-    expect((await db.tasks.get(id))!.start).toBe('someday')
+    // The next key acts on the rendered row, so wait for it to read Someday.
+    const rowText = () => r.container.querySelector(`[data-task-id="${id}"]`)?.textContent ?? ''
+    await waitFor(async () => (await db.tasks.get(id))!.start === 'someday' && rowText().includes('Someday'), 'the task parked')
     await key(document.body, 'n')
-    await flush(60)
+    await waitFor(async () => (await db.tasks.get(id))!.start === null, 'the task un-parked')
     expect(await db.tasks.get(id)).toMatchObject({ start: null, due: null })
   })
 

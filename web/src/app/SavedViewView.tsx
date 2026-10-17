@@ -66,6 +66,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   useEffect(() => {
     if (draft === lastSaved.current) setDraft(view.query)
     lastSaved.current = view.query
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a remote query change triggers this; the draft is read, not a trigger
   }, [view.query])
   const dirty = draft.trim() !== view.query
   const inputRef = useRef<HTMLInputElement>(null)
@@ -91,7 +92,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   }
 
   // ---- results and keyboard navigation (a task can appear under several labels) ----
-  const groups = result.ok ? result.groups : []
+  const groups = useMemo(() => (result.ok ? result.groups : []), [result])
   const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [groups])
   const [selected, setSelected] = useState<string | null>(null)
   const openId = usePanelTaskId()

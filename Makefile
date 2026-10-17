@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png _locales
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint i18n-check repo-check
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
 all: build
 
@@ -70,6 +70,8 @@ storybook:
 ## and @playwright/test $(PLAYWRIGHT_VERSION) installed globally (as CI does); override
 ## PLAYWRIGHT_NODE_PATH to use another install.
 PLAYWRIGHT_VERSION := 1.56.1
+# The image CI's UI check runs in, pinned by digest (OpenSpec ci-release-gates).
+PLAYWRIGHT_IMAGE := mcr.microsoft.com/playwright:v$(PLAYWRIGHT_VERSION)-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
 PLAYWRIGHT_NODE_PATH ?= $(shell npm root -g)
 ui-check:
 	cd web && npm run build-storybook
@@ -81,7 +83,7 @@ ui-check:
 ## Without Docker, run the "UI baselines" workflow and commit its artifact instead.
 ui-baselines:
 	docker run --rm -v "$(CURDIR)":/work -v /work/web/node_modules -w /work \
-	  mcr.microsoft.com/playwright:v$(PLAYWRIGHT_VERSION)-noble bash -euc '\
+	  $(PLAYWRIGHT_IMAGE) bash -euc '\
 	    npm i -g --no-audit --no-fund @playwright/test@$(PLAYWRIGHT_VERSION) >/dev/null; \
 	    cd web && npm ci --no-audit --no-fund >/dev/null && npm run build-storybook; \
 	    cd ../scripts/ui-check && NODE_PATH=$$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=all; \
@@ -114,8 +116,17 @@ lint:
 	go vet ./...
 	cd web && npm run typecheck
 
+## Static analysis of the Go code (test-integrity), pinned so CI and laptops agree.
+## Needs the web build in internal/web/dist (make web), like go test.
+STATICCHECK_VERSION := v0.8.1
+staticcheck:
+	go run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./...
+
+## The OpenSpec CLI at an exact version (CI runs it through this target; Dependabot does not
+## see npx, so bump it by hand).
+OPENSPEC_VERSION := 1.13.2
 openspec-validate:
-	npx --yes @fission-ai/openspec@latest validate --all --strict
+	npx --yes @fission-ai/openspec@$(OPENSPEC_VERSION) validate --all --strict
 
 ## Everything CI runs.
 ## Documentation (user-documentation): build the docs site into dist/docs-site, regenerate the in-app help
@@ -173,12 +184,35 @@ deploy-check:
 repo-check:
 	node --test scripts/repo-checks.test.mjs
 
-check: lint test ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
+check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
+
+## The parts of `make check` that CI runs in its Checks job (the others run in the web,
+## server and extension jobs; scripts/repo-checks.test.mjs keeps the two lists whole).
+ci-checks: fmt-check ui-lint i18n-check openspec-validate deploy-check repo-check
+
+## gofmt gate: no Go file may need formatting.
+fmt-check:
+	@out=$$(gofmt -l cmd internal skills); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
+
+## Browser end-to-end checks (two devices, offline edits converging, saved views) against
+## a throwaway server on :18081 each. Expects `make build`; needs Playwright with Chromium.
+e2e:
+	@for s in e2e-smoke e2e-views; do \
+	  d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18081 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
+	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18081/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
+	  echo "== $$s"; OPENTODO_URL=http://127.0.0.1:18081 node scripts/$$s.mjs; st=$$?; kill $$pid; wait $$pid 2>/dev/null; \
+	  if [ $$st -ne 0 ]; then cat $$d/server.log; rm -rf $$d; exit $$st; fi; rm -rf $$d; \
+	done
 
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
 ui-lint:
 	node scripts/ui-check.mjs
+
+## React hooks lint (web-lint-and-test-hygiene): Rules of Hooks and effect
+## dependencies as errors; every remaining suppression carries its reason.
+web-lint:
+	cd web && npm run lint
 
 ## Translation catalogs (app-localization): every shipped catalog complete, no stale
 ## or malformed entries, placeholders as in the source; script tests included.

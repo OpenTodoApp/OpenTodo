@@ -26,15 +26,23 @@ func manyDaily(t *testing.T, n int, dtstart string) []Event {
 	return cal.Events
 }
 
+// Fast is measured in work units (rule periods visited and starts produced),
+// not wall time, so a slow or busy machine cannot fail it (test-integrity).
 func TestExpandOldSeriesIsFastAndComplete(t *testing.T) {
 	events := manyDaily(t, 2000, "19700101T090000Z")
 	w := StoreWindow(day("2026-10-17"))
-	start := time.Now()
-	occ, warns := Expand(events, w, MaxOccurrences)
-	if took := time.Since(start); took > 2*time.Second {
-		t.Errorf("expansion took %v", took)
+	// One series from 1970 costs the window's periods, not 56 years of them:
+	// walking from DTSTART would visit more than 20,000 periods.
+	x := &expansion{ctx: context.Background(), left: maxExpandWork}
+	starts(events[0], w, warnings{}, x)
+	if used := maxExpandWork - x.left; used > 1200 {
+		t.Errorf("one series from 1970 cost %d work units, want at most 1200", used)
 	}
-	if len(occ) != MaxOccurrences || !strings.Contains(strings.Join(warns, "|"), "5000") {
+	// 2000 of them stop at the calendar's work budget, with the occurrences
+	// found so far and both warnings.
+	occ, warns := Expand(events, w, MaxOccurrences)
+	all := strings.Join(warns, "|")
+	if len(occ) != MaxOccurrences || !strings.Contains(all, "5000") || !strings.Contains(all, "repeats too much") {
 		t.Fatalf("got %d occurrences, warnings %q", len(occ), warns)
 	}
 	// A series from 1970 still has its occurrences today (it used to run out

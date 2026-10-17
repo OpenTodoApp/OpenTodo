@@ -90,6 +90,7 @@ func mailLink(t *testing.T, m smtptest.Message) string {
 func TestSMTPSettingsRoutes(t *testing.T) {
 	e, srv := mailEnv(t, false)
 	resp, out := e.do("GET", "/api/v1/auth/status", nil)
+	e.mustStatus(resp, 200, out)
 	if out["outgoingEmail"].(map[string]any)["enabled"] != false {
 		t.Fatalf("status = %v", out["outgoingEmail"])
 	}
@@ -117,10 +118,12 @@ func TestSMTPSettingsRoutes(t *testing.T) {
 	}
 	e.configureMail(srv)
 	resp, out = e.do("GET", "/api/v1/settings/smtp", nil)
+	e.mustStatus(resp, 200, out)
 	if out["configured"] != true || out["passwordSet"] != true || out["password"] != nil || out["username"] != "todo" {
 		t.Fatalf("configured = %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/auth/status", nil)
+	e.mustStatus(resp, 200, out)
 	if out["outgoingEmail"].(map[string]any)["enabled"] != true {
 		t.Fatalf("status = %v", out["outgoingEmail"])
 	}
@@ -144,6 +147,7 @@ func TestSMTPSettingsRoutes(t *testing.T) {
 		t.Fatalf("received %+v", msgs)
 	}
 	resp, out = e.do("GET", "/api/v1/settings/smtp", nil)
+	e.mustStatus(resp, 200, out)
 	if lt, _ := out["lastTest"].(map[string]any); lt["outcome"] != "sent" {
 		t.Fatalf("lastTest = %v", out["lastTest"])
 	}
@@ -178,7 +182,7 @@ func TestSMTPSettingsRoutes(t *testing.T) {
 	for _, r := range [][2]string{{"GET", "/api/v1/settings/smtp"}, {"PUT", "/api/v1/settings/smtp"}, {"POST", "/api/v1/settings/smtp/test"}} {
 		resp, out = anon.do(r[0], r[1], map[string]any{})
 		if resp.StatusCode != 401 {
-			t.Fatalf("anonymous %s = %d", r[1], resp.StatusCode)
+			t.Fatalf("anonymous %s = %d %v", r[1], resp.StatusCode, out)
 		}
 	}
 	_, secret, _ := e.invite(map[string]any{})
@@ -210,6 +214,7 @@ func TestSMTPManagedByEnvironment(t *testing.T) {
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
 	resp, out = e.do("GET", "/api/v1/settings/smtp", nil)
+	e.mustStatus(resp, 200, out)
 	if mb := out["managedBy"].(map[string]any); mb["host"] != "env" || mb["username"] != "settings" {
 		t.Fatalf("managedBy = %v", mb)
 	}
@@ -222,6 +227,7 @@ func TestSMTPManagedByEnvironment(t *testing.T) {
 func TestOutgoingEmailOffOnDemoAndUnwired(t *testing.T) {
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/auth/status", nil)
+	e.mustStatus(resp, 200, out)
 	if out["outgoingEmail"].(map[string]any)["enabled"] != false {
 		t.Fatalf("unwired status = %v", out)
 	}
@@ -296,7 +302,7 @@ func TestSelfServicePasswordReset(t *testing.T) {
 	before := len(srv.Messages())
 	resp, out = newClientAt(e, "10.0.0.3").do("POST", "/api/v1/auth/password-reset", map[string]string{"email": "m@example.com"})
 	if resp.StatusCode != 202 || len(srv.Messages()) != before {
-		t.Fatalf("deactivated = %d, %d messages", resp.StatusCode, len(srv.Messages()))
+		t.Fatalf("deactivated = %d, %d messages (%v)", resp.StatusCode, len(srv.Messages()), out)
 	}
 }
 
@@ -334,7 +340,7 @@ func TestPasswordResetLimitsAndFailures(t *testing.T) {
 	m.mustStatus(resp, 201, out)
 	resp, out = newClientAt(e, "10.2.0.1").do("POST", "/api/v1/auth/password-reset", map[string]string{"email": "m@example.com"})
 	if resp.StatusCode != 202 {
-		t.Fatalf("relay down = %d", resp.StatusCode)
+		t.Fatalf("relay down = %d %v", resp.StatusCode, out)
 	}
 	e.db.QueryRow(`SELECT COUNT(*) FROM password_resets r JOIN users u ON u.id = r.user_id WHERE u.email = 'm@example.com' AND r.revoked_at IS NULL AND r.used_at IS NULL`).Scan(&n)
 	if n != 0 {
@@ -418,7 +424,7 @@ func TestPasswordResetSSOOnlySendsNothing(t *testing.T) {
 	ssoOnly = true
 	resp, out = newClientAt(e, "10.4.0.1").do("POST", "/api/v1/auth/password-reset", map[string]string{"email": "owner@example.com"})
 	if resp.StatusCode != 202 || len(srv.Messages()) != 0 {
-		t.Fatalf("SSO-only = %d, %d messages", resp.StatusCode, len(srv.Messages()))
+		t.Fatalf("SSO-only = %d, %d messages (%v)", resp.StatusCode, len(srv.Messages()), out)
 	}
 }
 
