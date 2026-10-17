@@ -49,9 +49,10 @@ func TestShutdownDuringPushRecordsDelivery(t *testing.T) {
 }
 
 // TestStaleRemindersAreDismissed (reliable-background-jobs): reminders of
-// completed or deleted tasks are recorded as dismissed by the server once, so
-// the scheduler stops examining them on every pass, and they never hide a due
-// reminder behind them.
+// completed tasks are recorded as dismissed by the server once, so the
+// scheduler stops examining them on every pass, and they never hide a due
+// reminder behind them. A deleted task's reminder is left alone (the Trash
+// rule: restoring the task brings it back).
 func TestStaleRemindersAreDismissed(t *testing.T) {
 	e := newTestEnv(t)
 	f := newFakePush(t)
@@ -66,14 +67,11 @@ func TestStaleRemindersAreDismissed(t *testing.T) {
 		"task:deleted": {"title": "Gone", "completed_at": nil, "deleted_at": now - 5000},
 		"task:open":    {"title": "Open", "completed_at": nil, "deleted_at": nil},
 	})
-	const stale = 1200 // more than a page of candidates
+	const stale = 1200 // more than two pages of candidates
 	for i := 0; i < stale; i++ {
-		task := "done"
-		if i%2 == 1 {
-			task = "deleted"
-		}
-		e.reminder(t, "u1", fmt.Sprintf("r-stale-%04d", i), task, now-int64(10*60_000-i))
+		e.reminder(t, "u1", fmt.Sprintf("r-stale-%04d", i), "done", now-int64(10*60_000-i))
 	}
+	e.reminder(t, "u1", "r-trash", "deleted", now-2000)
 	e.reminder(t, "u1", "r-open", "open", now-1000) // fires after every stale one
 	n, err := s.Tick(ctx)
 	if err != nil || n != 1 {
@@ -86,12 +84,17 @@ func TestStaleRemindersAreDismissed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cands) != 0 {
-		t.Fatalf("%d reminders are still scanned on every pass", len(cands))
+	if len(cands) != 1 || cands[0].ID != "r-trash" {
+		t.Fatalf("still scanned on every pass: %d reminders, want only r-trash", len(cands))
 	}
 	r, _ := e.sync.Get(ctx, "u1", "reminder", "r-stale-0000")
 	if string(r["dismissed_at"]) == "null" || string(r["delivered_at"]) != "null" {
 		t.Fatalf("stale reminder = dismissed %s delivered %s", r["dismissed_at"], r["delivered_at"])
+	}
+	// Restoring the deleted task delivers its reminder once (Trash rule).
+	e.apply(t, "u1", map[string]map[string]any{"task:deleted": {"deleted_at": nil}})
+	if n, _ := s.Tick(ctx); n != 1 {
+		t.Fatalf("restored task's reminder recorded %d, want 1", n)
 	}
 	// Reopening the task and moving the reminder to a new time fires it again.
 	*e.clock = e.clock.Add(time.Minute)

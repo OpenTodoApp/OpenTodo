@@ -257,8 +257,9 @@ type dueReminder struct {
 // creator's personal scope "user:<id>", even on a task in a shared project, so
 // the scope names the user whose devices are notified. The task's state is
 // checked afterwards through sync.Get, which sees personal and shared scopes;
-// a reminder whose task is completed or deleted is then recorded as dismissed,
-// so it leaves this query for good (reliable-background-jobs).
+// a reminder whose task is completed is then recorded as dismissed, so it
+// leaves this query for good (reliable-background-jobs). One on a deleted task
+// stays until the task is restored or purged from the Trash.
 const dueQuery = `
 SELECT f.scope_id, f.entity_id, CAST(f.value AS REAL), COALESCE(json_extract(tid.value, '$'), '')
 FROM scope_fields f
@@ -291,8 +292,8 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 				return nil, err
 			}
 			if closed {
-				// Its task is completed or deleted: it will never fire for this
-				// firing time, so stop examining it on every pass.
+				// Its task is completed: it will never fire for this firing
+				// time, so stop examining it on every pass.
 				if err := s.recordDismissed(ctx, d.UserID, d.ID, nowMs); err != nil {
 					return nil, err
 				}
@@ -346,17 +347,18 @@ func (s *Service) candidates(ctx context.Context, maxFireMs int64, limit int, af
 // eligible reports whether a candidate fires: only reminders on an open task
 // the user can still see, and not while the task's project or any ancestor
 // project is in the Trash. It fills in the title that may be pushed. closed
-// reports a task that is completed or deleted: its reminder never fires for
-// this firing time.
+// reports a completed task: its reminder never fires for this firing time.
 func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[string]bool) (ok, closed bool, err error) {
 	t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
 	if err != nil {
 		return false, false, err
 	}
-	if t == nil {
+	if t == nil || t.Deleted() {
+		// A deleted task is in the Trash: nothing is recorded, so restoring it
+		// brings the reminder back (OpenSpec `reminders`).
 		return false, false, nil
 	}
-	if t.Deleted() || !isNull(t["completed_at"]) {
+	if !isNull(t["completed_at"]) {
 		return false, true, nil
 	}
 	inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
@@ -506,7 +508,7 @@ func (s *Service) recordDelivered(ctx context.Context, userID, reminderID string
 }
 
 // recordDismissed writes dismissed_at as a server op for a reminder whose task
-// is completed or deleted, the same way recordDelivered does.
+// is completed, the same way recordDelivered does.
 func (s *Service) recordDismissed(ctx context.Context, userID, reminderID string, nowMs int64) error {
 	if err := s.recordReminderField(ctx, userID, reminderID, "dismissed_at", nowMs); err != nil {
 		return fmt.Errorf("dismiss reminder of a closed task: %w", err)
