@@ -604,7 +604,8 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "All": [
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/ui/Combobox/useCombobox.ts"
   ],
   "All changes": [
     "web/src/app/FeedView.tsx",
