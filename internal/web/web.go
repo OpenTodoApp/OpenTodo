@@ -33,6 +33,11 @@ func HandlerWith(o Options) http.Handler {
 	if err != nil {
 		panic(err)
 	}
+	return handlerFor(sub, o)
+}
+
+// handlerFor serves the built app from sub.
+func handlerFor(sub fs.FS, o Options) http.Handler {
 	fileServer := http.FileServer(http.FS(sub))
 	index, _ := fs.ReadFile(sub, "index.html")
 	if o.NoIndex && index != nil {
@@ -71,6 +76,14 @@ func HandlerWith(o Options) http.Handler {
 					return
 				}
 			}
+		}
+		// A missing file is a 404, never the page: a tab still running the previous
+		// release asks for its old chunks, and an HTML answer to a script request
+		// fails in ways the app cannot tell from being offline. Only extension-less
+		// paths are client-side routes (client-sync-robustness).
+		if p == "assets" || strings.HasPrefix(p, "assets/") || path.Ext(p) != "" {
+			http.NotFound(w, r)
+			return
 		}
 		if index == nil {
 			http.Error(w, "OpenTodo frontend is not built. Run `make web` and rebuild the binary.", http.StatusNotFound)

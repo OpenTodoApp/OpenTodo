@@ -6,6 +6,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useSyncExternalStore } from 'react'
 import { api, isNetworkError } from './api'
+import { fetchWithTimeout, transferTimeoutMs } from './http'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { mutateMany, type Change } from './ops'
 import { decryptFile, encryptFile } from './crypto'
@@ -264,7 +265,7 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
     if (!key) throw new AttachmentError('locked', t('Unlock encryption on this device to open this file.'))
     let envelope = local?.blob
     if (!envelope) {
-      const res = await fetch(contentUrl(a.id), { credentials: 'same-origin' })
+      const res = await fetchWithTimeout(contentUrl(a.id), { credentials: 'same-origin', timeoutMs: transferTimeoutMs() })
       if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? t('This file is missing on the server.') : t('The server answered {status}.', { status: res.status }))
       envelope = await res.blob()
     }
@@ -448,7 +449,7 @@ async function storedBytes(a: Attachment): Promise<Blob> {
   if (!a.uploaded_at) throw new FileMigrationPaused('a file is still uploading from another device')
   let res: Response
   try {
-    res = await fetch(contentUrl(a.id), { credentials: 'same-origin' })
+    res = await fetchWithTimeout(contentUrl(a.id), { credentials: 'same-origin', timeoutMs: transferTimeoutMs() })
   } catch {
     throw new FileMigrationPaused('offline')
   }

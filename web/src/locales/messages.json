@@ -212,6 +212,12 @@
   "A new link is on its way; the earlier one no longer works.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "A new version of OpenTodo is ready.": [
+    "web/src/app/UpdateBanner.tsx"
+  ],
+  "A newer version of OpenTodo is open in another tab. Reload this tab to keep working.": [
+    "web/src/app/UpdateBanner.tsx"
+  ],
   "A newer version of OpenTodo is required to read your data.": [
     "web/src/app/App.tsx"
   ],
@@ -6212,10 +6218,12 @@
   ],
   "Reload": [
     "web/src/app/ErrorBoundary.tsx",
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/PanelBoundary.tsx"
   ],
   "Reload to update": [
-    "web/src/app/App.tsx"
+    "web/src/app/App.tsx",
+    "web/src/app/UpdateBanner.tsx"
   ],
   "Reloading": [
     "web/src/app/DataSettings.tsx"
@@ -7949,6 +7957,9 @@
   "The calendar's secret or public iCal address (https, ending in .ics on most services).": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "The change could not be saved.": [
+    "web/src/app/actionError.ts"
+  ],
   "The code is not valid. Check that your device’s clock is set automatically and try again.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -8286,6 +8297,9 @@
   ],
   "The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "The server took too long to answer. Your changes stay on this device.": [
+    "web/src/lib/http.ts"
   ],
   "The server’s assistant": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -8707,6 +8721,9 @@
   ],
   "This page reloads when the server is back, usually within a few seconds.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "This part of the app could not be shown.": [
+    "web/src/app/PanelBoundary.tsx"
   ],
   "This password reset link is not valid.": [
     "web/src/lib/i18n/errors.ts"
@@ -9885,7 +9902,8 @@
     "web/src/app/DataSettings.tsx"
   ],
   "Your data is safe on this device and on the server.": [
-    "web/src/app/ErrorBoundary.tsx"
+    "web/src/app/ErrorBoundary.tsx",
+    "web/src/app/PanelBoundary.tsx"
   ],
   "Your demo sandbox has expired": [
     "web/src/app/App.tsx"

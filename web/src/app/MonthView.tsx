@@ -27,6 +27,7 @@ import { useShortcutScope } from './shortcuts'
 import { setDueWithUndo } from './undoable'
 import { useToday, useViewerZone } from './useViews'
 import { t } from '../lib/i18n'
+import { act, reportActionError } from './actionError'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
@@ -99,14 +100,14 @@ export function MonthView({ date }: { date?: string }) {
       await updateTask(id, { due: dueFromView(raw.due, due) })
       setFocused(due.date)
       if (due.date.slice(0, 7) !== month) goTo(due.date)
-    }).catch(() => undefined)
+    }).catch(reportActionError)
   }, [month, goTo])
 
   /** Dropped on a day: same time and zone, new date (one due edit, with Undo). */
   const dropOn = useCallback((id: string, d: string) => {
     const task = viewedMap.get(id)
     if (!task?.due || task.due.date === d) return
-    void setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due.time ? { time: task.due.time } : {}) }))
+    act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due.time ? { time: task.due.time } : {}) })))
     setSelectedId(id)
     setFocused(d)
   }, [viewedMap, rawMap])

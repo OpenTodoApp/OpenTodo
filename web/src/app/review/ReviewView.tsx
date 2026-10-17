@@ -27,6 +27,7 @@ import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
 import { useToday } from '../useViews'
 import { t } from '../../lib/i18n'
+import { act } from '../actionError'
 
 export function ReviewView({ userId }: { userId?: string }) {
   const today = useToday()
@@ -135,13 +136,13 @@ export function ReviewView({ userId }: { userId?: string }) {
               }))}>
               <StepIntro step={step} steps={steps} />
               {step === 'next' ? (
-                <ProjectRows rows={projectRows} selected={selected} onAdd={setAddTo} onArchive={(p) => void archive(p)} onSelect={setSelected} />
+                <ProjectRows rows={projectRows} selected={selected} onAdd={setAddTo} onArchive={(p) => act(archive(p))} onSelect={setSelected} />
               ) : (
                 <ul data-testid={`review-${step}`}>
                   {taskRows.map((item) => (
                     <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
                       showProject={step !== 'clear'} selected={item.id === selected}
-                      onToggle={() => void setTaskCompleted(item.id, !item.completed_at)}
+                      onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
                       onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
                   ))}
                 </ul>

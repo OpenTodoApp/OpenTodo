@@ -31,6 +31,7 @@ import { visibleTasks } from '../lib/trash'
 import { Dialog } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg } from '../lib/i18n'
+import { act } from './actionError'
 
 const DEBOUNCE_MS = 150
 
@@ -269,7 +270,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                       blockedBy={blocked.get(tk.id)}
                       habit={habits.get(tk.id)}
                       breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
-                      onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)}
+                      onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
                       onOpen={() => {
                         setSelectedId(tk.id)
                         setOpenId(tk.id)

@@ -18,6 +18,7 @@ import { firstRunDone, setFirstRunDone, USER_PREFS_ID } from '../lib/userPrefs'
 import { installPrompt, useInstallPrompt } from './installPrompt'
 import { navigate } from './router'
 import { t, msg } from '../lib/i18n'
+import { act } from './actionError'
 
 export const SAMPLE_PROJECT_NAME = msg('Show me around')
 
@@ -73,7 +74,7 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
   useEffect(() => { if (step === 0) onFocusQuickAdd() }, [step, onFocusQuickAdd])
   useEffect(() => { if (step === 0 && taskCount > 0) setStep(1) }, [step, taskCount])
   const next = () => {
-    if (step >= STEPS.length - 1) void setFirstRunDone()
+    if (step >= STEPS.length - 1) act(setFirstRunDone())
     else setStep(step + 1)
   }
   const current = STEPS[step]
@@ -92,7 +93,7 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
             <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={t('Appearance')}>
               {THEME_MODES.map((m) => (
                 <Button key={m} size="sm" variant={mode === m ? 'primary' : 'secondary'} role="radio" aria-checked={mode === m} data-first-run-mode={m}
-                  onClick={() => void setAppearance('theme_mode', m)}>{label(m)}</Button>
+                  onClick={() => act(setAppearance('theme_mode', m))}>{label(m)}</Button>
               ))}
             </div>
           )}
@@ -115,7 +116,7 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
                 void createSampleProject().then((id) => navigate({ view: 'project', id }))
               }}>{t('Show me around')}</Button>
             )}
-            <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={() => void setFirstRunDone()}>{t('Skip all')}</Button>
+            <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={() => act(setFirstRunDone())}>{t('Skip all')}</Button>
           </div>
         </div>
       </div>

@@ -61,6 +61,7 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 }
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { act } from './actionError'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'triage' } | { view: 'public' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' } | { view: 'forgot' } | { view: 'verify' } | { view: 'display' } | { view: 'review' } | { view: 'stats' }>
 
@@ -378,13 +379,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (projectId && m !== viewMode) void saveViewMode(projectId, m)
   }, [projectId, viewMode])
   const toggleSection = useCallback((key: string, force?: boolean) => {
-    if (projectId) void setSectionCollapsed(projectId, key, force ?? !collapsedSections.includes(key))
+    if (projectId) act(setSectionCollapsed(projectId, key, force ?? !collapsedSections.includes(key)))
   }, [projectId, collapsedSections])
 
   /** Move a top-level task to a section ('' = none); a no-op when it is already there. */
   const moveToSection = useCallback((task: Task, key: string) => {
     if ((effectiveSection(task, sectionMap) ?? '') === key) return
-    void moveTaskToSection(task.id, key || null).catch(() => undefined)
+    act(moveTaskToSection(task.id, key || null))
   }, [sectionMap])
 
   // Manual ordering (OpenSpec `manual-ordering`): project lists and boards (editors
@@ -433,12 +434,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           if (!r || !current) return
           const entry = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
           const section = entry.parent_id === null ? secs.get(r.task.id) : undefined
-          void moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })
+          act(moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) }))
         } else if (target.startsWith('section:')) {
           const key = target.slice('section:'.length)
           const row = rs.find((x) => x.task.id === task.id)
           if (row && row.parent === null) moveToSection(task, key)
-          else void moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' })
+          else act(moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' }))
         } else return
         setSelectedId(task.id)
       },
@@ -524,7 +525,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (!prompt) return
     const parent = prompt
     setPrompt(null)
-    void toggleComplete(parent.id, true)
+    act(toggleComplete(parent.id, true))
   }, [prompt, toggleComplete])
 
   const indent = useCallback((row: Row, idx: number) => {
@@ -534,7 +535,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       if (r.depth < row.depth) return
       if (r.depth === row.depth && r.parent === row.parent) {
         toggleCollapsed(r.task.id, false)
-        void setTaskParent(row.task.id, r.task.id).catch(() => undefined)
+        act(setTaskParent(row.task.id, r.task.id))
         return
       }
     }
@@ -543,7 +544,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const outdent = useCallback((row: Row) => {
     if (!tree || row.parent === null) return
     const grandparent = tree.nodes.get(row.parent)?.parent ?? null
-    void setTaskParent(row.task.id, grandparent).catch(() => undefined)
+    act(setTaskParent(row.task.id, grandparent))
   }, [tree])
 
   // Keyboard (keyboard-shortcuts "One shortcut registry with scopes"): the `list`
@@ -576,7 +577,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const moveBy = (how: Step) => () => {
     // Keyboard moves (manual-ordering): only in manually ordered views; the selection stays on the moved task; edges do nothing.
     if (!manual || !selectedId) return false
-    void moveTaskBy(selectedId, how)
+    act(moveTaskBy(selectedId, how))
   }
   useShortcutScope('view', { 'project.view-mode': () => { if (!projectId) return false; toggleViewMode() } }, { view: route.view })
   useShortcutScope('list', {
@@ -625,13 +626,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     'list.complete': () => {
       if (ticked.length) { void runBulk(ticked, { kind: 'complete' }); return }
       if (!row || !writable) return false
-      void toggleComplete(row.task.id, !row.task.completed_at)
+      act(toggleComplete(row.task.id, !row.task.completed_at))
     },
     'list.priority': (e) => {
       const priority = Number(e.key) as Priority
       if (ticked.length) { void runBulk(ticked, { kind: 'priority', priority }); return }
       if (!selectedId || (row && !writable)) return false
-      void updateTask(selectedId, { priority })
+      act(updateTask(selectedId, { priority }))
     },
     'list.labels': () => {
       if (ticked.length) { openActions('labels'); return }
@@ -646,14 +647,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     'list.delete': () => {
       if (ticked.length) { void runBulk(ticked, { kind: 'trash' }); return }
       if (!selectedId || (row && !writable)) return false
-      void deleteWithUndo(selectedId)
+      act(deleteWithUndo(selectedId))
       setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
     },
     'list.skip': () => {
       // Skip the current occurrence of the selected (or open) recurring task.
       const id = row?.task.id ?? openId
       if (!id) return false
-      void skipOccurrence(id)
+      act(skipOccurrence(id))
     },
     'list.detach': () => {
       // "This occurrence only": detach a standalone copy and open it.
@@ -674,7 +675,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     'list.blocked-by': openFor(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row || !writable) return false; void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
-    'list.evening': () => { if (!row || !writable) return false; void updateTask(row.task.id, { evening: !row.task.evening }) },
+    'list.evening': () => { if (!row || !writable) return false; act(updateTask(row.task.id, { evening: !row.task.evening })) },
     // Duplicate the task and its open subtasks right below it (project-templates D6).
     'list.duplicate': () => { if (!row || !writable) return false; void duplicateTask(row.task.id).then((id) => setSelectedId(id)) },
   })
@@ -791,7 +792,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         dropKey={manual ? `task:${r.task.id}` : undefined}
         dropIndicator={dropAt?.id === r.task.id ? dropAt.zone : null}
         dragging={draggingId === r.task.id}
-        onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
+        onToggle={() => act(toggleComplete(r.task.id, !r.task.completed_at))}
         onToggleCollapse={treeView && !board ? () => toggleCollapsed(r.task.id) : undefined}
         onOpen={() => {
           setSelectedId(r.task.id)

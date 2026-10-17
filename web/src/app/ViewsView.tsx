@@ -12,6 +12,7 @@ import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } fr
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
 
@@ -101,7 +102,7 @@ export function ViewsView() {
           <span className="flex-1" />
           {s && (s.ok ? <span className="text-meta text-faint">{s.count}</span> : <Tooltip label={s.error}><span className="text-meta text-danger">{t('error')}</span></Tooltip>)}
         </button>
-        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => void setPinned(v.id, !v.pinned)} aria-label={v.pinned ? t('Unpin {name}', { name: v.name }) : t('Pin {name}', { name: v.name })}>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => act(setPinned(v.id, !v.pinned))} aria-label={v.pinned ? t('Unpin {name}', { name: v.name }) : t('Pin {name}', { name: v.name })}>
           {v.pinned ? t('Unpin') : t('Pin')}
         </button>
         <ViewMenu view={v} />

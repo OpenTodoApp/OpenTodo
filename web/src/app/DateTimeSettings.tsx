@@ -10,6 +10,7 @@ import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { act } from './actionError'
 
 const DATE_NAMES = translatedMap<DateFormatPref>({ system: msg('System'), 'day-month': msg('Day-month'), 'month-day': msg('Month-day'), iso: 'ISO' })
 const TIME_NAMES = translatedMap<TimeFormatPref>({ system: msg('System'), '12h': msg('12-hour'), '24h': msg('24-hour') })
@@ -18,7 +19,7 @@ const DEFAULTS: DateTimePrefs = { date_format: 'system', time_format: 'system', 
 
 export function DateTimeSection() {
   const { prefs, resolved } = useDateTimeFormat()
-  return <DateTimeView prefs={prefs ?? DEFAULTS} resolved={resolved} onChange={(field, value) => void setUserPref(field, value as never)} />
+  return <DateTimeView prefs={prefs ?? DEFAULTS} resolved={resolved} onChange={(field, value) => act(setUserPref(field, value as never))} />
 }
 
 export interface DateTimeViewProps {

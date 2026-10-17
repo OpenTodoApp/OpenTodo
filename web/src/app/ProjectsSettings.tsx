@@ -6,11 +6,12 @@ import { Switch } from '../ui'
 import { ArchivedProjectsSection } from './ArchivedProjects'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 /** Per-device opt-out of automatic archiving (trash-and-history), stored in local meta, and the archived projects list (unarchive-projects). */
 export function AutoArchiveSection() {
   const on = useLiveQuery(getAutoArchive, [], true)
-  return <AutoArchiveView on={on} onChange={(v) => void setAutoArchive(v)}><ArchivedProjectsSection /></AutoArchiveView>
+  return <AutoArchiveView on={on} onChange={(v) => act(setAutoArchive(v))}><ArchivedProjectsSection /></AutoArchiveView>
 }
 
 export function AutoArchiveView({ on, onChange, children }: { on: boolean; onChange: (on: boolean) => void; children?: React.ReactNode }) {

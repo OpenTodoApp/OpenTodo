@@ -32,6 +32,7 @@ import { TaskPage } from './TaskPage'
 import { db } from '../lib/db'
 import { watchViewerZone } from '../lib/dates'
 import { UndoToast } from './bulk/UndoToast'
+import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
@@ -208,6 +209,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
         <div className="relative min-h-0 flex-1 overflow-y-auto">
+          {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
+          <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
@@ -244,22 +247,25 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
           )}
+          </PanelBoundary>
         </div>
         {vim && (
-          <Suspense fallback={null}>
-            <VimLayer userId={user.id} onHelp={() => setShowHelp(true)} onHelpTopic={(q) => navigate({ view: 'help', q })} onHelpSection={setVimHelp} />
-          </Suspense>
+          <PanelBoundary>
+            <Suspense fallback={null}>
+              <VimLayer userId={user.id} onHelp={() => setShowHelp(true)} onHelpTopic={(q) => navigate({ view: 'help', q })} onHelpSection={setVimHelp} />
+            </Suspense>
+          </PanelBoundary>
         )}
       </main>
-      <PanelHost user={user} />
+      <PanelBoundary><PanelHost user={user} /></PanelBoundary>
       {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} />}
       {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
-      {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
-      {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
-      {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}
+      {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
+      {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense></PanelBoundary>}
+      {paletteLoaded && paletteOpen && <PanelBoundary resetKey={paletteOpen}><Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       <ReminderToasts />
       <UndoToast />
       <TemplateDialogHost />

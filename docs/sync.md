@@ -311,6 +311,12 @@ Before storing the cursor the client compares `generation` with the one it store
 
 Triggers: 250 ms after a local edit, on `online`, when the tab becomes visible, on a live wake-up (below), on every (re)connection of the live channel, periodically (every 30 s, relaxed to 5 min while live updates are connected), and manually from the status pill.
 
+Robustness (OpenSpec change `client-sync-robustness`):
+
+- **Deadlines.** Every request has a timeout (`web/src/lib/http.ts`: 30 s, 10 min for file and archive transfers). A timeout or a network failure shows *offline* and retries with jittered backoff (1 s doubling to 30 s); any other failure, including a bug in the client, shows *error*.
+- **One tab syncs.** The tab holding the Web Lock `opentodo-sync` runs the loop, the timer and the live channel; other tabs post `{type: "sync"}` on the `opentodo-sync` BroadcastChannel and show the status the leader broadcasts. When the leader stops or closes, the lock passes to another tab. Without Web Locks every tab syncs on its own.
+- **Sign-out.** `stopSync()` starts a new local data epoch and aborts the request in flight; the running exchange checks the epoch after every await and stops before its next write. Sign-out waits for it, tells the other tabs (they reload), and clears the local data while holding the lock.
+
 Server (`internal/sync.Apply`): validate the whole batch, then in one transaction resolve each op's scope, refuse the ones the author may not write (reported in `rejected`), `INSERT OR IGNORE` the others into `ops` (duplicate ids are counted, not re-applied) with their scope in `op_scopes`, and upsert `scope_fields` under the winner rule. `Pull` returns ops after the cursor from every scope the caller can see in `seq` order, skipping the caller's own device but still advancing the cursor past them.
 
 ### Paging

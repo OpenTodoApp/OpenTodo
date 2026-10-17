@@ -16,6 +16,7 @@ import { Popover } from '../overlay/Popover'
 import { useViewerZone } from '../useViews'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'
+import { act } from '../actionError'
 
 /** `z` with the panel open (not typing) toggles the zone; listed in the shortcut help. */
 export const ZONE_TOGGLE_KEY = 'z'
@@ -84,7 +85,7 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
   const [candidate, setCandidate] = useState<string | null>(null)
   const chip = useRef<HTMLButtonElement>(null)
 
-  const write = (next: Due | null) => { if (next) void updateTask(task.id, { due: next }) }
+  const write = (next: Due | null) => { if (next) act(updateTask(task.id, { due: next })) }
   const toggleZone = () => {
     if (!due?.time) return
     write(zoned ? releaseDue(due, zone) : fixDueToZone(due, zone))

@@ -1,6 +1,6 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
-import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './db'
+import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow } from './db'
 import { dueToInstant, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { hlcNow, hlcSeed, wins } from './hlc'
@@ -20,10 +20,17 @@ import { t } from './i18n'
 import { uuid } from './ids'
 
 let devicePromise: Promise<string> | null = null
+/** The local data epoch the memoised id was read in; a sign-out starts a new one. */
+let deviceEpoch = -1
 
-/** Stable per-browser device id; memoized as a promise so concurrent first calls agree. */
+/**
+ * Stable per-browser device id; memoized as a promise so concurrent first calls
+ * agree. The memo is per local data epoch: after clearLocalData the id is read
+ * (or created) again from the fresh database instead of reusing the old one.
+ */
 export function getDeviceId(): Promise<string> {
-  if (!devicePromise) {
+  if (!devicePromise || deviceEpoch !== localEpoch()) {
+    deviceEpoch = localEpoch()
     devicePromise = (async () => {
       let id = await getMeta<string | null>('device', null)
       if (!id) {

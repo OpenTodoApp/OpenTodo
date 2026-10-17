@@ -11,6 +11,7 @@ import { TimeField } from './datetime/TimeField'
 import { ZoneControl } from './task-detail/ZoneControl'
 import { useViewerZone } from './useViews'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 /** `z` with the panel open (not typing) toggles the zone; the handler lives in ZoneControl. */
 export { ZONE_TOGGLE_KEY } from './task-detail/ZoneControl'
@@ -20,7 +21,7 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
   const view = localDueOf(task.due, zone)
   const hint = zoneHint(task.due, zone)
 
-  const setView = (next: { date: string; time?: string } | null) => void setDueWithUndo(task.id, dueFromView(task.due, next, zone))
+  const setView = (next: { date: string; time?: string } | null) => act(setDueWithUndo(task.id, dueFromView(task.due, next, zone)))
 
   return (
     <div className="space-y-1">
@@ -30,7 +31,7 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
           onChange={(date) => setView(date ? { date, ...(view?.time ? { time: view.time } : {}) } : null)} />
         <TimeField label={t('Due time')} hideLabel value={view?.time ?? null} disabled={!view}
           onChange={(time) => view && setView(time ? { date: view.date, time } : { date: view.date })} />
-        {task.due && <IconButton icon="x" label={t('Clear due date')} onClick={() => void setDueWithUndo(task.id, null)} />}
+        {task.due && <IconButton icon="x" label={t('Clear due date')} onClick={() => act(setDueWithUndo(task.id, null))} />}
       </div>
       {task.due && <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} />}
       {hint && <p className="text-meta text-muted" data-testid="zone-hint">{hint}</p>}

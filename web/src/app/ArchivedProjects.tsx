@@ -9,6 +9,7 @@ import { Button } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 export function ArchivedProjectsSection() {
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])
@@ -31,7 +32,7 @@ export function ArchivedProjectsSection() {
     })
   }
 
-  return <ArchivedProjectsList rows={rows} onRestore={(id, i) => void restore(id, i)} listRef={listRef} headingRef={headingRef} />
+  return <ArchivedProjectsList rows={rows} onRestore={(id, i) => act(restore(id, i))} listRef={listRef} headingRef={headingRef} />
 }
 
 export interface ArchivedProjectsListProps {
