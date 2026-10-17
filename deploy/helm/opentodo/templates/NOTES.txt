@@ -1,0 +1,19 @@
+OpenTodo {{ .Chart.AppVersion }} is starting ({{ include "opentodo.image" . }}).
+
+{{- if .Values.ingress.enabled }}
+Open {{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+Open it with a port-forward:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "opentodo.fullname" . }} 8080:{{ .Values.service.port }}
+and visit http://localhost:8080
+{{- end }}
+
+The first visitor creates the owner account.
+{{- with include "opentodo.setupTokenSecret" . }}
+It asks for the setup token:
+  kubectl --namespace {{ $.Release.Namespace }} get secret {{ . }} -o jsonpath='{.data.{{ $.Values.setupToken.secretKey }}}' | base64 -d; echo
+{{- end }}
+{{- if not .Values.persistence.enabled }}
+
+persistence.enabled is false: the data lives in an emptyDir and is lost when the pod goes.
+{{- end }}

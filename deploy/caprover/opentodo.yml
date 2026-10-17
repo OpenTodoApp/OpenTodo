@@ -1,0 +1,56 @@
+captainVersion: 4
+services:
+    $$cap_appname:
+        image: ghcr.io/pixari/opentodo:$$cap_opentodo_version
+        environment:
+            OPENTODO_BASE_URL: $$cap_opentodo_base_url
+            OPENTODO_SETUP_TOKEN: $$cap_opentodo_setup_token
+            OPENTODO_ALLOW_SIGNUP: $$cap_opentodo_allow_signup
+            OPENTODO_TRUSTED_PROXIES: $$cap_opentodo_trusted_proxies
+        volumes:
+            - $$cap_appname-data:/data
+        caproverExtra:
+            containerHttpPort: '8080'
+caproverOneClickApp:
+    variables:
+        - id: $$cap_opentodo_version
+          label: OpenTodo version
+          defaultValue: '0.6.1'
+          description: The image tag of ghcr.io/pixari/opentodo. Releases are listed at https://github.com/pixari/opentodo/releases
+          validRegex: /^[0-9]+\.[0-9]+(\.[0-9]+)?$/
+        - id: $$cap_opentodo_base_url
+          label: Base URL
+          description: The address people open, for example https://todo.example.com. Needed behind a reverse proxy for passkeys, secure cookies and links in emails. Include the port if there is one. Leave empty when you open OpenTodo by the server's address.
+          validRegex: /^(https?:\/\/\S+)?$/
+        - id: $$cap_opentodo_setup_token
+          label: Setup token
+          defaultValue: $$cap_gen_random_hex(32)
+          description: Optional, at least 16 characters. When set, creating the first (owner) account asks for this token, so a server reachable from the internet cannot be claimed by a stranger.
+          validRegex: /^(\S{16,})?$/
+        - id: $$cap_opentodo_allow_signup
+          label: Open sign-up
+          defaultValue: 'false'
+          description: true lets anyone who can reach the server create an account. Otherwise the owner invites people.
+          validRegex: /^(true|false)$/
+        - id: $$cap_opentodo_trusted_proxies
+          label: Trusted proxies
+          description: "Reverse proxies whose X-Forwarded-For is trusted for the visitor's address: IP addresses or ranges such as 192.0.2.0/24 separated by commas, or cloudflare. Set it only when every request comes through them."
+    instructions:
+        start: |-
+            OpenTodo is an open-source, local-first task manager: one container, the data in one volume, no database server.
+
+            Leave Base URL empty for now. CapRover serves a new app over plain http, and an https Base URL on an http address breaks sign-in. Set it after you enable HTTPS (see the message after the install).
+
+            The setup token is generated for you. You need it to create the owner account, and the next screen shows it.
+        end: |-
+            OpenTodo is deployed. Open http://$$cap_appname.$$cap_root_domain and create the owner account, the first account on the server. When it asks for the setup token, enter: $$cap_opentodo_setup_token
+
+            After that, sign-up is closed and the owner invites people.
+
+            Installing the app on a phone, working offline, push notifications, passkeys and end-to-end encryption need https. Under HTTP Settings of the app, click Enable HTTPS, then turn on Force HTTPS. Then, under App Configs, set OPENTODO_BASE_URL to https://$$cap_appname.$$cap_root_domain (or your own domain) and click Save & Update.
+
+            Guide: https://open-todo.app/docs/self-hosting/caprover/
+    displayName: OpenTodo
+    isOfficial: false
+    description: Open-source, local-first task manager. Works offline and syncs every device from one small container.
+    documentation: https://open-todo.app/docs/self-hosting/caprover/
