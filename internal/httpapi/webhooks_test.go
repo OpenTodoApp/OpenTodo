@@ -304,6 +304,7 @@ func TestWebhookPolicyForbidsMembers(t *testing.T) {
 	owner.mustStatus(resp, 400, out)
 	owner.allowPrivate(true)
 	resp, out = owner.do("GET", "/api/v1/settings/webhooks", nil)
+	owner.mustStatus(resp, 200, out)
 	if out["allowPrivate"] != true {
 		t.Fatalf("policy = %v", out)
 	}
@@ -331,6 +332,7 @@ func TestWebhookPolicyPresetSeedsOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp, out = e.do("GET", "/api/v1/settings/webhooks", nil)
+	e.mustStatus(resp, 200, out)
 	if out["allowPrivate"] != false {
 		t.Fatalf("preset overrode the owner's choice: %v", out)
 	}
@@ -429,6 +431,7 @@ func TestWebhookEndToEnd(t *testing.T) {
 	for e.hooks.ProcessDue(context.Background()) > 0 {
 	}
 	resp, out = e.do("GET", "/api/v1/webhooks/"+hookID+"/deliveries", nil)
+	e.mustStatus(resp, 200, out)
 	list := out["deliveries"].([]any)
 	latest = list[0].(map[string]any)
 	if latest["status"] != "delivered" || latest["attempts"] != float64(2) || latest["statusCode"] != float64(200) || latest["responseExcerpt"] != "ok" {

@@ -241,6 +241,7 @@ func TestAssistantSettingsRoute(t *testing.T) {
 		}
 	}
 	resp, out = e.do("PUT", "/api/v1/settings/assistant", map[string]any{"enabled": true, "default_provider": "compatible", "providers": map[string]any{"compatible": map[string]any{"enabled": true, "model": "llama"}}})
+	e.mustStatus(resp, 400, out)
 	if msg := out["error"].(map[string]any)["message"].(string); !strings.Contains(msg, "base_url") {
 		t.Fatalf("field not named: %s", msg)
 	}
@@ -255,6 +256,7 @@ func TestAssistantSettingsRoute(t *testing.T) {
 	}
 	raw, _ := json.Marshal(out)
 	resp, got := e.do("GET", "/api/v1/settings/assistant", nil)
+	e.mustStatus(resp, 200, got)
 	raw2, _ := json.Marshal(got)
 	if strings.Contains(string(raw)+string(raw2), fakeKey) {
 		t.Fatal("the key was returned")
@@ -387,6 +389,7 @@ func TestAssistantConsentRoute(t *testing.T) {
 		"providers": map[string]any{"openai": map[string]any{"enabled": true, "model": "gpt-test"}}, "keys": map[string]any{"openai": "sk-openai-FAKE"}})
 	e.mustStatus(resp, 200, out)
 	resp, out = e.do("GET", "/api/v1/me/assistant", nil)
+	e.mustStatus(resp, 200, out)
 	if out["consented"] != false || out["provider"] != "openai" {
 		t.Fatalf("after provider change: %v", out)
 	}
@@ -447,7 +450,7 @@ func TestAssistantUsageRoute(t *testing.T) {
 	e, _, _ := assistantEnv(t)
 	resp, out := newClientFor(e).do("GET", "/api/v1/me/assistant/usage", nil)
 	if resp.StatusCode != 401 {
-		t.Fatalf("anonymous: %d", resp.StatusCode)
+		t.Fatalf("anonymous: %d %v", resp.StatusCode, out)
 	}
 	e.enableAssistant(nil)
 	e.consentAssistant("anthropic")
@@ -462,6 +465,7 @@ func TestAssistantUsageRoute(t *testing.T) {
 		t.Fatalf("usage event %v", usage)
 	}
 	resp, out = e.do("GET", "/api/v1/me/assistant/usage", nil)
+	e.mustStatus(resp, 200, out)
 	if out["input_tokens"].(float64) != 120 || out["output_tokens"].(float64) != 30 || out["turns"].(float64) != 1 {
 		t.Fatalf("%v", out)
 	}
@@ -592,6 +596,7 @@ func TestTurnRouteGuards(t *testing.T) {
 	m.mustStatus(resp, 201, o)
 	refused("encrypted", 409, "encryption_enabled", m, ask("hi"))
 	resp, o = m.do("GET", "/api/v1/me/assistant", nil)
+	m.mustStatus(resp, 200, o)
 	if o["available"] != false || o["reason"] != "encryption_enabled" {
 		t.Fatalf("encrypted status %v", o)
 	}
@@ -760,6 +765,7 @@ func TestPromptInjectionNeedsConfirmation(t *testing.T) {
 	}
 	// Membership is untouched.
 	resp, out = se.alice.do("GET", "/api/v1/projects/"+se.project+"/members", nil)
+	se.alice.mustStatus(resp, 200, out)
 	if strings.Contains(fmt.Sprint(out), "attacker") {
 		t.Fatal("shared with the attacker")
 	}
@@ -845,6 +851,6 @@ func TestTestConnectionRoute(t *testing.T) {
 	m.mustStatus(resp, 201, out)
 	resp, out = m.do("POST", "/api/v1/settings/assistant/test", map[string]any{"provider": "anthropic"})
 	if resp.StatusCode != 403 {
-		t.Fatalf("member test: %d", resp.StatusCode)
+		t.Fatalf("member test: %d %v", resp.StatusCode, out)
 	}
 }

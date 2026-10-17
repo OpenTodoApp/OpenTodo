@@ -83,7 +83,7 @@ var (
 	// ErrRateLimited: the address created too many sandboxes this hour (429).
 	ErrRateLimited = errors.New("too many new demo sandboxes from your network, try again later")
 	// ErrBusy: the live cap or the database size guard was reached (503).
-	ErrBusy = errors.New("The demo is busy, try again in a few minutes")
+	ErrBusy = errors.New("the demo is busy, try again in a few minutes")
 )
 
 // SandboxHours is the idle and maximum lifetime of a sandbox, in hours.

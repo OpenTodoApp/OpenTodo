@@ -148,6 +148,7 @@ func TestFirstRunSetupThenSignupClosed(t *testing.T) {
 	resp, out = other.do("POST", "/api/v1/auth/register", map[string]string{"email": "x@example.com", "password": "another long password"})
 	other.mustStatus(resp, 403, out)
 	resp, out = other.do("GET", "/api/v1/auth/status", nil)
+	other.mustStatus(resp, 200, out)
 	if out["setupRequired"] != false || out["signupAllowed"] != false {
 		t.Fatalf("status after setup = %v", out)
 	}
@@ -354,10 +355,12 @@ func TestLabelsCrud(t *testing.T) {
 	resp, out = e.do("GET", "/api/v1/labels/"+dupID, nil)
 	e.mustStatus(resp, 404, out)
 	resp, out = e.do("GET", "/api/v1/labels", nil)
+	e.mustStatus(resp, 200, out)
 	if n := len(out["labels"].([]any)); n != 1 {
 		t.Fatalf("labels after delete = %d", n)
 	}
 	resp, out = e.do("GET", "/api/v1/labels?include_deleted=true", nil)
+	e.mustStatus(resp, 200, out)
 	if n := len(out["labels"].([]any)); n != 2 {
 		t.Fatalf("labels including deleted = %d", n)
 	}
@@ -382,6 +385,7 @@ func TestTaskLabelsMustExist(t *testing.T) {
 		t.Fatalf("error = %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	e.mustStatus(resp, 200, out)
 	if n := len(out["tasks"].([]any)); n != 0 {
 		t.Fatalf("rejected create left %d tasks", n)
 	}

@@ -123,7 +123,7 @@ func TestDefinitionsUseStrictSubset(t *testing.T) {
 		if !ok {
 			t.Fatalf("%s: no type", path)
 		}
-		types := []string{}
+		var types []string
 		switch v := typ.(type) {
 		case string:
 			types = []string{v}

@@ -44,6 +44,8 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Notifications and webhooks are no longer lost when the app disconnects during a sync.** Once a change is saved, its notifications and webhook deliveries are recorded even if the request was cut off.
 - **Impossible due dates are refused.** A due date that does not exist (such as 31 February) or a time outside 00:00–23:59 is no longer accepted, so it cannot break recurring tasks and reminders.
 - **A database migration that would have been skipped is reported.** The server records which migration files it applied and logs an error at startup for a file it never ran; the repository checks refuse a new migration not numbered above those on the main branch.
+- **A new hosted instance always gets its setup link.** In multi-tenant hosting, creating an instance whose record could not be read back right away replied without its setup token; the reply now keeps the record just created.
+- **More reliable tests and checks (for contributors).** Every API test now checks the status of each response, `make check` and CI run staticcheck, the server and the web app share one list of synced and encrypted fields that both test suites check, and a randomized test with replayable seeds checks that devices with wrong clocks converge after a project is shared. The demo's "busy" API message now starts in lower case like the others; the app shows its own text.
 
 ### Added
 

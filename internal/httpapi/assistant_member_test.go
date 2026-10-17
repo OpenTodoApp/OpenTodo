@@ -197,6 +197,7 @@ func TestMemberProviderResolution(t *testing.T) {
 	// the member must accept a disclosure naming the owner's provider.
 	me.setOwner(t, map[string]any{"allow_member_keys": false})
 	resp, out = me.member.do("GET", "/api/v1/me/assistant", nil)
+	me.member.mustStatus(resp, 200, out)
 	if out["source"] != "server" || out["provider"] != "anthropic" || out["consented"] != false || out["own_provider"] == nil {
 		t.Fatalf("disallowed: %v", out)
 	}
@@ -219,6 +220,7 @@ func TestMemberProviderResolution(t *testing.T) {
 	// Allowed again: the kept choice is back in effect (after consent).
 	me.setOwner(t, map[string]any{"allow_member_keys": true})
 	resp, out = me.member.do("GET", "/api/v1/me/assistant", nil)
+	me.member.mustStatus(resp, 200, out)
 	if out["source"] != "own" || out["provider"] != "openai" || out["consented"] != false {
 		t.Fatalf("allowed again: %v", out)
 	}
@@ -253,6 +255,7 @@ func TestMemberProviderResolution(t *testing.T) {
 	}
 	// The member's provider choice is audited by name, never a key.
 	resp, out = me.owner.do("GET", "/api/v1/audit?limit=200", nil)
+	me.owner.mustStatus(resp, 200, out)
 	if a := fmt.Sprint(out); !strings.Contains(a, "assistant.own_provider") || !strings.Contains(a, "assistant.own_key.gemini") {
 		t.Fatalf("audit %v", out)
 	}
@@ -363,15 +366,18 @@ func TestMemberKeyCap(t *testing.T) {
 		t.Fatal("a capped turn reached the provider")
 	}
 	resp, out = me.member.do("GET", "/api/v1/me/assistant/usage", nil)
+	me.member.mustStatus(resp, 200, out)
 	if out["counted_tokens"].(float64) != 2500 || out["cap_member_keys"] != true {
 		t.Fatalf("usage with cap_member_keys %v", out)
 	}
 	// Owner view and audit carry the switch; the owner sees one member on their own key.
 	resp, out = me.owner.do("GET", "/api/v1/settings/assistant", nil)
+	me.owner.mustStatus(resp, 200, out)
 	if out["cap_member_keys"] != true || out["own_key_members"].(float64) != 1 {
 		t.Fatalf("owner view %v", out)
 	}
 	resp, out = me.owner.do("GET", "/api/v1/audit?limit=100", nil)
+	me.owner.mustStatus(resp, 200, out)
 	if !strings.Contains(fmt.Sprint(out), "assistant.cap_member_keys") {
 		t.Fatalf("audit %v", out)
 	}
@@ -430,6 +436,7 @@ func TestMemberConnectionTest(t *testing.T) {
 	me.openai.status = 401
 	me.openai.mu.Unlock()
 	resp, out = me.member.do("POST", "/api/v1/me/assistant/test", nil)
+	me.member.mustStatus(resp, 200, out)
 	if out["ok"] != false || out["code"] != "provider_auth" || !strings.Contains(out["message"].(string), "your API key") {
 		t.Fatalf("bad key: %v", out)
 	}

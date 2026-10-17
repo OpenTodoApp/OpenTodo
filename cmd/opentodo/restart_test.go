@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -49,7 +47,11 @@ func TestWebRestoreRestartsInPlace(t *testing.T) {
 		t.Skip("builds and runs the server binary")
 	}
 	bin := filepath.Join(t.TempDir(), "opentodo")
-	build := exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"), "build", "-o", bin, ".")
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Skip("needs the go command on PATH")
+	}
+	build := exec.Command(goBin, "build", "-o", bin, ".")
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, out)
 	}
@@ -177,6 +179,6 @@ func TestWebRestoreRestartsInPlace(t *testing.T) {
 		t.Fatalf("restore state = %v", state)
 	}
 	if !strings.Contains(logs.String(), "restore applied") {
-		t.Fatal(fmt.Sprintf("log does not mention the apply:\n%s", logs.String()))
+		t.Fatalf("log does not mention the apply:\n%s", logs.String())
 	}
 }
