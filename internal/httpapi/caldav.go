@@ -105,7 +105,7 @@ func (s *Server) handlePutCaldavSetting(w http.ResponseWriter, r *http.Request) 
 		Enabled *bool `json:"enabled"`
 	}
 	if err := readJSON(r, &in); err != nil || in.Enabled == nil {
-		writeError(w, http.StatusBadRequest, "invalid_input", `body must be {"enabled": true|false}`)
+		badBodyWith(w, err, "invalid_input", `body must be {"enabled": true|false}`)
 		return
 	}
 	before := s.caldavEnabled(r.Context())
@@ -141,7 +141,7 @@ func (s *Server) handleCreateAppPassword(w http.ResponseWriter, r *http.Request)
 		Name string `json:"name"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	// CalDAV clients need plaintext titles (OpenSpec `e2ee`): refused while the

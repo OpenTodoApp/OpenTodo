@@ -61,7 +61,7 @@ func (s *Server) handlePutBackupSettings(w http.ResponseWriter, r *http.Request)
 		Secrets  backup.SecretUpdate `json:"secrets"`
 	}
 	if err := readJSON(r, &in); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		badBody(w, err)
 		return
 	}
 	if in.Settings == nil {
