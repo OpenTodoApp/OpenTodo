@@ -1,0 +1,43 @@
+# OpenTodo as a Podman Quadlet (Podman 4.6 or later). Copy this file and opentodo.volume to
+# /etc/containers/systemd/ (rootful) or ~/.config/containers/systemd/ (rootless), then run
+# systemctl daemon-reload and systemctl start opentodo (add --user when rootless).
+# Guide: https://open-todo.app/docs/self-hosting/podman/
+
+[Unit]
+Description=OpenTodo task manager
+Documentation=https://open-todo.app/docs/self-hosting/podman/
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=opentodo
+Image=ghcr.io/pixari/opentodo:stable
+# podman auto-update pulls the stable tag again and restarts the container when a release moved it.
+AutoUpdate=registry
+PublishPort=8080:8080
+Volume=opentodo.volume:/data
+# The image has no shell, so the check is a JSON array (exec form): a plain
+# string would be run with /bin/sh -c and always fail.
+HealthCmd=["/opentodo", "healthcheck"]
+HealthInterval=30s
+HealthTimeout=5s
+HealthStartPeriod=5s
+HealthRetries=3
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all
+# The https address people open, for example https://todo.example.com. Leave empty on plain http.
+Environment=OPENTODO_BASE_URL=
+# Optional, 16+ characters: asked when the owner account is created.
+Environment=OPENTODO_SETUP_TOKEN=
+Environment=OPENTODO_ALLOW_SIGNUP=false
+# Reverse proxies whose X-Forwarded-For is trusted, for example cloudflare.
+Environment=OPENTODO_TRUSTED_PROXIES=
+
+[Service]
+Restart=always
+# The first start pulls the image.
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

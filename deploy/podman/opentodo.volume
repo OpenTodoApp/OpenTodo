@@ -1,0 +1,4 @@
+# The named volume for OpenTodo's data. Podman calls it systemd-opentodo
+# (podman volume inspect systemd-opentodo shows where it lives).
+[Volume]
+Label=app=opentodo
