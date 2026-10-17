@@ -233,7 +233,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token from every address, so a fresh public server cannot be claimed by a stranger. Unset, setup from a public address needs the one-time [setup code](docs/self-hosting/docker.md#the-setup-code) printed in the server log instead. No effect once the owner exists. The Coolify template generates one |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime in days |
-| `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. The startup line shows the level in use (`log_level=`); `debug` adds one line per API request (method, path, status, duration) |
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest [import](docs/import.md) file, 1–200 |
 | `OPENTODO_ATTACHMENTS_MAX_FILE_MB` | `25` | Optional preset for the largest [attachment](docs/attachments.md), 1–2048; applied once, then Settings decides |
 | `OPENTODO_ATTACHMENTS_QUOTA_MB` | `1024` | Optional preset for each account's attachment total, 0 (unlimited)–1048576; applied once |

@@ -29,5 +29,5 @@
   <Config Name="Session days" Target="OPENTODO_SESSION_DAYS" Default="90" Mode="" Description="Days a sign-in stays valid." Type="Variable" Display="advanced" Required="false" Mask="false">90</Config>
   <Config Name="Trash retention days" Target="OPENTODO_TRASH_RETENTION_DAYS" Default="30" Mode="" Description="Days deleted items stay in the Trash; 0 keeps them forever." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
   <Config Name="Largest import (MB)" Target="OPENTODO_IMPORT_MAX_MB" Default="20" Mode="" Description="Largest import file accepted, in MB." Type="Variable" Display="advanced" Required="false" Mask="false">20</Config>
-  <Config Name="Log level" Target="OPENTODO_LOG_LEVEL" Default="info" Mode="" Description="debug, info, warn or error." Type="Variable" Display="advanced" Required="false" Mask="false">info</Config>
+  <Config Name="Log level" Target="OPENTODO_LOG_LEVEL" Default="info" Mode="" Description="debug, info, warn or error. The first log line shows the level in use; debug adds one line per request the app makes." Type="Variable" Display="advanced" Required="false" Mask="false">info</Config>
 </Container>
