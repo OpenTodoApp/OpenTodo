@@ -13,12 +13,12 @@ import (
 // Trash and history routes (OpenSpec change `trash-and-history`). All require
 // authentication. History reads the op log; purge is the only route that removes
 // data from it, and only for entities already in the Trash.
-func (s *Server) registerTrashRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/tasks/{id}/history", s.requireAuth(s.historyHandler("task")))
-	mux.Handle("GET /api/v1/projects/{id}/history", s.requireAuth(s.historyHandler("project")))
-	mux.Handle("DELETE /api/v1/tasks/{id}/purge", s.requireAuth(s.purgeHandler("task")))
-	mux.Handle("DELETE /api/v1/projects/{id}/purge", s.requireAuth(s.purgeHandler("project")))
-	mux.Handle("POST /api/v1/trash/purge", s.requireAuth(s.handleEmptyTrash))
+func (s *Server) registerTrashRoutes(mux *routes) {
+	mux.handle("GET /api/v1/tasks/{id}/history", signedIn, s.historyHandler("task"))
+	mux.handle("GET /api/v1/projects/{id}/history", signedIn, s.historyHandler("project"))
+	mux.handle("DELETE /api/v1/tasks/{id}/purge", signedIn, s.purgeHandler("task"))
+	mux.handle("DELETE /api/v1/projects/{id}/purge", signedIn, s.purgeHandler("project"))
+	mux.handle("POST /api/v1/trash/purge", signedIn, s.handleEmptyTrash)
 }
 
 func (s *Server) historyHandler(entity string) http.HandlerFunc {

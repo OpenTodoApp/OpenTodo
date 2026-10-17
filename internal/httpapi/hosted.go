@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
 )
 
 // WithHosted marks a tenant served by a host (OpenSpec `multi-tenant-host`,
@@ -61,25 +60,19 @@ func (s *Server) hostGuard(next http.Handler) http.Handler {
 }
 
 // registerHostedRoutes adds the owner's archive download on a hosted tenant.
-func (s *Server) registerHostedRoutes(mux *http.ServeMux) {
+func (s *Server) registerHostedRoutes(mux *routes) {
 	if !s.hosted {
 		return
 	}
-	mux.Handle("GET /api/v1/export/archive", s.requireAuth(s.requireFresh(s.handleArchiveDownload)))
+	mux.handle("GET /api/v1/export/archive", ownerOnly("download the server archive").sensitive().demoDenied(), s.handleArchiveDownload)
 }
 
 // handleArchiveDownload streams the whole tenant as a backup archive, the
 // format `opentodo restore` reads (multi-tenant-host "Owners can take their
-// data away"). Owner only, from a recently confirmed session or a full token.
+// data away"). Owner only, from a recently confirmed session or an admin
+// token: the archive holds every account's credentials (route policy,
+// route-authorization-policy).
 func (s *Server) handleArchiveDownload(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the server archive") {
-		return
-	}
-	// The archive holds every account's credentials: never for a read or agent token.
-	if tokenFrom(r.Context()).Scope != auth.ScopeFull {
-		writeError(w, http.StatusForbidden, "insufficient_scope", "downloading the server archive needs a session or a full API token")
-		return
-	}
 	if s.backups == nil {
 		writeError(w, http.StatusServiceUnavailable, "unavailable", "archives are not available on this server")
 		return

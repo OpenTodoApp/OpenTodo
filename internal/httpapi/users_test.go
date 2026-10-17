@@ -291,7 +291,8 @@ func TestDeactivationClosesEventStream(t *testing.T) {
 
 // TestPasswordChangeRequiresFreshSession: the password change and every
 // administrative action need a recent re-authentication for cookie sessions
-// (mfa-totp section 8 carried over); bearer tokens are never challenged.
+// (mfa-totp section 8 carried over); admin tokens are never challenged and full
+// tokens are refused (route-authorization-policy).
 func TestPasswordChangeRequiresFreshSession(t *testing.T) {
 	m := newMFAEnv(t)
 	_, secret, _ := m.invite(map[string]any{})
@@ -299,9 +300,12 @@ func TestPasswordChangeRequiresFreshSession(t *testing.T) {
 	resp, out := c.do("POST", "/api/v1/auth/register", map[string]string{"email": "m@example.com", "password": "correct horse battery", "invitation": secret})
 	c.mustStatus(resp, 201, out)
 	id := out["user"].(map[string]any)["id"].(string)
-	resp, out = m.do("POST", "/api/v1/tokens", map[string]string{"name": "script"})
+	resp, out = m.do("POST", "/api/v1/tokens", map[string]string{"name": "script", "scope": "admin"})
 	m.mustStatus(resp, 201, out)
 	token := out["secret"].(string)
+	resp, out = m.do("POST", "/api/v1/tokens", map[string]string{"name": "full script"})
+	m.mustStatus(resp, 201, out)
+	fullToken := out["secret"].(string)
 
 	m.clock.advance(FreshWindow + time.Second)
 	for _, r := range []struct {
@@ -320,8 +324,12 @@ func TestPasswordChangeRequiresFreshSession(t *testing.T) {
 	}
 	// The read-only list is not a sensitive action.
 	m.expect("GET", "/api/v1/users", nil, 200, "")
-	// A bearer token is never challenged.
+	// A full token is refused on administration routes; an admin token is never challenged.
 	anon := newClientAt(m.env, "10.6.6.7")
+	resp, out = anon.do("POST", "/api/v1/users/"+id+"/deactivate", nil, "Authorization", "Bearer "+fullToken)
+	if resp.StatusCode != 403 || errCode(out) != "insufficient_scope" {
+		t.Fatalf("full token deactivates: %d %v", resp.StatusCode, out)
+	}
 	resp, out = anon.do("POST", "/api/v1/users/"+id+"/deactivate", nil, "Authorization", "Bearer "+token)
 	anon.mustStatus(resp, 200, out)
 	// After re-authentication the request succeeds.

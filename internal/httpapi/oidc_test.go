@@ -193,11 +193,21 @@ func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
 		t.Fatalf("returning identity signed in as %v", out["user"])
 	}
 
-	// The owner's verified email links the owner account.
+	// The owner's verified email never links the owner account by itself
+	// (route-authorization-policy): the owner links from a signed-in session.
 	o.idp.SetUser(oidctest.User{Subject: "owner-sub", Email: "owner@example.com", EmailVerified: true})
 	ownerSSO := o.client("203.0.113.5")
-	if resp = o.ssoLogin(ownerSSO); location(resp) != "/" {
-		t.Fatalf("owner link = %q", location(resp))
+	if resp = o.ssoLogin(ownerSSO); location(resp) != "/?error=oidc_link_required" || hasCookie(resp, sessionCookie) {
+		t.Fatalf("owner link by email = %q", location(resp))
+	}
+	if n := o.auditCount("name = 'login.failed' AND details LIKE '%oidc_link_required%'"); n != 1 {
+		t.Fatalf("refused link audited %d times", n)
+	}
+	if resp = o.ssoLogin(o.env); location(resp) != "/settings/security?linked=1" {
+		t.Fatalf("owner link from Settings = %q", location(resp))
+	}
+	if resp = o.ssoLogin(ownerSSO); location(resp) != "/" || !hasCookie(resp, sessionCookie) {
+		t.Fatalf("owner sign-in after linking = %q", location(resp))
 	}
 	_, out = ownerSSO.do("GET", "/api/v1/me", nil)
 	if out["user"].(map[string]any)["role"] != "owner" {
@@ -489,9 +499,16 @@ func TestOIDCSignInSatisfiesMFA(t *testing.T) {
 	if resp.StatusCode != 200 || out["mfaRequired"] != true || hasCookie(resp, sessionCookie) {
 		t.Fatalf("password sign-in of enrolled owner = %v", out)
 	}
-	// ... the provider sign-in does not.
+	// ... an identity the owner linked from Settings does not; an identity
+	// that only matches the email is refused (route-authorization-policy).
 	o.idp.SetUser(oidctest.User{Subject: "owner-sub", Email: "owner@example.com", EmailVerified: true})
 	c := o.client("203.0.113.51")
+	if resp = o.ssoLogin(c); location(resp) != "/?error=oidc_link_required" || hasCookie(resp, sessionCookie) {
+		t.Fatalf("provider sign-in of enrolled owner before linking = %q", location(resp))
+	}
+	if resp = o.ssoLogin(o.env); location(resp) != "/settings/security?linked=1" {
+		t.Fatalf("link from Settings = %q", location(resp))
+	}
 	resp = o.ssoLogin(c)
 	if location(resp) != "/" || !hasCookie(resp, sessionCookie) {
 		t.Fatalf("provider sign-in of enrolled owner = %d %q", resp.StatusCode, location(resp))

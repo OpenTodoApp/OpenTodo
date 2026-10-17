@@ -47,7 +47,7 @@ func inlineType(mt string) bool {
 }
 
 // registerAttachmentRoutes mounts the routes and wires the blob store into sync.
-func (s *Server) registerAttachmentRoutes(mux *http.ServeMux) {
+func (s *Server) registerAttachmentRoutes(mux *routes) {
 	if s.blobs == nil && s.cfg.DataDir != "" {
 		b, err := blobs.New(s.cfg.DataDir)
 		if err != nil {
@@ -87,14 +87,14 @@ func (s *Server) registerAttachmentRoutes(mux *http.ServeMux) {
 	if s.attachmentLimiter == nil {
 		s.attachmentLimiter = newRateLimiter(120, time.Hour)
 	}
-	mux.Handle("GET /api/v1/settings/attachments", s.requireAuth(s.handleGetAttachmentSettings))
-	mux.Handle("PUT /api/v1/settings/attachments", s.requireAuth(s.handlePutAttachmentSettings))
-	mux.Handle("GET /api/v1/tasks/{id}/attachments", s.requireAuth(s.handleListAttachments))
-	mux.Handle("POST /api/v1/tasks/{id}/attachments", s.requireAuth(s.handleCreateAttachment))
-	mux.Handle("PUT /api/v1/attachments/{id}/content", s.requireAuth(s.handleUploadAttachment))
-	mux.Handle("GET /api/v1/attachments/{id}/content", s.requireAuth(s.handleAttachmentContent))
-	mux.Handle("PATCH /api/v1/attachments/{id}", s.requireAuth(s.handleRenameAttachment))
-	mux.Handle("DELETE /api/v1/attachments/{id}", s.requireAuth(s.handleRemoveAttachment))
+	mux.handle("GET /api/v1/settings/attachments", signedIn.demoDenied(), s.handleGetAttachmentSettings)
+	mux.handle("PUT /api/v1/settings/attachments", ownerOnly("manage the attachment settings").demoDenied(), s.handlePutAttachmentSettings)
+	mux.handle("GET /api/v1/tasks/{id}/attachments", signedIn.demoDenied(), s.handleListAttachments)
+	mux.handle("POST /api/v1/tasks/{id}/attachments", signedIn.demoDenied(), s.handleCreateAttachment)
+	mux.handle("PUT /api/v1/attachments/{id}/content", signedIn.demoDenied(), s.handleUploadAttachment)
+	mux.handle("GET /api/v1/attachments/{id}/content", signedIn.demoDenied(), s.handleAttachmentContent)
+	mux.handle("PATCH /api/v1/attachments/{id}", signedIn.demoDenied(), s.handleRenameAttachment)
+	mux.handle("DELETE /api/v1/attachments/{id}", signedIn.demoDenied(), s.handleRemoveAttachment)
 }
 
 // WithAttachmentRateLimit replaces the per-account upload limit (tests).
@@ -151,9 +151,6 @@ func (s *Server) handleGetAttachmentSettings(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) handlePutAttachmentSettings(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the attachment settings") {
-		return
-	}
 	store := settings.New(s.sync.DB())
 	before, err := store.Attachments(r.Context())
 	if err != nil {

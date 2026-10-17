@@ -1886,7 +1886,7 @@
   "Read which data is sent to the assistant and accept it first.": "Leia quais dados são enviados ao assistente e aceite primeiro.",
   "Read-only": "Somente leitura",
   "Read-only access for an AI assistant, or a token that can make changes": "Acesso somente leitura para um assistente de IA, ou um token que pode fazer alterações",
-  "Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": "Somente leitura pode ler tudo o que você pode, mas é recusado em qualquer alteração. Um token de assistente de IA só pode alterar tarefas pelas ferramentas do assistente (MCP), e só enquanto o proprietário do servidor e você permitirem alterações do assistente em Configurações → IA; ele nunca pode criar tokens nem alterar configurações.",
+  "Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": "Acesso total pode fazer tudo o que você pode, exceto gerenciar credenciais de acesso e a administração. Somente leitura pode ler tudo o que você pode, mas é recusado em qualquer alteração. Um token de assistente de IA só pode alterar tarefas pelas ferramentas do assistente (MCP), e só enquanto o proprietário do servidor e você permitirem alterações do assistente em Configurações → IA; ele nunca pode criar tokens nem alterar configurações.",
   "Read-only events next to your tasks in Day and Week. Paste a calendar's iCal (.ics) address.": "Eventos somente leitura ao lado das suas tarefas em Dia e Semana. Cole o endereço iCal (.ics) de um calendário.",
   "Read-only: you are a viewer of this shared project.": "Somente leitura: você é leitor deste projeto compartilhado.",
   "Read-only: you are a viewer of this shared project. You can still comment.": "Somente leitura: você é leitor deste projeto compartilhado. Ainda pode comentar.",
@@ -3577,5 +3577,18 @@
   "“{name}” would go over your {quota} of attachments.": "“{name}” ultrapassaria seus {quota} de anexos.",
   "“{title}” already waits for this task, so it cannot block it": "“{title}” já aguarda esta tarefa, então não pode bloqueá-la",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "“{title}” está em um projeto compartilhado de outra forma; uma tarefa só pode aguardar tarefas compartilhadas do mesmo jeito",
-  "⤼ Skip": "⤼ Pular"
+  "⤼ Skip": "⤼ Pular",
+  "Admin: full access plus credentials and administration": "Administrador: acesso total mais credenciais e administração",
+  "An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.": "Um token de administrador pode desativar a verificação em duas etapas, criar mais tokens e senhas de app, gerenciar contas e alterar o login único e outras configurações secretas, sem sua senha ou um código. Crie um só para um script que precise dele, guarde-o como uma senha e revogue-o quando terminar.",
+  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": "Todos os dispositivos e navegadores conectados à sua conta são desconectados, navegadores lembrados precisam digitar um código de novo, e seus tokens de API e senhas de app param de funcionar na hora. Scripts, apps de calendário e assistentes precisam de novos. Alterações que outro dispositivo ainda não sincronizou são perdidas. Seus dados ficam no seu servidor.",
+  "Sign in with your password first, then link single sign-on in Settings → Account.": "Entre primeiro com sua senha e depois vincule o login único em Configurações → Conta.",
+  "Sign out everywhere": "Sair em todos os lugares",
+  "Sign out everywhere?": "Sair em todos os lugares?",
+  "Signed out everywhere": "Saiu em todos os lugares",
+  "Signs out every device and browser, including this one, and revokes your API tokens and app passwords.": "Desconecta todos os dispositivos e navegadores, inclusive este, e revoga seus tokens de API e senhas de app.",
+  "This account is not linked to {provider} yet. Sign in with your password (and code) first, then link {provider} in Settings → Account.": "Esta conta ainda não está vinculada a {provider}. Entre primeiro com sua senha (e código) e depois vincule {provider} em Configurações → Conta.",
+  "{n, plural, one {# API token} other {# API tokens}}": "{n, plural, one {# token de API} other {# tokens de API}}",
+  "{n, plural, one {# app password} other {# app passwords}}": "{n, plural, one {# senha de app} other {# senhas de app}}",
+  "{n, plural, one {# session} other {# sessions}}": "{n, plural, one {# sessão} other {# sessões}}",
+  "“{name}” (admin)": "“{name}” (administrador)"
 }

@@ -39,20 +39,21 @@ func TestBusyHashingAnswers503(t *testing.T) {
 	}
 }
 
-// TestRequireSessionOrFullUsesResolvedToken (SEC-7): the check reads the scope
-// requireAuth put in the context instead of resolving the token a second time.
+// TestRequireSessionOrFullUsesResolvedToken (SEC-7): the route policy's
+// full-token rule reads the scope requireAuth put in the context instead of
+// resolving the token a second time (route-authorization-policy).
 func TestRequireSessionOrFullUsesResolvedToken(t *testing.T) {
 	s, _ := bareServer(t)
 	for _, tc := range []struct {
 		scope string
 		want  bool
-	}{{auth.ScopeFull, true}, {auth.ScopeRead, false}, {auth.ScopeAgent, false}} {
+	}{{auth.ScopeFull, true}, {auth.ScopeAdmin, true}, {auth.ScopeRead, false}, {auth.ScopeAgent, false}} {
 		req := httptest.NewRequest("GET", "/api/v1/me/agent-access", nil)
 		// The header names no stored token: only the resolved scope can decide.
 		req.Header.Set("Authorization", "Bearer ot_not_looked_up_again")
 		req = req.WithContext(context.WithValue(req.Context(), tokenKey, auth.TokenInfo{Scope: tc.scope}))
 		rec := httptest.NewRecorder()
-		if got := s.requireSessionOrFull(rec, req); got != tc.want {
+		if got := s.admits(rec, req, signedIn.fullTokens()); got != tc.want {
 			t.Fatalf("scope %s: allowed = %v, want %v (status %d)", tc.scope, got, tc.want, rec.Code)
 		}
 	}

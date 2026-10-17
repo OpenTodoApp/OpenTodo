@@ -66,6 +66,7 @@
   "oidc_disabled",
   "oidc_email_unverified",
   "oidc_failed",
+  "oidc_link_required",
   "oidc_state_invalid",
   "owner_must_transfer",
   "passkey_challenge_invalid",

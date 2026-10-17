@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
 )
 
 // ---- handlers: audit log (OpenSpec change `audit-log`) ----
@@ -21,16 +20,6 @@ import (
 // user reads their own access events. There are deliberately no routes that
 // modify or delete an event: PATCH or DELETE on /api/v1/audit/{id} falls through
 // to the generic collection routes, which answer 404 for the unknown collection.
-
-// requireOwner answers 403 unless the signed-in user is the owner.
-func (s *Server) requireOwner(w http.ResponseWriter, r *http.Request) *auth.User {
-	u := userFrom(r.Context())
-	if !s.auth.IsOwner(u) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can access the audit log")
-		return nil
-	}
-	return u
-}
 
 // filterError names the query parameter that was rejected.
 type filterError struct{ param, msg string }
@@ -110,9 +99,6 @@ func (s *Server) auditFilter(w http.ResponseWriter, r *http.Request, paged bool)
 }
 
 func (s *Server) handleAuditList(w http.ResponseWriter, r *http.Request) {
-	if s.requireOwner(w, r) == nil {
-		return
-	}
 	f, ok := s.auditFilter(w, r, true)
 	if !ok {
 		return
@@ -132,10 +118,7 @@ func (s *Server) handleAuditList(w http.ResponseWriter, r *http.Request) {
 // handleAuditExport streams every matching event, newest first, as
 // newline-delimited JSON and records the export itself afterwards.
 func (s *Server) handleAuditExport(w http.ResponseWriter, r *http.Request) {
-	u := s.requireOwner(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	f, ok := s.auditFilter(w, r, false)
 	if !ok {
 		return
@@ -175,9 +158,6 @@ func (s *Server) handleAuditExport(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetAuditSettings(w http.ResponseWriter, r *http.Request) {
-	if s.requireOwner(w, r) == nil {
-		return
-	}
 	set, err := s.audit.Settings(r.Context())
 	if err != nil {
 		s.internal(w, err)
@@ -187,10 +167,7 @@ func (s *Server) handleGetAuditSettings(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handlePutAuditSettings(w http.ResponseWriter, r *http.Request) {
-	u := s.requireOwner(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	var in struct {
 		RetentionDays *float64 `json:"retentionDays"`
 		LogIP         *bool    `json:"logIp"`

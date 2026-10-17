@@ -28,16 +28,16 @@ const davRealm = "OpenTodo CalDAV"
 // caldavState caches the toggle: 0 = not loaded, 1 = off, 2 = on.
 type caldavState struct{ v atomic.Int32 }
 
-func (s *Server) registerCaldavRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/app-passwords", s.requireAuth(s.handleListAppPasswords))
-	mux.Handle("POST /api/v1/app-passwords", s.requireAuth(s.requireFresh(s.handleCreateAppPassword)))
-	mux.Handle("DELETE /api/v1/app-passwords/{id}", s.requireAuth(s.handleRevokeAppPassword))
-	mux.Handle("GET /api/v1/settings/caldav", s.requireAuth(s.handleGetCaldavSetting))
-	mux.Handle("PUT /api/v1/settings/caldav", s.requireAuth(s.handlePutCaldavSetting))
-	mux.HandleFunc("/dav/", s.handleDAV)
-	mux.HandleFunc("/dav", s.handleDAV)
-	mux.HandleFunc("/.well-known/caldav", s.handleDAV)
-	mux.HandleFunc("/.well-known/caldav/", s.handleDAV)
+func (s *Server) registerCaldavRoutes(mux *routes) {
+	mux.handle("GET /api/v1/app-passwords", signedIn, s.handleListAppPasswords)
+	mux.handle("POST /api/v1/app-passwords", signedIn.sensitive().demoDenied(), s.handleCreateAppPassword)
+	mux.handle("DELETE /api/v1/app-passwords/{id}", signedIn.demoDenied(), s.handleRevokeAppPassword)
+	mux.handle("GET /api/v1/settings/caldav", signedIn, s.handleGetCaldavSetting)
+	mux.handle("PUT /api/v1/settings/caldav", ownerOnly("manage the CalDAV setting").demoDenied(), s.handlePutCaldavSetting)
+	mux.handle("/dav/", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
+	mux.handle("/dav", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
+	mux.handle("/.well-known/caldav", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
+	mux.handle("/.well-known/caldav/", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
 }
 
 // seedCaldav applies the OPENTODO_CALDAV preset on first start only.
@@ -98,9 +98,6 @@ func (s *Server) handleGetCaldavSetting(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handlePutCaldavSetting(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the CalDAV setting") {
-		return
-	}
 	var in struct {
 		Enabled *bool `json:"enabled"`
 	}

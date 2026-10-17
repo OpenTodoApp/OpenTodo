@@ -30,6 +30,17 @@ describe('TokensView', () => {
     expect(render({ creating: true, scope: 'read' })).toMatch(/<option value="read" selected="">Read-only<\/option>/)
   })
 
+  it('offers the admin scope with a warning shown only while it is chosen (route-authorization-policy)', () => {
+    const html = render({ creating: true })
+    expect(html).toContain('<option value="admin">Admin: full access plus credentials and administration</option>')
+    expect(html).toContain('except managing sign-in credentials and administration')
+    expect(html).not.toContain('An admin token can turn off two-factor authentication')
+    const admin = render({ creating: true, scope: 'admin' })
+    expect(admin).toMatch(/<option value="admin" selected="">/)
+    expect(admin).toContain('An admin token can turn off two-factor authentication')
+    expect(render({ tokens: [token({ scope: 'admin' })] })).toContain('>admin<')
+  })
+
   it('labels each token with its scope; tokens from before scopes read as full', () => {
     const html = render({ tokens: [token(), token({ id: 't2', name: 'assistant', scope: 'read' }), token({ id: 't3', name: 'old', scope: undefined }),
       token({ id: 't4', name: 'desk', scope: 'agent' })] })
@@ -57,6 +68,7 @@ describe('TokensView', () => {
     expect(scopeLabel('full')).toBe('full access')
     expect(scopeLabel(undefined)).toBe('full access')
     expect(scopeLabel('agent')).toBe('assistant, can make changes')
+    expect(scopeLabel('admin')).toBe('admin')
   })
 })
 

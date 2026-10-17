@@ -7,8 +7,13 @@ import { ApiError } from './api'
 import { getMeta, setMeta } from './db'
 import { t } from './i18n'
 
-/** `agent`: an assistant token that can make changes through MCP write tools only. */
-export type TokenScope = 'full' | 'read' | 'agent'
+/**
+ * `agent`: an assistant token that can make changes through MCP write tools only.
+ * `admin`: a full token that may also manage credentials and administration
+ * (second factor, passkeys, tokens, app passwords, accounts, single sign-on,
+ * encryption keys, settings with secrets); created only from a signed-in session.
+ */
+export type TokenScope = 'full' | 'read' | 'agent' | 'admin'
 
 export interface ApiToken {
   id: string
@@ -36,6 +41,7 @@ export interface AgentAccess {
 /** Label for a token's scope in the token list. */
 export function scopeLabel(scope: TokenScope | undefined): string {
   if (scope === 'agent') return t('assistant, can make changes')
+  if (scope === 'admin') return t('admin')
   return scope === 'read' ? t('read-only') : t('full access')
 }
 

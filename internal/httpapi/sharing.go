@@ -16,12 +16,12 @@ import (
 // route requires authentication; a caller who is not a member of the project gets
 // the same 404 as for a project that does not exist. Membership is changed only
 // here, never through the op log.
-func (s *Server) registerSharingRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/projects/{id}/members", s.requireAuth(s.handleListMembers))
-	mux.Handle("POST /api/v1/projects/{id}/members", s.requireAuth(s.handleAddMember))
-	mux.Handle("PATCH /api/v1/projects/{id}/members/{userId}", s.requireAuth(s.handleSetMemberRole))
-	mux.Handle("DELETE /api/v1/projects/{id}/members/{userId}", s.requireAuth(s.handleRemoveMember))
-	mux.Handle("POST /api/v1/projects/{id}/transfer", s.requireAuth(s.handleTransferProject))
+func (s *Server) registerSharingRoutes(mux *routes) {
+	mux.handle("GET /api/v1/projects/{id}/members", signedIn, s.handleListMembers)
+	mux.handle("POST /api/v1/projects/{id}/members", signedIn.demoDenied(), s.handleAddMember)
+	mux.handle("PATCH /api/v1/projects/{id}/members/{userId}", signedIn.demoDenied(), s.handleSetMemberRole)
+	mux.handle("DELETE /api/v1/projects/{id}/members/{userId}", signedIn.demoDenied(), s.handleRemoveMember)
+	mux.handle("POST /api/v1/projects/{id}/transfer", signedIn.demoDenied(), s.handleTransferProject)
 }
 
 // memberError maps the sync package's membership errors onto the API envelope.

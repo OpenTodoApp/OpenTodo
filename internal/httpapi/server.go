@@ -145,6 +145,8 @@ type Server struct {
 	idemSalt string
 	// hosted is set for a tenant a host serves (multi-tenant-host); see hosted.go.
 	hosted bool
+	// routeTable records every registered route with its policy (policy.go).
+	routeTable []routeEntry
 	// streams counts open live-update streams per client address and in all
 	// (SEC-6); see events.go.
 	streams streamCounter
@@ -229,18 +231,19 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// Deleting an account removes its synced data in the same transaction
 	// (user-management D4; the project-sharing hook lives in the sync package).
 	authSvc.SetBeforeDelete(opsync.DeleteAccountData)
-	mux := http.NewServeMux()
+	// Every route declares its access policy (route-authorization-policy); see policy.go.
+	mux := &routes{s: s, mux: http.NewServeMux()}
 	s.registerAttachmentRoutes(mux)
 
-	mux.HandleFunc("GET /healthz", s.handleHealth)
-	mux.HandleFunc("GET /api/v1/auth/status", s.handleAuthStatus)
-	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
-	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
-	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	mux.handle("GET /healthz", public("health check for the container and load balancers"), s.handleHealth)
+	mux.handle("GET /api/v1/auth/status", public("sign-in screen bootstrap: tells the app what the server offers"), s.handleAuthStatus)
+	mux.handle("POST /api/v1/auth/register", public("first-run owner setup and sign-up").demoDenied(), s.handleRegister)
+	mux.handle("POST /api/v1/auth/login", public("password sign-in, rate limited per address"), s.handleLogin)
+	mux.handle("POST /api/v1/auth/logout", public("signing out must work with an expired session too"), s.handleLogout)
 	// Passwordless sign-in: anonymous by design. Finishing shares the login
 	// limiter; fetching a challenge has its own per-address limiter.
-	mux.HandleFunc("POST /api/v1/auth/passkey/options", s.handlePasskeyLoginOptions)
-	mux.HandleFunc("POST /api/v1/auth/passkey", s.handlePasskeyLogin)
+	mux.handle("POST /api/v1/auth/passkey/options", public("passwordless sign-in, rate limited per address"), s.handlePasskeyLoginOptions)
+	mux.handle("POST /api/v1/auth/passkey", public("passwordless sign-in, rate limited per address"), s.handlePasskeyLogin)
 	// Second factor (OpenSpec `mfa-totp`): the second sign-in step is anonymous
 	// (it carries the challenge), everything else requires a session or token.
 	s.registerMFARoutes(mux)
@@ -253,50 +256,50 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerSignupRoutes(mux)
 	s.registerPublicLinkRoutes(mux)
 
-	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
-	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
-	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.requireFresh(s.handleCreateToken)))
-	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
-	mux.Handle("POST /api/v1/passkeys/register/options", s.requireAuth(s.handlePasskeyRegisterOptions))
-	mux.Handle("POST /api/v1/passkeys/register", s.requireAuth(s.handlePasskeyRegister))
-	mux.Handle("GET /api/v1/passkeys", s.requireAuth(s.handleListPasskeys))
-	mux.Handle("PATCH /api/v1/passkeys/{id}", s.requireAuth(s.handleRenamePasskey))
-	mux.Handle("DELETE /api/v1/passkeys/{id}", s.requireAuth(s.handleDeletePasskey))
+	mux.handle("GET /api/v1/me", signedIn, s.handleMe)
+	mux.handle("GET /api/v1/tokens", signedIn, s.handleListTokens)
+	mux.handle("POST /api/v1/tokens", signedIn.sensitive().demoDenied(), s.handleCreateToken)
+	mux.handle("DELETE /api/v1/tokens/{id}", signedIn.demoDenied(), s.handleDeleteToken)
+	mux.handle("POST /api/v1/passkeys/register/options", signedIn.credential().demoDenied(), s.handlePasskeyRegisterOptions)
+	mux.handle("POST /api/v1/passkeys/register", signedIn.credential().demoDenied(), s.handlePasskeyRegister)
+	mux.handle("GET /api/v1/passkeys", signedIn, s.handleListPasskeys)
+	mux.handle("PATCH /api/v1/passkeys/{id}", signedIn.credential().demoDenied(), s.handleRenamePasskey)
+	mux.handle("DELETE /api/v1/passkeys/{id}", signedIn.credential().demoDenied(), s.handleDeletePasskey)
 	// Invitations: owner-only management plus the one public preview route the
 	// spec defines (the invitee has no account yet). Both must be registered before
 	// the generic {collection} routes so the mux prefers these literal patterns.
-	mux.Handle("GET /api/v1/invitations", s.requireAuth(s.handleListInvitations))
-	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.requireFresh(s.handleCreateInvitation)))
-	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
-	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
+	mux.handle("GET /api/v1/invitations", adminsOnly("manage invitations"), s.handleListInvitations)
+	mux.handle("POST /api/v1/invitations", adminsOnly("manage invitations").sensitive().demoDenied(), s.handleCreateInvitation)
+	mux.handle("DELETE /api/v1/invitations/{id}", adminsOnly("manage invitations").credential().demoDenied(), s.handleRevokeInvitation)
+	mux.handle("GET /api/v1/invitations/{token}", public("the invitee previews the invitation before having an account"), s.handlePreviewInvitation)
 	// User administration (OpenSpec `user-management`): literal patterns, so they
 	// win over the {collection} routes below.
 	s.registerUserRoutes(mux)
 	// Audit log: owner-only reads, export and settings; personal activity for
 	// everyone. Literal patterns, so they win over the {collection} routes below.
-	mux.Handle("GET /api/v1/audit", s.requireAuth(s.handleAuditList))
-	mux.Handle("GET /api/v1/audit/export", s.requireAuth(s.handleAuditExport))
-	mux.Handle("GET /api/v1/settings/audit", s.requireAuth(s.handleGetAuditSettings))
-	mux.Handle("PUT /api/v1/settings/audit", s.requireAuth(s.handlePutAuditSettings))
-	mux.Handle("GET /api/v1/me/activity", s.requireAuth(s.handleMyActivity))
+	mux.handle("GET /api/v1/audit", ownerOnly("access the audit log"), s.handleAuditList)
+	mux.handle("GET /api/v1/audit/export", ownerOnly("access the audit log"), s.handleAuditExport)
+	mux.handle("GET /api/v1/settings/audit", ownerOnly("access the audit log"), s.handleGetAuditSettings)
+	mux.handle("PUT /api/v1/settings/audit", ownerOnly("access the audit log").demoDenied(), s.handlePutAuditSettings)
+	mux.handle("GET /api/v1/me/activity", signedIn, s.handleMyActivity)
 	// Webhooks (OpenSpec `webhooks`): /api/v1/webhooks* and /api/v1/settings/webhooks,
 	// all behind requireAuth; literal patterns win over the {collection} routes below.
 	s.registerWebhookRoutes(mux)
 	// Backups: owner only (OpenSpec `backups`); literal patterns win over {collection}.
-	mux.Handle("GET /api/v1/backups", s.requireAuth(s.handleBackupStatus))
-	mux.Handle("GET /api/v1/backups/settings", s.requireAuth(s.handleGetBackupSettings))
-	mux.Handle("PUT /api/v1/backups/settings", s.requireAuth(s.handlePutBackupSettings))
-	mux.Handle("POST /api/v1/backups/run", s.requireAuth(s.handleBackupRun))
-	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
+	mux.handle("GET /api/v1/backups", ownerOnly("manage backups"), s.handleBackupStatus)
+	mux.handle("GET /api/v1/backups/settings", ownerOnly("manage backups"), s.handleGetBackupSettings)
+	mux.handle("PUT /api/v1/backups/settings", ownerOnly("manage backups").credential().demoDenied(), s.handlePutBackupSettings)
+	mux.handle("POST /api/v1/backups/run", ownerOnly("manage backups").demoDenied(), s.handleBackupRun)
+	mux.handle("POST /api/v1/backups/test", ownerOnly("manage backups").demoDenied(), s.handleBackupTest)
 	// Web restore (backup-restore-web): owner only; confirm and safety-copy
 	// delete also need a fresh session and refuse API tokens (in the handlers).
-	mux.Handle("GET /api/v1/backups/archives", s.requireAuth(s.handleBackupArchives))
-	mux.Handle("GET /api/v1/backups/restore", s.requireAuth(s.handleRestoreState))
-	mux.Handle("POST /api/v1/backups/restore", s.requireAuth(s.handleRestoreConfirm))
-	mux.Handle("POST /api/v1/backups/restore/uploads", s.requireAuth(s.handleRestoreUpload))
-	mux.Handle("POST /api/v1/backups/restore/prepare", s.requireAuth(s.handleRestorePrepare))
-	mux.Handle("DELETE /api/v1/backups/restore/safety-copies/{name}", s.requireAuth(s.handleDeleteSafetyCopy))
-	mux.Handle("DELETE /api/v1/backups/restore/{id}", s.requireAuth(s.handleRestoreCancel))
+	mux.handle("GET /api/v1/backups/archives", ownerOnly("manage backups").demoDenied(), s.handleBackupArchives)
+	mux.handle("GET /api/v1/backups/restore", ownerOnly("manage backups").demoDenied(), s.handleRestoreState)
+	mux.handle("POST /api/v1/backups/restore", ownerOnly("manage backups").sessionOnly().recent().demoDenied(), s.handleRestoreConfirm)
+	mux.handle("POST /api/v1/backups/restore/uploads", ownerOnly("manage backups").demoDenied(), s.handleRestoreUpload)
+	mux.handle("POST /api/v1/backups/restore/prepare", ownerOnly("manage backups").demoDenied(), s.handleRestorePrepare)
+	mux.handle("DELETE /api/v1/backups/restore/safety-copies/{name}", ownerOnly("manage backups").sessionOnly().recent().demoDenied(), s.handleDeleteSafetyCopy)
+	mux.handle("DELETE /api/v1/backups/restore/{id}", ownerOnly("manage backups").demoDenied(), s.handleRestoreCancel)
 	// Project sharing (OpenSpec `project-sharing`): literal patterns win over {collection}.
 	s.registerSharingRoutes(mux)
 	// Project invite links (OpenSpec `project-invite-links`): literal patterns win over {collection}.
@@ -326,36 +329,37 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerDemoRoutes(mux)
 	// Hosted tenants (OpenSpec `multi-tenant-host`): the owner's archive download.
 	s.registerHostedRoutes(mux)
-	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
-	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
-	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
+	mux.handle("POST /api/v1/sync", signedIn, s.handleSync)
+	mux.handle("GET /api/v1/sync/events", signedIn, s.handleEvents)
+	mux.handle("GET /api/v1/export", signedIn, s.handleExport)
 	// Import (OpenSpec `data-import`): literal patterns win over the {collection} routes.
-	mux.Handle("POST /api/v1/import/preview", s.requireAuth(s.handleImportPreview))
-	mux.Handle("POST /api/v1/import", s.requireAuth(s.handleImportStart))
-	mux.Handle("GET /api/v1/import/jobs", s.requireAuth(s.handleImportJobs))
-	mux.Handle("GET /api/v1/import/jobs/{id}", s.requireAuth(s.handleImportJob))
-	mux.Handle("POST /api/v1/import/jobs/{id}/undo", s.requireAuth(s.handleImportUndo))
-	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
-	mux.Handle("POST /api/v1/{collection}", s.requireAuth(s.handleCreate))
-	mux.Handle("GET /api/v1/{collection}/{id}", s.requireAuth(s.handleGet))
-	mux.Handle("PATCH /api/v1/{collection}/{id}", s.requireAuth(s.handlePatch))
-	mux.Handle("DELETE /api/v1/{collection}/{id}", s.requireAuth(s.handleDelete))
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+	mux.handle("POST /api/v1/import/preview", signedIn.demoDenied(), s.handleImportPreview)
+	mux.handle("POST /api/v1/import", signedIn.demoDenied(), s.handleImportStart)
+	mux.handle("GET /api/v1/import/jobs", signedIn, s.handleImportJobs)
+	mux.handle("GET /api/v1/import/jobs/{id}", signedIn, s.handleImportJob)
+	mux.handle("POST /api/v1/import/jobs/{id}/undo", signedIn.demoDenied(), s.handleImportUndo)
+	mux.handle("GET /api/v1/{collection}", signedIn, s.handleList)
+	mux.handle("POST /api/v1/{collection}", signedIn, s.handleCreate)
+	mux.handle("GET /api/v1/{collection}/{id}", signedIn, s.handleGet)
+	mux.handle("PATCH /api/v1/{collection}/{id}", signedIn, s.handlePatch)
+	mux.handle("DELETE /api/v1/{collection}/{id}", signedIn, s.handleDelete)
+	mux.handle("/api/", public("unknown API routes answer 404 not_found"), func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown API route")
 	})
 	if web != nil {
 		// The share sheet POSTs here when the service worker is not active yet.
-		mux.HandleFunc("POST /share", s.handleSharePost)
-		mux.Handle("/", web)
+		mux.handle("POST /share", public("the share sheet posts here before the service worker runs; it only redirects into the app"), s.handleSharePost)
+		mux.handler("/", public("the web app; it signs in through the API"), web)
 		// A public list page (public-links D7): no indexing and no referrer, so
 		// the secret in its address never leaks to a site it links to.
-		mux.Handle("GET /public/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux.handle("GET /public/", public("a public list page; its data comes from the public-link API"), func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-Robots-Tag", "noindex, nofollow")
 			w.Header().Set("Referrer-Policy", "no-referrer")
 			web.ServeHTTP(w, r)
-		}))
+		})
 	}
-	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux)))))
+	s.routeTable = mux.table
+	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux.mux)))))
 }
 
 // auditContext hands the client address and user agent to the audit recorder.
@@ -416,14 +420,14 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 		}
 		ctx := context.WithValue(r.Context(), userKey, u)
 		ctx = context.WithValue(ctx, tokenKey, tok)
-		// Only sessions and full tokens reach a handler that writes: read tokens
+		// Only sessions, full and admin tokens reach a handler that writes: read tokens
 		// (mcp-server D2) and agent tokens (mcp-write-tools D2) are refused, and
 		// so is any scope this binary does not know (fail closed). The one
 		// exception is the fixed list of agent content routes (agent-ready-cli
 		// D8): an agent token's write there never reaches the regular handler but
 		// runs through the agent tool registry, with its switches, limits and
 		// audit (agent_rest.go).
-		if scope != auth.ScopeFull && isWriteRequest(r) {
+		if !auth.FullAccess(scope) && isWriteRequest(r) {
 			if scope == auth.ScopeAgent && agentRoute(r) != "" {
 				s.handleAgentWrite(w, r.WithContext(ctx), u, tok)
 				return
@@ -922,9 +926,15 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
+	// An admin token is minted only by a person in a recently confirmed session
+	// (the route policy checked the freshness), never by another token.
+	if in.Scope == auth.ScopeAdmin && sessionFrom(r.Context()) == nil {
+		writeError(w, http.StatusForbidden, "session_required", "an admin token can only be created from a signed-in session")
+		return
+	}
 	t, plain, err := s.auth.CreateTokenScoped(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope)
 	if errors.Is(err, auth.ErrInvalidScope) {
-		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full, read or agent")
+		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full, read, agent or admin")
 		return
 	}
 	if err != nil {
@@ -949,20 +959,7 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
 
 // ---- handlers: invitations ----
 
-// requireInviter answers 403 unless the signed-in user may manage invitations.
-func (s *Server) requireInviter(w http.ResponseWriter, r *http.Request) *auth.User {
-	u := userFrom(r.Context())
-	if !s.auth.CanInvite(u) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner and admins can manage invitations")
-		return nil
-	}
-	return u
-}
-
 func (s *Server) handleListInvitations(w http.ResponseWriter, r *http.Request) {
-	if s.requireInviter(w, r) == nil {
-		return
-	}
 	list, err := s.auth.ListInvitations(r.Context())
 	if err != nil {
 		s.internal(w, err)
@@ -972,10 +969,7 @@ func (s *Server) handleListInvitations(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) {
-	u := s.requireInviter(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	if !s.inviteLimiter.allow(u.ID) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many invitations created, try again later")
 		return
@@ -1031,10 +1025,7 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleRevokeInvitation(w http.ResponseWriter, r *http.Request) {
-	u := s.requireInviter(w, r)
-	if u == nil {
-		return
-	}
+	u := userFrom(r.Context())
 	err := s.auth.RevokeInvitation(r.Context(), u.ID, r.PathValue("id"))
 	switch {
 	case errors.Is(err, auth.ErrNotFound):

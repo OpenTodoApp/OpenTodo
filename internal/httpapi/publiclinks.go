@@ -24,18 +24,18 @@ type publicLimiters struct {
 	create, read, tick, addr *rateLimiter
 }
 
-func (s *Server) registerPublicLinkRoutes(mux *http.ServeMux) {
+func (s *Server) registerPublicLinkRoutes(mux *routes) {
 	s.public = publicLimiters{
 		create: newRateLimiter(20, time.Hour),
 		read:   newRateLimiter(120, time.Minute),
 		tick:   newRateLimiter(60, time.Minute),
 		addr:   newRateLimiter(120, time.Minute),
 	}
-	mux.Handle("GET /api/v1/projects/{id}/public-links", s.requireAuth(s.handleListPublicLinks))
-	mux.Handle("POST /api/v1/projects/{id}/public-links", s.requireAuth(s.requireFresh(s.handleCreatePublicLink)))
-	mux.Handle("DELETE /api/v1/projects/{id}/public-links/{linkId}", s.requireAuth(s.handleRevokePublicLink))
-	mux.HandleFunc("GET /api/v1/public/{token}", s.handlePublicList)
-	mux.HandleFunc("POST /api/v1/public/{token}/tick", s.handlePublicTick)
+	mux.handle("GET /api/v1/projects/{id}/public-links", signedIn.demoDenied(), s.handleListPublicLinks)
+	mux.handle("POST /api/v1/projects/{id}/public-links", signedIn.recent().demoDenied(), s.handleCreatePublicLink)
+	mux.handle("DELETE /api/v1/projects/{id}/public-links/{linkId}", signedIn.demoDenied(), s.handleRevokePublicLink)
+	mux.handle("GET /api/v1/public/{token}", public("anyone with the link reads the list; the secret in the address is the credential").demoDenied(), s.handlePublicList)
+	mux.handle("POST /api/v1/public/{token}/tick", public("anyone with a tick-enabled link may tick; the secret in the address is the credential").demoDenied(), s.handlePublicTick)
 }
 
 // publicHeaders keep a public list out of search engines, referrers and caches.

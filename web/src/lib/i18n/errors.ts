@@ -82,6 +82,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   oidc_disabled: msg('Single sign-on is not configured on this server.'),
   oidc_email_unverified: msg('The sign-in provider did not confirm a verified email address.'),
   oidc_failed: msg('Single sign-on failed. Try again.'),
+  oidc_link_required: msg('Sign in with your password first, then link single sign-on in Settings → Account.'),
   oidc_state_invalid: msg('Sign in again before linking an account.'),
   owner_must_transfer: msg('The owner cannot leave the project. Transfer ownership to another member first.'),
   passkey_challenge_invalid: msg('The passkey request expired or was already used. Try again.'),

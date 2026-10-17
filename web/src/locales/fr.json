@@ -1886,7 +1886,7 @@
   "Read which data is sent to the assistant and accept it first.": "Lisez d’abord quelles données sont envoyées à l’assistant et acceptez.",
   "Read-only": "Lecture seule",
   "Read-only access for an AI assistant, or a token that can make changes": "Accès en lecture seule pour un assistant IA, ou un jeton qui peut faire des modifications",
-  "Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": "La lecture seule peut lire tout ce que vous pouvez lire mais est refusée pour toute modification. Un jeton d’assistant IA ne peut modifier des tâches que via les outils de l’assistant (MCP), et uniquement tant que le propriétaire du serveur et vous autorisez les modifications par assistant dans Réglages → IA ; il ne peut jamais créer de jetons ni modifier de réglages.",
+  "Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": "L’accès complet peut faire tout ce que vous pouvez, sauf gérer les identifiants de connexion et l’administration. La lecture seule peut lire tout ce que vous pouvez lire mais est refusée pour toute modification. Un jeton d’assistant IA ne peut modifier des tâches que via les outils de l’assistant (MCP), et uniquement tant que le propriétaire du serveur et vous autorisez les modifications par assistant dans Réglages → IA ; il ne peut jamais créer de jetons ni modifier de réglages.",
   "Read-only events next to your tasks in Day and Week. Paste a calendar's iCal (.ics) address.": "Des événements en lecture seule à côté de vos tâches dans Jour et Semaine. Collez l’adresse iCal (.ics) d’un calendrier.",
   "Read-only: you are a viewer of this shared project.": "Lecture seule : vous êtes lecteur de ce projet partagé.",
   "Read-only: you are a viewer of this shared project. You can still comment.": "Lecture seule : vous êtes lecteur de ce projet partagé. Vous pouvez quand même commenter.",
@@ -3577,5 +3577,18 @@
   "“{name}” would go over your {quota} of attachments.": "« {name} » dépasserait vos {quota} de pièces jointes.",
   "“{title}” already waits for this task, so it cannot block it": "« {title} » attend déjà cette tâche et ne peut donc pas la bloquer",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "« {title} » est dans un projet partagé différemment ; une tâche ne peut attendre que des tâches partagées de la même façon",
-  "⤼ Skip": "⤼ Ignorer"
+  "⤼ Skip": "⤼ Ignorer",
+  "Admin: full access plus credentials and administration": "Admin : accès complet plus identifiants et administration",
+  "An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.": "Un jeton admin peut désactiver la double authentification, créer d’autres jetons et mots de passe d’application, gérer les comptes et modifier l’authentification unique et d’autres réglages secrets, sans votre mot de passe ni un code. N’en créez un que pour un script qui en a besoin, gardez-le comme un mot de passe et révoquez-le quand vous avez terminé.",
+  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": "Chaque appareil et navigateur connecté à votre compte est déconnecté, les navigateurs mémorisés doivent saisir à nouveau un code, et vos jetons d’API et mots de passe d’application cessent aussitôt de fonctionner. Les scripts, applications de calendrier et assistants en ont besoin de nouveaux. Les modifications qu’un autre appareil n’a pas encore synchronisées sont perdues. Vos données restent sur votre serveur.",
+  "Sign in with your password first, then link single sign-on in Settings → Account.": "Connectez-vous d’abord avec votre mot de passe, puis associez l’authentification unique dans Réglages → Compte.",
+  "Sign out everywhere": "Se déconnecter partout",
+  "Sign out everywhere?": "Se déconnecter partout ?",
+  "Signed out everywhere": "Déconnecté partout",
+  "Signs out every device and browser, including this one, and revokes your API tokens and app passwords.": "Déconnecte chaque appareil et navigateur, y compris celui-ci, et révoque vos jetons d’API et mots de passe d’application.",
+  "This account is not linked to {provider} yet. Sign in with your password (and code) first, then link {provider} in Settings → Account.": "Ce compte n’est pas encore associé à {provider}. Connectez-vous d’abord avec votre mot de passe (et votre code), puis associez {provider} dans Réglages → Compte.",
+  "{n, plural, one {# API token} other {# API tokens}}": "{n, plural, one {# jeton d’API} other {# jetons d’API}}",
+  "{n, plural, one {# app password} other {# app passwords}}": "{n, plural, one {# mot de passe d’application} other {# mots de passe d’application}}",
+  "{n, plural, one {# session} other {# sessions}}": "{n, plural, one {# session} other {# sessions}}",
+  "“{name}” (admin)": "« {name} » (admin)"
 }

@@ -21,7 +21,7 @@ import (
 // design D8) and credential introspection on /api/v1/me (design D7).
 
 // registeredPatterns parses this package's sources for every pattern handed to
-// mux.Handle or mux.HandleFunc, so a route added later is covered without
+// mux.handle or mux.handler (policy.go), so a route added later is covered without
 // editing the test.
 func registeredPatterns(t *testing.T) []string {
 	t.Helper()
@@ -49,7 +49,8 @@ func registeredPatterns(t *testing.T) []string {
 				return true
 			}
 			sel, ok := call.Fun.(*ast.SelectorExpr)
-			if !ok || (sel.Sel.Name != "Handle" && sel.Sel.Name != "HandleFunc") {
+			// routes.handle and routes.handler (policy.go) register every route.
+			if !ok || (sel.Sel.Name != "handle" && sel.Sel.Name != "handler") {
 				return true
 			}
 			if lit, ok := call.Args[0].(*ast.BasicLit); ok && lit.Kind == gotoken.STRING {

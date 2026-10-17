@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -542,6 +543,11 @@ func (s *Service) ResetPassword(ctx context.Context, secret, password string) er
 	if _, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id = ?", userID); err != nil {
 		return err
 	}
+	// Remembered browsers skip the second factor; after a reset they must
+	// prove it again (route-authorization-policy, SEC-16).
+	if _, err := tx.ExecContext(ctx, "DELETE FROM trusted_devices WHERE user_id = ?", userID); err != nil {
+		return err
+	}
 	if err := s.audit.RecordTx(ctx, tx, audit.PasswordResetCompleted(userID, id)); err != nil {
 		return err
 	}
@@ -579,6 +585,39 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, next, kee
 		return err
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.PasswordChanged(userID)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// SignOutEverywhere ends every session of the account, forgets its remembered
+// browsers and revokes its API tokens and CalDAV app passwords, in one
+// transaction with one sessions.revoked audit event (route-authorization-policy,
+// SEC-16). Passkeys, the second factor and the password stay.
+func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	now := s.clock().UnixMilli()
+	counts := make([]int64, 4)
+	for i, st := range []struct {
+		q    string
+		args []any
+	}{
+		{"DELETE FROM sessions WHERE user_id = ?", []any{userID}},
+		{"DELETE FROM trusted_devices WHERE user_id = ?", []any{userID}},
+		{"DELETE FROM api_tokens WHERE user_id = ?", []any{userID}},
+		{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, userID}},
+	} {
+		res, err := tx.ExecContext(ctx, st.q, st.args...)
+		if err != nil {
+			return fmt.Errorf("sign out everywhere: %w", err)
+		}
+		counts[i], _ = res.RowsAffected()
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.SignedOutEverywhere(userID, counts[0], counts[1], counts[2], counts[3])); err != nil {
 		return err
 	}
 	return tx.Commit()

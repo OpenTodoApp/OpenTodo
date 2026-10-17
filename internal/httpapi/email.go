@@ -17,10 +17,10 @@ import (
 // feature as not enabled by the operator.
 func WithEmail(svc *email.Service) Option { return func(s *Server) { s.email = svc } }
 
-func (s *Server) registerEmailRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/email-inbox", s.requireAuth(s.handleGetEmailInbox))
-	mux.Handle("PATCH /api/v1/email-inbox", s.requireAuth(s.handlePatchEmailInbox))
-	mux.Handle("POST /api/v1/email-inbox/rotate", s.requireAuth(s.handleRotateEmailInbox))
+func (s *Server) registerEmailRoutes(mux *routes) {
+	mux.handle("GET /api/v1/email-inbox", signedIn, s.handleGetEmailInbox)
+	mux.handle("PATCH /api/v1/email-inbox", signedIn.demoDenied(), s.handlePatchEmailInbox)
+	mux.handle("POST /api/v1/email-inbox/rotate", signedIn.demoDenied(), s.handleRotateEmailInbox)
 }
 
 type emailInboxDTO struct {

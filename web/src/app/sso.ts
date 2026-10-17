@@ -30,6 +30,8 @@ export function oidcErrorMessage(code: string | null, provider = t('the provider
       return t('Signing in with {provider} did not work. Try again; if it keeps failing, ask the server owner to check the single sign-on settings.', { provider })
     case 'signup_closed':
       return t('There is no account for this identity yet, and this server does not create accounts automatically. Ask the owner for access.')
+    case 'oidc_link_required':
+      return t('This account is not linked to {provider} yet. Sign in with your password (and code) first, then link {provider} in Settings → Account.', { provider })
     case 'oidc_email_unverified':
       return t('{provider} did not confirm a verified email address for you, so it cannot be matched to an account. Verify your email there, or ask the owner.', { provider })
     case 'oidc_state_invalid':

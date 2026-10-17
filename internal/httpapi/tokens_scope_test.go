@@ -65,7 +65,7 @@ func TestReadTokenRefusedOnWrites(t *testing.T) {
 	if len(evs) == 0 || evs[len(evs)-1].Details["token_scope"] != "read" {
 		t.Fatalf("token.created events = %+v", evs)
 	}
-	resp, out = e.do("POST", "/api/v1/tokens", map[string]any{"name": "x", "scope": "admin"})
+	resp, out = e.do("POST", "/api/v1/tokens", map[string]any{"name": "x", "scope": "superuser"})
 	if resp.StatusCode != 400 || errCode(out) != "invalid_input" {
 		t.Fatalf("unknown scope: %d %v", resp.StatusCode, out)
 	}

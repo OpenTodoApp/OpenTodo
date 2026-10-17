@@ -27,15 +27,15 @@ func WithPush(p *push.Service) Option { return func(s *Server) { s.push = p } }
 
 func (s *Server) pushEnabled() bool { return s.push != nil && !s.cfg.PushDisabled }
 
-func (s *Server) registerPushRoutes(mux *http.ServeMux) {
+func (s *Server) registerPushRoutes(mux *routes) {
 	if !s.pushEnabled() {
 		return
 	}
-	mux.Handle("GET /api/v1/push/vapid-key", s.requireAuth(s.handlePushKey))
-	mux.Handle("POST /api/v1/push/subscriptions", s.requireAuth(s.handlePushSubscribe))
-	mux.Handle("DELETE /api/v1/push/subscriptions/{id}", s.requireAuth(s.handlePushUnsubscribe))
+	mux.handle("GET /api/v1/push/vapid-key", signedIn, s.handlePushKey)
+	mux.handle("POST /api/v1/push/subscriptions", signedIn.demoDenied(), s.handlePushSubscribe)
+	mux.handle("DELETE /api/v1/push/subscriptions/{id}", signedIn.demoDenied(), s.handlePushUnsubscribe)
 	s.pushTestLimiter = newRateLimiter(pushTestLimit, pushTestWindow)
-	mux.Handle("POST /api/v1/push/test", s.requireAuth(s.handlePushTest))
+	mux.handle("POST /api/v1/push/test", signedIn.demoDenied(), s.handlePushTest)
 }
 
 // Test pushes per account (OpenSpec `push-test-delivery` D3): enough for a

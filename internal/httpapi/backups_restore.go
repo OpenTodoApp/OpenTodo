@@ -11,8 +11,8 @@ import (
 
 // Web restore (OpenSpec backup-restore-web, design D8). Every route is owner
 // only and covered by the demo deny prefix /api/v1/backups; the confirmation and
-// the safety-copy delete also need a fresh session (requireFresh) and refuse API
-// tokens.
+// the safety-copy delete also need a fresh session and refuse API tokens (route
+// policy, see policy.go).
 
 // liftDeadlines lets a long upload or download run past the server's 60 s
 // read/write timeouts, as the live-update stream does.
@@ -20,24 +20,6 @@ func liftDeadlines(w http.ResponseWriter) {
 	rc := http.NewResponseController(w)
 	_ = rc.SetReadDeadline(time.Time{})
 	_ = rc.SetWriteDeadline(time.Time{})
-}
-
-// requireRestoreSession refuses bearer tokens: destructive restore actions need an
-// interactive owner session.
-func requireRestoreSession(w http.ResponseWriter, r *http.Request) bool {
-	if sessionFrom(r.Context()) == nil {
-		writeError(w, http.StatusForbidden, "session_required", "restoring needs a signed-in browser session, not an API token")
-		return false
-	}
-	return true
-}
-
-// fresh applies requireFresh after the owner check, so a member is told
-// "forbidden" rather than asked to re-authenticate.
-func (s *Server) fresh(w http.ResponseWriter, r *http.Request) bool {
-	ok := false
-	s.requireFresh(func(http.ResponseWriter, *http.Request) { ok = true })(w, r)
-	return ok
 }
 
 func invalidField(w http.ResponseWriter, field, msg string) {
@@ -81,7 +63,7 @@ func (s *Server) restoreError(w http.ResponseWriter, err error) {
 }
 
 func (s *Server) handleBackupArchives(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	list, dest, err := s.backups.Archives(r.Context())
@@ -93,7 +75,7 @@ func (s *Server) handleBackupArchives(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
-	u := s.requireBackupOwner(w, r)
+	u := s.backupsReady(w, r)
 	if u == nil {
 		return
 	}
@@ -107,7 +89,7 @@ func (s *Server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRestorePrepare(w http.ResponseWriter, r *http.Request) {
-	u := s.requireBackupOwner(w, r)
+	u := s.backupsReady(w, r)
 	if u == nil {
 		return
 	}
@@ -144,7 +126,7 @@ func (s *Server) handleRestorePrepare(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRestoreCancel(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	s.backups.CancelRestore(r.PathValue("id"))
@@ -152,8 +134,8 @@ func (s *Server) handleRestoreCancel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRestoreConfirm(w http.ResponseWriter, r *http.Request) {
-	u := s.requireBackupOwner(w, r)
-	if u == nil || !requireRestoreSession(w, r) || !s.fresh(w, r) {
+	u := s.backupsReady(w, r)
+	if u == nil {
 		return
 	}
 	var in struct {
@@ -177,7 +159,7 @@ func (s *Server) handleRestoreConfirm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRestoreState(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	st, err := s.backups.RestoreState(r.Context())
@@ -189,8 +171,8 @@ func (s *Server) handleRestoreState(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteSafetyCopy(w http.ResponseWriter, r *http.Request) {
-	u := s.requireBackupOwner(w, r)
-	if u == nil || !requireRestoreSession(w, r) || !s.fresh(w, r) {
+	u := s.backupsReady(w, r)
+	if u == nil {
 		return
 	}
 	if err := s.backups.DeleteSafetyCopy(r.Context(), r.PathValue("name"), u.ID); err != nil {

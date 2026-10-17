@@ -1514,7 +1514,8 @@
           "enum": [
             "full",
             "read",
-            "agent"
+            "agent",
+            "admin"
           ]
         },
         "createdAt": {

@@ -33,11 +33,11 @@ type smtpLastTest struct {
 	Reply   string `json:"reply,omitempty"`
 }
 
-func (s *Server) registerMailRoutes(mux *http.ServeMux) {
+func (s *Server) registerMailRoutes(mux *routes) {
 	s.smtpTestLimiter = newRateLimiter(smtpTestLimit, smtpTestWindow)
-	mux.Handle("GET /api/v1/settings/smtp", s.requireAuth(s.handleGetSMTP))
-	mux.Handle("PUT /api/v1/settings/smtp", s.requireAuth(s.requireFresh(s.handlePutSMTP)))
-	mux.Handle("POST /api/v1/settings/smtp/test", s.requireAuth(s.handleTestSMTP))
+	mux.handle("GET /api/v1/settings/smtp", ownerOnly("manage outgoing email").credential().demoDenied(), s.handleGetSMTP)
+	mux.handle("PUT /api/v1/settings/smtp", ownerOnly("manage outgoing email").sensitive().demoDenied(), s.handlePutSMTP)
+	mux.handle("POST /api/v1/settings/smtp/test", ownerOnly("send a test message").demoDenied(), s.handleTestSMTP)
 }
 
 // mailEnabled reports whether outgoing email can be used right now.
@@ -45,14 +45,11 @@ func (s *Server) mailEnabled(ctx context.Context) bool {
 	return s.mail != nil && !s.cfg.Demo && s.mail.Enabled(ctx)
 }
 
-// requireSMTPOwner admits the owner's session only: the configuration holds a
-// credential, so no API token may read or change it.
-func (s *Server) requireSMTPOwner(w http.ResponseWriter, r *http.Request) *auth.User {
+// smtpReady answers 404 when outgoing email is not wired and otherwise returns
+// the signed-in user. The route policy admits only the owner, with a session or
+// an admin token: the configuration holds a credential.
+func (s *Server) smtpReady(w http.ResponseWriter, r *http.Request) *auth.User {
 	u := userFrom(r.Context())
-	if !s.auth.IsOwner(u) || sessionFrom(r.Context()) == nil {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage outgoing email")
-		return nil
-	}
 	if s.mail == nil {
 		writeError(w, http.StatusNotFound, "smtp_disabled", "outgoing email is not available on this server")
 		return nil
@@ -80,7 +77,7 @@ func (s *Server) smtpJSON(ctx context.Context, c mail.Config) map[string]any {
 }
 
 func (s *Server) handleGetSMTP(w http.ResponseWriter, r *http.Request) {
-	if s.requireSMTPOwner(w, r) == nil {
+	if s.smtpReady(w, r) == nil {
 		return
 	}
 	c, err := s.mail.Config(r.Context())
@@ -92,7 +89,7 @@ func (s *Server) handleGetSMTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
-	u := s.requireSMTPOwner(w, r)
+	u := s.smtpReady(w, r)
 	if u == nil {
 		return
 	}
@@ -140,10 +137,6 @@ func (s *Server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
 // SMTP server's outcome; delivery failures are a successful diagnostic (200).
 func (s *Server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 	u := userFrom(r.Context())
-	if !s.auth.IsOwner(u) || tokenFrom(r.Context()).Scope == auth.ScopeRead {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can send a test message")
-		return
-	}
 	if !s.mailEnabled(r.Context()) {
 		writeError(w, http.StatusNotFound, "smtp_disabled", "outgoing email is not configured")
 		return

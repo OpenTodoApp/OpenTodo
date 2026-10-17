@@ -44,7 +44,7 @@ export function SecretReveal({ what, secret, testId }: { what: string; secret: s
   )
 }
 
-const SCOPE_HUE: Record<TokenScope, HueName> = { full: 'slate', read: 'blue', agent: 'violet' }
+const SCOPE_HUE: Record<TokenScope, HueName> = { full: 'slate', read: 'blue', agent: 'violet', admin: 'red' }
 const day = (ms: number) => formatInstant(ms, 'date')
 
 export interface TokensViewProps {
@@ -108,13 +108,19 @@ export function TokensView(p: TokensViewProps) {
                 <Input aria-label={t('Token name')} placeholder={t('e.g. laptop CLI')} value={p.name} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
               </Field>
               <Field label={t('Access')}
-                description={t('Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.')}>
+                description={t('Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.')}>
                 <Select aria-label={t('Token scope')} value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
                   <option value="full">{t('Full access')}</option>
                   <option value="read">{t('Read-only')}</option>
                   <option value="agent">{t('AI assistant, can make changes')}</option>
+                  <option value="admin">{t('Admin: full access plus credentials and administration')}</option>
                 </Select>
               </Field>
+              {p.scope === 'admin' && (
+                <Notice tone="warning">
+                  {t('An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.')}
+                </Notice>
+              )}
               {p.error && <Notice tone="danger">{p.error}</Notice>}
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={p.onCloseNew}>{t('Cancel')}</Button>

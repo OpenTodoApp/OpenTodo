@@ -352,6 +352,11 @@ export const api = {
     request<{ expiresAt: number; sent: true }>('POST', `/api/v1/users/${encodeURIComponent(id)}/password-reset`, { send: true }),
   transferOwnership: (id: string, password: string) =>
     request<{ user: AdminUser }>('POST', `/api/v1/users/${encodeURIComponent(id)}/transfer-ownership`, { password }),
+  /**
+   * Signs out every session (this one too), forgets remembered browsers and
+   * revokes API tokens and app passwords (route-authorization-policy).
+   */
+  signOutEverywhere: () => request<void>('POST', '/api/v1/me/sign-out-everywhere'),
   /** Every signed-in user: signs out the other sessions, keeps this one. */
   changePassword: (currentPassword: string, newPassword: string) =>
     request<void>('POST', '/api/v1/me/password', { currentPassword, newPassword }),

@@ -140,9 +140,9 @@ func TestCreateAgentToken(t *testing.T) {
 
 func TestInvalidScope400(t *testing.T) {
 	e := ownerEnv(t)
-	resp, out := e.do("POST", "/api/v1/tokens", map[string]any{"name": "x", "scope": "admin"})
+	resp, out := e.do("POST", "/api/v1/tokens", map[string]any{"name": "x", "scope": "superuser"})
 	if resp.StatusCode != 400 || errCode(out) != "invalid_input" || !strings.Contains(out["error"].(map[string]any)["message"].(string), "agent") {
-		t.Fatalf("admin scope: %d %v", resp.StatusCode, out)
+		t.Fatalf("unknown scope: %d %v", resp.StatusCode, out)
 	}
 	var n int
 	_ = e.db.QueryRow(`SELECT COUNT(*) FROM api_tokens WHERE name = 'x'`).Scan(&n)

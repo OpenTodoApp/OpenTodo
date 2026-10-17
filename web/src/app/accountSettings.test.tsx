@@ -21,6 +21,36 @@ describe('SessionPanel', () => {
     await unmount()
   })
 
+  it('signs out everywhere only after confirming, then signs this device out (route-authorization-policy)', async () => {
+    const onLogout = vi.fn()
+    const everywhere = vi.fn(async () => {})
+    const { unmount } = await render(<SessionPanel onLogout={onLogout} onSignOutEverywhere={everywhere} />)
+    await click(button('Sign out everywhere'))
+    await flush(20)
+    expect(everywhere).not.toHaveBeenCalled()
+    expect(document.querySelector('[data-testid="confirm-dialog"]')?.textContent).toContain('API tokens and app passwords stop working')
+    const confirm = [...document.querySelectorAll('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Sign out everywhere')!
+    await click(confirm)
+    await flush(20)
+    expect(everywhere).toHaveBeenCalledTimes(1)
+    expect(onLogout).toHaveBeenCalledTimes(1)
+    await unmount()
+  })
+
+  it('keeps this device signed in when signing out everywhere fails', async () => {
+    const onLogout = vi.fn()
+    const everywhere = vi.fn(async () => { throw new Error('You are offline.') })
+    const { unmount } = await render(<SessionPanel onLogout={onLogout} onSignOutEverywhere={everywhere} />)
+    await click(button('Sign out everywhere'))
+    await flush(20)
+    const confirm = [...document.querySelectorAll('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Sign out everywhere')!
+    await click(confirm)
+    await flush(20)
+    expect(onLogout).not.toHaveBeenCalled()
+    expect(document.querySelector('[data-testid="confirm-dialog"]')?.textContent).toContain('You are offline.')
+    await unmount()
+  })
+
   it('Cancel clears nothing and returns focus to the Sign out button', async () => {
     const onLogout = vi.fn()
     const { unmount } = await render(<SessionPanel onLogout={onLogout} />)

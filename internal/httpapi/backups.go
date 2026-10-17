@@ -8,14 +8,10 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 )
 
-// requireOwner answers 403 unless the signed-in user is the owner, and 503 when
-// the backup service is not wired. It returns the user on success.
-func (s *Server) requireBackupOwner(w http.ResponseWriter, r *http.Request) *auth.User {
+// backupsReady answers 503 when the backup service is not wired and otherwise
+// returns the signed-in user (the route policy admits only the owner).
+func (s *Server) backupsReady(w http.ResponseWriter, r *http.Request) *auth.User {
 	u := userFrom(r.Context())
-	if u == nil || u.Role != "owner" {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage backups")
-		return nil
-	}
 	if s.backups == nil {
 		writeError(w, http.StatusServiceUnavailable, "unavailable", "backups are not available on this server")
 		return nil
@@ -38,7 +34,7 @@ func (s *Server) backupSettingsBody(w http.ResponseWriter, r *http.Request, set 
 }
 
 func (s *Server) handleGetBackupSettings(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	set, err := s.backups.LoadSettings(r.Context())
@@ -53,7 +49,7 @@ func (s *Server) handleGetBackupSettings(w http.ResponseWriter, r *http.Request)
 // keeps the stored value, "" clears it, anything else replaces it. They are
 // never echoed back; the response carries presence flags only.
 func (s *Server) handlePutBackupSettings(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	var in struct {
@@ -83,7 +79,7 @@ func (s *Server) handlePutBackupSettings(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleBackupStatus(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	ctx := r.Context()
@@ -132,7 +128,7 @@ func (s *Server) handleBackupStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleBackupRun(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	err := s.backups.StartRun(r.Context(), backup.KindManual, userFrom(r.Context()).ID)
@@ -150,7 +146,7 @@ func (s *Server) handleBackupRun(w http.ResponseWriter, r *http.Request) {
 // handleBackupTest writes and deletes a probe object at the saved destination.
 // A destination failure is a 502 carrying the destination's message.
 func (s *Server) handleBackupTest(w http.ResponseWriter, r *http.Request) {
-	if s.requireBackupOwner(w, r) == nil {
+	if s.backupsReady(w, r) == nil {
 		return
 	}
 	err := s.backups.TestDestination(r.Context())

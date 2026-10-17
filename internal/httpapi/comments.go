@@ -19,15 +19,15 @@ import (
 // require authentication. Comment writes go through the op log (ApplyStrict), so
 // the sync engine's authorship rules apply to REST and devices alike; a task or
 // comment outside the caller's scopes answers the same 404 as an unknown one.
-func (s *Server) registerCommentRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/tasks/{id}/comments", s.requireAuth(s.handleListComments))
-	mux.Handle("POST /api/v1/tasks/{id}/comments", s.requireAuth(s.handleCreateComment))
-	mux.Handle("PATCH /api/v1/comments/{id}", s.requireAuth(s.handlePatchComment))
-	mux.Handle("DELETE /api/v1/comments/{id}", s.requireAuth(s.handleDeleteComment))
-	mux.Handle("GET /api/v1/tasks/{id}/activity", s.requireAuth(s.activityHandler("task")))
-	mux.Handle("GET /api/v1/projects/{id}/activity", s.requireAuth(s.activityHandler("project")))
+func (s *Server) registerCommentRoutes(mux *routes) {
+	mux.handle("GET /api/v1/tasks/{id}/comments", signedIn, s.handleListComments)
+	mux.handle("POST /api/v1/tasks/{id}/comments", signedIn, s.handleCreateComment)
+	mux.handle("PATCH /api/v1/comments/{id}", signedIn, s.handlePatchComment)
+	mux.handle("DELETE /api/v1/comments/{id}", signedIn, s.handleDeleteComment)
+	mux.handle("GET /api/v1/tasks/{id}/activity", signedIn, s.activityHandler("task"))
+	mux.handle("GET /api/v1/projects/{id}/activity", signedIn, s.activityHandler("project"))
 	// Cross-project feed (OpenSpec change `activity-feed`).
-	mux.Handle("GET /api/v1/activity", s.requireAuth(s.handleFeed))
+	mux.handle("GET /api/v1/activity", signedIn, s.handleFeed)
 }
 
 func (s *Server) handleListComments(w http.ResponseWriter, r *http.Request) {

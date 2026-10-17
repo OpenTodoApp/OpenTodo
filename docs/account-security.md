@@ -52,7 +52,7 @@ Forgot it? If your server sends email, choose **Forgot password?** on the sign-i
 
 ## Check recent sign-ins
 
-**Settings → Account → Recent activity** lists sign-ins and token changes on your account from the last 90 days. If you see one you don't recognise, change your password, revoke your API tokens and tell your server's owner.
+**Settings → Account → Recent activity** lists sign-ins and token changes on your account from the last 90 days. If you see one you don't recognise, change your password, choose **Sign out everywhere** and tell your server's owner.
 
 ## Confirm it's you
 

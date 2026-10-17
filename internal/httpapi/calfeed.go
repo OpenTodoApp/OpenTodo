@@ -41,7 +41,7 @@ const (
 // inline fetches and the background job share one store and policy.
 func WithCalendarFeeds(w *calfeed.Worker) Option { return func(s *Server) { s.calWorker = w } }
 
-func (s *Server) registerCalendarFeedRoutes(mux *http.ServeMux) {
+func (s *Server) registerCalendarFeedRoutes(mux *routes) {
 	if s.calWorker == nil {
 		allow := func(context.Context) bool { return false }
 		if s.hooks != nil {
@@ -55,18 +55,18 @@ func (s *Server) registerCalendarFeedRoutes(mux *http.ServeMux) {
 	s.feedLimiter = newRateLimiter(feedFetchesPerHr, time.Hour)
 	s.seedCalendarFeeds(context.Background())
 
-	mux.Handle("GET /api/v1/settings/calendar-feeds", s.requireAuth(s.handleGetCalendarFeedsSetting))
-	mux.Handle("PUT /api/v1/settings/calendar-feeds", s.requireAuth(s.handlePutCalendarFeedsSetting))
-	mux.Handle("GET /api/v1/calendar-feeds/subscriptions", s.requireAuth(s.feedsGate(s.handleListSubscriptions)))
-	mux.Handle("POST /api/v1/calendar-feeds/subscriptions", s.requireAuth(s.feedsGate(s.handleCreateSubscription)))
-	mux.Handle("PATCH /api/v1/calendar-feeds/subscriptions/{id}", s.requireAuth(s.feedsGate(s.handlePatchSubscription)))
-	mux.Handle("DELETE /api/v1/calendar-feeds/subscriptions/{id}", s.requireAuth(s.feedsGate(s.handleDeleteSubscription)))
-	mux.Handle("POST /api/v1/calendar-feeds/subscriptions/{id}/refresh", s.requireAuth(s.feedsGate(s.handleRefreshSubscription)))
-	mux.Handle("GET /api/v1/calendar-feeds/events", s.requireAuth(s.feedsGate(s.handleCalendarEvents)))
-	mux.Handle("GET /api/v1/calendar-feeds/feed", s.requireAuth(s.feedsGate(s.handleGetFeed)))
-	mux.Handle("POST /api/v1/calendar-feeds/feed", s.requireAuth(s.requireFresh(s.feedsGate(s.handleRotateFeed))))
-	mux.Handle("DELETE /api/v1/calendar-feeds/feed", s.requireAuth(s.feedsGate(s.handleRevokeFeed)))
-	mux.HandleFunc("GET /feeds/{secret}/tasks.ics", s.handleTaskFeed)
+	mux.handle("GET /api/v1/settings/calendar-feeds", signedIn.demoDenied(), s.handleGetCalendarFeedsSetting)
+	mux.handle("PUT /api/v1/settings/calendar-feeds", ownerOnly("manage the calendar feeds setting").demoDenied(), s.handlePutCalendarFeedsSetting)
+	mux.handle("GET /api/v1/calendar-feeds/subscriptions", signedIn.demoDenied(), s.feedsGate(s.handleListSubscriptions))
+	mux.handle("POST /api/v1/calendar-feeds/subscriptions", signedIn.demoDenied(), s.feedsGate(s.handleCreateSubscription))
+	mux.handle("PATCH /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handlePatchSubscription))
+	mux.handle("DELETE /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handleDeleteSubscription))
+	mux.handle("POST /api/v1/calendar-feeds/subscriptions/{id}/refresh", signedIn.demoDenied(), s.feedsGate(s.handleRefreshSubscription))
+	mux.handle("GET /api/v1/calendar-feeds/events", signedIn.demoDenied(), s.feedsGate(s.handleCalendarEvents))
+	mux.handle("GET /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleGetFeed))
+	mux.handle("POST /api/v1/calendar-feeds/feed", signedIn.recent().demoDenied(), s.feedsGate(s.handleRotateFeed))
+	mux.handle("DELETE /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleRevokeFeed))
+	mux.handle("GET /feeds/{secret}/tasks.ics", public("calendar apps authenticate with the secret in the address").demoDenied(), s.handleTaskFeed)
 }
 
 // CalendarWorker is the background fetcher, run by the jobs leader.
@@ -116,9 +116,6 @@ func (s *Server) handleGetCalendarFeedsSetting(w http.ResponseWriter, r *http.Re
 }
 
 func (s *Server) handlePutCalendarFeedsSetting(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the calendar feeds setting") {
-		return
-	}
 	var in struct {
 		Enabled *bool `json:"enabled"`
 	}

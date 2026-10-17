@@ -17,9 +17,9 @@ import (
 // email is the operator's and the routes answer as without a mailer until the
 // operator configures it.
 
-func (s *Server) registerDigestRoutes(mux *http.ServeMux) {
-	mux.Handle("GET /api/v1/me/email-digest", s.requireAuth(s.handleGetDigest))
-	mux.Handle("PUT /api/v1/me/email-digest", s.requireAuth(s.handlePutDigest))
+func (s *Server) registerDigestRoutes(mux *routes) {
+	mux.handle("GET /api/v1/me/email-digest", signedIn.fullTokens(), s.handleGetDigest)
+	mux.handle("PUT /api/v1/me/email-digest", signedIn.fullTokens().demoDenied(), s.handlePutDigest)
 }
 
 func (s *Server) digestStore() *digest.Store { return digest.NewStore(s.sync.DB(), s.auth.Now) }
@@ -55,9 +55,6 @@ func (s *Server) digestJSON(st digest.Settings, available, encrypted bool) diges
 }
 
 func (s *Server) handleGetDigest(w http.ResponseWriter, r *http.Request) {
-	if !s.requireSessionOrFull(w, r) {
-		return
-	}
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
 	st, err := s.digestStore().Get(ctx, uid)
@@ -74,9 +71,6 @@ func (s *Server) handleGetDigest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutDigest(w http.ResponseWriter, r *http.Request) {
-	if !s.requireSessionOrFull(w, r) {
-		return
-	}
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
 	var in struct {

@@ -27,15 +27,15 @@ import (
 // project links" (design D6): a JSON boolean, false when unset.
 const membersInviteKey = "project_invites.members_create_accounts"
 
-func (s *Server) registerProjectInviteRoutes(mux *http.ServeMux) {
+func (s *Server) registerProjectInviteRoutes(mux *routes) {
 	s.projectInviteLimiter = newRateLimiter(20, time.Hour)
-	mux.Handle("GET /api/v1/projects/{id}/invites", s.requireAuth(s.handleListProjectInvites))
-	mux.Handle("POST /api/v1/projects/{id}/invites", s.requireAuth(s.requireFresh(s.handleCreateProjectInvite)))
-	mux.Handle("DELETE /api/v1/projects/{id}/invites/{inviteId}", s.requireAuth(s.handleRevokeProjectInvite))
-	mux.HandleFunc("GET /api/v1/project-invites/{token}", s.handlePreviewProjectInvite)
-	mux.Handle("POST /api/v1/project-invites/{token}/accept", s.requireAuth(s.handleAcceptProjectInvite))
-	mux.Handle("GET /api/v1/settings/project-invites", s.requireAuth(s.handleGetProjectInviteSettings))
-	mux.Handle("PUT /api/v1/settings/project-invites", s.requireAuth(s.handlePutProjectInviteSettings))
+	mux.handle("GET /api/v1/projects/{id}/invites", signedIn.demoDenied(), s.handleListProjectInvites)
+	mux.handle("POST /api/v1/projects/{id}/invites", signedIn.recent().demoDenied(), s.handleCreateProjectInvite)
+	mux.handle("DELETE /api/v1/projects/{id}/invites/{inviteId}", signedIn.demoDenied(), s.handleRevokeProjectInvite)
+	mux.handle("GET /api/v1/project-invites/{token}", public("someone with an invite link previews the project before joining").demoDenied(), s.handlePreviewProjectInvite)
+	mux.handle("POST /api/v1/project-invites/{token}/accept", signedIn.demoDenied(), s.handleAcceptProjectInvite)
+	mux.handle("GET /api/v1/settings/project-invites", signedIn, s.handleGetProjectInviteSettings)
+	mux.handle("PUT /api/v1/settings/project-invites", ownerOnly("manage the project invite setting").demoDenied(), s.handlePutProjectInviteSettings)
 }
 
 // membersMayInvite reads the owner switch; an unreadable setting counts as off.
@@ -333,9 +333,6 @@ func (s *Server) handleGetProjectInviteSettings(w http.ResponseWriter, r *http.R
 }
 
 func (s *Server) handlePutProjectInviteSettings(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the project invite setting") {
-		return
-	}
 	var in struct {
 		MembersCanInviteNewPeople *bool `json:"membersCanInviteNewPeople"`
 	}

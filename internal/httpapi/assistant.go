@@ -38,22 +38,22 @@ func WithAssistantSetup(f func(*assistant.Service)) Option {
 	return func(s *Server) { s.assistantSetup = f }
 }
 
-func (s *Server) registerAssistantRoutes(mux *http.ServeMux) {
+func (s *Server) registerAssistantRoutes(mux *routes) {
 	store := assistant.NewStore(s.sync.DB(), s.cfg.DataDir, nil)
 	s.assistant = assistant.NewService(store, &assistant.Loop{Tools: s.agentTools, Sync: s.sync, Log: s.log})
 	s.assistantTestLimiter = newRateLimiter(memberTestLimit, memberTestWindow)
 	if s.assistantSetup != nil {
 		s.assistantSetup(s.assistant)
 	}
-	mux.Handle("GET /api/v1/settings/assistant", s.requireAuth(s.handleGetAssistantSettings))
-	mux.Handle("PUT /api/v1/settings/assistant", s.requireAuth(s.handlePutAssistantSettings))
-	mux.Handle("POST /api/v1/settings/assistant/test", s.requireAuth(s.handleTestAssistant))
-	mux.Handle("GET /api/v1/me/assistant", s.requireAuth(s.handleGetMyAssistant))
-	mux.Handle("PUT /api/v1/me/assistant", s.requireAuth(s.handlePutMyAssistant))
-	mux.Handle("GET /api/v1/me/assistant/usage", s.requireAuth(s.handleMyAssistantUsage))
-	mux.Handle("POST /api/v1/me/assistant/test", s.requireAuth(s.handleTestMyAssistant))
-	mux.Handle("POST /api/v1/assistant/turn", s.requireAuth(s.handleAssistantTurn))
-	mux.Handle("GET /api/v1/assistant/skills", s.requireAuth(s.handleAssistantSkills))
+	mux.handle("GET /api/v1/settings/assistant", signedIn, s.handleGetAssistantSettings)
+	mux.handle("PUT /api/v1/settings/assistant", ownerOnly("manage the assistant settings").credential().demoDenied(), s.handlePutAssistantSettings)
+	mux.handle("POST /api/v1/settings/assistant/test", ownerOnly("manage the assistant settings").demoDenied(), s.handleTestAssistant)
+	mux.handle("GET /api/v1/me/assistant", signedIn.demoDenied(), s.handleGetMyAssistant)
+	mux.handle("PUT /api/v1/me/assistant", signedIn.fullTokens().demoDenied(), s.handlePutMyAssistant)
+	mux.handle("GET /api/v1/me/assistant/usage", signedIn.demoDenied(), s.handleMyAssistantUsage)
+	mux.handle("POST /api/v1/me/assistant/test", signedIn.sessionOnly().demoDenied(), s.handleTestMyAssistant)
+	mux.handle("POST /api/v1/assistant/turn", signedIn.sessionOnly().demoDenied(), s.handleAssistantTurn)
+	mux.handle("GET /api/v1/assistant/skills", signedIn.demoDenied(), s.handleAssistantSkills)
 }
 
 // handleAssistantSkills lists the built-in skills (assistant-skills), or an
@@ -144,9 +144,6 @@ func (s *Server) handleGetAssistantSettings(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handlePutAssistantSettings(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the assistant settings") {
-		return
-	}
 	cur := s.assistantSettings(r.Context())
 	var in struct {
 		assistant.Settings
@@ -185,9 +182,6 @@ func (s *Server) handlePutAssistantSettings(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
-	if !requireOwner(w, r, "the assistant settings") {
-		return
-	}
 	// The on-screen values are optional; absent ones fall back to the saved
 	// settings (assistant-test-unsaved-settings).
 	var in struct {
@@ -215,16 +209,6 @@ func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
 // consentFields lists what the disclosure says may be sent.
 var consentFields = []string{"task titles and descriptions", "project, section and label names", "due dates, priorities and completion",
 	"comments", "names of members of shared projects", "your display name, today's date and your time zone", "the messages you type"}
-
-// requireSession refuses API tokens: only a signed-in person uses the
-// assistant or decides about consent (design D5).
-func requireSession(w http.ResponseWriter, r *http.Request) bool {
-	if sessionFrom(r.Context()) == nil {
-		writeError(w, http.StatusForbidden, "session_required", "the assistant is used from the app while signed in; API tokens cannot use it")
-		return false
-	}
-	return true
-}
 
 func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any, error) {
 	set := s.assistantSettings(ctx)
@@ -297,9 +281,6 @@ func (s *Server) handleGetMyAssistant(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {
-	if !s.requireSessionOrFull(w, r) {
-		return
-	}
 	ctx := r.Context()
 	u := userFrom(ctx)
 	var in struct {
@@ -450,9 +431,6 @@ func sameChoice(a, b *assistant.MemberChoice) bool {
 // provider, model and key: signed-in sessions only, rate limited, and only
 // toward the built-in host of the provider they chose.
 func (s *Server) handleTestMyAssistant(w http.ResponseWriter, r *http.Request) {
-	if !requireSession(w, r) {
-		return
-	}
 	ctx := r.Context()
 	u := userFrom(ctx)
 	set := s.assistantSettings(ctx)
@@ -534,9 +512,6 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	set := s.assistantSettings(ctx)
 	if !set.Active() {
 		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
-		return
-	}
-	if !requireSession(w, r) {
 		return
 	}
 	u := userFrom(ctx)
