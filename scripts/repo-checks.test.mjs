@@ -70,9 +70,9 @@ test('the root docker-compose.yml publishes on every interface unless OPENTODO_B
   assert.match(read('.env.example'), /^#? ?OPENTODO_BIND=/m)
 })
 
-test('SECURITY.md names the last X-Forwarded-For hop, as the code uses', () => {
+test('SECURITY.md names the X-Forwarded-For hop the code uses (the nearest untrusted one)', () => {
   const s = read('SECURITY.md')
   assert.doesNotMatch(s, /first `X-Forwarded-For`/)
-  assert.match(s, /last `X-Forwarded-For` hop/)
+  assert.match(s, /nearest untrusted `X-Forwarded-For` hop/)
   assert.match(s, /OPENTODO_TRUSTED_PROXIES/)
 })
