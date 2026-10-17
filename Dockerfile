@@ -15,9 +15,10 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY web/ ./
 # Shared test fixtures the web type check imports (Go and TS activity rules and
-# statistics definitions must agree).
+# statistics definitions, synced and encrypted fields must agree).
 COPY internal/activity/testdata/activity_fixture.json /src/internal/activity/testdata/activity_fixture.json
 COPY internal/digest/testdata/stats_fixture.json /src/internal/digest/testdata/stats_fixture.json
+COPY internal/sync/testdata/schema_fixture.json /src/internal/sync/testdata/schema_fixture.json
 # vite writes to ../internal/web/dist (see web/vite.config.ts)
 RUN mkdir -p /src/internal/web && npm run build
 
