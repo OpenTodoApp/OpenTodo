@@ -16,7 +16,7 @@ import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
-import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncState } from './types'
+import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
@@ -129,6 +129,18 @@ function isOffline(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine === false
 }
 
+/** The shape every sync answer has; anything else did not come from the sync endpoint. */
+function isSyncResponse(v: unknown): v is SyncResponse {
+  if (typeof v !== 'object' || v === null) return false
+  const r = v as Record<string, unknown>
+  const list = (x: unknown) => x === undefined || Array.isArray(x)
+  return Array.isArray(r.ops) && r.ops.every((o) => typeof o === 'object' && o !== null)
+    && typeof r.cursor === 'number' && Number.isFinite(r.cursor) && typeof r.hasMore === 'boolean'
+    && (r.serverTime === undefined || typeof r.serverTime === 'number')
+    && list(r.rejected) && list(r.memberships) && list(r.purged)
+    && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
+}
+
 async function runOnce(): Promise<void> {
   const pending = (await db.outbox.count()) + (await heldCount())
   publish({ pending })
@@ -161,35 +173,44 @@ async function runOnce(): Promise<void> {
       const sent = batch.map(({ local: _local, ...op }) => op)
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
-      const res = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
+      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
+      // A proxy or captive portal can answer 200 with a page of its own: nothing
+      // was synced, so the outbox stays as it is (client-data-safety).
+      if (!isSyncResponse(res)) throw new Error(t('The server sent an answer this app does not understand. Your changes stay on this device.'))
       hlcObserveServerTime(res.serverTime)
-      if (batch.length > 0) {
-        await db.outbox.bulkDelete(batch.map((o) => o.local as number))
-        await markSent(sent, wireOps)
-      }
-      const incoming = await decryptIncoming(res.ops)
-      if ((await reconcileMode(incoming)) === 'locked') {
-        // Encryption was enabled elsewhere and this device has no key: keep the
-        // cursor so the batch is pulled again after unlocking.
-        publish({ state: 'locked', error: null, pending: await db.outbox.count() })
-        return
-      }
       // A server limit (multi-tenant-host) refuses ops without judging them: the
       // device keeps them, unsynced, and sends them again later.
       const { limited, refused } = splitRejected(res.rejected ?? [])
-      if (limited.length > 0) {
-        await holdOps(sent, limited)
-        heldReason = limited[0].reason
+      // The sent batch leaves the outbox in the same transaction that holds the
+      // ops a limit refused and forgets the clocks of refused ones (project-sharing:
+      // the server's values, which travel in res.ops, then win), so no path
+      // drops a change without handling its refusal (client-data-safety).
+      let keys: string[] = []
+      let notice: RejectedNotice | null = null
+      await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
+        if (batch.length > 0) {
+          await db.outbox.bulkDelete(batch.map((o) => o.local as number))
+          await markSent(sent, wireOps)
+        }
+        if (limited.length > 0) await holdOps(sent, limited)
+        ;({ keys, notice } = await forgetRejected(sent, refused))
+        // A refused op never happened: drop it from the local activity log too.
+        await forgetActivity(refused.map((r) => r.id))
+      })
+      if (limited.length > 0) heldReason = limited[0].reason
+      if (notice) addRejected(notice)
+      const incoming = await decryptIncoming(res.ops)
+      if ((await reconcileMode(incoming)) === 'locked') {
+        // Encryption was enabled elsewhere and this device has no key: keep the
+        // cursor so the batch is pulled again after unlocking. Rows that only
+        // existed here and were refused go now; the server's values come later.
+        await dropUnconfirmed(keys)
+        publish({ state: 'locked', error: null, pending: (await db.outbox.count()) + (await heldCount()) })
+        return
       }
-      // Refused ops (project-sharing): forget their local clocks so the server's
-      // values, which travel in res.ops, win; drop rows that only existed here.
-      const { keys, notice } = await forgetRejected(sent, refused)
-      // A refused op never happened: drop it from the local activity log too.
-      await forgetActivity(refused.map((r) => r.id))
       await applyOps(incoming.ops, { wire: incoming.wire })
       if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
-      if (notice) addRejected(notice)
       if (res.memberships) await storeMemberships(res.memberships)
       // Purged on the server (trash-and-history D5): drop the rows and queued ops.
       if (res.purged?.length) await removeLocally(res.purged)

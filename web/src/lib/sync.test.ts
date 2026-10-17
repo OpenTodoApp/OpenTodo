@@ -714,3 +714,21 @@ describe('every entity kind (client-data-safety)', () => {
     expect(await db.outbox.count()).toBe(0)
   })
 })
+
+describe('malformed answers (client-data-safety)', () => {
+  it('a 200 answer that is not a sync response keeps the queued edits', async () => {
+    await mutate('task', 't1', { title: 'Offline edit' })
+    expect(await db.outbox.count()).toBe(1)
+    // What api.parse yields for a proxy's HTML page with status 200.
+    syncCalls.mockImplementationOnce((async () => ({})) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('error')
+    expect(await db.outbox.count()).toBe(1)
+    expect(await getMeta('cursor', -1)).toBe(-1)
+    // The next real exchange uploads it.
+    await syncNow()
+    const sent = syncCalls.mock.calls.at(-1) as unknown as [string, number, { field: string }[]]
+    expect(sent[2].map((o) => o.field)).toContain('title')
+    expect(await db.outbox.count()).toBe(0)
+  })
+})

@@ -23,6 +23,8 @@ const { server, MockApiError } = vi.hoisted(() => {
     calls: [] as { device: string; ops: Op[] }[],
     /** The account has the weekly email digest on (stats-and-review): enabling encryption turns it off. */
     digestOn: false,
+    /** Refuses an op with this reason (client-data-safety); null accepts it. */
+    reject: null as ((op: Op) => string | null) | null,
   }
   return { server, MockApiError }
 })
@@ -37,12 +39,18 @@ vi.mock('./api', () => ({
       }
       server.calls.push({ device, ops: structuredClone(ops) })
       let applied = 0
+      const rejected: { id: string; reason: string }[] = []
       for (const op of ops) {
+        const reason = server.reject?.(op)
+        if (reason) {
+          rejected.push({ id: op.id, reason })
+          continue
+        }
         if (server.log.some((o) => o.id === op.id)) continue
         server.log.push({ ...structuredClone(op), seq: ++server.seq })
         applied++
       }
-      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now() }
+      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now(), rejected }
     },
     encryptionKeys: async () => {
       if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
@@ -107,6 +115,7 @@ beforeEach(() => {
   server.failNext = 0
   server.calls = []
   server.digestOn = false
+  server.reject = null
 })
 afterEach(() => vi.useRealTimers())
 
@@ -461,6 +470,35 @@ describe('migration job (task 2.4)', () => {
     await applyOps(inc.ops, { wire: inc.wire })
     expect(await normalizeOnSight(inc)).toBe(0)
     expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+  })
+})
+
+describe('locked during an exchange (client-data-safety)', () => {
+  it('keeps changes a limit refused and forgets refused ones when the answer turns out locked', async () => {
+    await on('A')
+    await seedTasks()
+    await on('B')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+    // B edits while A turns encryption on.
+    await mutate('task', 't1', { priority: 3 })
+    await mutate('task', 't1', { position: 7 })
+    await on('A')
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    await on('B')
+    server.reject = (op) => (op.field === 'priority' ? 'limit_storage' : op.field === 'position' ? 'forbidden' : null)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('locked')
+    // The limited change is held for later, not lost with the sent batch.
+    expect((await getMeta<Op[]>('heldOps', [])).map((o) => o.field)).toEqual(['priority'])
+    expect(syncSnapshot().pending).toBe(1)
+    // The refused one no longer claims to be the newest value.
+    const t1 = (await db.tasks.get('t1'))!
+    expect(t1._clock.position).toBeUndefined()
+    expect(t1._clock.priority).toBeDefined()
+    expect(syncSnapshot().rejected?.count).toBe(1)
   })
 })
 
