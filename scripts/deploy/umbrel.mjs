@@ -141,7 +141,7 @@ export function routes(root = ROOT) {
   const out = new Set()
   for (const f of readdirSync(dir)) {
     if (!f.endsWith('.go') || f.endsWith('_test.go')) continue
-    for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/\.Handle(?:Func)?\("(?:[A-Z]+ )?(\/[^"]*)"/g)) out.add(m[1])
+    for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/\.(?:Handle(?:Func)?|handle)\("(?:[A-Z]+ )?(\/[^"]*)"/g)) out.add(m[1])
   }
   return out
 }
