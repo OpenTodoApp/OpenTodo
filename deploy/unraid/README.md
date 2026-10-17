@@ -2,7 +2,7 @@
 
 [`opentodo.xml`](opentodo.xml) is an Unraid Community Applications (CA) template: the `0.6` image line, the web port 8080, the appdata folder `/mnt/user/appdata/opentodo` on `/data`, the Web UI link and icon, and the optional settings with their descriptions (base URL and setup token shown, the rest under **Show more settings**). No setting is required. The facts it shares with the other templates are in [`../deploy.json`](../deploy.json); `make check` keeps them in line ([`../README.md`](../README.md)).
 
-**Status: to be submitted to Community Applications.** Until OpenTodo shows up in the **Apps** tab, install it from the template URL; the steps are in [docs/self-hosting/unraid.md](../../docs/self-hosting/unraid.md).
+**Status: listed in Community Applications.** Unraid users install OpenTodo from the **Apps** tab; the steps are in [docs/self-hosting/unraid.md](../../docs/self-hosting/unraid.md).
 
 ## The template repository
 
@@ -29,7 +29,7 @@ cd /tmp/opentodo-unraid && git add -A && git commit -m "OpenTodo template: <what
 
 ## Submitting to Community Applications (maintainer)
 
-One submission covers the repository and every later version of the template.
+Done: the template repository was submitted and approved. One submission covers the repository and every later version of the template; the steps are kept for reference.
 
 1. Test first: install from the template URL on an Unraid server, open the Web UI, create the owner, add a task, restart the container and check the task is still there, then update the container and check again.
 2. Make sure the template repository is public and matches `upstream/`.

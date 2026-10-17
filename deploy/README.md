@@ -5,7 +5,7 @@ One folder per platform, each with its template in that platform's own format. T
 | Platform | Folder | Status |
 | --- | --- | --- |
 | Coolify | [`coolify/`](coolify/) | Pending in Coolify's service list; paste it as Docker Compose meanwhile |
-| Unraid | [`unraid/`](unraid/) | To submit to Community Applications; install from the template URL meanwhile |
+| Unraid | [`unraid/`](unraid/) | Listed in Community Applications (**Apps**), from [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid) |
 
 ## Checks
 

@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
+
 ## [0.6.1] - 2026-10-17
 
 OpenTodo 0.6.1 makes plain-http installs work: opened by a home server's or NAS's address (`http://192.168.1.10:8080`), the app no longer shows **Offline** with nothing saved. It adds an **Unraid template**, and fixes encryption turning off part-way, settings pages scrolling away, and two small things in the task panel.

@@ -6,7 +6,7 @@ Unraid Community Applications templates for [OpenTodo](https://open-todo.app), t
 | --- | --- |
 | [`templates/opentodo.xml`](templates/opentodo.xml) | OpenTodo: one container, one appdata folder, no required settings |
 
-Install it from **Apps** in Unraid. Until it is listed there, add it by hand from Unraid's terminal:
+Install it from **Apps** in Unraid: search for **OpenTodo** and click **Install**. Without Community Applications, add it by hand from Unraid's terminal:
 
 ```bash
 wget -O /boot/config/plugins/dockerMan/templates-user/my-OpenTodo.xml \
