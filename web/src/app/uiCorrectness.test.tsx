@@ -161,7 +161,7 @@ describe('confirmations use the app dialog (UI-19)', () => {
       return undefined
     })
     const r = await render(<ShareDialog project={project} userId="u1" cached={membership} onClose={() => {}} />)
-    const owner = () => document.querySelector<HTMLButtonElement>('button[aria-label="Make Sam the owner"]')
+    const owner = () => document.querySelector<HTMLButtonElement>('button[aria-label="Make owner: Sam"]')
     await waitFor(() => !!owner(), 'the member row')
     await click(owner()!)
     expect(nativeAsked()).toBe(0)

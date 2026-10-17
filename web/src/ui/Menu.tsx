@@ -25,12 +25,13 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
   const close = useContext(MenuCloseContext)
   const id = useId()
   const describedBy = [shortcut && `${id}-k`, description && `${id}-d`].filter(Boolean).join(' ') || undefined
+  // The name comes from the visible label (WCAG 2.5.3 Label in Name); the description and
+  // the shortcut hint are hidden from the name and announced as the item's description.
   return (
     <button
       type="button"
       role={checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
       aria-checked={checked}
-      aria-label={label}
       aria-describedby={describedBy}
       aria-keyshortcuts={shortcut}
       disabled={disabled}
@@ -46,9 +47,9 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
       </span>
       <span className="min-w-0 flex-1">
         <span className="block">{label}</span>
-        {description && <span id={`${id}-d`} className="block text-meta text-muted">{description}</span>}
+        {description && <span id={`${id}-d`} aria-hidden className="block text-meta text-muted">{description}</span>}
       </span>
-      {shortcut && <kbd id={`${id}-k`} className="ui-kbd mt-0.5 shrink-0">{shortcut}</kbd>}
+      {shortcut && <kbd id={`${id}-k`} aria-hidden className="ui-kbd mt-0.5 shrink-0">{shortcut}</kbd>}
     </button>
   )
 }

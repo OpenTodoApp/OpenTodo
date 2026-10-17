@@ -171,7 +171,6 @@ export function MonthView({ date }: { date?: string }) {
     const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
     return (
       <button key={task.id} type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
-        aria-label={[task.title || t('Untitled'), v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}
         onPointerDown={canEdit ? (e) => {
           if (e.button !== 0) return
           beginDrag(e, { label: task.title, onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4)) } })
@@ -179,9 +178,11 @@ export function MonthView({ date }: { date?: string }) {
         onClick={(e) => { e.stopPropagation(); setSelectedId(task.id); if (v?.due) setFocused(v.due.date) }}
         onDoubleClick={() => setPanelTaskId(task.id)}
         className={`flex w-full min-w-0 touch-manipulation items-center gap-1 rounded-chip border-l-3 border-l-hue-solid px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${selected ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken hover:bg-sunken dark:bg-raised'} ${canEdit ? 'cursor-grab' : ''}`}>
-        {v?.due?.time && <span className="shrink-0 tabular-nums text-muted">{formatTime(v.due.time)}</span>}
-        <span className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
-        {task.priority < 4 && <span className="shrink-0 text-hint font-semibold text-muted" data-priority={task.priority}>P{task.priority}</span>}
+        {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
+        <span className="sr-only">{[task.title || t('Untitled'), v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
+        {v?.due?.time && <span aria-hidden className="shrink-0 tabular-nums text-muted">{formatTime(v.due.time)}</span>}
+        <span aria-hidden className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
+        {task.priority < 4 && <span aria-hidden className="shrink-0 text-hint font-semibold text-muted" data-priority={task.priority}>P{task.priority}</span>}
       </button>
     )
   }
@@ -214,11 +215,12 @@ export function MonthView({ date }: { date?: string }) {
               return (
                 <div key={d} role="gridcell" tabIndex={isFocused ? 0 : -1} data-month-day={d} data-drop-target={`day:${d}`}
                   aria-selected={isFocused} aria-current={d === today ? 'date' : undefined}
-                  aria-label={[d, list.length ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length }) : '', load.over ? t('over capacity') : ''].filter(Boolean).join(', ')}
                   onClick={() => { setFocused(d); setSelectedId(null) }}
                   onFocus={(e) => { if (e.target === e.currentTarget) setFocused(d) }}
                   className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${narrow ? 'min-h-14' : 'min-h-28'} ${outside ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
-                  <div className="mb-0.5 flex items-center justify-between gap-1">
+                  {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
+                  <span className="sr-only">{[d, list.length ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length }) : '', load.over ? t('over capacity') : ''].filter(Boolean).join(', ')}</span>
+                  <div aria-hidden className="mb-0.5 flex items-center justify-between gap-1">
                     <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-meta tabular-nums ${d === today ? 'bg-accent font-semibold text-on-accent' : ''}`}>{Number(d.slice(8))}</span>
                     {!narrow && load.planned > 0 && (
                       <span data-capacity data-over={load.over || undefined}
@@ -228,7 +230,7 @@ export function MonthView({ date }: { date?: string }) {
                     )}
                   </div>
                   {narrow ? (
-                    list.length > 0 && <span data-month-count className="block text-center text-meta font-medium text-default">{list.length}</span>
+                    list.length > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{list.length}</span>
                   ) : (
                     <div className="space-y-0.5">
                       {shown.map((task) => row(task, false))}

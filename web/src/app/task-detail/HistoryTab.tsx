@@ -137,7 +137,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
                 </div>
                 {!readOnly && canRestoreField('task', c.field) && (
                   <Button variant="ghost" size="sm" className="mt-1" icon="rotate-ccw"
-                    aria-label={t('Restore {field} to {value}', { field: currentLanguage() === 'en' ? changeLabel(c.field).toLowerCase() : changeLabel(c.field), value: valueText(c.field, c.to, refName) })}
+                    aria-label={t('Restore this value: {field}, {value}', { field: currentLanguage() === 'en' ? changeLabel(c.field).toLowerCase() : changeLabel(c.field), value: valueText(c.field, c.to, refName) })}
                     onClick={() => onRestoreValue(c.field, c.to)}>
                     {t('Restore this value')}
                   </Button>

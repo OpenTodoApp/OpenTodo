@@ -123,7 +123,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
                       {c.lost && <Tooltip label={t('Arrived after a newer change and was never applied')}><span className="rounded-chip text-meta italic" tabIndex={0}>{t('(lost)')}</span></Tooltip>}
                       {!readOnly && canRestoreField(entity, c.field) && (
                         <button type="button" className="ml-auto text-meta text-accent underline"
-                          aria-label={t('Restore {field} to {value}', { field: fieldLabel(c.field), value: fmt(c.field, c.to) })} onClick={() => void restore(c.field, c.to)}>
+                          aria-label={t('Restore this value: {field}, {value}', { field: fieldLabel(c.field), value: fmt(c.field, c.to) })} onClick={() => void restore(c.field, c.to)}>
                           {t('Restore this value')}
                         </button>
                       )}
