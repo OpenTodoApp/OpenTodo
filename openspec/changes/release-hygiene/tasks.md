@@ -13,7 +13,7 @@
 - [x] 3.1 `SECURITY.md`: last `X-Forwarded-For` hop, `OPENTODO_TRUSTED_PROXIES`, do not publish the port
 
 ## 4. Compose binding (OPS-12)
-- [x] 4.1 Root `docker-compose.yml` publishes on `${OPENTODO_BIND:-127.0.0.1}`; `.env.example`, README, docs/self-hosting/docker.md and coolify.md explain `OPENTODO_BIND`
+- [x] 4.1 Root `docker-compose.yml` publishes on `${OPENTODO_BIND:-0.0.0.0}` (default unchanged); `.env.example`, README and docs/self-hosting/docker.md explain `OPENTODO_BIND=127.0.0.1` behind a same-host proxy
 - [x] 4.2 Deploy checks and `docker compose config` still pass
 
 ## 5. Smoke test (OPS-16)

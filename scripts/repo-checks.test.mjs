@@ -62,11 +62,11 @@ test('go.mod pins a patched toolchain that the Dockerfile and every setup-go ste
   assert.match(ci, /go run golang\.org\/x\/vuln\/cmd\/govulncheck@v\d+\.\d+\.\d+ \.\/\.\.\./, 'CI runs a pinned govulncheck')
 })
 
-test('the root docker-compose.yml publishes on 127.0.0.1 unless OPENTODO_BIND says otherwise', () => {
+test('the root docker-compose.yml publishes on every interface unless OPENTODO_BIND says otherwise', () => {
   const ports = read('docker-compose.yml').match(/^\s+ports:\n((?:\s+#.*\n)*)\s+- "([^"]+)"/m)
   assert.ok(ports)
-  assert.equal(ports[2], '${OPENTODO_BIND:-127.0.0.1}:${OPENTODO_PORT:-8080}:8080')
-  assert.match(ports[1], /OPENTODO_BIND=0\.0\.0\.0/, 'the comment explains how to open it on the LAN')
+  assert.equal(ports[2], '${OPENTODO_BIND:-0.0.0.0}:${OPENTODO_PORT:-8080}:8080')
+  assert.match(ports[1], /OPENTODO_BIND=127\.0\.0\.1/, 'the comment explains the safer setting behind a proxy')
   assert.match(read('.env.example'), /^#? ?OPENTODO_BIND=/m)
 })
 

@@ -35,7 +35,7 @@ What the compose file does for you:
 - `OPENTODO_BASE_URL=${SERVICE_URL_OPENTODO}` passes the public https URL to the app so cookies are `Secure`, cross-site writes are rejected, and passkeys are available (see [Passkeys](#passkeys)).
 - `opentodo-data:/data` is a named volume Coolify manages; it holds the single SQLite database.
 - The health check uses the binary itself, so Coolify shows the service as healthy or unhealthy correctly.
-- `ports:` is ignored by Coolify's proxy routing and only matters for plain Docker; it binds to `127.0.0.1` by default, so the server is not reachable around the proxy.
+- `ports:` is ignored by Coolify's proxy routing and only matters for plain Docker.
 
 The compose file pulls the published image `ghcr.io/pixari/opentodo:stable`, which every release moves. Use a release line (`:0.6`) to take only its fixes, or `:latest` to follow `main` with unreleased changes. To build from your fork instead, change `image:` to `build: .` in the compose file; Coolify will build the multi-stage Dockerfile on the server. A build from source reports version `dev`; with the Dockerfile build pack, set **Advanced → Source commit availability** to *Available during build* and it reports `dev+<commit>`.
 

@@ -1,19 +1,19 @@
 ## MODIFIED Requirements
 
 ### Requirement: Coolify-compatible compose file
-The repository SHALL include a `docker-compose.yml` that Coolify can deploy from the repository URL with no manual variables: it SHALL declare the magic domain variable for the service port, pass the generated public URL as `OPENTODO_BASE_URL`, mount a named volume on `/data`, and define a health check. The same file SHALL work with plain `docker compose up`. It SHALL publish the host port on `127.0.0.1` unless the operator sets `OPENTODO_BIND` to another address, so the server is not reachable around a reverse proxy by default, and its comments SHALL explain how to open it on the local network.
+The repository SHALL include a `docker-compose.yml` that Coolify can deploy from the repository URL with no manual variables: it SHALL declare the magic domain variable for the service port, pass the generated public URL as `OPENTODO_BASE_URL`, mount a named volume on `/data`, and define a health check. The same file SHALL work with plain `docker compose up`. It SHALL publish the host port on every interface by default and let the operator choose the address with `OPENTODO_BIND`, and its comments SHALL name `127.0.0.1` as the safer choice behind a reverse proxy on the same machine.
 
 #### Scenario: Deploy on Coolify
 - **WHEN** the repository is added as a Docker Compose resource in Coolify and deployed
 - **THEN** the app is reachable on the assigned HTTPS domain and the owner setup screen appears
 
-#### Scenario: Plain compose on one machine
-- **WHEN** someone runs `docker compose up -d` with no `.env`
-- **THEN** `http://localhost:8080` opens the app and port 8080 is not reachable from other machines
-
 #### Scenario: Home server on the LAN
-- **WHEN** the operator sets `OPENTODO_BIND=0.0.0.0` in `.env` and starts the stack
-- **THEN** other devices on the network reach the app at the host's address and port
+- **WHEN** someone runs `docker compose up -d` with no `.env` on a NAS or home server
+- **THEN** `http://localhost:8080` opens the app and other devices on the network reach it at the host's address and port
+
+#### Scenario: Behind a reverse proxy on the same machine
+- **WHEN** the operator sets `OPENTODO_BIND=127.0.0.1` in `.env` and starts the stack
+- **THEN** the proxy on that machine reaches the app and other machines cannot reach port 8080 directly
 
 ## ADDED Requirements
 
