@@ -41,6 +41,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Notifications and webhooks are no longer lost when the app disconnects during a sync.** Once a change is saved, its notifications and webhook deliveries are recorded even if the request was cut off.
 - **Impossible due dates are refused.** A due date that does not exist (such as 31 February) or a time outside 00:00–23:59 is no longer accepted, so it cannot break recurring tasks and reminders.
 - **A database migration that would have been skipped is reported.** The server records which migration files it applied and logs an error at startup for a file it never ran; the repository checks refuse a new migration not numbered above those on the main branch.
+- **Saving many dependencies at once no longer stalls the server.** A sync that adds hundreds of "blocked by" links to a large project used to hold the database for many seconds (about 10 s for 1,000 links on 10,000 tasks), delaying everyone else; it now takes a fraction of a second. Completing a task also checks for unblocked tasks faster. A new database index is created on start.
+- **The activity feed loads faster on projects with a long history.** Each page now reads only the recently changed tasks it needs, and never the notes documents, instead of the whole history of every shared project. The events shown are the same.
+- **Large public project pages, syncs for members of many projects and CalDAV clients cost the server less.** A public link view no longer runs one query per task, listing memberships no longer runs one query per project, and CalDAV multiget and calendar queries no longer scan the whole account for each task asked for.
 
 ### Added
 

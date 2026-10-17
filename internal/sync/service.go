@@ -410,6 +410,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			res.Duplicates++ // the same op id twice in one batch
 			continue
 		}
+		rs.noteBlockedBy(op, scope)
 		if filtered {
 			op.Actor = userID
 			rewritten = append(rewritten, op)

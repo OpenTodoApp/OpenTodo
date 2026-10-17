@@ -164,6 +164,8 @@ type resolver struct {
 	attachmentLimit int64
 	// detail names the id behind the last refusal, when there is one (dependencies.go).
 	detail string
+	// graphs caches each scope's dependency graph for the batch (dependencies.go).
+	graphs map[string]*depGraph
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {

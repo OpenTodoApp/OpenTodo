@@ -3,8 +3,11 @@ package sync
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
+
+	"github.com/pixari/opentodo/internal/activity"
 )
 
 // ActivityOps returns the operations the activity log of one task or project is
@@ -72,30 +75,130 @@ func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([
 	return out, nil
 }
 
-// FeedOps returns, per shared project the user is a member of, the operations
-// the project's activity is derived from (OpenSpec change `activity-feed`,
-// design D4): every task, comment and project op of its scope, in seq order.
-// Personal data never appears. projectID, when not empty, narrows the result
-// to that project, and to nothing when the user is not a member of it.
-func (s *Service) FeedOps(ctx context.Context, userID, projectID string) (map[string][]Op, error) {
+// FeedReader reads the ops the activity feed is derived from (OpenSpec change
+// `activity-feed`, design D4; paging per `server-query-costs`): every task,
+// comment and project op of each shared project the user is a member of, one
+// entity at a time, newest entity first. Personal data never appears.
+//
+// The events of an entity depend only on that entity's own ops (the activity
+// rule groups, compares and labels per entity), so an entity's whole history
+// read at once yields exactly its events, wherever the others are. Entities
+// are ordered by their latest op at or before upTo; every event at or before
+// upTo starts at one of its entity's ops, so once the entities whose latest op
+// is at or after a bound are read, every event from bound to upTo is known.
+// Opaque document fields (activity.Opaque, e.g. task.notes_doc), which the rule
+// ignores, are never read.
+type FeedReader struct {
+	s    *Service
+	ents []feedEntity // newest latest op first
+	next int
+}
+
+type feedEntity struct {
+	project, entity, id string
+	latest              int64
+}
+
+// opaqueFilter is the SQL condition that leaves out the opaque fields.
+func opaqueFilter() (string, []any) {
+	keys := make([]string, 0, len(activity.Opaque))
+	for k := range activity.Opaque {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var cond strings.Builder
+	var args []any
+	for _, k := range keys {
+		entity, field, _ := strings.Cut(k, ".")
+		cond.WriteString(` AND NOT (o.entity = ? AND o.field = ?)`)
+		args = append(args, entity, field)
+	}
+	return cond.String(), args
+}
+
+// FeedReader lists the feed's entities: of projectID only when it is not empty
+// (and none when the user is not a member of it), with their latest op at or
+// before upTo.
+func (s *Service) FeedReader(ctx context.Context, userID, projectID string, upTo int64) (*FeedReader, error) {
 	acc, err := loadAccess(ctx, s.db, userID)
 	if err != nil {
 		return nil, err
 	}
-	out := map[string][]Op{}
-	const q = `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id FROM ops o JOIN op_scopes s ON s.seq = o.seq
-		WHERE s.scope_id = ? AND o.entity IN ('task','project','comment') ORDER BY o.seq`
+	r := &FeedReader{s: s}
+	opaque, opaqueArgs := opaqueFilter()
 	for _, pid := range acc.projects {
 		if projectID != "" && pid != projectID {
 			continue
 		}
-		ops, err := s.readOps(ctx, q, ProjectScope(pid))
+		rows, err := s.db.QueryContext(ctx, `SELECT o.entity, o.entity_id, MAX(o.ts) FROM ops o JOIN op_scopes s ON s.seq = o.seq
+			WHERE s.scope_id = ? AND o.entity IN ('task','project','comment') AND o.ts <= ?`+opaque+` GROUP BY o.entity, o.entity_id`,
+			append([]any{ProjectScope(pid), upTo}, opaqueArgs...)...)
 		if err != nil {
 			return nil, err
 		}
-		out[pid] = ops
+		for rows.Next() {
+			e := feedEntity{project: pid}
+			if err := rows.Scan(&e.entity, &e.id, &e.latest); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			r.ents = append(r.ents, e)
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
 	}
-	return out, nil
+	sort.SliceStable(r.ents, func(i, j int) bool { return r.ents[i].latest > r.ents[j].latest })
+	return r, nil
+}
+
+// Next reads the whole history (in seq order, opaque fields left out) of at
+// least n more entities, and of every other entity whose latest op is at the
+// same time as the last of them, grouped by project. Every entity not read yet
+// has its latest op before bound; done reports that none is left (bound is then
+// math.MinInt64).
+func (r *FeedReader) Next(ctx context.Context, n int) (ops map[string][]Op, bound int64, done bool, err error) {
+	end := min(r.next+max(n, 1), len(r.ents))
+	for end > 0 && end < len(r.ents) && r.ents[end].latest == r.ents[end-1].latest {
+		end++
+	}
+	batch := r.ents[r.next:end]
+	r.next = end
+	ops = map[string][]Op{}
+	ids := map[[2]string][]string{} // (project, entity) -> ids
+	var keys [][2]string
+	for _, e := range batch {
+		k := [2]string{e.project, e.entity}
+		if _, ok := ids[k]; !ok {
+			keys = append(keys, k)
+		}
+		ids[k] = append(ids[k], e.id)
+	}
+	opaque, opaqueArgs := opaqueFilter()
+	const cols = `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id FROM ops o JOIN op_scopes s ON s.seq = o.seq `
+	for _, k := range keys {
+		list := ids[k]
+		for len(list) > 0 {
+			c := min(len(list), 400)
+			chunk := list[:c]
+			list = list[c:]
+			got, err := r.s.readOps(ctx, cols+`WHERE s.scope_id = ? AND o.entity = ? AND o.entity_id IN (`+placeholders(c)+`)`+opaque,
+				append(append([]any{ProjectScope(k[0]), k[1]}, anys(chunk)...), opaqueArgs...)...)
+			if err != nil {
+				return nil, 0, false, err
+			}
+			ops[k[0]] = append(ops[k[0]], got...)
+		}
+	}
+	for pid := range ops {
+		list := ops[pid]
+		sort.Slice(list, func(i, j int) bool { return list[i].Seq < list[j].Seq })
+	}
+	if r.next >= len(r.ents) {
+		return ops, math.MinInt64, true, nil
+	}
+	return ops, batch[len(batch)-1].latest, false, nil
 }
 
 func (s *Service) readOps(ctx context.Context, query string, args ...any) ([]Op, error) {

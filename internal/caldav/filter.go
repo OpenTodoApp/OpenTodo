@@ -23,6 +23,43 @@ func Matches(f *Node, cal *Component) bool {
 	return true
 }
 
+// MatchesAnyTodo reports whether f selects every VCALENDAR that holds a VTODO
+// without looking at its content: no filter, or only the plain
+// VCALENDAR > VTODO comp-filters clients send to list all tasks. Matches gives
+// the same answer for such a filter, so a caller can skip parsing.
+func MatchesAnyTodo(f *Node) bool {
+	if f == nil {
+		return true
+	}
+	plain := func(cf *Node, name string) bool {
+		return strings.EqualFold(cf.Attr("name"), name) && cf.Child(NSCalDAV, "is-not-defined") == nil
+	}
+	for _, cal := range f.Children {
+		if !cal.Is(NSCalDAV, "comp-filter") {
+			continue
+		}
+		if !plain(cal, "VCALENDAR") {
+			return false
+		}
+		for _, ch := range cal.Children {
+			switch {
+			case ch.Is(NSCalDAV, "time-range"), ch.Is(NSCalDAV, "prop-filter"):
+				return false
+			case ch.Is(NSCalDAV, "comp-filter"):
+				if !plain(ch, "VTODO") {
+					return false
+				}
+				for _, g := range ch.Children {
+					if g.Is(NSCalDAV, "time-range") || g.Is(NSCalDAV, "prop-filter") || g.Is(NSCalDAV, "comp-filter") {
+						return false
+					}
+				}
+			}
+		}
+	}
+	return true
+}
+
 // compMatches evaluates a comp-filter against candidate components (the
 // filter's component matches when any candidate of that name satisfies it).
 func compMatches(cf *Node, candidates []*Component) bool {
