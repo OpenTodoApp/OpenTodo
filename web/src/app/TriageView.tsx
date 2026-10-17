@@ -11,7 +11,7 @@ import { db } from '../lib/db'
 import { moveTaskAcrossScopes } from '../lib/ops'
 import { currentUserId } from '../lib/sharing'
 import { advance, advanceQueue, back, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
-import { visibleTasks } from '../lib/trash'
+import { useLiveTasks } from '../lib/liveTasks'
 import type { Label, Membership, Project, Reminder, Task } from '../lib/types'
 import { DateField } from './datetime/DateField'
 import { LabelPicker } from './LabelPicker'
@@ -55,7 +55,7 @@ export function delegateEntries(memberships: readonly Membership[], projects: re
 }
 
 export function TriageView() {
-  const tasks = useLiveQuery(() => visibleTasks(), [], undefined as Task[] | undefined)
+  const tasks = useLiveTasks()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])

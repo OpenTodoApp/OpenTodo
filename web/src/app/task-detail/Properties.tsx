@@ -15,7 +15,7 @@ import { byPosition } from '../../lib/ordering'
 import { INBOX_KEY, NONE_KEY, parentSource, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { effectiveSection, moveTaskToSection } from '../../lib/sections'
 import { isSoloScope, memberName, membershipMap } from '../../lib/sharing'
-import { visibleTasks } from '../../lib/trash'
+import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { Avatar, ComboboxPanel, Icon, type IconName, MenuItem, MenuSeparator, Switch } from '../../ui'
 import { AssigneePicker } from '../AssigneePicker'
@@ -89,8 +89,9 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
     [projectId], [] as Section[],
   )
   // Tasks of the same project (any state): the parent picker applies its own rules.
+  // A project's come from the project_id index; Inbox tasks (no project) are not indexed.
   const projectTasks = useLiveQuery(
-    () => db.tasks.filter((tk) => (tk.project_id ?? null) === projectId).toArray(),
+    () => (projectId ? db.tasks.where('project_id').equals(projectId).toArray() : db.tasks.filter((tk) => !tk.project_id).toArray()),
     [projectId], [] as Task[],
   )
   const [parentError, setParentError] = useState<string | null>(null)
@@ -118,7 +119,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
     return () => offs.forEach((off) => off())
   }, [task.id])
   // Every live task: blockers may sit in any project of the same sharing scope.
-  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const allTasks = useLiveTasks() ?? NO_TASKS
 
   const projectItems = useMemo(() => projectSource(projects, { current: projectId, memberships }), [projects, projectId, memberships])
   const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])

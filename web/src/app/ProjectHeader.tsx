@@ -28,6 +28,7 @@ import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
 import { hueName } from '../lib/colourNames'
 import { act } from './actionError'
+import { useOpenTaskCount } from '../lib/liveTasks'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -187,7 +188,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
   const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
-  const openTasks = useLiveQuery(() => db.tasks.filter((task) => task.project_id === project.id && !task.deleted_at && !task.completed_at).count(), [project.id], 0)
+  const openTasks = useOpenTaskCount(project.id)
 
   // Activity and History are occupants of the shell's panel slot (app-shell "The
   // panel slot has an address"), opened from the overflow menu or Shift+H.

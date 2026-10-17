@@ -12,6 +12,7 @@ import { ApiError, isNetworkError, publicApi } from '../lib/api'
 import { formatShort, formatTime } from '../lib/dates'
 import type { PublicList } from '../lib/types'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { appendTo } from '../lib/collections'
 
 /** Refresh interval while the page is visible. */
 export const PUBLIC_REFRESH_MS = 30_000
@@ -29,7 +30,7 @@ export function publicGroups(list: PublicList): { id: string | null; name: strin
   const byPos = (a: Task, b: Task) => a.position - b.position
   const ids = new Set(list.tasks.map((item) => item.id))
   const children = new Map<string, Task[]>()
-  for (const entry of list.tasks) if (entry.parent_id && ids.has(entry.parent_id)) children.set(entry.parent_id, [...(children.get(entry.parent_id) ?? []), entry])
+  for (const entry of list.tasks) if (entry.parent_id && ids.has(entry.parent_id)) appendTo(children, entry.parent_id, entry)
   const walk = (x1: Task, depth: number, out: { task: Task; depth: number }[]) => {
     out.push({ task: x1, depth })
     for (const c of (children.get(x1.id) ?? []).sort(byPos)) walk(c, depth + 1, out)

@@ -63,46 +63,49 @@ func (s *Service) PublicProject(ctx context.Context, creatorID, projectID string
 	if !live(pp.Project) {
 		return PublicProject{}, false, nil
 	}
-	children := func(entity string) ([]string, error) {
-		rows, err := s.db.QueryContext(ctx, `SELECT entity_id FROM scope_fields WHERE scope_id = ? AND entity = ? AND field = 'project_id' AND value = ?`,
-			scope, entity, string(mustMarshal(projectID)))
+	// Each kind of child is read in one query: every field of every row whose
+	// project_id is this project, in id order.
+	children := func(entity string) ([]Entity, error) {
+		rows, err := s.db.QueryContext(ctx, `SELECT f.entity_id, f.field, f.value FROM scope_fields f
+			WHERE f.scope_id = ? AND f.entity = ? AND f.entity_id IN (
+				SELECT entity_id FROM scope_fields WHERE scope_id = ? AND entity = ? AND field = 'project_id' AND value = ?)
+			ORDER BY f.entity_id`, scope, entity, scope, entity, string(mustMarshal(projectID)))
 		if err != nil {
 			return nil, err
 		}
 		defer rows.Close()
-		var ids []string
+		var out []Entity
+		var cur Entity
+		curID := ""
 		for rows.Next() {
-			var id string
-			if err := rows.Scan(&id); err != nil {
+			var id, f string
+			var v []byte
+			if err := rows.Scan(&id, &f, &v); err != nil {
 				return nil, err
 			}
-			ids = append(ids, id)
+			if cur == nil || id != curID {
+				cur, curID = Entity{"id": mustMarshal(id)}, id
+				out = append(out, cur)
+			}
+			cur[f] = json.RawMessage(v)
 		}
-		return ids, rows.Err()
+		return out, rows.Err()
 	}
-	secIDs, err := children("section")
+	sections, err := children("section")
 	if err != nil {
 		return pp, false, err
 	}
-	for _, id := range secIDs {
-		e, err := load("section", id)
-		if err != nil {
-			return pp, false, err
-		}
+	for _, e := range sections {
 		if live(e) {
 			pp.Sections = append(pp.Sections, e)
 		}
 	}
-	taskIDs, err := children("task")
+	tasks, err := children("task")
 	if err != nil {
 		return pp, false, err
 	}
 	cutoff := now.Add(-PublicCompletedFor).UnixMilli()
-	for _, id := range taskIDs {
-		e, err := load("task", id)
-		if err != nil {
-			return pp, false, err
-		}
+	for _, e := range tasks {
 		if !live(e) {
 			continue
 		}

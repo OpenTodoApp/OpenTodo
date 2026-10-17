@@ -173,6 +173,11 @@ type davView struct {
 	names    map[string]string // task id -> resource name (when not <id>.ics)
 	uids     map[string]string // task id -> UID (when not the id)
 	cursor   int64
+	// Indexes built once per request (server-query-costs): tasks per calendar in
+	// list order, by "calendar NUL resource name", and task id per stored UID.
+	byCal   map[string][]opsync.Entity
+	byRes   map[string]opsync.Entity
+	uidToID map[string]string
 }
 
 func (d *davRequest) load() (*davView, error) {
@@ -239,8 +244,28 @@ func (d *davRequest) load() (*davView, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	v.index()
 	d.view = v
 	return v, nil
+}
+
+// index builds the per-request lookups so that finding a resource or a UID
+// does not scan every task (a multiget of n hrefs was n times the account).
+func (v *davView) index() {
+	v.byCal, v.byRes, v.uidToID = map[string][]opsync.Entity{}, map[string]opsync.Entity{}, map[string]string{}
+	for _, t := range v.tasks {
+		cal := v.calendarOf(t)
+		v.byCal[cal] = append(v.byCal[cal], t)
+		key := cal + "\x00" + v.resourceName(idOf(t["id"]))
+		if _, dup := v.byRes[key]; !dup {
+			v.byRes[key] = t
+		}
+	}
+	for id, u := range v.uids {
+		if prev, dup := v.uidToID[u]; !dup || id < prev {
+			v.uidToID[u] = id
+		}
+	}
 }
 
 // calendarVisible reports whether cal names a calendar of this user: the Inbox
@@ -303,15 +328,7 @@ func (v *davView) calendarOf(t opsync.Entity) string {
 	return ""
 }
 
-func (v *davView) tasksIn(cal string) []opsync.Entity {
-	var out []opsync.Entity
-	for _, t := range v.tasks {
-		if v.calendarOf(t) == cal {
-			out = append(out, t)
-		}
-	}
-	return out
-}
+func (v *davView) tasksIn(cal string) []opsync.Entity { return v.byCal[cal] }
 
 func (v *davView) resourceName(id string) string {
 	if n, ok := v.names[id]; ok {
@@ -328,21 +345,12 @@ func (v *davView) uidOf(id string) string {
 }
 
 // find returns the live task stored under name in calendar cal, or nil.
-func (v *davView) find(cal, name string) opsync.Entity {
-	for _, t := range v.tasksIn(cal) {
-		if v.resourceName(idOf(t["id"])) == name {
-			return t
-		}
-	}
-	return nil
-}
+func (v *davView) find(cal, name string) opsync.Entity { return v.byRes[cal+"\x00"+name] }
 
 // taskByUID returns the live task with the given UID anywhere, or nil.
 func (v *davView) taskByUID(uid string) opsync.Entity {
-	for id, u := range v.uids {
-		if u == uid {
-			return v.byID[id]
-		}
+	if id, ok := v.uidToID[uid]; ok {
+		return v.byID[id]
 	}
 	if t, ok := v.byID[uid]; ok {
 		if _, mapped := v.uids[uid]; !mapped {
@@ -551,6 +559,11 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 
 func (d *davRequest) resourceProps(v *davView, t opsync.Entity) map[caldav.PropName]propFunc {
 	body, etag := v.encode(t)
+	return resourcePropsOf(v, t, body, etag)
+}
+
+// resourcePropsOf is resourceProps for a task already encoded.
+func resourcePropsOf(v *davView, t opsync.Entity, body []byte, etag string) map[caldav.PropName]propFunc {
 	mod := v.modified[idOf(t["id"])]
 	return map[caldav.PropName]propFunc{
 		pResourceType:  func() string { return "" },
@@ -753,13 +766,19 @@ func (d *davRequest) query(v *davView, body *caldav.Node, names []caldav.PropNam
 	uid, cal := d.user.ID, d.path.calendar
 	filter := body.Child(caldav.NSCalDAV, "filter")
 	m := caldav.NewMultistatus()
+	// Every served resource is a VCALENDAR holding a VTODO, so the usual
+	// "all tasks" filter needs no parsing; any other filter is evaluated on the
+	// serialised data, which is encoded once per task.
+	everything := caldav.MatchesAnyTodo(filter)
 	for _, t := range v.tasksIn(cal) {
-		data, _ := v.encode(t)
-		comp, err := caldav.Parse(data)
-		if err != nil || !caldav.Matches(filter, comp) {
-			continue
+		data, etag := v.encode(t)
+		if !everything {
+			comp, err := caldav.Parse(data)
+			if err != nil || !caldav.Matches(filter, comp) {
+				continue
+			}
 		}
-		respond(m, resourceHref(uid, cal, v.resourceName(idOf(t["id"]))), d.resourceProps(v, t), names, all)
+		respond(m, resourceHref(uid, cal, v.resourceName(idOf(t["id"]))), resourcePropsOf(v, t, data, etag), names, all)
 	}
 	d.multistatus(m)
 }
