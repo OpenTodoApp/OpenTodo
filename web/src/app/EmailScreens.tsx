@@ -50,7 +50,8 @@ export function ForgotScreen({ enabled, user }: { enabled: boolean; user: User |
     } catch (err) {
       if (isNetworkError(err)) setState('offline')
       else if (err instanceof ApiError && err.code === 'rate_limited') setState('rate-limited')
-      else if (err instanceof ApiError && err.code === 'smtp_disabled') setState('disabled')
+      // base_url_required: the server mails no links without its public address.
+      else if (err instanceof ApiError && (err.code === 'smtp_disabled' || err.code === 'base_url_required')) setState('disabled')
       else setError(err instanceof ApiError ? err.message : t('Something went wrong.'))
     } finally {
       setBusy(false)

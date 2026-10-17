@@ -361,9 +361,9 @@ func TestPullIncludesActorAndIgnoresClientValue(t *testing.T) {
 // deleted parent" test (web/src/lib/ops.test.ts) and must give the same order.
 func TestThreadOrder(t *testing.T) {
 	c := func(id string, created int, parent string) Entity {
-		e := Entity{"id": json.RawMessage(quoteID(id)), "task_id": json.RawMessage(`"t"`), "created_at": json.RawMessage(mustJSON(created)), "parent_id": json.RawMessage("null")}
+		e := Entity{"id": json.RawMessage(QuoteJSON(id)), "task_id": json.RawMessage(`"t"`), "created_at": json.RawMessage(mustJSON(created)), "parent_id": json.RawMessage("null")}
 		if parent != "" {
-			e["parent_id"] = json.RawMessage(quoteID(parent))
+			e["parent_id"] = json.RawMessage(QuoteJSON(parent))
 		}
 		return e
 	}

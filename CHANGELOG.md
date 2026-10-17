@@ -13,6 +13,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **OpenTodo is in Unraid's Community Applications.** Install it from the **Apps** tab: search for OpenTodo and click **Install**. Installing from the template URL by hand still works. ([Unraid](docs/self-hosting/unraid.md))
 - **A `stable` image tag, used by every template.** Each release now also publishes `ghcr.io/pixari/opentodo:stable` (release candidates never move it), and the Unraid and Coolify templates, `docker-compose.yml` and the README examples use it: every release, minor versions included, arrives through the platform's update button, with migrations applied on start. Installs on `:0.6` keep their tag and its fixes; switch to `stable` once to follow every release. A **Promote stable** workflow points `stable` at an earlier release to roll back. ([Docker](docs/self-hosting/docker.md), [Unraid](docs/self-hosting/unraid.md#updates-and-backups), [Coolify](docs/self-hosting/coolify.md))
 
+### Security
+
+- **Emailed links always use the server's public address.** Password resets, sign-up confirmations and invitations sent by email are built only from `OPENTODO_BASE_URL`, never from the request, so nobody can make the server mail a link to another site. Without `OPENTODO_BASE_URL` these emails are not sent: the screen says the owner must set it, links to copy keep working, and the owner sees a configuration warning while outgoing email is set up. ([Outgoing email](docs/self-hosting/outgoing-email.md#set-the-base-url-first))
+- **Forwarded host headers count only from trusted proxies.** `X-Forwarded-Host` and `X-Forwarded-Proto` are used only when the request comes from an address in `OPENTODO_TRUSTED_PROXIES`. Behind a TLS proxy, set `OPENTODO_BASE_URL` (or list the proxy) so the links the app shows start with `https://`. ([Docker](docs/self-hosting/docker.md#behind-a-reverse-proxy))
+- **A shared project's id cannot be taken over.** Sharing a project is refused when another account has a project with the same id, so nobody can lock the owner out of their own project. ([Sync](docs/sync.md))
+- **Entity ids are limited to safe characters.** Letters, digits and `. _ : @ + = ~ -`, which covers every id the apps create, so a malformed id can no longer break the lists of a shared project's members. ([Sync](docs/sync.md#operation))
+
+### Fixed
+
+- **Attachments move with a project when it is shared.** Files added to a project's tasks before sharing it stayed visible only to the owner. Sharing now moves them with the tasks, and on upgrade the server moves the files of projects shared earlier; members' devices fetch them on their next sync.
+
 ## [0.6.1] - 2026-10-17
 
 OpenTodo 0.6.1 makes plain-http installs work: opened by a home server's or NAS's address (`http://192.168.1.10:8080`), the app no longer shows **Offline** with nothing saved. It adds an **Unraid template**, and fixes encryption turning off part-way, settings pages scrolling away, and two small things in the task panel.

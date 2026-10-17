@@ -30,6 +30,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 }
 ```
 
+`entityId` is 1 to 64 characters from ASCII letters, digits and `. _ : @ + = ~ -` (UUIDs, `me`, CalDAV UIDs). A batch with any other id is refused with 400 `invalid_op` and nothing in it is applied.
+
 ### Schema (v1)
 
 | Entity | Field | Type |
@@ -321,7 +323,7 @@ Every op and every materialized field belongs to one scope (OpenSpec `project-sh
 
 - **Which scope an op belongs to.** A project op goes to the project's scope once it is shared, otherwise to the author's personal scope. A task op goes to the scope the task already lives in; a new task goes to the scope of the `project_id` sent in the same batch (no project = Inbox = personal). Labels and views are always personal.
 - **A task never changes scope.** A `project_id` that would move a task into another scope is refused with reason `scope_change`. Clients move across scopes by copying the task (new id) into the destination and tombstoning the original; deleting a shared project tombstones the project and its tasks and the owner's device copies the open tasks into the owner's Inbox.
-- **First share.** Sharing a project relabels the project and its tasks from the owner's personal scope to the project scope in one transaction. Only the scope label changes; `seq`, op ids and content stay, so the owner's devices keep their cursor.
+- **First share.** Sharing a project relabels the project and its tasks (with their sections, custom field definitions, comments and attachments) from the owner's personal scope to the project scope in one transaction. It is refused with 409 `project_id_conflict` when another account's personal scope holds a project with the same id. Only the scope label changes; `seq`, op ids and content stay, so the owner's devices keep their cursor.
 - **Authorization at receipt.** Each op is checked against the author's membership when the server receives it, never against `op.ts`: viewer → nothing (except comments, see [Comments](#comments)); editor → tasks; admin → tasks and project fields except `deleted_at`; owner → everything; non-members → nothing. A refused op is not stored and is listed in `rejected` with its id and reason (`forbidden`, `scope_change` or `not_a_member`) in a 200 response; the rest of the batch is applied. The response's `ops` also carry the current winning op of every refused field the caller can see, so the device drops its local change and shows the server's value without another round trip. Resending an already refused op gives the same answer.
 - **Catch-up for a new member.** A device whose cursor is past part of a project's history when its user joins receives that history first: pages of the project's ops up to the device's cursor at its first exchange after joining, with `cursor` unchanged and `hasMore: true`, then the regular pull. Progress is kept per device (`member_backfills`), so each of the member's devices replays the history once. A replay page lost in transit is not resent; re-syncing from cursor 0 recovers it.
 - **Membership** lives outside the op log (`project_members`) and changes only through the REST routes, so offline devices cannot race on it. Every exchange returns the caller's `memberships`; a device purges a project (and its tasks) that it knew as shared and that is no longer listed. A membership change wakes the affected devices with an event that carries no cursor (`data: {}`), so they always run the exchange.

@@ -39,6 +39,8 @@ func (s *Server) memberError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "owner_must_transfer", "the owner cannot leave the project; transfer ownership to another member first")
 	case errors.Is(err, opsync.ErrAlreadyMember):
 		writeError(w, http.StatusConflict, "already_member", "this account is already a member of the project")
+	case errors.Is(err, opsync.ErrProjectIDConflict):
+		writeError(w, http.StatusConflict, "project_id_conflict", "this project cannot be shared because another account has a project with the same id; duplicate it and share the copy")
 	case errors.Is(err, opsync.ErrInvalidMember):
 		writeError(w, http.StatusBadRequest, "invalid_input", strings.TrimPrefix(err.Error(), opsync.ErrInvalidMember.Error()+": "))
 	default:

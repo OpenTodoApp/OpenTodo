@@ -497,10 +497,7 @@ func (s *Server) originAllowed(r *http.Request) bool {
 	if cfgOrigin := s.cfg.Origin(); cfgOrigin != "" && strings.EqualFold(origin, cfgOrigin) {
 		return true
 	}
-	host := r.Host
-	if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
-		host = strings.TrimSpace(strings.Split(fwd, ",")[0])
-	}
+	host := requestHost(r)
 	return strings.EqualFold(origin, "http://"+host) || strings.EqualFold(origin, "https://"+host)
 }
 
@@ -795,6 +792,11 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// baseURLMailWarning tells the owner why emailed links are refused: they are
+// built from OPENTODO_BASE_URL only (harden-links-and-sharing).
+var baseURLMailWarning = config.Warning{Variable: "OPENTODO_BASE_URL",
+	Message: "outgoing email is configured but no base URL is set, so password resets, sign-up verification and invitations are not sent by email. Set OPENTODO_BASE_URL to the address people open OpenTodo at, such as https://todo.example.com, and restart."}
+
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	u := userFrom(r.Context())
 	st, err := s.auth.MFAStatusFor(r.Context(), u, sessionFrom(r.Context()) != nil)
@@ -818,9 +820,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {
-		warnings := s.cfg.Warnings
-		if warnings == nil {
-			warnings = []config.Warning{}
+		warnings := append([]config.Warning{}, s.cfg.Warnings...)
+		if s.cfg.Origin() == "" && s.mailEnabled(r.Context()) {
+			warnings = append(warnings, baseURLMailWarning)
 		}
 		out["config_warnings"] = warnings
 	}
@@ -960,7 +962,7 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 		s.internal(w, err)
 		return
 	}
-	link := s.publicOrigin(r) + "/invite/" + secret
+	link := s.inviteLinkOrigin(r, msg) + "/invite/" + secret
 	out := map[string]any{"invitation": inv, "link": link}
 	if in.Send {
 		msg.Vars.Link, msg.Vars.Expiry = link, ttl
@@ -1016,22 +1018,48 @@ func (s *Server) handlePreviewInvitation(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, p)
 }
 
-// publicOrigin is the base for links handed to users: the configured base URL
-// when set, otherwise the origin of the request (honouring the proxy headers the
-// origin check already trusts) so LAN installs still get a working link.
+// publicOrigin is the base for links handed to the signed-in user who asked for
+// them (CalDAV address, feeds, public links, copied invite links): the
+// configured base URL when set, otherwise the origin of the request, so LAN
+// installs still get a working link. Links that are mailed use mailLinkOrigin.
 func (s *Server) publicOrigin(r *http.Request) string {
 	if o := s.cfg.Origin(); o != "" {
 		return o
 	}
-	host := r.Host
-	if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
-		host = strings.TrimSpace(strings.Split(fwd, ",")[0])
-	}
 	scheme := "http"
-	if r.TLS != nil || strings.EqualFold(strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-Proto"), ",")[0]), "https") {
+	if r.TLS != nil || fromTrustedProxy(r) && strings.EqualFold(firstHeaderValue(r, "X-Forwarded-Proto"), "https") {
 		scheme = "https"
 	}
-	return scheme + "://" + host
+	return scheme + "://" + requestHost(r)
+}
+
+// requestHost is the host the client asked for: the request's Host, or
+// X-Forwarded-Host when the connection comes from a trusted proxy
+// (OPENTODO_TRUSTED_PROXIES). Anyone else could name any host in that header
+// (OpenSpec change harden-links-and-sharing).
+func requestHost(r *http.Request) string {
+	if fromTrustedProxy(r) {
+		if fwd := firstHeaderValue(r, "X-Forwarded-Host"); fwd != "" {
+			return fwd
+		}
+	}
+	return r.Host
+}
+
+func firstHeaderValue(r *http.Request, name string) string {
+	return strings.TrimSpace(strings.Split(r.Header.Get(name), ",")[0])
+}
+
+// mailLinkOrigin is the base for links that grant access and leave the server
+// by email (password reset, sign-up verification, invitations): the configured
+// base URL only, never anything taken from the request, which an anonymous
+// caller controls. Without one it writes 409 base_url_required and returns "".
+func (s *Server) mailLinkOrigin(w http.ResponseWriter) string {
+	o := s.cfg.Origin()
+	if o == "" {
+		writeError(w, http.StatusConflict, "base_url_required", "emailed links need the server's public address: the owner must set OPENTODO_BASE_URL")
+	}
+	return o
 }
 
 // ---- handlers: sync ----
@@ -1242,7 +1270,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 				// A retried keyed create must plan the same colour.
 				pick = int(id[0])
 			}
-			body["color"] = json.RawMessage(fmt.Sprintf("%q", labelPalette[pick%len(labelPalette)]))
+			body["color"] = json.RawMessage(opsync.QuoteJSON(labelPalette[pick%len(labelPalette)]))
 		}
 	}
 	if entity == "view" {

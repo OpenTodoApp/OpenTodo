@@ -619,7 +619,7 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 	}
 	for _, t := range tasks {
 		rows, err := tx.QueryContext(ctx, `SELECT scope_id, entity_id FROM scope_fields WHERE entity = 'reminder' AND field = 'task_id' AND value = ?`,
-			fmt.Sprintf("%q", t.id))
+			QuoteJSON(t.id))
 		if err != nil {
 			return nil, err
 		}
@@ -681,7 +681,7 @@ func scopesHolding(ctx context.Context, q querier, entity, id string) ([]string,
 // commentIDsOf lists the comments of a task inside a scope.
 func commentIDsOf(ctx context.Context, q querier, scope, taskID string) ([]string, error) {
 	rows, err := q.QueryContext(ctx, `SELECT entity_id FROM scope_fields WHERE scope_id = ? AND entity = 'comment' AND field = 'task_id' AND value = ? ORDER BY entity_id`,
-		scope, quoteID(taskID))
+		scope, QuoteJSON(taskID))
 	if err != nil {
 		return nil, err
 	}
@@ -706,7 +706,7 @@ func taskIDsWhere(ctx context.Context, q querier, scope, field, id string, delet
 // childIDsWhere is taskIDsWhere for any entity (sections of a project).
 func childIDsWhere(ctx context.Context, q querier, scope, entity, field, id string, deletedOnly bool) ([]string, error) {
 	query := `SELECT f.entity_id FROM scope_fields f WHERE f.scope_id = ? AND f.entity = ? AND f.field = ? AND f.value = ?`
-	args := []any{scope, entity, field, fmt.Sprintf("%q", id)}
+	args := []any{scope, entity, field, QuoteJSON(id)}
 	if deletedOnly {
 		query += ` AND EXISTS (SELECT 1 FROM scope_fields d WHERE d.scope_id = f.scope_id AND d.entity = f.entity AND d.entity_id = f.entity_id AND d.field = 'deleted_at' AND d.value != 'null')`
 	}

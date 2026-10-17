@@ -182,7 +182,8 @@ func (s *Server) mailSendError(w http.ResponseWriter, err error) {
 }
 
 // inviteMessage validates a `send` flag before anything is created (design D6)
-// and prepares the message: 400 without an email, 409 while unconfigured, 429
+// and prepares the message: 400 without an email, 409 while unconfigured or
+// without a base URL (the link is built from it, see mailLinkOrigin), 429
 // when a sending limit is full. ok is false when an error was written.
 func (s *Server) inviteMessage(w http.ResponseWriter, r *http.Request, send bool, email string, kind mail.Kind, inviter *auth.User, role string) (mail.Message, bool) {
 	if !send {
@@ -197,11 +198,24 @@ func (s *Server) inviteMessage(w http.ResponseWriter, r *http.Request, send bool
 		writeError(w, http.StatusConflict, "smtp_disabled", "outgoing email is not configured")
 		return mail.Message{}, false
 	}
-	m := mail.Message{Kind: kind, To: email, Lang: mail.LangFrom(r.Header.Get("Accept-Language")), Origin: s.publicOrigin(r),
+	origin := s.mailLinkOrigin(w)
+	if origin == "" {
+		return mail.Message{}, false
+	}
+	m := mail.Message{Kind: kind, To: email, Lang: mail.LangFrom(r.Header.Get("Accept-Language")), Origin: origin,
 		ActorID: inviter.ID, Vars: mail.Vars{Inviter: inviter.Name, Role: role}}
 	if s.mail.Limited(r.Context(), m) {
 		s.mailSendError(w, mail.ErrRateLimited)
 		return mail.Message{}, false
 	}
 	return m, true
+}
+
+// inviteLinkOrigin is the base of an invite link: the base URL of a prepared
+// message when it is mailed, otherwise the origin shown to the inviter.
+func (s *Server) inviteLinkOrigin(r *http.Request, msg mail.Message) string {
+	if msg.Origin != "" {
+		return msg.Origin
+	}
+	return s.publicOrigin(r)
 }

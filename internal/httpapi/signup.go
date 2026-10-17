@@ -23,10 +23,14 @@ func (s *Server) registerSignupRoutes(mux *http.ServeMux) {
 // address that already has an account gets the other message. Both answer the
 // same 202, and a failed send keeps the answer.
 func (s *Server) registerWithVerification(w http.ResponseWriter, r *http.Request, c credentials) {
+	origin := s.mailLinkOrigin(w)
+	if origin == "" {
+		return
+	}
 	ctx := context.WithoutCancel(r.Context())
 	lang := mail.LangFrom(r.Header.Get("Accept-Language"))
 	msg := mail.Message{Kind: mail.KindVerifySignup, To: strings.ToLower(strings.TrimSpace(c.Email)), Lang: lang,
-		Origin: s.publicOrigin(r), Vars: mail.Vars{Expiry: auth.SignupTTL}}
+		Origin: origin, Vars: mail.Vars{Expiry: auth.SignupTTL}}
 	accepted := func() { writeJSON(w, http.StatusAccepted, map[string]any{"verificationRequired": true}) }
 	if err := auth.CheckPasswordPolicy(c.Password); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
@@ -47,7 +51,7 @@ func (s *Server) registerWithVerification(w http.ResponseWriter, r *http.Request
 	}
 	msg.Vars.Existing = existing
 	if !existing {
-		msg.Vars.Link = s.publicOrigin(r) + "/verify/" + secret
+		msg.Vars.Link = origin + "/verify/" + secret
 	}
 	if err := s.mail.Send(ctx, msg); err != nil && secret != "" {
 		if cerr := s.auth.CancelSignup(ctx, secret); cerr != nil {
