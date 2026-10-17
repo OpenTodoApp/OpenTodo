@@ -161,7 +161,7 @@ describe('Share dialog', () => {
     expect(html).toContain('Sam Rivera')
     expect(html).toContain('Sharing changes: Disabled on this demo instance.')
     expect(html).not.toContain('>Share</button>')
-    expect(html).not.toContain('Make Sam Rivera the owner')
+    expect(html).not.toContain('Make owner: Sam Rivera')
     expect(html).not.toContain('Remove Sam Rivera')
   })
 

@@ -124,7 +124,7 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
                     onClick={() => void run(async () => { await api.removeMember(project.id, m.userId); return api.listMembers(project.id) })}>{t('Remove')}</button>
                 )}
                 {!locked && myRole === 'owner' && !self && (
-                  <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={t('Make {name} the owner', { name: m.name || m.email })}
+                  <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={busy} aria-label={t('Make owner: {name}', { name: m.name || m.email })}
                     onClick={() => setAsking({ kind: 'transfer', userId: m.userId, name: m.name || m.email })}>
                     {t('Make owner')}
                   </button>

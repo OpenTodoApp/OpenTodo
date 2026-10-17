@@ -607,7 +607,8 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "All": [
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/ui/Combobox/useCombobox.ts"
   ],
   "All changes": [
     "web/src/app/FeedView.tsx",
@@ -1590,8 +1591,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Collapse {name}": [
-    "web/src/app/Sidebar.tsx",
-    "web/src/ui/patterns/ListGroupHeader.tsx"
+    "web/src/app/Sidebar.tsx"
   ],
   "Collection URL": [
     "web/src/app/BackupsPanel.tsx"
@@ -2919,8 +2919,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Expand {name}": [
-    "web/src/app/Sidebar.tsx",
-    "web/src/ui/patterns/ListGroupHeader.tsx"
+    "web/src/app/Sidebar.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -4276,6 +4275,9 @@
   "Make owner": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Make owner: {name}": [
+    "web/src/app/ShareDialog.tsx"
+  ],
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
@@ -4284,9 +4286,6 @@
   ],
   "Make {name} an admin?": [
     "web/src/app/UsersPanel.tsx"
-  ],
-  "Make {name} the owner": [
-    "web/src/app/ShareDialog.tsx"
   ],
   "Make {name} the owner of “{project}”? You become an admin.": [
     "web/src/app/ShareDialog.tsx"
@@ -6538,14 +6537,14 @@
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "Restore this value: {field}, {value}": [
+    "web/src/app/HistoryPanel.tsx",
+    "web/src/app/task-detail/HistoryTab.tsx"
+  ],
   "Restore this version": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "Restore this version?": [
-    "web/src/app/task-detail/HistoryTab.tsx"
-  ],
-  "Restore {field} to {value}": [
-    "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "Restore {name}": [
@@ -7472,7 +7471,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Skip to content": [
-    "web/src/app/Shell.tsx"
+    "web/src/app/pageFocus.tsx"
   ],
   "Skip to the next task": [
     "web/src/lib/shortcuts.ts"
@@ -11532,7 +11531,7 @@
     "web/src/lib/reminderTime.ts"
   ],
   "{page} – OpenTodo": [
-    "web/src/app/pageFocus.ts"
+    "web/src/app/pageFocus.tsx"
   ],
   "{pct}% of your {cap, number}-token limit, resets {date}": [
     "web/src/app/assistant/AssistantSettings.tsx"

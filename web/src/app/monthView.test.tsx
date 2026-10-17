@@ -114,7 +114,7 @@ describe('month grid', () => {
     const id = await createTask({ title: 'Theirs', due: { date: '2026-11-20' }, project_id: 'shared' })
     const r = await render(<MonthView />)
     await waitFor(() => r.container.querySelector(`[data-month-task="${id}"]`) !== null)
-    expect(r.container.querySelector(`[data-month-task="${id}"]`)!.getAttribute('aria-label')).toContain('read-only')
+    expect(r.container.querySelector(`[data-month-task="${id}"]`)!.textContent).toContain('read-only')
     await click(r.container.querySelector(`[data-month-task="${id}"]`)!)
     await key(document.body, 'ArrowRight')
     await flush(50)
