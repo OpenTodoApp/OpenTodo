@@ -2535,6 +2535,7 @@
   "The server refused a change: {detail}": "O servidor recusou uma alteração: {detail}",
   "The server refused the file ({status}).": "O servidor recusou o arquivo ({status}).",
   "The server restarts. Everyone is briefly disconnected.": "O servidor reinicia. Todos ficam desconectados por um instante.",
+  "The server sent an answer this app does not understand. Your changes stay on this device.": "O servidor enviou uma resposta que esta aplicação não entende. As suas alterações ficam neste dispositivo.",
   "The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.": "O servidor ainda guarda este texto sem criptografia; ele é criptografado após a próxima sincronização de um dispositivo desbloqueado.",
   "The server’s assistant": "O assistente do servidor",
   "The server’s database is unavailable.": "O banco de dados do servidor está indisponível.",

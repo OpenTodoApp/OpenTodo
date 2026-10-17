@@ -8232,6 +8232,9 @@
   "The server restarts. Everyone is briefly disconnected.": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "The server sent an answer this app does not understand. Your changes stay on this device.": [
+    "web/src/lib/sync.ts"
+  ],
   "The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.": [
     "web/src/app/TaskRow.tsx"
   ],

@@ -3,8 +3,8 @@
 // which replaces the local cache, so all devices converge on the server's member
 // list and roles. Everything here reads the cache, so roles render the same offline.
 import { forgetEntities } from './activity'
-import { db, entityTables, getMeta, setMeta } from './db'
-import type { Clock, Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
+import { db, entityTables, getMeta, setMeta, syncedTables, tableOf } from './db'
+import type { Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
 import { t } from './i18n'
 
 /** The local scope label of a project: its own scope when shared, else the user's personal scope. */
@@ -149,24 +149,6 @@ export interface RejectedNotice {
   assignments?: number
 }
 
-type Row = Record<string, unknown> & { id: string; _clock?: Clock }
-
-function tableFor(entity: Entity) {
-  switch (entity) {
-    case 'project': return db.projects
-    case 'label': return db.labels
-    case 'view': return db.views
-    case 'reminder': return db.reminders
-    case 'section': return db.sections
-    case 'comment': return db.comments
-    case 'project_prefs': return db.prefs
-    case 'user_prefs': return db.userPrefs
-    case 'attachment': return db.attachments
-    case 'review': return db.review
-    default: return db.tasks
-  }
-}
-
 /**
  * First half of handling refused ops (design D3): forget the local winner clock of
  * every refused field so the server's value, which travels in the same response,
@@ -187,7 +169,7 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
       if (!op) continue
       count++
       if (r.reason === 'not_a_member') assignments++
-      const table = tableFor(op.entity) as unknown as { get(id: string): Promise<Row | undefined>; put(v: Row): Promise<unknown> }
+      const table = tableOf(op.entity)
       const row = await table.get(op.entityId)
       if (!row) continue
       keys.add(`${op.entity}:${op.entityId}`)
@@ -226,12 +208,12 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
  */
 export async function dropUnconfirmed(keys: string[]): Promise<void> {
   if (keys.length === 0) return
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments], async () => {
+  await db.transaction('rw', syncedTables(), async () => {
     for (const key of keys) {
       const i = key.indexOf(':')
       const entity = key.slice(0, i) as Entity
       const id = key.slice(i + 1)
-      const table = tableFor(entity) as unknown as { get(id: string): Promise<Row | undefined>; delete(id: string): Promise<void> }
+      const table = tableOf(entity)
       const row = await table.get(id)
       if (row && Object.keys(row._clock ?? {}).length === 0) await table.delete(id)
     }

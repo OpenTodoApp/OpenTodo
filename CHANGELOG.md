@@ -4,6 +4,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **Pasting into notes is safer.** The rich-text editor's ProseMirror view is updated to 1.42.6, which fixes a published issue with pasted content (GHSA-c8x8-7fp4-3x9w).
+- **Links are encrypted with the rest of your data.** Turning end-to-end encryption on now also encrypts the address and name of links you attached before, and turning it off decrypts them again. Each link is replaced by a copy in the new form; the old one moves to the Trash. ([End-to-end encryption](docs/e2ee.md))
+
+### Fixed
+
+- **A proxy page no longer loses unsynced changes.** When something between the app and the server (a proxy, a captive portal) answered a sync with its own page, changes made offline were dropped. They now stay on the device and upload on the next sync, and the status says the answer was not understood.
+- **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.
+- **Custom fields survive a server restore.** After the server is restored from a backup, devices now send their custom field definitions back with everything else.
+- **Refused custom field and link changes are handled.** A custom field change the server refused now shows the server's value, and a refused attachment no longer stops syncing.
+
 ### Added
 
 - **Templates for six more ways to run OpenTodo.** A Helm chart for Kubernetes (one pod with a persistent volume, an optional Ingress, a generated setup token, a locked-down pod), published with each release to `oci://ghcr.io/pixari/charts/opentodo`; a Podman Quadlet that runs OpenTodo as a systemd service, kept up to date by `podman auto-update`; a CapRover one-click app; a `fly.toml` for Fly.io; a Render Blueprint with a Deploy to Render button; and a Container Manager project for Synology DSM 7.2+. Each is checked by `make check` and has a guide. ([Kubernetes](docs/self-hosting/kubernetes.md), [Podman](docs/self-hosting/podman.md), [CapRover](docs/self-hosting/caprover.md), [Fly.io](docs/self-hosting/fly.md), [Render](docs/self-hosting/render.md), [Synology](docs/self-hosting/synology.md))
