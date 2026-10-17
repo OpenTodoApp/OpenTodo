@@ -31,7 +31,11 @@ func TestExpandOldSeriesIsFastAndComplete(t *testing.T) {
 	w := StoreWindow(day("2026-10-17"))
 	start := time.Now()
 	occ, warns := Expand(events, w, MaxOccurrences)
-	if took := time.Since(start); took > 2*time.Second {
+	limit := 2 * time.Second
+	if raceEnabled {
+		limit = 30 * time.Second
+	}
+	if took := time.Since(start); took > limit {
 		t.Errorf("expansion took %v", took)
 	}
 	if len(occ) != MaxOccurrences || !strings.Contains(strings.Join(warns, "|"), "5000") {

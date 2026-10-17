@@ -2,13 +2,14 @@
 # Single-container build: static Go binary with the compiled web app embedded.
 # Final image is distroless (no shell, non-root) and well under 50 MB.
 
-ARG GO_VERSION=1.26.9
-ARG NODE_VERSION=22
+# Base images are pinned by digest next to their tag (OpenSpec ci-release-gates), so a
+# rebuild of the same commit uses the same bases; Dependabot proposes new digests. The
+# golang tag names the go.mod toolchain (scripts/repo-checks.test.mjs keeps them equal).
 
 # ---- 1. web app -------------------------------------------------------------
 # Build stages run on the builder's native platform; Go cross-compiles for the
 # target, so a multi-arch build never emulates a compiler under QEMU.
-FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-alpine AS web
+FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -21,7 +22,7 @@ COPY internal/digest/testdata/stats_fixture.json /src/internal/digest/testdata/s
 RUN mkdir -p /src/internal/web && npm run build
 
 # ---- 2. server --------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.26.9-alpine@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec66b295eff4dd87ade AS build
 ARG VERSION=dev
 ARG TARGETOS
 ARG TARGETARCH
@@ -41,7 +42,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     && mkdir -p /out/data && chown 65532:65532 /out/data
 
 # ---- 3. runtime -------------------------------------------------------------
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 LABEL org.opencontainers.image.title="OpenTodo" \
       org.opencontainers.image.description="Your tasks, your server. Open-source, local-first task manager." \
       org.opencontainers.image.source="https://github.com/pixari/opentodo" \

@@ -11,7 +11,7 @@ files=$(cat)
 code_files=$(printf '%s\n' "$files" | grep -vxF 'web/src/generated/help.json' || true)
 code=false
 docs=false
-if printf '%s\n' "$code_files" | grep -qE '^(internal/|cmd/|web/|extension/|deploy/|skills/|go\.(mod|sum)$|Dockerfile|docker-compose\.yml$|Makefile$|\.github/|scripts/(e2e-layout|cli-smoke|ui-check|coolify|deploy|ci-changes|repo-checks))'; then
+if printf '%s\n' "$code_files" | grep -qE '^(internal/|cmd/|web/|extension/|deploy/|skills/|go\.(mod|sum)$|Dockerfile|\.dockerignore$|docker-compose\.yml$|Makefile$|\.github/|scripts/(e2e-layout|e2e-smoke|e2e-views|cli-smoke|ui-check|coolify|deploy|ci-changes|repo-checks))'; then
   code=true
 fi
 if printf '%s\n' "$files" | grep -qE '^(docs/|website/|web/src/generated/help\.json$|CHANGELOG\.md$|README\.md$|openspec/|scripts/(site-bundle|e2e-docs|screenshots|docs-screenshots))'; then
