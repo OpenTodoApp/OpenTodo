@@ -2,7 +2,7 @@
 # Single-container build: static Go binary with the compiled web app embedded.
 # Final image is distroless (no shell, non-root) and well under 50 MB.
 
-ARG GO_VERSION=1.26
+ARG GO_VERSION=1.26.9
 ARG NODE_VERSION=22
 
 # ---- 1. web app -------------------------------------------------------------

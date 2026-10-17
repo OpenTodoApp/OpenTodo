@@ -253,7 +253,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](docs/backups.md#environment-presets) (`DESTINATION`, `SCHEDULE`, `TIME`, `WEEKDAY`, `KEEP`, `MAX_AGE_DAYS`, `COMPRESS`, `LOCAL_DIR`, `S3_*`, `WEBDAV_*`, `PASSPHRASE`/`PASSPHRASE_FILE`), applied once; Settings → Backups wins afterwards |
 | `OPENTODO_HOST_URL`, `_TOKEN`, `_OPERATOR_ADDR`, `_IDLE_MINUTES`, `_MAX_OPEN`, `_LIMITS` | unset (off) | [Host mode](docs/self-hosting/host-mode.md) for operators of a hosted service: many tenants in one process, chosen by host name. Not needed to self-host |
 
-`OPENTODO_PORT` in `.env` only changes the host port published by `docker-compose.yml`. The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
+`OPENTODO_PORT` and `OPENTODO_BIND` in `.env` only change the host port and address published by `docker-compose.yml` (default `0.0.0.0:8080`, every interface; behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice). The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
 
 ## Adding people
 

@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png _locales
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint i18n-check
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint i18n-check repo-check
 
 all: build
 
@@ -169,7 +169,11 @@ deploy-check:
 	node --test scripts/coolify-template-check.test.mjs scripts/deploy/*.test.mjs scripts/site-bundle.test.mjs
 	node scripts/deploy-check.mjs
 
-check: lint test ui-lint i18n-check docs-check openspec-validate deploy-check
+## CI path filter cases, the shared Go toolchain (go.mod, Dockerfile, CI) and compose defaults.
+repo-check:
+	node --test scripts/repo-checks.test.mjs
+
+check: lint test ui-lint i18n-check docs-check openspec-validate deploy-check repo-check
 
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
