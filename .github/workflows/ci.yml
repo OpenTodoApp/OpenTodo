@@ -94,6 +94,8 @@ jobs:
           want=$(sed -n 's/^toolchain //p' go.mod)
           go version | grep -q " $want " || { go version; echo "expected the go.mod toolchain $want"; exit 1; }
       - run: go vet ./...
+      - name: staticcheck (version pinned in the Makefile)
+        run: make staticcheck
       # Fails on vulnerabilities the code can reach (OpenSpec release-hygiene).
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...

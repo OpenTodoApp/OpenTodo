@@ -90,7 +90,7 @@ var (
 	reItem     = regexp.MustCompile(`(?i)<li\b[^>]*>`)
 	reCell     = regexp.MustCompile(`(?i)</t[dh]\s*>`)
 	reTag      = regexp.MustCompile(`(?s)</?[a-zA-Z!][^>]*>`)
-	reSpaces   = regexp.MustCompile(`[ \t\f\v ​]+`)
+	reSpaces   = regexp.MustCompile(`[ \t\f\v\x{00a0}\x{200b}]+`)
 	maxLinkLen = 300
 )
 

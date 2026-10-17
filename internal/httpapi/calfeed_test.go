@@ -116,6 +116,7 @@ func TestCalendarFeedsSubscriptionsAndEvents(t *testing.T) {
 		t.Fatalf("patched = %v", s)
 	}
 	resp, out = e.do("GET", "/api/v1/calendar-feeds/events?from=2026-10-19&to=2026-10-26", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["events"].([]any)) != 0 {
 		t.Fatal("a disabled subscription's events are listed")
 	}
@@ -184,6 +185,7 @@ func TestCalendarFeedURL(t *testing.T) {
 	}
 	// The URL is returned once: the GET only describes it.
 	resp, out = e.do("GET", "/api/v1/calendar-feeds/feed", nil)
+	e.mustStatus(resp, 200, out)
 	if out["url"] != nil || out["feed"] == nil {
 		t.Fatalf("describe = %v", out)
 	}

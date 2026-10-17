@@ -202,6 +202,7 @@ func TestPublicTick(t *testing.T) {
 	resp, out = anon.do("POST", "/api/v1/public/"+tick+"/tick", map[string]any{"taskId": plants, "completed": true})
 	anon.mustStatus(resp, 200, out)
 	resp, out = se.alice.do("GET", "/api/v1/tasks/"+plants, nil)
+	se.alice.mustStatus(resp, 200, out)
 	if out["completed_at"] != nil || out["due"].(map[string]any)["date"] == "2026-10-12" {
 		t.Fatalf("recurring after tick = %v", out)
 	}

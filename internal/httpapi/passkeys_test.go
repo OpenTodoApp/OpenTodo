@@ -102,6 +102,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
 	resp, out = e.do("GET", "/api/v1/auth/status", nil)
+	e.mustStatus(resp, 200, out)
 	if out["passkeysAvailable"] != true {
 		t.Fatalf("status = %v", out)
 	}
@@ -143,6 +144,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 	resp, out = other.do("GET", "/api/v1/me", nil)
 	other.mustStatus(resp, 200, out)
 	resp, out = other.do("GET", "/api/v1/passkeys", nil)
+	other.mustStatus(resp, 200, out)
 	for _, p := range out["passkeys"].([]any) {
 		pm := p.(map[string]any)
 		if pm["name"] == "Phone" && pm["lastUsedAt"] == nil {
@@ -161,6 +163,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 
 	// Replayed challenge: the same assertion a second time.
 	resp, out = other.do("POST", "/api/v1/auth/passkey/options", map[string]any{})
+	other.mustStatus(resp, 200, out)
 	challenge, _ := webauthn.DecodeBase64URL(out["publicKey"].(map[string]any)["challenge"].(string))
 	cd, ad, sig := laptop.Assert(t, testRPID, testOrigin, challenge)
 	body := map[string]any{"credential": credentialJSON(laptop.CredentialID, map[string]any{
@@ -177,6 +180,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 
 	// Wrong origin in a registration is invalid_input and stores nothing.
 	resp, out = e.do("POST", "/api/v1/passkeys/register/options", map[string]any{})
+	e.mustStatus(resp, 200, out)
 	challenge, _ = webauthn.DecodeBase64URL(out["publicKey"].(map[string]any)["challenge"].(string))
 	evil := testauth.New(t, webauthn.AlgES256)
 	cd, att := evil.Register(t, testRPID, "https://evil.example", challenge)
@@ -195,6 +199,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 		t.Fatalf("encoding error = %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/passkeys", nil)
+	e.mustStatus(resp, 200, out)
 	if n := len(out["passkeys"].([]any)); n != 2 {
 		t.Fatalf("passkeys after failures = %d", n)
 	}
@@ -228,6 +233,7 @@ func TestPasskeyCounterRegressionOverHTTP(t *testing.T) {
 		t.Fatalf("regression = %d %v", resp.StatusCode, out)
 	}
 	resp, out = e.do("GET", "/api/v1/passkeys", nil)
+	e.mustStatus(resp, 200, out)
 	if out["passkeys"].([]any)[0].(map[string]any)["suspiciousAt"] == nil {
 		t.Fatalf("not flagged: %v", out)
 	}
@@ -269,6 +275,7 @@ func TestPasskeyRoutesAuth(t *testing.T) {
 		t.Fatalf("foreign delete = %d %v", resp.StatusCode, out)
 	}
 	resp, out = member.do("GET", "/api/v1/passkeys", nil)
+	member.mustStatus(resp, 200, out)
 	if n := len(out["passkeys"].([]any)); n != 0 {
 		t.Fatalf("member sees %d foreign passkeys", n)
 	}
@@ -282,6 +289,7 @@ func TestPasskeyRoutesAuth(t *testing.T) {
 		resp, out := plain.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 		plain.mustStatus(resp, 201, out)
 		resp, out = plain.do("GET", "/api/v1/auth/status", nil)
+		plain.mustStatus(resp, 200, out)
 		if out["passkeysAvailable"] != false {
 			t.Fatalf("base %q status = %v", base, out)
 		}
@@ -303,6 +311,7 @@ func TestPasskeyRoutesAuth(t *testing.T) {
 	// An https base URL reports availability (cookies are Secure there, so only status is checked).
 	secure := newEnvWithBase(t, "https://todo.example.com", false)
 	resp, out = secure.do("GET", "/api/v1/auth/status", nil)
+	secure.mustStatus(resp, 200, out)
 	if out["passkeysAvailable"] != true {
 		t.Fatalf("https status = %v", out)
 	}

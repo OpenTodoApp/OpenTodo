@@ -54,6 +54,7 @@ func TestNotificationRoutesAuthAndOwnership(t *testing.T) {
 		}
 	}
 	resp, out = se.bob.do("GET", "/api/v1/notifications", nil)
+	se.bob.mustStatus(resp, 200, out)
 	if out["unread"].(float64) != 1 {
 		t.Fatalf("foreign mark changed state: %v", out)
 	}
@@ -63,6 +64,7 @@ func TestNotificationRoutesAuthAndOwnership(t *testing.T) {
 		se.bob.mustStatus(resp, 204, out)
 	}
 	resp, out = se.bob.do("GET", "/api/v1/notifications", nil)
+	se.bob.mustStatus(resp, 200, out)
 	if out["unread"].(float64) != 0 || out["notifications"].([]any)[0].(map[string]any)["readAt"] == nil {
 		t.Fatalf("after read = %v", out)
 	}

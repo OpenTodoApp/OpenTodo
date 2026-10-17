@@ -219,6 +219,7 @@ func TestInvitationPreviewAndAccept(t *testing.T) {
 
 	// Exactly one member was admitted.
 	resp, out = anon.do("GET", "/api/v1/auth/status", nil)
+	anon.mustStatus(resp, 200, out)
 	if out["signupAllowed"] != false {
 		t.Fatalf("sign-up must stay closed: %v", out)
 	}

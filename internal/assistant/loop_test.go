@@ -205,7 +205,15 @@ func TestLoopProposesWithoutWriting(t *testing.T) {
 	if len(res.Changes) != 12 {
 		t.Fatalf("change set has %d items, want 12", len(res.Changes))
 	}
+	want := map[string]bool{}
+	for _, id := range overdue {
+		want[id] = true
+	}
 	for _, c := range res.Changes {
+		if !want[c.EntityID] {
+			t.Fatalf("change for %q, which is not one of the overdue tasks", c.EntityID)
+		}
+		delete(want, c.EntityID)
 		if c.Entity != "task" || string(c.Patch["due"]) != `{"date":"2026-10-16"}` || c.Base["due"] == nil || c.Create {
 			t.Fatalf("change %+v", c)
 		}
