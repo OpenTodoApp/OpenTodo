@@ -52,8 +52,18 @@ type Server struct {
 	blobs *blobs.Store
 	// attachmentLimiter caps uploads per account (120/hour, attachments D5).
 	attachmentLimiter *rateLimiter
-	// limiter guards the unauthenticated auth routes per client IP (10/min).
-	limiter *rateLimiter
+	// One limiter per purpose, per client address, 10 a minute each
+	// (trusted-client-identity): limiter counts failed password sign-ins,
+	// registerLimiter registrations and sign-up links, resetLimiter password
+	// reset requests and links, invitePreviewLimiter invitation and project
+	// invite links, publicLinkLimiter unknown public links, mcpLimiter MCP
+	// requests without a valid token and passkeyLimiter passkey sign-ins.
+	limiter, registerLimiter, resetLimiter, invitePreviewLimiter *rateLimiter
+	publicLinkLimiter, mcpLimiter, passkeyLimiter                *rateLimiter
+	// accountLimiter counts failed passwords, second-factor codes and
+	// re-authentications per account (accountFailures in 15 minutes), on top of
+	// the per-address limits.
+	accountLimiter *rateLimiter
 	// passkeyOptions limits anonymous passkey challenge requests separately, so
 	// the sign-in screen's autofill request does not use up password attempts.
 	passkeyOptions *rateLimiter
@@ -160,6 +170,10 @@ func (s *Server) opTS() int64 {
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
+		registerLimiter: newRateLimiter(10, time.Minute), resetLimiter: newRateLimiter(10, time.Minute),
+		invitePreviewLimiter: newRateLimiter(10, time.Minute), publicLinkLimiter: newRateLimiter(10, time.Minute),
+		mcpLimiter: newRateLimiter(10, time.Minute), passkeyLimiter: newRateLimiter(10, time.Minute),
+		accountLimiter: newRateLimiter(accountFailures, accountWindow),
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
@@ -182,6 +196,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		o(s)
 	}
 	setTrustedProxies(cfg.TrustedProxies, cfg.TrustCloudflare)
+	s.announceSetupCode()
 	if err := s.loadIdempotencySalt(context.Background()); err != nil {
 		// Without a stored salt keyed ids still derive per user; they are only
 		// guessable by someone who knows the user id and the key.
@@ -501,10 +516,17 @@ func (s *Server) originAllowed(r *http.Request) bool {
 	if origin == "" {
 		return true
 	}
-	if cfgOrigin := s.cfg.Origin(); cfgOrigin != "" && strings.EqualFold(origin, cfgOrigin) {
+	cfgOrigin := s.cfg.Origin()
+	if cfgOrigin != "" && strings.EqualFold(origin, cfgOrigin) {
 		return true
 	}
 	host := requestHost(r)
+	// With a base URL the request must also be addressed to its host, so a page
+	// under another name that resolves here (DNS rebinding) is cross-site
+	// (trusted-client-identity).
+	if cfgOrigin != "" && !strings.EqualFold(host, s.cfg.BaseURL.Host) {
+		return false
+	}
 	return strings.EqualFold(origin, "http://"+host) || strings.EqualFold(origin, "https://"+host)
 }
 
@@ -515,6 +537,11 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "same-origin")
 		h.Set("Permissions-Policy", "camera=(), geolocation=()")
+		if s.cfg.SecureCookies() {
+			// The base URL is https: browsers keep to it for a year
+			// (trusted-client-identity); no includeSubDomains, no preload.
+			h.Set("Strict-Transport-Security", "max-age=31536000")
+		}
 		if !strings.HasPrefix(r.URL.Path, "/api/") {
 			h.Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
 		}
@@ -585,6 +612,9 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"oidc":          s.oidcStatus(r.Context()),
 		"outgoingEmail": map[string]bool{"enabled": s.mailEnabled(r.Context())},
 	}
+	// Without a token, a client outside the local network needs the setup code
+	// from the server log (trusted-client-identity).
+	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalAddr(clientIP(r))
 	if s.hosted {
 		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
 		out["hosted"] = true
@@ -624,7 +654,7 @@ type credentials struct {
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.registerLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -659,10 +689,15 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	u, err := s.auth.RegisterWithSetupToken(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken)
+	// Without a setup token, a first registration from a public address needs
+	// the setup code from the server log (trusted-client-identity).
+	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalAddr(clientIP(r)))
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
+		return
+	case errors.Is(err, auth.ErrSetupCodeInvalid):
+		writeError(w, http.StatusForbidden, "setup_code_invalid", err.Error())
 		return
 	case errors.Is(err, auth.ErrMemberLimit):
 		writeError(w, http.StatusForbidden, "limit_members", err.Error())
@@ -692,7 +727,9 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if allowed, first := s.limiter.hit(clientIP(r)); !allowed {
+	// Only failures count against the address (trusted-client-identity).
+	ip := clientIP(r)
+	if blocked, first := s.limiter.check(ip); blocked {
 		// One event per window and address once limiting kicks in, instead of one
 		// per refused attempt, so credential stuffing cannot flood the log.
 		if first {
@@ -710,8 +747,18 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
+	key, err := s.loginAccountKey(r.Context(), c.Email)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if s.accountLocked(w, r, key) {
+		return
+	}
 	u, err := s.auth.Authenticate(r.Context(), c.Email, c.Password)
 	if errors.Is(err, auth.ErrInvalidCredentials) {
+		s.limiter.hit(ip)
+		s.accountLimiter.hit(key)
 		var f *auth.LoginFailure
 		if errors.As(err, &f) {
 			s.audit.Record(r.Context(), audit.LoginFailed(f.UserID, f.Email, f.Reason))
@@ -770,8 +817,10 @@ func (s *Server) issueSession(w http.ResponseWriter, r *http.Request, u *auth.Us
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: secret, Path: "/", Expires: exp,
-		HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode,
+		HttpOnly: true, Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode,
 	})
+	// A successful sign-in clears the account's failed attempts.
+	s.accountLimiter.reset(accountKey(u.ID))
 	return secret, true
 }
 
@@ -789,7 +838,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode})
 	// Provider sign-out (oidc-login D7): the local session is already gone; the
 	// client follows the redirect to the provider's end-session endpoint.
 	if redirect != "" {
@@ -992,11 +1041,11 @@ func (s *Server) handleRevokeInvitation(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// handlePreviewInvitation is public: the invitee has no account yet. It shares
-// the sign-in limiter so token guessing is as expensive as password guessing,
+// handlePreviewInvitation is public: the invitee has no account yet. The
+// invite-link limiter makes token guessing as expensive as password guessing,
 // and every failure is the same 404.
 func (s *Server) handlePreviewInvitation(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.invitePreviewLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -1021,7 +1070,7 @@ func (s *Server) publicOrigin(r *http.Request) string {
 		return o
 	}
 	scheme := "http"
-	if r.TLS != nil || fromTrustedProxy(r) && strings.EqualFold(firstHeaderValue(r, "X-Forwarded-Proto"), "https") {
+	if requestIsHTTPS(r) {
 		scheme = "https"
 	}
 	return scheme + "://" + requestHost(r)
@@ -1848,7 +1897,10 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
 }
 
-// rateLimiter is a fixed-window per-key counter, enough to blunt password guessing.
+// rateLimiter is a fixed-window per-key counter, enough to blunt password
+// guessing. Keys that are IPv6 addresses count per /64 (addrKey). Expired
+// windows are removed by a background sweep, never while counting a hit
+// (trusted-client-identity).
 type rateLimiter struct {
 	mu     sync.Mutex
 	limit  int
@@ -1857,21 +1909,59 @@ type rateLimiter struct {
 }
 
 type window struct {
-	start time.Time
-	count int
+	start   time.Time
+	count   int
+	refused int // refusals counted by check
 }
 
 func newRateLimiter(limit int, w time.Duration) *rateLimiter {
-	return &rateLimiter{limit: limit, window: w, hits: map[string]*window{}}
+	l := &rateLimiter{limit: limit, window: w, hits: map[string]*window{}}
+	limiterSweeper.add(l)
+	return l
 }
 
 // blocked reports whether key already used up its window, without counting an
 // attempt (callers that count only failures check this first, then hit).
 func (l *rateLimiter) blocked(key string) bool {
+	key = addrKey(key)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	w, ok := l.hits[key]
 	return ok && time.Since(w.start) <= l.window && w.count >= l.limit
+}
+
+// check is blocked plus firstRefusal: true for exactly one refused check per
+// window, so callers log one event per window instead of one per attempt.
+func (l *rateLimiter) check(key string) (blocked, firstRefusal bool) {
+	key = addrKey(key)
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	w, ok := l.hits[key]
+	if !ok || time.Since(w.start) > l.window || w.count < l.limit {
+		return false, false
+	}
+	w.refused++
+	return true, w.refused == 1
+}
+
+// retryAfter is how long until key's window ends (0 when it is not blocked).
+func (l *rateLimiter) retryAfter(key string) time.Duration {
+	key = addrKey(key)
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	w, ok := l.hits[key]
+	if !ok || w.count < l.limit {
+		return 0
+	}
+	return max(0, l.window-time.Since(w.start))
+}
+
+// reset forgets key's attempts (a successful sign-in clears its failures).
+func (l *rateLimiter) reset(key string) {
+	key = addrKey(key)
+	l.mu.Lock()
+	delete(l.hits, key)
+	l.mu.Unlock()
 }
 
 func (l *rateLimiter) allow(key string) bool {
@@ -1882,16 +1972,10 @@ func (l *rateLimiter) allow(key string) bool {
 // hit counts one attempt for key. firstRefusal is true for exactly one refused
 // attempt per window: the first one over the limit.
 func (l *rateLimiter) hit(key string) (allowed, firstRefusal bool) {
+	key = addrKey(key)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
-	if len(l.hits) > 10000 {
-		for k, v := range l.hits {
-			if now.Sub(v.start) > l.window {
-				delete(l.hits, k)
-			}
-		}
-	}
 	w, ok := l.hits[key]
 	if !ok || now.Sub(w.start) > l.window {
 		l.hits[key] = &window{start: now, count: 1}
@@ -1899,4 +1983,15 @@ func (l *rateLimiter) hit(key string) (allowed, firstRefusal bool) {
 	}
 	w.count++
 	return w.count <= l.limit, w.count == l.limit+1
+}
+
+// sweep removes the windows that ended before now.
+func (l *rateLimiter) sweep(now time.Time) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for k, v := range l.hits {
+		if now.Sub(v.start) > l.window {
+			delete(l.hits, k)
+		}
+	}
 }

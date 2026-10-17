@@ -62,7 +62,7 @@ func (s *Server) registerWithVerification(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) handlePreviewSignup(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.registerLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -79,7 +79,7 @@ func (s *Server) handlePreviewSignup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCompleteSignup(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if !s.registerLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}

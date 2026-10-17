@@ -12,6 +12,7 @@ import { currentLanguage, msg, t } from './catalog'
 /** One translatable message per code; `{detail}` is the server's English message. */
 export const ERROR_MESSAGES: Record<string, string> = {
   account_active: msg('This account is already active.'),
+  account_locked: msg('Too many failed attempts for this account. Wait 15 minutes and try again.'),
   account_deactivated: msg('This account has been deactivated. Ask the server owner or an admin.'),
   already_member: msg('This account is already a member of the project.'),
   already_uploaded: msg('This file is already stored.'),
@@ -99,6 +100,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   scope_change: msg('This change would move the item out of its project’s sharing.'),
   self_action: msg('You cannot do this to your own account.'),
   session_required: msg('This needs a signed-in browser session, not an API token.'),
+  setup_code_invalid: msg('That setup code is not right. Copy it from the server log and try again.'),
   setup_token_invalid: msg('The setup token is missing or wrong.'),
   signup_closed: msg('Sign-up is disabled on this server.'),
   smtp_disabled: msg('Outgoing email is not available on this server.'),

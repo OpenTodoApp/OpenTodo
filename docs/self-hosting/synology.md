@@ -59,7 +59,7 @@ Change them in the project's YAML (**Project → opentodo → YAML Configuration
 | `OPENTODO_BASE_URL` | empty | Leave empty when you open OpenTodo by the NAS's address. Behind the reverse proxy, set the https address people open, for example `https://todo.example.com`. |
 | `OPENTODO_SETUP_TOKEN` | empty | Optional, 16+ characters. When set, creating the owner account asks for it, so a stranger cannot claim the server first. |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
-| `OPENTODO_TRUSTED_PROXIES` | empty | Leave it empty behind DSM's reverse proxy (OpenTodo trusts the nearest proxy). Set `cloudflare` if Cloudflare's proxy sits in front. |
+| `OPENTODO_TRUSTED_PROXIES` | empty | Leave it empty behind DSM's reverse proxy (OpenTodo trusts proxies on loopback and private addresses). Set `cloudflare` if Cloudflare's proxy sits in front. |
 
 Other `OPENTODO_*` variables are in the [configuration table](https://github.com/pixari/opentodo#configuration).
 

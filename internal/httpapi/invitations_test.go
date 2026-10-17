@@ -231,13 +231,15 @@ func TestInvitationLinkUsesRequestOrigin(t *testing.T) {
 	if link := out["link"].(string); !strings.HasPrefix(link, e.srv.URL+"/invite/oti_") {
 		t.Fatalf("link = %q, want prefix %s/invite/oti_", link, e.srv.URL)
 	}
-	// Forwarded headers count only from a trusted proxy (harden-links-and-sharing).
+	// Forwarded headers count only from a trusted proxy (harden-links-and-sharing);
+	// a configured list replaces the default (trusted-client-identity).
+	t.Cleanup(func() { setTrustedProxies(nil, false) })
+	setTrustedProxies([]netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")}, false)
 	resp, out = e.do("POST", "/api/v1/invitations", map[string]any{}, "X-Forwarded-Host", "todo.example.com", "X-Forwarded-Proto", "https")
 	e.mustStatus(resp, 201, out)
 	if link := out["link"].(string); !strings.HasPrefix(link, e.srv.URL+"/invite/oti_") {
 		t.Fatalf("untrusted proxied link = %q", link)
 	}
-	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	setTrustedProxies([]netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}, false)
 	resp, out = e.do("POST", "/api/v1/invitations", map[string]any{}, "X-Forwarded-Host", "todo.example.com", "X-Forwarded-Proto", "https")
 	e.mustStatus(resp, 201, out)
@@ -257,7 +259,16 @@ func TestInvitationPreviewRateLimited(t *testing.T) {
 	if last != http.StatusTooManyRequests {
 		t.Fatalf("expected 429 after repeated previews, got %d", last)
 	}
-	// Acceptance shares the same per-IP window through the register route.
+	// Acceptance through the register route has its own per-IP window
+	// (trusted-client-identity: one limiter per purpose).
+	anon = newClientAt(e, "203.0.113.77")
+	for i := 0; i < 12; i++ {
+		anon.do("GET", "/api/v1/invitations/oti_guess", nil)
+	}
+	for i := 0; i < 10; i++ {
+		resp, out := anon.do("POST", "/api/v1/auth/register", map[string]string{"email": "x@example.com", "password": "another long password", "invitation": "oti_guess"})
+		anon.mustStatus(resp, 404, out)
+	}
 	resp, out := anon.do("POST", "/api/v1/auth/register", map[string]string{"email": "x@example.com", "password": "another long password", "invitation": "oti_guess"})
 	anon.mustStatus(resp, 429, out)
 	if errCode(out) != "rate_limited" {

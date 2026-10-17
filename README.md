@@ -166,7 +166,7 @@ docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
   ghcr.io/pixari/opentodo:stable
 ```
 
-Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.6` follows the 0.6 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
+Open <http://localhost:8080> and create the owner account. Opened from outside your local network, the setup screen asks for a one-time setup code: find it with `docker logs opentodo` ([details](docs/self-hosting/docker.md#the-setup-code)). Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.6` follows the 0.6 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
 
 ### Docker Compose
 
@@ -177,7 +177,7 @@ cp .env.example .env          # optional, every value has a default
 docker compose up -d
 ```
 
-Data is kept in the `opentodo-data` volume.
+Data is kept in the `opentodo-data` volume. Setting up from outside your local network needs the setup code from `docker compose logs opentodo`.
 
 ### Coolify
 
@@ -229,8 +229,8 @@ Every setting is an optional environment variable with a safe default; an invali
 | --- | --- | --- |
 | `OPENTODO_ADDR` | `:8080` | Listen address |
 | `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | Directory for the SQLite database, secrets, the VAPID key and local backups |
-| `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, passkeys and web push; also used for strict origin checks and in invitation, reset and CalDAV links |
-| `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token, so a fresh public server cannot be claimed by a stranger. No effect once the owner exists. The Coolify template generates one |
+| `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, `Strict-Transport-Security`, passkeys and web push; also used for strict origin checks (the request must be addressed to its host) and in invitation, reset and CalDAV links |
+| `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token from every address, so a fresh public server cannot be claimed by a stranger. Unset, setup from a public address needs the one-time [setup code](docs/self-hosting/docker.md#the-setup-code) printed in the server log instead. No effect once the owner exists. The Coolify template generates one |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime in days |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
@@ -240,7 +240,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before it is purged, 0–3650; `0` never purges automatically. See [Purge](docs/sync.md#purge) |
 | `OPENTODO_DEMO` | unset (off) | `true` turns a dedicated instance into a [public demo](docs/self-hosting/demo.md): a private, seeded sandbox per visitor, deleted after 2 h of inactivity, after 24 h and every night at 03:00 UTC; abusable features refused with 403 `demo_restricted` |
 | `OPENTODO_DEMO_MAX_SANDBOXES`, `OPENTODO_DEMO_MAX_DB_MB` | `500`, `1024` | Optional demo tuning: live sandbox cap and the database size above which no new sandbox is created |
-| `OPENTODO_TRUSTED_PROXIES` | — | Optional: proxies in front of your reverse proxy whose `X-Forwarded-For` hops are skipped for rate limits and the audit log (IPs, CIDRs, `cloudflare`) |
+| `OPENTODO_TRUSTED_PROXIES` | loopback and private networks | Optional: the proxies whose `X-Forwarded-For`, `X-Forwarded-Host` and `X-Forwarded-Proto` are believed, for rate limits, the audit log and the setup code (IPs, CIDRs, `private` for the default ranges, `cloudflare` for Cloudflare's edges plus the default). A list replaces the default; see [Behind a reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy) |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | `true`/`false` presets the owner's "allow private network targets" [webhook](docs/webhooks.md#private-network-protection) policy on first start; afterwards Settings decides |
 | `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI → AI assistants decides |

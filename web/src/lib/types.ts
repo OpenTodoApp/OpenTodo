@@ -481,6 +481,9 @@ export interface AuthStatus {
   setupRequired: boolean
   /** The first account needs OPENTODO_SETUP_TOKEN (owner-bootstrap); absent on older servers. */
   setupTokenRequired?: boolean
+  /** Without a token, setup from outside the server's local network needs the
+   * one-time code printed in the server log (trusted-client-identity); absent on older servers. */
+  setupCodeRequired?: boolean
   signupAllowed: boolean
   authenticated: boolean
   user: User | null

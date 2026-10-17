@@ -81,10 +81,11 @@ type Config struct {
 	// optional and read only in demo mode.
 	DemoMaxSandboxes int
 	DemoMaxDBMB      int
-	// TrustedProxies lists proxies in front of the reverse proxy whose
-	// X-Forwarded-For hops are skipped when finding the client address
-	// (OPENTODO_TRUSTED_PROXIES: IPs, CIDRs and/or the keyword "cloudflare").
-	// Optional; empty trusts only the nearest hop.
+	// TrustedProxies lists the proxies whose X-Forwarded-For is believed and
+	// whose hops are skipped when finding the client address
+	// (OPENTODO_TRUSTED_PROXIES: IPs, CIDRs and/or the keywords "private" and
+	// "cloudflare"). Optional; empty means the default, PrivateRanges
+	// (trusted-client-identity).
 	TrustedProxies []netip.Prefix
 	// TrustCloudflare is set when OPENTODO_TRUSTED_PROXIES names "cloudflare":
 	// a request whose nearest hop is a Cloudflare edge may then name the client
@@ -106,13 +107,18 @@ type Warning struct {
 	Message  string   `json:"message"`
 	Ignored  []string `json:"ignored,omitempty"`
 
-	logAttrs []any // the startup log line's fields
+	logAttrs []any  // the startup log line's fields
+	logMsg   string // the startup log line; empty means "invalid entries ignored"
 }
 
 // LogWarnings writes one error line per configuration warning, so the cause
 // is in the container log even though the server keeps running.
 func (c Config) LogWarnings(log *slog.Logger) {
 	for _, w := range c.Warnings {
+		if w.logMsg != "" {
+			log.Error(w.logMsg, w.logAttrs...)
+			continue
+		}
 		log.Error(w.Variable+": invalid entries ignored", w.logAttrs...)
 	}
 }
@@ -282,6 +288,9 @@ func Load() (Config, error) {
 		if w, ok := t.Warning(); ok {
 			c.Warnings = append(c.Warnings, w)
 		}
+		if w, ok := t.NoLocalProxyWarning(); ok {
+			c.Warnings = append(c.Warnings, w)
+		}
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":
@@ -331,7 +340,9 @@ func (c Config) ImportMaxBytes() int64 {
 	return int64(mb) << 20
 }
 
-// SecureCookies reports whether session cookies must carry the Secure flag.
+// SecureCookies reports whether the base URL is https: cookies then always
+// carry the Secure flag and responses send Strict-Transport-Security. The HTTP
+// layer also sets Secure for a request that arrived over https.
 func (c Config) SecureCookies() bool {
 	return c.BaseURL != nil && c.BaseURL.Scheme == "https"
 }

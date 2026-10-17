@@ -114,6 +114,9 @@ func (s *Server) handleMFALogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "challenge and code (or recoveryCode) are required")
 		return
 	}
+	if uid, ok := s.auth.MFAChallengeUser(in.Challenge); ok && s.accountLocked(w, r, accountKey(uid)) {
+		return
+	}
 	u, method, err := s.auth.CompleteMFAChallenge(r.Context(), in.Challenge, code, recovery)
 	switch {
 	case errors.Is(err, auth.ErrMFAChallengeInvalid):
@@ -135,7 +138,7 @@ func (s *Server) handleMFALogin(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, &http.Cookie{
 			Name: trustCookie, Value: secret, Path: "/api/v1/auth", Expires: exp, MaxAge: int(auth.TrustedDeviceTTL.Seconds()),
-			HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode,
+			HttpOnly: true, Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode,
 		})
 	}
 	if s.startSession(w, r, u, http.StatusOK, true) {
@@ -143,10 +146,12 @@ func (s *Server) handleMFALogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// recordMFAFailure writes mfa.challenge_failed with the reason, never the code.
+// recordMFAFailure writes mfa.challenge_failed with the reason, never the code,
+// and counts the failure against the account.
 func (s *Server) recordMFAFailure(r *http.Request, err error) {
 	var f *auth.MFAFailure
 	if errors.As(err, &f) {
+		s.accountLimiter.hit(accountKey(f.UserID))
 		s.audit.Record(r.Context(), audit.MFAChallengeFailed(f.UserID, f.Reason))
 	}
 }
@@ -170,6 +175,9 @@ func (s *Server) handleReauth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	u := sess.User
+	if s.accountLocked(w, r, accountKey(u.ID)) {
+		return
+	}
 	viaCode := false
 	switch {
 	case in.Password != "":
@@ -179,6 +187,7 @@ func (s *Server) handleReauth(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ok {
+			s.accountLimiter.hit(accountKey(u.ID))
 			s.audit.Record(r.Context(), audit.LoginFailed(u.ID, u.Email, "reauth_wrong_password"))
 			writeError(w, http.StatusUnauthorized, "invalid_credentials", "the password is not correct")
 			return
@@ -202,6 +211,7 @@ func (s *Server) handleReauth(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.accountLimiter.reset(accountKey(u.ID))
 	writeJSON(w, http.StatusOK, map[string]any{"reauthAt": s.auth.Now().UnixMilli(), "validForMs": FreshWindow.Milliseconds()})
 }
 

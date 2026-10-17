@@ -390,8 +390,8 @@ func (s *Server) handleRevokeFeed(w http.ResponseWriter, r *http.Request) {
 // credential (design D7). Unknown secrets count per address like failed CalDAV
 // sign-ins; a valid feed is limited per token.
 func (s *Server) handleTaskFeed(w http.ResponseWriter, r *http.Request) {
-	ip := clientIP(r)
-	if s.davLimiter.over("feed:" + ip) {
+	ip := addrKey(clientIP(r))
+	if s.davLimiter.blocked("feed:" + ip) {
 		w.Header().Set("Retry-After", "60")
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts; try again later")
 		return
