@@ -708,12 +708,14 @@ func (s *Service) startRestoreHousekeeping(ctx context.Context) {
 		}
 	}
 	s.sweepStaging(keep, true)
-	go func() {
+	s.spawn(func() {
 		t := time.NewTicker(sweepEvery)
 		defer t.Stop()
 		for {
 			select {
 			case <-ctx.Done():
+				return
+			case <-s.life.Done():
 				return
 			case <-t.C:
 				s.restoreMu.Lock()
@@ -725,7 +727,7 @@ func (s *Service) startRestoreHousekeeping(ctx context.Context) {
 				s.sweepStaging(cur, false)
 			}
 		}
-	}()
+	})
 }
 
 // sweepStaging removes staging directories other than keep: all of them when

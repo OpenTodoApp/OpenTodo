@@ -256,7 +256,9 @@ type dueReminder struct {
 // personal (OpenSpec `reminders`, `project-sharing`): they always live in their
 // creator's personal scope "user:<id>", even on a task in a shared project, so
 // the scope names the user whose devices are notified. The task's state is
-// checked afterwards through sync.Get, which sees personal and shared scopes.
+// checked afterwards through sync.Get, which sees personal and shared scopes;
+// a reminder whose task is completed or deleted is then recorded as dismissed,
+// so it leaves this query for good (reliable-background-jobs).
 const dueQuery = `
 SELECT f.scope_id, f.entity_id, CAST(f.value AS REAL), COALESCE(json_extract(tid.value, '$'), '')
 FROM scope_fields f
@@ -265,36 +267,63 @@ WHERE f.entity = 'reminder' AND f.field = 'fire_at' AND f.scope_id LIKE 'user:%'
   AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
       AND x.field = 'deleted_at' AND x.value <> 'null')
   AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
-      AND x.field IN ('delivered_at', 'dismissed_at') AND x.value <> 'null' AND CAST(x.value AS REAL) >= CAST(f.value AS REAL))
-ORDER BY CAST(f.value AS REAL)`
+      AND x.field IN ('delivered_at', 'dismissed_at') AND x.value <> 'null' AND CAST(x.value AS REAL) >= CAST(f.value AS REAL))`
+
+// dueOrder is the scan order; it is also the keyset the pages resume from.
+const dueOrder = ` ORDER BY CAST(f.value AS REAL), f.scope_id, f.entity_id`
+
+// scanPage is how many candidates one query of the scheduler's scan reads.
+const scanPage = 500
 
 func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder, error) {
-	cands, err := s.candidates(ctx, nowMs, -1)
-	if err != nil {
-		return nil, err
-	}
 	var out []dueReminder
 	trashed := map[string]bool{} // "<user>\x00<project>" -> in the Trash (this pass)
-	for _, d := range cands {
-		ok, err := s.eligible(ctx, &d, trashed)
+	var after *dueReminder
+	for {
+		cands, err := s.candidates(ctx, nowMs, scanPage, after)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			continue
+		for i := range cands {
+			d := cands[i]
+			ok, closed, err := s.eligible(ctx, &d, trashed)
+			if err != nil {
+				return nil, err
+			}
+			if closed {
+				// Its task is completed or deleted: it will never fire for this
+				// firing time, so stop examining it on every pass.
+				if err := s.recordDismissed(ctx, d.UserID, d.ID, nowMs); err != nil {
+					return nil, err
+				}
+				continue
+			}
+			if !ok {
+				continue
+			}
+			out = append(out, d)
+			if len(out) == batchLimit {
+				return out, nil
+			}
 		}
-		out = append(out, d)
-		if len(out) == batchLimit {
-			break
+		if len(cands) < scanPage {
+			return out, nil
 		}
+		after = &cands[len(cands)-1]
 	}
-	return out, nil
 }
 
 // candidates runs dueQuery: undelivered reminders firing at or before
-// maxFireMs, earliest first, at most limit rows (-1: all).
-func (s *Service) candidates(ctx context.Context, maxFireMs int64, limit int) ([]dueReminder, error) {
-	rows, err := s.db.QueryContext(ctx, dueQuery+" LIMIT ?", maxFireMs, limit)
+// maxFireMs, earliest first, at most limit rows (-1: all), after the given
+// one in scan order when after is set.
+func (s *Service) candidates(ctx context.Context, maxFireMs int64, limit int, after ...*dueReminder) ([]dueReminder, error) {
+	q, args := dueQuery, []any{maxFireMs}
+	if len(after) > 0 && after[0] != nil {
+		a := after[0]
+		q += ` AND (CAST(f.value AS REAL), f.scope_id, f.entity_id) > (?, ?, ?)`
+		args = append(args, float64(a.FireAt), opsync.PersonalScope(a.UserID), a.ID)
+	}
+	rows, err := s.db.QueryContext(ctx, q+dueOrder+" LIMIT ?", append(args, limit)...)
 	if err != nil {
 		return nil, fmt.Errorf("scan due reminders: %w", err)
 	}
@@ -316,30 +345,35 @@ func (s *Service) candidates(ctx context.Context, maxFireMs int64, limit int) ([
 
 // eligible reports whether a candidate fires: only reminders on an open task
 // the user can still see, and not while the task's project or any ancestor
-// project is in the Trash. It fills in the title that may be pushed.
-func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[string]bool) (bool, error) {
+// project is in the Trash. It fills in the title that may be pushed. closed
+// reports a task that is completed or deleted: its reminder never fires for
+// this firing time.
+func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[string]bool) (ok, closed bool, err error) {
 	t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	if t == nil || t.Deleted() || !isNull(t["completed_at"]) {
-		return false, nil
+	if t == nil {
+		return false, false, nil
+	}
+	if t.Deleted() || !isNull(t["completed_at"]) {
+		return false, true, nil
 	}
 	inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	if inTrash {
 		// Not recorded as delivered: once the project is restored the
 		// reminder is delivered on the next pass (OpenSpec `reminders`).
-		return false, nil
+		return false, false, nil
 	}
 	// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
 	// as ciphertext: the notification falls back to the content-free text.
 	if title := jsonString(t["title"]); !e2ee.IsCiphertext(title) {
 		d.Title = title
 	}
-	return true, nil
+	return true, false, nil
 }
 
 // nextScan bounds how many candidates NextDue examines.
@@ -355,7 +389,7 @@ func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
 	}
 	trashed := map[string]bool{}
 	for _, d := range cands {
-		ok, err := s.eligible(ctx, &d, trashed)
+		ok, _, err := s.eligible(ctx, &d, trashed)
 		if err != nil {
 			return time.Time{}, false, err
 		}
@@ -463,19 +497,39 @@ func (s *Service) opTS(nowMs int64) int64 {
 // creation would otherwise win and the reminder would be pushed on every tick),
 // so it is at least one past the current field timestamp.
 func (s *Service) recordDelivered(ctx context.Context, userID, reminderID string, nowMs int64) error {
+	// Recorded even when shutdown began during the send: a reminder pushed but
+	// not marked delivered would be pushed again after the restart.
+	if err := s.recordReminderField(context.WithoutCancel(ctx), userID, reminderID, "delivered_at", nowMs); err != nil {
+		return fmt.Errorf("record reminder delivery: %w", err)
+	}
+	return nil
+}
+
+// recordDismissed writes dismissed_at as a server op for a reminder whose task
+// is completed or deleted, the same way recordDelivered does.
+func (s *Service) recordDismissed(ctx context.Context, userID, reminderID string, nowMs int64) error {
+	if err := s.recordReminderField(ctx, userID, reminderID, "dismissed_at", nowMs); err != nil {
+		return fmt.Errorf("dismiss reminder of a closed task: %w", err)
+	}
+	return nil
+}
+
+// recordReminderField writes field = nowMs on a reminder as a server op whose
+// timestamp is at least one past the stored one.
+func (s *Service) recordReminderField(ctx context.Context, userID, reminderID, field string, nowMs int64) error {
 	ts := nowMs
 	var prev int64
-	err := s.db.QueryRowContext(ctx, `SELECT ts FROM scope_fields WHERE scope_id=? AND entity='reminder' AND entity_id=? AND field='delivered_at'`,
-		opsync.PersonalScope(userID), reminderID).Scan(&prev)
+	err := s.db.QueryRowContext(ctx, `SELECT ts FROM scope_fields WHERE scope_id=? AND entity='reminder' AND entity_id=? AND field=?`,
+		opsync.PersonalScope(userID), reminderID, field).Scan(&prev)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 	ts = max(ts, prev+1)
-	op := opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: reminderID, Field: "delivered_at",
+	op := opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: reminderID, Field: field,
 		Value: json.RawMessage(fmt.Sprint(nowMs)), TS: s.opTS(ts), Device: "server"}
 	res, err := s.sync.Apply(ctx, userID, []opsync.Op{op})
 	if err != nil {
-		return fmt.Errorf("record reminder delivery: %w", err)
+		return err
 	}
 	if res.Applied > 0 {
 		s.sync.NotifyApplied(res, "server")

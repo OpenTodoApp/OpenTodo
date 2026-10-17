@@ -29,10 +29,23 @@ func (s *Service) StartRun(ctx context.Context, kind, actorID string) error {
 	// Visible as running before this returns, so a status request right after a
 	// 202 already shows the run in progress.
 	s.setRunning(&Run{Kind: kind, StartedAt: s.now().UnixMilli(), Status: StatusRunning})
-	go func() {
+	// The run outlives the request but not the server: shutdown cancels it and
+	// waits for its outcome (Stop).
+	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	unhook := context.AfterFunc(s.life, cancel)
+	started := s.spawn(func() {
 		defer s.runMu.Unlock()
-		s.execute(context.WithoutCancel(ctx), kind, actorID)
-	}()
+		defer cancel()
+		defer unhook()
+		s.execute(runCtx, kind, actorID)
+	})
+	if !started {
+		unhook()
+		cancel()
+		s.setRunning(nil)
+		s.runMu.Unlock()
+		return ErrStopping
+	}
 	return nil
 }
 

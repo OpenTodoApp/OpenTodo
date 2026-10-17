@@ -96,15 +96,17 @@ func (s *Service) runIfDue(ctx context.Context) {
 	}
 }
 
-// Start launches the scheduler goroutine; it stops when ctx is cancelled. Runs
-// left "running" by a previous process are marked as interrupted first.
+// Start launches the scheduler goroutine; it stops when ctx is cancelled or
+// Stop is called, and Stop waits for it. Runs left "running" by a previous
+// process are marked as interrupted first.
 func (s *Service) Start(ctx context.Context) {
+	context.AfterFunc(ctx, s.lifeStop)
 	if err := s.markInterrupted(context.WithoutCancel(ctx)); err != nil {
 		s.log.Error("backup: mark interrupted runs", "err", err)
 	}
 	s.startRestoreHousekeeping(context.WithoutCancel(ctx))
 	s.recordPendingRestore(context.WithoutCancel(ctx))
-	go s.loop(ctx)
+	s.spawn(func() { s.loop(s.life) })
 }
 
 func (s *Service) loop(ctx context.Context) {

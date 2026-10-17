@@ -28,6 +28,8 @@ type flaky struct {
 	mu   gosync.Mutex
 	down bool
 	real mail.Transport
+	// onSend runs after a message went out (shutdown during a send).
+	onSend func()
 }
 
 func (f *flaky) Send(ctx context.Context, c mail.Config, to string, data []byte) error {
@@ -37,7 +39,11 @@ func (f *flaky) Send(ctx context.Context, c mail.Config, to string, data []byte)
 	if down {
 		return &mail.SendError{Stage: mail.StageConnect, Reply: "connection refused"}
 	}
-	return f.real.Send(ctx, c, to, data)
+	err := f.real.Send(ctx, c, to, data)
+	if f.onSend != nil {
+		f.onSend()
+	}
+	return err
 }
 
 func (f *flaky) set(down bool) { f.mu.Lock(); f.down = down; f.mu.Unlock() }
@@ -361,5 +367,25 @@ func TestStoreValidationAndNextSend(t *testing.T) {
 	got.LastSentFor = "2026-10-23"
 	if next := NextSendAt(got, at("2026-10-23 08:00")); !next.Equal(at("2026-10-30 07:00")) {
 		t.Fatalf("next after sending = %v", next)
+	}
+}
+
+// TestShutdownDuringSendRecordsTheSend (reliable-background-jobs): a digest
+// that went out while the server began shutting down is still recorded as
+// sent, so the next start does not send it again.
+func TestShutdownDuringSendRecordsTheSend(t *testing.T) {
+	e := newEnv(t)
+	e.enable("u1")
+	ctx, cancel := context.WithCancel(context.Background())
+	e.tr.onSend = cancel
+	e.clock = at("2026-10-23 07:03")
+	_, _ = e.service().Tick(ctx)
+	e.tr.onSend = nil
+	// Past the retry delay: an unrecorded send would go out again now.
+	if n := e.tick(e.service(), "2026-10-23 07:30"); n != 0 {
+		t.Fatalf("sent again after the restart: %d", n)
+	}
+	if got := len(e.smtp.Messages()); got != 1 {
+		t.Fatalf("sink received %d messages, want 1", got)
 	}
 }
