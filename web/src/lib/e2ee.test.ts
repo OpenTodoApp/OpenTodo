@@ -564,6 +564,28 @@ describe('migration job (task 2.4)', () => {
     expect(encryptionSnapshot().migration).toBeNull()
   })
 
+  it('reads each task about once per run, not the whole table per batch (large-list-performance)', async () => {
+    await on('A')
+    const many = MIGRATION_BATCH * 10
+    const ops: Op[] = []
+    for (let i = 0; i < many; i++) ops.push({ id: `seed-${i}`, entity: 'task', entityId: `t${String(i).padStart(5, '0')}`, field: 'title', value: `Task ${i}`, ts: 100, device: 'old' })
+    await applyOps(ops)
+    await enableEncryption(PASS, FAST)
+    let reads = 0
+    const count = (row: unknown) => { reads++; return row }
+    db.tasks.hook('reading', count)
+    try {
+      await startMigration('encrypt')
+    } finally {
+      db.tasks.hook('reading').unsubscribe(count)
+    }
+    console.info(`[large-list-performance] task rows read by the migration of ${many} tasks: ${reads} (${(reads / many).toFixed(1)} per task)`)
+    expect((await db.outbox.toArray()).filter((o) => o.field === 'title')).toHaveLength(many)
+    // Counting the work, the batch and writing each row back: a fixed few reads per task
+    // (about 5), where re-reading the table for each of the ten batches took about 20.
+    expect(reads).toBeLessThan(many * 8)
+  })
+
   it('encrypts an existing project description when encryption is turned on (project-notes 2.1)', async () => {
     await on('A')
     await applyOps([

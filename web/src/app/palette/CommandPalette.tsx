@@ -8,8 +8,8 @@ import { db } from '../../lib/db'
 import { pickScores } from '../../lib/pickRank'
 import { canEditProject, membershipMap, roleOf } from '../../lib/sharing'
 import { loadViewMode } from '../../lib/sections'
-import { visibleTasks } from '../../lib/trash'
-import type { Label, Project, Section, Task, User, View } from '../../lib/types'
+import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
+import type { Label, Project, Section, User, View } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel } from '../../ui'
 import { useCombobox } from '../../ui'
 import { Icon } from '../../ui'
@@ -43,7 +43,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const [taskId] = useState(() => list?.selected() ?? list?.openId() ?? null)
   const [mode, setMode] = useState<'search' | 'closing' | Step>('search')
 
-  const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.filter((l) => !l.deleted_at).toArray(), [], [] as Label[])
   const views = useLiveQuery(() => db.views.filter((v) => !v.deleted_at).toArray(), [], [] as View[])

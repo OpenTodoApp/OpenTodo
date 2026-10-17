@@ -49,6 +49,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Snooze and Dismiss from a notification follow the corrected clock.** On a device whose clock is off, the notification actions now stamp their change with the same server-corrected time as the app, so the change is neither overwritten by an older edit nor refused; a change the server does refuse stays queued for the app's next sync instead of being dropped.
 - **Clearing a property you just added removes its chip.** After adding Estimate (or another property) from the Add menu and setting a value, clearing it again now removes the chip instead of leaving an empty one.
 - **For contributors: the web app is linted for React hook mistakes.** `make check` now runs ESLint with the Rules of Hooks and effect dependencies (`make web-lint`), and the web tests fail on any network request they did not mock.
+- **Long lists stay fast.** Moving through a list with `j` and `k` now redraws only the two rows involved instead of every row (in a 2,000-task project, 2 rows per key press instead of 2,000).
+- **Edits and syncs read your tasks once, not once per panel.** The list, the sidebar counts, the project header, labels, calendars and the task panel now share one live copy of your tasks, so each change or sync reads the stored tasks once instead of about six times with a project open.
+- **Large lists group and encrypt in linear time.** Grouping a list by project and showing a section's completed tasks no longer slow down sharply with thousands of tasks, rows no longer each open their own lookup when encryption is on, and turning encryption on or off no longer re-reads all your data for every batch of 200 items.
 
 ### Added
 
