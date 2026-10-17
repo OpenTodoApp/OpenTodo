@@ -36,6 +36,8 @@ Press <kbd>?</kbd> at any time for the cheat sheet. The shortcuts for where you 
 
 A two-step shortcut like <kbd>g</kbd> then <kbd>t</kbd> means: press <kbd>g</kbd>, let go, then press <kbd>t</kbd>.
 
+With a screen reader, <kbd>j</kbd> / <kbd>k</kbd> move focus to the selected row, so it reads the task with its dates, counts and notes; subtasks are read with their level. Going to another page moves focus to the page's heading and the browser tab names the page. The first <kbd>Tab</kbd> on a page reaches **Skip to content**, which jumps past the sidebar.
+
 On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Option</kbd> for <kbd>Alt</kbd>.
 
 ## All shortcuts

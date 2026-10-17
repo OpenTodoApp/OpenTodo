@@ -548,6 +548,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
       )}
       <div
         data-drop-lane={day.date}
+        role="group"
         aria-label={t('Unscheduled on {date}', { date: day.date })}
         className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >

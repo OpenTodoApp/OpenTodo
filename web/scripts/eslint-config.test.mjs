@@ -51,4 +51,19 @@ export function A({ id }: { id: string }) {
 }`
     expect(await lint(code)).toEqual([])
   })
+
+  // assistive-tech-semantics: a name on a role-less span or div is ignored by screen readers.
+  it('refuses aria-label and aria-labelledby on a span or div without a role', async () => {
+    const code = `export function A({ n }: { n: number }) {
+  return <div><span aria-label={\`\${n} comments\`}>{n}</span><div aria-labelledby="x">y</div></div>
+}`
+    expect(await lint(code)).toEqual(['a11y/no-generic-aria-label: 2', 'a11y/no-generic-aria-label: 2'])
+  })
+
+  it('accepts a name on an element with a role, on other elements, and visually hidden text', async () => {
+    const code = `export function A({ n }: { n: number }) {
+  return <div role="group" aria-label="Range"><button aria-label="Close">x</button><span>{n}<span className="sr-only"> comments</span></span></div>
+}`
+    expect(await lint(code)).toEqual([])
+  })
 })

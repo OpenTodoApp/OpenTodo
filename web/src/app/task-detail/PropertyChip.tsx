@@ -81,7 +81,7 @@ export function PropertyChip({ id, icon, label, value, empty, placeholder, readO
       <span id={labelId} className="sr-only">{label}</span>
       <span className="inline-flex max-w-full items-center gap-1">
         {readOnly || !editor ? (
-          <span id={valueId} className={chipClass} aria-labelledby={`${labelId} ${valueId}`}>
+          <span id={valueId} className={chipClass}>
             <Icon name={icon} size="xs" className="shrink-0 text-faint" /><span className="min-w-0 truncate">{shown}</span>
           </span>
         ) : (

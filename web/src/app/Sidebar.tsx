@@ -1,4 +1,4 @@
-import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -366,7 +366,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                 data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
                 leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
                 count={!isDashboard(v) && c && c.ok ? c.count : undefined}
-                badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger" aria-label={c.error}>!</span> : undefined} />
+                badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
               {!collapsed && <ViewMenu view={v} className="hover-reveal" />}
             </div>
           )
@@ -426,7 +426,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                   label={p.name}
                   leading={<ProjectMark project={p} />}
                   badge={<>
-                    {sharedIds.has(n.id) && <span className="text-faint" aria-label={t('Shared project')}><Icon name="users" size={14} /></span>}
+                    {sharedIds.has(n.id) && <span className="text-faint"><Icon name="users" size={14} /><span className="sr-only">{t('Shared project')}</span></span>}
                     {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label={t('unread changes')} /> : null}
                   </>}
                   count={count}
@@ -493,7 +493,7 @@ export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, '
 function UnreadBadge({ n, label }: { n: number; label: string }) {
   const text = formatUnread(n)
   return (
-    <span data-unread-count={n} aria-label={`${text} ${label}`}
-      className="rounded-full bg-accent px-1.5 text-hint font-semibold leading-4 text-on-accent">{text}</span>
+    <span data-unread-count={n}
+      className="rounded-full bg-accent px-1.5 text-hint font-semibold leading-4 text-on-accent"><ReadAs label={`${text} ${label}`}>{text}</ReadAs></span>
   )
 }

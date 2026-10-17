@@ -271,7 +271,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
   if (status === 'offline') return <NeedsConnection what={t('audit log')} />
   return (
     <div className="overflow-x-auto rounded-control border border-default focus-visible:outline-2 focus-visible:outline-focus"
-      tabIndex={0} onKeyDown={onKeyDown} aria-label={t('Audit events (press e to export)')} data-scroll-x>
+      tabIndex={0} onKeyDown={onKeyDown} role="region" aria-label={t('Audit events (press e to export)')} data-scroll-x>
       <table className="w-full text-left text-body">
         <thead className="bg-sunken text-meta text-muted dark:bg-raised">
           <tr>

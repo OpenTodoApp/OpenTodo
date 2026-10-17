@@ -1685,7 +1685,6 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Complete task": [
-    "web/src/app/TaskRow.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Complete the selected task": [
@@ -1698,6 +1697,7 @@
     "web/src/app/palette/registry.ts"
   ],
   "Complete {title}": [
+    "web/src/app/TaskRow.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -6371,11 +6371,11 @@
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Reopen task": [
-    "web/src/app/TaskRow.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Reopen {title}": [
     "web/src/app/PublicListScreen.tsx",
+    "web/src/app/TaskRow.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -7448,6 +7448,9 @@
   ],
   "Skip those rows": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Skip to content": [
+    "web/src/app/Shell.tsx"
   ],
   "Skip to the next task": [
     "web/src/lib/shortcuts.ts"
@@ -11487,6 +11490,9 @@
   ],
   "{offset} the deadline": [
     "web/src/lib/reminderTime.ts"
+  ],
+  "{page} – OpenTodo": [
+    "web/src/app/pageFocus.ts"
   ],
   "{pct}% of your {cap, number}-token limit, resets {date}": [
     "web/src/app/assistant/AssistantSettings.tsx"

@@ -7,7 +7,7 @@ import { Clock, useNow } from './display/Clock'
 import { DisplayColumn, type DisplayRowData } from './display/DisplayColumn'
 import { parseDisplayOptions, type DisplayOptions } from './display/displayOptions'
 import { useDisplayKeys, useRootPresentation, useWakeLock } from './display/displayHooks'
-import { hueFor, Notice } from '../ui'
+import { hueFor, Notice, ReadAs } from '../ui'
 import { ApiError, isNetworkError, publicApi } from '../lib/api'
 import { formatShort, formatTime } from '../lib/dates'
 import type { PublicList } from '../lib/types'
@@ -149,7 +149,7 @@ export function PublicListScreen({ token }: { token: string }) {
                         <>
                           <span className={`user-text min-w-0 flex-1 break-words text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{x1.title || t('Untitled')}</span>
                           {due && <span className="shrink-0 text-meta tabular-nums text-muted">{due}</span>}
-                          {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" aria-label={t('Priority {priority}', { priority: x1.priority })}>P{x1.priority}</span>}
+                          {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" ><ReadAs label={t('Priority {priority}', { priority: x1.priority })}>P{x1.priority}</ReadAs></span>}
                         </>
                       )
                       return (

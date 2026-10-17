@@ -5,11 +5,32 @@
 // or a name (estimate, subtask progress, comments, attachments, project), in the
 // metadata size with tabular figures, never a monospace face. Icons in chips are
 // 12 px ("Secondary text is one size").
+//
+// A chip's full phrase ("3 comments", "Has notes") is visually hidden text inside it,
+// never an aria-label: a span has no role, so screen readers ignore a name on it
+// (OpenSpec assistive-tech-semantics; the lint rule a11y/no-generic-aria-label).
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
 import { t } from '../lib/i18n'
 
 export type Tone = 'danger' | 'success' | 'warning' | 'accent' | 'violet' | 'indigo' | 'muted' | 'faint'
+
+/**
+ * Text read differently than it is shown: the visible text is hidden from assistive
+ * technology and `label` is read in its place ("3" is read "3 comments"). Without a
+ * label the children are read as shown.
+ */
+export function ReadAs({ label, children }: { label?: string | null; children?: ReactNode }) {
+  if (!label) return <>{children}</>
+  // `relative`: the hidden text is positioned against this span, not against a far
+  // ancestor, so it never widens a scroller it sits in (a board column, issue #95).
+  return (
+    <span className="relative">
+      {children !== undefined && children !== null && <span aria-hidden="true">{children}</span>}
+      <span className="sr-only">{label}</span>
+    </span>
+  )
+}
 
 const TONE: Record<Tone, string> = {
   danger: 'text-danger',
@@ -36,9 +57,9 @@ export interface ToneTextProps {
 /** A short phrase in a tone colour: the date ("Today · evening · repeats") or the deadline. */
 export function ToneText({ tone = 'muted', icon, children, label, className, ...rest }: ToneTextProps & Record<`data-${string}`, string | undefined>) {
   return (
-    <span className={`inline-flex min-w-0 items-center gap-1 text-meta tabular-nums ${TONE[tone]}${className ? ` ${className}` : ''}`} aria-label={label} {...rest}>
+    <span className={`inline-flex min-w-0 items-center gap-1 text-meta tabular-nums ${TONE[tone]}${className ? ` ${className}` : ''}`} {...rest}>
       {icon && <Icon name={icon} size="xs" />}
-      <span className="truncate">{children}</span>
+      <span className="truncate"><ReadAs label={label}>{children}</ReadAs></span>
     </span>
   )
 }
@@ -56,10 +77,11 @@ export interface NeutralChipProps {
 /** A quiet chip for a count or a name: sunken fill, metadata size, tabular figures. */
 export function NeutralChip({ icon, children, label, dot, className, ...rest }: NeutralChipProps & Record<`data-${string}`, string | undefined>) {
   return (
-    <span className={`inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip bg-sunken px-1.5 py-px text-meta tabular-nums text-muted dark:bg-raised${className ? ` ${className}` : ''}`} aria-label={label} {...rest}>
+    <span className={`inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip bg-sunken px-1.5 py-px text-meta tabular-nums text-muted dark:bg-raised${className ? ` ${className}` : ''}`} {...rest}>
       {dot && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dot }} />}
       {icon && <Icon name={icon} size="xs" />}
-      {children !== undefined && children !== null && <span className="truncate">{children}</span>}
+      {children !== undefined && children !== null && <span className="truncate"><ReadAs label={label}>{children}</ReadAs></span>}
+      {(children === undefined || children === null) && label && <ReadAs label={label} />}
     </span>
   )
 }

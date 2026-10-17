@@ -19,6 +19,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Screen readers hear what the chips say.** Counts, "Has notes", deadlines, group counts and the warning on a title that could not be decrypted were silent or read as bare numbers; they are now read as full phrases ("3 comments", "4 open tasks").
+- **Screen readers follow the list.** Moving with <kbd>j</kbd> / <kbd>k</kbd> moves focus to the selected task, subtasks are read with their level and position, and each complete button names its task ("Complete Buy milk"). ([Keyboard shortcuts](docs/keyboard.md))
+- **Page changes are announced.** The browser tab names the page ("Today – OpenTodo"), going to another page moves focus to its heading, and a "Skip to content" link jumps past the sidebar. ([Keyboard shortcuts](docs/keyboard.md))
 - **A server opened at an address other than its base URL says so.** After a move to a new domain with `OPENTODO_BASE_URL` still naming the old one, signing in and "Try the demo" were refused with "cross-site request rejected" or "This page expired. Reload it", which a reload does not fix. The sign-in screen now names the address the server is set up for, and the log has one warning per refused host naming it and the base URL. ([Behind a reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy), #125)
 - **A proxy page no longer loses unsynced changes.** When something between the app and the server (a proxy, a captive portal) answered a sync with its own page, changes made offline were dropped. They now stay on the device and upload on the next sync, and the status says the answer was not understood.
 - **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.

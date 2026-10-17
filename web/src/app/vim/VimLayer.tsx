@@ -137,7 +137,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           />
           {message
             ? <span role="alert" className="text-danger">{message}</span>
-            : <span className="truncate text-faint" aria-label={t('Completions')}>{completions.slice(0, 6).join('  ')}</span>}
+            : <span className="truncate text-faint"><span className="sr-only">{t('Completions')} </span>{completions.slice(0, 6).join('  ')}</span>}
         </form>
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">

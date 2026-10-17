@@ -8,7 +8,7 @@ import { db, setMeta, useDatabase } from '../../lib/db'
 import { setDemo } from '../../lib/demo'
 import { applyOps, createTask, resetDeviceId } from '../../lib/ops'
 import type { Op } from '../../lib/types'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, flush, key, render, spokenText, visibleText } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
 import { TaskRow } from '../TaskRow'
 import { AttachmentsRow, pastedName, typeLabel } from './AttachmentsRow'
@@ -201,8 +201,8 @@ describe('AttachmentsRow', () => {
     const row = (await db.tasks.get(task))!
     const r = await render(<ul><TaskRow task={row} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
     mounted.push(r)
-    await waitFor(() => r.container.querySelector('[data-attachments]')?.textContent === '2')
-    expect(r.container.querySelector('[data-attachments]')!.getAttribute('aria-label')).toBe('2 attachments')
+    await waitFor(() => visibleText(r.container.querySelector('[data-attachments]') ?? document.createElement('i')) === '2')
+    expect(spokenText(r.container.querySelector('[data-attachments]')!)).toBe('2 attachments')
   })
 
   it('names pasted images and types', () => {

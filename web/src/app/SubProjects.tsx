@@ -51,7 +51,7 @@ export function SubProjects({ projectId }: { projectId: string }) {
                 className="flex min-h-9 w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised">
                 <span className="flex w-5 shrink-0 items-center justify-center"><ProjectMark project={n.item} /></span>
                 <span className="min-w-0 flex-1 truncate">{n.item.name}</span>
-                <span className="text-meta tabular-nums text-faint" aria-label={t('Open tasks including sub-projects')}>{counts.get(n.id) ?? 0}</span>
+                <span className="text-meta tabular-nums text-faint">{counts.get(n.id) ?? 0}<span className="sr-only"> {t('Open tasks including sub-projects')}</span></span>
               </button>
             </li>
           ))}

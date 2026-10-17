@@ -331,6 +331,17 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections, logbook])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
+  // Each row's place among its visible siblings (assistive-tech-semantics): the tree's
+  // aria-level, aria-posinset and aria-setsize, so a subtask is announced as one.
+  const siblingPos = useMemo(() => {
+    const out = new Map<string, { pos: number; size: number }>()
+    for (const g of groups) {
+      const sets = new Map<string | null, string[]>()
+      for (const r of g.rows) appendTo(sets, r.parent, r.task.id)
+      for (const ids of sets.values()) ids.forEach((id, i) => out.set(id, { pos: i + 1, size: ids.length }))
+    }
+    return out
+  }, [groups])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Sections with only completed tasks keep a header with "n completed" and Show
@@ -751,9 +762,19 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     return () => input.removeEventListener('blur', reset)
   }, [route, projectReadOnly])
 
+  // The cursor is real focus (assistive-tech-semantics): a new cursor row takes focus
+  // on its open button, so a screen reader reads the task, unless focus is elsewhere
+  // (a panel, a dialog, the quick add, the sidebar): only an unfocused page or focus
+  // already on a row of this list moves with the cursor.
+  const listRoot = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!selectedId) return
-    document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
+    const el = document.querySelector<HTMLElement>(`[data-task-id="${CSS.escape(selectedId)}"]`)
+    el?.scrollIntoView({ block: 'nearest' })
+    const active = document.activeElement as HTMLElement | null
+    const free = !active || active === document.body
+      || (!!listRoot.current?.contains(active) && !!active.closest('li[data-task-id]') && !isTypingTarget(active))
+    if (el && free && !el.contains(active)) el.querySelector<HTMLElement>('[data-row-open]')?.focus({ preventScroll: true })
   }, [selectedId])
 
   // Row handlers (large-list-performance D1): one object for the life of the list,
@@ -814,6 +835,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         ticked={selection.ticked.has(r.task.id)}
         showCheckbox={selectMode || selection.ticked.size > 0}
         hideFieldBadges={fieldColumns}
+        posInSet={treeView && !board ? siblingPos.get(r.task.id)?.pos : undefined}
+        setSize={treeView && !board ? siblingPos.get(r.task.id)?.size : undefined}
         actions={rowActions}
       />
       {addingUnder === r.task.id && !board && (
@@ -872,7 +895,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   }
 
   return (
-    <div className="min-w-0 px-4 py-5 md:px-8">
+    <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
         <div className={board || timeline ? 'mx-auto' : fieldColumns ? 'mx-auto max-w-6xl' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}

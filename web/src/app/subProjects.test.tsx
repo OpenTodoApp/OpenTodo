@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, visibleText } from '../ui/test-utils'
 import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
 
@@ -42,8 +42,8 @@ describe('sub-projects group', () => {
     await waitFor(() => r.container.textContent!.includes('Paint') && r.container.querySelector('[data-sub-projects]') !== null)
     const group = r.container.querySelector('[data-sub-projects]')!
     // Direct children only, each with the open total of its whole subtree.
-    expect([...group.querySelectorAll('[data-sub-project]')].map((b) => b.textContent)).toEqual(['Kitchen3', 'Garden0'])
-    expect(group.querySelector('[data-group-header] [data-group-count]')?.textContent).toBe('2')
+    expect([...group.querySelectorAll('[data-sub-project]')].map((b) => visibleText(b))).toEqual(['Kitchen3', 'Garden0'])
+    expect(visibleText(group.querySelector('[data-group-header] [data-group-count]')!)).toBe('2')
     // Above the list, below the header.
     const order = [...r.container.querySelectorAll('[data-page-header], [data-sub-projects], [data-task-id]')]
     expect(order[0].hasAttribute('data-page-header')).toBe(true)

@@ -16,7 +16,7 @@ OpenTodo's interface is friendly and roomy, in the spirit of TickTick, Todoist a
 1. **Content first.** Chrome is neutral, and colour is reserved for meaning: priority, project and label colours, status.
 2. **Roomy, not sparse.** Generous padding, one idea per row, state before forms.
 3. **One way to do a thing.** Every control comes from a primitive and every value from a token.
-4. **Accessible by construction.** AA contrast, a visible focus ring, 44 px touch targets and reduced motion are enforced by tests, not left to review.
+4. **Accessible by construction.** AA contrast, a visible focus ring, 44 px touch targets and reduced motion are enforced by tests, not left to review. A phrase for screen readers ("3 comments" for a chip showing "3") is visually hidden text inside the element (`ReadAs` in `web/src/ui/Chips.tsx`), never an `aria-label` on a `span` or `div` without a role, which screen readers ignore; `npm run lint` refuses that.
 5. **Calm motion.** Short transitions, nothing bouncing in the way.
 
 | | Keep (identity) | Evolve (craft) |
