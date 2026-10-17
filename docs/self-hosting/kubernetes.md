@@ -12,7 +12,7 @@ OpenTodo is one container with one volume. The Helm chart runs it as a single po
 
 ## Install
 
-From the first release that ships the chart (after 0.6.1), the chart is published as an OCI artifact on GitHub's registry:
+From 0.7.0, the first release that ships it, the chart is published as an OCI artifact on GitHub's registry:
 
 ```bash
 helm install opentodo oci://ghcr.io/pixari/charts/opentodo \
@@ -21,7 +21,7 @@ helm install opentodo oci://ghcr.io/pixari/charts/opentodo \
 
 Until then, install it from a clone of the repository: `helm install opentodo ./deploy/helm/opentodo --namespace opentodo --create-namespace`.
 
-The chart's version is the OpenTodo release it installs: chart `0.6.1` runs `ghcr.io/pixari/opentodo:0.6.1`. Pick a version with `--version`.
+The chart's version is the OpenTodo release it installs: chart `0.7.0` runs `ghcr.io/pixari/opentodo:0.7.0`. Pick a version with `--version`.
 
 ## First visit
 

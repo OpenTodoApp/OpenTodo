@@ -51,12 +51,12 @@ test('umbrel: the manifest parser reads folded text, lists of maps and quotes, a
 
 test('umbrel: image pinned by release tag and digest, equal to the manifest version', () => {
   const digest = '233314397daa3fb8e72d4abf5c4d5ace64da4ad46154579f50ac3ff20a07115b'
-  has(variant(both('docker-compose.yml', compose.replace(`0.6.1@sha256:${digest}`, 'stable'))), /image must be ghcr\.io\/pixari\/opentodo:0\.6\.1@sha256/)
+  has(variant(both('docker-compose.yml', compose.replace(`0.7.0@sha256:${digest}`, 'stable'))), /image must be ghcr\.io\/pixari\/opentodo:0\.7\.0@sha256/)
   has(variant(both('docker-compose.yml', compose.replace(`@sha256:${digest}`, ''))), /image must be .*@sha256:<index digest>/)
-  has(variant(both('umbrel-app.yml', manifest.replace('version: "0.6.1"', 'version: "0.6.0"'))), /manifest version 0\.6\.0 must equal the image tag 0\.6\.1/)
+  has(variant(both('umbrel-app.yml', manifest.replace('version: "0.7.0"', 'version: "0.6.0"'))), /manifest version 0\.6\.0 must equal the image tag 0\.7\.0/)
   // A new release makes the pinned package stale until the version, tag and digest are bumped.
-  const next = { ...ctx, changelog: '## [0.7.0] - 2026-11-01\n' + ctx.changelog }
-  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.7\.0@sha256/)
+  const next = { ...ctx, changelog: '## [0.8.0] - 2026-11-01\n' + ctx.changelog }
+  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0@sha256/)
 })
 
 test('umbrel: manifest rules', () => {
@@ -71,7 +71,7 @@ test('umbrel: manifest rules', () => {
   has(m('releaseNotes: ""', 'releaseNotes: "New"'), /releaseNotes must be "" until the app is listed/)
   has(m('submission: https://github.com/getumbrel/umbrel-apps/pull/0000', 'submission: https://example.com'), /submission must be the pull request URL/)
   has(m('path: ""', 'path: ""\nicon: https://example.com/x.svg'), /icon is not used/)
-  has(m('name: OpenTodo\nversion', 'version: "0.6.1"\nname: OpenTodo\nversion'), /duplicate key|Umbrel's order/)
+  has(m('name: OpenTodo\nversion', 'version: "0.7.0"\nname: OpenTodo\nversion'), /duplicate key|Umbrel's order/)
   has(m('There is no default password', 'There is no password'), /no default password/)
 })
 
