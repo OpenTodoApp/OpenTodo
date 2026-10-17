@@ -59,6 +59,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Long lists stay fast.** Moving through a list with `j` and `k` now redraws only the two rows involved instead of every row (in a 2,000-task project, 2 rows per key press instead of 2,000).
 - **Edits and syncs read your tasks once, not once per panel.** The list, the sidebar counts, the project header, labels, calendars and the task panel now share one live copy of your tasks, so each change or sync reads the stored tasks once instead of about six times with a project open.
 - **Large lists group and encrypt in linear time.** Grouping a list by project and showing a section's completed tasks no longer slow down sharply with thousands of tasks, rows no longer each open their own lookup when encryption is on, and turning encryption on or off no longer re-reads all your data for every batch of 200 items.
+- **Commands work the same in every language.** In German, French, Spanish, Italian and Portuguese, the Vim `i` command now puts the caret in the task's title, and moving through the list with `j` and `k` releases a project left focused in the sidebar.
+- **Viewers of a shared project can no longer skip, detach, schedule or estimate its tasks by keyboard.** Shift+K, Shift+O, `s` and `e` now do nothing on a task you can only view, like the other editing keys, instead of making a change the server then undid.
+- **Today and the sidebar counts move to the new day at midnight** while the app stays open.
+- **Confirmations are the app's own dialogs.** Making someone the owner, leaving a project, revoking an invite link, undoing an import and requiring two-factor authentication ask in the app instead of the browser's pop-up. Adding a link to a note (Ctrl/Cmd+K) opens a small dialog that accepts only `https://`, `http://` and `mailto:` addresses, instead of silently dropping anything else.
+- **The Logbook's "done" count and the estimate field's example are translated.**
+- **The calendar's hour lines follow the theme**, including high contrast and dark.
+- **More list actions say why they failed.** Bulk keys, park, duplicate, "this occurrence only", adding a subtask and completing from the panel now show a message when the change cannot be saved.
 
 ### Added
 

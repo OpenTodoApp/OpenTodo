@@ -246,9 +246,14 @@ export const wrapInCheckList: Command = (state, dispatch) => {
   return wrapInList(schema.nodes.bullet_list)(state, dispatch && ((tr) => dispatch(checkItems(tr))))
 }
 
-/** Ask for a URL and link the selection; an empty answer removes the link. */
-export function linkCommand(ask: (current: string) => string | null): Command {
-  return (state, dispatch) => {
+/**
+ * Ask for a URL and link the selection; an empty answer removes the link, null
+ * cancels. The answer may come later (the app's link dialog): it then applies to
+ * the editor's selection at that time, which ProseMirror has mapped through any
+ * change made meanwhile (a remote merge), and focus returns to the editor.
+ */
+export function linkCommand(ask: (current: string) => string | null | Promise<string | null>): Command {
+  return (state, dispatch, view) => {
     const type = schema.marks.link
     const { from, to, empty } = state.selection
     if (empty) return false
@@ -258,11 +263,22 @@ export function linkCommand(ask: (current: string) => string | null): Command {
       const m = type.isInSet(n.marks)
       if (m) current = m.attrs.href as string
     })
-    const href = ask(current)
-    if (href === null) return true
-    const tr = state.tr.removeMark(from, to, type)
-    if (href.trim()) tr.addMark(from, to, type.create({ href: href.trim() }))
-    dispatch(tr)
+    const apply = (href: string | null, at: EditorState, send: (tr: Transaction) => void) => {
+      if (href === null || at.selection.empty) return
+      const tr = at.tr.removeMark(at.selection.from, at.selection.to, type)
+      if (href.trim()) tr.addMark(at.selection.from, at.selection.to, type.create({ href: href.trim() }))
+      send(tr)
+    }
+    const answer = ask(current)
+    if (answer instanceof Promise) {
+      void answer.then((href) => {
+        if (!view || view.isDestroyed) return
+        apply(href, view.state, (tr) => view.dispatch(tr))
+        view.focus()
+      })
+      return true
+    }
+    apply(answer, state, dispatch)
     return true
   }
 }
@@ -336,8 +352,8 @@ function rules(): Plugin {
 }
 
 export interface EditorHooks {
-  /** Ask for a link URL (window.prompt in the app). */
-  askLink: (current: string) => string | null
+  /** Ask for a link URL: null cancels, '' removes the link (the app answers from its link dialog, later). */
+  askLink: (current: string) => string | null | Promise<string | null>
   /** Leave the editor (Escape). */
   onEscape: () => void
   /** Current encoded size, for the input cap. */

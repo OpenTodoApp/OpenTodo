@@ -426,6 +426,9 @@
   "Add a field": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Add a link": [
+    "web/src/app/LinkDialog.tsx"
+  ],
   "Add a link…": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
@@ -1314,6 +1317,7 @@
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/FieldsDialog.tsx",
+    "web/src/app/LinkDialog.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -1807,7 +1811,8 @@
   ],
   "Continue": [
     "web/src/app/ReauthDialog.tsx",
-    "web/src/app/SecurityPanel.tsx"
+    "web/src/app/SecurityPanel.tsx",
+    "web/src/app/TwoFactorPanel.tsx"
   ],
   "Conversation": [
     "web/src/app/assistant/AssistantPanel.tsx"
@@ -2578,6 +2583,9 @@
   "Edit label {name}": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Edit link": [
+    "web/src/app/LinkDialog.tsx"
+  ],
   "Edit the current project’s note (Esc saves and closes it)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2746,6 +2754,9 @@
   ],
   "Enter a whole number.": [
     "web/src/app/RemindersField.tsx"
+  ],
+  "Enter an address that starts with https://, http:// or mailto:.": [
+    "web/src/app/LinkDialog.tsx"
   ],
   "Enter one of your recovery codes. Each code works once.": [
     "web/src/app/AuthScreen.tsx"
@@ -3772,6 +3783,9 @@
   "Issuer URL": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "It disappears from your devices.": [
+    "web/src/app/ShareDialog.tsx"
+  ],
   "It expires {when} and works once.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
@@ -4038,13 +4052,16 @@
   "Leave empty to keep the saved password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "Leave it empty to remove the link.": [
+    "web/src/app/LinkDialog.tsx"
+  ],
   "Leave the notes": [
     "web/src/lib/richtextEditor.ts"
   ],
   "Leave the shared page without saving it as a task": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Leave “{project}”? It disappears from your devices.": [
+  "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
   ],
   "Let an assistant that supports the Model Context Protocol (MCP) read your projects and tasks with a token you create. Read-only by default; the server itself contacts no one.": [
@@ -4087,10 +4104,8 @@
     "web/src/lib/richtextEditor.ts"
   ],
   "Link address": [
+    "web/src/app/LinkDialog.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
-  ],
-  "Link address (empty to remove)": [
-    "web/src/app/NotesEditor.tsx"
   ],
   "Link copied": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -4274,6 +4289,9 @@
     "web/src/app/ShareDialog.tsx"
   ],
   "Make {name} the owner of “{project}”? You become an admin.": [
+    "web/src/app/ShareDialog.tsx"
+  ],
+  "Make {name} the owner?": [
     "web/src/app/ShareDialog.tsx"
   ],
   "Manage the custom fields of the current project: add, rename, reorder, delete": [
@@ -6281,6 +6299,9 @@
   "Remove label {name}": [
     "web/src/ui/Chips.tsx"
   ],
+  "Remove link": [
+    "web/src/app/LinkDialog.tsx"
+  ],
   "Remove my key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -6425,6 +6446,9 @@
   ],
   "Require single sign-on (SSO only)": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Require two-factor authentication?": [
+    "web/src/app/TwoFactorPanel.tsx"
   ],
   "Required by the server owner": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -6610,10 +6634,7 @@
   "Revoke the {role} link for {email}": [
     "web/src/app/InviteLinksSection.tsx"
   ],
-  "Revoke the {role} link for {email}? It will stop working.": [
-    "web/src/app/InviteLinksSection.tsx"
-  ],
-  "Revoke the {role} link? It will stop working.": [
+  "Revoke this invite link?": [
     "web/src/app/InviteLinksSection.tsx"
   ],
   "Revoke this public link?": [
@@ -6713,6 +6734,7 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/FieldsDialog.tsx",
+    "web/src/app/LinkDialog.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/RemindersField.tsx",
@@ -8376,6 +8398,12 @@
   "The whole server as one backup archive, to move to your own OpenTodo server": [
     "web/src/app/settingsIndex.ts"
   ],
+  "The {role} link for {email} will stop working.": [
+    "web/src/app/InviteLinksSection.tsx"
+  ],
+  "The {role} link will stop working.": [
+    "web/src/app/InviteLinksSection.tsx"
+  ],
   "Their authenticator, recovery codes and remembered browsers stop working; they sign in with their password alone.": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -9245,6 +9273,9 @@
   "Undo (Mod-Shift-z: redo)": [
     "web/src/lib/richtextEditor.ts"
   ],
+  "Undo import": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Undo is available.": [
     "web/src/app/assistant/AssistantPanel.tsx"
   ],
@@ -9256,6 +9287,9 @@
   ],
   "Undo the last restore": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Undo this import?": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Undoing…": [
     "web/src/app/assistant/AssistantRoot.tsx"
@@ -9825,7 +9859,7 @@
   "You have not accepted yet; the assistant asks before your first message.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "You have not set up two-factor authentication yourself. After this change you must set it up before you can continue. Continue?": [
+  "You have not set up two-factor authentication yourself. After this change you must set it up before you can continue.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "You have reached the limit: {detail}": [
@@ -10234,6 +10268,9 @@
   ],
   "duplicate": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "e.g. 45m, 1h30": [
+    "web/src/app/EstimateField.tsx"
   ],
   "e.g. iPhone": [
     "web/src/app/CaldavPanel.tsx"
@@ -11192,6 +11229,9 @@
   "{n, plural, one {# day} other {# days}}": [
     "web/src/app/PublicLinksSection.tsx"
   ],
+  "{n, plural, one {# done} other {# done}}": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "{n, plural, one {# earlier version deleted.} other {# earlier versions deleted.}}": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -11364,11 +11404,11 @@
   "{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}": [
     "web/src/app/ProjectHeader.tsx"
   ],
+  "{n, plural, one {The # item it created will be deleted on every device. Items it updated are kept.} other {The # items it created will be deleted on every device. Items it updated are kept.}}": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "{n, plural, one {The last send failed: {error}.} other {The last # sends failed: {error}.}}": [
     "web/src/lib/push.ts"
-  ],
-  "{n, plural, one {Undo this import? The # item it created will be deleted on every device. Items it updated are kept.} other {Undo this import? The # items it created will be deleted on every device. Items it updated are kept.}}": [
-    "web/src/app/ImportScreen.tsx"
   ],
   "{n, plural, one {Values on # task are kept but hidden.} other {Values on # tasks are kept but hidden.}}": [
     "web/src/app/FieldsDialog.tsx"

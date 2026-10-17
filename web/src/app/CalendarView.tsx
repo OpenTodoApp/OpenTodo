@@ -606,8 +606,8 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
       className="relative min-w-0 flex-1 border-l border-default"
       style={{
         height: GRID_HEIGHT,
-        // Hour lines, fainter 15-minute lines.
-        backgroundImage: 'linear-gradient(to bottom, rgb(148 163 184 / 0.35) 1px, transparent 1px), linear-gradient(to bottom, rgb(148 163 184 / 0.12) 1px, transparent 1px)',
+        // Hour lines, fainter 15-minute lines, in the theme's border colour.
+        backgroundImage: 'linear-gradient(to bottom, var(--ot-border) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--ot-border) 45%, transparent) 1px, transparent 1px)',
         backgroundSize: `100% ${60 * PX_PER_MIN}px, 100% ${SLOT_MINUTES * PX_PER_MIN}px`,
       }}
     >

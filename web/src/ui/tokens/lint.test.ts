@@ -17,11 +17,13 @@ const PALETTE = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|gree
 const UTILITY = 'bg|text|border|ring|fill|stroke|outline|divide|placeholder|decoration|shadow|accent|caret|from|via|to'
 const RAW_CLASS = new RegExp(`(?<![\\w-])(?:[\\w-]+:)*(?:${UTILITY})-(?:(?:${PALETTE})-\\d{2,3}|white|black)(?:\\/\\d+)?(?![\\w-])`, 'g')
 const HEX = /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?\b/g
+/** Colour functions with literal values (`rgb(148 163 184 / 0.35)`); `color-mix()` over tokens is fine. */
+const COLOUR_FN = /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*[\d.][^)]*\)/g
 
 /** A line marked `token-lint-allow` keeps a fixed colour on purpose (for example a QR code). */
 export function rawColours(path: string, source: string): string[] {
   return source.split('\n').flatMap((line, i) => line.includes('token-lint-allow') ? [] :
-    [...line.matchAll(RAW_CLASS), ...(/\bcolor=/.test(line) ? [] : line.matchAll(HEX))].map((m) => `${path}:${i + 1}: ${m[0]}`),
+    [...line.matchAll(RAW_CLASS), ...(/\bcolor=/.test(line) ? [] : line.matchAll(HEX)), ...line.matchAll(COLOUR_FN)].map((m) => `${path}:${i + 1}: ${m[0]}`),
   )
 }
 
@@ -57,6 +59,11 @@ function componentLayers(source: string): { text: string; line: number }[] {
 }
 
 describe('token lint', () => {
+  it('finds literal colour functions as well as hex (ui-correctness)', () => {
+    const src = "a: 'rgb(148 163 184 / 0.35)'\nb: 'hsl(210 40% 50%)'\nc: 'oklch(0.7 0.1 250)'\nd: 'color-mix(in srgb, var(--ot-border) 45%, transparent)'"
+    expect(rawColours('x.tsx', src)).toEqual(['x.tsx:1: rgb(148 163 184 / 0.35)', 'x.tsx:2: hsl(210 40% 50%)', 'x.tsx:3: oklch(0.7 0.1 250)'])
+  })
+
   it('src/ui uses tokens instead of raw colours', () => {
     const found = Object.entries(ui).flatMap(([path, src]) => rawColours(path.replace(/^\.\.\//, 'src/ui/'), src))
     expect(found).toEqual([])

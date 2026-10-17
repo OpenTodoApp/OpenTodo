@@ -1,4 +1,4 @@
-import { PageBody, PageHeader } from '../ui'
+import { ConfirmDialog, PageBody, PageHeader } from '../ui'
 import { Skeleton } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
@@ -394,9 +394,8 @@ export function ImportScreen() {
     }
   }
 
+  const [undoing, setUndoing] = useState<ImportJob | null>(null)
   async function undo(j: ImportJob) {
-    const created = j.totals.create + j.totals.newProjects + j.totals.newLabels
-    if (!window.confirm(t('{n, plural, one {Undo this import? The # item it created will be deleted on every device. Items it updated are kept.} other {Undo this import? The # items it created will be deleted on every device. Items it updated are kept.}}', { n: created }))) return
     setBusy(true)
     setError(null)
     try {
@@ -411,7 +410,9 @@ export function ImportScreen() {
     }
   }
 
+  const created = undoing ? undoing.totals.create + undoing.totals.newProjects + undoing.totals.newLabels : 0
   return (
+    <>
     <ImportView
       offline={offline}
       fileName={file?.name ?? null}
@@ -434,7 +435,13 @@ export function ImportScreen() {
       onOption={(key, value) => { setOptions((cur) => ({ ...cur, [key]: value })); setPreview(null) }}
       onPreview={() => void runPreview()}
       onStart={() => void start()}
-      onUndo={(j) => void undo(j)}
+      onUndo={setUndoing}
     />
+    {undoing && (
+      <ConfirmDialog title={t('Undo this import?')} confirmLabel={t('Undo import')}
+        consequence={t('{n, plural, one {The # item it created will be deleted on every device. Items it updated are kept.} other {The # items it created will be deleted on every device. Items it updated are kept.}}', { n: created })}
+        onConfirm={() => undo(undoing)} onCancel={() => setUndoing(null)} />
+    )}
+    </>
   )
 }
