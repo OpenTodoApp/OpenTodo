@@ -318,6 +318,13 @@ func TestIMAPSourceMoveFlow(t *testing.T) {
 			}
 			mb.Close()
 			for uid, m := range f.snapshot() {
+				if m.folder == "INBOX" && len(caps) == 0 {
+					// No UIDPLUS: the original stays flagged, never expunged.
+					if !m.seen || !m.deleted {
+						t.Fatalf("message %d after Done: %+v", uid, m)
+					}
+					continue
+				}
 				if m.folder != "OpenTodo.Processed" || !m.seen || m.deleted {
 					t.Fatalf("message %d after Done: %+v", uid, m)
 				}
@@ -438,5 +445,54 @@ func TestIMAPSourceUnreachable(t *testing.T) {
 	src := &IMAPSource{Addr: addr, User: "u", Password: "p", Mailbox: "INBOX", insecurePlaintext: true}
 	if _, err := src.Open(context.Background()); err == nil {
 		t.Fatal("connected to a closed port")
+	}
+}
+
+// TestIMAPWithoutUIDPLUSNeverExpungesOthers (reliable-background-jobs): a
+// server without UIDPLUS has no way to expunge only our messages, so a bare
+// EXPUNGE would also remove messages another client flagged \Deleted. Our
+// processed messages are left flagged \Seen and \Deleted instead.
+func TestIMAPWithoutUIDPLUSNeverExpungesOthers(t *testing.T) {
+	for _, del := range []bool{false, true} {
+		t.Run(fmt.Sprintf("delete=%v", del), func(t *testing.T) {
+			f := newFakeIMAP(t)
+			f.add(1, []byte("Subject: one\r\n\r\nfirst\r\n"))
+			f.add(9, []byte("Subject: other\r\n\r\nanother client's\r\n"))
+			f.mu.Lock()
+			f.msgs[9].deleted = true // flagged by another client, not expunged yet
+			f.mu.Unlock()
+			src := f.source()
+			src.Delete = del
+			ctx := context.Background()
+			mb, err := src.Open(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := mb.Done(ctx, []uint32{1}); err != nil {
+				t.Fatal(err)
+			}
+			mb.Close()
+			msgs := f.snapshot()
+			if _, ok := msgs[9]; !ok {
+				t.Fatal("another client's \\Deleted message was expunged")
+			}
+			if m, ok := msgs[1]; !ok || !m.seen || !m.deleted || m.folder != "INBOX" {
+				t.Fatalf("processed message = %+v, %v; want it left flagged \\Seen \\Deleted", m, ok)
+			}
+			if !del {
+				if m, ok := msgs[10001]; !ok || m.folder != "OpenTodo.Processed" {
+					t.Fatalf("no copy in the processed folder: %+v", msgs)
+				}
+			}
+			// It is not handled again.
+			mb, err = src.Open(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer mb.Close()
+			if got, _ := mb.Unseen(ctx); len(got) != 0 {
+				t.Fatalf("handled again: %+v", got)
+			}
+		})
 	}
 }
