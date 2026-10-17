@@ -25,6 +25,7 @@ import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { selectTask } from './signals'
 import { completeWithUndo, deleteWithUndo, moveWithUndo, parkWithUndo, setDueWithUndo } from './undoable'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 /** Someday (`y`) needs the `start` field of someday-and-evening, which has landed. */
 export const HAS_SOMEDAY = true
@@ -260,7 +261,7 @@ export function TriageView() {
       )}
       {task && picker === 'move' && (
         <Dialog title={t('Move to a project')} onClose={() => setPicker(null)} size="sm">
-          <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={(id) => void moveTo(id)} />
+          <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={(id) => act(moveTo(id))} />
         </Dialog>
       )}
       {task && picker === 'delegate' && (

@@ -12,6 +12,7 @@ import { completedOccurrences } from '../lib/recurring'
 import type { Task } from '../lib/types'
 import { HabitHistory } from './HabitHistory'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 /**
  * The detail panel's recurrence controls (OpenSpec change recurring-tasks): the
@@ -86,7 +87,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           }}
         />
         {task.recurrence && (
-          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label={t('Stop repeating')} onClick={() => { setDraft(''); void setRecurrence(task.id, null) }}><Icon name="x" /></button>
+          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label={t('Stop repeating')} onClick={() => { setDraft(''); act(setRecurrence(task.id, null)) }}><Icon name="x" /></button>
         )}
       </div>
       <datalist id="recurrence-suggestions">
@@ -105,7 +106,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       {recurring && (
         <div className="flex flex-wrap gap-2 pt-1">
           <Tooltip label={t('Move to the next occurrence without completing')} shortcut={keysOf('list.skip')}>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => void skip()}>{t('⤼ Skip')}</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => act(skip())}>{t('⤼ Skip')}</button>
           </Tooltip>
           <Tooltip label={t('Make a standalone copy of this occurrence and move the series on')} shortcut={keysOf('list.detach')}>
             <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => void detach()}>{t('This occurrence only')}</button>
@@ -115,7 +116,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       {notice && <p className="text-meta text-muted" role="status">{notice}</p>}
       {habitOffered && (
         <div className="space-y-2 pt-2" data-habit>
-          <Switch checked={!!task.habit} onChange={(v) => void mutate('task', task.id, { habit: v })} label={t('Track as a habit')}
+          <Switch checked={!!task.habit} onChange={(v) => act(mutate('task', task.id, { habit: v }))} label={t('Track as a habit')}
             description={t('Streaks and a month history, counted on this device from the days done')} />
           {stats && (
             <>

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func TestInjectNoIndex(t *testing.T) {
@@ -70,5 +71,39 @@ func TestServiceWorkerNeverCached(t *testing.T) {
 	Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/sw.js", nil))
 	if rec.Header().Get("CDN-Cache-Control") != "no-store" {
 		t.Error("sw.js: CDN-Cache-Control missing")
+	}
+}
+
+// TestMissingFilesAreNotFound: a missing asset or any path with a file
+// extension is a 404, so a tab of the previous release sees its old chunk fail
+// instead of receiving the page; extension-less paths stay client routes.
+func TestMissingFilesAreNotFound(t *testing.T) {
+	sub := fstest.MapFS{
+		"index.html":           {Data: []byte("<!doctype html><html><head></head><body></body></html>")},
+		"assets/index-abc.js":  {Data: []byte("console.log(1)")},
+		"manifest.webmanifest": {Data: []byte("{}")},
+	}
+	h := handlerFor(sub, Options{})
+	for path, want := range map[string]int{
+		"/":                         200,
+		"/inbox":                    200,
+		"/project/3f2a":             200,
+		"/day/2026-10-17":           200,
+		"/assets/index-abc.js":      200,
+		"/manifest.webmanifest":     200,
+		"/assets/index-old.js":      404,
+		"/assets/TaskDetail-old.js": 404,
+		"/assets/":                  404,
+		"/favicon.ico":              404,
+		"/some/deep/chunk.css":      404,
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if rec.Code != want {
+			t.Errorf("%s: status %d, want %d", path, rec.Code, want)
+		}
+		if want == 404 && strings.Contains(rec.Body.String(), "<html") {
+			t.Errorf("%s: answered with the page", path)
+		}
 	}
 }

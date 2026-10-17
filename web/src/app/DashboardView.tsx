@@ -16,6 +16,7 @@ import { ViewMenu } from './ViewsView'
 import type { ViewData } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 export function DashboardView({ dashboard, data }: { dashboard: View; data: ViewData }) {
   const { views, projects, labels, ctx } = data
@@ -70,7 +71,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
       else if (f.panel?.kind === 'view') navigate({ view: 'view', id: f.panel.id })
     },
     'dashboard.open-view': () => { const f = focused(); if (f?.panel?.kind !== 'view') return false; navigate({ view: 'view', id: f.panel.id }) },
-    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; void setTaskCompleted(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at) },
+    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; act(setTaskCompleted(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at)) },
     'dashboard.escape': () => {
       if (openId) { setOpenId(null); return }
       if (!focused()) return false
@@ -163,7 +164,7 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFo
         <ul>
           {summary.tasks.map((tk, i) => (
             <TaskRow key={tk.id} task={tk} project={tk.project_id ? projectMap.get(tk.project_id) : undefined} labels={resolveLabels(tk.labels, labelMap)}
-              showProject selected={i === selectedTask} blockedBy={blocked.get(tk.id)} onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)} onOpen={() => onOpenTask(tk.id)} />
+              showProject selected={i === selectedTask} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)} />
           ))}
         </ul>
       )}

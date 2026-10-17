@@ -1,5 +1,6 @@
 import { errorMessage } from './i18n/errors'
 import { t } from './i18n/catalog'
+import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
 import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
@@ -12,6 +13,8 @@ import type {
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
+
+export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
 
 export class ApiError extends Error {
   /** The server's own message (English, a machine contract). */
@@ -61,13 +64,16 @@ function reauthenticate(): Promise<boolean> {
   return reauthInFlight
 }
 
-async function request<T>(method: string, path: string, body?: unknown, retried = false): Promise<T> {
+/** Per-call options: the caller's abort signal (sign-out stops a sync exchange). */
+interface RequestOptions { signal?: AbortSignal }
+
+async function request<T>(method: string, path: string, body?: unknown, retried = false, opts: RequestOptions = {}): Promise<T> {
   try {
-    return await send<T>(method, path, body)
+    return await send<T>(method, path, body, opts)
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) {
       if (err.code === 'reauth_required' && !retried && (await reauthenticate())) {
-        return request<T>(method, path, body, true)
+        return request<T>(method, path, body, true, opts)
       }
       if (err.code === 'mfa_enrolment_required') enrolmentListeners.forEach((fn) => fn())
     }
@@ -75,12 +81,13 @@ async function request<T>(method: string, path: string, body?: unknown, retried 
   }
 }
 
-async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
+async function send<T>(method: string, path: string, body?: unknown, opts: RequestOptions = {}): Promise<T> {
+  const res = await fetchWithTimeout(path, {
     method,
     headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
     credentials: 'same-origin',
+    signal: opts.signal,
   })
   return parse<T>(res)
 }
@@ -90,7 +97,7 @@ async function upload<T>(path: string, file: Blob, filename: string, options: Im
   const form = new FormData()
   form.append('options', JSON.stringify(options))
   form.append('file', file, filename)
-  const res = await fetch(path, { method: 'POST', body: form, credentials: 'same-origin' })
+  const res = await fetchWithTimeout(path, { method: 'POST', body: form, credentials: 'same-origin', timeoutMs: timeouts.transfer })
   return parse<T>(res)
 }
 
@@ -106,7 +113,9 @@ function uploadArchive(file: Blob, onProgress?: (fraction: number) => void): Pro
     xhr.withCredentials = true
     xhr.setRequestHeader('Content-Type', 'application/octet-stream')
     xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total) }
-    xhr.onerror = () => reject(new TypeError('network error'))
+    xhr.timeout = timeouts.transfer
+    xhr.ontimeout = () => reject(new RequestTimeoutError())
+    xhr.onerror = () => reject(new NetworkError())
     xhr.onload = () => {
       let data: { error?: { code: string; message: string } } & Partial<StagedRestore> = {}
       try { data = JSON.parse(xhr.responseText || '{}') } catch { /* a proxy's HTML page */ }
@@ -133,7 +142,9 @@ function uploadAttachmentContent(id: string, blob: Blob, onProgress?: (fraction:
     xhr.withCredentials = true
     xhr.setRequestHeader('Content-Type', 'application/octet-stream')
     xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total) }
-    xhr.onerror = () => reject(new TypeError('network error'))
+    xhr.timeout = timeouts.transfer
+    xhr.ontimeout = () => reject(new RequestTimeoutError())
+    xhr.onerror = () => reject(new NetworkError())
     xhr.onload = () => {
       let data: { error?: { code: string; message: string } } = {}
       try { data = JSON.parse(xhr.responseText || '{}') } catch { /* a proxy's HTML page */ }
@@ -149,7 +160,7 @@ function uploadAttachmentContent(id: string, blob: Blob, onProgress?: (fraction:
  * sensitive request.
  */
 async function downloadServerArchive(retried = false): Promise<{ blob: Blob; filename: string }> {
-  const res = await fetch('/api/v1/export/archive', { credentials: 'same-origin' })
+  const res = await fetchWithTimeout('/api/v1/export/archive', { credentials: 'same-origin', timeoutMs: timeouts.transfer })
   if (!res.ok) {
     try {
       await parse(res)
@@ -164,7 +175,11 @@ async function downloadServerArchive(retried = false): Promise<{ blob: Blob; fil
 
 async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
-  const data = await res.json().catch(() => ({}))
+  const data = await res.json().catch((err: unknown) => {
+    // The deadline passed while the body was still arriving: no answer, not an empty one.
+    if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) throw new RequestTimeoutError()
+    return {}
+  })
   if (!res.ok) {
     const err = (data as { error?: { code: string; message: string } }).error
     throw new ApiError(res.status, err?.code ?? 'error', err?.message ?? res.statusText)
@@ -221,8 +236,8 @@ export const api = {
   listIdentities: () => request<{ identities: LinkedIdentity[]; provider: OidcStatus }>('GET', '/api/v1/me/identities'),
   unlinkIdentity: (id: string) => request<void>('DELETE', `/api/v1/me/identities/${encodeURIComponent(id)}`),
   /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
-  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number) =>
-    request<SyncResponse>('POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset }),
+  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number, signal?: AbortSignal) =>
+    request<SyncResponse>('POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset }, false, { signal }),
   // Project sharing: membership is server-side authorization data, changed only through these routes.
   listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
   addMember: (projectId: string, email: string, role: ProjectRole) =>
@@ -496,9 +511,9 @@ export function isNetworkError(err: unknown): boolean {
  */
 export const publicApi = {
   list: async (token: string): Promise<PublicList> =>
-    parse<PublicList>(await fetch(`/api/v1/public/${encodeURIComponent(token)}`, { credentials: 'omit', cache: 'no-store' })),
+    parse<PublicList>(await fetchWithTimeout(`/api/v1/public/${encodeURIComponent(token)}`, { credentials: 'omit', cache: 'no-store' })),
   tick: async (token: string, taskId: string, completed: boolean): Promise<{ taskId: string; completed_at: number | null }> =>
-    parse(await fetch(`/api/v1/public/${encodeURIComponent(token)}/tick`, {
+    parse(await fetchWithTimeout(`/api/v1/public/${encodeURIComponent(token)}/tick`, {
       method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, completed }),
     })),
 }

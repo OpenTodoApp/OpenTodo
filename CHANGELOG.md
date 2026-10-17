@@ -19,6 +19,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **Changes are kept when a sync turns out to need unlocking.** If encryption was turned on on another device during a sync, changes a server limit held back were lost and refused changes kept their local values. They are now held for later or take the server's values.
 - **Custom fields survive a server restore.** After the server is restored from a backup, devices now send their custom field definitions back with everything else.
 - **Refused custom field and link changes are handled.** A custom field change the server refused now shows the server's value, and a refused attachment no longer stops syncing.
+- **Signing out during a sync no longer leaves the previous account's data behind.** A sync still waiting for the server is stopped before it writes anything more, and the next account starts with a fresh device. Other open tabs of the app reload to the sign-in screen. ([Offline and sync](docs/offline-and-sync.md))
+- **A server that stops answering no longer stalls syncing.** Every request now gives up after 30 seconds (10 minutes for file uploads and downloads); the status shows offline and the app tries again shortly, waiting a little longer each time. ([Offline and sync](docs/offline-and-sync.md))
+- **Open tabs recover after a server update.** A screen whose code changed in the update reloads on its own, a "Reload to update" prompt appears when a new version is ready or another tab updated the stored data, and an error in one screen or panel no longer blanks the whole app. The server now answers missing app files with "not found" instead of the app page, and only a real network problem shows as offline. ([Troubleshooting](docs/troubleshooting-app.md))
+- **Changes that can't be made say why.** Moving a task under one of its own subtasks, a move a section does not allow, or a change that fails to save now shows the reason at the bottom of the screen instead of doing nothing.
+- **Only one tab syncs.** With the app open in several tabs, one of them syncs for all; the others show its status and take over when it closes. Moving between lists no longer starts a new sync each time. ([Sync protocol](docs/sync.md))
+- **Changes held back by a server limit are no longer lost or sent twice** when they are offered again at the moment another change is held.
+- **A title you are typing stays as you type it** when another device renames the task at the same time; leaving the field saves your title.
+- **The browser is asked to keep the app's data**, so it is not deleted when space runs low or after weeks without a visit.
 
 ### Added
 

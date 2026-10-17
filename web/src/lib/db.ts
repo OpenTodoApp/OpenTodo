@@ -403,12 +403,77 @@ class OpenTodoDB extends Dexie {
   }
 }
 
-export let db = new OpenTodoDB()
+export let db = watchVersionChange(new OpenTodoDB())
 
 /** Replace the database instance (tests use this to get an isolated store). */
 export function useDatabase(name: string): OpenTodoDB {
-  db = new OpenTodoDB(name)
+  db = watchVersionChange(new OpenTodoDB(name))
   return db
+}
+
+// ---- a newer release in another tab (client-sync-robustness) ----
+
+let outdated = false
+const outdatedListeners = new Set<() => void>()
+
+/**
+ * Another tab opened the database with a newer schema: this tab closes its
+ * connection (so the upgrade is not blocked) and asks to be reloaded. Its
+ * writes would fail from here on, so the banner is the only way forward.
+ */
+function watchVersionChange(d: OpenTodoDB): OpenTodoDB {
+  d.on('versionchange', () => {
+    d.close()
+    outdated = true
+    for (const fn of outdatedListeners) fn()
+    return false
+  })
+  return d
+}
+
+/** True once a newer version of the app took over the local database in another tab. */
+export function databaseOutdated(): boolean {
+  return outdated
+}
+
+/** Subscribes to {@link databaseOutdated}; returns an unsubscribe function. */
+export function onDatabaseOutdated(fn: () => void): () => void {
+  outdatedListeners.add(fn)
+  return () => outdatedListeners.delete(fn)
+}
+
+/**
+ * Asks the browser to keep this site's storage under pressure (Safari evicts
+ * unpersisted data after weeks without a visit). Called after sign-in; the
+ * answer is the browser's, and a refusal changes nothing.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined
+    if (!storage?.persist) return false
+    if (await storage.persisted?.()) return true
+    return await storage.persist()
+  } catch {
+    return false
+  }
+}
+
+// ---- local data epoch (client-sync-robustness) ----
+
+/**
+ * Bumped whenever the local data stops belonging to the running session: on
+ * sign-out (clearLocalData) and when sync stops. Work that started under an
+ * older epoch (a sync exchange, the memoised device id) must not write again.
+ */
+let epoch = 0
+
+export function localEpoch(): number {
+  return epoch
+}
+
+/** Starts a new epoch: everything started before it stops at its next step. */
+export function bumpLocalEpoch(): number {
+  return ++epoch
 }
 
 /** A row of any synced entity, for code that treats every kind alike. */
@@ -457,6 +522,7 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
+  bumpLocalEpoch()
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),

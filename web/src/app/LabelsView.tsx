@@ -23,6 +23,7 @@ import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { Popover } from './overlay'
 import { navigate, type Route } from './router'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
@@ -151,7 +152,7 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
     if (!delta) return
     e.preventDefault()
     const next = HUES[(i + delta + HUES.length) % HUES.length]
-    void updateLabel(label.id, { color: next.hex })
+    act(updateLabel(label.id, { color: next.hex }))
     swatches.current?.querySelector<HTMLButtonElement>(`[data-hue-option="${next.name}"]`)?.focus()
   }
   return (
@@ -171,7 +172,7 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
               <button key={h.name} type="button" role="radio" aria-checked={h.name === current} aria-label={h.name} data-hue-option={h.name}
                 tabIndex={h.name === current ? 0 : -1}
                 className="touch-target inline-flex h-9 w-9 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
-                onClick={() => void updateLabel(label.id, { color: h.hex })}>
+                onClick={() => act(updateLabel(label.id, { color: h.hex }))}>
                 <span data-hue={h.name} className={`block h-6 w-6 rounded-full bg-hue-solid ${h.name === current ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface' : ''}`} />
               </button>
             ))}
@@ -183,10 +184,10 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
         <section className="space-y-1">
           <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">{t('Organize')}</h3>
           <div className="grid grid-cols-2 gap-1">
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, -1)}>{t('Move up')} <kbd className="ui-kbd">Alt+↑</kbd></button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 1)}>{t('Move down')} <kbd className="ui-kbd">Alt+↓</kbd></button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'top')}>{t('To the top')}</button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'bottom')}>{t('To the bottom')}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => act(reorderLabel(label.id, -1))}>{t('Move up')} <kbd className="ui-kbd">Alt+↑</kbd></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => act(reorderLabel(label.id, 1))}>{t('Move down')} <kbd className="ui-kbd">Alt+↓</kbd></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => act(reorderLabel(label.id, 'top'))}>{t('To the top')}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => act(reorderLabel(label.id, 'bottom'))}>{t('To the bottom')}</button>
           </div>
         </section>
         <section className="space-y-1 border-t border-default pt-3">
@@ -243,7 +244,7 @@ export function useLabelDrag() {
         if (next?.id !== current?.id || next?.zone !== current?.zone) { current = next; setDrop(next) }
       },
       onDrop: () => {
-        if (current) void moveLabelTo(label.id, current.zone === 'before' ? { before: current.id } : { after: current.id })
+        if (current) act(moveLabelTo(label.id, current.zone === 'before' ? { before: current.id } : { after: current.id }))
       },
       onEnd: () => { current = null; setDrop(null) },
     })
@@ -293,7 +294,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
     }
   }
   const startRename = () => { setName(label.name); setEditing(true) }
-  const move = (to: -1 | 1 | 'top' | 'bottom') => { refocus.current = true; void reorderLabel(label.id, to) }
+  const move = (to: -1 | 1 | 'top' | 'bottom') => { refocus.current = true; act(reorderLabel(label.id, to)) }
   const onKeyDown = useRowMenuShortcut({ openMenu: () => setMenuOpen(true), rename: startRename, move })
   const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move })
 

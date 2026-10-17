@@ -5,6 +5,7 @@ import { updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { estimateFocus } from './signals'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 /**
  * Estimate control of the detail panel (OpenSpec `time-blocking`): shorthand input
@@ -36,7 +37,7 @@ export function EstimateField({ task }: { task: Task }) {
 
   const set = (minutes: number | null) => {
     setError(null)
-    if (minutes !== task.estimate_minutes) void updateTask(task.id, { estimate_minutes: minutes })
+    if (minutes !== task.estimate_minutes) act(updateTask(task.id, { estimate_minutes: minutes }))
     setDraft(minutes ? formatMinutes(minutes) : '')
   }
 

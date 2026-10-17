@@ -6,12 +6,12 @@ import { LanguageProvider } from './LanguageProvider'
 import { useLanguageVersion, t } from '../lib/i18n'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
-import { clearLocalData } from '../lib/db'
+import { clearLocalData, requestPersistentStorage } from '../lib/db'
 import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { clearInbox } from '../lib/shareInbox'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
 import { unsubscribeOnSignOut } from '../lib/push'
-import { startSync, stopSync, useSyncStatus } from '../lib/sync'
+import { announceSignOut, onSignOutElsewhere, startSync, stopSync, stopSyncAndWait, syncNow, useSyncStatus, withSyncLock } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
@@ -30,6 +30,8 @@ import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
 import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
+import { PanelBoundary } from './PanelBoundary'
+import { UpdateBanner } from './UpdateBanner'
 
 // Display mode (display-mode): its own chunk, fetched when a display route opens.
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
@@ -67,6 +69,9 @@ export function App() {
         // End-to-end encryption (OpenSpec e2ee): learn the account mode before the
         // first sync, so a new device unlocks before anything is pulled.
         await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
+        // Ask the browser not to evict the local copy (Safari drops unpersisted
+        // storage after weeks without a visit); its answer changes nothing else.
+        void requestPersistentStorage()
         setPhase({ kind: status.mfa?.restricted ? 'restricted' : 'ready', user: status.user })
       } else {
         const hadSession = localStorage.getItem('opentodo.user') !== null
@@ -117,10 +122,17 @@ export function App() {
     if (sync.state === 'unauthenticated' && phase.kind === 'ready') void refresh()
   }, [sync.state, phase.kind, refresh])
 
+  // Sync runs while signed in, except on the screens that work without it. The
+  // effect depends on that one boolean, so moving between lists does not start
+  // a new exchange (client-sync-robustness).
+  const syncWanted = phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify' && route.view !== 'public'
   useEffect(() => {
-    if (phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify' && route.view !== 'public') startSync()
+    if (syncWanted) startSync()
     else stopSync()
-  }, [phase.kind, route.view])
+  }, [syncWanted])
+
+  // Another tab signed out and cleared the local data: this one reloads to the sign-in screen.
+  useEffect(() => onSignOutElsewhere(() => window.location.reload()), [])
 
   // A visitor who went to sign in from a project invite link (possibly through
   // the identity provider, which returns to /) comes back to the link.
@@ -133,6 +145,9 @@ export function App() {
   const logout = useCallback(async () => {
     let redirect: string | undefined
     try {
+      // Unsynced changes are uploaded first when online (as Settings promises),
+      // for at most ten seconds; the exchange is then stopped before the clear.
+      if (navigator.onLine !== false) await Promise.race([syncNow().catch(() => undefined), new Promise((r) => setTimeout(r, 10_000))])
       // Remove this device's push subscription first (the server also drops it with the session).
       await unsubscribeOnSignOut()
       redirect = (await api.logout())?.redirect
@@ -152,6 +167,7 @@ export function App() {
       <LanguageProvider>
         <DateTimePrefsProvider>
           <ReauthHost />
+          <UpdateBanner />
           {screen()}
         </DateTimePrefsProvider>
       </LanguageProvider>
@@ -262,7 +278,7 @@ export function App() {
     if (route.view === 'display') {
       // Display mode (display-mode D3): the display replaces the shell; sync keeps
       // running (started above for every signed-in route), so it stays live.
-      return <Suspense fallback={null}><DisplayScreen route={route} /></Suspense>
+      return <PanelBoundary><Suspense fallback={null}><DisplayScreen route={route} /></Suspense></PanelBoundary>
     }
     return (
       <>
@@ -287,8 +303,11 @@ export function App() {
 
 /** Clears everything this device holds for the signed-in account (sign-out and an expired demo sandbox). */
 async function clearDeviceData() {
-  stopSync()
-  await clearLocalData()
+  // Other tabs stop syncing and reload; the exchange running here stops and is
+  // awaited, and the data is cleared while no tab can sync (client-sync-robustness).
+  announceSignOut()
+  await stopSyncAndWait()
+  await withSyncLock(() => clearLocalData())
   // Files shared to the app and not saved yet (OpenSpec attachments D9).
   await clearInbox().catch(() => undefined)
   forgetMemoryKeys()

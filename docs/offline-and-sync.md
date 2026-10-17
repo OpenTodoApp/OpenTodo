@@ -31,7 +31,7 @@ The status at the top right tells you where things stand.
 | **Synced** | Everything on this device is on the server, and the other way round |
 | **Syncing…** | Sending or receiving changes right now |
 | **3 pending** | Changes are waiting to be sent; they'll go in a moment |
-| **Offline · 3 pending** | No connection; 3 changes will be sent when it's back |
+| **Offline · 3 pending** | No connection, or no answer within 30 seconds; 3 changes will be sent when it's back |
 | **Sync error** | The server answered with a problem; hover over the status for details |
 | **Signed out** | Your session ended; sign in again and waiting changes are sent |
 | **Locked** | Your account uses [encryption](e2ee.md) and this device needs your passphrase |

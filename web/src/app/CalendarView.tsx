@@ -35,6 +35,7 @@ import { rememberCalendarMode } from '../lib/calendarMode'
 import { useToday, useViewerZone } from './useViews'
 import { visibleTasks } from '../lib/trash'
 import { t } from '../lib/i18n'
+import { act, reportActionError } from './actionError'
 
 /** 48 px per hour, 12 px per 15-minute slot. */
 const PX_PER_MIN = 0.8
@@ -192,11 +193,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
       const time = toHHMM(target.start)
-      if (task.due?.date !== target.date || task.due?.time !== time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time }))
+      if (task.due?.date !== target.date || task.due?.time !== time) act(setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time })))
     } else if (target.type === 'lane') {
-      if (task.due?.date !== target.date || task.due?.time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date }))
+      if (task.due?.date !== target.date || task.due?.time) act(setDueWithUndo(taskId, dueFromView(stored, { date: target.date })))
     } else if (target.estimate !== task.estimate_minutes) {
-      void updateTask(taskId, { estimate_minutes: target.estimate })
+      act(updateTask(taskId, { estimate_minutes: target.estimate }))
     }
     setSelectedId(taskId)
   }, [taskMap, rawMap])
@@ -219,7 +220,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       if (!patch) return
       await updateTask(id, 'due' in patch ? { ...patch, due: dueFromView(raw.due, patch.due ?? null) } : patch)
       after?.(task, patch)
-    }).catch(() => undefined)
+    }).catch(reportActionError)
   }, [])
 
   const goTo = useCallback((d: string) => navigate({ view: mode, date: d === today ? undefined : d }), [mode, today])
@@ -289,7 +290,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); setOpenId(task.id) }),
     'calendar.complete': unlessPlacing(() => {
       if (!task?.due) return false
-      void completeWithUndo(task.id, true)
+      act(completeWithUndo(task.id, true))
       setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
     }),
   })
@@ -339,7 +340,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={eventsShown} data-calendars-toggle
                 title={eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}
                 className={eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
-                onClick={() => void setShowEvents(!eventsShown)}>{t('Calendars')}</Button>
+                onClick={() => act(setShowEvents(!eventsShown))}>{t('Calendars')}</Button>
             )}
             <span className="flex items-center" role="group" aria-label={t('Range')}>
               <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? t('Previous day') : t('Previous week')} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} />

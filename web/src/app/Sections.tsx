@@ -10,6 +10,7 @@ import { createSection, deleteSection, renameSection, reorderSection } from '../
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { t } from '../lib/i18n'
+import { act } from './actionError'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
@@ -66,7 +67,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   const onRowKey = useRowMenuShortcut({
     openMenu: () => setMenuOpen(true),
     rename: startRename,
-    move: (to) => { if (section && (to === -1 || to === 1)) void reorderSection(section.id, to) },
+    move: (to) => { if (section && (to === -1 || to === 1)) act(reorderSection(section.id, to)) },
   })
 
   const titleNode = renaming && section ? (

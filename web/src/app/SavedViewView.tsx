@@ -23,6 +23,7 @@ import { habitStatsMap } from '../lib/habits'
 import { useViewData, type ViewData } from './useViews'
 import { Dialog } from './overlay'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { act } from './actionError'
 
 const GROUP_LABEL = translatedMap<GroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None') })
 const SORT_LABEL = translatedMap<SortBy>({ due: msg('Due date'), priority: msg('Priority'), position: msg('Manual order'), created: msg('Created'), title: msg('Title') })
@@ -125,7 +126,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     <PageBody width="list">
           <PageHeader title={view.name} meta={count !== null ? count : undefined} help="saved-filter"
             leading={<span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />}
-            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => void setPinned(view.id, !view.pinned)}>{view.pinned ? t('Unpin') : t('Pin')}</Button>}
+            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => act(setPinned(view.id, !view.pinned))}>{view.pinned ? t('Unpin') : t('Pin')}</Button>}
             menu={<ViewMenu view={view} />} />
 
           <div className="mb-3 border-b border-default pb-2">
@@ -147,19 +148,19 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted">
               <label className="flex items-center gap-1.5">{t('Group')}
                 <select className="ui-input w-auto py-1 text-meta" aria-label={t('Group by')} value={opts.groupBy}
-                  onChange={(e) => void updateView(view.id, { group_by: e.target.value as GroupBy })}>
+                  onChange={(e) => act(updateView(view.id, { group_by: e.target.value as GroupBy }))}>
                   {GROUP_BY_OPTIONS.map((g) => <option key={g} value={g}>{GROUP_LABEL[g]}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-1.5">{t('Sort')}
                 <select className="ui-input w-auto py-1 text-meta" aria-label={t('Sort by')} value={opts.sortBy}
-                  onChange={(e) => void updateView(view.id, { sort_by: e.target.value as SortBy })}>
+                  onChange={(e) => act(updateView(view.id, { sort_by: e.target.value as SortBy }))}>
                   {SORT_BY_OPTIONS.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-1.5">{t('Direction')}
                 <select className="ui-input w-auto py-1 text-meta" aria-label={t('Sort direction')} value={opts.sortDir}
-                  onChange={(e) => void updateView(view.id, { sort_dir: e.target.value as SortDir })}>
+                  onChange={(e) => act(updateView(view.id, { sort_dir: e.target.value as SortDir }))}>
                   <option value="asc">{opts.sortBy === 'priority' ? t('Ascending (p4 first)') : t('Ascending')}</option>
                   <option value="desc">{opts.sortBy === 'priority' ? t('Descending (p1 first)') : t('Descending')}</option>
                 </select>
@@ -189,7 +190,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                           blockedBy={blocked.get(tk.id)}
                           habit={habits.get(tk.id)}
                           breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
-                          onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)}
+                          onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
                           onOpen={() => { setSelected(key); setOpenId(tk.id) }}
                           {...bulk.rowProps(tk.id)}
                         />
