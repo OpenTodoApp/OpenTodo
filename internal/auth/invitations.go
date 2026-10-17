@@ -110,14 +110,15 @@ func (s *Service) CreateInvitation(ctx context.Context, creator *User, email str
 	return inv, secret, nil
 }
 
-// ListInvitations returns every invitation, newest first, with derived status.
+// ListInvitations returns every invitation, newest first (two created in the same
+// millisecond in reverse insertion order), with derived status.
 func (s *Service) ListInvitations(ctx context.Context) ([]Invitation, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT i.id, i.email, i.role, i.created_by, c.name, i.created_at, i.expires_at,
 			i.accepted_at, i.revoked_at, a.id, a.email, a.name
 		FROM invitations i
 		JOIN users c ON c.id = i.created_by
 		LEFT JOIN users a ON a.id = i.accepted_by
-		ORDER BY i.created_at DESC`)
+		ORDER BY i.created_at DESC, i.rowid DESC`)
 	if err != nil {
 		return nil, err
 	}
