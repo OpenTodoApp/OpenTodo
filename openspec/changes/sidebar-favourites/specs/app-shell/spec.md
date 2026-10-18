@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) and a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available); then, in one scroller, the Favourites group when the user has pinned anything, then Projects, Labels and Filters, each collapsible with its state remembered on the device (Labels and Filters closed until the device stores a state) and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects, favourites and collapsed group headers only.
+The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything, then Projects, Labels and Filters, each collapsible with its state remembered on the device (Labels and Filters closed until the device stores a state) and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects, favourites and collapsed group headers only.
 
 #### Scenario: Default sidebar
 - **WHEN** a user with projects and labels and no favourites opens the app on a 1280×800 screen
@@ -24,6 +24,10 @@ The sidebar SHALL show, top to bottom: the app name, the primary destinations In
 #### Scenario: Two groups closed
 - **WHEN** the user collapses Filters and Labels
 - **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
+
+#### Scenario: More open on a phone
+- **WHEN** a user with 25 projects opens the drawer on a 390×640 phone, opens More and swipes up on the drawer
+- **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the primary destinations and the footer stay in place, and the page behind the drawer does not move
 
 #### Scenario: Favourites first
 - **WHEN** the user has pinned a project, a label and a saved filter
