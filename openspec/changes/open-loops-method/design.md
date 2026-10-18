@@ -44,9 +44,9 @@ The method name is a single constant used in one place, so a rename before relea
 
 *Alternatives:* vocabulary in Markdown front matter (the docs would own it, but the app would have to parse docs at runtime); per-language vocabulary files (they would duplicate the catalogs and bypass `i18n-check`).
 
-### D2. "How you work" is `user_prefs.method`, a string read as `lists` when unknown
+### D2. "How you work" is `user_prefs.method_mode`, a string read as `lists` when unknown
 
-This follows exactly the pattern of `density` and `sidebar_destinations`: an additive `kString` in `Schema["user_prefs"]`, the default in `web/src/lib/ops.ts`, the type in `types.ts`. The mode is read through one hook (`useMethodMode()`), which every surface consults. The start-view offer writes only the existing per-device `startView` key.
+This follows exactly the pattern of `density` and `sidebar_destinations`: an additive `kString` in `Schema["user_prefs"]`, the default in `web/src/lib/ops.ts`, the type in `types.ts`. The mode is read through one hook (`useMethodMode()`), which every surface consults. The start-view offer writes only the existing per-device `startView` key. The field is `method_mode`, not `method`, because `method` is already an audit detail key (the sign-in method) and the audit test forbids any overlap between entity fields and detail keys.
 
 *Alternative:* a per-device setting. Rejected, because the sidebar and markers should follow the user, as appearance does, while the start view stays per device as it is today.
 
@@ -110,7 +110,7 @@ All additive; no field is renamed or removed, and nothing is encrypted:
 
 | Entity | New field | Kind | Content? |
 | --- | --- | --- | --- |
-| `user_prefs` | `method` | string (`lists`/`companion`/`first`) | no |
+| `user_prefs` | `method_mode` | string (`lists`/`companion`/`first`) | no |
 | `project_prefs` | `reviewed_at` | number (Unix ms) | no |
 | `review` | `daily_at`, `monthly_at` | number | no |
 | `review` | `focus_date` | string `YYYY-MM-DD` | no |
@@ -136,7 +136,7 @@ Each field is added to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts`, 
 
 ## Migration Plan
 
-- Existing accounts read `method` as `lists`. Their sidebar, start view and pages are unchanged, and the weekly review shows the new steps without method words.
+- Existing accounts read `method_mode` as `lists`. Their sidebar, start view and pages are unchanged, and the weekly review shows the new steps without method words.
 - Clients that predate this change ignore the new `user_prefs` and `review` fields and keep their values (existing rules for unknown fields on known entities).
 - Servers that predate it reject the new fields as unknown. The device keeps its local value (existing "Older server" scenario).
 - Rollback: the fields are inert to older code, and removing the UI leaves them as unused data.

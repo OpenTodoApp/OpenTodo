@@ -17,9 +17,9 @@ describe('How you work (open-loops "How you work preference")', () => {
   })
 
   it('an unknown value from a newer client reads as lists and is kept', async () => {
-    await applyOps([{ id: 'r1', entity: 'user_prefs', entityId: 'me', field: 'method', value: 'coach', ts: 10, device: 'newer' }])
+    await applyOps([{ id: 'r1', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'coach', ts: 10, device: 'newer' }])
     const row = await db.userPrefs.get('me')
-    expect(row?.method).toBe('coach')
+    expect(row?.method_mode).toBe('coach')
     expect(readMethodMode(row)).toBe('lists')
     expect(await db.outbox.count()).toBe(0)
   })
@@ -28,15 +28,15 @@ describe('How you work (open-loops "How you work preference")', () => {
     await setMethodMode('first')
     expect(readMethodMode(await db.userPrefs.get('me'))).toBe('first')
     const queued = (await db.outbox.toArray()).map(({ entity, entityId, field, value }) => ({ entity, entityId, field, value }))
-    expect(queued).toEqual([{ entity: 'user_prefs', entityId: 'me', field: 'method', value: 'first' }])
+    expect(queued).toEqual([{ entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first' }])
   })
 
   it('concurrent choices converge on the later write', async () => {
     await setMethodMode('companion')
-    const clock = (await db.userPrefs.get('me'))!._clock.method
-    await applyOps([{ id: 'b', entity: 'user_prefs', entityId: 'me', field: 'method', value: 'first', ts: clock.ts + 1, device: 'B' }])
+    const clock = (await db.userPrefs.get('me'))!._clock.method_mode
+    await applyOps([{ id: 'b', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first', ts: clock.ts + 1, device: 'B' }])
     expect(readMethodMode(await db.userPrefs.get('me'))).toBe('first')
-    await applyOps([{ id: 'c', entity: 'user_prefs', entityId: 'me', field: 'method', value: 'lists', ts: clock.ts - 1, device: 'C' }])
+    await applyOps([{ id: 'c', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'lists', ts: clock.ts - 1, device: 'C' }])
     expect(readMethodMode(await db.userPrefs.get('me'))).toBe('first')
   })
 })

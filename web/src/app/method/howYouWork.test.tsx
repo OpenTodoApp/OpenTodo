@@ -83,7 +83,7 @@ describe('The mode is presentation only (open-loops "How you work preference")',
     await db.outbox.clear()
     for (const mode of ['companion', 'first', 'lists'] as const) await setMethodMode(mode)
     const ops = (await db.outbox.toArray()).map((o) => [o.entity, o.field, o.value])
-    expect(ops).toEqual([['user_prefs', 'method', 'companion'], ['user_prefs', 'method', 'first'], ['user_prefs', 'method', 'lists']])
+    expect(ops).toEqual([['user_prefs', 'method_mode', 'companion'], ['user_prefs', 'method_mode', 'first'], ['user_prefs', 'method_mode', 'lists']])
     expect((await db.tasks.toArray()).map((x) => x.title)).toEqual(['Measure wall'])
   })
 })

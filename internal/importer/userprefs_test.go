@@ -66,7 +66,7 @@ func TestOwnExportRestoresReview(t *testing.T) {
 
 const openLoopsOwnExport = `{"format":"opentodo-export","version":1,
   "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
-  "user_prefs":[{"id":"me","method":"companion"}],
+  "user_prefs":[{"id":"me","method_mode":"companion"}],
   "review":[{"id":"me","completed_at":1760600000000,"daily_at":1760700000000,"monthly_at":1760000000000,"focus_date":"2026-10-17","focus":"a,b"}],
   "project_prefs":[{"id":"p1","feed_seen_at":5,"reviewed_at":1760500000000}],
   "encryption":null}`
@@ -81,7 +81,7 @@ func TestOwnExportRestoresOpenLoopsFields(t *testing.T) {
 		t.Fatalf("job = %+v", job)
 	}
 	ctx := context.Background()
-	if row, _ := h.sync.Get(ctx, h.uid, "user_prefs", "me"); str(row, "method") != "companion" {
+	if row, _ := h.sync.Get(ctx, h.uid, "user_prefs", "me"); str(row, "method_mode") != "companion" {
 		t.Fatalf("prefs = %v", row)
 	}
 	row, _ := h.sync.Get(ctx, h.uid, "review", "me")

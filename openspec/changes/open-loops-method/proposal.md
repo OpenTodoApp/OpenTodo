@@ -28,7 +28,7 @@ OpenTodo already ships almost every piece of a GTD-style system, but as separate
 - **Website material from the release.** The site bundle carries the method vocabulary in every language (`method.json`) and a `method` fact, so the website's method page (in the website repository) uses the released words and screenshots and only advertises what that version ships.
 - **Starter setup.** Choosing Open Loops at first run, or later from Settings, offers to create four context labels (`@home`, `@computer`, `@calls`, `@errands`) as ordinary operations.
 
-Nothing here is **BREAKING**: every new op field is additive (`user_prefs.method`, `project_prefs.reviewed_at`, `review.daily_at`, `review.monthly_at`, `review.focus_date`, `review.focus`), there is no new API route, no new environment variable and no Dexie version change.
+Nothing here is **BREAKING**: every new op field is additive (`user_prefs.method_mode`, `project_prefs.reviewed_at`, `review.daily_at`, `review.monthly_at`, `review.focus_date`, `review.focus`), there is no new API route, no new environment variable and no Dexie version change.
 
 Out of scope:
 - The website's method landing page, cheat-sheet PDF and demo button. These live in `OpenTodoWebsite`. This change supplies the bundle data and docs they build on.

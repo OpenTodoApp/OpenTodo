@@ -353,7 +353,7 @@ export interface UserPrefs {
   /** The owner's welcome note (welcome-note): "seen" once closed on any device. */
   welcome: string
   /** How you work (open-loops-method D2): lists | companion | first; unknown or empty values read as lists. */
-  method: string
+  method_mode: string
   _clock: Clock
 }
 

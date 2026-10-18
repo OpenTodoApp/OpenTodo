@@ -70,7 +70,7 @@ describe('three-step first run', () => {
     expect((await db.userPrefs.get(USER_PREFS_ID))?.theme_mode).toBe('dark')
     await click(q('[data-first-run-continue]')!)
     await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'install')
-    expect((await db.userPrefs.get(USER_PREFS_ID))?.method).toBe('companion')
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('companion')
     expect(await db.labels.count()).toBe(0)
 
     // Step three: skip installing closes the card for good.
@@ -106,7 +106,7 @@ describe('three-step first run', () => {
     await waitFor(() => q('[data-offer="start"]') === null)
     await click(q('[data-first-run-continue]')!)
     await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'install')
-    expect((await db.userPrefs.get(USER_PREFS_ID))?.method).toBe('first')
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('first')
     expect((await db.labels.toArray()).map((l) => l.name).sort()).toEqual(['@calls', '@computer', '@errands', '@home'])
     expect(await getStartView()).toBe('loop')
     await r.unmount()
@@ -132,7 +132,7 @@ describe('three-step first run', () => {
     await waitFor(() => q('[data-first-run]') === null && q('[data-empty-state="inbox"]') !== null)
     expect((await db.userPrefs.get(USER_PREFS_ID))?.first_run).toBe('done')
     // How you work was never written, so it reads as Lists only.
-    expect((await db.userPrefs.get(USER_PREFS_ID))?.method).toBe('')
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('')
     expect(q('[data-empty-state]')!.textContent).toContain('Your Inbox is empty')
     expect(q('[data-empty-action]')!.textContent).toBe('Add a task')
     await r.unmount()

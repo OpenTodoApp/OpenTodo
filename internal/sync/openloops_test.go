@@ -13,7 +13,7 @@ func TestOpenLoopsFieldsValidate(t *testing.T) {
 	cases := []struct {
 		entity, field, ok, bad string
 	}{
-		{"user_prefs", "method", `"first"`, `3`},
+		{"user_prefs", "method_mode", `"first"`, `3`},
 		{"project_prefs", "reviewed_at", `1700000000000`, `"yesterday"`},
 		{"review", "daily_at", `1700000000000`, `"today"`},
 		{"review", "monthly_at", `1700000000000`, `true`},

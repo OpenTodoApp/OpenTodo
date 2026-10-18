@@ -2,8 +2,8 @@
 
 ## 1. Data fields (design D2, D4, D5, Data model impact)
 
-- [x] 1.1 Add `method` to `Schema["user_prefs"]`, `reviewed_at` to `Schema["project_prefs"]`, and `daily_at`, `monthly_at`, `focus_date` and `focus` to `Schema["review"]` in `internal/sync/ops.go`, each with a comment naming this change. Verify with `go test ./internal/sync/...`: a case that each field validates with its kind, one that a wrong kind is rejected, and one that the fields resolve to the personal scope for a shared project's `project_prefs`.
-- [x] 1.2 Add the fields to `web/src/lib/types.ts` and the defaults in `web/src/lib/ops.ts`, plus a `useMethodMode()` hook that reads `user_prefs.method` and maps unknown or empty values to `lists`. Verify with vitest: the "Unknown value from a newer client" and "Concurrent choices" scenarios (LWW across two simulated devices), and that reading writes no op (`npm test` in web/).
+- [x] 1.1 Add `method_mode` to `Schema["user_prefs"]`, `reviewed_at` to `Schema["project_prefs"]`, and `daily_at`, `monthly_at`, `focus_date` and `focus` to `Schema["review"]` in `internal/sync/ops.go`, each with a comment naming this change. Verify with `go test ./internal/sync/...`: a case that each field validates with its kind, one that a wrong kind is rejected, and one that the fields resolve to the personal scope for a shared project's `project_prefs`.
+- [x] 1.2 Add the fields to `web/src/lib/types.ts` and the defaults in `web/src/lib/ops.ts`, plus a `useMethodMode()` hook that reads `user_prefs.method_mode` and maps unknown or empty values to `lists`. Verify with vitest: the "Unknown value from a newer client" and "Concurrent choices" scenarios (LWW across two simulated devices), and that reading writes no op (`npm test` in web/).
 - [x] 1.3 Confirm the JSON export and import round-trip the new fields and that `internal/activity` derives no event from them. Verify with an export test in `internal/sync` or `internal/importer` that includes each field, and with the shared activity fixture still passing (`go test ./...`).
 
 ## 2. Vocabulary and derived rules (design D1, D3)

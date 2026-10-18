@@ -462,7 +462,7 @@ var Schema = map[string]map[string]kind{
 		// How you work (OpenSpec change open-loops-method, design D2): "lists",
 		// "companion" or "first"; clients read an unknown or empty value as
 		// "lists", so new modes stay additive.
-		"method": kString,
+		"method_mode": kString,
 		// Interface language (OpenSpec change app-localization, design D1):
 		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
 		// restricted here; clients read an unknown code as "system" and keep the

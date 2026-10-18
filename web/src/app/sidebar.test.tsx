@@ -141,7 +141,7 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
 
   it('Open Loops first sidebar: six destinations by the Places; Upcoming and Calendar join More; promotions are kept for later', async () => {
     await setPromoted(null, 'someday', true)
-    await applyOps([{ id: 'm1', entity: 'user_prefs', entityId: 'me', field: 'method', value: 'first', ts: Date.now() + 1000, device: 'laptop' } as Op])
+    await applyOps([{ id: 'm1', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first', ts: Date.now() + 1000, device: 'laptop' } as Op])
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => primaryOf(r.container)[0] === 'loop')
     expect(primaryOf(r.container)).toEqual(['loop', 'inbox', 'today', 'next', 'waiting', 'review'])
@@ -152,7 +152,7 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     expect(moreItems(r.container).slice(0, 4)).toEqual(['upcoming', 'day', 'anytime', 'someday'])
     expect(moreItems(r.container)).not.toContain('loop')
     // Back to Companion: the promoted Someday is a primary destination again.
-    await applyOps([{ id: 'm2', entity: 'user_prefs', entityId: 'me', field: 'method', value: 'companion', ts: Date.now() + 2000, device: 'laptop' } as Op])
+    await applyOps([{ id: 'm2', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'companion', ts: Date.now() + 2000, device: 'laptop' } as Op])
     await waitFor(() => primaryOf(r.container).includes('someday'))
     expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day', 'someday'])
     await r.unmount()
