@@ -2,7 +2,7 @@
 // structure", design D2): one item for destinations, projects, labels and
 // filters, and one group header. The app's Sidebar composes them; drag, keyboard
 // moves and live counts stay in the app.
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type RefObject, useEffect } from 'react'
 import { Icon, type IconName } from '../Icon'
 import { Tooltip } from '../Tooltip'
 
@@ -32,7 +32,7 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
 ) {
   const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth}
-      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
+      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
       {icon ? <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
@@ -78,7 +78,7 @@ export function SidebarGroup({ title, collapsible = false, open = true, onToggle
     <nav aria-label={label ?? title} data-sidebar-group={title} data-testid={testId}>
       {/* The heading sticks to the top of the sidebar's scroller while its rows scroll (app-shell "Sticky sidebar group headers"); the top padding, not a margin, keeps the canvas behind it. */}
       {!collapsed && (
-        <div data-sidebar-group-header className={`${tight ? 'pt-2' : 'pt-5'} sticky top-0 z-10 flex items-center justify-between bg-canvas px-2 pb-1 text-hint font-semibold uppercase tracking-wide text-faint`}>
+        <div data-sidebar-group-header className={`${tight ? 'pt-2' : 'pt-5 pointer-fine:pt-4'} sticky top-0 z-10 flex items-center justify-between bg-canvas px-2 pb-1 text-hint font-semibold uppercase tracking-wide text-faint`}>
           {heading}
           {actions && <span className="flex items-center gap-1 normal-case">{actions}</span>}
         </div>
@@ -99,3 +99,35 @@ export const SidebarGroupAction = forwardRef<HTMLButtonElement, ButtonHTMLAttrib
     </button>
   )
 })
+
+/**
+ * Marks a scroller's edges for the fade masks of `.ui-scroller` (sidebar-compact-desktop):
+ * `data-fade-top` while content is hidden above, `data-fade-bottom` while some is hidden
+ * below, so a list that fits shows no fade at all.
+ */
+export function useScrollEdges(ref: RefObject<HTMLElement | null>): void {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let frame = 0
+    const update = () => {
+      frame = 0
+      el.toggleAttribute('data-fade-top', el.scrollTop > 1)
+      el.toggleAttribute('data-fade-bottom', el.scrollTop + el.clientHeight < el.scrollHeight - 1)
+    }
+    const later = () => { if (!frame) frame = requestAnimationFrame(update) }
+    update()
+    el.addEventListener('scroll', later, { passive: true })
+    // The scroller's own size (a resized window) and its content (a group opened or closed).
+    const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(later) : null
+    resize?.observe(el)
+    const content = typeof MutationObserver === 'function' ? new MutationObserver(later) : null
+    content?.observe(el, { childList: true, subtree: true })
+    return () => {
+      el.removeEventListener('scroll', later)
+      resize?.disconnect()
+      content?.disconnect()
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [ref])
+}

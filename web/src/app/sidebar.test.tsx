@@ -24,6 +24,17 @@ import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollap
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
+// happy-dom reports a 1024 px window with a fine pointer (the desktop sidebar). A touch
+// screen (sidebar-compact-desktop): pointer queries answer coarse, widths as before.
+const realMatchMedia = window.matchMedia
+function touchScreen() {
+  window.matchMedia = ((q: string) => {
+    const matches = /pointer:\s*fine/.test(q) ? false : /pointer:\s*coarse/.test(q) ? true : realMatchMedia.call(window, q).matches
+    return { matches, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false }
+  }) as typeof window.matchMedia
+}
+afterEach(() => { window.matchMedia = realMatchMedia })
+
 beforeEach(async () => {
   await db.delete()
   await db.open()
@@ -55,8 +66,9 @@ describe('one scroller', () => {
     expect(labels).toBeTruthy()
     expect(scroller.contains(labels)).toBe(true)
     expect(side.querySelector('nav[aria-label="Projects"]')!.contains(labels)).toBe(false)
-    // The More group scrolls with them, so opening it on a short phone screen cannot squeeze the scroller away (sidebar-drawer-scroll).
-    expect(scroller.contains(side.querySelector('[data-testid="sidebar-more"]'))).toBe(true)
+    // On a desktop More is a menu among the primary destinations (sidebar-compact-desktop).
+    expect(scroller.contains(side.querySelector('[data-sidebar-more-menu]'))).toBe(false)
+    expect(side.querySelector('nav[data-sidebar-primary] [data-sidebar-more-menu]')).not.toBeNull()
     // Pinned ends: Inbox and the account row are outside the scroller.
     const inbox = [...side.querySelectorAll('button')].find((b) => b.textContent?.trim().startsWith('Inbox'))!
     const account = [...side.querySelectorAll('button')].find((b) => b.textContent?.includes('Ada'))!
@@ -75,6 +87,17 @@ const moreItems = (root: ParentNode) => [...moreOf(root).querySelectorAll('[data
 const moreToggle = (root: ParentNode) => moreOf(root).querySelector<HTMLButtonElement>('button[aria-expanded]')!
 
 describe('primary destinations and More (ux-overhaul 4.1)', () => {
+  // The inline More group is the touch layout (sidebar-compact-desktop); the desktop menu is tested below.
+  beforeEach(touchScreen)
+
+  it('on a touch screen the More group scrolls with the groups, so opening it on a short phone screen cannot squeeze the scroller away (sidebar-drawer-scroll)', async () => {
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
+    await flush(50)
+    expect(r.container.querySelector('[data-sidebar-scroll]')!.contains(moreOf(r.container))).toBe(true)
+    expect(r.container.querySelector('[data-sidebar-more-menu]')).toBeNull()
+    await r.unmount()
+  })
+
   it('shows Inbox, Today, Upcoming and Calendar, then a closed More group; Assigned and Updates only once a project is shared', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await flush(50)
@@ -123,6 +146,90 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     await click(moreToggle(r.container))
     await waitFor(() => moreOf(r.container).querySelector('[data-destination="feed"] [data-unread-count]') !== null)
     expect(moreOf(r.container).querySelector('button[aria-expanded="true"] [data-unread-count]')).toBeNull()
+    await r.unmount()
+  })
+})
+
+describe('the desktop sidebar (sidebar-compact-desktop)', () => {
+  const menuItems = () => [...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map((b) => b.getAttribute('data-menu-label'))
+  const moreButton = (root: ParentNode) => root.querySelector<HTMLButtonElement>('[data-sidebar-more-menu] button[aria-haspopup="menu"]')!
+
+  it('opens More as a menu after the primary destinations; a chosen item navigates; the review due marker is on the row', async () => {
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await flush(50)
+    expect(r.container.querySelector('[data-testid="sidebar-more"]')).toBeNull()
+    const trigger = moreButton(r.container)
+    expect(trigger.getAttribute('aria-label')).toBe('More')
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    // Never reviewed: the review is due, and the closed More row says so.
+    expect(trigger.querySelector('[data-review-due-more]')).not.toBeNull()
+    await click(trigger)
+    await waitFor(() => menuItems().length > 0)
+    expect(menuItems()).toEqual(['Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Trash', 'Filter'])
+    expect(document.querySelector('[data-menu-label="Review"]')?.textContent).toContain('Review due')
+    await click(document.querySelector<HTMLElement>('[data-menu-label="Someday"]')!)
+    await waitFor(() => window.location.pathname === '/someday')
+    expect(document.querySelector('[role="menu"]')).toBeNull()
+    // While a More destination is open, the More row is marked as the current place.
+    await r.rerender(<Sidebar route={{ view: 'someday' }} user={user} />)
+    expect(moreButton(r.container).className).toContain('bg-accent-soft')
+    await r.unmount()
+  })
+
+  it('puts Search beside the name and Help in one footer row with the other controls, each with its name', async () => {
+    const r = await render(<Sidebar route={{ view: 'help' }} user={user} onSearch={() => {}} onShortcuts={() => {}} onToggleCollapse={() => {}} />)
+    await flush(50)
+    const search = r.container.querySelector('[data-palette-button]')!
+    expect(search.getAttribute('aria-label')).toBe('Search and commands')
+    expect(search.getAttribute('aria-keyshortcuts')).toBe('Control+K Meta+K')
+    expect(r.container.querySelector('[data-sidebar-footer]')!.contains(search)).toBe(false)
+    const row = r.container.querySelector('[data-sidebar-footer] [data-footer-icons]')!
+    const names = [...row.querySelectorAll('button')].map((b) => b.getAttribute('aria-label'))
+    expect(names).toEqual(expect.arrayContaining(['Help', 'Notifications', 'Keyboard shortcuts', 'Collapse sidebar']))
+    expect(row.querySelector('[data-help-button]')?.getAttribute('aria-current')).toBe('page')
+    await r.unmount()
+  })
+
+  it('keeps Help as a full row on a phone, and the rail keeps Search in its footer', async () => {
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: false, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    try {
+      const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
+      await flush(50)
+      const help = r.container.querySelector('[data-sidebar-footer] [data-help-button]')!
+      expect(help.hasAttribute('data-sidebar-item')).toBe(true)
+      expect(help.textContent).toContain('Help')
+      await r.unmount()
+    } finally { window.matchMedia = original }
+    const rail = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} collapsed onToggleCollapse={() => {}} />)
+    await flush(50)
+    expect(rail.container.querySelector('[data-sidebar-footer] [data-palette-button]')).not.toBeNull()
+    await rail.unmount()
+  })
+
+  it('shows no Filters or Labels group while there is nothing in it, and brings each back with its first item', async () => {
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await flush(50)
+    const groups = () => [...r.container.querySelectorAll('[data-sidebar-group]')].map((g) => g.getAttribute('data-sidebar-group'))
+    expect(groups()).toEqual(['Projects'])
+    expect(r.container.textContent).not.toContain('Save a filter')
+    expect(r.container.textContent).not.toContain('No labels yet')
+    await createView({ name: 'Errands', query: 'today' })
+    await waitFor(() => groups().includes('Filters'))
+    await createLabel({ name: 'errand' })
+    await waitFor(() => groups().includes('Labels'))
+    expect(groups()).toEqual(['Filters', 'Projects', 'Labels'])
+    await r.unmount()
+  })
+
+  it('rows are 32 px with a fine pointer and keep 36 px for touch; the scroller has the thin scrollbar and fade markers', async () => {
+    await createProject({ name: 'Home' })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-project-id]') !== null)
+    const cls = r.container.querySelector('[data-destination="inbox"]')!.className
+    expect(cls).toContain('min-h-9')
+    expect(cls).toContain('pointer-fine:min-h-8')
+    expect(r.container.querySelector('[data-sidebar-scroll]')!.classList.contains('ui-scroller')).toBe(true)
     await r.unmount()
   })
 })

@@ -1,4 +1,4 @@
-import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, Menu } from '../ui'
+import { Badge, Button, DESKTOP_HEADER_QUERY, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, Menu, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -37,6 +37,13 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 
 
+/**
+ * From 768 px with a fine pointer, More is a menu after the primary destinations instead
+ * of a group in the scroller (sidebar-compact-desktop): the projects keep their room.
+ * Touch keeps the inline group, which scrolls with the rest (sidebar-drawer-scroll).
+ */
+export const MORE_MENU_QUERY = '(min-width: 768px) and (pointer: fine)'
+
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 0.75
 
@@ -69,6 +76,12 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
 }) {
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
+  // From 768 px the footer's controls share one row (sidebar-compact-desktop).
+  const wide = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
+  const scroller = useRef<HTMLDivElement>(null)
+  useScrollEdges(scroller)
+  const footerRow = wide && !collapsed
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
   const prefsRow = useUserPrefsRow()
   const review = useReviewRow()
@@ -166,6 +179,10 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const shownLabels = useMemo(() => (found ? labels.filter((l) => found.labels.has(l.id)) : labels), [found, labels])
   const shownViews = useMemo(() => (found ? pinnedViews.filter((v) => found.views.has(v.id)) : pinnedViews), [found, pinnedViews])
   const groupShown = (n: number) => (found ? n > 0 : true)
+  // A group with nothing in it takes no room (sidebar-compact-desktop): Filters appears with
+  // the first saved filter (pinned or not, so "All" stays reachable), Labels with the first label.
+  const filtersShown = found ? shownViews.length > 0 : views.length > 0
+  const labelsShown = found ? shownLabels.length > 0 : labels.length > 0 || addingLabel
   const isOpen = (id: GroupId) => (found ? true : groupOpen[id])
   const active = found?.order[Math.min(activeMatch, Math.max(0, (found?.order.length ?? 1) - 1))] ?? null
   const isActiveMatch = (kind: 'project' | 'label' | 'view', id: string) => active?.kind === kind && active.id === id
@@ -305,19 +322,22 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const reviewBadge = due
     ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })}`}</span></span>
     : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
-  const more: { id: Promotable | 'ask' | 'review' | 'stats'; node: ReactNode }[] = [
-    { id: 'anytime', node: item({ view: 'anytime' }, t('Anytime'), 'layers') },
-    { id: 'someday', node: item({ view: 'someday' }, t('Someday'), 'archive') },
+  // Each More destination once, as data: an item in the inline group, or a menu item
+  // (with its badge as the item's description) in the desktop menu.
+  const moreEntries: { id: Promotable | 'ask' | 'review' | 'stats'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string }[] = [
+    { id: 'anytime', route: { view: 'anytime' }, label: t('Anytime'), icon: 'layers' },
+    { id: 'someday', route: { view: 'someday' }, label: t('Someday'), icon: 'archive' },
     // Assigned to me only where tasks can be assigned: when the account shares a project.
-    ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, node: item({ view: 'assigned' }, t('Assigned to me'), 'user-check') }] : []),
-    { id: 'completed', node: item({ view: 'completed' }, t('Completed'), 'circle-check-big') },
-    { id: 'review', node: item({ view: 'review' }, t('Review'), 'clipboard-check', undefined, reviewBadge) },
-    { id: 'stats', node: item({ view: 'stats' }, t('Statistics'), 'chart-column') },
-    ...(sharedIds.size > 0 ? [{ id: 'feed' as const, node: item({ view: 'feed' }, t('Updates'), 'newspaper', undefined, unreadBadge) }] : []),
-    { id: 'trash', node: item({ view: 'trash' }, t('Trash'), 'trash-2') },
-    { id: 'filter', node: item({ view: 'filter' }, t('Filter'), 'filter') },
-    ...(assistant?.available ? [{ id: 'ask' as const, node: item({ view: 'ask' }, t('Ask'), 'message-circle') }] : []),
+    ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, route: { view: 'assigned' } as Route, label: t('Assigned to me'), icon: 'user-check' as IconName }] : []),
+    { id: 'completed', route: { view: 'completed' }, label: t('Completed'), icon: 'circle-check-big' },
+    { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewBadge, note: due ? t('Review due') : reviewAgo(review?.completed_at) },
+    { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
+    ...(sharedIds.size > 0 ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: unreadBadge, note: unread.total > 0 ? `${formatUnread(unread.total)} ${t('unread updates')}` : undefined }] : []),
+    { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
+    { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
+    ...(assistant?.available ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
   ]
+  const more = moreEntries.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge) }))
   const primaryExtra = more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
   // A due review shows on the closed More heading too, so the marker is never hidden.
   const moreBadge = unreadBadge ?? (due ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
@@ -332,9 +352,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     // without room (sidebar-drawer-scroll).
     <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
       <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
-        <div className={`mb-4 flex items-center gap-2 ${collapsed ? 'justify-center' : 'px-1'}`}>
+        <div className={`mb-4 flex items-center gap-2 pointer-fine:mb-3 ${collapsed ? 'justify-center' : 'px-1'}`}>
           <img src="/favicon.svg" alt="" className="h-7 w-7" />
-          {!collapsed && <span className="font-semibold">{t('OpenTodo')}</span>}
+          {!collapsed && <span className="flex-1 font-semibold">{t('OpenTodo')}</span>}
+          {/* Search and commands beside the name (sidebar-compact-desktop); the icon rail keeps it in the footer. */}
+          {!collapsed && onSearch && (
+            <IconButton icon="search" label={t('Search and commands')} shortcut={keysOf('global.palette')} size="sm" onClick={onSearch}
+              aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />
+          )}
         </div>
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {item({ view: 'inbox' }, t('Inbox'), 'inbox', counts.inbox)}
@@ -342,9 +367,13 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           {item({ view: 'upcoming' }, t('Upcoming'), 'calendar-days')}
           {item({ view: calendarMode }, t('Calendar'), 'calendar-range')}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
+          {moreAsMenu && rest.length > 0 && (
+            <MoreMenu entries={rest} badge={moreBadge} collapsed={collapsed} hints={hints}
+              active={rest.some((m) => m.route.view === route.view)} />
+          )}
         </nav>
       </div>
-      <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
+      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
           <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or filter…')} aria-label={t('Find in the sidebar')}
@@ -352,10 +381,10 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
         </div>
       )}
-      <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
+      {!moreAsMenu && <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
         {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
-      </SidebarGroup>
-      {groupShown(shownViews.length) && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
+      </SidebarGroup>}
+      {filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
         actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
         {shownViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id
@@ -371,9 +400,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
             </div>
           )
         })}
-        {pinnedViews.length === 0 && !collapsed && !found && (
-          <p className="px-2 py-1 text-meta text-faint">{t('Save a filter to pin it here.')}</p>
-        )}
       </SidebarGroup>}
       {/* Projects stays while finding: its header holds the field's opener. */}
       {(finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
@@ -450,35 +476,16 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         )}
         {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">{t('No projects yet.')}</p>}
       </SidebarGroup>}
-      {groupShown(shownLabels.length) && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
+      {labelsShown && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
         actions={<>
           <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label={t('All labels')}>{t('All')}</SidebarGroupAction>
           <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
         </>}>
         {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
-        {labels.length === 0 && !addingLabel && !collapsed && !found && <p className="px-2 py-1 text-meta text-faint">{t('No labels yet.')}</p>}
       </SidebarGroup>}
       </div>
-      {/* Pinned footer (app-shell "No desktop top bar"): Help, search, notifications, the sync dot, the account, collapse. */}
-      <div className={`flex shrink-0 flex-col gap-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer>
-        <SidebarItem icon="circle-help" label={t('Help')} active={route.view === 'help'} collapsed={collapsed} onClick={() => navigate({ view: 'help' })} />
-        {onSearch && <SidebarItem icon="search" label={t('Search and commands')} collapsed={collapsed} onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
-        <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`}>
-          <NotificationBell compact={collapsed} />
-          {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
-          {onShortcuts && <IconButton icon="keyboard" label={t('Keyboard shortcuts')} shortcut={keysOf('global.help')} size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
-          <SyncStatus compact={collapsed} />
-          {!collapsed && <span className="flex-1" />}
-          {onToggleCollapse && (
-            <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')} shortcut={keysOf('global.sidebar')} size="sm"
-              className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
-          )}
-        </div>
-        <SidebarItem active={route.view === 'settings' || route.view === 'import'} collapsed={collapsed} onClick={() => navigate({ view: 'settings' })}
-          leading={<span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-hint font-semibold text-on-accent">{(user.name || user.email).slice(0, 1).toUpperCase()}</span>}
-          label={user.name || user.email} badge={<span className="text-faint" aria-hidden="true"><Icon name="settings" /></span>} />
-      </div>
+      <SidebarFooter route={route} user={user} collapsed={collapsed} row={footerRow} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} />
     </div>
   )
 }
@@ -495,5 +502,73 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
   return (
     <span data-unread-count={n}
       className="rounded-full bg-accent px-1.5 text-hint font-semibold leading-4 text-on-accent"><ReadAs label={`${text} ${label}`}>{text}</ReadAs></span>
+  )
+}
+
+/** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
+function MoreMenu({ entries, badge, active, collapsed, hints }: {
+  entries: { id: string; route: Route; label: string; icon: IconName; note?: string }[]
+  badge?: ReactNode
+  active: boolean
+  collapsed: boolean
+  hints: boolean
+}) {
+  return (
+    <div data-sidebar-more-menu>
+      <Menu kind="menu" label={t('More')} title={t('More')} align="start" width="sm:w-64"
+        triggerClassName={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised'}`}
+        trigger={<>
+          <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name="ellipsis" /></span>
+          {!collapsed && <span className="min-w-0 flex-1 truncate">{t('More')}</span>}
+          {!collapsed && badge}
+          {!collapsed && <span className="text-faint" aria-hidden="true"><Icon name="chevron-right" size="xs" /></span>}
+        </>}>
+        {entries.map((m) => (
+          <MenuItem key={m.id} icon={m.icon} label={m.label} description={m.note}
+            shortcut={hints ? GO_KEYS[m.route.view] : undefined} onSelect={() => navigate(m.route)} />
+        ))}
+      </Menu>
+    </div>
+  )
+}
+
+/**
+ * The pinned footer (app-shell "No desktop top bar"): Help, notifications, the assistant,
+ * shortcuts, the sync dot and collapse, then the account. `row` (from 768 px, not the
+ * rail) puts Help in the icon row (sidebar-compact-desktop).
+ */
+function SidebarFooter({ route, user, collapsed, row, onSearch, onShortcuts, onAssistant, onToggleCollapse }: {
+  route: Route
+  user: User
+  collapsed: boolean
+  row: boolean
+  onSearch?: () => void
+  onShortcuts?: () => void
+  onAssistant?: () => void
+  onToggleCollapse?: () => void
+}) {
+  return (
+    <div className={`flex shrink-0 flex-col gap-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer data-footer-row={row || undefined}>
+      {!row && <SidebarItem icon="circle-help" label={t('Help')} active={route.view === 'help'} collapsed={collapsed} onClick={() => navigate({ view: 'help' })} data-help-button />}
+      {collapsed && onSearch && <SidebarItem icon="search" label={t('Search and commands')} collapsed onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
+      <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`} data-footer-icons>
+        {row && (
+          <IconButton icon="circle-help" label={t('Help')} size="sm" onClick={() => navigate({ view: 'help' })} data-help-button
+            aria-current={route.view === 'help' ? 'page' : undefined} className={route.view === 'help' ? 'bg-accent-soft text-on-accent-soft' : undefined} />
+        )}
+        <NotificationBell compact={collapsed} />
+        {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
+        {onShortcuts && <IconButton icon="keyboard" label={t('Keyboard shortcuts')} shortcut={keysOf('global.help')} size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
+        <SyncStatus compact={collapsed} />
+        {!collapsed && <span className="flex-1" />}
+        {onToggleCollapse && (
+          <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')} shortcut={keysOf('global.sidebar')} size="sm"
+            className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
+        )}
+      </div>
+      <SidebarItem active={route.view === 'settings' || route.view === 'import'} collapsed={collapsed} onClick={() => navigate({ view: 'settings' })}
+        leading={<span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-hint font-semibold text-on-accent">{(user.name || user.email).slice(0, 1).toUpperCase()}</span>}
+        label={user.name || user.email} badge={<span className="text-faint" aria-hidden="true"><Icon name="settings" /></span>} />
+    </div>
   )
 }

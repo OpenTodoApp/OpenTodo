@@ -8,6 +8,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Keep completed tasks in a project.** Turn on **Show completed tasks** in a project's menu and its completed tasks stay at the end of the list in a **Completed** group, closed until you open it, newest first. Untick one there to put it back on the list, handy for groceries and other lists you reuse. The setting is per project and per device. ([Completed tasks in a project](docs/completed-in-projects.md), #145)
 
+### Changed
+
+- **A roomier sidebar on a computer.** Search sits next to the OpenTodo name, Help joins the icons in one footer row, and **More** opens as a menu instead of pushing your projects down. Filters and Labels appear once you have one, rows are a little tighter with a mouse, and the sidebar has a thin scrollbar with a soft fade where more is hidden. In a 1280×600 window seven projects now fit instead of two. Touch screens keep their larger targets and the inline More group.
+
 ### Fixed
 
 - **Completed tasks show a ticked circle again.** In the Completed view, a section's revealed completed tasks and the task panel, a completed task's circle kept its priority colour, which hid the check mark.

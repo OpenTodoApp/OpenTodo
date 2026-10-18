@@ -4822,9 +4822,6 @@
   "No labels yet": [
     "web/src/app/LabelsView.tsx"
   ],
-  "No labels yet.": [
-    "web/src/app/Sidebar.tsx"
-  ],
   "No labels yet. Type a name and press Enter.": [
     "web/src/app/LabelPicker.tsx"
   ],
@@ -6749,9 +6746,6 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/task-detail/CommentsTab.tsx"
-  ],
-  "Save a filter to pin it here.": [
-    "web/src/app/Sidebar.tsx"
   ],
   "Save as template": [
     "web/src/app/TemplateDialogs.tsx"

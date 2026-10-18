@@ -26,7 +26,7 @@ The task lists use the usual list keys. Everything works offline.
 
 ## Finishing a review
 
-**Finish review** records the time. It syncs to all your devices, so your phone knows when you last reviewed on your laptop. In the sidebar, Review shows how long ago that was, and a **Due** marker once it is more than seven days ago, or if you never finished one. The marker also shows on the closed More group.
+**Finish review** records the time. It syncs to all your devices, so your phone knows when you last reviewed on your laptop. In the sidebar, Review shows how long ago that was, and a **Due** marker once it is more than seven days ago, or if you never finished one. The marker also shows on **More** while it is closed.
 
 ## Statistics
 
