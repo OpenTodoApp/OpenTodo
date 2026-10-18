@@ -7,7 +7,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
-import { flatRow, sectionOfRows } from '../lib/listGroups'
+import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
 import { createTask } from '../lib/ops'
@@ -65,6 +65,9 @@ function useListUi() {
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, setAddingTo, openActions }
   return { ui, actionsOpen, actionsPicker, onActionsOpen, selectMode, setSelectMode, addingTo }
 }
+
+/** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
+const NO_DONE: Map<string, Task[]> = new Map()
 
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const m = useListModel(route, userId)
@@ -241,7 +244,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           ) : (
             <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
-              doneBySection={m.doneBySection} revealed={revealed} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
+              doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
+              completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
           {m.logbook && <LogbookMore total={m.logbook.total} limit={m.logbookLimit} onMore={() => m.setLogbookLimit((n) => n + LOGBOOK_PAGE)} />}

@@ -105,6 +105,8 @@ export interface GroupedListProps {
   collapsedGroups: ReadonlySet<string>
   projects: Project[]
   labels: Label[]
+  /** The project's Completed group at the end of the list (project-completed-section). */
+  completed?: { tasks: Task[]; open: boolean; onToggle: () => void }
 }
 
 /** The list's groups: section groups of a project (headings are drop targets), or headed groups. */
@@ -113,9 +115,10 @@ export function GroupedList(p: GroupedListProps) {
   const rowList = (children: ReactNode, extra?: Record<string, string>) => (p.fieldColumns
     ? <div role="rowgroup" {...extra}>{children}</div>
     : <ul {...extra}>{children}</ul>)
-  const body = p.groups.map((g, gi) => (g.section !== undefined && p.project
+  const body = [...p.groups.map((g, gi) => (g.section !== undefined && p.project
     ? <SectionGroup key={g.key} g={g} first={gi <= 1} last={gi === p.groups.length - 1} rowList={rowList} {...p} project={p.project} />
-    : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />))
+    : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
+  p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
   return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}</FieldColumnsTable> : <>{body}</>
 }
 
@@ -165,6 +168,19 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           collapsed={collapsed} onToggle={() => setGroupCollapsed(view, g.key, !collapsed)} />
       )}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
+    </section>
+  )
+}
+
+/**
+ * The project's completed tasks at the end of its list (project-completed-section):
+ * closed by default, newest first; unchecking one puts it back among the open tasks.
+ */
+function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: (r: Row) => ReactNode; fieldColumns: boolean }) {
+  return (
+    <section role={fieldColumns ? 'rowgroup' : undefined} className="mb-4" data-completed-group>
+      <ListGroupHeader title={t('Completed')} count={c.tasks.length} collapsed={!c.open} onToggle={c.onToggle} tone="muted" />
+      {c.open && rowList(c.tasks.map((task) => renderRow(flatRow(task))))}
     </section>
   )
 }

@@ -253,6 +253,14 @@ const shots = [
     await go(p, demoBase, '/views', () => p.getByRole('heading', { name: 'Views' }).waitFor())
     await p.locator('main').getByRole('button', { name: /^Menu for view Deep work/ }).first().click(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
+  // Completed tasks kept in the project (project-completed-section): the switch is per device, so the scene turns it on and off again.
+  { name: 'project-completed', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Work')
+    await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="Show completed tasks"]').click()
+    await p.locator('[data-completed-group] button[aria-expanded]').click(); await p.locator('[data-completed-group] [data-task-id]').first().waitFor(); await p.mouse.move(700, 120); await settle(p, 500)
+  }, async after(p) {
+    await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="Show completed tasks"]').click().catch(() => {})
+  } },
   { name: 'project-move', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Side project')
     await p.keyboard.press('m'); await p.locator('[data-picker-step]').waitFor(); await settle(p, 500)
