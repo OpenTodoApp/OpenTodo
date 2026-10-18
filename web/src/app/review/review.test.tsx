@@ -8,7 +8,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
-import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
+import { createProject, createTask, resetDeviceId, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
 import { compute, periodFor, PERIOD_LABELS } from '../../lib/stats'
 import type { Task, User } from '../../lib/types'
 import { flush, key, render, type } from '../../ui/test-utils'
@@ -207,7 +207,7 @@ describe('Weekly review', () => {
 
 describe('sidebar Review entry', () => {
   it('nine days after the last review carries a due marker with a text alternative', async () => {
-    await db.review.put({ id: 'me', completed_at: NOW.getTime() - 9 * 86_400_000, _clock: {} })
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 9 * 86_400_000, _clock: {} })
     localStorage.setItem('ot.sidebar.more', '1')
     // The inline More group (a touch screen; the desktop menu shows the marker as the item's description).
     const original = window.matchMedia
@@ -218,7 +218,7 @@ describe('sidebar Review entry', () => {
     const entry = r.container.querySelector('[data-destination="review"]')!
     expect(entry.textContent).toContain('Due')
     expect(entry.textContent).toContain('the last weekly review was 9 days ago')
-    await db.review.put({ id: 'me', completed_at: NOW.getTime() - 2 * 86_400_000, _clock: {} })
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 2 * 86_400_000, _clock: {} })
     await waitFor(() => !r.container.querySelector('[data-review-due]'))
     expect(r.container.querySelector('[data-review-ago]')!.textContent).toBe('2 days ago')
     await r.unmount()

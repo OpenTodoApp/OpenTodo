@@ -54,7 +54,7 @@ This follows exactly the pattern of `density` and `sidebar_destinations`: an add
 
 `isActionable`, `nextActionOf(project)`, `withoutNextAction`, `isStalled` and `waitingOf` are pure functions over tasks, projects, sections, memberships, the user id and the local date.
 
-- The digest needs only `withoutNextAction`. `digest.Task` gains `Start`, `BlockedBy` and `SectionID`, `digest.Input` gains `Sections`, and `WithoutNextAction` is rewritten to the shared rule.
+- The digest needs only `withoutNextAction`, which does not depend on list order. `digest.Task` gains `Start` and `BlockedBy`, and `WithoutNextAction` is rewritten to the shared rule; sections stay web-only.
 - A fixture `internal/digest/testdata/next_action_fixture.json` (a handful of projects and tasks plus expected outputs) is read by a Go test and by a vitest test. This is the same pattern as `internal/activity/testdata/activity_fixture.json`.
 - "Blocked" uses the existing derived blocked state: blocked while any task in `blocked_by` is live and open.
 - `stalled` and `waiting` stay web-only for now. The digest doesn't show them, so they need no port.

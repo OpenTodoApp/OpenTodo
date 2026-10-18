@@ -48,6 +48,6 @@ Statistics are computed on this device from your tasks. Nothing is sent to the s
 
 ## Weekly digest by email
 
-In **Settings → Notifications → Weekly digest**, turn on an email for your review day: last week's numbers, overdue tasks, what is due in the next seven days, projects without a next action, when you last reviewed, and a link to the review. Pick the day and hour; your time zone and language come from the browser and are shown on the card.
+In **Settings → Notifications → Weekly digest**, turn on an email for your review day: last week's numbers, overdue tasks, what is due in the next seven days, projects without a next action, when you last reviewed, and a link to the review. A project counts as without a next action when none of its open tasks can be done now, waits for someone or another task, or starts later: a project whose only tasks are assigned to someone else or blocked is not listed, and neither is one whose task starts next month. Pick the day and hour; your time zone and language come from the browser and are shown on the card.
 
 The digest uses the same definitions as Statistics. It needs [outgoing email](self-hosting/outgoing-email.md) set up by the server owner, contains task names, and is not available with end-to-end encryption: turning encryption on switches it off. A failed send is retried for six hours.

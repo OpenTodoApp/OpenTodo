@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createProject, createTask, setTaskCompleted } from '../lib/ops'
+import { createProject, createTask, REVIEW_DEFAULTS, setTaskCompleted } from '../lib/ops'
 import { db } from '../lib/db'
 import type { EmailDigest, Task } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
@@ -64,7 +64,7 @@ async function seedReview() {
   await createTask({ title: 'Send the invoice to Northwind', project_id: seeded.work, due: { date: '2026-10-12' }, priority: 1 })
   const sweep = await createTask({ title: 'Sweep the floor', project_id: seeded.garage })
   await setTaskCompleted(sweep, true)
-  await db.review.put({ id: 'me', completed_at: new Date('2026-10-05T18:00:00').getTime(), _clock: {} })
+  await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: new Date('2026-10-05T18:00:00').getTime(), _clock: {} })
 }
 
 /** The review on its first unfinished step, Get clear, with two Inbox tasks. */

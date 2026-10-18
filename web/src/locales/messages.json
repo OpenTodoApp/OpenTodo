@@ -221,6 +221,9 @@
   "A newer version of OpenTodo is required to read your data.": [
     "web/src/app/App.tsx"
   ],
+  "A part of life you keep up, made of projects.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "A passkey is the fastest way to sign in: no password to type, and it cannot be phished.": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -248,6 +251,9 @@
   "A star on GitHub helps other people find it.": [
     "web/src/app/AboutSection.tsx"
   ],
+  "A system works only while you trust it, and you trust it by reviewing it.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "A task can wait for at most {max} tasks": [
     "web/src/lib/dependencies.ts"
   ],
@@ -262,6 +268,9 @@
   ],
   "A task names a section that is not in the file ({task}).": [
     "web/src/lib/templates.ts"
+  ],
+  "A task of a minute or two is done on the spot, not filed.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "A task with a deadline: it turns red when late": [
     "web/src/app/FirstRun.tsx"
@@ -743,6 +752,9 @@
   "An option has at most {n} characters.": [
     "web/src/lib/fields.ts"
   ],
+  "An outcome you can finish.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Android device": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -870,6 +882,9 @@
   ],
   "Archives in the destination": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Area|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Arrange": [
     "web/src/app/DashboardView.tsx"
@@ -1372,6 +1387,15 @@
     "web/src/app/CaptureSettings.tsx",
     "web/src/app/settingsSections.ts"
   ],
+  "Catch everything|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
+  "Catch|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
+  "Caught, not yet decided.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Change": [
     "web/src/app/DigestCard.tsx"
   ],
@@ -1499,6 +1523,9 @@
   ],
   "Choose what {title} waits for": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Clarify|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Clear": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -2079,6 +2106,9 @@
   "Daily": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Daily check|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Danger zone": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -2178,6 +2208,12 @@
   "Deadline {date}, {label}": [
     "web/src/app/TaskRow.tsx"
   ],
+  "Decide once what each item is and what it needs.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
+  "Decide once|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Decisions": [
     "web/src/app/TriageView.tsx"
   ],
@@ -2186,6 +2222,9 @@
   ],
   "Defer {title}": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Deferred, waiting and someday items stay out of sight until they matter.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Delegate": [
     "web/src/app/TriageView.tsx"
@@ -2439,6 +2478,9 @@
   "Display: Upcoming": [
     "web/src/lib/views.ts"
   ],
+  "Do it if it is quicker than filing it|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Do on": [
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
@@ -2496,6 +2538,9 @@
   ],
   "Download {name}": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Do|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Drag <strong>Add to OpenTodo</strong> to your bookmarks bar. On any page, click it to add the page, its title and the selected text in a small window. It holds no password or token; it uses your sign-in on this server.": [
     "web/src/app/CaptureSettings.tsx"
@@ -2573,6 +2618,9 @@
   ],
   "Each field is restored as its own change, recorded in the history.": [
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Each item gets one decision, the first time you look at it.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Each option may appear once.": [
     "web/src/lib/fields.ts"
@@ -2863,6 +2911,9 @@
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
   ],
+  "Every project always shows its very next action.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Every project has a next action.": [
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -2905,6 +2956,12 @@
   ],
   "Everything on this server — every account, project, task, comment, file and setting — as one backup archive. Restore it into your own OpenTodo server with {command}; devices then sync with the new address.": [
     "web/src/app/ServerArchivePanel.tsx"
+  ],
+  "Everything stays on your devices and your own server, private by design.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
+  "Everything that has your attention gets a home.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Everything you can see as one JSON file, including the Trash. Keep it as a personal copy or move to another server.": [
     "web/src/app/DataSettings.tsx"
@@ -3180,6 +3237,9 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/settingsIndex.ts"
   ],
+  "Five minutes: the Inbox to zero, what is overdue, and today's focus.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Fix a timed due to your time zone, or release it to a floating time": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -3311,6 +3371,12 @@
   ],
   "Get clear": [
     "web/src/lib/review.ts"
+  ],
+  "Get whatever is on your mind into the Inbox the moment it appears.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
+  "Give every item one home: a project, a date, Waiting or Someday.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Go to Anytime": [
     "web/src/app/palette/registry.ts",
@@ -3452,6 +3518,9 @@
   "Group chat": [
     "web/src/app/PublicLinksSection.tsx"
   ],
+  "Has a day: Today and Upcoming.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Has notes": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -3495,6 +3564,9 @@
   ],
   "Hide the planning list": [
     "web/src/app/CalendarView.tsx"
+  ],
+  "Hide what is not now|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Highlight, then dismiss the last chip": [
     "web/src/lib/shortcuts.ts"
@@ -3569,6 +3641,9 @@
   ],
   "If an account exists for <strong>{trim}</strong>, a message with a reset link is on its way. The link works once, for 24 hours.": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "If it is on your mind, it goes in the Inbox.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Ignore": [
     "web/src/app/ImportScreen.tsx"
@@ -3734,6 +3809,9 @@
   ],
   "Inbox, unlabelled, has a parent task": [
     "web/src/app/FilterView.tsx"
+  ],
+  "Inbox|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Include task titles": [
     "web/src/app/NotificationsSettings.tsx"
@@ -4066,6 +4144,9 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/listGroups.ts"
   ],
+  "Later|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Leave": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -4269,6 +4350,9 @@
   "Look back": [
     "web/src/lib/review.ts"
   ],
+  "Look over the whole system on a rhythm, so you can trust it.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Lost both keys": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -4334,6 +4418,9 @@
   ],
   "Matching settings": [
     "web/src/app/SettingsView.tsx"
+  ],
+  "Maybe one day: parked without a date.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Member": [
     "web/src/lib/roleNames.ts"
@@ -4420,6 +4507,9 @@
   ],
   "Month/day (December 11)": [
     "web/src/app/QuickAddSettings.tsx"
+  ],
+  "Monthly look|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Monthly tokens per person": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -4719,6 +4809,9 @@
   "Next run:": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Next step|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Next week": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/bulk/BulkActions.tsx"
@@ -4728,6 +4821,9 @@
   ],
   "Next: {join}": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Next|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "No": [
     "web/src/app/task-detail/HistoryTab.tsx",
@@ -5023,6 +5119,9 @@
   ],
   "Not available with end-to-end encryption: {detail}": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "Not before its start date.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Not checked": [
     "web/src/app/NotificationsSettings.tsx"
@@ -5375,6 +5474,9 @@
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/ResetScreen.tsx"
   ],
+  "One next step|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": [
     "web/src/app/CaldavPanel.tsx"
   ],
@@ -5614,6 +5716,9 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/ImportScreen.tsx"
   ],
+  "Outcomes that take more than one step.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Outdent the selected task": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5835,6 +5940,9 @@
   ],
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Place|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": [
     "web/src/app/CalendarView.tsx"
@@ -6068,6 +6176,12 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts"
+  ],
+  "Projects|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
+  "Project|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Properties": [
     "web/src/app/task-detail/Properties.tsx"
@@ -6653,8 +6767,14 @@
   "Review finished {instant}.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Review on a rhythm|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Review steps": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Review|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Revoke": [
     "web/src/app/CaldavPanel.tsx",
@@ -6897,6 +7017,9 @@
   ],
   "Scheduled for {date}: {title}.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "Scheduled|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Schema version": [
     "web/src/app/RestoreSection.tsx"
@@ -7580,6 +7703,9 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/history.ts"
   ],
+  "Someday|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Someone": [
     "web/src/app/FeedView.tsx",
     "web/src/app/NotificationBell.tsx",
@@ -8188,6 +8314,9 @@
     "web/src/app/PasswordSection.tsx",
     "web/src/app/ResetScreen.tsx"
   ],
+  "The next action of every project, by context.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "The offline service worker is not active yet. Reload the page; on iPhone and iPad, install the app to the Home Screen first.": [
     "web/src/lib/push.ts"
   ],
@@ -8460,6 +8589,9 @@
   "The upload does not match the attachment. Try again.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The very next physical action.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "The view is removed on all your devices. Your tasks are not affected.": [
     "web/src/app/ViewsView.tsx"
   ],
@@ -8532,6 +8664,9 @@
   ],
   "Thinking…": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
+  ],
+  "Thirty minutes: get clear, get current, get creative.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "This Evening": [
     "web/src/app/QuickAdd.tsx",
@@ -9281,6 +9416,9 @@
   "Turning this off stops all your assistants from making changes at once, without revoking their tokens.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Twenty minutes: your areas, old someday items and the four-week trend.": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Two-factor authentication": [
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/settingsIndex.ts"
@@ -9709,8 +9847,14 @@
   "Waiting for the first refresh": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Waiting|method": [
+    "web/src/lib/method/vocabulary.json"
+  ],
   "Waits for nothing": [
     "web/src/lib/assistant.ts"
+  ],
+  "Waits for someone or something else first.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Waits for {tasks}": [
     "web/src/lib/assistant.ts"
@@ -9746,6 +9890,9 @@
   ],
   "Weekly review": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Weekly review|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Weeks": [
     "web/src/app/TimelineView.tsx"
@@ -9817,6 +9964,9 @@
   ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Work from your next actions, by context, one step at a time.": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Working hours and day length for the Day and Week views (go to them with {kbd} and {kbd2}). Each device keeps its own; they are not synced.": [
     "web/src/app/CalendarSettings.tsx"
@@ -10063,6 +10213,9 @@
   ],
   "Your key is saved; type to replace it": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Your loops, your server|method": [
+    "web/src/lib/method/vocabulary.json"
   ],
   "Your name, email and role": [
     "web/src/app/settingsIndex.ts"

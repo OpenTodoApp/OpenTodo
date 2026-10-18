@@ -8,7 +8,9 @@
 // branch of a conditional), the text of <T>, plus two lists kept outside the
 // message layer: the shortcut registry in web/src/lib/shortcuts.ts (the keyboard
 // guide is generated from it, so it stays plain English and is translated where
-// it is shown) and the English texts of the service worker (web/public/push-sw.js).
+// it is shown), the English texts of the service worker (web/public/push-sw.js)
+// and the Open Loops vocabulary (web/src/lib/method/vocabulary.json, whose method
+// name is a product name and stays untranslated).
 // A context option makes the key `message|context`.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -79,6 +81,16 @@ export function workerMessages(file, text) {
   return out
 }
 
+/** The Open Loops vocabulary's English texts: the tagline and every term's name (with the context `method`, so "Next" the Place is not "Next" the button) and description. */
+export function methodMessages(file, text) {
+  const v = JSON.parse(text)
+  const out = [{ id: v.tagline, file, line: 1 }]
+  for (const group of ['moves', 'principles', 'places', 'rhythms', 'horizons']) {
+    for (const term of v[group] ?? []) out.push({ id: `${term.name}|method`, file, line: 1 }, { id: term.description, file, line: 1 })
+  }
+  return out
+}
+
 /** Every message of the web app, sorted, each with the files that use it. */
 export function extract(root = repo) {
   const found = []
@@ -89,6 +101,8 @@ export function extract(root = repo) {
   }
   const sw = join(root, 'web/public/push-sw.js')
   found.push(...workerMessages(sw, readFileSync(sw, 'utf8')))
+  const vocabulary = join(root, 'web/src/lib/method/vocabulary.json')
+  found.push(...methodMessages(vocabulary, readFileSync(vocabulary, 'utf8')))
   const map = new Map()
   for (const m of found) {
     const files = map.get(m.id) ?? new Set()

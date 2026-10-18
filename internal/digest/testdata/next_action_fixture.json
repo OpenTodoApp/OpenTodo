@@ -1,0 +1,363 @@
+{
+  "about": "Shared vectors for the Open Loops rules (OpenSpec change open-loops-method, design D3): web/src/lib/method/rules.ts and internal/digest WithoutNextAction both evaluate this file. Change them together.",
+  "me": "me",
+  "today": "2026-10-18",
+  "now": 1792324800000,
+  "roles": {
+    "household": "editor",
+    "viewed": "viewer"
+  },
+  "projects": [
+    {
+      "id": "garage",
+      "name": "Garage",
+      "position": 1
+    },
+    {
+      "id": "household",
+      "name": "Household",
+      "position": 2
+    },
+    {
+      "id": "learn",
+      "name": "Learn Italian",
+      "position": 3
+    },
+    {
+      "id": "passport",
+      "name": "Passport",
+      "position": 4
+    },
+    {
+      "id": "garden",
+      "name": "Garden",
+      "position": 5
+    },
+    {
+      "id": "viewed",
+      "name": "Viewed",
+      "position": 6
+    },
+    {
+      "id": "old",
+      "name": "Old",
+      "position": 7,
+      "archived": true
+    },
+    {
+      "id": "taxes",
+      "name": "Taxes",
+      "position": 8
+    },
+    {
+      "id": "move",
+      "name": "Move",
+      "position": 9
+    },
+    {
+      "id": "fixed",
+      "name": "Fixed",
+      "position": 10
+    },
+    {
+      "id": "mine",
+      "name": "Mine",
+      "position": 11
+    },
+    {
+      "id": "gone",
+      "name": "Gone",
+      "position": 12,
+      "deleted_at": 1792238400000
+    }
+  ],
+  "sections": [
+    {
+      "id": "s1",
+      "project_id": "move",
+      "name": "Later stuff",
+      "position": 1,
+      "deleted_at": null
+    }
+  ],
+  "tasks": [
+    {
+      "id": "g0",
+      "project_id": "garage",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": 1792152000000,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "g1",
+      "project_id": "garage",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [
+        "g2"
+      ],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "g2",
+      "project_id": "garage",
+      "parent_id": null,
+      "position": 3,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "h1",
+      "project_id": "household",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": "ana",
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "l1",
+      "project_id": "learn",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": "someday",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "l2",
+      "project_id": "learn",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": "someday",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "p1",
+      "project_id": "passport",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": "2027-03-01",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "x1",
+      "project_id": "old",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "t1",
+      "project_id": "taxes",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1787140800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "t2",
+      "project_id": "taxes",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1788004800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "t0",
+      "project_id": "taxes",
+      "parent_id": null,
+      "position": 0,
+      "created_at": 1786276800000,
+      "completed_at": 1788868800000,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "m1",
+      "project_id": "move",
+      "parent_id": null,
+      "position": 0,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": "s1",
+      "deleted_at": null
+    },
+    {
+      "id": "m2",
+      "project_id": "move",
+      "parent_id": null,
+      "position": 5,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "f0",
+      "project_id": "fixed",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": 1792238400000,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "f1",
+      "project_id": "fixed",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [
+        "f0"
+      ],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "me1",
+      "project_id": "mine",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": "me",
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "me2",
+      "project_id": "mine",
+      "parent_id": "me1",
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "i1",
+      "project_id": null,
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [
+        "g2"
+      ],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "d1",
+      "project_id": "garden",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": 1792238400000
+    }
+  ],
+  "expected": {
+    "withoutNextAction": [
+      "learn",
+      "garden"
+    ],
+    "nextAction": {
+      "garage": "g2",
+      "household": null,
+      "learn": null,
+      "passport": null,
+      "garden": null,
+      "taxes": "t1",
+      "move": "m2",
+      "fixed": "f1",
+      "mine": "me1"
+    },
+    "stalled": [
+      "taxes"
+    ],
+    "waiting": [
+      "g1",
+      "h1",
+      "i1"
+    ]
+  }
+}
