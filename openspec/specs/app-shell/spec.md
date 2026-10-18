@@ -17,7 +17,7 @@ From 768 px wide the shell SHALL fill the viewport height with the sidebar and t
 - **THEN** it fails if more than three elements can scroll vertically, naming the screen and the extra element
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) and a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available); then the Filters, Projects and Labels groups in one scroller; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today and projects only.
+The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) and a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available); then the Filters, Projects and Labels groups in one scroller, each collapsible with its state remembered on the device and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
 
 #### Scenario: Default sidebar
 - **WHEN** a user with projects and labels opens the app on a 1280×800 screen
@@ -30,6 +30,14 @@ The sidebar SHALL show, top to bottom: the app name, the primary destinations In
 #### Scenario: Promote a destination
 - **WHEN** the user turns on "Show in sidebar" for Someday in Settings → Appearance
 - **THEN** Someday appears among the primary destinations on every device of that user after sync, and leaves the More group
+
+#### Scenario: Collapse a group
+- **WHEN** the user has six pinned filters and collapses the Filters group, then reloads the app on the same device
+- **THEN** the Filters header reads "Filters 6" with no rows under it, the Projects group starts directly below it, and on the user's other devices the Filters group is still open
+
+#### Scenario: Two groups closed
+- **WHEN** the user collapses Filters and Labels
+- **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
 
 ### Requirement: Page template
 Every view SHALL render a page header with the title in one size, optional meta text beside it, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, boards and calendars the full column. The header SHALL stay visible while the content scrolls.
@@ -106,3 +114,57 @@ From 1024 px the sidebar SHALL be resizable by dragging its edge between 15 rem 
 #### Scenario: Collapse to icons
 - **WHEN** the user presses `[` outside a text field on a desktop
 - **THEN** the sidebar shows only icons with their names as tooltips, and the content column widens
+
+### Requirement: Sticky sidebar group headers
+While a group's rows scroll inside the sidebar's scroller, the group's header SHALL stay visible at the top of the scroller until the next group's header replaces it. The header SHALL keep its actions (collapse, All, add) while stuck.
+
+#### Scenario: Scrolled into a long tree
+- **WHEN** the user scrolls the sidebar so that the twentieth of thirty projects is at the top of the scroller
+- **THEN** the "Projects" header is visible above that row and its collapse control still collapses the group
+
+#### Scenario: Next header takes over
+- **WHEN** the user scrolls on until the Labels rows reach the top
+- **THEN** the "Labels" header is visible at the top and the "Projects" header is not
+
+### Requirement: Find in the sidebar
+The sidebar SHALL offer a find field at the top of its scroller, opened from the Projects header, by a registered shortcut and by a palette command. While it has text, the scroller SHALL show only the projects (with their ancestors), labels and filters whose names match it, case- and accent-insensitive, under the headers of the groups that have matches. Escape or clearing the field SHALL restore the groups as they were, collapse state included.
+
+#### Scenario: Narrow to a sub-project
+- **WHEN** the user has "Work › Hiring › Designer" and types "des" into the find field
+- **THEN** the Projects group shows "Work", "Hiring" and "Designer" in tree order and no other project, the Labels group shows no rows unless a label matches, and Enter on the first match opens it
+
+#### Scenario: Matches across groups
+- **WHEN** the user types "wait" and has a label "waiting" and a pinned filter "Waiting for"
+- **THEN** both are listed under their own group headers and groups without matches are hidden
+
+#### Scenario: Clear restores the groups
+- **WHEN** the Labels group was collapsed before the user typed "err", and the user presses Escape
+- **THEN** the field clears, the Labels group is collapsed again and focus is on the field's opener
+
+#### Scenario: In the phone drawer
+- **WHEN** the sidebar is open as a drawer on a 390 px wide screen and the user opens the find field
+- **THEN** the field is at the top of the drawer's scroller and choosing a match closes the drawer and opens the destination
+
+### Requirement: Page changes are announced
+
+The browser tab title SHALL name the current page ("Today – OpenTodo"), following the page heading also when its text arrives later. A navigation the person started SHALL move focus to the new page's heading, except on the first load (including the start-view redirect), while a dialog, an overlay or the task panel holds focus, while a text field has it, and when the new page moved focus into itself. A "Skip to content" link SHALL be the first focusable element of the shell, shown while focused, and SHALL move focus to the page heading. This is presentation only and behaves the same offline.
+
+#### Scenario: Navigating from the sidebar
+
+- **WHEN** the user activates "Today" in the sidebar
+- **THEN** the tab title is "Today – OpenTodo" and focus is on the page heading
+
+#### Scenario: First load
+
+- **WHEN** the app opens at its start view
+- **THEN** focus is not moved
+
+#### Scenario: A dialog holds focus
+
+- **WHEN** a navigation happens while focus is in a dialog
+- **THEN** focus stays in the dialog
+
+#### Scenario: Skip link
+
+- **WHEN** the user presses Tab on a fresh page and activates the first link
+- **THEN** focus moves to the page heading

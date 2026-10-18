@@ -32,7 +32,7 @@ Editors, admins and the owner SHALL be able to assign and unassign tasks in a sh
 - **THEN** the task is assigned to them immediately, with no network round trip
 
 ### Requirement: Unassign on departure
-When a member leaves or is removed from a project, every task in that project assigned to them SHALL be unassigned by operations written by the server, so devices that were offline during the departure converge on the unassigned state without client logic. Assignments to that person submitted afterwards SHALL be rejected.
+When a member leaves or is removed from a project, or their account is deleted, every task in that project assigned to them SHALL be unassigned by operations written by the server, so devices that were offline during the departure converge on the unassigned state without client logic. Assignments to that person submitted afterwards SHALL be rejected.
 
 #### Scenario: Removed member had tasks
 - **WHEN** Bob, assignee of four tasks in a shared project, is removed
@@ -41,6 +41,10 @@ When a member leaves or is removed from a project, every task in that project as
 #### Scenario: Offline assignment to a departed member
 - **WHEN** Alice assigns a task to Bob offline, Bob leaves before Alice reconnects, and Alice syncs
 - **THEN** the assignment is rejected with reason `not_a_member` and Alice's device shows the task unassigned
+
+#### Scenario: Deleted account had tasks in someone else's project
+- **WHEN** the owner deletes Bob's account while Bob is the assignee of a task in Alice's shared project
+- **THEN** the task is unassigned by a server-authored change in Alice's project, Alice's devices show it unassigned after their next sync, and webhooks see the change
 
 ### Requirement: Assigned to me view
 The client SHALL offer an "Assigned to me" view listing the user's open assigned tasks across all projects, grouped by project, reachable from the sidebar's More group and a `g`-prefixed keyboard shortcut, with a live count. The view SHALL be rendered from local storage so it works offline and updates as soon as synced assignments arrive.
@@ -118,3 +122,10 @@ When a project the user owned alone gains a member, its unassigned tasks SHALL r
 #### Scenario: Sharing a project
 - **WHEN** the user shares a project containing one self-assigned task and four unassigned tasks with Bob
 - **THEN** after the membership syncs, the self-assigned task reads "You" in the assignee picker and the other four read "Unassigned"
+
+### Requirement: Read notifications are removed after 90 days
+Read in-app notifications older than 90 days SHALL be removed when the server opens the data directory and then once a day while it runs, on a self-hosted server as on a host. Unread notifications SHALL be kept whatever their age.
+
+#### Scenario: Server running for months
+- **WHEN** a self-hosted server runs without a restart and a read notification passes 90 days
+- **THEN** it is removed within a day, and unread notifications stay

@@ -302,7 +302,7 @@ Settings content SHALL be built from sections and rows with a fixed anatomy. A s
 - **THEN** the Two-factor row shows an "Off" badge beside its label and "Set up" as its control, and the section header has no button or help link
 
 ### Requirement: Confirmation dialog
-The client SHALL offer one shared confirmation dialog, used instead of the browser's native confirm prompt. It SHALL name the action and its consequence, start focus on the safe choice, cancel on Escape and return focus to the control that opened it. A destructive confirmation SHALL NOT close on an outside tap.
+The client SHALL offer one shared confirmation dialog, used instead of the browser's native confirm prompt. It SHALL name the action and its consequence, start focus on the safe choice, cancel on Escape and return focus to the control that opened it. A destructive confirmation SHALL NOT close on an outside tap. The client SHALL NOT use the browser's native `confirm()`, `prompt()` or `alert()` anywhere: confirmations use this dialog, and a question that needs an answer (such as the address of a link in a note) uses a small dialog of the app that validates the answer before it is applied.
 
 #### Scenario: Destructive confirmation by keyboard
 - **WHEN** a keyboard user triggers a destructive action and the confirmation dialog opens
@@ -311,6 +311,14 @@ The client SHALL offer one shared confirmation dialog, used instead of the brows
 #### Scenario: Outside tap does not confirm or dismiss
 - **WHEN** a destructive confirmation is open and the user taps outside it
 - **THEN** the dialog stays open and nothing is changed
+
+#### Scenario: Leaving a shared project
+- **WHEN** a member chooses Leave in the share dialog
+- **THEN** the app's confirmation dialog names the project, and the member leaves only after confirming
+
+#### Scenario: Link address in a note
+- **WHEN** a user selects text in a note, presses Mod-k and enters `javascript:alert(1)`
+- **THEN** the link dialog says the address must start with `https://`, `http://` or `mailto:` and keeps the text unlinked; a valid address links the selection, which syncs like any note edit (offline it is saved locally and uploaded later)
 
 ### Requirement: List row
 The client SHALL offer one shared list row with an optional leading icon or avatar, a primary label, secondary details, optional badges and an optional trailing menu, reachable and operable by keyboard.
@@ -384,7 +392,7 @@ Screens SHALL use three surface styles only: row (control radius, no shadow, hov
 - **THEN** the token lint fails naming the file and line
 
 ### Requirement: Token lint covers the screens
-The token lint SHALL cover the app folder as well as the shared UI folder, with a per-file allow-list that may only shrink and reaches zero when this change is complete. Raw palette colours, hex literals, raw text sizes, pixel font sizes, raw radii, raw shadows and the legacy component classes SHALL each fail it.
+The token lint SHALL cover the app folder as well as the shared UI folder, with a per-file allow-list that may only shrink and reaches zero when this change is complete. Raw palette colours, hex literals, literal colour functions (`rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()` with numeric values), raw text sizes, pixel font sizes, raw radii, raw shadows and the legacy component classes SHALL each fail it. A colour mixed from tokens (`color-mix()` over `var(--ot-…)`) passes.
 
 #### Scenario: New raw size
 - **WHEN** a change adds `text-xs` to a screen that is not on the allow-list
@@ -393,6 +401,10 @@ The token lint SHALL cover the app folder as well as the shared UI folder, with 
 #### Scenario: Allow-list only shrinks
 - **WHEN** a change adds a file to the allow-list
 - **THEN** the lint's self-test fails
+
+#### Scenario: Literal colour function
+- **WHEN** a change styles a screen with `rgb(148 163 184 / 0.35)`
+- **THEN** the token lint fails naming the file, the line and the value
 
 ### Requirement: Core screens in the workbench
 The workbench SHALL have stories with fixture data for the sidebar, the shell with a list and the panel open, the task row in every state, a task list with groups, the board, the Day and Week calendar, quick add with chips, the page header and the settings page, each in light and dark at 375 and 1280 px, under the same accessibility and visual-regression gates as the primitives.
@@ -440,3 +452,88 @@ The tokens SHALL offer a high-contrast override (`data-contrast="high"` on the d
 #### Scenario: No motion
 - **WHEN** the root carries `data-motion="none"` and a task is completed
 - **THEN** the row changes state with no transition or animation, as under the system's reduced-motion setting
+
+### Requirement: Hooks lint gate
+The web app's checks SHALL lint its source for the Rules of Hooks and for effect, memo and callback dependencies, and SHALL fail on any finding. A suppression of either rule SHALL state its reason, and a suppression that no longer suppresses anything SHALL fail the check. The gate is a development check only and adds nothing to the shipped app.
+
+#### Scenario: Missing effect dependency fails the check
+- **WHEN** a change adds an effect that reads a prop not listed in its dependencies
+- **THEN** the hooks lint fails and names the file, the line and the missing dependency
+
+#### Scenario: Stale suppression fails the check
+- **WHEN** a dependency suppression remains on an effect whose dependencies are now complete
+- **THEN** the hooks lint fails on the unused suppression
+
+#### Scenario: Justified suppression passes
+- **WHEN** a mount-only effect carries a dependency suppression followed by its reason
+- **THEN** the hooks lint passes
+
+### Requirement: Hermetic web tests
+The web test suite SHALL NOT reach the network: a request a test did not mock SHALL fail that test and name the request. Interaction tests SHALL wait for the condition they assert, with a deadline, rather than for a fixed time, so that a busy machine running tests in parallel only makes them slower, never failing.
+
+#### Scenario: Unmocked request
+- **WHEN** a test renders a screen that asks the server for data and the test mocks no request
+- **THEN** the test fails with a message naming the method and path of the request
+
+#### Scenario: Busy machine
+- **WHEN** the full web suite runs with more parallel workers than processor cores
+- **THEN** every test passes as it does on an idle machine
+
+### Requirement: The design system stands alone
+
+The shared building blocks in `web/src/ui`, overlays (dialogs, menus, popovers, toasts) included, SHALL NOT depend on any screen in `web/src/app`, so every primitive can be built, tested and shown in the workbench without the screens. Screens SHALL import shared UI, overlays included, through the `web/src/ui` barrel. The lint run of `make check` SHALL fail when a file under `web/src/ui` imports from `web/src/app`. This is a code-structure rule: it changes nothing a user sees, works the same offline, and has no effect on sync.
+
+#### Scenario: A primitive imports a screen module
+
+- **WHEN** a file under `web/src/ui` imports anything from `web/src/app`
+- **THEN** the lint run fails and names the import
+
+#### Scenario: Primitives use overlays from the design system
+
+- **WHEN** the Combobox, ConfirmDialog, AskComposer or PageHeader opens a popover, dialog or menu
+- **THEN** it uses the overlay module in `web/src/ui/overlay` and behaves as before on every screen size
+
+### Requirement: Component size limit
+The web app's checks SHALL fail when a function in the app's source (a component, hook or helper; tests, stories and test kits excepted) is longer than 250 lines. A function that was already longer when the limit came in SHALL be listed by file with a ceiling and the reason it is long; a listed ceiling SHALL NOT be raised, and the entry SHALL be removed once the function fits the limit. Splitting a screen to meet the limit SHALL NOT change what it shows, what its keys do or what it writes.
+
+#### Scenario: New long component fails the check
+- **WHEN** a change adds a component whose function is longer than 250 lines
+- **THEN** the web lint fails and names the file, the line and the function's length
+
+#### Scenario: Allow-listed function grows
+- **WHEN** a change makes an allow-listed function longer than its listed ceiling
+- **THEN** the web lint fails for that function
+
+#### Scenario: Split task list behaves as before
+- **WHEN** the task list is split into hooks, pure grouping functions and bodies
+- **THEN** its groups, keyboard shortcuts with their read-only checks, drag and drop, tree semantics for assistive technology and per-row re-rendering behave as before, as shown by the existing list tests
+
+### Requirement: Recent picks in a project tree
+A picker that shows a tree (projects with their sub-projects) SHALL keep the tree's shape. When the tree has at least 12 entries and the device has recent picks for that picker, it SHALL offer up to five of them first under a "Recent" heading and head the tree below "All". A shorter tree SHALL show each entry once, in tree order, with no "Recent" group.
+
+#### Scenario: Short project list has no duplicates
+- **WHEN** a user with four projects, three of them picked before as the import target, opens "Tasks without a project go to"
+- **THEN** each project is listed once, in tree order, and there is no "Recent" heading
+
+#### Scenario: Long project list offers recent picks
+- **WHEN** a user with fifteen projects, one of them picked before, opens the same picker
+- **THEN** that project is listed first under "Recent", and the full tree follows under "All"
+
+### Requirement: Names are announced
+
+Text that stands for a longer phrase (a count read as "3 comments", an icon read as "Has notes", a deadline read with its date, a warning read in place of a title) SHALL reach assistive technology as visually hidden text inside the element, with the abbreviated visible text hidden from it, and SHALL NOT be an `aria-label` or `aria-labelledby` on an element without a role. An element whose name describes a container SHALL have the role the name belongs to. The web lint SHALL refuse `aria-label` and `aria-labelledby` on a `span` or `div` without a role. The hidden text SHALL NOT change layout or widen a scroller. This is presentation only: no data is stored, and it behaves the same offline.
+
+#### Scenario: A count chip
+
+- **WHEN** a row shows a comment chip with "3"
+- **THEN** a screen reader reads "3 comments" and the chip carries no `aria-label`
+
+#### Scenario: An icon-only chip
+
+- **WHEN** a task has notes
+- **THEN** its row's notes chip is read as "Has notes"
+
+#### Scenario: A name on a span
+
+- **WHEN** a component puts `aria-label` on a `span` without a role
+- **THEN** `npm run lint` fails and names the file and line

@@ -21,6 +21,10 @@ The sidebar SHALL show, top to bottom: the app name, the primary destinations In
 - **WHEN** the user has six saved filters and collapses the Filters group, then reloads the app on the same device
 - **THEN** the Filters header reads "Filters 6" with no rows under it, and on the user's other devices the Filters group keeps its own state
 
+#### Scenario: Two groups closed
+- **WHEN** the user collapses Filters and Labels
+- **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
+
 #### Scenario: Favourites first
 - **WHEN** the user has pinned a project, a label and a saved filter
 - **THEN** the Favourites group is the first group of the scroller, above Projects, and the Labels and Filters groups are collapsed on a device that never stored a group state

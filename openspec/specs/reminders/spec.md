@@ -307,3 +307,36 @@ A reminder MAY be written in the same operation set as the task it belongs to, f
 #### Scenario: Created through the REST API
 - **WHEN** a client creates a task with `POST /api/v1/tasks` and then its reminder with `POST /api/v1/reminders` naming the new task id
 - **THEN** the reminder is accepted with the firing time computed by the server for a relative reminder, exactly as for a reminder added later
+
+### Requirement: Reminders of completed tasks are dismissed by the server
+When the server's scheduler finds a due reminder whose task is completed, it SHALL record the reminder as dismissed for that firing time with an operation authored by the server, and SHALL not examine it again until its firing time changes. Reminders on deleted tasks SHALL follow the Trash rule instead (nothing recorded). The scheduler SHALL read its candidates in bounded pages, so many stale reminders never hold back a due one.
+
+#### Scenario: Many reminders on completed tasks
+- **WHEN** a user has a thousand overdue reminders on completed tasks and one due reminder on an open task
+- **THEN** the due reminder is pushed on the next check, the others are recorded as dismissed, and later checks no longer examine them
+
+#### Scenario: New firing time after completion
+- **WHEN** a dismissed reminder's task is reopened and the reminder gets a new firing time
+- **THEN** it is pushed again at the new time
+
+### Requirement: Bounded push delivery
+The scheduler SHALL send reminders for several accounts at a time (eight), so one account's slow or unreachable push endpoints never hold back other accounts' reminders, and one account's sends in one pass SHALL take at most 20 seconds, the rest being sent on the next pass while the reminder is less than an hour overdue. Delivery is still recorded as a server op (`delivered_at`) that converges on every device like any other; a device that was offline shows the reminder from its own copy.
+
+#### Scenario: Slow endpoints of one account
+- **WHEN** one account's push endpoints hang and another account has a reminder due in the same pass
+- **THEN** the other account's reminder is pushed without waiting for the hanging endpoints
+
+#### Scenario: Budget spent
+- **WHEN** an account's sends in one pass take longer than its budget
+- **THEN** its remaining sends wait for the next pass and the reminder is not yet recorded as delivered
+
+### Requirement: Bounded push subscriptions
+An account SHALL hold at most 20 push subscriptions; registering a device beyond that SHALL replace the subscription registered least recently. A subscription whose last 20 sends failed and that delivered nothing for a day SHALL no longer be sent to until the device registers it again. Subscriptions are server state, not ops; nothing changes for offline devices.
+
+#### Scenario: Too many devices
+- **WHEN** an account with 20 subscriptions registers another device
+- **THEN** the new subscription is stored and the least recently registered one is removed
+
+#### Scenario: Dead subscription
+- **WHEN** a subscription's last 20 sends failed and it has delivered nothing for a day
+- **THEN** reminders are no longer sent to it, and registering it again from the device sends to it once more

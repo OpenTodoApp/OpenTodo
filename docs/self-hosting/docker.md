@@ -40,7 +40,7 @@ To add more people, keep sign-up closed and create single-use invitation links i
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server.
 - Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
-- The compose file pulls `ghcr.io/pixari/opentodo:stable`, which every release moves. To stay on one release line use `:0.6` (its fixes only), to pin one version `:0.6.1`; `:latest` follows the main branch and carries unreleased changes.
+- The compose file pulls `ghcr.io/pixari/opentodo:stable`, which every release moves. To stay on one release line use `:0.7` (its fixes only), to pin one version `:0.7.0`; `:latest` follows the main branch and carries unreleased changes.
 - To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:stable` with `build: .`.
 
 ## Plain `docker run`
@@ -224,7 +224,7 @@ The command needs only the data volume: shell access to the host is the proof of
 
 ## Verifying the image and downloads
 
-Releases built after 0.6.1 are signed and carry their build record. The image is signed with [cosign](https://docs.sigstore.dev/) without a long-lived key: the signature names the GitHub workflow and tag that built it. Check it before you deploy a new version:
+From 0.7.0, releases are signed and carry their build record. The image is signed with [cosign](https://docs.sigstore.dev/) without a long-lived key: the signature names the GitHub workflow and tag that built it. Check it before you deploy a new version:
 
 ```bash
 cosign verify ghcr.io/pixari/opentodo:<version> \
