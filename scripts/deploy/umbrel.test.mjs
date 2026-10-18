@@ -50,7 +50,8 @@ test('umbrel: the manifest parser reads folded text, lists of maps and quotes, a
 })
 
 test('umbrel: image pinned by release tag and digest, equal to the manifest version', () => {
-  const digest = '233314397daa3fb8e72d4abf5c4d5ace64da4ad46154579f50ac3ff20a07115b'
+  // The committed digest, whatever scripts/deploy/pin.mjs last wrote.
+  const digest = /@sha256:([0-9a-f]{64})/.exec(compose)[1]
   has(variant(both('docker-compose.yml', compose.replace(`0.7.0@sha256:${digest}`, 'stable'))), /image must be ghcr\.io\/pixari\/opentodo:0\.7\.0@sha256/)
   has(variant(both('docker-compose.yml', compose.replace(`@sha256:${digest}`, ''))), /image must be .*@sha256:<index digest>/)
   has(variant(both('umbrel-app.yml', manifest.replace('version: "0.7.0"', 'version: "0.6.0"'))), /manifest version 0\.6\.0 must equal the image tag 0\.7\.0/)
