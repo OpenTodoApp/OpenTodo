@@ -113,11 +113,15 @@ The layout SHALL work from 360 px wide phones to desktops. Below 768 px the side
 - **THEN** the app renders dark on phones and desktops alike
 
 ### Requirement: Render failure containment
-A rendering error SHALL show a recoverable message with a reload action instead of a blank page, and SHALL not lose local data.
+A rendering error SHALL show a recoverable message with a reload action instead of a blank page, and SHALL not lose local data. An error in one screen, the task panel or an overlay (help, assistant, command palette, Vim layer, display screen) SHALL replace only that part with the message and a Reload button; the sidebar and the rest of the shell SHALL keep working, and navigating to another screen SHALL try again.
 
 #### Scenario: Unexpected render error
 - **WHEN** a component throws while rendering
 - **THEN** the user sees an error message and a Reload button, and their data is intact after reloading
+
+#### Scenario: One screen fails
+- **WHEN** the code of one screen fails to load or render
+- **THEN** that screen shows the message with Reload while the sidebar still navigates, and another screen opens normally
 
 ### Requirement: Vim keybindings are opt-in
 The settings view SHALL offer a "Vim keybindings" switch that is off by default. The preference SHALL be stored on the device only, SHALL take effect immediately without a reload, SHALL be readable offline, and SHALL NOT be synced or sent to the server; signing out clears it with the rest of the local data. Because it is device-local there is nothing to converge between devices.
@@ -356,3 +360,103 @@ The Completed view SHALL list completed tasks newest first, grouped by the local
 #### Scenario: Offline and synced
 - **WHEN** the device is offline, the user completes a task, and later another device's completion syncs in
 - **THEN** each appears under its completion day without a reload, and reopening a task removes it from its group
+
+### Requirement: Screens read local data through the data layer
+
+Screens in `web/src/app` SHALL read the device's local data only through the data layer in `web/src/lib`, never by opening the local database themselves; the lint run of `make check` SHALL fail on an import of the database module (other than the sign-out and storage-persistence calls) or a use of the database object in a screen, except in tests, test kits, stories and files explicitly allow-listed while another change moves them. Widely read lists (projects, labels, memberships, saved views, preferences, field definitions) SHALL come from one shared live read each, so every screen shows the same rows. Reads stay local: they work offline, and a change from another device appears on every open screen after sync without a reload.
+
+#### Scenario: A screen opens the database
+
+- **WHEN** a screen file in `web/src/app` imports the database object or reads a table directly
+- **THEN** the lint run fails and points to the data layer
+
+#### Scenario: A synced change reaches every screen
+
+- **GIVEN** the sidebar, the command palette and a project header are open
+- **WHEN** a project is renamed on another device and this device syncs, or the device is offline and the rename is made here
+- **THEN** all three show the new name without a reload
+
+### Requirement: One visibility rule for projects
+
+Every screen SHALL apply the same rule to which projects it reads: projects in the Trash (deleted) SHALL be left out everywhere except the Trash, history and statistics; archived projects SHALL be included in the lists screens hand to pickers, quick add and saved views, which leave archived projects out themselves as their own requirements say, and SHALL be left out of browsing lists such as the sidebar tree. The quick add sheet SHALL treat projects exactly as the quick add line of the task views does. The rule is applied to local data, so it holds offline, and an archive, restore or deletion synced from another device moves the project in or out of every list on the next render.
+
+#### Scenario: Archived project in quick add
+
+- **GIVEN** a project "Old" is archived
+- **WHEN** the user types `#Old` in the quick add sheet or in a view's quick add line
+- **THEN** both treat it the same way, and neither files the task into the archived project
+
+#### Scenario: Archived project in the sidebar and in a picker
+
+- **GIVEN** a task in an archived project
+- **WHEN** the sidebar and the task's project picker are shown
+- **THEN** the sidebar tree does not list the archived project, and the picker lists it first, marked "archived", as the task's current project
+
+#### Scenario: Deleted project
+
+- **WHEN** a project is moved to the Trash on another device and this device syncs
+- **THEN** it disappears from every list except the Trash, where it can be restored
+
+### Requirement: Date-dependent views follow the clock
+Today, Upcoming, Anytime, the Logbook headings, the habit streaks and the sidebar counts SHALL move to the new day within a minute of local midnight (and on a change of time zone) while the app stays open, without a reload or a data change. This is local: it works offline, and no operation is written.
+
+#### Scenario: Midnight with the app open
+- **WHEN** the app shows Today at 23:58 and a task is due tomorrow
+- **THEN** shortly after midnight the task is listed in Today and the sidebar's Today count includes it
+
+### Requirement: Editing shortcuts respect the role
+Every list shortcut that changes a task (including skip occurrence, this occurrence only, schedule in the Day view and edit estimate) SHALL do nothing for a task in a project where the user is a viewer, so no local change is made that the server would refuse. Shortcuts that only move the selection or open a task keep working.
+
+#### Scenario: Viewer presses skip
+- **WHEN** a viewer selects a recurring task of a shared project and presses Shift+K, Shift+O, s or e
+- **THEN** the task is unchanged on the device, no copy is created, the Day view does not open and the panel does not open on the estimate
+
+### Requirement: List actions report failures
+An action started from the task list (a bulk key, park, duplicate, this occurrence only, adding a subtask, completing from the panel) that fails SHALL show its message as a toast instead of failing silently.
+
+#### Scenario: Refused duplicate
+- **WHEN** duplicating the selected task fails
+- **THEN** a toast shows the reason and the list is unchanged
+
+### Requirement: Recovery after a server upgrade
+An open tab SHALL recover when the server moves to a new release: when a lazily loaded part of the app is gone, it SHALL reload once on its own (and show a "Reload to update" prompt if the part is still missing right after); when a new service worker takes control, or a newer tab upgrades the local database, it SHALL show a "Reload to update" prompt, and a tab whose database was upgraded elsewhere SHALL close its connection. Offline, the precached release keeps working; local data is untouched.
+
+#### Scenario: Old chunk after an upgrade
+- **WHEN** the server was upgraded and an open tab opens a screen whose code chunk no longer exists
+- **THEN** the tab reloads into the new release
+
+#### Scenario: New service worker
+- **WHEN** a new release's service worker takes control of an open tab
+- **THEN** the tab shows "A new version of OpenTodo is ready." with a "Reload to update" button
+
+### Requirement: Missing files are not the app page
+The server SHALL answer a request for a missing file under `assets/`, or for any path with a file extension, with 404, and SHALL keep answering extension-less paths with the app page.
+
+#### Scenario: Old chunk requested
+- **WHEN** a tab of the previous release requests `/assets/TaskDetail-<old hash>.js`
+- **THEN** the server answers 404, not the app page
+
+#### Scenario: Client route
+- **WHEN** the browser navigates to `/project/<id>`
+- **THEN** the server answers with the app page
+
+### Requirement: Failed actions are shown
+When a change the user makes is refused or fails to save (for example making a task its own subtask, a move the target does not allow, or a local database error), the client SHALL show the reason as a toast in the user's language instead of dropping it, and SHALL log promise rejections nobody handled. A refused change is not written, so nothing has to converge.
+
+#### Scenario: Refused subtask
+- **WHEN** the user indents a task under a task in another project, or drops a task onto itself
+- **THEN** a toast shows the translated reason and the task is unchanged
+
+### Requirement: Title draft survives remote changes
+While the user is typing a new title in the task panel, a title change from another device SHALL not replace the text being typed; leaving the field SHALL save the draft as the user's edit, which converges by the normal last-writer-wins rule. An untouched title SHALL follow remote changes.
+
+#### Scenario: Remote rename while typing
+- **WHEN** the user is typing a new title and another device renames the task
+- **THEN** the field keeps the user's text, and leaving it saves that text
+
+### Requirement: Local data is kept by the browser
+After sign-in the client SHALL ask the browser to keep its storage persistent, so the local copy is not evicted under storage pressure or after weeks without a visit; a refusal SHALL change nothing else.
+
+#### Scenario: Persistent storage
+- **WHEN** the user signs in on a browser that supports persistent storage
+- **THEN** the app requests it once, and works the same whatever the answer

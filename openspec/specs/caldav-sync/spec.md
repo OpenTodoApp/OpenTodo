@@ -227,3 +227,40 @@ A task's `blocked_by` SHALL be served as one `RELATED-TO;RELTYPE=DEPENDS-ON` lin
 #### Scenario: Unknown relation preserved
 - **WHEN** a client sends a `DEPENDS-ON` relation whose UID matches no task the user can see
 - **THEN** `blocked_by` is unchanged, the line is kept in `ical_extra`, and the next fetch returns it
+
+### Requirement: CalDAV lookups do not scan the account
+A CalDAV request SHALL load the user's view once and index it, so that finding a resource by name, a task by UID or a calendar's members does not scan every task. Responses SHALL stay the same. CalDAV writes still go through ops; nothing changes for offline devices or convergence.
+
+#### Scenario: Multiget on a large account
+- **WHEN** a client sends a calendar-multiget of 200 hrefs for an account of 2,000 tasks
+- **THEN** each href costs a lookup, not a scan of the account, and the response lists the same resources and ETags as before
+
+#### Scenario: Unauthenticated request
+- **WHEN** a REPORT arrives without valid app-password credentials
+- **THEN** the response is 401 and no view is loaded
+
+### Requirement: Calendar queries encode each task once
+A calendar-query SHALL encode each task once. For the plain filter that selects every task (VCALENDAR containing VTODO, no further conditions) it SHALL not parse the encoded data again; any other filter SHALL be evaluated on the calendar data the client would receive. The plain filter also returns a task whose calendar data would not parse back, as PROPFIND and sync-collection already do. The query only reads; devices are unaffected.
+
+#### Scenario: Plain filter
+- **WHEN** a client sends a calendar-query with only `comp-filter VCALENDAR` and `comp-filter VTODO`
+- **THEN** every task of the calendar is returned without its data being parsed again
+
+#### Scenario: Time-range query
+- **WHEN** a client sends a calendar-query with a VTODO time-range
+- **THEN** only the tasks whose calendar data falls in the range are returned, as before
+
+### Requirement: Bounded calendar data parsing
+The server SHALL parse iCalendar data in time proportional to its size. A logical content line SHALL be at most 64 KB after unfolding, and a body SHALL hold at most eight physical lines per allowed content line; a body over either limit SHALL be refused as invalid calendar data before any write, so nothing changes on the server and the client keeps its local copy to retry or fix. The limits apply to CalDAV resources and to subscribed calendars alike.
+
+#### Scenario: Continuation-line flood
+- **WHEN** a client `PUT`s a 1 MB VTODO body made of one property folded into hundreds of thousands of continuation lines
+- **THEN** the server refuses it as invalid calendar data within a fraction of a second and no task changes
+
+#### Scenario: Long description
+- **WHEN** a client `PUT`s a VTODO whose folded `DESCRIPTION` is 60 KB long
+- **THEN** it is accepted and the task's notes hold the whole description
+
+#### Scenario: Over-long line
+- **WHEN** a body holds one content line longer than 64 KB after unfolding
+- **THEN** the server refuses it as invalid calendar data

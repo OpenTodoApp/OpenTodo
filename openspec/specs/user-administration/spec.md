@@ -151,11 +151,11 @@ Only the owner SHALL change roles, through `PUT /api/v1/users/{id}/role` with bo
 - **THEN** the response is a 401 `unauthorized` error
 
 ### Requirement: Using a reset link
-`GET /api/v1/password-resets/{token}` and `POST /api/v1/password-resets/{token}` SHALL require no authentication. GET returns the account's email and the expiry. POST with `{"password"}` sets a new password under the password policy, marks the link used, and deletes every session of the account in one transaction. It does not sign in. API tokens are kept. An unknown, used, expired or revoked token SHALL give the same 404 `reset_invalid` error.
+`GET /api/v1/password-resets/{token}` and `POST /api/v1/password-resets/{token}` SHALL require no authentication. GET returns the account's email and the expiry. POST with `{"password"}` sets a new password under the password policy, marks the link used, and deletes every session and every remembered browser of the account in one transaction. It does not sign in. API tokens are kept. An unknown, used, expired or revoked token SHALL give the same 404 `reset_invalid` error.
 
 #### Scenario: Reset succeeds
 - **WHEN** someone posts a valid new password to a pending reset link
-- **THEN** the response is 204, the old password no longer signs in, the new one does, all previous sessions get 401, and the link is now refused
+- **THEN** the response is 204, the old password no longer signs in, the new one does, all previous sessions get 401, remembered browsers are asked for the second factor again, and the link is now refused
 
 #### Scenario: Link is used, expired or unknown
 - **WHEN** a used, expired, revoked or unknown token is fetched or posted

@@ -97,3 +97,51 @@ While a list, the panel or a settings page waits for local data, it SHALL show s
 #### Scenario: Cold start
 - **WHEN** the app opens before the local database has answered
 - **THEN** the content column shows skeleton rows that are replaced by tasks without a layout jump
+
+### Requirement: Large lists stay responsive
+
+Task lists SHALL do work in proportion to what changed, not to the size of the list or of the task store. Moving the cursor SHALL re-render only the row it leaves and the row it reaches. One write (local or from sync) SHALL read the stored tasks once for every list, count and badge on screen together, not once per component. Grouping a list SHALL take time linear in the number of tasks. With end-to-end encryption on, rows SHALL NOT each open their own query. This holds offline as online: the lists read local storage either way, and every device converges as before because only reads change.
+
+#### Scenario: Cursor moves in a long list
+
+- **WHEN** a project lists 2,000 tasks and the user presses `j` or `k`
+- **THEN** at most the two rows whose selection changed render again
+
+#### Scenario: One write with the sidebar and a project open
+
+- **WHEN** a project of 2,000 tasks is open with the sidebar and one task is renamed
+- **THEN** the stored tasks are read about once to update the list, the sidebar counts and the project header
+
+#### Scenario: Synced changes refresh every view
+
+- **WHEN** a sync batch lands while the device was offline or online
+- **THEN** every open list, count and badge shows the new state from one shared read
+
+#### Scenario: Grouping a large list
+
+- **WHEN** 20,000 tasks fall into one group of a list
+- **THEN** grouping them takes linear time (milliseconds, not seconds)
+
+### Requirement: Lists for assistive technology
+
+The keyboard cursor of a task list SHALL be real focus: when the cursor moves to a row, that row's open control SHALL take focus, unless focus is outside the list (the task panel, a dialog, the quick add, a text field, the sidebar), which keeps focus. The cursor row SHALL be marked as current. Rows of the project and Inbox trees SHALL expose their level and their position among their visible siblings. Each row's complete control SHALL be named after its task ("Complete Buy milk", "Reopen Buy milk"), and a title that cannot be decrypted SHALL NOT be read out as ciphertext. Cursor moves SHALL still re-render only the row left and the row reached. This is presentation only and behaves the same offline.
+
+#### Scenario: Moving the cursor
+
+- **WHEN** a list is shown and the user presses `j`
+- **THEN** focus is on the first row's open control and the row is marked as current
+
+#### Scenario: Focus stays in the panel
+
+- **WHEN** focus is in the task panel and the cursor moves
+- **THEN** focus stays in the panel
+
+#### Scenario: Subtasks
+
+- **WHEN** a project shows a task with two subtasks
+- **THEN** the subtask rows are level 2 and positions 1 and 2 of 2
+
+#### Scenario: Complete button
+
+- **WHEN** a row shows the task "Pack"
+- **THEN** its complete button is named "Complete Pack"

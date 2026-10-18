@@ -101,7 +101,7 @@ Deeply nested levels SHALL stay readable on a 360 px wide screen by capping the 
 - **THEN** a tooltip reads "Work › Client A › Q4 launch"
 
 ### Requirement: Collapse and expand
-Each project with sub-projects SHALL be collapsible in the sidebar. Collapse state SHALL be a per-device preference that persists across reloads and is not synced. It SHALL be toggled by pointer and by keyboard (Left collapses, Right expands, when a project row is focused). Navigating to a sub-project SHALL expand its ancestors so the current project is visible.
+Each project with sub-projects SHALL be collapsible in the sidebar. Collapse state SHALL be a per-device preference that persists across reloads and is not synced. On a device that has never stored a collapse state, every project with sub-projects SHALL start collapsed. It SHALL be toggled by pointer and by keyboard (Left collapses, Right expands, when a project row is focused), and the Projects header menu SHALL offer "Collapse all" and "Expand all". Navigating to a sub-project SHALL expand its ancestors so the current project is visible.
 
 #### Scenario: Collapse persists locally
 - **WHEN** the user collapses "Work" and reloads the app
@@ -110,6 +110,18 @@ Each project with sub-projects SHALL be collapsible in the sidebar. Collapse sta
 #### Scenario: Keyboard toggle
 - **WHEN** a project row with sub-projects has focus and the user presses Left, then Right
 - **THEN** its sub-projects are hidden and then shown again
+
+#### Scenario: Roots only on a new device
+- **WHEN** the user signs in on a device for the first time with thirty projects in eleven top-level projects
+- **THEN** the sidebar lists the eleven top-level projects, those with sub-projects collapsed with their subtree open-task counts, and a device that already stored a collapse state keeps it
+
+#### Scenario: Collapse all
+- **WHEN** the user chooses "Collapse all" from the Projects header menu while "Work" and "Home" are expanded
+- **THEN** every project with sub-projects is collapsed on this device, "Expand all" opens them all again, and other devices are unaffected
+
+#### Scenario: Navigation still reveals
+- **WHEN** everything is collapsed and the user opens "Designer" from the command palette
+- **THEN** "Work" and "Hiring" expand so "Designer" is visible and selected, and the other roots stay collapsed
 
 ### Requirement: Move a project
 The user SHALL be able to move a project under another project or to the top level from the project header's "Move to" action, reachable by keyboard. The picker SHALL be searchable by name, show each candidate's parent path, and SHALL exclude the project itself, its descendants and archived or deleted projects. A move SHALL set the parent field, place the project last among its new siblings, and SHALL apply locally at once, work offline, and converge on other devices through the operation log.

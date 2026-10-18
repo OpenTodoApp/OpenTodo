@@ -55,7 +55,7 @@ Every day at 03:00 UTC, and at startup when the last reset predates the most rec
 - **THEN** it deletes all sandboxes before serving requests
 
 ### Requirement: Restricted features
-With demo mode on, requests to sign-up, invitations, user administration, password change or reset including the self-service reset request and sign-up verification, API tokens, app passwords, CalDAV, passkeys, two-factor, server settings, backups, webhooks, email to task, import, end-to-end encryption, web push, sharing changes, MCP and the in-app assistant SHALL be refused with 403 `demo_restricted` before authentication. Rate limits SHALL stay.
+With demo mode on, requests to sign-up, invitations, user administration, password change or reset including the self-service reset request and sign-up verification, signing out everywhere, API tokens, app passwords, CalDAV, passkeys, two-factor, server settings, backups, webhooks, email to task, import, end-to-end encryption, web push, sharing changes, MCP and the in-app assistant SHALL be refused with 403 `demo_restricted` before authentication. The deny list SHALL refuse exactly the routes whose declared route policy says a demo refuses them. Rate limits SHALL stay.
 
 #### Scenario: Refused while signed in
 - **WHEN** the signed-in demo account POSTs to `/api/v1/tokens`

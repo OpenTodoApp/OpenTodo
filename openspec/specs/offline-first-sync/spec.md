@@ -80,11 +80,19 @@ The client SHALL sync shortly after each local edit, when the network comes back
 - **THEN** the indicator distinguishes the two states, and in the disconnected state syncing still happens on the periodic timer
 
 ### Requirement: Clock safety
-Timestamps SHALL be strictly increasing per device even if the system clock moves backwards, and the server SHALL clamp timestamps more than five minutes in the future so a wrong clock cannot make a field unchangeable.
+Timestamps SHALL be strictly increasing per device even if the system clock moves backwards. An operation stamped more than five minutes ahead of the server's clock SHALL NOT be stored with that timestamp, so a wrong clock cannot make a field unchangeable: a device that announces the `clock_skew` feature SHALL get it refused with reason `clock_skew` and the server's time, SHALL correct its clock and SHALL send the same change again with a new timestamp, so the edit is kept; for a device that does not announce it, the server SHALL clamp the timestamp to five minutes ahead of its clock. The client SHALL follow the server's clock while the skew exceeds two seconds, SHALL drop its correction once its clock is right again, and SHALL bring a stored clock seed more than five minutes ahead of the server back to server time.
 
 #### Scenario: Device clock far in the future
 - **WHEN** a device with a clock one hour ahead syncs an edit
 - **THEN** the stored timestamp is at most five minutes ahead of server time and later edits from correctly set devices can still win
+
+#### Scenario: Fast device converges
+- **WHEN** a device whose clock runs one hour fast edits a task title, syncs, and a correctly set device edits the same title a minute later
+- **THEN** the first device's edit is stored after its clock was corrected, the later edit wins on the server and on both devices, and the first device's next edit still wins
+
+#### Scenario: Older client keeps clamping
+- **WHEN** a client that does not announce the `clock_skew` feature sends an op stamped an hour ahead
+- **THEN** the op is stored with a timestamp five minutes ahead of server time and is not reported as refused
 
 ### Requirement: Per-user isolation
 Operations SHALL be stored and served per scope: a user's personal scope holds their Inbox, unshared projects and the tasks in them, and each shared project is its own scope. A user SHALL receive operations only from their personal scope and from the scopes of projects they are currently a member of, and SHALL be able to affect only those scopes, within their role. No user SHALL receive or affect any other scope.
@@ -176,11 +184,19 @@ A stream SHALL deliver wake-ups only for the account that authenticated it. Oper
 - **THEN** the stream is closed within one heartbeat interval and reconnection attempts are refused with 401
 
 ### Requirement: Connection limits
-The server SHALL cap concurrent streams per account; when the cap is exceeded it SHALL close the oldest stream for that account rather than refuse the new one, so a device that reconnects after a half-closed connection is never locked out. The cap SHALL be at least sixteen so several tabs and devices coexist.
+The server SHALL cap concurrent streams per account; when the cap is exceeded it SHALL close the oldest stream for that account rather than refuse the new one, so a device that reconnects after a half-closed connection is never locked out. The cap SHALL be ten, so several tabs and devices coexist while one account (such as a demo sandbox) cannot hold more. The server SHALL also hold at most 20 streams per client address and 2,000 in all; a stream over either cap SHALL be refused with 503 `busy` and `Retry-After`, and the client keeps converging through its backoff and polling, since the stream carries no data.
 
 #### Scenario: Stale connection replaced
 - **WHEN** an account already has the maximum number of open streams and a device opens another
 - **THEN** the new stream is accepted and the oldest one is closed; the closed client reconnects through its normal backoff
+
+#### Scenario: Too many streams from one address
+- **WHEN** one client address already holds 20 open streams, across any accounts, and opens another
+- **THEN** the new stream is refused with 503 `busy` and `Retry-After`, while a client at another address can still connect
+
+#### Scenario: Server-wide cap
+- **WHEN** the server already holds its maximum number of streams and a device opens another
+- **THEN** the stream is refused with 503 `busy`; once a stream closes, a new one is accepted
 
 ### Requirement: Works behind reverse proxies
 The stream SHALL send a heartbeat at least every thirty seconds and SHALL set response headers that disable proxy buffering and caching, so it stays open behind common reverse proxies and NAT idle timeouts with no proxy-specific configuration in the default deployment. The service worker SHALL never intercept or cache the stream.
@@ -211,3 +227,163 @@ A pull page, including the history replay for a newly joined project, SHALL hold
 #### Scenario: Offline device reconnects
 - **WHEN** a device that was offline for weeks reconnects
 - **THEN** it pulls in bounded pages until nothing remains and ends with the same data as other devices
+
+### Requirement: Notification actions share the device clock
+Changes written outside the open app on the device, such as Snooze and Dismiss on a reminder notification, SHALL be stamped with the same corrected clock as the app's own edits. When such a change is uploaded without the app and is refused, or the answer is not the server's, it SHALL stay queued for the app's next sync. Offline, it is applied and queued as any other edit; convergence follows last-writer-wins.
+
+#### Scenario: Device clock an hour slow
+- **WHEN** the app has found the device clock an hour behind the server and the user snoozes a reminder from its notification with the app closed
+- **THEN** the change is stamped about an hour later than the device clock reads, after the device's last stamp, like an edit made in the app
+
+#### Scenario: Refused upload
+- **WHEN** the notification action uploads its change itself and the server refuses one of its operations as stamped too far ahead
+- **THEN** that operation stays queued on the device, the accepted ones leave the queue, and the app's next sync stamps it again and sends it
+
+#### Scenario: Answer from a proxy
+- **WHEN** the upload is answered with a page that is not a sync response
+- **THEN** every operation of the change stays queued on the device
+
+#### Scenario: Offline
+- **WHEN** the user dismisses a reminder from its notification while the device is offline
+- **THEN** the reminder is dismissed on the device and the change waits in the queue for the next sync
+
+### Requirement: Convergence is verified under random histories
+The test suite SHALL include a seeded property test of convergence: devices of more than one account with clocks from minutes slow to hours fast make random edits, exchange in random order and page sizes, and a project is shared part way through. After every device has exchanged its queued (offline) edits, every device SHALL hold the server's value and clock for each field it can see, and the server's state SHALL equal a last-writer-wins replay of its op log.
+
+#### Scenario: Random history converges
+- **WHEN** the property test runs with any seed
+- **THEN** after the final exchanges every replica, the server and the replay of the op log agree on every field
+
+#### Scenario: A failure can be replayed
+- **WHEN** a run fails
+- **THEN** its log names the seed, and running the test with that seed reproduces the same history
+
+### Requirement: Op schema contract shared by server and client
+One fixture file SHALL list, per entity, the op fields the server accepts, the field name prefixes, and the content fields an encrypted account encrypts. The server's test suite SHALL fail when its schema or content field list differs from the fixture, and the web client's test suite SHALL fail when its entities, row defaults or content field list differ from it, so a field cannot be added on one side only. Every content field SHALL be a schema field.
+
+#### Scenario: Field added on the server only
+- **WHEN** a field is added to the server schema but not to the fixture and the client's row defaults
+- **THEN** the server's schema fixture test fails and names the difference
+
+#### Scenario: Content field missing on the client
+- **WHEN** a field is encrypted by the server's list but missing from the client's content fields
+- **THEN** the client's schema fixture test fails
+
+### Requirement: One server clock
+Every operation the server writes itself (REST and assistant writes, CalDAV, public links, reminder deliveries, imports, email, unassignments) SHALL take its timestamp from one strictly increasing clock per server process, and SHALL carry the device `server:<boot id>`, chosen at process start. The bare device `server` of operations stored by older releases SHALL keep being treated as the server's.
+
+#### Scenario: Two server writers in one millisecond
+- **WHEN** a REST write and a reminder delivery write within the same millisecond
+- **THEN** they carry different timestamps, so neither is dropped as a tie
+
+#### Scenario: Server device stays reserved
+- **WHEN** a device sends ops with device `server` or `server:abc` to `/api/v1/sync`
+- **THEN** the request is refused with 400 `invalid_op`
+
+### Requirement: Post-commit effects survive a disconnect
+Once a batch has committed, the server SHALL deliver its effects (webhook queueing, assignment, mention and unblocked notifications) even when the client that sent it disconnected and its request was cancelled.
+
+#### Scenario: Client goes away after commit
+- **WHEN** a device's request is cancelled right after its batch assigning a task committed
+- **THEN** the assignee's notification is still recorded with the task's title
+
+### Requirement: Due values are real dates and times
+A task's `due` SHALL name a date that exists and, when it has a time, a clock time from 00:00 to 23:59; other values SHALL be refused.
+
+#### Scenario: Impossible due date
+- **WHEN** a device sends `due` `{"date":"2026-02-31"}` or `{"date":"2026-05-01","time":"24:00"}`
+- **THEN** the batch is refused with 400 `invalid_op` and nothing in it is stored
+
+### Requirement: Entity id characters
+An op's `entityId` SHALL be 1 to 64 characters from ASCII letters, digits and `.` `_` `:` `@` `+` `=` `~` `-`. The server SHALL refuse a batch containing any other id as an invalid op (400 `invalid_op` on sync, nothing stored), so a stored id can always be written into JSON and URLs. Every id the clients generate (UUIDs, name-derived UUIDs, `me`, CalDAV UIDs) SHALL stay valid, so offline devices keep converging. The server SHALL write ids into JSON with standard JSON string quoting.
+
+#### Scenario: Control character refused
+- **WHEN** a device pushes an op for task id `x\u0007`
+- **THEN** the batch is refused as invalid, nothing is stored, and every member's task list still loads
+
+#### Scenario: Client ids accepted
+- **WHEN** a device pushes ops for a UUID, a CalDAV UID such as `20261017T101500Z-1234@example.com`, or the preferences row `me`
+- **THEN** the ops are applied as before
+
+### Requirement: Sign-out stops the running exchange
+When the user signs out or sync stops, the client SHALL abort the sync request in flight, SHALL stop a running exchange before its next write, and SHALL wait for it before clearing the local data. Nothing sent for the previous session SHALL be stored afterwards, and the next account SHALL get a new device id. Queued edits go with the local data, as on any sign-out; the next account converges from an empty database.
+
+#### Scenario: Sign-out while the server is answering
+- **WHEN** a sync request is waiting for the server and the user signs out, and the server's answer with operations and a new cursor arrives afterwards
+- **THEN** the request is aborted, none of those operations and no cursor are stored, and the cleared database stays empty
+
+#### Scenario: New device id after sign-out
+- **WHEN** the user signs out and another account signs in on the same browser
+- **THEN** the first exchange of the new account uses a device id stored in the new local data, not the previous one
+
+### Requirement: Requests have a deadline
+Every request the client makes to the server SHALL have a timeout: 30 seconds for ordinary requests and 10 minutes for file and archive uploads and downloads. A request that times out SHALL count as no answer: the sync status shows offline, the outbox stays queued for offline use, the exchange is tried again with backoff (1 second doubling to 30 seconds), and a later exchange runs normally. Convergence follows from the server ignoring op ids it already holds.
+
+#### Scenario: Hung sync request
+- **WHEN** the server accepts the sync request but never answers
+- **THEN** after the timeout the status shows offline, the edits stay queued, and the next exchange is sent and completes
+
+#### Scenario: Retry after a network failure
+- **WHEN** an exchange fails because the network is unreachable
+- **THEN** the status shows offline and the exchange is tried again about one second later without user action
+
+### Requirement: Offline means no answer from the server
+The client SHALL show the offline state only when the browser reports no network, a request failed in the network, or a request timed out. Any other failure during an exchange, including an error in the client's own code, SHALL show the error state with its message; queued edits stay on the device in both cases.
+
+#### Scenario: Client error during an exchange
+- **WHEN** an exchange fails because of a programming error in the client while the network is up
+- **THEN** the status shows an error with the message instead of offline
+
+### Requirement: One tab syncs
+Of the tabs open in one browser, the client SHALL run the sync loop (exchanges, timer, live channel) in one tab only, chosen with a browser lock; the other tabs SHALL ask it to sync after their edits and on "Sync now", and SHALL show its status. When that tab closes or stops, another open tab SHALL take over. Without such a lock every tab SHALL sync on its own. All tabs share one local database and outbox, so their edits converge as those of one device.
+
+#### Scenario: Two tabs
+- **WHEN** the app is open in two tabs and the user edits a task in the second one
+- **THEN** only the first tab sends the sync request, and the second tab's indicator shows the result
+
+#### Scenario: The syncing tab closes
+- **WHEN** the tab that runs the sync loop is closed while another tab stays open
+- **THEN** the remaining tab starts syncing on its own
+
+### Requirement: Sign-out reaches every tab
+A sign-out in one tab SHALL make the other open tabs reload, and the local data SHALL be cleared only while no tab is syncing, so no tab writes the previous account's data into the cleared database.
+
+#### Scenario: Sign-out with two tabs open
+- **WHEN** the user signs out in one tab while another tab is syncing
+- **THEN** the other tab reloads to the sign-in screen and the local data is cleared after its exchange stopped
+
+### Requirement: Held changes are kept atomically
+Changes a server limit refused SHALL be held and offered again in local transactions that read and write the held list together, so a change held while others are being offered again is neither lost nor queued twice. Offline, held changes stay on the device; they converge like any other change once the limit allows them.
+
+#### Scenario: Hold during a requeue
+- **WHEN** held changes are moved back to the outbox at the moment another change is held
+- **THEN** every change is either queued once or still held afterwards
+
+### Requirement: Malformed sync answers leave the device unchanged
+The client SHALL check that a sync answer has the shape of a sync response before it removes anything from the outbox or applies anything. An answer that does not (for example a page served by a proxy or captive portal with a success status) SHALL leave the outbox, the cursor and the local data unchanged and SHALL show a sync error; the queued changes SHALL be sent again on the next exchange, and convergence SHALL follow from the server ignoring op ids it already holds.
+
+#### Scenario: Proxy page with status 200
+- **WHEN** the device has an offline edit queued and the sync request is answered with status 200 and an HTML page
+- **THEN** the edit stays queued, the cursor is unchanged, the status shows an error, and the next successful exchange uploads the edit
+
+### Requirement: Refusals are handled before an exchange can stop
+When a sync answer is accepted, the client SHALL remove the sent batch from the outbox in the same local transaction that keeps the changes a server limit refused and forgets the local clocks of refused changes, before any later step can end the exchange. When the exchange then stops because the device holds no key for an encrypting account, the cursor SHALL stay unchanged, so the server's values arrive after unlocking and win; held changes SHALL stay on the device and be offered again later.
+
+#### Scenario: Locked answer with a limit refusal
+- **WHEN** a device sends two edits, the server refuses one for a storage limit and one as forbidden, and its answer shows that encryption was turned on elsewhere while this device has no key
+- **THEN** the device shows the locked state, keeps the limited edit as held, counts it as pending, and no longer treats the forbidden edit as the newest value
+
+### Requirement: Every entity kind is re-seeded and handled when refused
+The client SHALL map every synced entity kind to its local table in one place that has no default table. Re-seeding after a server restore SHALL send every synced entity kind, custom field definitions included, with their original clocks so devices converge as by the normal rule. A refused change to any entity kind SHALL have its local clock forgotten, and a row of any kind that existed only on this device and was refused SHALL be removed without failing the exchange.
+
+#### Scenario: Custom field definitions after a restore
+- **WHEN** the server is restored from a backup and the device holds a custom field definition
+- **THEN** the re-seed sends the definition's fields with their original timestamps and devices
+
+#### Scenario: Refused custom field change
+- **WHEN** the server refuses an offline rename of a custom field definition and sends its own value
+- **THEN** the definition shows the server's name, and a definition that only existed on this device is removed
+
+#### Scenario: Refused link attachment
+- **WHEN** the server refuses a link attachment this device created offline
+- **THEN** the exchange completes without an error, the attachment is removed locally and the user is told a change was not accepted

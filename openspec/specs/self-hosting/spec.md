@@ -20,11 +20,15 @@ All persistent state SHALL live under the configured data directory (`/data` in 
 - **THEN** all accounts, projects, tasks and tokens are available
 
 ### Requirement: Schema migrations
-The server SHALL apply embedded database migrations automatically at startup and SHALL refuse to start if a migration fails.
+The server SHALL apply embedded database migrations automatically at startup and SHALL refuse to start if a migration fails. It SHALL record the name of every applied migration file, and SHALL log an error naming any file numbered below an applied migration that was never applied, instead of skipping it silently. The repository checks SHALL fail a change that adds a migration not numbered above every migration on the main branch.
 
 #### Scenario: Upgrade
 - **WHEN** a newer image starts against a data directory from an older version
 - **THEN** pending migrations run before the server accepts requests
+
+#### Scenario: Migration merged below the current version
+- **WHEN** the server starts with a migration file numbered below the database's version that was never applied
+- **THEN** it logs an error naming that file
 
 ### Requirement: Optional configuration only
 Every setting SHALL be an `OPENTODO_*` environment variable with a working default: `ADDR`, `DATA_DIR`, `BASE_URL`, `ALLOW_SIGNUP`, `SESSION_DAYS`, `LOG_LEVEL`. Invalid values SHALL stop startup with a clear message, except `OPENTODO_TRUSTED_PROXIES`, whose invalid entries are ignored with a warning (requirement "Lenient trusted proxies").
@@ -56,18 +60,30 @@ The binary SHALL offer a `healthcheck` subcommand that exits 0 only when the loc
 - **THEN** it succeeds while the server is up and fails when the database is unavailable
 
 ### Requirement: Coolify-compatible compose file
-The repository SHALL include a `docker-compose.yml` that Coolify can deploy from the repository URL with no manual variables: it SHALL declare the magic domain variable for the service port, pass the generated public URL as `OPENTODO_BASE_URL`, mount a named volume on `/data`, and define a health check. The same file SHALL work with plain `docker compose up`.
+The repository SHALL include a `docker-compose.yml` that Coolify can deploy from the repository URL with no manual variables: it SHALL declare the magic domain variable for the service port, pass the generated public URL as `OPENTODO_BASE_URL`, mount a named volume on `/data`, and define a health check. The same file SHALL work with plain `docker compose up`. It SHALL publish the host port on every interface by default and let the operator choose the address with `OPENTODO_BIND`, and its comments SHALL name `127.0.0.1` as the safer choice behind a reverse proxy on the same machine.
 
 #### Scenario: Deploy on Coolify
 - **WHEN** the repository is added as a Docker Compose resource in Coolify and deployed
 - **THEN** the app is reachable on the assigned HTTPS domain and the owner setup screen appears
 
+#### Scenario: Home server on the LAN
+- **WHEN** someone runs `docker compose up -d` with no `.env` on a NAS or home server
+- **THEN** `http://localhost:8080` opens the app and other devices on the network reach it at the host's address and port
+
+#### Scenario: Behind a reverse proxy on the same machine
+- **WHEN** the operator sets `OPENTODO_BIND=127.0.0.1` in `.env` and starts the stack
+- **THEN** the proxy on that machine reaches the app and other machines cannot reach port 8080 directly
+
 ### Requirement: Security headers
-Responses SHALL carry a Content-Security-Policy restricting scripts, connections and frames to the app's own origin, plus `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and a same-origin referrer policy.
+Responses SHALL carry a Content-Security-Policy restricting scripts, connections and frames to the app's own origin, plus `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and a same-origin referrer policy. When `OPENTODO_BASE_URL` is https, every response SHALL also carry `Strict-Transport-Security: max-age=31536000`, without `includeSubDomains` or `preload`; without an https base URL it SHALL NOT be sent.
 
 #### Scenario: Headers present
 - **WHEN** the app shell is requested
 - **THEN** the response includes the Content-Security-Policy with `script-src 'self'` and `frame-ancestors 'none'`
+
+#### Scenario: HSTS with an https base URL
+- **WHEN** `OPENTODO_BASE_URL` is `https://todo.example.com` and any route is requested
+- **THEN** the response has `Strict-Transport-Security: max-age=31536000`, and a server without a base URL sends no such header
 
 ### Requirement: No telemetry
 The server and client SHALL make no network requests to third parties and SHALL collect no usage data. The only outbound requests the server makes SHALL be to destinations the owner or a user explicitly configured (such as a backup destination or a webhook endpoint), and none of them SHALL carry usage data beyond the configured payload.
@@ -160,7 +176,7 @@ An image built from source without an explicit version SHALL report a version th
 - **THEN** it reports `0.2.1` whatever `SOURCE_COMMIT` is
 
 ### Requirement: Lenient trusted proxies
-`OPENTODO_TRUSTED_PROXIES` SHALL accept entries separated by commas or whitespace, each `cloudflare` (any case), an IP or a CIDR. Invalid entries SHALL NOT stop startup or fail the health check: the server SHALL ignore them, apply the valid ones and log one error naming them, what is accepted and what applies, hinting `cloudflare` for a near miss. Ignoring SHALL never widen trust; with no valid entry it SHALL behave as unset.
+`OPENTODO_TRUSTED_PROXIES` SHALL accept entries separated by commas or whitespace, each `cloudflare` or `private` (any case), an IP or a CIDR. `private` SHALL stand for the default trusted ranges; `cloudflare` SHALL stand for Cloudflare's published edge ranges plus the default ranges. Invalid entries SHALL NOT stop startup or fail the health check: the server SHALL ignore them, apply the valid ones and log one error naming them, what is accepted and what applies, hinting `cloudflare` or `private` for a near miss. Ignoring SHALL never widen trust; with no valid entry it SHALL behave as unset.
 
 #### Scenario: Typo in the keyword
 - **WHEN** the server starts with `OPENTODO_TRUSTED_PROXIES=cloudflar`
@@ -273,3 +289,261 @@ Each platform checker SHALL declare an image policy: `stable` (the image `ghcr.i
 #### Scenario: Digest refreshed after the release
 - **WHEN** the release image is published and the maintainer runs `node scripts/deploy/pin.mjs`
 - **THEN** every pinned digest under `deploy/` is replaced by the registry's multi-arch index digest for that version, and `--check` reports any that still differ
+
+### Requirement: Client address from trusted proxies only
+The server SHALL believe `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and `CF-Connecting-IP` only from a trusted proxy peer: loopback, private and link-local networks when `OPENTODO_TRUSTED_PROXIES` is unset, otherwise the configured list. From any other peer, the peer is the client. From a trusted peer, the client SHALL be the nearest untrusted `X-Forwarded-For` hop read from the right (or `CF-Connecting-IP` at a trusted Cloudflare edge hop). Every limit and the audit log use it.
+
+#### Scenario: Direct client forges the header
+- **WHEN** a client on a public address connects directly and sends `X-Forwarded-For: 192.168.1.5`
+- **THEN** the client is its own public address
+
+#### Scenario: Local reverse proxy
+- **WHEN** the variable is unset and a proxy on a container network (`172.18.0.3`) forwards a request with `X-Forwarded-For: 6.6.6.6, 203.0.113.4`
+- **THEN** the client is `203.0.113.4`
+
+#### Scenario: Cloudflare edge vouches for the client
+- **WHEN** the value is `cloudflare` and a local proxy forwards a request whose nearest hop is a Cloudflare edge with `CF-Connecting-IP: 198.51.100.9`
+- **THEN** the client is `198.51.100.9`
+
+#### Scenario: Configured list replaces the default
+- **WHEN** the variable is `192.0.2.0/24` and a request comes from `10.0.0.2` with `X-Forwarded-For: 203.0.113.4`
+- **THEN** the client is `10.0.0.2`
+
+### Requirement: Warning for a list without a local proxy
+When the valid entries of `OPENTODO_TRUSTED_PROXIES` name no loopback, private or link-local address, the server SHALL start normally, log one error line and add an owner configuration warning saying that a reverse proxy on the machine or a container network is no longer trusted and that `private` keeps it trusted.
+
+#### Scenario: Public proxy only
+- **WHEN** the value is `203.0.113.10`
+- **THEN** the owner sees a warning for `OPENTODO_TRUSTED_PROXIES` that suggests adding `private`
+
+#### Scenario: Keywords keep the default
+- **WHEN** the value is `cloudflare` or `private, 203.0.113.10`
+- **THEN** no such warning is shown
+
+### Requirement: Static analysis gate
+`make check` and CI SHALL run staticcheck at a version pinned in the repository over all Go packages and fail on any finding. Exclusions, if ever needed, SHALL be listed with a reason in a checked-in configuration file.
+
+#### Scenario: Unchecked response in a test
+- **WHEN** a test assigns an HTTP response and never reads it
+- **THEN** `make staticcheck` fails and names the file and line
+
+#### Scenario: Same version everywhere
+- **WHEN** a contributor runs `make staticcheck` and CI runs the Go job
+- **THEN** both run the staticcheck version named in the Makefile
+
+### Requirement: Server code stays navigable
+The test suite SHALL fail when a function in a non-test Go file under `internal/` is longer than 150 lines, counted from its `func` line to its closing brace, or when such a file is longer than 1,100 lines. An exception SHALL be listed in the check's allow-list with the reason it stays longer, and an entry that is no longer over the limit SHALL fail the check, so the list only shrinks. Splitting code to meet the limits SHALL NOT change routes, access policies, API responses or the op format.
+
+#### Scenario: A function grows past the limit
+- **WHEN** a contributor makes a function in `internal/` longer than 150 lines without listing it
+- **THEN** `go test ./internal/codesize/` fails and names the file, the function and its length
+
+#### Scenario: A listed exception is fixed
+- **WHEN** a function in the allow-list is split below the limit and its entry stays
+- **THEN** the check fails and asks for the entry to be removed
+
+#### Scenario: Routes registered in any order
+- **WHEN** a literal route such as `GET /api/v1/invitations/{token}` and the generic `GET /api/v1/{collection}/{id}` are both registered
+- **THEN** a request to `/api/v1/invitations/<token>` reaches the invitation handler whichever was registered first, and every route still appears in the route policy table
+
+### Requirement: Background jobs stop before the database closes
+On shutdown (SIGTERM, interrupt or a restart for a web restore) the server SHALL cancel its background jobs and wait for them to finish, for at most 20 seconds, before it closes the database. A job that was sending something when shutdown began SHALL record the outcome of that send, so it is not repeated after the next start. When the wait times out the server SHALL log it and close anyway.
+
+#### Scenario: Backup running at shutdown
+- **WHEN** the server is stopped while a backup is uploading
+- **THEN** the backup is cancelled and recorded as failed before the database closes, and no "database is closed" error is logged
+
+#### Scenario: Digest sent during shutdown
+- **WHEN** a weekly digest was handed to the mail server just as shutdown began
+- **THEN** it is recorded as sent, and the next start does not send it again
+
+#### Scenario: Reminder pushed during shutdown
+- **WHEN** a reminder push was accepted by the push service just as shutdown began
+- **THEN** the delivery is recorded, and the reminder is not pushed again after the restart
+
+### Requirement: Patched release toolchain
+Release binaries and images SHALL be built with the Go toolchain named by the `toolchain` line in `go.mod`, which SHALL be a patch release of the `go` line's version; the Dockerfile's default Go version SHALL be the same patch. CI SHALL fail when the Go in use differs from that toolchain, and SHALL run a pinned `govulncheck` that fails when the code can reach a known vulnerability.
+
+#### Scenario: Runner with another Go
+- **WHEN** a CI job that builds or tests the server runs with a Go other than the `go.mod` toolchain
+- **THEN** the job fails naming the expected toolchain
+
+#### Scenario: Reachable vulnerability
+- **WHEN** a dependency or the standard library has a published vulnerability in a function the server calls
+- **THEN** the server job fails until the toolchain or dependency is updated
+
+#### Scenario: Dockerfile drifts from go.mod
+- **WHEN** the `toolchain` line is bumped without the Dockerfile's `GO_VERSION`
+- **THEN** the repository checks fail
+
+### Requirement: CI path filter covers every input
+The CI path filter SHALL classify every file that is compiled into the binary or checks the deploy templates (including `skills/`, `deploy/`, `scripts/deploy*` and the root `docker-compose.yml`) as code, so changes to them run the server jobs, and its classification SHALL be covered by a table of paths and expected outputs that runs in CI.
+
+#### Scenario: Agent skill only
+- **WHEN** a pull request changes only `skills/opentodo-cli/SKILL.md`
+- **THEN** the filter reports `code=true` and the Go tests run
+
+#### Scenario: Docs only
+- **WHEN** a pull request changes only files under `docs/` and the generated in-app help
+- **THEN** the filter reports `code=false` and `docs=true`
+
+### Requirement: Templates for general container platforms
+The repository SHALL include a checked template and a guide for Kubernetes (a Helm chart), Podman Quadlet, CapRover, Fly.io, Render and Synology Container Manager, each in `deploy/<platform>/` with a checker that applies the shared deployment facts and the image policy of that platform. Each template SHALL run a single instance with persistent storage on `/data` writable by the user the container runs as, the health check, closed sign-up by default and no required setting.
+
+#### Scenario: Start from the template
+- **WHEN** a user deploys OpenTodo with the template for their platform and opens it
+- **THEN** the container becomes healthy and the first visitor gets the owner setup screen, while later visitors cannot register
+
+#### Scenario: Data survives a redeploy
+- **WHEN** the app is redeployed, updated or restarted on the platform
+- **THEN** the same `/data` storage is mounted and every account and task is still there
+
+#### Scenario: One writer
+- **WHEN** a platform could run several instances or roll a new one before stopping the old one
+- **THEN** the template runs exactly one instance and replaces it by stopping the old one first, because SQLite has one writer
+
+### Requirement: Helm chart publishing
+Every release that is not a pre-release SHALL publish the Helm chart as an OCI artifact under `oci://ghcr.io/pixari/charts`, and pull requests that change the chart SHALL lint it.
+
+#### Scenario: A release publishes the chart
+- **WHEN** the tag `v0.7.0` is pushed
+- **THEN** a chart version for that release can be installed with `helm install` from `oci://ghcr.io/pixari/charts/opentodo`
+
+#### Scenario: A broken chart is caught
+- **WHEN** a pull request changes `deploy/helm/` so that the chart no longer lints or renders
+- **THEN** the pull request's checks fail
+
+### Requirement: The log names its level
+The server's startup line SHALL include the log level in effect (`log_level=debug|info|warn|error`). With `OPENTODO_LOG_LEVEL=debug` the server SHALL also log, at startup and at debug level, a line saying that debug logging adds one line per API request.
+
+#### Scenario: Debug is visible before any request
+- **WHEN** the server starts with `OPENTODO_LOG_LEVEL=debug` and no request has been made yet
+- **THEN** the log has the startup line with `log_level=debug` and a `level=DEBUG` line about request logging
+
+#### Scenario: Info stays quiet
+- **WHEN** the server starts with the default level
+- **THEN** the startup line shows `log_level=info` and no debug line is written
+
+### Requirement: Forwarded host only from trusted proxies
+The server SHALL honour `X-Forwarded-Host` and `X-Forwarded-Proto` only on a connection whose peer address is in `OPENTODO_TRUSTED_PROXIES`. Otherwise it SHALL use the request's `Host` and the connection's TLS state, both for links shown without a base URL (invite and reset links to copy, CalDAV address, calendar feeds, public links, MCP endpoint, OIDC redirect) and for the cookie origin check. A configured `OPENTODO_BASE_URL` always takes precedence.
+
+#### Scenario: Untrusted peer
+- **WHEN** no base URL is set and a client that is not a trusted proxy sends `X-Forwarded-Host: todo.example.com`
+- **THEN** links use the request's `Host`, and an `Origin` of `https://todo.example.com` is not accepted on the strength of that header
+
+#### Scenario: Trusted proxy
+- **WHEN** no base URL is set, `OPENTODO_TRUSTED_PROXIES` contains the proxy's address, and the proxy sends `X-Forwarded-Host: todo.example.com` and `X-Forwarded-Proto: https`
+- **THEN** links start with `https://todo.example.com`
+
+### Requirement: Warning for email without a base URL
+While outgoing email is enabled and `OPENTODO_BASE_URL` is unset, the owner's `config_warnings` SHALL include an entry for `OPENTODO_BASE_URL` saying that reset, verification and invitation emails are not sent until it is set. The entry SHALL disappear once a base URL is configured or email is turned off. The data is server configuration, not synced; offline the notice is absent.
+
+#### Scenario: Owner configures SMTP on a LAN install
+- **WHEN** the owner saves an SMTP configuration on a server without `OPENTODO_BASE_URL` and opens Settings
+- **THEN** a configuration warning names `OPENTODO_BASE_URL` and the fix
+
+#### Scenario: Not for others
+- **WHEN** an admin, a member or an API token requests `GET /api/v1/me` on that server
+- **THEN** the response carries no `config_warnings`
+
+### Requirement: Reads do not wait for writes
+The server SHALL answer pure reads (lists, records, pulls, exports) from read-only connections while a write is in progress, SHALL keep every transaction that reads then writes on the single writer, and SHALL take the write lock when a write transaction begins. A read started after a commit SHALL see it. Offline behaviour and convergence are unchanged.
+
+#### Scenario: List during a long write
+- **WHEN** a large import or purge holds the database's write transaction and a user opens a task list or syncs
+- **THEN** the list and the pull answer without waiting for that write to finish
+
+#### Scenario: Own write is visible
+- **WHEN** a client saves a change and then lists the same kind of record
+- **THEN** the list includes the change
+
+#### Scenario: Two processes write
+- **WHEN** a newer server process writes to the data directory while the old one is in a write transaction during a rolling update
+- **THEN** the second write waits and succeeds once the first commits, and neither fails with "database is locked"
+
+#### Scenario: Restore
+- **WHEN** a confirmed restore is applied and the server opens the restored database
+- **THEN** reads come from the restored database, not from connections opened on the previous file
+
+### Requirement: Read cost bounded by the visible data
+Listing records and pulling ops SHALL read only the scopes the user can see (their personal data and the shared projects they are a member of), whatever the number of other users on the server. The server SHALL refresh the database's query planner statistics at startup and at least daily. Offline behaviour and convergence are unchanged.
+
+#### Scenario: Member of a shared project lists tasks
+- **WHEN** a user who joined one shared project lists their tasks on a server with many other users
+- **THEN** the query reads that user's personal rows and the project's rows only, not other users' rows
+
+#### Scenario: First pull after joining
+- **WHEN** a member's device pulls its first page from cursor 0
+- **THEN** the server reads at most one page of op positions per visible scope before reading the ops, and returns every visible op exactly once in sequence order over the following pages
+
+#### Scenario: Statistics
+- **WHEN** the server starts, and once a day while it runs
+- **THEN** it refreshes the planner statistics of tables whose size changed a lot, reading a bounded sample
+
+### Requirement: One strict parser for template YAML
+The template conformance check SHALL read every YAML template with one shared strict parser, and each platform's checker SHALL name the profile of the subset its files may use. Every profile SHALL refuse YAML outside the subset (anchors, aliases, tags, flow maps, duplicate keys, inconsistent indentation) with the line number.
+
+#### Scenario: Unsupported YAML in a template
+- **WHEN** a contributor adds an anchor (`&x`) or a flow map to any platform's YAML template
+- **THEN** `make check` fails with "not in the supported YAML subset" and the line number
+
+#### Scenario: A construct the platform's profile does not allow
+- **WHEN** a Coolify-style compose file gains a `|` block scalar or a `- key: value` item, or the Umbrel manifest gains a `|` block scalar
+- **THEN** `make check` fails and names what the file may use
+
+#### Scenario: Same reading in every check
+- **WHEN** two checkers read `'it''s'`, `"a\"b"` or a folded `>` text with a blank line
+- **THEN** both read `it's`, `a"b` and a text with one newline for the blank line
+
+#### Scenario: A checker with its own parser
+- **WHEN** a platform checker defines its own YAML parsing function
+- **THEN** the deploy tests fail and point to the shared parser
+
+### Requirement: Gated and verifiable releases
+CI SHALL publish the container image (including the `stable` and `latest` tags) and the GitHub release only after every other CI job of the run succeeded. Before publishing, CI SHALL build the image, scan it for known vulnerabilities and fail on a critical finding that has a fixed version, and start that same build the way the Coolify template does. The published image SHALL carry an SBOM and build provenance and its digest SHALL be signed keylessly with cosign; every GitHub release asset SHALL have a build provenance attestation. The self-hosting docs SHALL explain how to verify both.
+
+#### Scenario: A gate fails on a release tag
+- **WHEN** the tag `v0.7.0` is pushed and the layout, UI, docs website or template check fails
+- **THEN** no image tag moves and no GitHub release is published
+
+#### Scenario: The smoke test runs the image under test
+- **WHEN** a pull request changes the server
+- **THEN** CI builds the image from that commit, scans it and runs the Coolify smoke test against it, without pulling a published image
+
+#### Scenario: Fixable critical vulnerability
+- **WHEN** the built image contains a package with a critical vulnerability that has a fixed version
+- **THEN** the image job fails and nothing is published
+
+#### Scenario: Operator verifies an image
+- **WHEN** an operator runs `cosign verify` on a released image with the release workflow's identity and GitHub's OIDC issuer
+- **THEN** the signature verifies, and `gh attestation verify` verifies a downloaded release binary
+
+### Requirement: Pinned build inputs
+Workflow actions SHALL be pinned to full commit SHAs with the release named in a comment; Dockerfile base images and CI job images SHALL be pinned by digest next to their tag; the OpenSpec CLI SHALL run at one exact version. Dependabot SHALL propose updates weekly for Go modules, the web app's npm packages, GitHub Actions and Docker base images. Every CI job SHALL have a timeout, and every workflow a concurrency group that cancels superseded pull request runs but never a run for the main branch or a tag.
+
+#### Scenario: A tag is moved upstream
+- **WHEN** an action's maintainer (or an attacker) points an existing release tag at other code
+- **THEN** CI keeps running the pinned commit until a reviewed update changes the SHA
+
+#### Scenario: Unpinned reference added
+- **WHEN** a workflow change adds `uses: some/action@v1` or a job image without a digest
+- **THEN** the repository checks fail and name the reference
+
+#### Scenario: Superseded pull request run
+- **WHEN** a second commit is pushed to a pull request while its checks run
+- **THEN** the first run is cancelled, while runs for main and tags always finish
+
+### Requirement: CI runs the local checks
+CI SHALL run every part of `make check` (including the gofmt gate, the design-system lint, the translation checks, the deploy template and site bundle tests, OpenSpec validation and the repository checks), the browser end-to-end checks of two devices converging after an offline edit and of saved views, and, at least nightly, the Go tests under the race detector. The repository checks SHALL fail when `make check` gains a step that CI does not run.
+
+#### Scenario: Unformatted Go file
+- **WHEN** a pull request adds a Go file that `gofmt -l` lists
+- **THEN** the checks job fails
+
+#### Scenario: Offline edit no longer converges
+- **WHEN** a change breaks syncing an edit made offline on a second device
+- **THEN** the end-to-end step of the layout job fails
+
+#### Scenario: New make check step
+- **WHEN** a target is added to `make check` but neither to `make ci-checks` nor to a CI step
+- **THEN** the repository checks fail and name the target
