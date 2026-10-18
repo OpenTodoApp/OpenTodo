@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **The `latest` image reports which build it is.** Images built from the main branch reported their version as `main`; they now report `dev+<commit>`, the commit they were built from, in Settings → About, `/healthz` and the log. ([Docker](docs/self-hosting/docker.md), #160)
 - **No "Open menu" bubble over the menu on phones.** Tapping an icon button (such as the menu button) no longer leaves its tooltip on screen, where it covered the first sidebar entry; tooltips still appear on hover and when you move to a button with the keyboard. (#169)
 
 ## [0.8.0] - 2026-10-18

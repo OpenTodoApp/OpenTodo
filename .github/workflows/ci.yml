@@ -416,7 +416,10 @@ jobs:
           load: true
           push: false
           tags: opentodo:ci
-          build-args: VERSION=${{ github.ref_name }}
+          # A release reports its tag; anything else (latest, pull requests) dev+<commit>, never the branch name (#160).
+          build-args: |
+            VERSION=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'dev' }}
+            SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
           cache-from: type=gha,scope=image-amd64
           cache-to: type=gha,mode=max,scope=image-amd64
       - name: Vulnerability scan (fails on critical findings that have a fix)
@@ -479,7 +482,10 @@ jobs:
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ github.ref_name }}
+          # A release reports its tag; anything else (latest, pull requests) dev+<commit>, never the branch name (#160).
+          build-args: |
+            VERSION=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'dev' }}
+            SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
           cache-from: |
             type=gha,scope=image-amd64
             type=gha,scope=image-release
