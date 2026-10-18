@@ -1,0 +1,99 @@
+Message-ID: <newsletter-1@email.example.com>
+Date: Sat, 17 Oct 2026 19:00:00 +0000
+From: "Claude Team" <news@email.example.com>
+To: todo+SECRET@example.com
+Subject: This week in Claude Code: updates to the desktop app
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="nl-boundary"
+
+--nl-boundary
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Claude Code <https://links.email.example.com/a/sc/zTkUQGNIwiCnKZ094-EuGrHIj=
+OcjJ4BwF-FI9nR3fy5tlqluLa_ofk_owk2mxH0_Toqt8tiF3lcBvBcLdbaAYYF9F1tLsgSqo8jE=
+zZI836hBwlBYkRXyXq0fk08_FdvJfuJDEGYleILclhSnWz6K573LktfXix3yNOEF43D00kyKTkK=
+jlOU5MteHj46Noo10ly5ac1lnGM7EsN33mszM4RlogZ9Kvc83PPpRtLUVnd1carameTmBjB/25>
+Hey!
+
+We've shipped a lot in the desktop app over the past two weeks, including a=
+ new session screen and nested sessions <https://links.email.example.com/a/=
+sc/zTkUQGNIwiCnKZ094-EuGrHIjOcjJ4BwF-FI9nR3fy5tlqluLa_ofk_owk2mxH0_Toqt8tiF=
+3lcBvBcLdbaAYYF9F1tLsgSqo8jEzZI836hBwlBYkRXyXq0fk08_FdvJfuJDEGYleILclhSnWz6=
+K573LktfXix3yNOEF43D00kyKTkKjlOU5MteHj46Noo10ly5ac1lnGM7EsN33mszM4RlogZ9Kvc=
+83PPpRtLUVnd1carameTmBjB/25>.
+
+Read the post <https://links.email.example.com/a/sc/zTkUQGNIwiCnKZ094-EuGrH=
+IjOcjJ4BwF-FI9nR3fy5tlqluLa_ofk_owk2mxH0_Toqt8tiF3lcBvBcLdbaAYYF9F1tLsgSqo8=
+jEzZI836hBwlBYkRXyXq0fk08_FdvJfuJDEGYleILclhSnWz6K573LktfXix3yNOEF43D00kyKT=
+kKjlOU5MteHj46Noo10ly5ac1lnGM7EsN33mszM4RlogZ9Kvc83PPpRtLUVnd1carameTmBjB/2=
+5>
+
+--nl-boundary
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<!doctype html><html><head><style>.x{color:red}</style></head><body>
+<div style=3D"display:none;max-height:0;overflow:hidden">This week: desktop=
+ updates=CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =
+=CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=
+=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=
+=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=
+=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=
+=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C=
+ =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=
+=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=
+=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =
+=CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=
+=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=
+=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=
+=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=
+=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C=
+ =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=
+=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=
+=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =
+=CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=
+=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=
+=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=
+=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=
+=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C=
+ =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=
+=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C =CD=8F=C2=A0=E2=80=8C </div>
+<table role=3D"presentation" width=3D"100%"><tr><td align=3D"center">
+<a href=3D"https://links.email.example.com/a/sc/zTkUQGNIwiCnKZ094-EuGrHIjOc=
+jJ4BwF-FI9nR3fy5tlqluLa_ofk_owk2mxH0_Toqt8tiF3lcBvBcLdbaAYYF9F1tLsgSqo8jEzZ=
+I836hBwlBYkRXyXq0fk08_FdvJfuJDEGYleILclhSnWz6K573LktfXix3yNOEF43D00kyKTkKjl=
+OU5MteHj46Noo10ly5ac1lnGM7EsN33mszM4RlogZ9Kvc83PPpRtLUVnd1carameTmBjB/25"><=
+img src=3D"https://cdn.example.com/logo.png" alt=3D"Claude Code" width=3D"1=
+20"></a>
+</td></tr><tr><td>
+<h1>This week in Claude Code</h1>
+<p>Hey!</p>
+<p>We&#39;ve shipped <strong>a lot</strong> in the desktop app over the pas=
+t two weeks, including a new session screen and <a href=3D"https://links.em=
+ail.example.com/a/sc/zTkUQGNIwiCnKZ094-EuGrHIjOcjJ4BwF-FI9nR3fy5tlqluLa_ofk=
+_owk2mxH0_Toqt8tiF3lcBvBcLdbaAYYF9F1tLsgSqo8jEzZI836hBwlBYkRXyXq0fk08_FdvJf=
+uJDEGYleILclhSnWz6K573LktfXix3yNOEF43D00kyKTkKjlOU5MteHj46Noo10ly5ac1lnGM7E=
+sN33mszM4RlogZ9Kvc83PPpRtLUVnd1carameTmBjB/25">nested sessions</a>, which l=
+et Claude run tasks in parallel. Prices start at 5*3 =3D 15_units.</p>
+<h2>What&rsquo;s new</h2>
+<ul>
+  <li>Cloud sessions <em>resume</em> faster</li>
+  <li>Nested sessions
+    <ol><li>Start one</li><li>Watch it</li></ol>
+  </li>
+</ul>
+<p>1. Not a list, just a sentence.</p>
+<p><a href=3D"https://example.com/post?(id)=3D1&amp;x=3D2" style=3D"backgro=
+und:#c96442;padding:12px">Read the post</a></p>
+<p><a href=3D"https://example.com/">https://example.com/</a> &middot; <a hr=
+ef=3D"javascript:alert(1)">Unsafe</a> &middot; <a href=3D"mailto:x@example.=
+com">Mail us</a></p>
+</td></tr></table>
+<p style=3D"font-size:12px"><a href=3D"https://links.email.example.com/a/sc=
+/zTkUQGNIwiCnKZ094-EuGrHIjOcjJ4BwF-FI9nR3fy5tlqluLa_ofk_owk2mxH0_Toqt8tiF3l=
+cBvBcLdbaAYYF9F1tLsgSqo8jEzZI836hBwlBYkRXyXq0fk08_FdvJfuJDEGYleILclhSnWz6K5=
+73LktfXix3yNOEF43D00kyKTkKjlOU5MteHj46Noo10ly5ac1lnGM7EsN33mszM4RlogZ9Kvc83=
+PPpRtLUVnd1carameTmBjB/25">Unsubscribe</a></p>
+</body></html>
+--nl-boundary--

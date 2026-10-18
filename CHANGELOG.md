@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Newsletters sent to Email to task are readable.** An HTML message now becomes formatted notes with its headings, lists, bold text and links shown as their text, instead of plain text with every tracking address spelled out; a newsletter's hidden preview text and its blank filler lines are gone. ([Email to task](docs/email.md))
 - **Email to task keeps long messages.** A forwarded message's text was cut at 16 KB; the task now keeps about 48 KB, as much as its notes hold (also with end-to-end encryption), and only longer messages end with a note that the rest did not fit. ([Email to task](docs/email.md), #161)
 
 ## [0.8.0] - 2026-10-18

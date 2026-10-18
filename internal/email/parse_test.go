@@ -43,8 +43,8 @@ func TestParseMessage(t *testing.T) {
 			contains: []string{
 				"Café openings",
 				"Three new places opened this week & one closed.",
-				"- North – espresso bar\n- South",
-				"Read more: full article (https://news.example.net/cafes?id=7)\nOr visit https://news.example.net/",
+				"# Café openings\n\nThree new places opened this week & one closed.\n\n- North – espresso bar\n- South",
+				"Read more: [full article](https://news.example.net/cafes?id=7)\nOr visit [news.example.net](https://news.example.net/)",
 				"<script> stays text",
 			},
 			notContains: []string{"alert", "color: red", "Newsletter", "tracking comment", "<p>", "<h1>", "pixel.gif"},
@@ -234,12 +234,68 @@ func TestStripSubjectPrefixes(t *testing.T) {
 	}
 }
 
-func TestHTMLToTextDropsActiveContent(t *testing.T) {
-	got := HTMLToText(`<div onclick="steal()">Hi<SCRIPT type="x">document.cookie</SCRIPT><a href="javascript:alert(1)">click</a><iframe src="https://evil.example"></iframe></div>`)
-	if got != "Hi\nclick" && got != "Hiclick" {
+func TestHTMLToMarkdownDropsActiveContent(t *testing.T) {
+	got := HTMLToMarkdown(`<div onclick="steal()">Hi<SCRIPT type="x">document.cookie</SCRIPT><a href="javascript:alert(1)">click</a><iframe src="https://evil.example">x</iframe></div>`)
+	if got != "Hiclick" {
 		t.Fatalf("got %q", got)
 	}
-	if strings.Contains(got, "javascript") || strings.Contains(got, "cookie") || strings.Contains(got, "evil") {
-		t.Fatalf("active content leaked: %q", got)
+}
+
+// A newsletter (issue #9 report): the HTML part becomes notes Markdown with its
+// headings, lists and links, without the hidden preview text, its invisible
+// filler or the plain part's spelled-out tracking links. The golden file is
+// also read by web/src/lib/emailNotes.test.ts with the notes parser.
+func TestParseNewsletterAsMarkdown(t *testing.T) {
+	p, err := Parse(fixture(t, "newsletter.eml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	golden := filepath.Join("testdata", "newsletter.md")
+	if os.Getenv("UPDATE_GOLDEN") != "" {
+		if err := os.WriteFile(golden, []byte(p.Description+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(golden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Description+"\n" != string(want) {
+		t.Fatalf("description differs from %s:\n%s", golden, p.Description)
+	}
+	for _, bad := range []string{"<https", "\u034f", "\u200c", "This week: desktop updates", "javascript", "logo.png", "color:red"} {
+		if strings.Contains(p.Description, bad) {
+			t.Errorf("description contains %q", bad)
+		}
+	}
+}
+
+func TestHTMLToMarkdownStructure(t *testing.T) {
+	for _, c := range []struct{ in, want string }{
+		// Gmail: a div per line, an empty div between paragraphs.
+		{`<div>Hi Ana,</div><div><br></div><div>see you at 5.</div><div>Ben</div>`, "Hi Ana,\n\nsee you at 5.\nBen"},
+		{`<p>a <b> bold </b>word and <i></i>nothing</p>`, "a **bold** word and nothing"},
+		{`<p># not a heading</p><p>- not a list</p><p>2) not ordered</p>`, `\# not a heading` + "\n\n" + `\- not a list` + "\n\n" + `2\) not ordered`},
+		{`<p>[x] *y* _z_ ~w~ ` + "`c`" + `</p>`, `\[x\] \*y\* \_z\_ \~w\~ ` + "\\`c\\`"},
+		{`<ol><li>one<ul><li>a</li><li>b</li></ul></li><li>two</li></ol><p>after</p>`, "1. one\n   - a\n   - b\n2. two\n\nafter"},
+		{`<a href="https://e.com/a b">x <img alt="Logo"></a>`, "[x Logo](https://e.com/a%20b)"},
+		{`<a href="https://example.org/"><img src="https://t.example/p.gif"></a>text`, "text"},
+		{`<div style="DISPLAY: none"><div>hidden</div><span>too</span></div>shown`, "shown"},
+		{`<p>unclosed <b>bold <a href="https://e.com">link`, "unclosed **bold [link](https://e.com)**"},
+		{`a < b and c > d`, "a < b and c > d"},
+		{`<pre>line 1
+  line 2</pre>`, "line 1\nline 2"},
+	} {
+		if got := HTMLToMarkdown(c.in); got != c.want {
+			t.Errorf("HTMLToMarkdown(%q)\n got %q\nwant %q", c.in, got, c.want)
+		}
+	}
+}
+
+// A message whose HTML part is a stub keeps its plain text.
+func TestPlainWinsOverStubHTML(t *testing.T) {
+	w := &walker{plain: []string{"The full text of the message, with every detail the sender wrote."}, html: []string{"<p>Hi</p>"}}
+	if got := w.text(); !strings.HasPrefix(got, "The full text") {
+		t.Fatalf("got %q", got)
 	}
 }
