@@ -86,6 +86,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   // The reviews (open-loops-method D6): the project walk's and the Daily check's keys are
   // `view` entries; the step lists pause their list keys while the walk owns the keyboard.
   review: [],
+  // Open Loops (open-loops-method D9): Next and Waiting are lists; the Loop home is tiles.
+  next: ['list'], waiting: ['list'], loop: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -141,6 +143,7 @@ export const SHORTCUTS: Shortcut[] = [
   // Weekly review and Statistics (stats-and-review).
   { id: 'go.review', keys: ['g r'], description: 'Go to the weekly Review', section: 'go', scope: 'global' },
   { id: 'go.stats', keys: ['g Shift+S'], description: 'Go to Statistics: what you completed, created and let slip', section: 'go', scope: 'global' },
+  { id: 'go.loop', keys: ['g Shift+L'], description: 'Go to the Loop home: the five moves of Open Loops at a glance', section: 'go', scope: 'global' },
   { id: 'go.next', keys: ['g Shift+N'], description: 'Go to Next: the next action of every project, by context', section: 'go', scope: 'global' },
   { id: 'go.waiting', keys: ['g Shift+W'], description: 'Go to Waiting: what is assigned to someone else or blocked', section: 'go', scope: 'global' },
   { id: 'go.daily', keys: ['g Shift+R'], description: 'Go to the Daily check: the Inbox, what is overdue, today\'s focus', section: 'go', scope: 'global' },

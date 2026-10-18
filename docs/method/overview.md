@@ -4,7 +4,7 @@ summary: OpenTodo's own method for everything on your mind, inspired by GTD - fi
 audience: user
 section: Open Loops
 specs: [weekly-review]
-screens: [method/overview]
+screens: [method/overview, loop#how-prominent-it-is]
 order: 1
 ---
 # Open Loops

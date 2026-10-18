@@ -44,6 +44,7 @@ export type Route =
   // Open Loops (open-loops-method): the derived Next and Waiting views.
   | { view: 'next' }
   | { view: 'waiting' }
+  | { view: 'loop' }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -170,6 +171,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'next' }
     case 'waiting':
       return { view: 'waiting' }
+    case 'loop':
+      return { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
     default:

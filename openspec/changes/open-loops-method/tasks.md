@@ -44,15 +44,15 @@
 
 ## 6. How you work, the Loop home and the sidebar (design D2, D7, D9)
 
-- [ ] 6.1 Add "How you work" to Settings → You (three choices with descriptions, "Learn the method", the start-view offer for `first`, the starter-label offer). Verify with component tests for "Pick Open Loops first", "Learn before choosing", "Accept the starter labels", "A label of the same name exists" and "Contexts already exist" (`npm test`).
-- [ ] 6.2 Make `sidebarLayout.ts` mode-aware (`first`: Loop home, Inbox, Today, Next, Waiting, Review; promotions set aside but kept) and disable the destination switches in Settings → Appearance in `first` mode. Verify with `sidebar.test.tsx` cases for "Default sidebar" (four destinations), "Open Loops first sidebar", "Promotions kept across modes" and "Open Loops first" (appearance), and with `budget.test.tsx` holding at six (`npm test`).
-- [ ] 6.3 Build the Loop home (`/loop`, `g` then `Shift+L`, five tiles with live counts, today's focus rows, one column at 360 px, list semantics). Verify with component tests for "Morning on the Loop home", "A capture from another device" and "Keyboard path", plus an axe check and the layout check at 360 px (`npm test`, `make layout-check`).
-- [ ] 6.4 Verify the mode is presentation-only. Write a test that switching through all three modes writes exactly one `user_prefs` op each and no op on any task, project, label or view ("Switching back loses nothing"), and one for "Existing account after upgrade" (`npm test`).
+- [x] 6.1 Add "How you work" to Settings → You (three choices with descriptions, "Learn the method", the start-view offer for `first`, the starter-label offer). Verify with component tests for "Pick Open Loops first", "Learn before choosing", "Accept the starter labels", "A label of the same name exists" and "Contexts already exist" (`npm test`).
+- [x] 6.2 Make `sidebarLayout.ts` mode-aware (`first`: Loop home, Inbox, Today, Next, Waiting, Review; promotions set aside but kept) and disable the destination switches in Settings → Appearance in `first` mode. Verify with `sidebar.test.tsx` cases for "Default sidebar" (four destinations), "Open Loops first sidebar", "Promotions kept across modes" and "Open Loops first" (appearance), and with `budget.test.tsx` holding at six (`npm test`).
+- [x] 6.3 Build the Loop home (`/loop`, `g` then `Shift+L`, five tiles with live counts, today's focus rows, one column at 360 px, list semantics). Verify with component tests for "Morning on the Loop home", "A capture from another device" and "Keyboard path", plus an axe check and the layout check at 360 px (`npm test`, `make layout-check`).
+- [x] 6.4 Verify the mode is presentation-only. Write a test that switching through all three modes writes exactly one `user_prefs` op each and no op on any task, project, label or view ("Switching back loses nothing"), and one for "Existing account after upgrade" (`npm test`).
 - [ ] 6.5 Document Settings → You → How you work in `docs/settings-you.md` and `docs/method/set-up.md`, with screenshots of the three sidebars. Verify with `npm run docs:check` and `make docs`.
 
 ## 7. First run (design D10)
 
-- [ ] 7.1 Rework the first-run card's second step to "How do you want to work" (Companion preselected, appearance as its second row, "Learn the method", follow-up offers). Verify with component tests for "Complete the first run", "Open Loops first from the start", "Skip all" and "Learn before choosing" (`npm test`), and update `docs/getting-started.md`.
+- [x] 7.1 Rework the first-run card's second step to "How do you want to work" (Companion preselected, appearance as its second row, "Learn the method", follow-up offers). Verify with component tests for "Complete the first run", "Open Loops first from the start", "Skip all" and "Learn before choosing" (`npm test`), and update `docs/getting-started.md`.
 
 ## 8. Site bundle (design D1)
 

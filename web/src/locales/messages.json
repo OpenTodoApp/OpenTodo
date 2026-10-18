@@ -155,6 +155,18 @@
   "<strong>{inviterName}</strong> invited you to the project <strong2>{projectName}</strong2> as <strong3>{role}</strong3>.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
+  "@calls": [
+    "web/src/lib/method/starter.ts"
+  ],
+  "@computer": [
+    "web/src/lib/method/starter.ts"
+  ],
+  "@errands": [
+    "web/src/lib/method/starter.ts"
+  ],
+  "@home": [
+    "web/src/lib/method/starter.ts"
+  ],
   "@work & due <= tomorrow & p1": [
     "web/src/app/FilterView.tsx"
   ],
@@ -820,7 +832,6 @@
   ],
   "Appearance": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/FirstRun.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/settingsSections.ts"
   ],
@@ -1413,7 +1424,11 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Catch into the Inbox": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Catch something": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Catch|method": [
     "web/src/lib/method/vocabulary.json"
@@ -1736,6 +1751,9 @@
   "Compact makes task rows, group headers and the sidebar tighter. Touch targets stay full size on touch screens.": [
     "web/src/app/AppearanceSection.tsx"
   ],
+  "Companion": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "Compatible endpoint": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -1880,6 +1898,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Continue": [
+    "web/src/app/FirstRun.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx"
@@ -2064,6 +2083,9 @@
   "Create the account for <strong>{email}</strong> with the name and password you chose. This link works until {instant}.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "Create them": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "Create token": [
     "web/src/app/TokensSection.tsx"
   ],
@@ -2099,6 +2121,9 @@
   "Created {instant} · used {relativeTime}": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "Created {names}.": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "Creates an API token that you paste into the assistant. Read-only is the safe default.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
@@ -2133,8 +2158,14 @@
   "Daily": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Daily check done today": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "Daily check done. See you tomorrow.": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Daily check due": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Daily check: put the selected task in today's focus (up to three), or take it out": [
     "web/src/lib/shortcuts.ts"
@@ -3489,6 +3520,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Next": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Go to Next: the next action of every project, by context": [
@@ -3563,6 +3595,12 @@
   ],
   "Go to the Inbox": [
     "web/src/app/vim/commands.ts"
+  ],
+  "Go to the Loop home": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to the Loop home: the five moves of Open Loops at a glance": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Go to the Trash": [
     "web/src/lib/shortcuts.ts"
@@ -3678,6 +3716,12 @@
   "How dates and times look and where weeks start, on all your devices. System follows this browser.": [
     "web/src/app/DateTimeSettings.tsx"
   ],
+  "How do you want to work?": [
+    "web/src/app/FirstRun.tsx"
+  ],
+  "How much the app shows Open Loops, its method for everything on your mind. Saved to your account; switching never changes a task.": [
+    "web/src/app/method/HowYouWorkSection.tsx"
+  ],
   "How quick add reads what you type. Applies to this device only.": [
     "web/src/app/QuickAddSettings.tsx"
   ],
@@ -3687,6 +3731,11 @@
   "How to install": [
     "web/src/app/CaptureSettings.tsx",
     "web/src/app/FirstRun.tsx"
+  ],
+  "How you work": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/method/MethodModeChooser.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "I have an account: sign in to join": [
     "web/src/app/ProjectInviteScreen.tsx"
@@ -4054,6 +4103,9 @@
   "Keep mine (skip)": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Keep my start view": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "Keep open": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -4248,6 +4300,9 @@
   "Learn Open Loops": [
     "web/src/app/help/HelpView.tsx"
   ],
+  "Learn the method: {method}": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "Leave": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -4340,6 +4395,12 @@
   ],
   "Listed in the evening group of Today": [
     "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Lists only": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "Lists only, Companion or Open Loops first: how much the app shows its method": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Live updates connected": [
     "web/src/app/SyncStatus.tsx"
@@ -4456,6 +4517,12 @@
   ],
   "Looks good": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Loop home": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Lost both keys": [
     "web/src/app/EncryptionPanel.tsx"
@@ -4907,8 +4974,7 @@
     "web/src/app/AboutSection.tsx"
   ],
   "Next": [
-    "web/src/app/EncryptionPanel.tsx",
-    "web/src/app/FirstRun.tsx"
+    "web/src/app/EncryptionPanel.tsx"
   ],
   "Next action": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -5041,6 +5107,9 @@
   ],
   "No filter to add": [
     "web/src/app/DashboardView.tsx"
+  ],
+  "No focus chosen today. Pick up to three tasks in the Daily check.": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "No further occurrences: the next completion ends the series.": [
     "web/src/app/RecurrenceField.tsx"
@@ -5196,6 +5265,9 @@
   ],
   "No task matches this view.": [
     "web/src/app/SavedViewView.tsx"
+  ],
+  "No thanks": [
+    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
@@ -5689,6 +5761,12 @@
   "Open Inbox": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Open Loops first": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "Open Loops first arranges the sidebar by the Places, so these choices wait until you switch to Lists only or Companion in Settings → Account. They are kept.": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Open Settings: {section}": [
     "web/src/app/palette/registry.ts"
   ],
@@ -5729,6 +5807,12 @@
   ],
   "Open on launch": [
     "web/src/app/PreferencesPanels.tsx"
+  ],
+  "Open on the Loop home": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "Open on the Loop home on this device? Your other devices keep their own start view.": [
+    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Open parent task": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -5773,6 +5857,9 @@
   "Open the task’s panel to edit anything else": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Open the weekly review": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "Open the {method} guide": [
     "web/src/app/help/MethodLink.tsx"
   ],
@@ -5795,6 +5882,9 @@
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/ResetScreen.tsx",
     "web/src/app/Sidebar.tsx"
+  ],
+  "OpenTodo as a plain task app, with no method words.": [
+    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
     "web/src/app/VoiceSettings.tsx"
@@ -6254,6 +6344,7 @@
   ],
   "Process the Inbox": [
     "web/src/app/TriageView.tsx",
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-list/ListChrome.tsx",
@@ -8006,6 +8097,9 @@
   "Start on <span>(optional; dates move so the earliest lands on this day)</span>": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "Start the daily check": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "Start using OpenTodo": [
     "web/src/app/WelcomeDialog.tsx"
   ],
@@ -8016,6 +8110,9 @@
   "Start view on this device": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx"
+  ],
+  "Start with four contexts? {names}. Any label that starts with @ is a context.": [
+    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Start your daily check: the Inbox, what is overdue and today’s focus.": [
     "web/src/app/method/DailyCheckToast.tsx"
@@ -8353,6 +8450,9 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
+  "The Loop home opens first, the sidebar follows the Places, and a daily check is offered each day.": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -8476,6 +8576,9 @@
   ],
   "The filter is pinned to the sidebar under Filters.": [
     "web/src/app/FilterView.tsx"
+  ],
+  "The five moves": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "The guide is in English.": [
     "web/src/app/help/EnglishGuideNote.tsx"
@@ -9052,6 +9155,9 @@
   "This device is signed in to your server.": [
     "web/src/app/AccountSettings.tsx"
   ],
+  "This device now opens on the Loop home.": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": [
     "web/src/lib/sync.ts"
   ],
@@ -9469,6 +9575,7 @@
     "web/src/lib/views.ts"
   ],
   "Today’s focus": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/DailyCheck.tsx"
   ],
   "Today’s focus holds {n} tasks. Take one out first.": [
@@ -10115,6 +10222,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Walk your projects": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/method/MethodListView.tsx"
   ],
   "We sent a link to <strong>{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.": [
@@ -10151,6 +10259,12 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Weekly review due": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
+  "Weekly review {ago}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "Weekly review|method": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -10186,6 +10300,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Whatever is on your mind…": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
   "When": [
@@ -10531,6 +10646,9 @@
   "Your server cannot be reached. Try again when you are online.": [
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/ServerArchivePanel.tsx"
+  ],
+  "Your sidebar stays as it is; screens name the move they serve and link to the method.": [
+    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Your start view was deleted, so the Inbox opened instead.": [
     "web/src/app/Shell.tsx"
@@ -11715,6 +11833,18 @@
   "{n, number} on your own key, not counted toward the limit": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "{n, plural, =0 {Every project has a next action} one {# project without a next action} other {# projects without a next action}}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
+  "{n, plural, =0 {No next action} one {# next action} other {# next actions}}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
+  "{n, plural, =0 {Nothing to decide} one {# to decide} other {# to decide}}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
+  "{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "{n, plural, one {# API token} other {# API tokens}}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -11862,6 +11992,9 @@
   ],
   "{n, plural, one {# shortcut} other {# shortcuts}}": [
     "web/src/app/ShortcutHelp.tsx"
+  ],
+  "{n, plural, one {# stalled} other {# stalled}}": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "{n, plural, one {# task carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.} other {# tasks carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.}}": [
     "web/src/app/LabelsView.tsx"
@@ -12064,6 +12197,9 @@
   ],
   "{n} to update": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "{n} waiting": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "{n} with deadlines": [
     "web/src/app/ImportScreen.tsx"

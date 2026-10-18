@@ -15,7 +15,7 @@ You are signed in (see [Getting started](getting-started.md)). This page adds a 
 
 ## Your first visit
 
-The first time an account opens the app, the Inbox shows a short card with three steps instead of an empty list: add your first task, choose light or dark, and install the app. Every step has a **Skip** button, and **Skip all** closes the card at once. It never comes back on that account, on any of your devices.
+The first time an account opens the app, the Inbox shows a short card with three steps instead of an empty list: add your first task, choose [how you work](method/set-up.md) (Lists only, Companion or Open Loops first) and light or dark, and install the app. Every step has a **Skip** button, and **Skip all** closes the card at once. It never comes back on that account, on any of your devices.
 
 The card also offers **Show me around**. It creates one project, "Show me around", with six tasks that demonstrate a date, a deadline, a label, a subtask, a repeat and notes. They are ordinary tasks: edit them, complete them, or delete the project when you are done and it goes to the Trash like any other.
 

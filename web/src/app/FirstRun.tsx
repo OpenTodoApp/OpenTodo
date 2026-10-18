@@ -1,7 +1,7 @@
-// The first run (OpenSpec change ux-overhaul, first-run): the first time an account
-// opens the app, the Inbox shows a three-step card instead of the empty state: add
-// a first task (quick add is focused, with one example), choose the appearance,
-// install the app or skip. Every step is skippable; the card leaves after the third
+// The first run (OpenSpec changes ux-overhaul, first-run, and open-loops-method D10):
+// the first time an account opens the app, the Inbox shows a three-step card
+// instead of the empty state: add a first task (quick add is focused, with one
+// example), choose how you work and the appearance, install the app or skip. Every step is skippable; the card leaves after the third
 // step or Skip all and never returns on that account, because its state is an
 // ordinary preference op (`first_run`) that syncs to the account's other devices.
 // "Show me around" creates one sample project with six tasks as ordinary ops.
@@ -14,6 +14,8 @@ import { createLabel, findLabelByName } from '../lib/labels'
 import { createProject, createSubtask, createTask } from '../lib/ops'
 import type { ThemeModePref } from '../lib/types'
 import { firstRunDone, setFirstRunDone } from '../lib/userPrefs'
+import { setMethodMode, type MethodMode } from '../lib/method/mode'
+import { MethodModeChooser } from './method/MethodModeChooser'
 import { installPrompt, useInstallPrompt } from './installPrompt'
 import { navigate } from './router'
 import { t, msg } from '../lib/i18n'
@@ -58,15 +60,17 @@ export async function createSampleProject(today = todayISO()): Promise<string> {
   return project
 }
 
-const STEPS: { id: 'task' | 'appearance' | 'install'; title: string; icon: IconName }[] = [
+const STEPS: { id: 'task' | 'work' | 'install'; title: string; icon: IconName }[] = [
   { id: 'task', get title() { return t('Add your first task') }, icon: 'plus' },
-  { id: 'appearance', get title() { return t('Choose light or dark') }, icon: 'palette' },
+  { id: 'work', get title() { return t('How do you want to work?') }, icon: 'rotate-ccw' },
   { id: 'install', get title() { return t('Install the app') }, icon: 'download' },
 ]
 
 export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void }) {
   const [step, setStep] = useState(0)
   const [sampleOffered, setSampleOffered] = useState(true)
+  // Companion is preselected but written only when the user continues (first-run "Three-step first run").
+  const [method, setMethod] = useState<MethodMode>('companion')
   const row = useUserPrefsRow()
   const mode = readAppearance(row ?? null).mode
   const canInstall = useInstallPrompt()
@@ -90,13 +94,17 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
           {current.id === 'task' && (
             <p className="mt-1 text-body text-muted">{t.rich('Type a line in the box above and press Enter. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.', { em: (chunks) => <em>{chunks}</em> })}</p>
           )}
-          {current.id === 'appearance' && (
-            <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={t('Appearance')}>
-              {THEME_MODES.map((m) => (
-                <Button key={m} size="sm" variant={mode === m ? 'primary' : 'secondary'} role="radio" aria-checked={mode === m} data-first-run-mode={m}
-                  onClick={() => act(setAppearance('theme_mode', m))}>{label(m)}</Button>
-              ))}
-            </div>
+          {current.id === 'work' && (
+            <>
+              <div className="mt-2"><MethodModeChooser value={method} onChosen={setMethod} writeOnChoose={false} offerPreselected /></div>
+              <p className="mt-3 text-meta text-muted" id="first-run-appearance">{t('Choose light or dark')}</p>
+              <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="first-run-appearance">
+                {THEME_MODES.map((m) => (
+                  <Button key={m} size="sm" variant={mode === m ? 'primary' : 'secondary'} role="radio" aria-checked={mode === m} data-first-run-mode={m}
+                    onClick={() => act(setAppearance('theme_mode', m))}>{label(m)}</Button>
+                ))}
+              </div>
+            </>
           )}
           {current.id === 'install' && (
             <p className="mt-1 text-body text-muted">{t('Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.')}</p>
@@ -108,8 +116,11 @@ export function FirstRunCard({ onFocusQuickAdd }: { onFocusQuickAdd: () => void 
                 else { navigate({ view: 'help', page: 'install-app' }); next() }
               }}>{canInstall ? t('Install') : t('How to install')}</Button>
             )}
+            {current.id === 'work' && (
+              <Button size="sm" variant="primary" data-first-run-continue onClick={() => act(setMethodMode(method).then(next))}>{t('Continue')}</Button>
+            )}
             <Button size="sm" variant={current.id === 'install' ? 'ghost' : 'secondary'} data-first-run-next onClick={next}>
-              {step === STEPS.length - 1 ? t('Skip') : current.id === 'appearance' ? t('Next') : t('Skip this step')}
+              {step === STEPS.length - 1 ? t('Skip') : t('Skip this step')}
             </Button>
             {sampleOffered && (
               <Button size="sm" variant="ghost" icon="rocket" data-first-run-sample onClick={() => {

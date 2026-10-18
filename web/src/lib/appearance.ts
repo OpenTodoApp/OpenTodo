@@ -12,7 +12,7 @@ import { USER_PREFS_ID } from './userPrefs'
 export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
 
 /** Destinations the user may promote from the sidebar's More group to its primary items (app-shell "Sidebar structure"). */
-export const PROMOTABLE = ['next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter'] as const
+export const PROMOTABLE = ['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter'] as const
 export type Promotable = (typeof PROMOTABLE)[number]
 
 /** Row density (appearance-preferences "Density preference"); unknown stored values read as comfortable. */
