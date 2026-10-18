@@ -35,11 +35,15 @@ Date groups, section groups, project groups and the "Later" group SHALL use one 
 - **THEN** "Tomorrow" stays collapsed on this device and shows its count
 
 ### Requirement: Empty groups
-A group with no open tasks SHALL be hidden when it is generated (a date, "No section", "Later"), and SHALL show only its header when it is user-created (a section). A section whose tasks are all completed SHALL show "n completed" in its header with a control that reveals them.
+A group with no open tasks SHALL be hidden when it is generated (a date, "No section", "Later"), and SHALL show only its header when it is user-created (a section). A section whose tasks are all completed SHALL show "n completed" in its header with a control that reveals them, except while the project shows its Completed group, which holds those tasks.
 
 #### Scenario: Done section
 - **WHEN** a project's "Done" section holds two completed tasks and no open one
 - **THEN** its header reads "Done · 2 completed" with a Show control, and no empty body is rendered
+
+#### Scenario: Done section with the Completed group on
+- **WHEN** the same project has "Show completed tasks" on
+- **THEN** the "Done" header shows no "n completed" and no Show control, and the two tasks are in the Completed group at the end of the list
 
 ### Requirement: Nothing between the header and the list
 Above the first task of a list there SHALL be at most the page header and the quick add. Filters (duration, labels, assignee), layout switches, disclosures, sort notes and promotions SHALL live in the page header, its menus or the overflow, never as rows above the list.
@@ -145,3 +149,18 @@ The keyboard cursor of a task list SHALL be real focus: when the cursor moves to
 
 - **WHEN** a row shows the task "Pack"
 - **THEN** its complete button is named "Complete Pack"
+
+### Requirement: Completed group in a project
+A project's Project menu SHALL offer "Show completed tasks" in the list layout, a preference of the device per project that is off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first. The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. The board and the timeline SHALL be unchanged. A completed task's circle SHALL show the filled check without the priority ring.
+
+#### Scenario: Groceries reused
+- **WHEN** a user turns on "Show completed tasks" in a Groceries project where Milk and Eggs were ticked off, Eggs last, and opens the Completed group
+- **THEN** the group's heading reads "Completed 2", Eggs is listed above Milk, both show a ticked circle, and unticking Milk puts it back among the open tasks
+
+#### Scenario: Off by default
+- **WHEN** a user opens a project they never changed the setting for
+- **THEN** no Completed group is shown and completed tasks are only in the Completed view
+
+#### Scenario: Board layout
+- **WHEN** the project is shown as a board
+- **THEN** the Project menu does not offer "Show completed tasks" and the board shows open tasks only
