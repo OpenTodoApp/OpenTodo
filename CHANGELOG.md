@@ -4,6 +4,11 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
+- **Settings → About.** A new section for everyone with the server's version, Help, the documentation and the website, the issue tracker, the source code and a Buy Me a Coffee button; the owner can show the welcome note again from there.
+
 ## [0.7.1] - 2026-10-18
 
 OpenTodo 0.7.1 lets a project keep its completed tasks in its own list, in a Completed group you open when you need it, for lists you tick off and reuse such as groceries. It also fixes completed tasks showing an empty circle instead of a ticked one.
@@ -15,8 +20,6 @@ OpenTodo 0.7.1 lets a project keep its completed tasks in its own list, in a Com
 
 ### Added
 
-- **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
-- **Settings → About.** A new section for everyone with the server's version, Help, the documentation and the website, the issue tracker, the source code and a Buy Me a Coffee button; the owner can show the welcome note again from there.
 - **Keep completed tasks in a project.** Turn on **Show completed tasks** in a project's menu and its completed tasks stay at the end of the list in a **Completed** group, closed until you open it, newest first. Untick one there to put it back on the list, handy for groceries and other lists you reuse. The setting is per project and per device. ([Completed tasks in a project](docs/completed-in-projects.md), #145)
 
 ### Fixed
