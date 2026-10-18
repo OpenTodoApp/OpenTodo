@@ -35,10 +35,23 @@ The web app manifest declares a [Web Share Target](https://developer.mozilla.org
 | Platform | Install | Share |
 | --- | --- | --- |
 | Android, Chrome / Edge / Samsung Internet | Menu → **Install app** (or **Add to Home screen**) | Share from any app → **OpenTodo** |
+| Android, other browsers (Vivaldi, Brave …) or a device without Google Play services (GrapheneOS, /e/OS, LineageOS) | Usually only a home-screen shortcut, which Android cannot list in the share menu | See [below](#opentodo-is-missing-from-the-share-menu-on-android) |
 | Windows, ChromeOS, Chrome / Edge | Install icon in the address bar | Share from apps that use the system share dialog |
 | macOS, Chrome / Edge | Install icon in the address bar | Support for receiving shares varies by version; use the bookmarklet or extension |
 | iOS and iPadOS, any browser | Share → **Add to Home Screen** | Safari does not support share targets for web apps; use the bookmarklet in Safari instead |
 | Firefox (all platforms) | Firefox does not install web apps as share targets | Use the extension or bookmarklet |
+
+### OpenTodo is missing from the share menu on Android
+
+Android lists a web app in the share menu only when it was installed as a real app (a *WebAPK*), not as a home-screen shortcut. Chrome creates that app through Google Play services, Samsung Internet through its own service. Other browsers such as Vivaldi or Brave, and any browser on a device without Google Play services (GrapheneOS without sandboxed Google Play, /e/OS, LineageOS), add a shortcut instead. OpenTodo then opens normally from the home screen but cannot receive shares. Nothing on your server can change this.
+
+To check: open Android **Settings → Apps**. If **OpenTodo** is listed there, it is installed as an app; if not, it is a shortcut.
+
+What works instead:
+
+- **Install from Chrome**: remove the shortcut, open your server in Chrome and choose **Install app**. On GrapheneOS this needs sandboxed Google Play installed in the same profile.
+- **Email to task**: share the page to your email app and send it to your [secret inbox address](email.md), if the owner turned email capture on.
+- **Copy and paste**: share → **Copy**, then paste the link into quick add.
 
 Some apps put the link inside the shared text instead of the link field. The capture screen then takes the last `http(s)` link from the text and moves it to the end of the description.
 
