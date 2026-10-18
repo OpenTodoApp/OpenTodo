@@ -1,7 +1,9 @@
 // Tooltip (OpenSpec change ux-overhaul, design-system "Tooltip primitive"): opens
 // on hover after 400 ms and on focus at once, shows a label and an optional
 // shortcut, closes on Escape and blur, is announced as the control's description
-// and does not open on touch (the accessible name still applies). Icon-only
+// and does not open on touch (the accessible name still applies). Focus that a
+// press gives the control (a tap on a phone, a click) does not open it either,
+// so a tapped menu button leaves no tip over the drawer it opened (issue 169). Icon-only
 // buttons use it by default; screens never use the native `title` attribute.
 import { cloneElement, type ReactElement, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -31,6 +33,8 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
   const anchor = useRef<HTMLElement | null>(null)
   const tip = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Set between a press and its release: the focus it brings is not keyboard focus.
+  const pressed = useRef(false)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
   const show = useCallback((immediate: boolean) => {
@@ -87,8 +91,10 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     'aria-describedby': described,
     onPointerEnter: (e: PointerEvent) => { (child.props.onPointerEnter as ((e: PointerEvent) => void) | undefined)?.(e); if (e.pointerType !== 'touch' && !coarsePointer()) show(false) },
     onPointerLeave: (e: PointerEvent) => { (child.props.onPointerLeave as ((e: PointerEvent) => void) | undefined)?.(e); hide() },
-    onPointerDown: (e: PointerEvent) => { (child.props.onPointerDown as ((e: PointerEvent) => void) | undefined)?.(e); hide() },
-    onFocus: (e: FocusEvent) => { (child.props.onFocus as ((e: FocusEvent) => void) | undefined)?.(e); show(true) },
+    onPointerDown: (e: PointerEvent) => { (child.props.onPointerDown as ((e: PointerEvent) => void) | undefined)?.(e); pressed.current = true; hide() },
+    onPointerUp: (e: PointerEvent) => { (child.props.onPointerUp as ((e: PointerEvent) => void) | undefined)?.(e); pressed.current = false },
+    onPointerCancel: (e: PointerEvent) => { (child.props.onPointerCancel as ((e: PointerEvent) => void) | undefined)?.(e); pressed.current = false },
+    onFocus: (e: FocusEvent) => { (child.props.onFocus as ((e: FocusEvent) => void) | undefined)?.(e); if (!pressed.current) show(true) },
     onBlur: (e: FocusEvent) => { (child.props.onBlur as ((e: FocusEvent) => void) | undefined)?.(e); hide() },
   } as Record<string, unknown>)
 
