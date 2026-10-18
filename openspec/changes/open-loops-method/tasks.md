@@ -71,7 +71,7 @@
   7. Switch to Lists only and check the original sidebar.
 
   Verify with the smoke script against `make run`.
-- [ ] 9.3 Manual smoke on `make dev` with two browser profiles of the same user and one of a second member of a shared project:
+- [x] 9.3 Manual smoke on `make dev` with two browser profiles of the same user and one of a second member of a shared project:
   - per-user review stamps on the shared project
   - a daily check on one profile clearing the marker on the other
   - offline walk and reconnect
