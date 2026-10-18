@@ -1,6 +1,6 @@
 services:
   opentodo:
-    image: ghcr.io/pixari/opentodo:0.7.1
+    image: ghcr.io/pixari/opentodo:0.7.2
     restart: unless-stopped
     environment:
       OPENTODO_BASE_URL: ${OPENTODO_BASE_URL:-}

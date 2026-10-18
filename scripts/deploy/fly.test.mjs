@@ -48,7 +48,7 @@ test('fly: TOML subset parser', () => {
 
 test('fly: image policy', () => {
   has(withToml('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(withToml('opentodo:stable', 'opentodo:0.7.1'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(withToml('opentodo:stable', 'opentodo:0.7.2'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(withToml('[build]\n  image = "ghcr.io/pixari/opentodo:stable"\n', ''), /\[build\] with image is required/)
   has(withToml('  image = "ghcr.io/pixari/opentodo:stable"\n', '  image = "ghcr.io/pixari/opentodo:stable"\n  dockerfile = "Dockerfile"\n'), /\[build\] "dockerfile" is not allowed/)
 })

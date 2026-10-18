@@ -6,15 +6,30 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
-- **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
 - **Open Loops, a calm method for everything on your mind.** OpenTodo now has a method of its own, inspired by GTD: catch, clarify, place, do and review. Choose how prominent it is in **Settings → Account → How you work**: **Lists only** (as before), **Companion** (screens name the move they serve and link to the method) or **Open Loops first** (the new **Loop home** opens first and the sidebar is arranged by the Places). New views: **Next** (<kbd>g</kbd> <kbd>Shift+N</kbd>), each project's next action grouped by `@context` labels, and **Waiting** (<kbd>g</kbd> <kbd>Shift+W</kbd>), what you assigned to someone else or is blocked. The method has its own chapter in the docs and Help. ([Open Loops](docs/method/overview.md))
 - **The weekly review walks every project.** Seven steps in three phases: the Inbox and a Mind sweep, then what slipped, what is waiting, each project one card at a time (<kbd>r</kbd> marks it reviewed, <kbd>q</kbd> adds a next action), the week ahead, and Someday. Your mark on a shared project is yours alone. A five-minute **Daily check** (<kbd>g</kbd> <kbd>Shift+R</kbd>) picks up to three tasks as today's focus, and a **Monthly look** covers your areas, old Someday items and the four-week trend. ([Weekly review](docs/review-and-statistics.md), [Rhythms](docs/method/rhythms.md))
-- **Settings → About.** A new section for everyone with the server's version, Help, the documentation and the website, the issue tracker, the source code and a Buy Me a Coffee button; the owner can show the welcome note again from there.
 
 ### Changed
 
 - **"Projects without a next action" counts waiting and deferred tasks.** In the review and the weekly email digest, a project whose open tasks are all assigned to someone else, blocked, or start later is no longer listed; one whose only tasks are parked in Someday now is. ([Places](docs/method/places.md#projects-without-a-next-action))
 - **Statistics and the weekly digest have their own guide page**, next to the weekly review's. ([Statistics and the weekly digest](docs/statistics.md))
+
+## [0.7.2] - 2026-10-18
+
+OpenTodo 0.7.2 gives the sidebar on a computer more room for your projects: More opens as a menu, Help joins the footer icons, and empty groups stay hidden until you use them. The owner of a new server is greeted with a short thank-you, and a new **Settings → About** section gathers the version, the documentation, the website, the issue tracker and the source code. Unlike 0.7.1, its GitHub release has the binaries attached again.
+
+### Upgrade notes
+
+- **No migration and no new environment variables.** Replace the image or the binary and restart.
+- **Sync is additive:** one new preference field (`user_prefs.welcome`) remembers that the welcome note was closed; older apps ignore it.
+
+### Added
+
+- **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
+- **Settings → About.** A new section for everyone with the server's version, Help, the documentation and the website, the issue tracker, the source code and a Buy Me a Coffee button; the owner can show the welcome note again from there.
+
+### Changed
+
 - **A roomier sidebar on a computer.** Search sits next to the OpenTodo name, Help joins the icons in one footer row, and **More** opens as a menu instead of pushing your projects down. Filters and Labels appear once you have one, rows are a little tighter with a mouse, and the sidebar has a thin scrollbar with a soft fade where more is hidden. In a 1280×600 window seven projects now fit instead of two. Touch screens keep their larger targets and the inline More group.
 
 ## [0.7.1] - 2026-10-18
@@ -544,7 +559,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pixari/opentodo/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/pixari/opentodo/compare/v0.6.0...v0.6.1

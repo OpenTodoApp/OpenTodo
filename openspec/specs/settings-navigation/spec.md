@@ -6,7 +6,7 @@ How the Settings screen is organised: an overview that lists sections, one page 
 ## Requirements
 
 ### Requirement: Settings sections and routes
-Settings SHALL be split into sections at `/settings/<id>`: `account`, `appearance`, `general`, `notifications`, `capture`, `integrations`, `data`, `people` and `server`. `/settings` SHALL open the first visible section from 1024 px wide and the section list below it; `/settings/import` SHALL keep the import screen. An unknown section SHALL open the first visible section. Sections are client screens and open offline; rows that need the server show their offline state inside the section.
+Settings SHALL be split into sections at `/settings/<id>`: `account`, `appearance`, `general`, `notifications`, `capture`, `about`, `integrations`, `data`, `people` and `server`. `/settings` SHALL open the first visible section from 1024 px wide and the section list below it; `/settings/import` SHALL keep the import screen. An unknown section SHALL open the first visible section. Sections are client screens and open offline; rows that need the server show their offline state inside the section.
 
 #### Scenario: Deep link
 - **WHEN** a signed-in user opens `/settings/integrations` directly or reloads it
@@ -123,7 +123,7 @@ Every Settings panel SHALL keep its Help link and screen id (`settings/...`) whe
 - **THEN** it reads `Einstellungen → Sicherheit → Zwei-Faktor-Authentifizierung`, and the Help link on that panel still opens the section for `settings/two-factor`
 
 ### Requirement: Settings groups
-The section list SHALL show sections in this order and in these groups. You: Account, Appearance. App: General, Notifications, Capture. Data: Integrations, Data. Server: People, Server. Groups SHALL be labelled headings, a group with no visible section SHALL be omitted, and each group's list SHALL be exposed to assistive technology under its heading.
+The section list SHALL show sections in this order and in these groups. You: Account, Appearance. App: General, Notifications, Capture, About. Data: Integrations, Data. Server: People, Server. Groups SHALL be labelled headings, a group with no visible section SHALL be omitted, and each group's list SHALL be exposed to assistive technology under its heading.
 
 #### Scenario: Group headings for screen readers
 - **WHEN** a screen reader user moves through the list
@@ -131,7 +131,7 @@ The section list SHALL show sections in this order and in these groups. You: Acc
 
 #### Scenario: Owner order
 - **WHEN** the owner opens the list
-- **THEN** the nine sections appear in the four groups in the stated order
+- **THEN** the ten sections appear in the four groups in the stated order
 
 ### Requirement: Account and General section contents
 Account SHALL hold profile, sessions, password, two-factor, passkeys, linked accounts and encryption; General SHALL hold start view, date and time, calendar, keyboard and language.
@@ -228,3 +228,14 @@ The settings list SHALL start with a search field that filters sections and indi
 #### Scenario: From the palette
 - **WHEN** the user types "passkey" in the command palette
 - **THEN** "Account › Passkeys" is listed and opens the Account section at the passkeys row
+
+### Requirement: About section
+Settings SHALL have an About section, visible to every account, that shows the server's version while online and a link to the in-app Help, the documentation on the website, the website, the issue tracker on GitHub and the source code, and a Buy Me a Coffee button. External links SHALL open in a new tab and load nothing into the app. For the owner it SHALL also offer to show the welcome note again.
+
+#### Scenario: Member opens About
+- **WHEN** a member opens `/settings/about` while online
+- **THEN** the page shows "OpenTodo <version>", Open Help, the documentation, website, issue and GitHub links and the coffee button, and no welcome note row
+
+#### Scenario: Owner reopens the welcome note
+- **WHEN** the owner chooses Show it again in Settings → About
+- **THEN** the welcome note opens, and closing it leaves Settings as it was
