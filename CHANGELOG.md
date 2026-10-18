@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Keep completed tasks in a project.** Turn on **Show completed tasks** in a project's menu and its completed tasks stay at the end of the list in a **Completed** group, closed until you open it, newest first. Untick one there to put it back on the list, handy for groceries and other lists you reuse. The setting is per project and per device. ([Completed tasks in a project](docs/completed-in-projects.md), #145)
+
+### Fixed
+
+- **Completed tasks show a ticked circle again.** In the Completed view, a section's revealed completed tasks and the task panel, a completed task's circle kept its priority colour, which hid the check mark.
+
 ## [0.7.0] - 2026-10-18
 
 OpenTodo 0.7.0 is a hardening release, the result of a review of the whole code base. Your account is harder to take over: credential and administration changes need an admin token or your signed-in session, repeated wrong passwords lock password sign-in for a while, a new server cannot be claimed from the internet without a setup code, forwarded addresses count only from trusted proxies, and **Sign out everywhere** ends every session and token at once. Sync keeps your changes in more of the situations where it could lose them (a device with a wrong clock, a proxy answering in the server's place, signing out during a sync, the history of a newly joined project), large servers and long lists answer faster, backups no longer fill the disk and reach S3 above 5 GB, and the app works better with screen readers and voice control. Templates for fourteen more platforms and a `stable` image tag make installing and updating simpler. Read the upgrade notes first: emailed links now need `OPENTODO_BASE_URL`, and scripts that change credentials need an admin token.
@@ -59,7 +67,6 @@ OpenTodo 0.7.0 is a hardening release, the result of a review of the whole code 
 
 ### Added
 
-- **Keep completed tasks in a project.** Turn on **Show completed tasks** in a project's menu and its completed tasks stay at the end of the list in a **Completed** group, closed until you open it, newest first. Untick one there to put it back on the list, handy for groceries and other lists you reuse. The setting is per project and per device. ([Completed tasks in a project](docs/completed-in-projects.md), #145)
 - **Templates for six more ways to run OpenTodo.** A Helm chart for Kubernetes (one pod with a persistent volume, an optional Ingress, a generated setup token, a locked-down pod), published with each release to `oci://ghcr.io/pixari/charts/opentodo`; a Podman Quadlet that runs OpenTodo as a systemd service, kept up to date by `podman auto-update`; a CapRover one-click app; a `fly.toml` for Fly.io; a Render Blueprint with a Deploy to Render button; and a Container Manager project for Synology DSM 7.2+. Each is checked by `make check` and has a guide. ([Kubernetes](docs/self-hosting/kubernetes.md), [Podman](docs/self-hosting/podman.md), [CapRover](docs/self-hosting/caprover.md), [Fly.io](docs/self-hosting/fly.md), [Render](docs/self-hosting/render.md), [Synology](docs/self-hosting/synology.md))
 - **Templates for eight more platforms.** CasaOS and ZimaOS, Cosmos Cloud, Dokploy, Easypanel, Portainer, Runtipi, TrueNAS Community Edition and Umbrel each get a template in their own format, checked by `make check`, with a guide covering install, settings, data permissions, https, updates and backups. Until a platform's catalog lists OpenTodo, the guide shows how to install it as a custom app; Portainer and Dokploy can already load the templates from this repository by URL. Stores that refuse moving tags name the release version (Umbrel also its digest, refreshed by `scripts/deploy/pin.mjs`); the others use `stable`. ([CasaOS](docs/self-hosting/casaos.md), [Cosmos](docs/self-hosting/cosmos.md), [Dokploy](docs/self-hosting/dokploy.md), [Easypanel](docs/self-hosting/easypanel.md), [Portainer](docs/self-hosting/portainer.md), [Runtipi](docs/self-hosting/runtipi.md), [TrueNAS](docs/self-hosting/truenas.md), [Umbrel](docs/self-hosting/umbrel.md))
 
@@ -79,7 +86,6 @@ OpenTodo 0.7.0 is a hardening release, the result of a review of the whole code 
 
 ### Fixed
 
-- **Completed tasks show a ticked circle again.** In the Completed view, a section's revealed completed tasks and the task panel, a completed task's circle kept its priority colour, which hid the check mark.
 - **The phone sidebar scrolls with More open.** On a short phone screen, opening More left the sidebar almost no room to scroll, so a swipe moved the page behind it instead of reaching your projects. More now scrolls with Filters, Projects and Labels, and the page behind the open sidebar stays still.
 - **The quick add sheet treats archived projects like the views' quick add.** Typing `#name` of an archived project no longer behaves differently in the sheet and in a list; every screen now reads projects, labels and shared-project roles from one shared live copy, so they agree with each other and update together after a sync.
 - **Screen readers hear what the chips say.** Counts, "Has notes", deadlines, group counts and the warning on a title that could not be decrypted were silent or read as bare numbers; they are now read as full phrases ("3 comments", "4 open tasks").
