@@ -40,7 +40,7 @@ async function waitFor(ok: () => boolean, ms = 2000) {
 }
 
 describe('one scroller', () => {
-  it('only the middle part scrolls; labels live in it, the account row and the primary navigation outside it', async () => {
+  it('only the middle part scrolls; More and labels live in it, the account row and the primary navigation outside it', async () => {
     for (let i = 0; i < 40; i++) await createProject({ name: `Project ${i}` })
     await createLabel({ name: 'errand' })
     const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
@@ -55,6 +55,8 @@ describe('one scroller', () => {
     expect(labels).toBeTruthy()
     expect(scroller.contains(labels)).toBe(true)
     expect(side.querySelector('nav[aria-label="Projects"]')!.contains(labels)).toBe(false)
+    // The More group scrolls with them, so opening it on a short phone screen cannot squeeze the scroller away (sidebar-drawer-scroll).
+    expect(scroller.contains(side.querySelector('[data-testid="sidebar-more"]'))).toBe(true)
     // Pinned ends: Inbox and the account row are outside the scroller.
     const inbox = [...side.querySelectorAll('button')].find((b) => b.textContent?.trim().startsWith('Inbox'))!
     const account = [...side.querySelectorAll('button')].find((b) => b.textContent?.includes('Ada'))!
