@@ -4,7 +4,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-10-17
+## [0.7.0] - 2026-10-18
 
 OpenTodo 0.7.0 is a hardening release, the result of a review of the whole code base. Your account is harder to take over: credential and administration changes need an admin token or your signed-in session, repeated wrong passwords lock password sign-in for a while, a new server cannot be claimed from the internet without a setup code, forwarded addresses count only from trusted proxies, and **Sign out everywhere** ends every session and token at once. Sync keeps your changes in more of the situations where it could lose them (a device with a wrong clock, a proxy answering in the server's place, signing out during a sync, the history of a newly joined project), large servers and long lists answer faster, backups no longer fill the disk and reach S3 above 5 GB, and the app works better with screen readers and voice control. Templates for fourteen more platforms and a `stable` image tag make installing and updating simpler. Read the upgrade notes first: emailed links now need `OPENTODO_BASE_URL`, and scripts that change credentials need an admin token.
 
