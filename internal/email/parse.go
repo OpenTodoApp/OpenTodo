@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -15,16 +16,18 @@ import (
 	"net/mail"
 	"net/textproto"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/pixari/opentodo/internal/e2ee"
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // Message limits (design D5, Risks).
 const (
 	// MaxMessageBytes: larger messages are discarded unread.
 	MaxMessageBytes = 10 << 20
-	// MaxDescriptionBytes caps the body text kept in the task description.
-	MaxDescriptionBytes = 16 << 10
 	// MaxTitleRunes caps the task title.
 	MaxTitleRunes = 500
 	// maxAttachmentLines caps the attachment list in the description.
@@ -35,8 +38,14 @@ const (
 	maxParts = 500
 )
 
-// TruncatedNote ends a description whose body was cut at MaxDescriptionBytes.
-const TruncatedNote = "[Message truncated: the text was longer than 16 KB]"
+// maxEncryptableBytes is the longest description an end-to-end encrypted account's
+// devices can still re-encrypt (encrypt-on-sight): its ciphertext, "enc:v1:" +
+// base64url(nonce(12) || ciphertext || tag(16)) between JSON quotes, must fit
+// sync.MaxValueBytes. About 48 KB of text.
+const maxEncryptableBytes = (opsync.MaxValueBytes-2-len(e2ee.PrefixV1))*3/4 - 12 - 16
+
+// TruncatedNote ends a description whose body did not fit in one synced value.
+const TruncatedNote = "[Message truncated: the rest did not fit in the task's notes]"
 
 // NoSubject is the title of a message with neither subject nor body text.
 const NoSubject = "(no subject)"
@@ -159,16 +168,49 @@ func truncateRunes(s string, n int) string {
 	return strings.TrimSpace(string(r[:n])) + "…"
 }
 
-// description is the body (cut at MaxDescriptionBytes with a note) followed by
-// one line per attachment with its name and size.
+// description is the body followed by one line per attachment with its name and
+// size. It keeps as much of the body as one synced value holds (OpenSpec change
+// email-body-limit, issue #161): when the description's JSON encoding, as the
+// task operation writes it, exceeds sync.MaxValueBytes, or it could not be
+// re-encrypted (maxEncryptableBytes), the body is cut at the longest rune
+// boundary that fits and ends with TruncatedNote.
 func description(body string, atts []Attachment) string {
+	if d := compose(body, false, atts); fitsValue(d) {
+		return d
+	}
+	// Every byte encodes to at least one, so no longer prefix can fit.
+	if len(body) > maxEncryptableBytes {
+		body = body[:maxEncryptableBytes]
+	}
+	cuts := make([]int, 0, len(body))
+	for i := range body {
+		cuts = append(cuts, i)
+	}
+	// The first cut that no longer fits; longer prefixes encode longer.
+	n := sort.Search(len(cuts), func(i int) bool { return !fitsValue(compose(body[:cuts[i]], true, atts)) })
+	for n > 0 && !fitsValue(compose(body[:cuts[n-1]], true, atts)) {
+		n--
+	}
+	if n == 0 {
+		return compose("", true, atts)
+	}
+	return compose(body[:cuts[n-1]], true, atts)
+}
+
+// fitsValue reports whether d, encoded as the operation encodes it, is within the
+// sync value limit, also once encrypted.
+func fitsValue(d string) bool {
+	if len(d) > maxEncryptableBytes {
+		return false
+	}
+	b, err := json.Marshal(d)
+	return err == nil && len(b) <= opsync.MaxValueBytes
+}
+
+func compose(body string, cut bool, atts []Attachment) string {
 	var b strings.Builder
-	if len(body) > MaxDescriptionBytes {
-		cut := MaxDescriptionBytes
-		for cut > 0 && !utf8.RuneStart(body[cut]) {
-			cut--
-		}
-		b.WriteString(strings.TrimRight(body[:cut], " \n\t"))
+	if cut {
+		b.WriteString(strings.TrimRight(body, " \n\t"))
 		b.WriteString("\n\n")
 		b.WriteString(TruncatedNote)
 	} else {
