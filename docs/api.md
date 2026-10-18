@@ -399,7 +399,7 @@ Optional SMTP, configured by the owner in **Settings → Server → Outgoing ema
 
 ### Weekly digest
 
-An opt-in email per user on a chosen weekday and hour (OpenSpec `email-digest`): last week's completed, created, completed late and slipped counts, up to 15 overdue tasks, up to 15 tasks due in the next seven days, up to 10 projects without an open task, the last review and a link to `/review`. The numbers follow the same definitions as the device's Statistics ([review-and-statistics.md](review-and-statistics.md#statistics)).
+An opt-in email per user on a chosen weekday and hour (OpenSpec `email-digest`): last week's completed, created, completed late and slipped counts, up to 15 overdue tasks, up to 15 tasks due in the next seven days, up to 10 projects without a next action ([Places](method/places.md#projects-without-a-next-action)), the last review and a link to `/review`. The numbers follow the same definitions as the device's Statistics ([statistics.md](statistics.md#statistics)).
 
 `GET /api/v1/me/email-digest` →
 

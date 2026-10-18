@@ -32,6 +32,7 @@ import { TaskPage } from './TaskPage'
 import { getTask } from '../lib/localData'
 import { watchViewerZone } from '../lib/dates'
 import { UndoToast } from './bulk/UndoToast'
+import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
@@ -58,6 +59,11 @@ const CommandPalette = lazy(() => import('./palette/CommandPalette'))
 // Weekly review and Statistics (stats-and-review D8): one chunk, fetched on first open.
 const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.ReviewView })))
 const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
+const DailyCheck = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.DailyCheck })))
+const MonthlyLook = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.MonthlyLook })))
+const NextView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.NextView })))
+const WaitingView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.WaitingView })))
+const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -156,7 +162,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     // Weekly review and Statistics (stats-and-review).
-    'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }),
+    'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -238,7 +244,15 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} />
           ) : route.view === 'review' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}><ReviewView userId={user.id} /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
+              {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
+            </Suspense>
+          ) : route.view === 'next' ? (
+            <Suspense fallback={null}><NextView /></Suspense>
+          ) : route.view === 'waiting' ? (
+            <Suspense fallback={null}><WaitingView /></Suspense>
+          ) : route.view === 'loop' ? (
+            <Suspense fallback={null}><LoopHome /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'triage' ? (
@@ -278,6 +292,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <WelcomeDialog user={user} />
       <ReminderToasts />
       <UndoToast />
+      <DailyCheckToast />
       <TemplateDialogHost />
       <ArchivePrompt />
     </div>

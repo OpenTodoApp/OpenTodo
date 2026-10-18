@@ -105,12 +105,12 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     expect(moreToggle(r.container).getAttribute('aria-expanded')).toBe('false')
     expect(moreItems(r.container)).toEqual([])
     await click(moreToggle(r.container))
-    expect(moreItems(r.container)).toEqual(['anytime', 'someday', 'completed', 'review', 'stats', 'trash', 'filter'])
+    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'completed', 'review', 'stats', 'trash', 'filter'])
     expect(localStorage.getItem('ot.sidebar.more')).toBe('1')
     // A shared project brings Assigned to me and Updates.
     await db.memberships.put({ projectId: 'p1', role: 'editor', ownerId: 'alice', members: [] } as Membership)
     await waitFor(() => moreItems(r.container).includes('assigned'))
-    expect(moreItems(r.container)).toEqual(['anytime', 'someday', 'assigned', 'completed', 'review', 'stats', 'feed', 'trash', 'filter'])
+    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'review', 'stats', 'feed', 'trash', 'filter'])
     expect(primaryOf(r.container)).toHaveLength(4)
     await r.unmount()
   })
@@ -127,6 +127,34 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     await r.rerender(<Sidebar route={{ view: 'day' }} user={user} />)
     await flush(20)
     expect(r.container.querySelector('[data-destination="week"]')?.getAttribute('aria-current')).toBe('page')
+    await r.unmount()
+  })
+
+  it('Companion promotes Next: it joins the primary items, and an entry an older client does not know is kept', async () => {
+    await applyOps([{ id: 'x1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_destinations', value: 'next,loop-of-the-future', ts: 5, device: 'laptop' } as Op])
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => primaryOf(r.container).includes('next'))
+    expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day', 'next'])
+    expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('next,loop-of-the-future')
+    await r.unmount()
+  })
+
+  it('Open Loops first sidebar: six destinations by the Places; Upcoming and Calendar join More; promotions are kept for later', async () => {
+    await setPromoted(null, 'someday', true)
+    await applyOps([{ id: 'm1', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first', ts: Date.now() + 1000, device: 'laptop' } as Op])
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => primaryOf(r.container)[0] === 'loop')
+    expect(primaryOf(r.container)).toEqual(['loop', 'inbox', 'today', 'next', 'waiting', 'review'])
+    // Review is a primary item here, so the closed More row does not repeat its marker.
+    expect(r.container.querySelector('[data-review-due-more]')).toBeNull()
+    expect(r.container.querySelector('[data-destination="review"] [data-review-due]')).not.toBeNull()
+    await click(moreToggle(r.container))
+    expect(moreItems(r.container).slice(0, 4)).toEqual(['upcoming', 'day', 'anytime', 'someday'])
+    expect(moreItems(r.container)).not.toContain('loop')
+    // Back to Companion: the promoted Someday is a primary destination again.
+    await applyOps([{ id: 'm2', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'companion', ts: Date.now() + 2000, device: 'laptop' } as Op])
+    await waitFor(() => primaryOf(r.container).includes('someday'))
+    expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day', 'someday'])
     await r.unmount()
   })
 
@@ -166,7 +194,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     expect(trigger.querySelector('[data-review-due-more]')).not.toBeNull()
     await click(trigger)
     await waitFor(() => menuItems().length > 0)
-    expect(menuItems()).toEqual(['Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Trash', 'Filter'])
+    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Trash', 'Filter'])
     expect(document.querySelector('[data-menu-label="Review"]')?.textContent).toContain('Review due')
     await click(document.querySelector<HTMLElement>('[data-menu-label="Someday"]')!)
     await waitFor(() => window.location.pathname === '/someday')

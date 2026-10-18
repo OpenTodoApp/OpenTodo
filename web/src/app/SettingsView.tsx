@@ -1,3 +1,4 @@
+import { HowYouWorkSection } from './method/HowYouWorkSection'
 import { Avatar, Badge, Icon, Input, Notice, PageBody, PageHeader, useMediaQuery } from '../ui'
 import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
@@ -263,6 +264,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
         <>
           {note}
           <ProfileCard user={user} />
+          <Anchor id="how-you-work"><HowYouWorkSection /></Anchor>
           <SessionPanel onLogout={onLogout} />
           <Anchor id="security">
             <DemoDisabled on={demo}>

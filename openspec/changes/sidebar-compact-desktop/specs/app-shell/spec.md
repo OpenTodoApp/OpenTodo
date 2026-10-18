@@ -22,6 +22,15 @@ From 768 px the sidebar footer SHALL put Help, notifications, the assistant, key
 ### Requirement: Sidebar structure
 The sidebar SHALL show, top to bottom: the app name with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available) and the Filters, Projects and Labels groups, each collapsible with its state remembered on the device and its item count on the header while collapsed; then a pinned footer with Help, notifications, sync status and the account. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same badge on the row. The Filters group SHALL be shown only once the user has a saved filter and the Labels group only once the user has a label; an empty group shows nothing, not a placeholder sentence. Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
 
+The primary destinations and the More group SHALL depend on the user's "How you work" preference:
+
+| Preference | Primary destinations | More group |
+| --- | --- | --- |
+| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Review, Statistics, Ask when available |
+| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Statistics, Ask when available |
+
+In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged.
+
 #### Scenario: Default sidebar
 - **WHEN** a user with projects and labels opens the app on a 1280×800 screen
 - **THEN** five primary destinations and the More group are visible above Filters, Projects and Labels, the footer is visible without scrolling, and only the middle part scrolls when the project tree is long
@@ -53,6 +62,14 @@ The sidebar SHALL show, top to bottom: the app name with a search button beside 
 #### Scenario: No empty groups
 - **WHEN** a new account with no saved filter and no label opens the app
 - **THEN** the sidebar shows no Filters or Labels group and no placeholder sentence, and saving a first filter brings the Filters group back with its All action
+
+#### Scenario: Open Loops first sidebar
+- **WHEN** a user picks Open Loops first and opens the app on a 1280×800 screen
+- **THEN** the primary destinations are Loop home, Inbox, Today, Next, Waiting and Review in that order, Upcoming and Calendar are in the More group, and the Review entry carries its rhythm markers
+
+#### Scenario: Promotions kept across modes
+- **WHEN** a user who promoted Someday switches to Open Loops first and later back to Companion
+- **THEN** Someday is in the More group while in Open Loops first, and is a primary destination again after switching back, on every device after sync
 
 ### Requirement: No desktop top bar
 From 768 px wide the shell SHALL have no bar above the content column; search SHALL be a button beside the app name in the sidebar, notifications, sync status and help SHALL live in the sidebar footer, and page actions in the page header. Below 768 px a bar SHALL show the menu button, the page title and up to two page actions, with the remaining actions in an overflow menu.

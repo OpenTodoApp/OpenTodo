@@ -1,53 +1,41 @@
 ---
-title: Weekly review and statistics
-summary: Walk a guided weekly review with live data, see what you completed, created and let slip, all computed on your device, and get an optional weekly digest by email.
+title: Weekly review
+summary: Walk a guided weekly review with live data in seven steps - the Inbox, a mind sweep, what slipped, what waits, every project one at a time, the week ahead and Someday.
 audience: user
 section: Guides
-specs: [statistics, weekly-review, email-digest]
-screens: [review, stats#statistics]
+specs: [weekly-review]
+screens: [review]
 order: 24
 ---
-# Weekly review and statistics
+# Weekly review
 
-<picture><source srcset="images/review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-light.webp" alt="The Weekly review screen on its first step, Get clear: four step tabs with counts, two Inbox tasks, and the Finish review button."></picture>
+<picture><source srcset="images/review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-light.webp" alt="The Weekly review screen on its first step, the Inbox: seven step tabs in three phases with counts, the Inbox tasks to process, and the Finish review button."></picture>
 
-Once a week, look back at what happened and set up the week ahead. Open **Review** in the sidebar (under More) or press <kbd>g</kbd> <kbd>r</kbd>.
+Once a week, look back at what happened and set up the week ahead. Open **Review** in the sidebar (under More) or press <kbd>g</kbd> <kbd>r</kbd>. It is the weekly rhythm of [Open Loops](method/review.md); the [Daily check and the Monthly look](method/rhythms.md) are in the page's menu.
 
-## The four steps
+## The seven steps
 
-The review opens on the first step that is not done. Move between steps with the arrow keys; each tab shows how much is left or a check mark.
+The review opens on the first step that is not done. Move between steps with the arrow keys; each tab shows how much is left or a check mark. The steps come in three phases:
 
-1. **Get clear**: the open tasks in your Inbox. It is done when the Inbox is empty. **Process the Inbox** walks them one at a time ([Process the Inbox](process-the-inbox.md)).
-2. **Look back**: how many tasks you completed this week, and what is overdue. Complete one with <kbd>c</kbd> or open it to give it a new date. Done when nothing is overdue.
-3. **Next actions**: projects with no open task. Choose **Add a next action** (or select the row with <kbd>j</kbd> and press <kbd>Enter</kbd>) to add a task to it, or **Archive** a finished project ([Archived projects](archived-projects.md)). Shared projects you can only view are not listed.
-4. **Look ahead**: what is due today and in the next six days. Set priorities with <kbd>1</kbd> to <kbd>4</kbd>.
+**Get clear**
+1. **Inbox**: done when the Inbox is empty. **Process the Inbox** walks it one task at a time ([Process the Inbox](process-the-inbox.md)).
+2. **Mind sweep**: a few prompts ("Calls to return", "Promises to someone") and a quick add that catches into the Inbox.
 
-The task lists use the usual list keys. Everything works offline.
+**Get current**
+3. **Look back**: what you completed this week, and what is overdue. Done when nothing is overdue.
+4. **Waiting**: what you assigned to someone else or what waits for another task.
+5. **Projects**: one card per project, least recently reviewed first, with its outcome (the first lines of its [note](project-notes.md)), its next action and whether it has stalled. <kbd>r</kbd> marks it reviewed, <kbd>q</kbd> adds a next action, <kbd>Enter</kbd> opens it, <kbd>a</kbd> archives it, <kbd>j</kbd> skips and <kbd>k</kbd> goes back. Done when every project was reviewed in the last seven days and has a next action. Your mark is yours: in a shared project, the others keep their own.
+6. **Look ahead**: what is due in the next seven days.
+
+**Get creative**
+7. **Someday**: what you parked. <kbd>n</kbd> brings a task back.
+
+Lists use the usual keys, offline too.
+
+<picture><source srcset="images/review-walk-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-walk-light.webp" alt="The Projects step of the weekly review: one card for the project Home renovation, never reviewed, with its next action and one waiting task, and the buttons Looks good, Add a next action, Open, Archive, Skip and Back with their keys."></picture>
 
 ## Finishing a review
 
-**Finish review** records the time. It syncs to all your devices, so your phone knows when you last reviewed on your laptop. In the sidebar, Review shows how long ago that was, and a **Due** marker once it is more than seven days ago, or if you never finished one. The marker also shows on **More** while it is closed.
+**Finish review** records the time. It syncs to all your devices, so your phone knows when you last reviewed on your laptop. In the sidebar, Review shows how long ago that was, and a **Due** marker once it is more than seven days ago, or if you never finished one. With [Open Loops](method/set-up.md) on, the marker also covers the Monthly look, and in Open Loops first the Daily check. The marker also shows on the closed More group.
 
-## Statistics
-
-<picture><source srcset="images/stats-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/stats-light.webp" alt="The Statistics screen for this week: the period chooser, five numbers (completed, created, completed late, slipped, overdue now), bar charts per day and per project with every value printed, and the lists of late and slipped tasks."></picture>
-
-Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, last week, the last 4 or 12 weeks with the arrow keys. Weeks start on your [first day of the week](dates-and-times.md).
-
-- **Completed**: tasks and subtasks completed in the period. Each day of a recurring task counts once; a skipped day of a habit never counts.
-- **Created**: new tasks. Completing a recurring task does not create one.
-- **Completed late**: completed on a day after the due day.
-- **Slipped**: due in the period, before today, and not done by the end of the period.
-- **Overdue now**: open and due before today, outside archived projects.
-
-Charts show completions per day, per week, per weekday and per project (the top five and "other"). Every value is printed, and screen readers get a table. Tasks in the Trash are left out.
-
-In a shared project a completed task counts for whoever completed it. Older tasks that do not record that count for their assignee, or for you when unassigned.
-
-Statistics are computed on this device from your tasks. Nothing is sent to the server or stored, they work offline, and every synced device shows the same numbers. With end-to-end encryption the numbers are the same and project names are decrypted on your device.
-
-## Weekly digest by email
-
-In **Settings → Notifications → Weekly digest**, turn on an email for your review day: last week's numbers, overdue tasks, what is due in the next seven days, projects without a next action, when you last reviewed, and a link to the review. Pick the day and hour; your time zone and language come from the browser and are shown on the card.
-
-The digest uses the same definitions as Statistics. It needs [outgoing email](self-hosting/outgoing-email.md) set up by the server owner, contains task names, and is not available with end-to-end encryption: turning encryption on switches it off. A failed send is retried for six hours.
+What you completed and let slip is in [Statistics and the weekly digest](statistics.md).

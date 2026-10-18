@@ -86,6 +86,10 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
 | <kbd>g</kbd> then <kbd>r</kbd> | Go to the weekly Review |
 | <kbd>g</kbd> then <kbd>Shift+S</kbd> | Go to Statistics: what you completed, created and let slip |
+| <kbd>g</kbd> then <kbd>Shift+L</kbd> | Go to the Loop home: the five moves of Open Loops at a glance |
+| <kbd>g</kbd> then <kbd>Shift+N</kbd> | Go to Next: the next action of every project, by context |
+| <kbd>g</kbd> then <kbd>Shift+W</kbd> | Go to Waiting: what is assigned to someone else or blocked |
+| <kbd>g</kbd> then <kbd>Shift+R</kbd> | Go to the Daily check: the Inbox, what is overdue, today's focus |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
 ### Tasks in a list
@@ -213,6 +217,18 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>k</kbd> | Back to the previous task |
 | <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
 | <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
+
+### Reviews
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>r</kbd> | Project walk: mark the project reviewed, then the next one |
+| <kbd>q</kbd> | Project walk: add a next action to the project |
+| <kbd>Enter</kbd> | Project walk: open the project |
+| <kbd>a</kbd> | Project walk: archive the project, then the next one |
+| <kbd>j</kbd> / <kbd>Space</kbd> | Project walk: skip to the next project |
+| <kbd>k</kbd> | Project walk: back to the previous project |
+| <kbd>f</kbd> | Daily check: put the selected task in today's focus (up to three), or take it out |
 
 ### Display mode
 

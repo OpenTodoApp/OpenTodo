@@ -25,6 +25,10 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 - **End-to-end encryption**: encrypt your task text on your devices, and keep its recovery key. See [End-to-end encryption](e2ee.md).
 - **Recent activity**: sign-ins and token changes from the last 90 days.
 
+
+## How you work
+
+**How you work** chooses how much the app shows [Open Loops](method/overview.md), its method for everything on your mind: **Lists only**, **Companion** (screens name the move they serve) or **Open Loops first** (the Loop home and a sidebar by the Places). It syncs to your devices and never changes a task; see [Set up in ten minutes](method/set-up.md).
 ## Appearance
 
 Four choices that follow your account to every device, also when you change them offline:

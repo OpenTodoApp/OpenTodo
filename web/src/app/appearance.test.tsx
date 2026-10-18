@@ -4,6 +4,8 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
+import { setPromoted } from '../lib/appearance'
+import { setMethodMode } from '../lib/method/mode'
 import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { AppearanceProvider } from './AppearanceProvider'
 import { AppearanceSection, SidebarSection } from './AppearanceSection'
@@ -67,7 +69,7 @@ describe('Appearance → Sidebar', () => {
     const r = await render(<SidebarSection />)
     await flush(30)
     const ids = [...document.querySelectorAll('[data-setting-row^="sidebar-"]')].map((e) => e.getAttribute('data-setting-row'))
-    expect(ids).toEqual(['sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
+    expect(ids).toEqual(['sidebar-loop', 'sidebar-next', 'sidebar-waiting', 'sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
     const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
     expect(someday.getAttribute('aria-checked')).toBe('false')
     await click(someday)
@@ -80,6 +82,20 @@ describe('Appearance → Sidebar', () => {
     await click(document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!)
     await flush(40)
     expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('trash')
+    await r.unmount()
+  })
+})
+
+describe('Appearance → Sidebar in Open Loops first (open-loops-method 6.2)', () => {
+  it('the destination switches are disabled with the explanation, and the stored list is kept', async () => {
+    await setPromoted(null, 'someday', true)
+    await setMethodMode('first')
+    const r = await render(<SidebarSection />)
+    await flush(50)
+    const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
+    expect(someday.disabled).toBe(true)
+    expect(someday.getAttribute('aria-checked')).toBe('true')
+    expect(r.container.textContent).toContain('Open Loops first arranges the sidebar')
     await r.unmount()
   })
 })

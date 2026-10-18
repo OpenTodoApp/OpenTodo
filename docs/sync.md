@@ -107,11 +107,15 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | attachment | `uploaded_at` | number or null; written only by the server once it stored the bytes |
 | attachment | `deleted_at` | number or null |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
+| project_prefs | `reviewed_at` | number (Unix ms: when this user last marked the project reviewed in the weekly review's project walk) |
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
 | user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |
+| user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
+| review | `daily_at`, `monthly_at` | number (Unix ms: the last Daily check and Monthly look) |
+| review | `focus_date`, `focus` | string: the local date (`YYYY-MM-DD`) today's focus was chosen on, and up to three comma-separated task ids |
 
 `actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
@@ -206,7 +210,7 @@ Unread counts are computed locally: events of a shared project by another actor 
 
 ### Weekly review
 
-`review` (OpenSpec `stats-and-review`, design D4) records when the user last finished a weekly review. Like `user_prefs` it is one row with the `entityId` `"me"` in the **author's personal scope**: it syncs to the account's own devices only, two finishes converge by LWW on `(ts, device)` so the later one wins, and an offline finish waits in the outbox. An older server rejects its ops as unknown; the device keeps its local value. The row has no REST collection, derives no activity, is not user-written content (plaintext for an encrypted account), and is included in the JSON export as `review`; importing an own export restores it. Statistics themselves are never synced or stored: they are computed on the device from the task rows (see [review-and-statistics.md](review-and-statistics.md)).
+`review` (OpenSpec `stats-and-review`, design D4) records when the user last finished a weekly review. Like `user_prefs` it is one row with the `entityId` `"me"` in the **author's personal scope**: it syncs to the account's own devices only, two finishes converge by LWW on `(ts, device)` so the later one wins, and an offline finish waits in the outbox. An older server rejects its ops as unknown; the device keeps its local value. The row has no REST collection, derives no activity, is not user-written content (plaintext for an encrypted account), and is included in the JSON export as `review`; importing an own export restores it. Statistics themselves are never synced or stored: they are computed on the device from the task rows (see [statistics.md](statistics.md)). The Open Loops rhythms (OpenSpec `open-loops-method`, design D5) add `daily_at`, `monthly_at`, `focus_date` and `focus` to the same row, each its own LWW register, so a Daily check on the phone never overwrites a weekly finish on the laptop. The per-project review stamp is `project_prefs.reviewed_at`: personal like the feed's seen marker, so a member's review of a shared project never marks it reviewed for the others; it is exported as `project_prefs` and restored by an own-export import.
 
 ### Task labels
 

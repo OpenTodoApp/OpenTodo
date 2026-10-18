@@ -4,6 +4,7 @@
 // applied at once. Theme tiles are a radio group with roving focus; each tile
 // previews its theme through the real tokens (a data-accent subtree). Below
 // 640 px the tiles are one scrollable row of named swatches.
+import { readMethodMode } from '../lib/method/mode'
 import { type KeyboardEvent, useRef } from 'react'
 import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
@@ -19,6 +20,7 @@ const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), 
 
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
+  loop: msg('Loop home'), next: msg('Next actions'), waiting: msg('Waiting'),
   anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('Filter'),
 })
 
@@ -106,13 +108,15 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
 }
 
 /** The sidebar destinations (app-shell "Sidebar structure"): one switch per destination of the More group. */
-export function SidebarView({ promoted, onPromote }: { promoted: readonly Promotable[]; onPromote: (id: Promotable, on: boolean) => void }) {
+export function SidebarView({ promoted, onPromote, arranged = false }: { promoted: readonly Promotable[]; onPromote: (id: Promotable, on: boolean) => void; arranged?: boolean }) {
   return (
     <SettingsSection title={t('Sidebar')} headingId="sidebar-heading"
-      description={t('Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group\'s destinations sit next to them, on every device.')}>
+      description={arranged
+        ? t('Open Loops first arranges the sidebar by the Places, so these choices wait until you switch to Lists only or Companion in Settings → Account. They are kept.')
+        : t('Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group\'s destinations sit next to them, on every device.')}>
       {PROMOTABLE.map((id) => (
         <SettingRow key={id} id={`sidebar-${id}`} label={PROMOTABLE_LABEL[id]} htmlFor={`sidebar-switch-${id}`}
-          control={<Switch id={`sidebar-switch-${id}`} checked={promoted.includes(id)} onChange={(on) => onPromote(id, on)} label={t('Show {name} among the primary items', { name: PROMOTABLE_LABEL[id] })} hideLabel />} />
+          control={<Switch id={`sidebar-switch-${id}`} checked={promoted.includes(id)} disabled={arranged} onChange={(on) => onPromote(id, on)} label={t('Show {name} among the primary items', { name: PROMOTABLE_LABEL[id] })} hideLabel />} />
       ))}
     </SettingsSection>
   )
@@ -133,5 +137,5 @@ export function AppearanceSection() {
 export function SidebarSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
-  return <SidebarView promoted={value.sidebar ?? []} onPromote={(id, on) => act(setPromoted(row, id, on))} />
+  return <SidebarView promoted={value.sidebar ?? []} arranged={readMethodMode(row) === 'first'} onPromote={(id, on) => act(setPromoted(row, id, on))} />
 }

@@ -84,16 +84,16 @@ describe('Help entry points', () => {
 })
 
 describe('Help landing (ux-overhaul)', () => {
-  it('opens on the search field with eight task entries before the guides', async () => {
+  it('opens on the search field with nine task entries before the guides', async () => {
     const { bundle } = await loadHelp()
     const slugs = new Set(bundle.pages.map((p) => p.slug))
-    expect(HELP_TASKS).toHaveLength(8)
+    expect(HELP_TASKS).toHaveLength(9)
     const r = await render(<HelpView />)
     await waitFor(() => r.container.querySelector('[data-help-tasks]') !== null)
     const search = r.container.querySelector<HTMLInputElement>('input#help-search')!
     expect(document.activeElement).toBe(search)
     const tasks = [...r.container.querySelectorAll<HTMLAnchorElement>('[data-help-task]')]
-    expect(tasks).toHaveLength(8)
+    expect(tasks).toHaveLength(9)
     for (const a of tasks) {
       const page = a.getAttribute('data-help-task')!
       if (slugs.has(page)) expect(a.getAttribute('target')).toBeNull()
@@ -108,6 +108,14 @@ describe('Help landing (ux-overhaul)', () => {
       if (t.anchor) expect(bundle.pages.find((p) => p.slug === t.page)!.html, `${t.page}#${t.anchor}`).toContain(`id="${t.anchor}"`)
     }
     await r.unmount()
+  })
+
+  it('Learn Open Loops opens the method overview, and every move has its method page', async () => {
+    const { bundle } = await loadHelp()
+    const entry = HELP_TASKS.find((x) => x.page === 'method/overview')!
+    expect(entry.label).toBe('Learn Open Loops')
+    expect(bundle.pages.find((p) => p.slug === 'method/overview')!.title).toBe('Open Loops')
+    for (const id of ['overview', 'catch', 'clarify', 'place', 'do', 'review']) expect(bundle.screens[`method/${id}`]?.page, id).toBe(`method/${id}`)
   })
 
   it('page headers offer Help for their screen, and every page and old settings panel has a screen id', async () => {

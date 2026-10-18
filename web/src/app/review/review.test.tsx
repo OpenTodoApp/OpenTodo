@@ -8,7 +8,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
-import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
+import { createProject, createTask, resetDeviceId, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
 import { compute, periodFor, PERIOD_LABELS } from '../../lib/stats'
 import type { Task, User } from '../../lib/types'
 import { flush, key, render, type } from '../../ui/test-utils'
@@ -16,6 +16,7 @@ import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
 import { Sidebar } from '../Sidebar'
+import { setMethodMode } from '../../lib/method/mode'
 import { StatsContent, StatsView } from './StatsView'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', createdAt: 0 } as User
@@ -131,7 +132,7 @@ describe('Statistics screen', () => {
 const tabNamed = (name: string) => [...document.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes(name))!
 
 describe('Weekly review', () => {
-  it('keyboard path: g r, two right arrows, j and Enter add a next action to the project', async () => {
+  it('keyboard path: g r, the right arrow to Projects, q adds a next action and r marks the project reviewed', async () => {
     await createTask({ title: 'Unsorted idea' })
     const garage = await createProject({ name: 'Garage' })
     const sweep = await createTask({ title: 'Sweep', project_id: garage })
@@ -142,23 +143,25 @@ describe('Weekly review', () => {
     await key(document.body, 'g')
     await key(document.body, 'r')
     await waitFor(() => !!document.querySelector('[role="tab"][aria-selected="true"]'))
-    // It opens on the first unfinished step, Get clear, with focus on the tabs.
-    expect(tabNamed('Get clear').getAttribute('aria-selected')).toBe('true')
-    expect(document.activeElement).toBe(tabNamed('Get clear'))
-    await key(document.activeElement!, 'ArrowRight')
-    await key(document.activeElement!, 'ArrowRight')
-    expect(tabNamed('Next actions').getAttribute('aria-selected')).toBe('true')
-    await waitFor(() => !!document.querySelector('[data-review-project]'))
-    await key(document.activeElement!, 'j')
-    expect(document.querySelector('[data-review-project][aria-selected="true"]')!.textContent).toContain('Garage')
-    await key(document.activeElement!, 'Enter')
+    // It opens on the first unfinished step, the Inbox of Get clear, with focus on the tabs.
+    expect(tabNamed('Get clear: Inbox').getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(tabNamed('Get clear: Inbox'))
+    for (let i = 0; i < 4; i++) await key(document.activeElement!, 'ArrowRight')
+    expect(tabNamed('Projects').getAttribute('aria-selected')).toBe('true')
+    await waitFor(() => !!document.querySelector('[data-walk-card]'))
+    expect(document.querySelector('[data-walk-card]')!.textContent).toContain('Garage')
+    expect(document.querySelector('[data-walk-card]')!.textContent).toContain('No next action')
+    await key(document.activeElement!, 'q')
     await waitFor(() => !!document.querySelector('[role="dialog"] input'))
     const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
     await type(input, 'Buy shelf brackets')
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await waitFor(() => !document.querySelector('[data-review-project]'))
+    await waitFor(() => document.querySelector('[data-walk-next]')?.textContent === 'Buy shelf brackets')
     const added = (await db.tasks.toArray()).find((t) => t.title === 'Buy shelf brackets')!
     expect(added.project_id).toBe(garage)
+    await key(document.body, 'r')
+    await waitFor(() => !!document.querySelector('[data-walk-summary]'))
+    expect((await db.prefs.get(garage))?.reviewed_at).toBe(NOW.getTime())
     await r.unmount()
   })
 
@@ -189,16 +192,15 @@ describe('Weekly review', () => {
     await r.unmount()
   })
 
-  it('archiving offline archives at once and queues the op', async () => {
+  it('archiving offline from the walk archives at once and queues the op', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline') }))
     const garage = await createProject({ name: 'Garage' })
-    navigate({ view: 'review' })
+    navigate({ view: 'review', step: 'projects' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[role="tab"][aria-selected="true"]'))
-    expect(tabNamed('Next actions').getAttribute('aria-selected')).toBe('true')
-    const archive = [...r.container.querySelectorAll('[data-review-project] button')].find((b) => b.textContent === 'Archive')!
-    await act(async () => (archive as HTMLButtonElement).click())
-    await waitFor(() => !document.querySelector('[data-review-project]'))
+    await waitFor(() => !!document.querySelector('[data-walk-card]'))
+    expect(tabNamed('Projects').getAttribute('aria-selected')).toBe('true')
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-walk-action="archive"]')!.click())
+    await waitFor(() => !document.querySelector('[data-walk-card]'))
     expect((await db.projects.get(garage))!.archived).toBe(true)
     expect((await db.outbox.toArray()).some((o) => o.entity === 'project' && o.entityId === garage && o.field === 'archived' && o.value === true)).toBe(true)
     await r.unmount()
@@ -207,7 +209,7 @@ describe('Weekly review', () => {
 
 describe('sidebar Review entry', () => {
   it('nine days after the last review carries a due marker with a text alternative', async () => {
-    await db.review.put({ id: 'me', completed_at: NOW.getTime() - 9 * 86_400_000, _clock: {} })
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 9 * 86_400_000, _clock: {} })
     localStorage.setItem('ot.sidebar.more', '1')
     // The inline More group (a touch screen; the desktop menu shows the marker as the item's description).
     const original = window.matchMedia
@@ -218,7 +220,7 @@ describe('sidebar Review entry', () => {
     const entry = r.container.querySelector('[data-destination="review"]')!
     expect(entry.textContent).toContain('Due')
     expect(entry.textContent).toContain('the last weekly review was 9 days ago')
-    await db.review.put({ id: 'me', completed_at: NOW.getTime() - 2 * 86_400_000, _clock: {} })
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 2 * 86_400_000, _clock: {} })
     await waitFor(() => !r.container.querySelector('[data-review-due]'))
     expect(r.container.querySelector('[data-review-ago]')!.textContent).toBe('2 days ago')
     await r.unmount()
@@ -228,5 +230,47 @@ describe('sidebar Review entry', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => !!r.container.querySelector('[data-review-due-more]'))
     await r.unmount()
+  })
+})
+
+describe('rhythm markers (open-loops-method 5.6)', () => {
+  const inline = () => {
+    localStorage.setItem('ot.sidebar.more', '1')
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: !/pointer:\s*fine/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    onTestFinished(() => { window.matchMedia = original })
+  }
+
+  it('Lists only: no marker for the Daily check or the Monthly look', async () => {
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 86_400_000, _clock: {} })
+    inline()
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => !!r.container.querySelector('[data-review-ago]'))
+    expect(r.container.querySelector('[data-review-due]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Open Loops first: the Review entry names the due Daily check and Monthly look', async () => {
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 86_400_000, _clock: {} })
+    await setMethodMode('first')
+    inline()
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => !!r.container.querySelector('[data-review-due]')?.textContent?.includes('the Monthly look is due; the Daily check is due'))
+    expect(r.container.querySelector('[data-review-due]')!.textContent).not.toContain('weekly')
+    await r.unmount()
+  })
+
+  it('Open Loops first in the morning: the Daily check is offered once a day on this device', async () => {
+    await setMethodMode('first')
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-daily-toast]'))
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[data-daily-toast] button')].find((b) => b.textContent === 'Not today')!.click())
+    expect(document.querySelector('[data-daily-toast]')).toBeNull()
+    await r.unmount()
+    const again = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(100)
+    expect(document.querySelector('[data-daily-toast]')).toBeNull()
+    await again.unmount()
   })
 })

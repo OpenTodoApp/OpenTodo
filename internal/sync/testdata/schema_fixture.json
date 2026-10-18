@@ -54,7 +54,8 @@
       "position"
     ],
     "project_prefs": [
-      "feed_seen_at"
+      "feed_seen_at",
+      "reviewed_at"
     ],
     "reminder": [
       "created_at",
@@ -67,7 +68,11 @@
       "task_id"
     ],
     "review": [
-      "completed_at"
+      "completed_at",
+      "daily_at",
+      "focus",
+      "focus_date",
+      "monthly_at"
     ],
     "section": [
       "created_at",
@@ -108,6 +113,7 @@
       "density",
       "first_run",
       "language",
+      "method_mode",
       "sidebar_destinations",
       "theme_accent",
       "theme_mode",

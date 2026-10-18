@@ -39,8 +39,12 @@ export type Route =
   // A chrome-free display of one view (display-mode): /display[/today|/upcoming|/project/<id>|/view/<id>]?<options>.
   | { view: 'display'; target: DisplayTarget; options: DisplayOptions }
   // Weekly review and Statistics (stats-and-review).
-  | { view: 'review' }
+  | { view: 'review'; step?: string }
   | { view: 'stats' }
+  // Open Loops (open-loops-method): the derived Next and Waiting views.
+  | { view: 'next' }
+  | { view: 'waiting' }
+  | { view: 'loop' }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -162,7 +166,13 @@ export function parseRoute(pathname: string): Route {
       return { view: 'display', target: parseDisplayTarget(parts.slice(1)) ?? { kind: 'today' }, options: parseDisplayOptions(query) }
     // The weekly review and the statistics (stats-and-review).
     case 'review':
-      return { view: 'review' }
+      return parts[1] ? { view: 'review', step: parts[1] } : { view: 'review' }
+    case 'next':
+      return { view: 'next' }
+    case 'waiting':
+      return { view: 'waiting' }
+    case 'loop':
+      return { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
     default:
@@ -228,6 +238,8 @@ export function routePath(r: Route): string {
       const q = serializeDisplayOptions(r.options)
       return `${displayTargetPath(r.target)}${q ? `?${q}` : ''}`
     }
+    case 'review':
+      return r.step ? `/review/${r.step}` : '/review'
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:

@@ -4,6 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Open Loops, a calm method for everything on your mind.** OpenTodo now has a method of its own, inspired by GTD: catch, clarify, place, do and review. Choose how prominent it is in **Settings → Account → How you work**: **Lists only** (as before), **Companion** (screens name the move they serve and link to the method) or **Open Loops first** (the new **Loop home** opens first and the sidebar is arranged by the Places). New views: **Next** (<kbd>g</kbd> <kbd>Shift+N</kbd>), each project's next action grouped by `@context` labels, and **Waiting** (<kbd>g</kbd> <kbd>Shift+W</kbd>), what you assigned to someone else or is blocked. The method has its own chapter in the docs and Help. ([Open Loops](docs/method/overview.md))
+- **The weekly review walks every project.** Seven steps in three phases: the Inbox and a Mind sweep, then what slipped, what is waiting, each project one card at a time (<kbd>r</kbd> marks it reviewed, <kbd>q</kbd> adds a next action), the week ahead, and Someday. Your mark on a shared project is yours alone. A five-minute **Daily check** (<kbd>g</kbd> <kbd>Shift+R</kbd>) picks up to three tasks as today's focus, and a **Monthly look** covers your areas, old Someday items and the four-week trend. ([Weekly review](docs/review-and-statistics.md), [Rhythms](docs/method/rhythms.md))
+
+### Changed
+
+- **"Projects without a next action" counts waiting and deferred tasks.** In the review and the weekly email digest, a project whose open tasks are all assigned to someone else, blocked, or start later is no longer listed; one whose only tasks are parked in Someday now is. ([Places](docs/method/places.md#projects-without-a-next-action))
+- **Statistics and the weekly digest have their own guide page**, next to the weekly review's. ([Statistics and the weekly digest](docs/statistics.md))
+
 ## [0.7.2] - 2026-10-18
 
 OpenTodo 0.7.2 gives the sidebar on a computer more room for your projects: More opens as a menu, Help joins the footer icons, and empty groups stay hidden until you use them. The owner of a new server is greeted with a short thank-you, and a new **Settings → About** section gathers the version, the documentation, the website, the issue tracker and the source code. Unlike 0.7.1, its GitHub release has the binaries attached again.

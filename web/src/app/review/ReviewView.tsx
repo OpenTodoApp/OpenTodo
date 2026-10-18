@@ -1,54 +1,52 @@
-// The weekly review (OpenSpec change `stats-and-review`, design D3, D4, D8): four
-// steps with live data from the local rows (lib/review.ts), on the Tabs primitive
-// and the ordinary task rows, so the list keys work inside each step. The only
-// manual action is "Finish review", which writes the synced `review` row.
-import { useLiveQuery } from 'dexie-react-hooks'
+// The weekly review (OpenSpec changes `stats-and-review` D3, D4, D8 and
+// `open-loops-method` D6): seven steps in three phases with live data from the
+// local rows (lib/review.ts), on the Tabs primitive and the ordinary task rows,
+// so the list keys work inside each list step; the Projects step is the project
+// walk, which owns the keyboard while it is shown. "Finish review" writes the
+// synced `review` row; the menu opens the Daily check and the Monthly look.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Icon, Notice, PageBody, PageHeader, Skeleton, Tabs, Dialog } from '../../ui'
-import { useAllLabels, useAllProjects, useMemberships, useReviewRow } from '../../lib/localData'
+import { Button, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, Tabs } from '../../ui'
+import { useAllLabels, useAllProjects, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
-import { archiveProject, createTask, setTaskCompleted } from '../../lib/ops'
-import { unarchiveProject } from '../../lib/archive'
+import { createTask, setTaskCompleted } from '../../lib/ops'
 import { resolveLabels } from '../../lib/labels'
-import { finishReview, firstUnfinished, reviewSteps, STEP_IDS, STEP_TITLES, type NextActionProject, type StepId } from '../../lib/review'
-import { currentUserId } from '../../lib/sharing'
+import { finishReview, firstUnfinished, PHASE_OF, PHASE_TITLES, reviewSteps, STEP_IDS, STEP_TITLES, SWEEP_PROMPTS, type ReviewSteps, type StepId, type WalkProject } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
-import { useLiveTasks } from '../../lib/liveTasks'
-import type { Project } from '../../lib/types'
+import type { Project, Task } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { HelpLink } from '../help/HelpLink'
+import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
+import { useMethodInput } from '../method/useMethodInput'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
 import { QuickAdd, type QuickAddInput } from '../QuickAdd'
 import { navigate } from '../router'
-import { isActivationTarget, useShortcutScope } from '../shortcuts'
 import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
-import { useToday } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
+import { ProjectWalk } from './ProjectWalk'
 
-export function ReviewView({ userId }: { userId?: string }) {
-  const today = useToday()
+const LIST_STEPS: readonly StepId[] = ['clear', 'back', 'waiting', 'ahead', 'someday']
+
+export function ReviewView({ step: routeStep }: { userId?: string; step?: string }) {
   const weekStart = useDateTimeFormat().resolved.weekStart
-  const tasks = useLiveTasks()
+  const input = useMethodInput()
   const projects = useAllProjects()
-  const memberships = useMemberships()
   const labels = useAllLabels()
-  const meRow = useLiveQuery(() => currentUserId(), [], null)
-  const me = meRow ?? userId ?? null
+  const reviewedAt = useReviewedAt()
   const review = useReviewRow()
-  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const [now, setNow] = useState(() => Date.now())
   const steps = useMemo(() => {
-    if (!tasks) return null
-    const thisWeek = compute({ tasks, projects, shared: sharedIds(memberships), me, today }, periodFor('this-week', today, weekStart), weekStart)
-    return reviewSteps({ tasks, projects, memberships: memberMap, me, today, completedThisWeek: thisWeek.completed })
-  }, [tasks, projects, memberships, memberMap, me, today, weekStart])
+    if (!input) return null
+    const thisWeek = compute({ tasks: input.tasks, projects: input.projects, shared: sharedIds([...input.memberships.values()]), me: input.me, today: input.today }, periodFor('this-week', input.today, weekStart), weekStart)
+    return reviewSteps({ ...input, completedThisWeek: thisWeek.completed, reviewedAt, now })
+  }, [input, reviewedAt, now, weekStart])
 
-  const [step, setStep] = useState<StepId | null>(null)
+  const initial = (STEP_IDS as readonly string[]).includes(routeStep ?? '') ? (routeStep as StepId) : null
+  const [step, setStep] = useState<StepId | null>(initial)
   // The screen opens on the first step that is not done (weekly-review "Review screen"),
   // and keeps following it while rows are still arriving (a first sync), until the user picks a step.
-  const chosen = useRef(false)
+  const chosen = useRef(!!initial)
   useEffect(() => { if (steps && !chosen.current) setStep(firstUnfinished(steps.done)) }, [steps])
   const tabs = useRef<HTMLDivElement>(null)
   const focusTab = () => (tabs.current?.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement | null)?.focus()
@@ -58,72 +56,61 @@ export function ReviewView({ userId }: { userId?: string }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [addTo, setAddTo] = useState<Project | null>(null)
-  const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [finished, setFinished] = useState<number | null>(null)
   const openId = usePanelTaskId()
   useEffect(() => setSelected(null), [step])
   // Working in a step (a selection, an open task) counts as choosing it.
   useEffect(() => { if (selected) chosen.current = true }, [selected])
+  // The walk compares stamps with "now"; refresh it when a project is marked reviewed.
+  useEffect(() => setNow(Date.now()), [reviewedAt])
 
   const current = step ?? 'clear'
-  const taskRows = useMemo(() => !steps ? [] : current === 'clear' ? steps.inbox : current === 'back' ? steps.overdue : current === 'ahead' ? steps.ahead : [], [steps, current])
+  const taskRows = useMemo(() => (steps ? stepTasks(steps, current) : []), [steps, current])
   const keyRows = useMemo(() => taskRows.map((tk) => ({ key: tk.id, task: tk })), [taskRows])
   useListKeys({
     rows: keyRows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor,
-    paused: current === 'next' || !!addTo,
+    paused: !LIST_STEPS.includes(current) || !!addTo,
     onIdleEscape: () => { setSelected(null); focusTab() },
   })
-  // Next actions: j / k select a project row, Enter opens quick add for it.
-  const projectRows = steps?.nextActions ?? []
-  const pIdx = projectRows.findIndex((r) => r.project.id === selected)
-  useShortcutScope('list', {
-    'list.down': () => setSelected(projectRows[Math.min(projectRows.length - 1, pIdx + 1)]?.project.id ?? null),
-    'list.up': () => setSelected(projectRows[Math.max(0, pIdx - 1)]?.project.id ?? null),
-    'list.open': (e) => {
-      const target = e.target as Element | null
-      if (pIdx < 0 || (isActivationTarget(target) && target?.getAttribute('role') !== 'tab')) return false
-      setAddTo(projectRows[pIdx].project)
-    },
-    'list.escape': () => { if (!selected) return false; setSelected(null); focusTab() },
-  }, { enabled: current === 'next' && !addTo })
 
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const allDone = !!steps && STEP_IDS.every((s) => steps.done[s])
   const last = finished ?? (review?.completed_at || null)
+  const methodMeta = useWithMethod('review')
+  const subtitle = useWithMethod('review', last ? t('Last review {instant}', { instant: formatInstant(last, 'long') }) : t('No review finished yet'))
 
-  const archive = async (p: Project) => {
-    await archiveProject(p.id)
-    setNotice({ text: t('Archived {name}.', { name: p.name }), undo: () => void unarchiveProject(p.id).then(() => setNotice(null)) })
-  }
   const add = async ({ labels: typed, ...rest }: QuickAddInput) => {
     if (!addTo) return
     await createTask({ ...rest, project_id: addTo.id, labels: typed ?? [] })
-    setNotice({ text: t('Added a next action to {name}.', { name: addTo.name }) })
+    setNotice(t('Added a next action to {name}.', { name: addTo.name }))
     setAddTo(null)
   }
 
   return (
     <PageBody width="list">
-      <PageHeader title={t('Weekly review')} icon="clipboard-check"
-        subtitle={last ? t('Last review {instant}', { instant: formatInstant(last, 'long') }) : t('No review finished yet')}
+      <PageHeader title={t('Weekly review')} icon="clipboard-check" meta={methodMeta} subtitle={subtitle} help="review"
         actions={<Button size="sm" variant={allDone ? 'primary' : 'secondary'} onClick={() => void (async () => {
-          const now = Date.now()
-          await finishReview(now)
-          setFinished(now)
+          const at = Date.now()
+          await finishReview(at)
+          setFinished(at)
           focusTab()
-        })()}>{t('Finish review')}</Button>} />
+        })()}>{t('Finish review')}</Button>}
+        overflow={<>
+          <MenuItem icon="sun" label={t('Daily check', { context: 'method' })} onSelect={() => navigate({ view: 'review', step: 'daily' })} />
+          <MenuItem icon="calendar-range" label={t('Monthly look', { context: 'method' })} onSelect={() => navigate({ view: 'review', step: 'monthly' })} />
+        </>} />
       {!steps || !step ? <Skeleton shape="row" count={4} /> : (
         <>
           {allDone && <div className="mb-3"><Notice tone="success">{t('Every step is done. Finish the review to record it on all your devices.')}</Notice></div>}
           {finished && <p role="status" className="mb-3 text-meta text-muted" data-testid="review-finished">{t('Review finished {instant}.', { instant: formatInstant(finished, 'long') })}</p>}
-          {notice && (
-            <div className="mb-3"><Notice tone="info" action={notice.undo && <Button size="sm" onClick={notice.undo}>{t('Undo')}</Button>}>{notice.text}</Notice></div>
-          )}
+          {notice && <div className="mb-3"><Notice tone="info">{notice}</Notice></div>}
           <div ref={tabs}>
             <Tabs label={t('Review steps')} value={step} onChange={(s) => { chosen.current = true; setStep(s as StepId) }}
               tabs={STEP_IDS.map((s) => ({
                 id: s,
+                group: PHASE_TITLES[PHASE_OF[s]],
                 label: (
                   <span className="inline-flex items-center gap-1.5" data-step={s}>
                     {steps.done[s] && <Icon name="check" size="sm" />}
@@ -131,11 +118,13 @@ export function ReviewView({ userId }: { userId?: string }) {
                     <span className="sr-only">{steps.done[s] ? `, ${t('done')}` : `, ${t('{n} left', { n: steps.left[s] })}`}</span>
                   </span>
                 ),
-                count: steps.done[s] || s === 'ahead' ? undefined : steps.left[s],
+                count: steps.done[s] ? undefined : steps.left[s] || undefined,
               }))}>
               <StepIntro step={step} steps={steps} />
-              {step === 'next' ? (
-                <ProjectRows rows={projectRows} selected={selected} onAdd={setAddTo} onArchive={(p) => act(archive(p))} onSelect={setSelected} />
+              {step === 'projects' ? (
+                <ProjectWalk walk={steps.walk} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
+              ) : step === 'sweep' ? (
+                <MindSweep projects={projects} labels={labels} />
               ) : (
                 <ul data-testid={`review-${step}`}>
                   {taskRows.map((item) => (
@@ -165,7 +154,35 @@ export function ReviewView({ userId }: { userId?: string }) {
   )
 }
 
-function StepIntro({ step, steps }: { step: StepId; steps: NonNullable<ReturnType<typeof reviewSteps>> }) {
+/** The task rows of a list step. */
+function stepTasks(steps: ReviewSteps, step: StepId): Task[] {
+  switch (step) {
+    case 'clear': return steps.inbox
+    case 'back': return steps.overdue
+    case 'waiting': return steps.waiting
+    case 'ahead': return steps.ahead
+    case 'someday': return steps.someday
+    default: return []
+  }
+}
+
+/** Mind sweep (weekly-review "Mind sweep"): trigger prompts and a quick add that captures into the Inbox and keeps focus. */
+function MindSweep({ projects, labels }: { projects: Project[]; labels: ReturnType<typeof useAllLabels> }) {
+  const [caught, setCaught] = useState(0)
+  return (
+    <div data-testid="review-sweep">
+      <ul className="mb-3 grid gap-x-4 gap-y-1 text-body text-muted sm:grid-cols-2">
+        {SWEEP_PROMPTS.map((p) => <li key={p} className="flex items-center gap-2"><Icon name="chevron-right" size="sm" />{t(p)}</li>)}
+      </ul>
+      <QuickAdd hideHint placeholder={t('Whatever is on your mind…')} label={t('Catch into the Inbox')}
+        projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels}
+        onAdd={async (input) => { await createTask({ ...input, project_id: input.project_id ?? null, labels: input.labels ?? [] }); setCaught((n) => n + 1) }} />
+      {caught > 0 && <p role="status" className="mt-2 text-meta text-muted">{t('{n, plural, one {# caught into the Inbox.} other {# caught into the Inbox.}}', { n: caught })}</p>}
+    </div>
+  )
+}
+
+function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
   switch (step) {
     case 'clear':
       return (
@@ -174,6 +191,8 @@ function StepIntro({ step, steps }: { step: StepId; steps: NonNullable<ReturnTyp
           {steps.inbox.length > 0 && <Button size="sm" onClick={() => navigate({ view: 'triage' })}>{t('Process the Inbox')}</Button>}
         </div>
       )
+    case 'sweep':
+      return <p className="mb-2 text-body text-muted">{t('What else is on your mind? Read each prompt and catch whatever comes up. Process it in the Inbox step afterwards.')}</p>
     case 'back':
       return (
         <p className="mb-2 text-body text-muted">
@@ -182,35 +201,13 @@ function StepIntro({ step, steps }: { step: StepId; steps: NonNullable<ReturnTyp
           <button type="button" className="text-accent underline" onClick={() => navigate({ view: 'stats' })}>{t('See statistics')}</button>
         </p>
       )
-    case 'next':
-      return <p className="mb-2 text-body text-muted">{steps.nextActions.length ? t('These projects have no open task. Add the next step, or archive the project if it is finished.') : t('Every project has a next action.')} <HelpLink screen="review" topic={t('Weekly review')} /></p>
+    case 'waiting':
+      return <p className="mb-2 text-body text-muted">{steps.waiting.length ? t('Assigned to someone else or blocked by another task. Open one to follow up in its comments.') : t('Nothing is waiting.')}</p>
+    case 'projects':
+      return <p className="mb-2 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.')}</p>
+    case 'someday':
+      return <p className="mb-2 text-body text-muted">{steps.someday.length ? t('Anything you now want to do? n brings a task back from Someday, c completes it, Delete trashes it.') : t('Nothing is parked in Someday.')}</p>
     default:
       return <p className="mb-2 text-body text-muted">{steps.ahead.length ? t('Due today and in the next six days. Set priorities with 1 to 4.') : t('Nothing is due in the next seven days.')}</p>
   }
-}
-
-function ProjectRows({ rows, selected, onAdd, onArchive, onSelect }: {
-  rows: readonly NextActionProject[]
-  selected: string | null
-  onAdd: (p: Project) => void
-  onArchive: (p: Project) => void
-  onSelect: (id: string) => void
-}) {
-  return (
-    <ul data-testid="review-next" className="divide-y divide-(--ot-border)">
-      {rows.map(({ project: p, canArchive }) => (
-        <li key={p.id} data-review-project={p.id} aria-selected={p.id === selected} onClick={() => onSelect(p.id)}
-          className={`flex flex-wrap items-center justify-between gap-2 rounded-control px-2 py-2 ${p.id === selected ? 'bg-accent-soft' : ''}`}>
-          <span className="flex min-w-0 items-center gap-2 text-body text-default">
-            <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
-            <span className="truncate">{p.name}</span>
-          </span>
-          <span className="flex gap-2">
-            <Button size="sm" icon="plus" onClick={() => onAdd(p)}>{t('Add a next action')}</Button>
-            {canArchive && <Button size="sm" variant="ghost" icon="archive" onClick={() => onArchive(p)}>{t('Archive')}</Button>}
-          </span>
-        </li>
-      ))}
-    </ul>
-  )
 }

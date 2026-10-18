@@ -12,6 +12,8 @@ import { USER_PREFS_ID } from '../lib/userPrefs'
 import { click, flush, render } from '../ui/test-utils'
 import { createSampleProject, SAMPLE_PROJECT_NAME } from './FirstRun'
 import { TaskListView } from './TaskListView'
+import { closeHelp, useHelpRequest } from '../lib/helpRequest'
+import { getStartView } from '../lib/views'
 
 const originalMatchMedia = window.matchMedia
 function pointer(kind: 'fine' | 'coarse') {
@@ -41,9 +43,12 @@ async function waitFor(ok: () => boolean, ms = 3000) {
   expect(ok()).toBe(true)
 }
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
+let lastHelp: string | null = null
+const helpScreen = () => lastHelp
+function HelpSpy() { lastHelp = useHelpRequest()?.screen ?? null; return null }
 
 describe('three-step first run', () => {
-  it('a new owner adds a task, picks dark and skips installing; a second device shows no card after sync', async () => {
+  it('Complete the first run: a task, Companion without the starter labels, dark, skip installing; a second device shows no card', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => q('[data-first-run]') !== null)
     expect(q('[data-first-run]')!.getAttribute('data-first-run-step')).toBe('task')
@@ -52,15 +57,21 @@ describe('three-step first run', () => {
 
     // Step one: the first task moves the card on, and the card stays although the Inbox is no longer empty.
     await createTask({ title: 'Call the dentist' })
-    await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'appearance')
+    await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'work')
     expect(r.container.textContent).toContain('Call the dentist')
 
-    // Step two: dark, stored as the ordinary appearance preference.
+    // Step two: Companion is preselected, with the starter labels offered; decline them, pick dark, continue.
+    expect(q('[data-method-mode="companion"]')!.getAttribute('aria-checked')).toBe('true')
+    expect(q('[data-offer="contexts"]')).not.toBeNull()
+    await click([...document.querySelectorAll<HTMLButtonElement>('[data-offer="contexts"] button')].find((b) => b.textContent === 'No thanks')!)
+    expect(q('[data-offer="contexts"]')).toBeNull()
     await click(q('[data-first-run-mode="dark"]')!)
     await waitFor(() => q('[data-first-run-mode="dark"]')?.getAttribute('aria-checked') === 'true')
     expect((await db.userPrefs.get(USER_PREFS_ID))?.theme_mode).toBe('dark')
-    await click(q('[data-first-run-next]')!)
+    await click(q('[data-first-run-continue]')!)
     await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'install')
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('companion')
+    expect(await db.labels.count()).toBe(0)
 
     // Step three: skip installing closes the card for good.
     expect(q('[data-first-run-install]')!.textContent).toBe('How to install')
@@ -82,12 +93,46 @@ describe('three-step first run', () => {
     await r2.unmount()
   })
 
+  it('Open Loops first from the start: the starter labels and the Loop home as this device\'s start view', async () => {
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => q('[data-first-run]') !== null)
+    await createTask({ title: 'Plan the move' })
+    await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'work')
+    await click(q('[data-method-mode="first"]')!)
+    await waitFor(() => q('[data-offer="start"]') !== null)
+    await click([...document.querySelectorAll<HTMLButtonElement>('[data-offer="contexts"] button')].find((b) => b.textContent === 'Create them')!)
+    await waitFor(() => q('[data-offer="contexts"]') === null)
+    await click([...document.querySelectorAll<HTMLButtonElement>('[data-offer="start"] button')].find((b) => b.textContent === 'Open on the Loop home')!)
+    await waitFor(() => q('[data-offer="start"]') === null)
+    await click(q('[data-first-run-continue]')!)
+    await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'install')
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('first')
+    expect((await db.labels.toArray()).map((l) => l.name).sort()).toEqual(['@calls', '@computer', '@errands', '@home'])
+    expect(await getStartView()).toBe('loop')
+    await r.unmount()
+  })
+
+  it('Learn before choosing opens the method overview and keeps the step and the task', async () => {
+    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><HelpSpy /></>)
+    await waitFor(() => q('[data-first-run]') !== null)
+    await createTask({ title: 'Water the plants' })
+    await waitFor(() => q('[data-first-run]')?.getAttribute('data-first-run-step') === 'work')
+    await click(q('[data-learn-method]')!)
+    expect(helpScreen()).toBe('method/overview')
+    expect(q('[data-first-run]')!.getAttribute('data-first-run-step')).toBe('work')
+    expect(r.container.textContent).toContain('Water the plants')
+    closeHelp()
+    await r.unmount()
+  })
+
   it('Skip all on the first step closes the card and shows the normal empty state', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => q('[data-first-run]') !== null)
     await click(q('[data-first-run-skip-all]')!)
     await waitFor(() => q('[data-first-run]') === null && q('[data-empty-state="inbox"]') !== null)
     expect((await db.userPrefs.get(USER_PREFS_ID))?.first_run).toBe('done')
+    // How you work was never written, so it reads as Lists only.
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('')
     expect(q('[data-empty-state]')!.textContent).toContain('Your Inbox is empty')
     expect(q('[data-empty-action]')!.textContent).toBe('Add a task')
     await r.unmount()

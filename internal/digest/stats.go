@@ -32,6 +32,10 @@ type Task struct {
 	Skipped     bool
 	Position    float64
 	Priority    int
+	// Start is "someday", a start date (YYYY-MM-DD) or "" (start-dates).
+	Start string
+	// BlockedBy lists the ids of the tasks this one waits for (task-dependencies).
+	BlockedBy []string
 }
 
 // Project is the part of a project row the statistics read.
@@ -226,18 +230,41 @@ func (in Input) Ahead(counted []Task) []Task {
 	return out
 }
 
-// WithoutNextAction lists live, unarchived projects the user can add tasks to
-// (not a viewer) that hold no open live task (the review's Next actions step).
+// WithoutNextAction lists the live, unarchived projects the user may edit tasks
+// in (not a viewer) that have no actionable, no waiting and no deferred open
+// top-level task: the Go port of withoutNextAction in
+// web/src/lib/method/rules.ts (OpenSpec change open-loops-method, design D3).
+// Both evaluate testdata/next_action_fixture.json; change them together.
 func (in Input) WithoutNextAction() []Project {
-	open := map[string]bool{}
+	byID := make(map[string]Task, len(in.Tasks))
 	for _, t := range in.Tasks {
-		if !t.Deleted && t.CompletedAt == nil && t.ProjectID != "" {
-			open[t.ProjectID] = true
+		byID[t.ID] = t
+	}
+	open := func(t Task) bool { return !t.Deleted && t.CompletedAt == nil }
+	blocked := func(t Task) bool {
+		for _, id := range t.BlockedBy {
+			if b, ok := byID[id]; ok && open(b) {
+				return true
+			}
+		}
+		return false
+	}
+	deferred := func(t Task) bool { return t.Start != "" && t.Start != "someday" && t.Start > in.Today }
+	delegated := func(t Task) bool { return t.AssigneeID != "" && t.AssigneeID != in.Me }
+	planned := map[string]bool{} // something actionable, waiting or deferred
+	for _, t := range in.Tasks {
+		if !open(t) || t.ParentID != "" || t.ProjectID == "" {
+			continue
+		}
+		waiting := blocked(t) || delegated(t)
+		actionable := !waiting && t.Start != "someday" && !deferred(t)
+		if actionable || waiting || deferred(t) {
+			planned[t.ProjectID] = true
 		}
 	}
 	var out []Project
 	for _, p := range in.Projects {
-		if p.Deleted || p.Archived || open[p.ID] || in.Shared[p.ID] == "viewer" {
+		if p.Deleted || p.Archived || planned[p.ID] || in.Shared[p.ID] == "viewer" {
 			continue
 		}
 		out = append(out, p)
@@ -278,6 +305,10 @@ func TaskOf(e opsync.Entity) Task {
 		_ = json.Unmarshal(v, &t.Skipped)
 	}
 	t.Position = num(e, "position")
+	t.Start = str(e, "start")
+	if v, ok := e["blocked_by"]; ok && string(v) != "null" {
+		_ = json.Unmarshal(v, &t.BlockedBy)
+	}
 	t.Priority = int(num(e, "priority"))
 	if t.Priority == 0 {
 		t.Priority = 4

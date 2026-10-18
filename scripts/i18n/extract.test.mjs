@@ -1,7 +1,7 @@
 // node --test scripts/i18n/extract.test.mjs (run by `make i18n-check`)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { messagesIn, shortcutMessages, workerMessages } from './extract.mjs'
+import { messagesIn, methodMessages, shortcutMessages, workerMessages } from './extract.mjs'
 
 const ids = (list) => list.map((m) => m.id)
 
@@ -40,4 +40,9 @@ test('the shortcut registry contributes descriptions, titles, states and quick-a
 test('the service worker contributes its English texts only', () => {
   const src = "const TEXT = { en: { snooze: 'Snooze 10 min' }, de: { snooze: '10 Min. später' } }"
   assert.deepEqual(ids(workerMessages('push-sw.js', src)), ['Snooze 10 min'])
+})
+
+test('collects the Open Loops vocabulary, names in the method context, but not the method name', () => {
+  const src = JSON.stringify({ name: 'Open Loops', tagline: 'A home for everything.', moves: [{ id: 'catch', name: 'Catch', description: 'Get it out.' }], places: [{ id: 'inbox', name: 'Inbox', description: 'Caught.' }] })
+  assert.deepEqual(ids(methodMessages('vocabulary.json', src)), ['A home for everything.', 'Catch|method', 'Get it out.', 'Inbox|method', 'Caught.'])
 })

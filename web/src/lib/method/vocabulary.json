@@ -1,0 +1,40 @@
+{
+  "about": "The Open Loops vocabulary (OpenSpec change open-loops-method, design D1): one id per term, the English name and description. The app translates them through the catalogs (scripts/i18n/extract.mjs reads this file); the site bundle writes them, translated, to method.json. Ids are added, never renamed or reused.",
+  "name": "Open Loops",
+  "tagline": "Everything that has your attention gets a home.",
+  "moves": [
+    { "id": "catch", "name": "Catch", "description": "Get whatever is on your mind into the Inbox the moment it appears.", "route": "/inbox", "keys": "q" },
+    { "id": "clarify", "name": "Clarify", "description": "Decide once what each item is and what it needs.", "route": "/triage", "keys": "g p" },
+    { "id": "place", "name": "Place", "description": "Give every item one home: a project, a date, Waiting or Someday.", "route": "/waiting", "keys": "g Shift+W" },
+    { "id": "do", "name": "Do", "description": "Work from your next actions, by context, one step at a time.", "route": "/next", "keys": "g Shift+N" },
+    { "id": "review", "name": "Review", "description": "Look over the whole system on a rhythm, so you can trust it.", "route": "/review", "keys": "g r" }
+  ],
+  "principles": [
+    { "id": "catch-everything", "name": "Catch everything", "description": "If it is on your mind, it goes in the Inbox." },
+    { "id": "decide-once", "name": "Decide once", "description": "Each item gets one decision, the first time you look at it." },
+    { "id": "do-it-now", "name": "Do it if it is quicker than filing it", "description": "A task of a minute or two is done on the spot, not filed." },
+    { "id": "one-next-step", "name": "One next step", "description": "Every project always shows its very next action." },
+    { "id": "hide-what-is-not-now", "name": "Hide what is not now", "description": "Deferred, waiting and someday items stay out of sight until they matter." },
+    { "id": "review-on-a-rhythm", "name": "Review on a rhythm", "description": "A system works only while you trust it, and you trust it by reviewing it." },
+    { "id": "your-loops-your-server", "name": "Your loops, your server", "description": "Everything stays on your devices and your own server, private by design." }
+  ],
+  "places": [
+    { "id": "inbox", "name": "Inbox", "description": "Caught, not yet decided." },
+    { "id": "next", "name": "Next", "description": "The next action of every project, by context." },
+    { "id": "waiting", "name": "Waiting", "description": "Waits for someone or something else first." },
+    { "id": "scheduled", "name": "Scheduled", "description": "Has a day: Today and Upcoming." },
+    { "id": "later", "name": "Later", "description": "Not before its start date." },
+    { "id": "someday", "name": "Someday", "description": "Maybe one day: parked without a date." },
+    { "id": "projects", "name": "Projects", "description": "Outcomes that take more than one step." }
+  ],
+  "rhythms": [
+    { "id": "daily", "name": "Daily check", "description": "Five minutes: the Inbox to zero, what is overdue, and today's focus.", "route": "/review/daily" },
+    { "id": "weekly", "name": "Weekly review", "description": "Thirty minutes: get clear, get current, get creative.", "route": "/review" },
+    { "id": "monthly", "name": "Monthly look", "description": "Twenty minutes: your areas, old someday items and the four-week trend.", "route": "/review/monthly" }
+  ],
+  "horizons": [
+    { "id": "step", "name": "Next step", "description": "The very next physical action." },
+    { "id": "project", "name": "Project", "description": "An outcome you can finish." },
+    { "id": "area", "name": "Area", "description": "A part of life you keep up, made of projects." }
+  ]
+}

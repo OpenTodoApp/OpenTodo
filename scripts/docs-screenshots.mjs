@@ -226,6 +226,20 @@ const shots = [
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
   // stats-and-review: the weekly review on its first unfinished step, and Statistics.
   { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('[role="tab"][aria-selected="true"]').waitFor()); await settle(p, 300) } },
+  // Open Loops (open-loops-method): the Loop home with the sidebar by the Places, Next, and the project walk.
+  { name: 'loop', server: D, async run(p) {
+    await go(p, demoBase, '/settings/account', () => p.locator('[data-method-mode="first"]').waitFor())
+    await p.locator('[data-method-mode="first"]').click()
+    await p.locator('[data-offer="start"]').getByRole('button', { name: 'Keep my start view' }).click()
+    const contexts = p.locator('[data-offer="contexts"]')
+    if (await contexts.count()) await contexts.getByRole('button', { name: 'Create them' }).click()
+    await go(p, demoBase, '/loop', () => p.locator('[data-loop-tile="do"]').waitFor()); await settle(p, 300)
+  }, async after(p) {
+    await go(p, demoBase, '/settings/account', () => p.locator('[data-method-mode="lists"]').waitFor())
+    await p.locator('[data-method-mode="lists"]').click(); await settle(p, 300)
+  } },
+  { name: 'next', server: D, async run(p) { await go(p, demoBase, '/next', () => p.locator('[data-group]').first().waitFor()); await settle(p, 300) } },
+  { name: 'review-walk', server: D, async run(p) { await go(p, demoBase, '/review/projects', () => p.locator('[data-walk-card]').waitFor()); await settle(p, 300) } },
   { name: 'stats', server: D, async run(p) { await go(p, demoBase, '/stats', () => p.locator('[data-period-chooser]').waitFor()); await settle(p, 300) } },
   { name: 'upcoming', server: D, card: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
   { name: 'project-list', server: D, card: true, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation') } },

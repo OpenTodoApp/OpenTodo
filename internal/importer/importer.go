@@ -48,6 +48,10 @@ const (
 	// KindReview is the "last weekly review" row (OpenSpec change
 	// stats-and-review): restored from an own export like user_prefs, never undone.
 	KindReview = "review"
+	// KindProjectPrefs is a personal per-project preferences row: the activity
+	// feed's seen marker and the review stamp (open-loops-method D4); restored
+	// from an own export like user_prefs, never undone.
+	KindProjectPrefs = "project_prefs"
 	// KindAttachment is a file or link attachment (OpenSpec change attachments).
 	KindAttachment = "attachment"
 	// KindField is a custom field definition (OpenSpec change custom-fields),

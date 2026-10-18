@@ -75,6 +75,9 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
             <option value="upcoming">{t('Upcoming')}</option>
             <option value="completed">{t('Completed')}</option>
             <option value="filter">{t('Filter')}</option>
+            <option value="loop">{t('Loop home')}</option>
+            <option value="next">{t('Next', { context: 'method' })}</option>
+            <option value="waiting">{t('Waiting', { context: 'method' })}</option>
           </optgroup>
           {views.length > 0 && (
             <optgroup label={t('Saved views')}>

@@ -51,7 +51,7 @@ How the app behaves: [Settings: App](settings-app.md).
 
 ### Notifications
 
-[Notifications](notifications.md): push notifications for reminders on this device, and a test that shows whether they arrive. The [weekly digest](review-and-statistics.md#weekly-digest-by-email) emails last week's numbers on your review day.
+[Notifications](notifications.md): push notifications for reminders on this device, and a test that shows whether they arrive. The [weekly digest](statistics.md#weekly-digest-by-email) emails last week's numbers on your review day.
 
 ### Capture
 

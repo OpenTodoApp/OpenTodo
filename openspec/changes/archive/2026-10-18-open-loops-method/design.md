@@ -44,9 +44,9 @@ The method name is a single constant used in one place, so a rename before relea
 
 *Alternatives:* vocabulary in Markdown front matter (the docs would own it, but the app would have to parse docs at runtime); per-language vocabulary files (they would duplicate the catalogs and bypass `i18n-check`).
 
-### D2. "How you work" is `user_prefs.method`, a string read as `lists` when unknown
+### D2. "How you work" is `user_prefs.method_mode`, a string read as `lists` when unknown
 
-This follows exactly the pattern of `density` and `sidebar_destinations`: an additive `kString` in `Schema["user_prefs"]`, the default in `web/src/lib/ops.ts`, the type in `types.ts`. The mode is read through one hook (`useMethodMode()`), which every surface consults. The start-view offer writes only the existing per-device `startView` key.
+This follows exactly the pattern of `density` and `sidebar_destinations`: an additive `kString` in `Schema["user_prefs"]`, the default in `web/src/lib/ops.ts`, the type in `types.ts`. The mode is read through one hook (`useMethodMode()`), which every surface consults. The start-view offer writes only the existing per-device `startView` key. The field is `method_mode`, not `method`, because `method` is already an audit detail key (the sign-in method) and the audit test forbids any overlap between entity fields and detail keys.
 
 *Alternative:* a per-device setting. Rejected, because the sidebar and markers should follow the user, as appearance does, while the start view stays per device as it is today.
 
@@ -54,7 +54,7 @@ This follows exactly the pattern of `density` and `sidebar_destinations`: an add
 
 `isActionable`, `nextActionOf(project)`, `withoutNextAction`, `isStalled` and `waitingOf` are pure functions over tasks, projects, sections, memberships, the user id and the local date.
 
-- The digest needs only `withoutNextAction`. `digest.Task` gains `Start`, `BlockedBy` and `SectionID`, `digest.Input` gains `Sections`, and `WithoutNextAction` is rewritten to the shared rule.
+- The digest needs only `withoutNextAction`, which does not depend on list order. `digest.Task` gains `Start` and `BlockedBy`, and `WithoutNextAction` is rewritten to the shared rule; sections stay web-only.
 - A fixture `internal/digest/testdata/next_action_fixture.json` (a handful of projects and tasks plus expected outputs) is read by a Go test and by a vitest test. This is the same pattern as `internal/activity/testdata/activity_fixture.json`.
 - "Blocked" uses the existing derived blocked state: blocked while any task in `blocked_by` is live and open.
 - `stalled` and `waiting` stay web-only for now. The digest doesn't show them, so they need no port.
@@ -79,7 +79,7 @@ The new fields are `daily_at`, `monthly_at`, `focus_date` (a `YYYY-MM-DD` string
 - The seven steps are one `Tabs` row (chrome row 2). The phase names are tab-group labels drawn as small separators, not a third row.
 - On phones the tab row needs to scroll horizontally inside itself. `Tabs` has no overflow handling today, so it gains `overflow-x: auto` with the selected tab scrolled into view, as a primitive change with a story. That's not a new vertical scroller.
 - The project walk is a card mode like triage. It owns the keyboard while its step is shown, through a `useShortcutScope('review-walk', …)` scope with keys registered in the shortcut table:
-  - `r` reviewed, `q` quick add for this project, `o` open, `a` archive, `j`/Space skip, `k` back.
+  - `r` reviewed, `q` quick add for this project, Enter open, `a` archive, `j`/Space skip, `k` back (`o` is Vim's open-below).
   - `q` is the global quick-add key scoped to the project, which avoids teaching a second "add" key.
 - The Someday step reuses the list's `n` (park or bring back), so its "promote" is the existing operation.
 - The Daily check's `f` (focus) is a new list-scope key, free in the registry today.
@@ -89,9 +89,9 @@ The new fields are `daily_at`, `monthly_at`, `focus_date` (a `YYYY-MM-DD` string
 
 `sidebarLayout.ts` gets the primary and More lists from the mode (the table in the `app-shell` delta). `first` mode uses a fixed six-item list, so the budget test's six-item limit holds. Promotions are not applied while in `first` mode, but the stored list is untouched. That's why switching back restores the user's sidebar. The new destinations `loop`, `next` and `waiting` are added to the promotable set; older clients ignore them per the existing rule.
 
-### D8. Method links are a subtitle node, not a header action
+### D8. Method links are a meta node, not a header action
 
-A small `MethodLink` component renders "‹Move› · Open Loops" as a link-styled button that calls `openHelp('method/<move>', el)`. It's passed as part of `subtitle` by the screens in the `open-loops` table and renders nothing in `lists` mode. This adds no header row and no action, and the phone bar already shows the subtitle. Each `docs/method/<move>.md` page lists `method/<move>` in its `screens:` front matter, so the docs check guards the ids.
+A small `MethodLink` component renders "‹Move› · Open Loops" as a link-styled button that calls `openHelp('method/<move>', el)`. `useWithMethod(move, existing)` appends it to a header's `meta` (the text beside the title on desktop) and `subtitle` (the phone bar's second line), returning the existing value untouched in `lists` mode. This adds no header row and no action. Each `docs/method/<move>.md` page lists `method/<move>` in its `screens:` front matter, so the docs check guards the ids.
 
 ### D9. Loop home and views
 
@@ -110,7 +110,7 @@ All additive; no field is renamed or removed, and nothing is encrypted:
 
 | Entity | New field | Kind | Content? |
 | --- | --- | --- | --- |
-| `user_prefs` | `method` | string (`lists`/`companion`/`first`) | no |
+| `user_prefs` | `method_mode` | string (`lists`/`companion`/`first`) | no |
 | `project_prefs` | `reviewed_at` | number (Unix ms) | no |
 | `review` | `daily_at`, `monthly_at` | number | no |
 | `review` | `focus_date` | string `YYYY-MM-DD` | no |
@@ -136,7 +136,7 @@ Each field is added to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts`, 
 
 ## Migration Plan
 
-- Existing accounts read `method` as `lists`. Their sidebar, start view and pages are unchanged, and the weekly review shows the new steps without method words.
+- Existing accounts read `method_mode` as `lists`. Their sidebar, start view and pages are unchanged, and the weekly review shows the new steps without method words.
 - Clients that predate this change ignore the new `user_prefs` and `review` fields and keep their values (existing rules for unknown fields on known entities).
 - Servers that predate it reject the new fields as unknown. The device keeps its local value (existing "Older server" scenario).
 - Rollback: the fields are inert to older code, and removing the UI leaves them as unused data.

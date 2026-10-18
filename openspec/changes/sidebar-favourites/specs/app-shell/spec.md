@@ -5,6 +5,15 @@
 ### Requirement: Sidebar structure
 The sidebar SHALL show, top to bottom: the app name with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything, then Projects, Labels and Filters, each collapsible with its state remembered on the device (Labels and Filters closed until the device stores a state) and its item count on the header while collapsed; then a pinned footer with Help, notifications, sync status and the account. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same badge on the row. The Filters group SHALL be shown only once the user has a saved filter and the Labels group only once the user has a label; an empty group shows nothing, not a placeholder sentence. Counts SHALL appear on Inbox, Today, projects, favourites and collapsed group headers only.
 
+The primary destinations and the More group SHALL depend on the user's "How you work" preference:
+
+| Preference | Primary destinations | More group |
+| --- | --- | --- |
+| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Review, Statistics, Ask when available |
+| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Statistics, Ask when available |
+
+In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged.
+
 #### Scenario: Default sidebar
 - **WHEN** a user with projects and labels and no favourites opens the app on a 1280×800 screen
 - **THEN** five primary destinations and the More group are visible above Projects, Labels and Filters, no Favourites group is shown, the footer is visible without scrolling, and only the middle part scrolls when the project tree is long
@@ -40,6 +49,14 @@ The sidebar SHALL show, top to bottom: the app name with a search button beside 
 #### Scenario: Favourites first
 - **WHEN** the user has pinned a project, a label and a saved filter
 - **THEN** the Favourites group is the first group of the scroller, above Projects, and the Labels and Filters groups are collapsed on a device that never stored a group state
+
+#### Scenario: Open Loops first sidebar
+- **WHEN** a user picks Open Loops first and opens the app on a 1280×800 screen
+- **THEN** the primary destinations are Loop home, Inbox, Today, Next, Waiting and Review in that order, Upcoming and Calendar are in the More group, and the Review entry carries its rhythm markers
+
+#### Scenario: Promotions kept across modes
+- **WHEN** a user who promoted Someday switches to Open Loops first and later back to Companion
+- **THEN** Someday is in the More group while in Open Loops first, and is a primary destination again after switching back, on every device after sync
 
 ## ADDED Requirements
 

@@ -91,7 +91,7 @@ Messages are written in the language of the browser that caused them (English, G
 
 ## Weekly digest
 
-With outgoing email configured, each user can opt in to a weekly digest in **Settings → Notifications** ([user guide](../review-and-statistics.md#weekly-digest-by-email)). The server sends it on the user's chosen weekday and hour in their time zone, from one background pass every 5 minutes. A failed send is retried every 15 minutes for six hours, then given up and recorded as `email.failed` with reason `skipped`; a restart never sends a second digest for the same day. Digests count towards the per-recipient limit but not the server-wide one, so a busy digest morning never blocks a password reset. The digest contains task and project names, so it is never built for an account with end-to-end encryption. Without `OPENTODO_BASE_URL` the review link uses the address the user saved the setting from.
+With outgoing email configured, each user can opt in to a weekly digest in **Settings → Notifications** ([user guide](../statistics.md#weekly-digest-by-email)). The server sends it on the user's chosen weekday and hour in their time zone, from one background pass every 5 minutes. A failed send is retried every 15 minutes for six hours, then given up and recorded as `email.failed` with reason `skipped`; a restart never sends a second digest for the same day. Digests count towards the per-recipient limit but not the server-wide one, so a busy digest morning never blocks a password reset. The digest contains task and project names, so it is never built for an account with end-to-end encryption. Without `OPENTODO_BASE_URL` the review link uses the address the user saved the setting from.
 
 ## Limits
 

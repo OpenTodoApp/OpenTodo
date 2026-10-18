@@ -194,6 +194,13 @@ ${header()}
       <ul class="cards cards-2">${by('Get started').map(card).join('')}</ul>
     </div>
   </section>
+  <section class="home-section" aria-labelledby="h-method">
+    <div class="home-wrap">
+      <h2 id="h-method">Open Loops</h2>
+      <p class="section-lede">A calm method for everything on your mind, inspired by GTD: five moves, the Places a task can live and the rhythms that keep it trustworthy.</p>
+      ${compact(by('Open Loops'))}
+    </div>
+  </section>
   <section class="home-section" aria-labelledby="h-guides">
     <div class="home-wrap">
       <h2 id="h-guides">Guides</h2>

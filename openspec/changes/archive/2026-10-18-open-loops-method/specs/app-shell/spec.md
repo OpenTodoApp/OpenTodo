@@ -5,10 +5,9 @@
 ### Requirement: Sidebar structure
 The sidebar SHALL show, top to bottom:
 1. the app name
-2. the primary destinations
-3. a "More" group, collapsed by default
-4. the Filters, Projects and Labels groups in one scroller, each collapsible with its state remembered on the device and its item count on the header while collapsed
-5. a pinned footer with Help, search, notifications, sync status and the account
+2. the primary destinations, pinned at the top
+3. in one scroller, a "More" group collapsed by default, then the Filters, Projects and Labels groups, each collapsible with its state remembered on the device and its item count on the header while collapsed
+4. a pinned footer with Help, search, notifications, sync status and the account
 
 Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
 

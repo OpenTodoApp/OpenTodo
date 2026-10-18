@@ -13,12 +13,13 @@ import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
 import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
-import { reviewAgo, reviewDue } from '../lib/review'
+import { dailyDue, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
+import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
-import type { Project, User } from '../lib/types'
+import type { Project, Review, User } from '../lib/types'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
@@ -318,13 +319,15 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const promoted = appearance.sidebar ?? []
   const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label={t('unread updates')} /> : undefined
   // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
-  const due = reviewDue(review?.completed_at)
-  const reviewBadge = due
-    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })}`}</span></span>
-    : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
+  const method = readMethodMode(prefsRow)
+  const { due, reviewBadge } = reviewMarker(review, method, today)
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
-  const moreEntries: { id: Promotable | 'ask' | 'review' | 'stats'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string }[] = [
+  const moreEntries: MoreEntry[] = [
+    // The Open Loops views (open-loops-method D7, D9), in every mode.
+    { id: 'loop', route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' },
+    { id: 'next', route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
+    { id: 'waiting', route: { view: 'waiting' }, label: t('Waiting', { context: 'method' }), icon: 'hourglass' },
     { id: 'anytime', route: { view: 'anytime' }, label: t('Anytime'), icon: 'layers' },
     { id: 'someday', route: { view: 'someday' }, label: t('Someday'), icon: 'archive' },
     // Assigned to me only where tasks can be assigned: when the account shares a project.
@@ -337,12 +340,15 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
     ...(assistant?.available ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
   ]
-  const more = moreEntries.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge) }))
-  const primaryExtra = more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
-  // A due review shows on the closed More heading too, so the marker is never hidden.
-  const moreBadge = unreadBadge ?? (due ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
-  const rest = more.filter((m) => !primaryExtra.includes(m))
+  const first = method === 'first'
   const calendarMode = readCalendarMode()
+  const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
+  const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge) }))
+  const primaryExtra = first ? [] : more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
+  // A due review shows on the closed More heading too, so the marker is never hidden.
+  // In Open Loops first the Review entry is a primary item, so More does not repeat its marker.
+  const moreBadge = unreadBadge ?? (due && !first ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
+  const rest = more.filter((m) => !primaryExtra.includes(m))
 
   return (
     // One scroller (ux-overhaul, app-shell "Sidebar structure"): the name and the
@@ -362,10 +368,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           )}
         </div>
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
-          {item({ view: 'inbox' }, t('Inbox'), 'inbox', counts.inbox)}
-          {item({ view: 'today' }, t('Today'), 'calendar-check', counts.today)}
-          {item({ view: 'upcoming' }, t('Upcoming'), 'calendar-days')}
-          {item({ view: calendarMode }, t('Calendar'), 'calendar-range')}
+          {primaryDestinations(first, calendarMode, counts, reviewBadge).map((d) => item(d.route, d.label, d.icon, d.count, d.badge))}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
             <MoreMenu entries={rest} badge={moreBadge} collapsed={collapsed} hints={hints}
@@ -506,6 +509,56 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 }
 
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
+// Each More destination once, as data: an item in the inline group, or a menu item.
+type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string }
+
+/**
+ * The Review entry's marker (weekly-review "Rhythm markers"): the weekly review in
+ * every mode, the Monthly look in Companion and Open Loops first, the Daily check in
+ * Open Loops first, each named in the text alternative.
+ */
+function reviewMarker(review: Review | null | undefined, method: MethodMode, today: string): { due: boolean; reviewBadge: ReactNode } {
+  const weeklyDue = reviewDue(review?.completed_at)
+  const rhythmsDue = [
+    ...(method !== 'lists' && monthlyDue(review?.monthly_at) ? [t('the Monthly look is due')] : []),
+    ...(method === 'first' && dailyDue(review?.daily_at, today) ? [t('the Daily check is due')] : []),
+  ]
+  const due = weeklyDue || rhythmsDue.length > 0
+  const dueText = [...(weeklyDue ? [t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })] : []), ...rhythmsDue].join('; ')
+  const reviewBadge = due
+    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${dueText}`}</span></span>
+    : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
+  return { due, reviewBadge }
+}
+
+/**
+ * More in Open Loops first (open-loops-method D7, app-shell "Sidebar structure"): the
+ * six primary destinations are fixed by the Places, so Upcoming and Calendar join More
+ * and the method's own destinations leave it. Promotions are set aside, not cleared.
+ */
+function firstModeMore(entries: MoreEntry[], calendarMode: Route['view']): MoreEntry[] {
+  const primary = new Set(['loop', 'next', 'waiting', 'review'])
+  return [
+    { id: 'upcoming', route: { view: 'upcoming' }, label: t('Upcoming'), icon: 'calendar-days' },
+    { id: 'calendar', route: { view: calendarMode } as Route, label: t('Calendar'), icon: 'calendar-range' },
+    ...entries.filter((m) => !primary.has(m.id)),
+  ]
+}
+
+/** The primary destinations (app-shell "Sidebar structure"): by the Places in Open Loops first, else Inbox, Today, Upcoming and Calendar. */
+function primaryDestinations(first: boolean, calendarMode: Route['view'], counts: { inbox?: number; today?: number }, reviewBadge: ReactNode): { route: Route; label: string; icon: IconName; count?: number; badge?: ReactNode }[] {
+  const inbox = { route: { view: 'inbox' } as Route, label: t('Inbox'), icon: 'inbox' as IconName, count: counts.inbox }
+  const today = { route: { view: 'today' } as Route, label: t('Today'), icon: 'calendar-check' as IconName, count: counts.today }
+  return first
+    ? [
+        { route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' }, inbox, today,
+        { route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
+        { route: { view: 'waiting' }, label: t('Waiting', { context: 'method' }), icon: 'hourglass' },
+        { route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewBadge },
+      ]
+    : [inbox, today, { route: { view: 'upcoming' }, label: t('Upcoming'), icon: 'calendar-days' }, { route: { view: calendarMode } as Route, label: t('Calendar'), icon: 'calendar-range' }]
+}
+
 function MoreMenu({ entries, badge, active, collapsed, hints }: {
   entries: { id: string; route: Route; label: string; icon: IconName; note?: string }[]
   badge?: ReactNode

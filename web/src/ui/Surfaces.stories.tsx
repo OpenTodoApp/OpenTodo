@@ -36,3 +36,24 @@ function Surfaces() {
 const meta: Meta = { title: 'UI/Surfaces' }
 export default meta
 export const Default: StoryObj = { render: () => <Surfaces /> }
+
+const PHASED = [
+  { id: 'inbox', label: 'Inbox', count: 3, group: 'Get clear' }, { id: 'sweep', label: 'Mind sweep', group: 'Get clear' },
+  { id: 'back', label: 'Look back', count: 2, group: 'Get current' }, { id: 'waiting', label: 'Waiting', group: 'Get current' },
+  { id: 'projects', label: 'Projects', count: 5, group: 'Get current' }, { id: 'ahead', label: 'Look ahead', group: 'Get current' },
+  { id: 'someday', label: 'Someday', group: 'Get creative' },
+]
+
+function GroupedTabs() {
+  const [tab, setTab] = useState('projects')
+  return (
+    <div className="max-w-sm">
+      <Tabs label="Review steps" value={tab} onChange={setTab} tabs={PHASED}>
+        <p className="text-body">Panel: {tab}</p>
+      </Tabs>
+    </div>
+  )
+}
+
+/** Tabs in groups (the review's phases), wider than the column: the row scrolls sideways and keeps the selected tab in view. */
+export const GroupedTabsAtPhoneWidth: StoryObj = { render: () => <GroupedTabs /> }
