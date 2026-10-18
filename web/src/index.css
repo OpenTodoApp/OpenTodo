@@ -64,6 +64,9 @@
   --color-info-soft: var(--ot-info-soft);
   --color-muted: var(--ot-muted);
   --color-faint: var(--ot-faint);
+  /* Buy Me a Coffee's brand yellow, for its one button (welcome-note); the same in every theme. */
+  --color-coffee: var(--ot-coffee);
+  --color-on-coffee: var(--ot-on-coffee);
   --color-on-accent: var(--ot-on-accent);
   --text-color-strong: var(--ot-text-strong);
   --text-color-default: var(--ot-text);
@@ -99,6 +102,8 @@
 
 :root, [data-theme="light"] {
   --ot-canvas: #f8fafc;
+  --ot-coffee: #ffdd00;
+  --ot-on-coffee: #0d0c22;
   --ot-surface: #ffffff;
   --ot-raised: #ffffff;
   --ot-sunken: #f1f5f9;
@@ -162,6 +167,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --ot-canvas: #020617;
+    --ot-coffee: #ffdd00;
+    --ot-on-coffee: #0d0c22;
     --ot-surface: #0f172a;
     --ot-raised: #1e293b;
     --ot-sunken: #020617;
@@ -217,6 +224,8 @@
 }
 :root[data-theme="dark"], [data-theme="dark"] {
   --ot-canvas: #020617;
+  --ot-coffee: #ffdd00;
+  --ot-on-coffee: #0d0c22;
   --ot-surface: #0f172a;
   --ot-raised: #1e293b;
   --ot-sunken: #020617;

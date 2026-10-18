@@ -3612,5 +3612,14 @@
   "{n, plural, one {# app password} other {# app passwords}}": "{n, plural, one {# mot de passe d’application} other {# mots de passe d’application}}",
   "{n, plural, one {# session} other {# sessions}}": "{n, plural, one {# session} other {# sessions}}",
   "“{name}” (admin)": "« {name} » (admin)",
-  "This server is set up for {host}. Open https://{host} and try again.": "Ce serveur est configuré pour {host}. Ouvrez https://{host} et réessayez."
+  "This server is set up for {host}. Open https://{host} and try again.": "Ce serveur est configuré pour {host}. Ouvrez https://{host} et réessayez.",
+  "A star helps other people find it.": "Une étoile aide d’autres personnes à le découvrir.",
+  "Buy me a coffee": "Offrez-moi un café",
+  "Open an issue on GitHub. Every report is read.": "Ouvrez un ticket sur GitHub. Chaque signalement est lu.",
+  "OpenTodo is free and open source, made by one person in the open. It is yours now: your server, your data, no subscription.": "OpenTodo est gratuit et open source, développé par une seule personne, en public. Il est à vous désormais : votre serveur, vos données, sans abonnement.",
+  "Share feedback or report a problem": "Donner votre avis ou signaler un problème",
+  "Star OpenTodo on GitHub": "Mettre une étoile à OpenTodo sur GitHub",
+  "Start using OpenTodo": "Commencer à utiliser OpenTodo",
+  "Thanks for installing OpenTodo": "Merci d’avoir installé OpenTodo",
+  "This message will not appear again. The same links are in Help.": "Ce message n’apparaîtra plus. Les mêmes liens se trouvent dans l’Aide."
 }

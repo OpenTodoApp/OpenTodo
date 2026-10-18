@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo; the links are also in Help. ([Feedback and support](docs/feedback-and-support.md))
 - **Keep completed tasks in a project.** Turn on **Show completed tasks** in a project's menu and its completed tasks stay at the end of the list in a **Completed** group, closed until you open it, newest first. Untick one there to put it back on the list, handy for groceries and other lists you reuse. The setting is per project and per device. ([Completed tasks in a project](docs/completed-in-projects.md), #145)
 
 ### Fixed

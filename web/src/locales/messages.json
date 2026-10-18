@@ -242,6 +242,9 @@
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "A star helps other people find it.": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "A task can wait for at most {max} tasks": [
     "web/src/lib/dependencies.ts"
   ],
@@ -1224,6 +1227,9 @@
   ],
   "Button label": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Buy me a coffee": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "CSV files and other apps’ exports go through Settings → Data → Import.": [
     "web/src/app/TemplateDialogs.tsx"
@@ -5408,6 +5414,9 @@
   "Open an authenticator app on your phone (any app that supports time-based codes).": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Open an issue on GitHub. Every report is read.": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "Open calendar": [
     "web/src/app/datetime/DateField.tsx"
   ],
@@ -5503,6 +5512,9 @@
   ],
   "OpenTodo export (JSON)": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "OpenTodo is free and open source, made by one person in the open. It is yours now: your server, your data, no subscription.": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.": [
     "web/src/app/SettingsView.tsx"
@@ -7168,6 +7180,9 @@
   "Share a project to see what others change here.": [
     "web/src/app/FeedView.tsx"
   ],
+  "Share feedback or report a problem": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "Share project": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7584,6 +7599,9 @@
   "Speech is recognised by your browser, not by OpenTodo.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Star OpenTodo on GitHub": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "Start": [
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
@@ -7602,6 +7620,9 @@
   ],
   "Start on <span>(optional; dates move so the earliest lands on this day)</span>": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "Start using OpenTodo": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "Start view": [
     "web/src/app/PreferencesPanels.tsx",
@@ -7881,6 +7902,9 @@
   "Text": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts"
+  ],
+  "Thanks for installing OpenTodo": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "That address is on a private network (LAN, localhost or similar). The server owner can allow private network targets below.": [
     "web/src/lib/webhooks.ts"
@@ -8736,6 +8760,9 @@
   ],
   "This list is public: anyone with the link can see it and tick items.": [
     "web/src/app/PublicListScreen.tsx"
+  ],
+  "This message will not appear again. The same links are in Help.": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "This needs a signed-in browser session, not an API token.": [
     "web/src/lib/i18n/errors.ts"

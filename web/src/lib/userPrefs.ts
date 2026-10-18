@@ -52,3 +52,13 @@ export function firstRunDone(row: Partial<UserPrefs> | null | undefined): boolea
 export function setFirstRunDone(): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { first_run: 'done' })
 }
+
+/** The owner's welcome note (OpenSpec change welcome-note): shown until it is closed on any device. */
+export function welcomeSeen(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.welcome === 'seen'
+}
+
+/** Marks the welcome note seen; an ordinary op, so it never shows again on the account's other devices. */
+export function setWelcomeSeen(): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { welcome: 'seen' })
+}
