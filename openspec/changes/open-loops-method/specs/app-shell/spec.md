@@ -48,3 +48,7 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 #### Scenario: Two groups closed
 - **WHEN** the user collapses Filters and Labels
 - **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
+
+#### Scenario: More open on a phone
+- **WHEN** a user with 25 projects opens the drawer on a 390×640 phone, opens More and swipes up on the drawer
+- **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the primary destinations and the footer stay in place, and the page behind the drawer does not move

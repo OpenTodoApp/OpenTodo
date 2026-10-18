@@ -4,6 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-10-18
+
+OpenTodo 0.7.2 gives the sidebar on a computer more room for your projects: More opens as a menu, Help joins the footer icons, and empty groups stay hidden until you use them. The owner of a new server is greeted with a short thank-you, and a new **Settings → About** section gathers the version, the documentation, the website, the issue tracker and the source code. Unlike 0.7.1, its GitHub release has the binaries attached again.
+
+### Upgrade notes
+
+- **No migration and no new environment variables.** Replace the image or the binary and restart.
+- **Sync is additive:** one new preference field (`user_prefs.welcome`) remembers that the welcome note was closed; older apps ignore it.
+
 ### Added
 
 - **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
@@ -540,7 +549,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pixari/opentodo/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/pixari/opentodo/compare/v0.6.0...v0.6.1
