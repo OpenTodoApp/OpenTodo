@@ -36,15 +36,25 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
     refs.current[tabs[next].id]?.focus()
   }
   const groupRefs = useRef<Record<string, HTMLSpanElement | null>>({})
-  // The selected tab comes into view with its group's name when they fit, the tab itself first.
+  // The selected tab comes into view with its group's name when they fit, the tab itself first;
+  // again from the start once a web font still loading has arrived, since it changes the tabs' widths.
   const group = tabs.find((t) => t.id === value)?.group
+  const row = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (group) groupRefs.current[group]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
-    refs.current[value]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    let live = true
+    const reveal = () => {
+      if (group) groupRefs.current[group]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+      refs.current[value]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    }
+    reveal()
+    if (typeof document !== 'undefined' && document.fonts?.status === 'loading') {
+      void document.fonts.ready.then(() => { if (!live || !row.current) return; row.current.scrollLeft = 0; reveal() })
+    }
+    return () => { live = false }
   }, [value, group])
   return (
     <div>
-      <div role="tablist" aria-label={label} onKeyDown={move} className="ui-scroller flex gap-1 overflow-x-auto overscroll-x-contain border-b border-default" data-tabs-row>
+      <div ref={row} role="tablist" aria-label={label} onKeyDown={move} className="ui-scroller flex gap-1 overflow-x-auto overscroll-x-contain border-b border-default" data-tabs-row>
         {tabs.map((t, i) => {
           const selected = t.id === value
           const startsGroup = !!t.group && t.group !== tabs[i - 1]?.group
