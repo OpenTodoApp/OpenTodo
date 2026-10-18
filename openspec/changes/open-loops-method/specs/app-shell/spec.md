@@ -5,10 +5,9 @@
 ### Requirement: Sidebar structure
 The sidebar SHALL show, top to bottom:
 1. the app name
-2. the primary destinations
-3. a "More" group, collapsed by default
-4. the Filters, Projects and Labels groups in one scroller, each collapsible with its state remembered on the device and its item count on the header while collapsed
-5. a pinned footer with Help, search, notifications, sync status and the account
+2. the primary destinations, pinned at the top
+3. in one scroller, a "More" group collapsed by default, then the Filters, Projects and Labels groups, each collapsible with its state remembered on the device and its item count on the header while collapsed
+4. a pinned footer with Help, search, notifications, sync status and the account
 
 Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
 
@@ -48,3 +47,7 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 #### Scenario: Two groups closed
 - **WHEN** the user collapses Filters and Labels
 - **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
+
+#### Scenario: More open on a phone
+- **WHEN** a user with 25 projects opens the drawer on a 390×640 phone, opens More and swipes up on the drawer
+- **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the primary destinations and the footer stay in place, and the page behind the drawer does not move
