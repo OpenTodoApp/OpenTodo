@@ -2,11 +2,16 @@ package email
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+	"unicode/utf8"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 func fixture(t *testing.T, name string) []byte {
@@ -128,20 +133,62 @@ func TestParseNoSubjectNoBody(t *testing.T) {
 	}
 }
 
-func TestParseTruncatesLongBody(t *testing.T) {
-	body := strings.Repeat("äbcdefghij\n", 3000) // > 16 KB, multi-byte runes
+// A long message is kept whole as long as one synced value holds it (OpenSpec
+// change email-body-limit, issue #161: it used to be cut at 16 KB).
+func TestParseKeepsLongBody(t *testing.T) {
+	body := strings.Repeat("äbcdefghij\n", 3600) // about 43 KB
 	p, err := Parse([]byte("Subject: long\nContent-Type: text/plain; charset=utf-8\n\n" + body))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(p.Description, TruncatedNote) {
-		t.Fatalf("no truncation note: ...%q", p.Description[len(p.Description)-80:])
+	if strings.Contains(p.Description, TruncatedNote) || p.Description != strings.TrimSpace(body) {
+		t.Fatalf("a %d byte body was not kept whole (%d bytes)", len(body), len(p.Description))
 	}
-	if len(p.Description) > MaxDescriptionBytes+len(TruncatedNote)+2 {
-		t.Fatalf("description is %d bytes", len(p.Description))
+}
+
+// checkCut asserts d was cut with the note, at a rune boundary, as late as the limits allow.
+func checkCut(t *testing.T, d string) {
+	t.Helper()
+	if !strings.Contains(d, TruncatedNote) {
+		t.Fatalf("no truncation note: ...%q", d[len(d)-80:])
 	}
-	if !strings.Contains(p.Description, "äbcdefghij") || strings.ContainsRune(p.Description, '\uFFFD') {
+	if !utf8.ValidString(d) || strings.ContainsRune(d, '\uFFFD') {
 		t.Fatal("truncation split a rune")
+	}
+	enc, _ := json.Marshal(d)
+	if len(enc) > opsync.MaxValueBytes || len(d) > maxEncryptableBytes {
+		t.Fatalf("description is %d bytes, %d encoded", len(d), len(enc))
+	}
+	// Late: within a few runes of a limit.
+	if len(enc) < opsync.MaxValueBytes-64 && len(d) < maxEncryptableBytes-64 {
+		t.Fatalf("cut too early: %d bytes, %d encoded", len(d), len(enc))
+	}
+}
+
+func TestDescriptionCutsAtTheValueLimit(t *testing.T) {
+	atts := []Attachment{{Name: "report.pdf", Size: 2 << 20}, {Name: "photo.jpg", Size: 300 << 10}}
+	// Multi-byte runes: the encrypted-size limit binds.
+	d := description(strings.Repeat("äbc € 😀 defghij\n", 12000), atts)
+	checkCut(t, d)
+	if !strings.HasSuffix(d, "- photo.jpg (300.0 KB)") {
+		t.Fatalf("the attachment list is missing: ...%q", d[len(d)-120:])
+	}
+	// Characters JSON escapes into six bytes: the JSON limit binds.
+	checkCut(t, description(strings.Repeat("<a href=\"x\">&\x01</a>\n", 8000), nil))
+}
+
+// The ops of a task from a very long message pass the server's validation.
+func TestLongMessageOpsAreValid(t *testing.T) {
+	body := strings.Repeat("Ein langer Absatz mit Umlauten: äöü, Zeichen <>&\"\\ und Emoji 😀.\n", 4000) // about 270 KB
+	p, err := Parse([]byte("Subject: long\nContent-Type: text/plain; charset=utf-8\n\n" + body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkCut(t, p.Description)
+	for _, op := range taskOps("u1", p, time.Unix(1_760_000_000, 0), 1_760_000_000_000) {
+		if err := opsync.Validate(op); err != nil {
+			t.Fatalf("%s: %v", op.Field, err)
+		}
 	}
 }
 

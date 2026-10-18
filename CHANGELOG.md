@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Email to task keeps long messages.** A forwarded message's text was cut at 16 KB; the task now keeps about 48 KB, as much as its notes hold (also with end-to-end encryption), and only longer messages end with a note that the rest did not fit. ([Email to task](docs/email.md), #161)
+
 ## [0.8.0] - 2026-10-18
 
 OpenTodo 0.8.0 introduces **Open Loops**, a method of its own for getting everything off your mind, inspired by GTD: catch, clarify, place, do and review. You choose how prominent it is, from not at all to the first screen you see. The weekly review becomes a guided walk through your Inbox, what slipped, what is waiting and every project, joined by a five-minute Daily check and a Monthly look. Nothing changes until you turn it on.

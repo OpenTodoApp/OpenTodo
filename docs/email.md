@@ -27,7 +27,7 @@ The task is an ordinary change in the operation log (device `server`), so every 
 | Task field | From the message |
 | --- | --- |
 | Title | The subject, with reply and forward prefixes removed (`Re:`, `Fwd:`, `FW:`, `AW:`, `WG:`, `SV:`, `TR:`, `RV:`…). Without a subject: the first line of the text, else `(no subject)` |
-| Description | The plain-text part. HTML-only mail is converted to text (links keep their address in parentheses; scripts, styles and images are dropped, nothing is loaded). Text beyond 16 KB is cut with a note. A message forwarded *as an attachment* is included as a "Forwarded message" block |
+| Description | The plain-text part. HTML-only mail is converted to text (links keep their address in parentheses; scripts, styles and images are dropped, nothing is loaded). Text beyond about 48 KB (what a task's notes hold, also once encrypted) is cut with a note. A message forwarded *as an attachment* is included as a "Forwarded message" block |
 | Attachments | Not stored. Each one is listed at the end of the description with its name and size, so nothing disappears silently |
 | Project, priority, due | Inbox, priority 4, no due date. Natural-language parsing of the subject (`tomorrow`, `#project`, `p1`) is not applied yet |
 
