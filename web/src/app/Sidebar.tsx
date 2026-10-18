@@ -327,7 +327,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   return (
     // One scroller (ux-overhaul, app-shell "Sidebar structure"): the name and the
     // primary destinations stay at the top, Help and the account at the bottom, and
-    // only the filters, projects and labels between them scroll.
+    // only the More group, filters, projects and labels between them scroll. More
+    // scrolls too, so opening it on a short phone screen never leaves the scroller
+    // without room (sidebar-drawer-scroll).
     <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
       <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
         <div className={`mb-4 flex items-center gap-2 ${collapsed ? 'justify-center' : 'px-1'}`}>
@@ -341,9 +343,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           {item({ view: calendarMode }, t('Calendar'), 'calendar-range')}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
         </nav>
-        <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
-          {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
-        </SidebarGroup>
       </div>
       <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
       {finding && !collapsed && (
@@ -353,6 +352,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
         </div>
       )}
+      <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
+        {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
+      </SidebarGroup>
       {groupShown(shownViews.length) && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
         actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
         {shownViews.map((v) => {

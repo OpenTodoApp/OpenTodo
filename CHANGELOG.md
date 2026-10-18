@@ -78,6 +78,7 @@ OpenTodo 0.7.0 is a hardening release, the result of a review of the whole code 
 
 ### Fixed
 
+- **The phone sidebar scrolls with More open.** On a short phone screen, opening More left the sidebar almost no room to scroll, so a swipe moved the page behind it instead of reaching your projects. More now scrolls with Filters, Projects and Labels, and the page behind the open sidebar stays still.
 - **The quick add sheet treats archived projects like the views' quick add.** Typing `#name` of an archived project no longer behaves differently in the sheet and in a list; every screen now reads projects, labels and shared-project roles from one shared live copy, so they agree with each other and update together after a sync.
 - **Screen readers hear what the chips say.** Counts, "Has notes", deadlines, group counts and the warning on a title that could not be decrypted were silent or read as bare numbers; they are now read as full phrases ("3 comments", "4 open tasks").
 - **Screen readers follow the list.** Moving with <kbd>j</kbd> / <kbd>k</kbd> moves focus to the selected task, subtasks are read with their level and position, and each complete button names its task ("Complete Buy milk"). ([Keyboard shortcuts](docs/keyboard.md))

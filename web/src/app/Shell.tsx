@@ -184,7 +184,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   return (
     <div className="flex h-full">
       <SkipLink frame={frame} content={content} />
-      {sidebarOpen && <div className="fixed inset-0 z-[45] bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {/* touch-none: a swipe on the scrim does not scroll the page behind the open drawer (sidebar-drawer-scroll). */}
+      {sidebarOpen && <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell). */}
       <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
@@ -214,7 +215,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        <div ref={content} id="content" className="relative min-h-0 flex-1 overflow-y-auto">
+        <div ref={content} id="content" className={`relative min-h-0 flex-1 overflow-y-auto ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (
