@@ -4,6 +4,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-18
+
+OpenTodo 0.8.0 introduces **Open Loops**, a method of its own for getting everything off your mind, inspired by GTD: catch, clarify, place, do and review. You choose how prominent it is, from not at all to the first screen you see. The weekly review becomes a guided walk through your Inbox, what slipped, what is waiting and every project, joined by a five-minute Daily check and a Monthly look. Nothing changes until you turn it on.
+
+### Upgrade notes
+
+- **No migration and no new environment variables.** Replace the image or the binary and restart.
+- **Sync is additive:** new preference fields (`user_prefs.method_mode`, `project_prefs.reviewed_at`, and `daily_at`, `monthly_at`, `focus_date` and `focus` on the review row) hold settings and timestamps, never task content; older apps ignore them. Upgrade the server before the devices, as for every release.
+- **The JSON export now includes per-project preferences** (`project_prefs`, such as when you last reviewed a project), and importing your own export restores them.
+- **The weekly email digest lists fewer projects as "without a next action"**: see Changed.
+
 ### Added
 
 - **Open Loops, a calm method for everything on your mind.** OpenTodo now has a method of its own, inspired by GTD: catch, clarify, place, do and review. Choose how prominent it is in **Settings → Account → How you work**: **Lists only** (as before), **Companion** (screens name the move they serve and link to the method) or **Open Loops first** (the new **Loop home** opens first and the sidebar is arranged by the Places). New views: **Next** (<kbd>g</kbd> <kbd>Shift+N</kbd>), each project's next action grouped by `@context` labels, and **Waiting** (<kbd>g</kbd> <kbd>Shift+W</kbd>), what you assigned to someone else or is blocked. The method has its own chapter in the docs and Help. ([Open Loops](docs/method/overview.md))
@@ -559,7 +570,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pixari/opentodo/compare/v0.6.1...v0.7.0
