@@ -3,7 +3,7 @@ title: Places
 summary: The seven homes a task can have in Open Loops - Inbox, Next, Waiting, Scheduled, Later, Someday and Projects - and the screen and keys for each.
 audience: user
 section: Open Loops
-specs: [start-dates]
+specs: [method-views, start-dates]
 screens: [next#the-next-and-waiting-views, waiting#the-next-and-waiting-views]
 order: 7
 ---

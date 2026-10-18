@@ -17,18 +17,41 @@ From 768 px wide the shell SHALL fill the viewport height with the sidebar and t
 - **THEN** it fails if more than three elements can scroll vertically, naming the screen and the extra element
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available) and the Filters, Projects and Labels groups, each collapsible with its state remembered on the device and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
+The sidebar SHALL show, top to bottom:
+1. the app name
+2. the primary destinations, pinned at the top
+3. in one scroller, a "More" group collapsed by default, then the Filters, Projects and Labels groups, each collapsible with its state remembered on the device and its item count on the header while collapsed
+4. a pinned footer with Help, search, notifications, sync status and the account
+
+Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
+
+The primary destinations and the More group SHALL depend on the user's "How you work" preference:
+
+| Preference | Primary destinations | More group |
+| --- | --- | --- |
+| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Review, Statistics, Ask when available |
+| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Statistics, Ask when available |
+
+In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged.
 
 #### Scenario: Default sidebar
-- **WHEN** a user with projects and labels opens the app on a 1280×800 screen
-- **THEN** five primary destinations and the More group are visible above Filters, Projects and Labels, the footer is visible without scrolling, and only the middle part scrolls when the project tree is long
+- **WHEN** a user in `lists` mode with projects and labels opens the app on a 1280×800 screen
+- **THEN** four primary destinations and the More group are visible above Filters, Projects and Labels, the footer is visible without scrolling, and only the middle part scrolls when the project tree is long
+
+#### Scenario: Open Loops first sidebar
+- **WHEN** a user picks Open Loops first and opens the app on a 1280×800 screen
+- **THEN** the primary destinations are Loop home, Inbox, Today, Next, Waiting and Review in that order, Upcoming and Calendar are in the More group, and the Review entry carries its rhythm markers
+
+#### Scenario: Promotions kept across modes
+- **WHEN** a user who promoted Someday switches to Open Loops first and later back to Companion
+- **THEN** Someday is in the More group while in Open Loops first, and is a primary destination again after switching back, on every device after sync
 
 #### Scenario: Labels are reachable
 - **WHEN** the user has forty projects and three labels
 - **THEN** scrolling the middle part of the sidebar reaches the Labels group, and nothing inside it scrolls separately
 
 #### Scenario: Promote a destination
-- **WHEN** the user turns on "Show in sidebar" for Someday in Settings → Appearance
+- **WHEN** a user in `lists` mode turns on "Show in sidebar" for Someday in Settings → Appearance
 - **THEN** Someday appears among the primary destinations on every device of that user after sync, and leaves the More group
 
 #### Scenario: Collapse a group

@@ -3,7 +3,7 @@ title: Open Loops
 summary: OpenTodo's own method for everything on your mind, inspired by GTD - five moves, seven principles, the Places a task can live and the rhythms that keep it all trustworthy.
 audience: user
 section: Open Loops
-specs: [weekly-review]
+specs: [open-loops, weekly-review]
 screens: [method/overview, loop#how-prominent-it-is]
 order: 1
 ---
