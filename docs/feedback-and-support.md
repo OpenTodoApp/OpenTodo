@@ -3,7 +3,8 @@ title: Feedback and support
 summary: Where to report a problem or suggest an idea, how to star OpenTodo on GitHub, and how to buy the maintainer a coffee.
 audience: user
 section: Reference
-specs: [first-run]
+specs: [first-run, settings-navigation]
+screens: [settings/about]
 order: 80
 ---
 # Feedback and support
@@ -24,6 +25,10 @@ If you found a security problem, do not open a public issue: follow `SECURITY.md
 
 If OpenTodo saves you a subscription, [a coffee](https://buymeacoffee.com/pixari) helps keep it going. It is entirely optional: OpenTodo has no paid plan and every feature is free.
 
+## Settings → About
+
+**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the source code and the coffee button.
+
 ## The welcome note
 
-The first time the owner opens a new server, a short note thanks them and shows these links. It appears once per account; closing it on one device closes it on all of them. People invited to the server do not see it, and neither does the public demo.
+The first time the owner opens a new server, a short note thanks them and shows these links. It appears once per account; closing it on one device closes it on all of them. People invited to the server do not see it, and neither does the public demo. The owner can open it again from **Settings → About → Welcome note**.

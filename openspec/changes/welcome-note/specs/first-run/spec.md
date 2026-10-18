@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Welcome note for the owner
-The first time the owner opens a server whose owner account was created in the last seven days and has no task yet, the app SHALL show a dialog thanking them for installing OpenTodo, with a link to open an issue on GitHub, a link to star the repository, a Buy Me a Coffee button and one primary button that closes it. Every link SHALL open in a new tab and SHALL load nothing from the linked site into the app. Closing the dialog in any way SHALL record the preference `welcome` as `seen` through the op log, and the dialog SHALL never show again on any device of that account. It SHALL NOT show to members, on a demo instance, or for an account that already had tasks when the app opened or is older than seven days. The same links SHALL be available in Help.
+The first time the owner opens a server whose owner account was created in the last seven days and has no task yet, the app SHALL show a dialog thanking them for installing OpenTodo, with a link to open an issue on GitHub, a link to star the repository, a Buy Me a Coffee button and one primary button that closes it. Every link SHALL open in a new tab and SHALL load nothing from the linked site into the app. Closing the dialog in any way SHALL record the preference `welcome` as `seen` through the op log, and the dialog SHALL never show again on any device of that account. It SHALL NOT show to members, on a demo instance, or for an account that already had tasks when the app opened or is older than seven days. The same links SHALL be available in Help and in Settings → About, where the owner can open the note again.
 
 #### Scenario: New server
 - **WHEN** the owner creates the owner account on a new server and the app opens

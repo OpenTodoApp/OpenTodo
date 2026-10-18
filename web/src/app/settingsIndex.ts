@@ -53,6 +53,11 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   // Notifications
   { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), anchor: 'notifications-heading', keywords: 'reminders' },
   { section: 'notifications', label: msg('Weekly digest'), description: msg('An email on your review day with last week\'s numbers'), anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
+  // About (welcome-note)
+  { section: 'about', label: msg('Documentation'), description: msg('The same guides on the website, with setup and self-hosting.'), anchor: 'about-docs', keywords: 'docs help manual guide website version' },
+  { section: 'about', label: msg('Share feedback or report a problem'), description: msg('Open an issue on GitHub. Every report is read.'), anchor: 'about-feedback', keywords: 'bug issue github feedback support contact' },
+  { section: 'about', label: msg('Buy me a coffee'), description: msg('Support OpenTodo'), anchor: 'about-support-heading', keywords: 'donate sponsor support coffee' },
+  { section: 'about', label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.'), anchor: 'about-welcome', visible: owner, keywords: 'thanks welcome' },
   // Capture
   { section: 'capture', label: msg('Quick add'), description: msg('Natural-language parsing, its languages and the date order'), anchor: 'quick-add-heading', keywords: 'natural language parsing' },
   { section: 'capture', label: msg('Voice capture'), description: msg('Dictate tasks into quick add'), anchor: 'voice-settings-heading', keywords: 'dictation microphone' },

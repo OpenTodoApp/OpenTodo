@@ -6,7 +6,7 @@ The owner who installs OpenTodo has no obvious way to give feedback or support t
 
 - The first time the owner opens a new server (an owner account created in the last seven days, no task yet, not the demo), a dialog thanks them for installing OpenTodo and offers three plain links: open an issue on GitHub, star the repository, and a Buy Me a Coffee button. One primary button, "Start using OpenTodo", closes it; Escape, the close button and a click outside close it too.
 - Closing it writes `welcome: "seen"` to the user's preferences (a new additive `user_prefs` field), so it never shows again on any of the account's devices. Members invited to the server, the public demo and accounts that already have tasks or are older than a week (servers in use before this change) never see it.
-- A short Reference page, "Feedback and support", lists the same links in Help, as the dialog says.
+- A new Settings section, **About** (App group, everyone): the version, Open Help, the documentation and website links, the issue tracker, the source code and the coffee button; the owner can show the welcome note again from there. A short Reference page, "Feedback and support", lists the same links in Help and is the section's Help page.
 - The coffee button uses Buy Me a Coffee's brand yellow through two new colour tokens (`--ot-coffee`, `--ot-on-coffee`, the same in every theme). The links load nothing from those sites: no widget, no script, no image.
 
 ## Impact

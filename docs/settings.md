@@ -17,7 +17,7 @@ Open **Settings** with the gear next to your name at the bottom of the sidebar, 
 
 **Search settings** finds a setting by name or by what it does; matches are listed under their section and Enter opens the first with that row focused. The command palette (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>) searches the same index: "passkey" lists **Account › Passkeys**.
 
-Every section has its own address, such as `/settings/integrations`, to bookmark or share with someone on the same server. Older links keep working: `/settings/security` opens **Account** at its security rows, `/settings/preferences` opens **General**, and so on.
+Every section has its own address, such as `/settings/integrations`, to bookmark or share. Older links keep working: `/settings/security` opens **Account** at its security rows.
 
 Inside a section, each card leads with a heading and one sentence saying what it is for, then its settings as rows: label and description on the left, the control on the right (below the label on a narrow screen), and a badge with the current state. Forms with several fields open from a button; actions that remove something ask you to confirm first and say what will be lost.
 
@@ -56,6 +56,10 @@ How the app behaves: [Settings: App](settings-app.md).
 ### Capture
 
 [Capture](settings-app.md#capture): quick add parsing and its languages, voice capture, the bookmarklet and extension, and email to task.
+
+### About
+
+[About](feedback-and-support.md#settings--about): version, docs, feedback and support.
 
 ## Data
 

@@ -53,12 +53,10 @@ function LinkRow({ href, icon, title, detail }: { href: string; icon: IconName; 
   )
 }
 
-export function WelcomeDialog({ user }: { user: User }) {
-  const open = useWelcome(user)
-  if (!open) return null
-  const close = () => act(setWelcomeSeen())
+/** The note itself: shown once by WelcomeDialog, and again on demand from Settings → About. */
+export function WelcomeNote({ onClose }: { onClose: () => void }) {
   return (
-    <Dialog title={t('Thanks for installing OpenTodo')} onClose={close} size="md" testId="welcome">
+    <Dialog title={t('Thanks for installing OpenTodo')} onClose={onClose} size="md" testId="welcome">
       <div className="space-y-4 p-4">
         <p className="text-body">
           {t('OpenTodo is free and open source, made by one person in the open. It is yours now: your server, your data, no subscription.')}
@@ -67,16 +65,30 @@ export function WelcomeDialog({ user }: { user: User }) {
           <LinkRow href={ISSUES_URL} icon="message-circle" title={t('Share feedback or report a problem')} detail={t('Open an issue on GitHub. Every report is read.')} />
           <LinkRow href={REPO_URL} icon="star" title={t('Star OpenTodo on GitHub')} detail={t('A star helps other people find it.')} />
         </div>
-        <a href={COFFEE_URL} target="_blank" rel="noopener noreferrer" data-welcome-coffee
-          className="flex items-center justify-center gap-2 rounded-control bg-coffee px-4 py-2.5 text-body font-semibold text-on-coffee shadow-1 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-          <Icon name="coffee" />
-          {t('Buy me a coffee')}
-        </a>
-        <p className="text-meta text-muted">{t('This message will not appear again. The same links are in Help.')}</p>
+        <CoffeeButton />
+        <p className="text-meta text-muted">{t('This message will not appear again. You can open it from Settings → About.')}</p>
         <div className="flex justify-end">
-          <Button variant="primary" onClick={close} data-welcome-close data-autofocus>{t('Start using OpenTodo')}</Button>
+          <Button variant="primary" onClick={onClose} data-welcome-close data-autofocus>{t('Start using OpenTodo')}</Button>
         </div>
       </div>
     </Dialog>
   )
+}
+
+/** Buy Me a Coffee in its brand yellow: a plain link, nothing is loaded from the site. */
+export function CoffeeButton({ className = '' }: { className?: string }) {
+  return (
+    <a href={COFFEE_URL} target="_blank" rel="noopener noreferrer" data-welcome-coffee
+      className={`flex items-center justify-center gap-2 rounded-control bg-coffee px-4 py-2.5 text-body font-semibold text-on-coffee shadow-1 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${className}`}>
+      <Icon name="coffee" />
+      {t('Buy me a coffee')}
+    </a>
+  )
+}
+
+/** Shows the note once to the owner of a new server; closing it is remembered on every device. */
+export function WelcomeDialog({ user }: { user: User }) {
+  const open = useWelcome(user)
+  if (!open) return null
+  return <WelcomeNote onClose={() => act(setWelcomeSeen())} />
 }
