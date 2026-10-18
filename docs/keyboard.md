@@ -222,6 +222,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
+| <kbd>[</kbd> | Weekly review: the previous step |
+| <kbd>]</kbd> | Weekly review: the next step |
 | <kbd>r</kbd> | Project walk: mark the project reviewed, then the next one |
 | <kbd>q</kbd> | Project walk: add a next action to the project |
 | <kbd>Enter</kbd> | Project walk: open the project |

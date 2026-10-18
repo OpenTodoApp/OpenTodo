@@ -280,6 +280,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'triage.open', keys: ['Enter'], description: 'Open the task’s panel to edit anything else', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
   // ---- the reviews (open-loops-method D6): the weekly review's project walk and the Daily check
+  { id: 'review.prev-step', keys: ['['], description: 'Weekly review: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },
+  { id: 'review.next-step', keys: [']'], description: 'Weekly review: the next step', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-reviewed', keys: ['r'], description: 'Project walk: mark the project reviewed, then the next one', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-add', keys: ['q'], description: 'Project walk: add a next action to the project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-open', keys: ['Enter'], description: 'Project walk: open the project', section: 'review', scope: 'view', views: ['review'] },

@@ -1,11 +1,12 @@
-// The weekly review (OpenSpec changes `stats-and-review` D3, D4, D8 and
-// `open-loops-method` D6): seven steps in three phases with live data from the
-// local rows (lib/review.ts), on the Tabs primitive and the ordinary task rows,
-// so the list keys work inside each list step; the Projects step is the project
-// walk, which owns the keyboard while it is shown. "Finish review" writes the
-// synced `review` row; the menu opens the Daily check and the Monthly look.
+// The weekly review (OpenSpec changes `stats-and-review` D3, D4, D8,
+// `open-loops-method` D6 and `review-guided-stepper`): seven steps in three phases
+// with live data from the local rows (lib/review.ts), walked one at a time: the
+// progress above, the step in one card, Back and Next below (and `[` / `]`). List
+// steps use the ordinary task rows, so the list keys work inside them; the Projects
+// step is the project walk, which owns its keys while it is shown. "Finish review"
+// writes the synced `review` row; the menu opens the Daily check and the Monthly look.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, Tabs } from '../../ui'
+import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { useAllLabels, useAllProjects, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
 import { createTask, setTaskCompleted } from '../../lib/ops'
@@ -25,6 +26,8 @@ import { useListKeys } from '../useListKeys'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { ProjectWalk } from './ProjectWalk'
+import { ReviewProgress } from './ReviewProgress'
+import { useShortcutScope } from '../shortcuts'
 
 const LIST_STEPS: readonly StepId[] = ['clear', 'back', 'waiting', 'ahead', 'someday']
 
@@ -48,10 +51,10 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   // and keeps following it while rows are still arriving (a first sync), until the user picks a step.
   const chosen = useRef(!!initial)
   useEffect(() => { if (steps && !chosen.current) setStep(firstUnfinished(steps.done)) }, [steps])
-  const tabs = useRef<HTMLDivElement>(null)
-  const focusTab = () => (tabs.current?.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement | null)?.focus()
-  // The selected tab takes focus, so the arrow keys move between steps (also when the opening step moves during a first sync).
-  useEffect(() => { if (step && !chosen.current) focusTab() }, [step])
+  // Changing step (and opening the screen) puts focus on the step's title, which names it and its position.
+  const title = useRef<HTMLHeadingElement>(null)
+  const focusTitle = () => title.current?.focus({ preventScroll: false })
+  useEffect(() => { if (step) focusTitle() }, [step])
 
   const [selected, setSelected] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
@@ -71,7 +74,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   useListKeys({
     rows: keyRows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor,
     paused: !LIST_STEPS.includes(current) || !!addTo,
-    onIdleEscape: () => { setSelected(null); focusTab() },
+    onIdleEscape: () => { setSelected(null); focusTitle() },
   })
 
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
@@ -80,6 +83,21 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const last = finished ?? (review?.completed_at || null)
   const methodMeta = useWithMethod('review')
   const subtitle = useWithMethod('review', last ? t('Last review {instant}', { instant: formatInstant(last, 'long') }) : t('No review finished yet'))
+
+  const finish = async () => {
+    const at = Date.now()
+    await finishReview(at)
+    setFinished(at)
+    focusTitle()
+  }
+  const go = (s: StepId) => { chosen.current = true; setStep(s) }
+  const index = step ? STEP_IDS.indexOf(step) : 0
+  const prev = index > 0 ? STEP_IDS[index - 1] : null
+  const next = index < STEP_IDS.length - 1 ? STEP_IDS[index + 1] : null
+  useShortcutScope('view', {
+    'review.prev-step': () => { if (!prev) return false; go(prev) },
+    'review.next-step': () => { if (!next) return false; go(next) },
+  }, { view: 'review', paused: !step || !!addTo || !!pickerFor })
 
   const add = async ({ labels: typed, ...rest }: QuickAddInput) => {
     if (!addTo) return
@@ -91,42 +109,41 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   return (
     <PageBody width="list">
       <PageHeader title={t('Weekly review')} icon="clipboard-check" meta={methodMeta} subtitle={subtitle} help="review"
-        actions={<Button size="sm" variant={allDone ? 'primary' : 'secondary'} onClick={() => void (async () => {
-          const at = Date.now()
-          await finishReview(at)
-          setFinished(at)
-          focusTab()
-        })()}>{t('Finish review')}</Button>}
+        actions={<Button size="sm" variant={allDone ? 'primary' : 'secondary'} onClick={finish}>{t('Finish review')}</Button>}
         overflow={<>
           <MenuItem icon="sun" label={t('Daily check', { context: 'method' })} onSelect={() => navigate({ view: 'review', step: 'daily' })} />
           <MenuItem icon="calendar-range" label={t('Monthly look', { context: 'method' })} onSelect={() => navigate({ view: 'review', step: 'monthly' })} />
         </>} />
       {!steps || !step ? <Skeleton shape="row" count={4} /> : (
         <>
-          {allDone && <div className="mb-3"><Notice tone="success">{t('Every step is done. Finish the review to record it on all your devices.')}</Notice></div>}
-          {finished && <p role="status" className="mb-3 text-meta text-muted" data-testid="review-finished">{t('Review finished {instant}.', { instant: formatInstant(finished, 'long') })}</p>}
+          {(allDone || finished) && <AllClear finished={finished} />}
           {notice && <div className="mb-3"><Notice tone="info">{notice}</Notice></div>}
-          <div ref={tabs}>
-            <Tabs label={t('Review steps')} value={step} onChange={(s) => { chosen.current = true; setStep(s as StepId) }}
-              tabs={STEP_IDS.map((s) => ({
-                id: s,
-                group: PHASE_TITLES[PHASE_OF[s]],
-                label: (
-                  <span className="inline-flex items-center gap-1.5" data-step={s}>
-                    {steps.done[s] && <Icon name="check" size="sm" />}
-                    {STEP_TITLES[s]}
-                    <span className="sr-only">{steps.done[s] ? `, ${t('done')}` : `, ${t('{n} left', { n: steps.left[s] })}`}</span>
-                  </span>
-                ),
-                count: steps.done[s] ? undefined : steps.left[s] || undefined,
-              }))}>
+          <ReviewProgress steps={steps} step={step} onStep={go} />
+          <Card as="section" padding="none" aria-labelledby="review-step-title" data-review-step={step}>
+            <header className="flex items-start gap-3 border-b border-default bg-accent-soft/40 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
+                <Icon name={STEP_ICONS[step]} size="lg" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-hint font-semibold uppercase tracking-wide text-accent" data-review-position>
+                  {t('Step {n} of {total} · {phase}', { n: STEP_IDS.indexOf(step) + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}
+                </p>
+                <h2 id="review-step-title" ref={title} tabIndex={-1} className="mt-0.5 text-h2 font-semibold text-strong outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                  {STEP_TITLES[step]}
+                </h2>
+              </div>
+              {steps.done[step]
+                ? <Badge hue="green">{t('Done')}</Badge>
+                : steps.left[step] > 0 && <Badge hue="orange">{t('{n} left', { n: steps.left[step] })}</Badge>}
+            </header>
+            <div className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6">
               <StepIntro step={step} steps={steps} />
               {step === 'projects' ? (
                 <ProjectWalk walk={steps.walk} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
               ) : step === 'sweep' ? (
                 <MindSweep projects={projects} labels={labels} />
-              ) : (
-                <ul data-testid={`review-${step}`}>
+              ) : taskRows.length > 0 && (
+                <ul className="-mx-2" data-testid={`review-${step}`}>
                   {taskRows.map((item) => (
                     <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
                       showProject={step !== 'clear'} selected={item.id === selected}
@@ -135,7 +152,13 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
                   ))}
                 </ul>
               )}
-            </Tabs>
+            </div>
+          </Card>
+          <div className="mt-4 flex items-center justify-between gap-2" data-review-nav>
+            {prev ? <Button variant="ghost" icon="chevron-left" onClick={() => go(prev)} data-review-back>{t('Back')}</Button> : <span />}
+            {next
+              ? <Button variant="primary" className="max-sm:flex-1" iconEnd="chevron-right" onClick={() => go(next)} data-review-next>{t('Next: {step}', { step: STEP_TITLES[next] })}</Button>
+              : <Button variant="primary" className="max-sm:flex-1" icon="check" onClick={finish} data-review-finish>{t('Finish review')}</Button>}
           </div>
         </>
       )}
@@ -151,6 +174,25 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
         </Dialog>
       )}
     </PageBody>
+  )
+}
+
+const STEP_ICONS: Record<StepId, IconName> = { clear: 'inbox', sweep: 'lightbulb', back: 'history', waiting: 'hourglass', projects: 'folder', ahead: 'calendar-days', someday: 'star' }
+
+/** Every step done, or the review just finished: a calm moment of closure before the next week. */
+function AllClear({ finished }: { finished: number | null }) {
+  return (
+    <Card className="mb-5 flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left" data-review-all-clear>
+      <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-success-soft text-on-success-soft">
+        <Icon name="circle-check-big" size="lg" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-h3 font-semibold text-strong">{finished ? t('Review done. See you next week.') : t('All clear')}</p>
+        {finished
+          ? <p role="status" className="text-body text-muted" data-testid="review-finished">{t('Review finished {instant}.', { instant: formatInstant(finished, 'long') })}</p>
+          : <p className="text-body text-muted">{t('Every step is done. Finish the review to record it on all your devices.')}</p>}
+      </div>
+    </Card>
   )
 }
 
@@ -171,8 +213,8 @@ function MindSweep({ projects, labels }: { projects: Project[]; labels: ReturnTy
   const [caught, setCaught] = useState(0)
   return (
     <div data-testid="review-sweep">
-      <ul className="mb-3 grid gap-x-4 gap-y-1 text-body text-muted sm:grid-cols-2">
-        {SWEEP_PROMPTS.map((p) => <li key={p} className="flex items-center gap-2"><Icon name="chevron-right" size="sm" />{t(p)}</li>)}
+      <ul className="mb-4 flex flex-wrap gap-2" aria-label={t('Prompts')}>
+        {SWEEP_PROMPTS.map((p) => <li key={p} className="rounded-chip border border-default bg-sunken px-3 py-1.5 text-meta text-default">{t(p)}</li>)}
       </ul>
       <QuickAdd hideHint placeholder={t('Whatever is on your mind…')} label={t('Catch into the Inbox')}
         projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels}
@@ -186,28 +228,28 @@ function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
   switch (step) {
     case 'clear':
       return (
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-body text-muted">{steps.inbox.length ? t('{count} to process: move, schedule, complete or trash each Inbox task.', { count: steps.inbox.length }) : t('The Inbox is empty.')}</p>
           {steps.inbox.length > 0 && <Button size="sm" onClick={() => navigate({ view: 'triage' })}>{t('Process the Inbox')}</Button>}
         </div>
       )
     case 'sweep':
-      return <p className="mb-2 text-body text-muted">{t('What else is on your mind? Read each prompt and catch whatever comes up. Process it in the Inbox step afterwards.')}</p>
+      return <p className="mb-3 text-body text-muted">{t('What else is on your mind? Read each prompt and catch whatever comes up. Process it in the Inbox step afterwards.')}</p>
     case 'back':
       return (
-        <p className="mb-2 text-body text-muted">
+        <p className="mb-3 text-body text-muted">
           {t('{n, plural, one {You completed # task this week.} other {You completed # tasks this week.}}', { n: steps.completedThisWeek })}{' '}
           {steps.overdue.length ? t('{n} overdue: complete them with c, or open one to give it a new date.', { n: steps.overdue.length }) : t('Nothing is overdue.')}{' '}
           <button type="button" className="text-accent underline" onClick={() => navigate({ view: 'stats' })}>{t('See statistics')}</button>
         </p>
       )
     case 'waiting':
-      return <p className="mb-2 text-body text-muted">{steps.waiting.length ? t('Assigned to someone else or blocked by another task. Open one to follow up in its comments.') : t('Nothing is waiting.')}</p>
+      return <p className="mb-3 text-body text-muted">{steps.waiting.length ? t('Assigned to someone else or blocked by another task. Open one to follow up in its comments.') : t('Nothing is waiting.')}</p>
     case 'projects':
-      return <p className="mb-2 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.')}</p>
+      return <p className="mb-3 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.')}</p>
     case 'someday':
-      return <p className="mb-2 text-body text-muted">{steps.someday.length ? t('Anything you now want to do? n brings a task back from Someday, c completes it, Delete trashes it.') : t('Nothing is parked in Someday.')}</p>
+      return <p className="mb-3 text-body text-muted">{steps.someday.length ? t('Anything you now want to do? n brings a task back from Someday, c completes it, Delete trashes it.') : t('Nothing is parked in Someday.')}</p>
     default:
-      return <p className="mb-2 text-body text-muted">{steps.ahead.length ? t('Due today and in the next six days. Set priorities with 1 to 4.') : t('Nothing is due in the next seven days.')}</p>
+      return <p className="mb-3 text-body text-muted">{steps.ahead.length ? t('Due today and in the next six days. Set priorities with 1 to 4.') : t('Nothing is due in the next seven days.')}</p>
   }
 }

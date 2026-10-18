@@ -653,6 +653,9 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
   ],
+  "All clear": [
+    "web/src/app/review/ReviewView.tsx"
+  ],
   "All day": [
     "web/src/app/CalendarEvents.tsx"
   ],
@@ -1112,7 +1115,7 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/menus/ActionMenu.tsx",
-    "web/src/app/review/ProjectWalk.tsx"
+    "web/src/app/review/ReviewView.tsx"
   ],
   "Back to my tasks": [
     "web/src/app/EmailScreens.tsx",
@@ -2575,6 +2578,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -5015,6 +5019,9 @@
   "Next: {join}": [
     "web/src/app/RecurrenceField.tsx"
   ],
+  "Next: {step}": [
+    "web/src/app/review/ReviewView.tsx"
+  ],
   "Next|method": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
@@ -6296,6 +6303,9 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/datetime/DateField.tsx"
   ],
+  "Previous project": [
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "Previous week": [
     "web/src/app/CalendarView.tsx"
   ],
@@ -6472,6 +6482,9 @@
   ],
   "Promises to someone": [
     "web/src/lib/review.ts"
+  ],
+  "Prompts": [
+    "web/src/app/review/ReviewView.tsx"
   ],
   "Properties": [
     "web/src/app/task-detail/Properties.tsx"
@@ -7051,6 +7064,9 @@
   "Review": [
     "web/src/app/Sidebar.tsx"
   ],
+  "Review done. See you next week.": [
+    "web/src/app/review/ReviewView.tsx"
+  ],
   "Review due": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -7060,8 +7076,8 @@
   "Review on a rhythm|method": [
     "web/src/lib/method/vocabulary.json"
   ],
-  "Review steps": [
-    "web/src/app/review/ReviewView.tsx"
+  "Review progress": [
+    "web/src/app/review/ReviewProgress.tsx"
   ],
   "Reviewed this week": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -8138,6 +8154,10 @@
   ],
   "Step {n} of {count}": [
     "web/src/app/FirstRun.tsx"
+  ],
+  "Step {n} of {total} · {phase}": [
+    "web/src/app/review/ReviewProgress.tsx",
+    "web/src/app/review/ReviewView.tsx"
   ],
   "Still visible to the server: {PLAINTEXT_FIELDS}. Shared projects are not encrypted, and new projects cannot be shared while encryption is on.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -10265,6 +10285,12 @@
   "Weekly review {ago}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "Weekly review: the next step": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Weekly review: the previous step": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Weekly review|method": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -10893,7 +10919,7 @@
   ],
   "done": [
     "web/src/app/HabitHistory.tsx",
-    "web/src/app/review/ReviewView.tsx"
+    "web/src/app/review/ReviewProgress.tsx"
   ],
   "due date": [
     "web/src/app/task-detail/HistoryTab.tsx",
@@ -12146,6 +12172,7 @@
     "web/src/app/NotificationsSettings.tsx"
   ],
   "{n} left": [
+    "web/src/app/review/ReviewProgress.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
   "{n} min after": [
