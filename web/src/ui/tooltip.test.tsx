@@ -70,6 +70,22 @@ describe('Tooltip', () => {
     await r.unmount()
   })
 
+  it('does not open on the focus a tap or click gives the control, only on keyboard focus (issue 169)', async () => {
+    const r = await render(<Tooltip label="Open menu"><button>≡</button></Tooltip>)
+    const button = r.container.querySelector('button')!
+    const press = (type: string) => act(async () => { button.dispatchEvent(new (window.PointerEvent ?? MouseEvent)(type, { bubbles: true, pointerType: 'touch' } as PointerEventInit)) })
+    await press('pointerdown')
+    await focus(button, 'focus')
+    await press('pointerup')
+    await advance(1000)
+    expect(tip()).toBeNull()
+    await focus(button, 'blur')
+    // Tabbing to it afterwards still shows the tip.
+    await focus(button, 'focus')
+    expect(tip()!.textContent).toBe('Open menu')
+    await r.unmount()
+  })
+
   it('IconButton carries one by default and no native title', async () => {
     const r = await render(<IconButton icon="x" label="Close" />)
     const button = r.container.querySelector('button')!
