@@ -11,6 +11,7 @@ import { Badge, Button, EmptyState } from '../../ui'
 import { act } from '../actionError'
 import { navigate } from '../router'
 import { isActivationTarget, useShortcutScope } from '../shortcuts'
+import { Kbd } from '../shortcuts/Kbd'
 
 /** The first lines of a project's note, as plain text: its outcome. */
 export function outcomeOf(description: string | undefined | null): string {
@@ -37,10 +38,13 @@ export function ProjectWalk({ walk, now, onAdd, paused }: { walk: readonly WalkP
   const live = useMemo(() => (queue ?? []).filter((id) => byId.has(id)), [queue, byId])
   const current = index < live.length ? byId.get(live[index]) ?? null : null
 
+  // The first card leaves focus on the step's title; after a decision focus follows the new card.
+  const shown = useRef(false)
   useEffect(() => {
     if (!current) return
     setAnnounce(t('{n} of {total}: {name}', { n: index + 1, total: live.length, name: current.project.name }))
-    card.current?.focus({ preventScroll: true })
+    if (shown.current) card.current?.focus({ preventScroll: true })
+    shown.current = true
   }, [current?.project.id, index, live.length]) // eslint-disable-line react-hooks/exhaustive-deps -- announce once per card
 
   const advance = () => setIndex((i) => Math.min(i + 1, live.length))
@@ -86,14 +90,14 @@ export function ProjectWalk({ walk, now, onAdd, paused }: { walk: readonly WalkP
     { key: 'open', hint: 'Enter', label: t('Open'), run: () => navigate({ view: 'project', id: w.project.id }) },
     ...(w.canArchive ? [{ key: 'archive', hint: 'a', label: t('Archive'), run: () => act(archive()) }] : []),
     { key: 'skip', hint: 'j', label: t('Skip'), run: advance },
-    { key: 'back', hint: 'k', label: t('Back'), run: () => setIndex((i) => Math.max(0, i - 1)), disabled: index === 0 },
+    { key: 'back', hint: 'k', label: t('Previous project'), run: () => setIndex((i) => Math.max(0, i - 1)), disabled: index === 0 },
   ]
   return (
     <div data-walk>
       <p className="sr-only" role="status" aria-live="polite" data-walk-live>{announce}</p>
       <p className="mb-2 text-meta text-muted tabular-nums" data-walk-progress>{t('{n} of {total}', { n: index + 1, total: live.length })}</p>
       <section ref={card} tabIndex={-1} data-walk-card={w.project.id} aria-label={t('Project {n} of {total}: {name}', { n: index + 1, total: live.length, name: w.project.name })}
-        className="rounded-card border border-default bg-surface p-5 shadow-1 outline-none focus-visible:outline-2 focus-visible:outline-focus">
+        className="rounded-card bg-sunken p-4 outline-none focus-visible:outline-2 focus-visible:outline-focus sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="flex min-w-0 items-center gap-2 text-h2 font-semibold text-strong">
             <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: w.project.color }} />
@@ -118,9 +122,9 @@ export function ProjectWalk({ walk, now, onAdd, paused }: { walk: readonly WalkP
       </section>
       <div role="toolbar" aria-label={t('Decisions')} className="mt-4 flex flex-wrap gap-2" data-walk-bar>
         {buttons.map((b) => (
-          <Button key={b.key} size="sm" variant={b.primary ? 'primary' : 'secondary'} disabled={b.disabled} onClick={b.run} data-walk-action={b.key}
+          <Button key={b.key} size="sm" variant={b.primary ? 'primary' : b.key === 'reviewed' || b.key === 'add' ? 'secondary' : 'ghost'} disabled={b.disabled} onClick={b.run} data-walk-action={b.key}
             aria-keyshortcuts={b.hint}>
-            {b.label} <span className="ui-kbd ml-1">{b.hint}</span>
+            {b.label}<Kbd k={b.hint} only className="ml-1" />
           </Button>
         ))}
       </div>

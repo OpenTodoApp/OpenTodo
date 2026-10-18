@@ -129,10 +129,11 @@ describe('Statistics screen', () => {
   })
 })
 
-const tabNamed = (name: string) => [...document.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes(name))!
+const stepTitle = () => document.querySelector<HTMLElement>('#review-step-title')
+const currentStep = () => document.querySelector('[data-progress-step][aria-current="step"]')?.getAttribute('data-progress-step')
 
 describe('Weekly review', () => {
-  it('keyboard path: g r, the right arrow to Projects, q adds a next action and r marks the project reviewed', async () => {
+  it('keyboard path: g r, ] to Projects, q adds a next action and r marks the project reviewed', async () => {
     await createTask({ title: 'Unsorted idea' })
     const garage = await createProject({ name: 'Garage' })
     const sweep = await createTask({ title: 'Sweep', project_id: garage })
@@ -142,12 +143,15 @@ describe('Weekly review', () => {
     await waitFor(() => r.container.textContent!.includes('Unsorted idea'))
     await key(document.body, 'g')
     await key(document.body, 'r')
-    await waitFor(() => !!document.querySelector('[role="tab"][aria-selected="true"]'))
-    // It opens on the first unfinished step, the Inbox of Get clear, with focus on the tabs.
-    expect(tabNamed('Get clear: Inbox').getAttribute('aria-selected')).toBe('true')
-    expect(document.activeElement).toBe(tabNamed('Get clear: Inbox'))
-    for (let i = 0; i < 4; i++) await key(document.activeElement!, 'ArrowRight')
-    expect(tabNamed('Projects').getAttribute('aria-selected')).toBe('true')
+    await waitFor(() => !!stepTitle())
+    // It opens on the first unfinished step, the Inbox of Get clear, with focus on its title.
+    expect(currentStep()).toBe('clear')
+    expect(document.querySelector('[data-review-position]')!.textContent).toBe('Step 1 of 7 · Get clear')
+    expect(document.activeElement).toBe(stepTitle())
+    for (let i = 0; i < 4; i++) await key(document.activeElement!, ']')
+    expect(currentStep()).toBe('projects')
+    expect(stepTitle()!.textContent).toBe('Projects')
+    expect(document.activeElement).toBe(stepTitle())
     await waitFor(() => !!document.querySelector('[data-walk-card]'))
     expect(document.querySelector('[data-walk-card]')!.textContent).toContain('Garage')
     expect(document.querySelector('[data-walk-card]')!.textContent).toContain('No next action')
@@ -175,12 +179,12 @@ describe('Weekly review', () => {
     await r.unmount()
   })
 
-  it('finishing writes the review op, shows the time and returns focus to the steps', async () => {
+  it('finishing writes the review op, shows the time and returns focus to the step', async () => {
     navigate({ view: 'review' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[role="tab"][aria-selected="true"]'))
-    // Nothing to do: every step is done, and Finish review is the primary action.
-    expect(r.container.textContent).toContain('Every step is done')
+    await waitFor(() => !!stepTitle())
+    // Nothing to do: every step is done, the all-clear card says so, and Finish review is the primary action.
+    expect(r.container.querySelector('[data-review-all-clear]')!.textContent).toContain('Every step is done')
     const finish = [...r.container.querySelectorAll('button')].find((b) => b.textContent === 'Finish review')!
     expect(finish.className).toContain('primary')
     await act(async () => finish.click())
@@ -188,7 +192,8 @@ describe('Weekly review', () => {
     expect((await db.review.get('me'))?.completed_at).toBe(NOW.getTime())
     const queued = (await db.outbox.toArray()).filter((o) => o.entity === 'review')
     expect(queued.map((o) => [o.entityId, o.field, o.value])).toEqual([['me', 'completed_at', NOW.getTime()]])
-    expect(document.activeElement?.getAttribute('role')).toBe('tab')
+    expect(document.activeElement).toBe(stepTitle())
+    expect(r.container.querySelector('[data-review-all-clear]')!.textContent).toContain('See you next week')
     await r.unmount()
   })
 
@@ -198,11 +203,58 @@ describe('Weekly review', () => {
     navigate({ view: 'review', step: 'projects' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector('[data-walk-card]'))
-    expect(tabNamed('Projects').getAttribute('aria-selected')).toBe('true')
+    expect(currentStep()).toBe('projects')
     await act(async () => document.querySelector<HTMLButtonElement>('[data-walk-action="archive"]')!.click())
     await waitFor(() => !document.querySelector('[data-walk-card]'))
     expect((await db.projects.get(garage))!.archived).toBe(true)
     expect((await db.outbox.toArray()).some((o) => o.entity === 'project' && o.entityId === garage && o.field === 'archived' && o.value === true)).toBe(true)
+    await r.unmount()
+  })
+})
+
+describe('Weekly review stepper', () => {
+  it('a circle in the progress opens its step; [ and the Back button go back; Next names the next step', async () => {
+    await createTask({ title: 'Unsorted idea' })
+    navigate({ view: 'review' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => currentStep() === 'clear')
+    const someday = document.querySelector<HTMLButtonElement>('[data-progress-step="someday"]')!
+    expect(someday.textContent).toBe('Get creative: Someday, done')
+    expect(document.querySelector('[data-progress-step="clear"]')!.textContent).toBe('Get clear: Inbox, 1 left')
+    await act(async () => someday.click())
+    expect(currentStep()).toBe('someday')
+    expect(document.querySelector('[data-review-position]')!.textContent).toBe('Step 7 of 7 · Get creative')
+    expect(document.activeElement).toBe(stepTitle())
+    // The last step offers Finish review instead of Next.
+    expect(document.querySelector('[data-review-next]')).toBeNull()
+    expect(document.querySelector('[data-review-finish]')).not.toBeNull()
+    await key(document.activeElement!, '[')
+    expect(currentStep()).toBe('ahead')
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-review-back]')!.click())
+    expect(currentStep()).toBe('projects')
+    expect(document.querySelector('[data-review-next]')!.textContent).toBe('Next: Look ahead')
+    await r.unmount()
+  })
+
+  it('the first step has no Back, and ] on the last step does nothing', async () => {
+    navigate({ view: 'review', step: 'clear' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => currentStep() === 'clear')
+    expect(document.querySelector('[data-review-back]')).toBeNull()
+    expect(document.querySelector('[data-review-next]')!.textContent).toBe('Next: Mind sweep')
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-progress-step="someday"]')!.click())
+    await key(document.activeElement!, ']')
+    expect(currentStep()).toBe('someday')
+    await r.unmount()
+  })
+
+  it('finishing from the last step records the review', async () => {
+    navigate({ view: 'review', step: 'someday' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => currentStep() === 'someday')
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-review-finish]')!.click())
+    await waitFor(() => !!r.container.querySelector('[data-testid="review-finished"]'))
+    expect((await db.review.get('me'))?.completed_at).toBe(NOW.getTime())
     await r.unmount()
   })
 })

@@ -225,7 +225,7 @@ const shots = [
   { name: 'display-today', server: D, async run(p) { await go(p, demoBase, '/display/today', () => p.locator('[data-screen="display"] [data-display-row]').first().waitFor()) } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
   // stats-and-review: the weekly review on its first unfinished step, and Statistics.
-  { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('[role="tab"][aria-selected="true"]').waitFor()); await settle(p, 300) } },
+  { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('#review-step-title').waitFor()); await settle(p, 300) } },
   // Open Loops (open-loops-method): the Loop home with the sidebar by the Places, Next, and the project walk.
   { name: 'loop', server: D, async run(p) {
     await go(p, demoBase, '/settings/account', () => p.locator('[data-method-mode="first"]').waitFor())

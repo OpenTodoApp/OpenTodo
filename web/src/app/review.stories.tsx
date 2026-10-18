@@ -73,6 +73,24 @@ export const WeeklyReview: StoryObj = {
   render: () => <ReviewView userId="u-ada" />,
 }
 
+/** The Mind sweep: trigger prompts and a quick add into the Inbox. */
+export const WeeklyReviewMindSweep: StoryObj = {
+  ...withSeed(seedReview),
+  render: () => <ReviewView userId="u-ada" step="sweep" />,
+}
+
+/** The project walk inside the step card: one project at a time. */
+export const WeeklyReviewProjects: StoryObj = {
+  ...withSeed(seedReview),
+  render: () => <ReviewView userId="u-ada" step="projects" />,
+}
+
+/** Every step done: the all-clear card, and Finish review as the primary action. */
+export const WeeklyReviewAllClear: StoryObj = {
+  ...withSeed(async () => {}),
+  render: () => <ReviewView userId="u-ada" />,
+}
+
 const digest: EmailDigest = {
   available: true, encryption: false, enabled: true, weekday: 5, hour: 7, timeZone: 'Europe/Zurich', language: 'de',
   nextSendAt: new Date('2026-10-16T07:00:00').getTime(), lastOutcome: 'sent', lastSentFor: '2026-10-09', lastAttemptAt: null,
