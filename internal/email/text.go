@@ -2,9 +2,7 @@ package email
 
 import (
 	"bytes"
-	"html"
 	"io"
-	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -79,54 +77,4 @@ func latin(b []byte, win, fifteen bool) string {
 		sb.WriteRune(r)
 	}
 	return sb.String()
-}
-
-var (
-	reComment  = regexp.MustCompile(`(?s)<!--.*?-->`)
-	reHidden   = []*regexp.Regexp{regexp.MustCompile(`(?is)<script\b.*?</script\s*>`), regexp.MustCompile(`(?is)<style\b.*?</style\s*>`), regexp.MustCompile(`(?is)<head\b.*?</head\s*>`), regexp.MustCompile(`(?is)<title\b.*?</title\s*>`)}
-	reLink     = regexp.MustCompile(`(?is)<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>(.*?)</a\s*>`)
-	reBreak    = regexp.MustCompile(`(?i)<br\s*/?>`)
-	reBlock    = regexp.MustCompile(`(?i)</?(p|div|tr|table|thead|tbody|tfoot|h[1-6]|ul|ol|blockquote|pre|section|article|header|footer|hr|center|dl|dt|dd)\b[^>]*>`)
-	reItem     = regexp.MustCompile(`(?i)<li\b[^>]*>`)
-	reCell     = regexp.MustCompile(`(?i)</t[dh]\s*>`)
-	reTag      = regexp.MustCompile(`(?s)</?[a-zA-Z!][^>]*>`)
-	reSpaces   = regexp.MustCompile(`[ \t\f\v\x{00a0}\x{200b}]+`)
-	maxLinkLen = 300
-)
-
-// HTMLToText turns an HTML body into readable plain text: invisible elements
-// (script, style, head) are dropped, block elements become line breaks, links
-// keep their target in parentheses, tags are removed and entities decoded.
-// It is plain string processing; nothing in the HTML is fetched or run.
-func HTMLToText(s string) string {
-	s = reComment.ReplaceAllString(s, "")
-	for _, re := range reHidden {
-		s = re.ReplaceAllString(s, "")
-	}
-	s = reLink.ReplaceAllStringFunc(s, func(m string) string {
-		sub := reLink.FindStringSubmatch(m)
-		href := strings.TrimSpace(html.UnescapeString(sub[1] + sub[2] + sub[3]))
-		text := strings.TrimSpace(reSpaces.ReplaceAllString(html.UnescapeString(reTag.ReplaceAllString(sub[4], "")), " "))
-		lower := strings.ToLower(href)
-		if (!strings.HasPrefix(lower, "http://") && !strings.HasPrefix(lower, "https://")) || len(href) > maxLinkLen {
-			return text
-		}
-		if text == "" || text == href || strings.TrimSuffix(text, "/") == strings.TrimSuffix(href, "/") {
-			return href
-		}
-		return text + " (" + href + ")"
-	})
-	s = strings.ReplaceAll(s, "\r\n", "\n")
-	s = strings.ReplaceAll(s, "\n", " ") // source line breaks are not text breaks in HTML
-	s = reBreak.ReplaceAllString(s, "\n")
-	s = reItem.ReplaceAllString(s, "\n- ")
-	s = reCell.ReplaceAllString(s, " ")
-	s = reBlock.ReplaceAllString(s, "\n")
-	s = reTag.ReplaceAllString(s, "")
-	s = html.UnescapeString(s)
-	lines := strings.Split(s, "\n")
-	for i, l := range lines {
-		lines[i] = strings.TrimSpace(reSpaces.ReplaceAllString(l, " "))
-	}
-	return normalizeText(strings.Join(lines, "\n"))
 }

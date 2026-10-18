@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/pixari/opentodo/internal/e2ee"
@@ -243,6 +244,19 @@ func humanSize(n int64) string {
 	}
 }
 
+var reURL = regexp.MustCompile(`https?://[^\s)>\]]+`)
+
+// letters counts the letters of s outside links, to compare a message's parts.
+func letters(s string) int {
+	n := 0
+	for _, r := range reURL.ReplaceAllString(s, "") {
+		if unicode.IsLetter(r) {
+			n++
+		}
+	}
+	return n
+}
+
 // walker collects the body text and attachments of a MIME tree.
 type walker struct {
 	plain, html []string
@@ -251,10 +265,18 @@ type walker struct {
 	parts       int
 }
 
+// text is the body as notes Markdown: the HTML part when there is one (OpenSpec
+// change email-html-notes: it keeps headings, lists and links, where a
+// newsletter's plain part spells out every tracking link), else the plain part.
+// A plain part with more than twice the words of the HTML wins: that HTML is a
+// stub some mailers send next to the real text.
 func (w *walker) text() string {
-	body := normalizeText(strings.Join(w.plain, "\n\n"))
-	if body == "" && len(w.html) > 0 {
-		body = HTMLToText(strings.Join(w.html, "\n"))
+	plain := normalizeText(invisible.Replace(strings.Join(w.plain, "\n\n")))
+	body := plain
+	if len(w.html) > 0 {
+		if md := HTMLToMarkdown(strings.Join(w.html, "\n")); md != "" && 2*letters(md) >= letters(plain) {
+			body = md
+		}
 	}
 	for _, f := range w.forwarded {
 		if body != "" {
