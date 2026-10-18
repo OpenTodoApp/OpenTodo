@@ -29,7 +29,7 @@ test('helm: the committed chart passes', () => {
 
 test('helm: Chart.yaml follows the latest release', () => {
   assert.deepEqual(checkChart(chart, ctx).errors, [])
-  has(checkChart(chart.replace('version: 0.8.0', 'version: 0.8.0'), ctx).errors, /version \(0\.8\.0\) must equal appVersion/)
+  has(checkChart(chart.replace('version: 0.8.0', 'version: 0.9.0'), ctx).errors, /version \(0\.9\.0\) must equal appVersion/)
   has(checkChart(chart.replace('appVersion: "0.8.0"', 'appVersion: "0.6.0"'), ctx).errors, /appVersion must be 0\.8\.0/)
   has(checkChart(chart.replace('appVersion: "0.8.0"', 'appVersion: 0.8.0'), ctx).errors, /quote appVersion/)
   has(checkChart(chart.replace('apiVersion: v2', 'apiVersion: v1'), ctx).errors, /apiVersion must be v2/)

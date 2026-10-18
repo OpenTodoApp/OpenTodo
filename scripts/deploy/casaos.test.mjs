@@ -34,8 +34,8 @@ test('casaos: image policy and x-casaos.version', () => {
   has(checkTemplate(compose.replace('version: "0.8.0"', 'version: "0.6.0"'), ctx), /x-casaos\.version must equal the image tag/)
   has(checkTemplate(compose.replace('version: "0.8.0"', 'version: 0.6'), ctx), /x-casaos\.version must be a quoted string/)
   // A new release in the changelog makes the pinned template stale.
-  const next = { ...ctx, changelog: '## [0.8.0] - 2026-11-01\n' + ctx.changelog }
-  has(checkTemplate(compose, next), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0/)
+  const next = { ...ctx, changelog: '## [0.9.0] - 2026-11-01\n' + ctx.changelog }
+  has(checkTemplate(compose, next), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0/)
 })
 
 test('casaos: port, data path and the init service', () => {

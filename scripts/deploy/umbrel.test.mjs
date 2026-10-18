@@ -56,8 +56,8 @@ test('umbrel: image pinned by release tag and digest, equal to the manifest vers
   has(variant(both('docker-compose.yml', compose.replace(`@sha256:${digest}`, ''))), /image must be .*@sha256:<index digest>/)
   has(variant(both('umbrel-app.yml', manifest.replace('version: "0.8.0"', 'version: "0.6.0"'))), /manifest version 0\.6\.0 must equal the image tag 0\.8\.0/)
   // A new release makes the pinned package stale until the version, tag and digest are bumped.
-  const next = { ...ctx, changelog: '## [0.8.0] - 2026-11-01\n' + ctx.changelog }
-  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0@sha256/)
+  const next = { ...ctx, changelog: '## [0.9.0] - 2026-11-01\n' + ctx.changelog }
+  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0@sha256/)
 })
 
 test('umbrel: manifest rules', () => {
