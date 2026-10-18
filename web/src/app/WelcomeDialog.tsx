@@ -10,6 +10,7 @@ import { Button, Dialog, Icon, type IconName } from '../ui'
 import { useDemo } from '../lib/demo'
 import { t } from '../lib/i18n'
 import { useHasTask, useUserPrefsRow } from '../lib/localData'
+import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { setWelcomeSeen, welcomeSeen } from '../lib/userPrefs'
 import { act } from './actionError'
@@ -24,16 +25,19 @@ const WELCOME_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 /**
  * Whether the note belongs on screen: the owner, not on the demo, not seen yet,
  * on a fresh account (created in the last week, no task yet when the app first
- * opened). Once shown it stays until it is closed, even when a task arrives meanwhile.
+ * opened). It waits for this device's first sync, so a device that has not yet
+ * received the account's tasks and preferences never shows it by mistake. Once
+ * shown it stays until it is closed, even when a task arrives meanwhile.
  */
 export function useWelcome(user: Pick<User, 'role' | 'createdAt'>, now = Date.now()): boolean {
   const row = useUserPrefsRow()
   const hasTask = useHasTask()
   const demo = useDemo()
+  const synced = useSyncStatus().lastSyncedAt !== null
   const shown = useRef(false)
   const fresh = typeof user.createdAt === 'number' && user.createdAt > 0 && now - user.createdAt < WELCOME_WINDOW_MS
   if (user.role !== 'owner' || demo || !fresh) return false
-  if (row === undefined || hasTask === undefined) return false
+  if (!synced || row === undefined || hasTask === undefined) return false
   if (welcomeSeen(row)) { shown.current = false; return false }
   if (!hasTask) shown.current = true
   return shown.current

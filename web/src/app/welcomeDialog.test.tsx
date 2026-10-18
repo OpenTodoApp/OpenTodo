@@ -4,6 +4,13 @@
 // closing it is a synced preference op.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// The note waits for the device's first sync; here every device has synced unless a test says otherwise.
+const syncState = vi.hoisted(() => ({ lastSyncedAt: 1 as number | null }))
+vi.mock('../lib/sync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/sync')>()),
+  useSyncStatus: () => ({ state: 'idle', pending: 0, lastSyncedAt: syncState.lastSyncedAt, error: null, live: false, rejected: null }),
+}))
 import { db } from '../lib/db'
 import { setDemo } from '../lib/demo'
 import { createTask, resetDeviceId } from '../lib/ops'
@@ -64,6 +71,15 @@ describe('welcome note', () => {
     await flush(100)
     expect(dialog()).toBeNull()
     await r.unmount()
+  })
+
+  it('waits for the first sync of this device', async () => {
+    syncState.lastSyncedAt = null
+    const r = await render(<WelcomeDialog user={owner} />)
+    await flush(100)
+    expect(dialog()).toBeNull()
+    await r.unmount()
+    syncState.lastSyncedAt = 1
   })
 
   it('is never shown to members', async () => {
