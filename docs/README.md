@@ -95,6 +95,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Capturing pages](capture.md) | Share sheet, bookmarklet and browser extension |
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
+| [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, how to star OpenTodo on GitHub, and how to buy the maintainer a coffee. |
 
 ## Self-hosting and operations
 

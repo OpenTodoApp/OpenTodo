@@ -453,6 +453,9 @@ var Schema = map[string]map[string]kind{
 		// The first-run card (ux-overhaul, first-run): "done" once the account has
 		// finished or skipped it, so a second device does not show it again after sync.
 		"first_run": kString,
+		// The owner's welcome note (OpenSpec change welcome-note): "seen" once it was
+		// closed on any device, so it is shown once per account.
+		"welcome": kString,
 		// Interface language (OpenSpec change app-localization, design D1):
 		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
 		// restricted here; clients read an unknown code as "system" and keep the

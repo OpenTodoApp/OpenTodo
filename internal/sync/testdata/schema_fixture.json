@@ -112,7 +112,8 @@
       "theme_accent",
       "theme_mode",
       "time_format",
-      "week_start"
+      "week_start",
+      "welcome"
     ],
     "view": [
       "color",

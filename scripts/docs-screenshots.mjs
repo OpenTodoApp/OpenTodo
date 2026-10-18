@@ -138,6 +138,8 @@ async function plainSetup() {
   await p.getByLabel('Name').fill('Ada Lovelace'); await p.getByLabel('Email').fill('ada@example.com'); await p.getByLabel(/Password/).fill(PASSWORD)
   await p.getByRole('button', { name: 'Create owner account' }).click()
   await p.getByRole('textbox', { name: 'Add a task' }).waitFor()
+  // The owner's one-time welcome note (welcome-note) is closed before the scenes.
+  await p.locator('[data-welcome-close]').click({ timeout: 10000 }).catch(() => {})
   // A second account, a shared project and a pending invitation.
   const { link } = await api('POST', '/api/v1/invitations', { email: 'bob@example.com' })
   const bc = await browser.newContext()

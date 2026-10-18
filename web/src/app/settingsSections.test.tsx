@@ -32,11 +32,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const NINE = ['account', 'appearance', 'general', 'notifications', 'capture', 'integrations', 'data', 'people', 'server'] as const
+const TEN = ['account', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data', 'people', 'server'] as const
 
 describe('routes', () => {
-  it('parses and builds /settings/<section> for the nine sections', () => {
-    expect(SETTINGS_SECTION_IDS).toEqual(NINE)
+  it('parses and builds /settings/<section> for the ten sections', () => {
+    expect(SETTINGS_SECTION_IDS).toEqual(TEN)
     for (const id of SETTINGS_SECTION_IDS) {
       expect(parseRoute(`/settings/${id}`)).toEqual({ view: 'settings', section: id })
       expect(routePath({ view: 'settings', section: id })).toBe(`/settings/${id}`)
@@ -81,11 +81,11 @@ describe('section table', () => {
     }
   })
 
-  it('groups the nine sections in the stated order per role, omitting empty groups', () => {
+  it('groups the ten sections in the stated order per role, omitting empty groups', () => {
     const shape = (u: User) => groupedSections(u).map((g) => [g.group.label, g.sections.map((s) => s.id)])
     expect(shape(owner)).toEqual([
       ['You', ['account', 'appearance']],
-      ['App', ['general', 'notifications', 'capture']],
+      ['App', ['general', 'notifications', 'capture', 'about']],
       ['Data', ['integrations', 'data']],
       ['Server', ['people', 'server']],
     ])
@@ -230,9 +230,9 @@ describe('opening a section', () => {
   })
 
   it('has no help link or action in any card header', () => {
-    const all = NINE.map((id) => render(owner, id)).join('\n')
+    const all = TEN.map((id) => render(owner, id)).join('\n')
     expect(all).not.toContain('data-help-screen="settings/password"')
-    expect(all.match(/data-help-screen="settings\/[a-z]+"/g)?.length).toBe(NINE.length)
+    expect(all.match(/data-help-screen="settings\/[a-z]+"/g)?.length).toBe(TEN.length)
   })
 })
 

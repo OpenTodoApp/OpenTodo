@@ -37,6 +37,18 @@ await page.getByLabel('Email').fill('ada@example.com')
 await page.getByLabel(/Password/).fill('correct horse battery staple')
 await page.getByRole('button', { name: 'Create owner account' }).click()
 
+step('welcome note after setup')
+// The owner of a new server is thanked once (welcome-note); closing it is remembered.
+const welcome = page.locator('[data-testid="welcome"]')
+await welcome.waitFor()
+await welcome.getByRole('link', { name: /Buy me a coffee/ }).waitFor()
+await page.locator('[data-welcome-close]').click()
+await welcome.waitFor({ state: 'detached' })
+await page.reload()
+await page.getByRole('textbox', { name: 'Add a task' }).waitFor()
+await page.waitForTimeout(500)
+if (await welcome.count()) throw new Error('the welcome note came back after a reload')
+
 step('inbox after setup')
 const quick = page.getByRole('textbox', { name: 'Add a task' })
 await quick.waitFor()

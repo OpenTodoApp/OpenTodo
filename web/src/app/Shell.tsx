@@ -20,6 +20,7 @@ import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
+import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
@@ -273,6 +274,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense></PanelBoundary>}
       {paletteLoaded && paletteOpen && <PanelBoundary resetKey={paletteOpen}><Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
+      {/* The owner's one-time thank-you on a new server (welcome-note). */}
+      <WelcomeDialog user={user} />
       <ReminderToasts />
       <UndoToast />
       <TemplateDialogHost />

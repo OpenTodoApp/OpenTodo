@@ -348,6 +348,8 @@ export interface UserPrefs {
   first_run: string
   /** Interface language (app-localization D1): 'system' or a shipped code; unknown values read as 'system'. */
   language: string
+  /** The owner's welcome note (welcome-note): "seen" once closed on any device. */
+  welcome: string
   _clock: Clock
 }
 
