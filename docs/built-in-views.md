@@ -33,7 +33,7 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Review** | Your [weekly review](review-and-statistics.md) | <kbd>g</kbd> <kbd>r</kbd> |
 | **Statistics** | What you [completed and let slip](review-and-statistics.md#statistics) | <kbd>g</kbd> <kbd>Shift+S</kbd> |
 
-The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More** (open it once, it stays open on this device). The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
+The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More**, a menu on a computer. The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 
 Each project can also be shown three ways: as a **List**, as a **Board** with a column per section, or as a **Timeline** of its dates with arrows between tasks that wait for each other. Press <kbd>v</kbd> to cycle through them; see [Sections and boards](sections-and-boards.md).
 

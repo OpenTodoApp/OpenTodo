@@ -28,7 +28,7 @@ Labels are personal. In a shared project, other members don't see the labels you
 
 ## See everything with one label
 
-The **Labels** group in the sidebar lists your labels with the number of open tasks for each. Select one to see all its tasks, grouped by project.
+Once you have a label, the **Labels** group in the sidebar lists your labels with the number of open tasks for each. Select one to see all its tasks, grouped by project.
 
 **All** next to Labels (or <kbd>g</kbd> <kbd>l</kbd>) opens the labels page, where you rename, recolour, reorder, merge and delete labels: see [Manage labels](manage-labels.md).
 

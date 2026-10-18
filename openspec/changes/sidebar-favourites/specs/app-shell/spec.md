@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything, then Projects, Labels and Filters, each collapsible with its state remembered on the device (Labels and Filters closed until the device stores a state) and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects, favourites and collapsed group headers only.
+The sidebar SHALL show, top to bottom: the app name with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything, then Projects, Labels and Filters, each collapsible with its state remembered on the device (Labels and Filters closed until the device stores a state) and its item count on the header while collapsed; then a pinned footer with Help, notifications, sync status and the account. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same badge on the row. The Filters group SHALL be shown only once the user has a saved filter and the Labels group only once the user has a label; an empty group shows nothing, not a placeholder sentence. Counts SHALL appear on Inbox, Today, projects, favourites and collapsed group headers only.
 
 #### Scenario: Default sidebar
 - **WHEN** a user with projects and labels and no favourites opens the app on a 1280×800 screen
@@ -28,6 +28,14 @@ The sidebar SHALL show, top to bottom: the app name, the primary destinations In
 #### Scenario: More open on a phone
 - **WHEN** a user with 25 projects opens the drawer on a 390×640 phone, opens More and swipes up on the drawer
 - **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the primary destinations and the footer stay in place, and the page behind the drawer does not move
+
+#### Scenario: More on a desktop
+- **WHEN** a user on a 1280×600 screen with a mouse selects More
+- **THEN** a menu lists the More destinations below the row, the projects keep their place in the scroller, choosing Someday opens it and closes the menu, and the More row is marked current while Someday is open
+
+#### Scenario: No empty groups
+- **WHEN** a new account with no saved filter and no label opens the app
+- **THEN** the sidebar shows no Filters or Labels group and no placeholder sentence, and saving a first filter brings the Filters group back with its All action
 
 #### Scenario: Favourites first
 - **WHEN** the user has pinned a project, a label and a saved filter

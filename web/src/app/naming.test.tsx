@@ -6,6 +6,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { db } from '../lib/db'
+import { createView } from '../lib/views'
 import { resetDeviceId } from '../lib/ops'
 import { SHORTCUTS } from '../lib/shortcuts'
 import type { User } from '../lib/types'
@@ -92,6 +93,8 @@ describe('old words', () => {
   })
 
   it('the interface says Filters, Updates and Sessions and audit log', async () => {
+    // The Filters group appears with the first saved filter (sidebar-compact-desktop).
+    await createView({ name: 'Errands', query: 'today' })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await flush(50)
     expect(r.container.querySelector('nav[aria-label="Filters"]')).toBeTruthy()

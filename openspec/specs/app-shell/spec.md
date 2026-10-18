@@ -17,7 +17,7 @@ From 768 px wide the shell SHALL fill the viewport height with the sidebar and t
 - **THEN** it fails if more than three elements can scroll vertically, naming the screen and the extra element
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) and a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available); then the Filters, Projects and Labels groups in one scroller, each collapsible with its state remembered on the device and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
+The sidebar SHALL show, top to bottom: the app name, the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available) and the Filters, Projects and Labels groups, each collapsible with its state remembered on the device and its item count on the header while collapsed; then a pinned footer with Help, search, notifications, sync status and the account. Counts SHALL appear on Inbox, Today, projects and collapsed group headers only.
 
 #### Scenario: Default sidebar
 - **WHEN** a user with projects and labels opens the app on a 1280×800 screen
@@ -38,6 +38,10 @@ The sidebar SHALL show, top to bottom: the app name, the primary destinations In
 #### Scenario: Two groups closed
 - **WHEN** the user collapses Filters and Labels
 - **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
+
+#### Scenario: More open on a phone
+- **WHEN** a user with 25 projects opens the drawer on a 390×640 phone, opens More and swipes up on the drawer
+- **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the primary destinations and the footer stay in place, and the page behind the drawer does not move
 
 ### Requirement: Page template
 Every view SHALL render a page header with the title in one size, optional meta text beside it, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, boards and calendars the full column. The header SHALL stay visible while the content scrolls.
