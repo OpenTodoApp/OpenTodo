@@ -2025,7 +2025,6 @@
   "Review": "Revisione",
   "Review due": "Revisione da fare",
   "Review finished {instant}.": "Revisione completata {instant}.",
-  "Review steps": "Passaggi della revisione",
   "Revoke": "Revoca",
   "Revoke app password": "Revoca password per app",
   "Revoke the feed URL?": "Revocare l’URL del feed?",
@@ -3816,5 +3815,14 @@
   "{n, plural, one {# stalled} other {# stalled}}": "{n, plural, one {# fermo} many {# fermi} other {# fermi}}",
   "{n} waiting": "{n} in attesa",
   "How do you want to work?": "Come vuoi lavorare?",
-  ": open the method guide": ": apri la guida del metodo"
+  ": open the method guide": ": apri la guida del metodo",
+  "All clear": "Tutto chiaro",
+  "Next: {step}": "Avanti: {step}",
+  "Previous project": "Progetto precedente",
+  "Prompts": "Spunti",
+  "Review done. See you next week.": "Revisione fatta. Alla prossima settimana.",
+  "Review progress": "Avanzamento della revisione",
+  "Step {n} of {total} · {phase}": "Passo {n} di {total} · {phase}",
+  "Weekly review: the next step": "Revisione settimanale: il passo successivo",
+  "Weekly review: the previous step": "Revisione settimanale: il passo precedente"
 }

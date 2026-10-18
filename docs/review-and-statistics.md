@@ -9,13 +9,13 @@ order: 24
 ---
 # Weekly review
 
-<picture><source srcset="images/review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-light.webp" alt="The Weekly review screen on its first step, the Inbox: seven step tabs in three phases with counts, the Inbox tasks to process, and the Finish review button."></picture>
+<picture><source srcset="images/review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-light.webp" alt="The Weekly review on its first step, the Inbox: a stepper of seven numbered circles in three phases, the Inbox step in a card with the tasks to process, and the Next button."></picture>
 
 Once a week, look back at what happened and set up the week ahead. Open **Review** in the sidebar (under More) or press <kbd>g</kbd> <kbd>r</kbd>. It is the weekly rhythm of [Open Loops](method/review.md); the [Daily check and the Monthly look](method/rhythms.md) are in the page's menu.
 
 ## The seven steps
 
-The review opens on the first step that is not done. Move between steps with the arrow keys; each tab shows how much is left or a check mark. The steps come in three phases:
+The review walks you through one step at a time, starting with the first that is not done. The stepper at the top shows every step: a check when it is done, a small number for what is left. Select a step to jump to it, or use **Back** and **Next** below the step (<kbd>[</kbd> and <kbd>]</kbd>). On the last step, **Next** becomes **Finish review**. The steps come in three phases:
 
 **Get clear**
 1. **Inbox**: done when the Inbox is empty. **Process the Inbox** walks it one task at a time ([Process the Inbox](process-the-inbox.md)).
