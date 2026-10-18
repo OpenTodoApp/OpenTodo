@@ -334,8 +334,9 @@ func TestUserExportExcludesAudit(t *testing.T) {
 		// user_prefs: the caller's date and time preferences (date-time-preferences).
 		// attachments: file and link metadata (attachments).
 		// fields: custom field definitions (custom-fields); review: when the last
-		// weekly review was finished (stats-and-review).
-		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption", "user_prefs", "attachments", "fields", "review":
+		// weekly review was finished (stats-and-review); project_prefs: personal
+		// per-project preferences (activity-feed, open-loops-method).
+		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption", "user_prefs", "attachments", "fields", "review", "project_prefs":
 		default:
 			t.Fatalf("user export has unexpected key %q", k)
 		}

@@ -80,3 +80,31 @@ func TestExportIncludesReview(t *testing.T) {
 		t.Fatalf("exported row = %v", row)
 	}
 }
+
+// TestExportIncludesOpenLoopsFields (open-loops-method D2, D4, D5): the export
+// carries the method preference, the rhythm fields and the per-project review
+// stamps.
+func TestExportIncludesOpenLoopsFields(t *testing.T) {
+	e := ownerEnv(t)
+	e.syncOps("devA",
+		rop("m1", "user_prefs", "me", "method", "first", 1),
+		rop("d1", "review", "me", "daily_at", 1760600000000, 2),
+		rop("f1", "review", "me", "focus", "t1,t2", 3),
+		rop("s1", "project_prefs", "p1", "reviewed_at", 1760500000000, 4),
+	)
+	resp, out := e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	if row := out["user_prefs"].([]any)[0].(map[string]any); row["method"] != "first" {
+		t.Fatalf("exported prefs = %v", row)
+	}
+	if row := out["review"].([]any)[0].(map[string]any); row["daily_at"] != float64(1760600000000) || row["focus"] != "t1,t2" {
+		t.Fatalf("exported review = %v", row)
+	}
+	list, ok := out["project_prefs"].([]any)
+	if !ok || len(list) != 1 {
+		t.Fatalf("export project_prefs = %v", out["project_prefs"])
+	}
+	if row := list[0].(map[string]any); row["id"] != "p1" || row["reviewed_at"] != float64(1760500000000) {
+		t.Fatalf("exported project prefs = %v", row)
+	}
+}

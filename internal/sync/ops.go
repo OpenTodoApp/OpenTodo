@@ -425,6 +425,9 @@ var Schema = map[string]map[string]kind{
 	// per-project preferences are additive fields here.
 	"project_prefs": {
 		"feed_seen_at": kNumber,
+		// When this user last marked the project reviewed in the weekly review's
+		// project walk (open-loops-method D4), Unix ms. Personal like the row.
+		"reviewed_at": kNumber,
 	},
 	// user_prefs: one user's date and time preferences (OpenSpec change
 	// `date-time-preferences`, design D1). Clients write a single row with the
@@ -456,6 +459,10 @@ var Schema = map[string]map[string]kind{
 		// The owner's welcome note (OpenSpec change welcome-note): "seen" once it was
 		// closed on any device, so it is shown once per account.
 		"welcome": kString,
+		// How you work (OpenSpec change open-loops-method, design D2): "lists",
+		// "companion" or "first"; clients read an unknown or empty value as
+		// "lists", so new modes stay additive.
+		"method": kString,
 		// Interface language (OpenSpec change app-localization, design D1):
 		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
 		// restricted here; clients read an unknown code as "system" and keep the
@@ -470,6 +477,13 @@ var Schema = map[string]map[string]kind{
 	// content: never encrypted, and it derives no activity event.
 	"review": {
 		"completed_at": kNumber,
+		// The other rhythms (open-loops-method D5): the last Daily check and
+		// Monthly look (Unix ms), and today's focus as the local date
+		// (YYYY-MM-DD) and up to three comma-separated task ids.
+		"daily_at":   kNumber,
+		"monthly_at": kNumber,
+		"focus_date": kString,
+		"focus":      kString,
 	},
 }
 

@@ -321,6 +321,8 @@ export interface ProjectPrefs {
   id: string
   /** Activity of the project up to this event time (Unix ms) has been seen; 0 = never marked. */
   feed_seen_at: number
+  /** When this user last marked the project reviewed in the review's project walk (open-loops-method D4), Unix ms; 0 = never. */
+  reviewed_at: number
   _clock: Clock
 }
 
@@ -350,6 +352,8 @@ export interface UserPrefs {
   language: string
   /** The owner's welcome note (welcome-note): "seen" once closed on any device. */
   welcome: string
+  /** How you work (open-loops-method D2): lists | companion | first; unknown or empty values read as lists. */
+  method: string
   _clock: Clock
 }
 
@@ -364,6 +368,12 @@ export interface Review {
   id: string
   /** Unix ms of the latest finish; 0 = never. */
   completed_at: number
+  /** The last Daily check and Monthly look (open-loops-method D5), Unix ms; 0 = never. */
+  daily_at: number
+  monthly_at: number
+  /** Today's focus (open-loops-method D5): the local date it was chosen on and up to three comma-separated task ids. */
+  focus_date: string
+  focus: string
   _clock: Clock
 }
 

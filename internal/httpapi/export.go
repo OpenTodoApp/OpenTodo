@@ -60,6 +60,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["review"] = review
+	// Personal per-project preferences (activity-feed D1, open-loops-method D4):
+	// the feed's seen markers and the review stamps, restored like review.
+	projectPrefs, err := s.sync.List(r.Context(), uid, "project_prefs", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["project_prefs"] = projectPrefs
 	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
 	// for an encrypted account; the wrapped key record makes the document
 	// restorable and decryptable elsewhere with the passphrase. null otherwise.
