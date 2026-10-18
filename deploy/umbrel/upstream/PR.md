@@ -14,7 +14,7 @@ New app
 
 App ID: `opentodo`
 Upstream project: https://github.com/pixari/opentodo (website https://open-todo.app, AGPL-3.0)
-Version: 0.7.0
+Version: 0.7.1
 
 ## Summary
 
