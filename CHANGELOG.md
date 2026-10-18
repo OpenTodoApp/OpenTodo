@@ -4,14 +4,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
-### Fixed
-
-- **Newsletters sent to Email to task are readable.** An HTML message now becomes formatted notes with its headings, lists, bold text and links shown as their text, instead of plain text with every tracking address spelled out; a newsletter's hidden preview text and its blank filler lines are gone. ([Email to task](docs/email.md))
-- **Email to task keeps long messages.** A forwarded message's text was cut at 16 KB; the task now keeps about 48 KB, as much as its notes hold (also with end-to-end encryption), and only longer messages end with a note that the rest did not fit. ([Email to task](docs/email.md), #161)
-
 ## [0.8.0] - 2026-10-18
 
-OpenTodo 0.8.0 introduces **Open Loops**, a method of its own for getting everything off your mind, inspired by GTD: catch, clarify, place, do and review. You choose how prominent it is, from not at all to the first screen you see. The weekly review becomes a guided walk through your Inbox, what slipped, what is waiting and every project, joined by a five-minute Daily check and a Monthly look. Nothing changes until you turn it on.
+OpenTodo 0.8.0 introduces **Open Loops**, a method of its own for getting everything off your mind, inspired by GTD: catch, clarify, place, do and review. You choose how prominent it is, from not at all to the first screen you see. The weekly review becomes a guided walk through your Inbox, what slipped, what is waiting and every project, joined by a five-minute Daily check and a Monthly look. Nothing changes until you turn it on. Email to task also keeps long messages and turns newsletters into readable, formatted notes. 0.7.2 was prepared but not published on its own: its changes (listed below) arrive with this release.
 
 ### Upgrade notes
 
@@ -29,6 +24,12 @@ OpenTodo 0.8.0 introduces **Open Loops**, a method of its own for getting everyt
 
 - **"Projects without a next action" counts waiting and deferred tasks.** In the review and the weekly email digest, a project whose open tasks are all assigned to someone else, blocked, or start later is no longer listed; one whose only tasks are parked in Someday now is. ([Places](docs/method/places.md#projects-without-a-next-action))
 - **Statistics and the weekly digest have their own guide page**, next to the weekly review's. ([Statistics and the weekly digest](docs/statistics.md))
+- **Why OpenTodo can be missing from the Android share menu.** The capture guide explains that Android lists only web apps installed as an app from Chrome or Samsung Internet, how to check, and what works instead. ([Capturing pages](docs/capture.md#opentodo-is-missing-from-the-share-menu-on-android), #159)
+
+### Fixed
+
+- **Newsletters sent to Email to task are readable.** An HTML message now becomes formatted notes with its headings, lists, bold text and links shown as their text, instead of plain text with every tracking address spelled out; a newsletter's hidden preview text and its blank filler lines are gone. ([Email to task](docs/email.md))
+- **Email to task keeps long messages.** A forwarded message's text was cut at 16 KB; the task now keeps about 48 KB, as much as its notes hold (also with end-to-end encryption), and only longer messages end with a note that the rest did not fit. ([Email to task](docs/email.md), #161)
 
 ## [0.7.2] - 2026-10-18
 
@@ -576,8 +577,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
 [Unreleased]: https://github.com/pixari/opentodo/compare/v0.8.0...HEAD
-[0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.2...v0.8.0
-[0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.7.2
+[0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.8.0
+[0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...01b1fe0
 [0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pixari/opentodo/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/pixari/opentodo/compare/v0.6.0...v0.6.1
