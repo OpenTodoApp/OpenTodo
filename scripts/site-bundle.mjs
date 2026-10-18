@@ -9,6 +9,7 @@
 //     icons/icons.svg    SVG sprite of the bundled Lucide icons and the website-only ones
 //                        (web/src/ui/icons/site-icons.json), plus names.json and the licence
 //     changelog.json     CHANGELOG.md as data
+//     method.json        the Open Loops vocabulary in every shipped language (open-loops-method D1)
 //     README.md          this layout and the stability rule
 //
 //   node scripts/site-bundle.mjs [--version V] [--out DIR] [--bin PATH] [--no-archive]
@@ -44,6 +45,38 @@ export const SCREENSHOTS = [
   'today-dark', 'trash', 'upcoming', 'week',
 ]
 export const SHOTS_DIR = 'docs/screenshots/site'
+
+/** The Open Loops features this version ships, as the manifest's `method` fact (stable ids, only added). */
+export const METHOD_FEATURES = ['vocabulary', 'modes', 'loop-home', 'next', 'waiting', 'project-walk', 'daily-check', 'monthly-look']
+/** method.json schema; fields are only ever added. */
+export const METHOD_SCHEMA = 1
+
+/** The shipped interface languages, read from web/src/locales/index.ts (English first). */
+function shippedLanguages(root) {
+  const text = readFileSync(join(root, 'web/src/locales/index.ts'), 'utf8')
+  return ['en', ...[...text.matchAll(/\{ code: '([a-z]{2,3})'/g)].map((m) => m[1]).filter((c) => c !== 'en')]
+}
+
+/**
+ * method.json (site-bundle "Method vocabulary in the bundle"): the vocabulary of
+ * web/src/lib/method/vocabulary.json with every name and description in each shipped
+ * language, read from the same catalogs the app uses (names carry the `method`
+ * context there), so the website shows exactly the app's words.
+ */
+export function methodVocabulary(root = repoRoot) {
+  const v = JSON.parse(readFileSync(join(root, 'web/src/lib/method/vocabulary.json'), 'utf8'))
+  const langs = shippedLanguages(root)
+  const catalogs = Object.fromEntries(langs.filter((l) => l !== 'en').map((l) => [l, JSON.parse(readFileSync(join(root, `web/src/locales/${l}.json`), 'utf8'))]))
+  const translate = (id, context) => Object.fromEntries(langs.map((l) => [l, l === 'en' ? id : (context && catalogs[l][`${id}|${context}`]) || catalogs[l][id] || id]))
+  const term = (x) => ({ id: x.id, name: translate(x.name, 'method'), description: translate(x.description), ...(x.route ? { route: x.route } : {}), ...(x.keys ? { keys: x.keys } : {}) })
+  return {
+    schema: METHOD_SCHEMA,
+    name: v.name,
+    languages: langs,
+    tagline: translate(v.tagline),
+    ...Object.fromEntries(['moves', 'principles', 'places', 'rhythms', 'horizons'].map((g) => [g, v[g].map(term)])),
+  }
+}
 
 // ---- tokens (D4) ----
 
@@ -170,6 +203,7 @@ export function buildManifest({ version, date, commit, formats, binBytes, docker
     specCount: specs.length,
     docsPages,
     importFormatCount: formats.length,
+    method: METHOD_FEATURES,
     ...serverFacts(),
   }
   if (binBytes) facts.binaryMB = mb(binBytes)
@@ -210,12 +244,13 @@ tagged commit. Layout version ${LAYOUT}.
 
 | Path | What it is |
 |---|---|
-| \`manifest.json\` | schema ${MANIFEST_SCHEMA}: \`version\`, \`date\`, \`commit\`, \`importFormats\` (formats this version imports), \`screenshots\`, \`facts\` (named values the website may show: \`quickAddLanguages\`, \`specCount\`, \`docsPages\`, \`importFormatCount\`, the server facts \`architectures\`, \`port\`, \`dataDir\`, \`database\`, \`license\`, \`exportFormat\` and \`exportFormatVersion\`, and \`binaryMB\` / \`dockerImageMB\` when measured) |
+| \`manifest.json\` | schema ${MANIFEST_SCHEMA}: \`version\`, \`date\`, \`commit\`, \`importFormats\` (formats this version imports), \`screenshots\`, \`facts\` (named values the website may show: \`quickAddLanguages\`, \`specCount\`, \`docsPages\`, \`importFormatCount\`, \`method\` (the Open Loops features this version ships: ${METHOD_FEATURES.join(', ')}), the server facts \`architectures\`, \`port\`, \`dataDir\`, \`database\`, \`license\`, \`exportFormat\` and \`exportFormatVersion\`, and \`binaryMB\` / \`dockerImageMB\` when measured) |
 | \`docs/\` | the documentation website, served under \`/docs/\` |
 | \`shots/\` | product screenshots, WebP; \`-dark\` names are the dark theme |
 | \`tokens/tokens.css\` | the \`--ot-*\` colour tokens for light and dark, standalone CSS |
 | \`icons/icons.svg\` | SVG sprite of the icon set (\`<use href="icons.svg#icon-inbox"/>\`), with \`names.json\` and \`LICENSE-lucide.txt\` (ISC) |
 | \`changelog.json\` | \`[{version, date, intro, sections: {Added: [markdown, ...]}}]\`, newest first |
+| \`method.json\` | schema ${METHOD_SCHEMA}: the Open Loops vocabulary, \`{name, languages, tagline, moves, principles, places, rhythms, horizons}\`, each term \`{id, name: {<lang>: text}, description: {<lang>: text}}\` (moves add \`route\` and \`keys\`), in the words the app of this version shows |
 
 ## Stability
 
@@ -272,6 +307,7 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
   // changelog.json, manifest.json, README.md
   const changelog = parseChangelog(readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8'))
   writeFileSync(join(dir, 'changelog.json'), JSON.stringify(changelog, null, 2) + '\n')
+  writeFileSync(join(dir, 'method.json'), JSON.stringify(methodVocabulary(), null, 2) + '\n')
   const released = changelog.find((c) => c.version === version.replace(/^v/, ''))
   const date = released?.date ?? (git('log', '-1', '--format=%cs') || new Date().toISOString().slice(0, 10))
   const binPath = bin ? resolve(repoRoot, bin) : undefined

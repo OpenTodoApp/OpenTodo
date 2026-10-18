@@ -56,7 +56,7 @@
 
 ## 8. Site bundle (design D1)
 
-- [ ] 8.1 Extend `scripts/site-bundle.mjs` to write `method.json` (schema 1, generated from `vocabulary.json` and the six catalogs) and the `method` fact, and document both in the bundle README table. Verify with the site-bundle script's tests ("Same words on the website", "Website gates the method page", and the existing "Older website, newer manifest") (`node --test scripts/`).
+- [x] 8.1 Extend `scripts/site-bundle.mjs` to write `method.json` (schema 1, generated from `vocabulary.json` and the six catalogs) and the `method` fact, and document both in the bundle README table. Verify with the site-bundle script's tests ("Same words on the website", "Website gates the method page", and the existing "Older website, newer manifest") (`node --test scripts/`).
 
 ## 9. Roadmap, changelog and integration
 

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
-  buildManifest, iconSprite, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, tokensCss, validateManifest,
+  buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, tokensCss, validateManifest,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -105,3 +105,31 @@ test('server facts come from their sources (site-bundle-server-facts)', () => {
   writeFileSync(join(root, 'internal/httpapi/export.go'), 'package httpapi\n')
   assert.throws(() => serverFacts(root), /internal\/httpapi\/export\.go/)
 })
+
+test('method.json: the app\'s own words in every shipped language (open-loops-method D1)', () => {
+  const m = methodVocabulary()
+  assert.equal(m.schema, 1)
+  assert.equal(m.name, 'Open Loops')
+  assert.deepEqual(m.languages, ['en', 'de', 'fr', 'es', 'it', 'pt'])
+  assert.deepEqual(m.moves.map((x) => x.id), ['catch', 'clarify', 'place', 'do', 'review'])
+  const it = JSON.parse(read('web/src/locales/it.json'))
+  const vocabulary = JSON.parse(read('web/src/lib/method/vocabulary.json'))
+  for (const [i, move] of vocabulary.moves.entries()) {
+    // Same words on the website: the Italian name is the catalog's entry in the method context.
+    assert.equal(m.moves[i].name.it, it[`${move.name}|method`], move.id)
+    assert.equal(m.moves[i].name.en, move.name)
+    assert.equal(m.moves[i].description.it, it[move.description], move.id)
+    assert.equal(m.moves[i].route, move.route)
+  }
+  for (const group of ['principles', 'places', 'rhythms', 'horizons']) {
+    for (const term of m[group]) for (const lang of m.languages) assert.ok(term.name[lang] && term.description[lang], `${group}.${term.id}.${lang}`)
+  }
+})
+
+test('the manifest names the Open Loops features as a fact the website can gate on', () => {
+  const m = buildManifest({ version: 'v1.0.0', date: '2026-10-18', commit: 'abc', formats: ['opentodo-json'], docsPages: 10 })
+  assert.deepEqual(m.facts.method, METHOD_FEATURES)
+  assert.ok(m.facts.method.includes('monthly-look'))
+  assert.deepEqual(validateManifest(m), [])
+})
+
