@@ -13,7 +13,8 @@ import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
 import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
-import { reviewAgo, reviewDue } from '../lib/review'
+import { dailyDue, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
+import { readMethodMode } from '../lib/method/mode'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
@@ -318,9 +319,18 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const promoted = appearance.sidebar ?? []
   const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label={t('unread updates')} /> : undefined
   // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
-  const due = reviewDue(review?.completed_at)
+  // The other rhythms (open-loops-method "Rhythm markers"): the Monthly look in Companion
+  // and Open Loops first, the Daily check in Open Loops first.
+  const method = readMethodMode(prefsRow)
+  const weeklyDue = reviewDue(review?.completed_at)
+  const rhythmsDue = [
+    ...(method !== 'lists' && monthlyDue(review?.monthly_at) ? [t('the Monthly look is due')] : []),
+    ...(method === 'first' && dailyDue(review?.daily_at, today) ? [t('the Daily check is due')] : []),
+  ]
+  const due = weeklyDue || rhythmsDue.length > 0
+  const dueText = [...(weeklyDue ? [t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })] : []), ...rhythmsDue].join('; ')
   const reviewBadge = due
-    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })}`}</span></span>
+    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${dueText}`}</span></span>
     : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.

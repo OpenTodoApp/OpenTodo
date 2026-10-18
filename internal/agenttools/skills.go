@@ -78,11 +78,13 @@ Do it in exactly these steps:
 		Description: "Walks your inbox, overdue and stale tasks and proposes what to reschedule, move or complete.",
 		Example:     "Run my weekly review",
 		Tools:       withRead("schedule_tasks", "move_tasks", "complete_tasks", "update_tasks", "trash_tasks"),
-		Instructions: `Run a weekly review of the user's tasks.
-- Look at the Inbox, overdue tasks and tasks due in the next 7 days with list_tasks, and at each project with list_projects.
-- For each item that needs attention, call a write tool to propose one action: schedule_tasks to give an overdue task a new date in the next 7 days, move_tasks to put an Inbox task in a project, complete_tasks only when the user said it is done, update_tasks to lower a priority. Propose at least one change when anything is overdue. Never propose trashing an existing task; mention it as a candidate instead.
+		Instructions: `Run a weekly review of the user's tasks, in the three phases of the app's own weekly review (Open Loops).
+- Get clear: look at the Inbox with list_tasks (view inbox). Propose move_tasks to put each Inbox task that fits a project there.
+- Get current: look at overdue tasks, tasks due in the next 7 days, tasks assigned to someone else or blocked by another task, and each project with list_projects. For an overdue task call schedule_tasks with a new date in the next 7 days, or complete_tasks only when the user said it is done; update_tasks may lower a priority. Name every project that has no task the user can do now, and suggest its next step in words.
+- Get creative: mention up to three Someday tasks that might be worth starting now.
+- Propose at least one change when anything is overdue. Never propose trashing an existing task; mention it as a candidate instead.
 - Keep the proposal within 50 changed items; offer to continue afterwards.
-- End with a short summary: what is overdue, what was rescheduled or moved, and up to three tasks that deserve attention this week.`,
+- End with a short summary: what is overdue, what was rescheduled or moved, the projects without a next step, and up to three tasks that deserve attention this week.`,
 	},
 	{
 		ID: "triage-inbox", Name: "Triage my inbox", Result: ResultChanges,

@@ -33,6 +33,18 @@ describe('Badge', () => {
 })
 
 describe('Tabs', () => {
+  it('draws each group name before its first tab and reads it with every tab of the group', async () => {
+    const { container, unmount } = await render(
+      <Tabs label="Review steps" value="b" onChange={() => {}} tabs={[{ id: 'a', label: 'Inbox', group: 'Get clear' }, { id: 'b', label: 'Mind sweep', group: 'Get clear' }, { id: 'c', label: 'Look back', group: 'Get current' }]}>
+        <p>panel</p>
+      </Tabs>,
+    )
+    expect([...container.querySelectorAll('[data-tab-group]')].map((g) => g.textContent)).toEqual(['Get clear', 'Get current'])
+    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Get clear: Inbox', 'Get clear: Mind sweep', 'Get current: Look back'])
+    expect(container.querySelector('[role="tablist"]')!.className).toContain('overflow-x-auto')
+    await unmount()
+  })
+
   function Demo() {
     const [v, setV] = useState('comments')
     return (

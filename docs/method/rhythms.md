@@ -4,6 +4,7 @@ summary: The three rhythms of Open Loops - the five-minute Daily check, the thir
 audience: user
 section: Open Loops
 specs: [weekly-review]
+screens: [review/daily#daily-check, review/monthly#monthly-look]
 order: 8
 ---
 # Rhythms
@@ -22,7 +23,7 @@ Five minutes, usually in the morning: open it from the Review screen's menu, the
 
 ## Weekly review
 
-Thirty minutes, on a day that suits you (<kbd>g</kbd> <kbd>r</kbd>). Seven steps in three phases: Get clear (Inbox, Mind sweep), Get current (Look back, Waiting, Projects, Look ahead) and Get creative (Someday). See [Weekly review and statistics](../review-and-statistics.md).
+Thirty minutes, on a day that suits you (<kbd>g</kbd> <kbd>r</kbd>). Seven steps in three phases: Get clear (Inbox, Mind sweep), Get current (Look back, Waiting, Projects, Look ahead) and Get creative (Someday). See [Weekly review](../review-and-statistics.md).
 
 ## Monthly look
 

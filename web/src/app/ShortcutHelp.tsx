@@ -35,6 +35,7 @@ export function contextSections(ctx: HelpContext | undefined): ShortcutSection[]
   if (['inbox', 'today', 'upcoming', 'someday', 'anytime', 'completed', 'assigned', 'project', 'label', 'next', 'waiting'].includes(v)) out.push('tasks')
   if (v === 'day' || v === 'week' || v === 'month') out.push('calendar')
   if (v === 'triage') out.push('triage')
+  if (v === 'review') out.push('tasks', 'review')
   if (v === 'filter' || v === 'view' || v === 'views') out.push('filter')
   if (v === 'trash' || v === 'feed') out.push('trash')
   if (v === 'settings' || v === 'import') out.push('settings')

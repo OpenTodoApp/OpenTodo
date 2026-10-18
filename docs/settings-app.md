@@ -36,7 +36,7 @@ The **Preview** shows a due date, a date, a due time, a comment time and this we
 
 Push notifications for reminders on this device, and a test that shows whether they arrive. See [Notifications](notifications.md) and [Push notifications](push-notifications.md).
 
-**Weekly digest**: an email on the day and hour you choose with last week's numbers, overdue and upcoming tasks, projects without a next action and a link to the review. It needs outgoing email set up by the server owner and is not offered with end-to-end encryption. See [Weekly review and statistics](review-and-statistics.md#weekly-digest-by-email).
+**Weekly digest**: an email on the day and hour you choose with last week's numbers, overdue and upcoming tasks, projects without a next action and a link to the review. It needs outgoing email set up by the server owner and is not offered with end-to-end encryption. See [Statistics and the weekly digest](statistics.md#weekly-digest-by-email).
 
 ## Capture
 

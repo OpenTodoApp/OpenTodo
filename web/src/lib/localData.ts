@@ -24,7 +24,7 @@ import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
 import type {
-  AppNotification, Attachment, CalendarSubscription, Comment, FieldDef, Label, Membership, Project, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarSubscription, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
@@ -37,6 +37,7 @@ const membershipRows = liveSnapshot('memberships', () => db.memberships.toArray(
 const viewRows = liveSnapshot('views', () => db.views.toArray())
 const prefsRow = liveSnapshot('user prefs', async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null)
 const reviewRow = liveSnapshot('review', async () => (await db.review.get(REVIEW_ID)) ?? null)
+const projectPrefRows = liveSnapshot('project prefs', () => db.prefs.toArray())
 
 // Stable empty values for callers that render before the first snapshot arrives.
 const NO_PROJECTS: Project[] = []
@@ -49,6 +50,8 @@ const liveOf = derived((all: Project[]) => all.filter((p) => !p.deleted_at).sort
 const allSorted = derived((all: Project[]) => all.slice().sort(compareByPosition))
 const activeOf = derived((all: Label[]) => activeLabels(all))
 const memberMapOf = derived((all: Membership[]) => new Map(all.map((m) => [m.projectId, m])))
+const reviewedAtOf = derived((all: ProjectPrefs[]) => new Map(all.filter((p) => p.reviewed_at > 0).map((p) => [p.id, p.reviewed_at])))
+const NO_STAMPS = new Map<string, number>()
 
 /** Live projects in position order: not deleted, archived ones included (see the rule above). */
 export function useProjects(): Project[] {
@@ -112,6 +115,12 @@ export function useViewRowsLoaded(): View[] | undefined {
 /** The synced user preferences row: undefined while loading, null when there is none yet. */
 export function useUserPrefsRow(): UserPrefs | null | undefined {
   return prefsRow.use()
+}
+
+/** This user's review stamp per project (project_prefs.reviewed_at, open-loops-method D4); empty while loading. */
+export function useReviewedAt(): ReadonlyMap<string, number> {
+  const rows = projectPrefRows.use()
+  return rows ? reviewedAtOf(rows) : NO_STAMPS
 }
 
 /** The weekly review row: undefined while loading, null when there is none yet. */

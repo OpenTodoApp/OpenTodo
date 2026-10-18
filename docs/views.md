@@ -32,7 +32,7 @@ Upcoming groups everything due after today by day, from **Tomorrow** on, and lis
 
 ## Review your week
 
-**Review** (<kbd>g</kbd> <kbd>r</kbd>) walks a weekly review in four steps with live data, and **Statistics** (<kbd>g</kbd> <kbd>Shift+S</kbd>) shows what you completed, created and let slip, computed on your device. See [Weekly review and statistics](review-and-statistics.md).
+**Review** (<kbd>g</kbd> <kbd>r</kbd>) walks a [weekly review](review-and-statistics.md) in seven steps with live data, and **Statistics** (<kbd>g</kbd> <kbd>Shift+S</kbd>) shows what you [completed, created and let slip](statistics.md), computed on your device.
 
 ## Anytime, for when you have time
 

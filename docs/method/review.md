@@ -17,7 +17,7 @@ Look over the whole system on a rhythm, so you can trust it. Trust is what lets 
 - **Weekly review** (30 minutes, <kbd>g</kbd> <kbd>r</kbd>): the whole system, in three phases.
 - **Monthly look** (20 minutes): your areas, old Someday items and the four-week trend.
 
-Details are in [Rhythms](rhythms.md) and in [Weekly review and statistics](../review-and-statistics.md).
+Details are in [Rhythms](rhythms.md) and in [Weekly review](../review-and-statistics.md).
 
 ## The weekly review
 

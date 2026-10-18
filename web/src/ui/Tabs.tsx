@@ -1,11 +1,16 @@
 // Tabs (OpenSpec change ui-primitives, design D9): WAI-ARIA tabs with roving
-// focus and automatic activation (arrow keys, Home and End).
-import { useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
+// focus and automatic activation (arrow keys, Home and End). Tabs may carry a
+// group (open-loops-method D6): a group's name is drawn before its first tab and
+// read with each of its tabs. The row scrolls sideways inside itself when it is
+// wider than the screen, keeping the selected tab in view.
+import { Fragment, useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
 
 export interface TabItem {
   id: string
   label: ReactNode
   count?: number
+  /** The group the tab belongs to (a phase of the review): shown before its first tab, announced with each. */
+  group?: string
 }
 
 export interface TabsProps {
@@ -30,14 +35,19 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
     onChange(tabs[next].id)
     refs.current[tabs[next].id]?.focus()
   }
+  useEffect(() => { refs.current[value]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }) }, [value])
   return (
     <div>
-      <div role="tablist" aria-label={label} onKeyDown={move} className="flex gap-1 border-b border-default">
-        {tabs.map((t) => {
+      <div role="tablist" aria-label={label} onKeyDown={move} className="ui-scroller flex gap-1 overflow-x-auto overscroll-x-contain border-b border-default" data-tabs-row>
+        {tabs.map((t, i) => {
           const selected = t.id === value
+          const startsGroup = !!t.group && t.group !== tabs[i - 1]?.group
           return (
+            <Fragment key={t.id}>
+            {startsGroup && (
+              <span aria-hidden="true" data-tab-group={t.group} className={`flex shrink-0 items-center whitespace-nowrap pr-1 text-hint font-semibold uppercase tracking-wide text-faint ${i > 0 ? 'ml-2 border-l border-default pl-3' : 'pl-1'}`}>{t.group}</span>
+            )}
             <button
-              key={t.id}
               ref={(el) => { refs.current[t.id] = el }}
               type="button"
               role="tab"
@@ -46,13 +56,15 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
               aria-controls={`${base}-panel`}
               tabIndex={selected ? 0 : -1}
               onClick={() => onChange(t.id)}
-              className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-body font-medium transition duration-(--duration-ui)
+              className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-body font-medium transition duration-(--duration-ui)
                 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
                 ${selected ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-default'}`}
             >
+              {t.group && <span className="sr-only">{`${t.group}: `}</span>}
               {t.label}
               {t.count != null && <span className="rounded-full bg-sunken px-1.5 text-hint text-muted">{t.count}</span>}
             </button>
+            </Fragment>
           )
         })}
       </div>

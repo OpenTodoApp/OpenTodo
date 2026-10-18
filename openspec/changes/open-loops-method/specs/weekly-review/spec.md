@@ -95,7 +95,7 @@ The keys SHALL be:
 | --- | --- | --- |
 | `r` | mark the project reviewed by writing the user's personal review stamp for it | yes |
 | `q` | open quick add scoped to the project, the same key as quick add everywhere; the new task becomes the next action when it qualifies | no |
-| `o` | open the project | no |
+| Enter | open the project | no |
 | `a` | archive the project, only where the user may archive it, through the ordinary op, undoable | yes |
 | `j` or Space | skip without marking | yes |
 | `k` | go back | — |

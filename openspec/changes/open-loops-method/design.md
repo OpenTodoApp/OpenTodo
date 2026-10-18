@@ -79,7 +79,7 @@ The new fields are `daily_at`, `monthly_at`, `focus_date` (a `YYYY-MM-DD` string
 - The seven steps are one `Tabs` row (chrome row 2). The phase names are tab-group labels drawn as small separators, not a third row.
 - On phones the tab row needs to scroll horizontally inside itself. `Tabs` has no overflow handling today, so it gains `overflow-x: auto` with the selected tab scrolled into view, as a primitive change with a story. That's not a new vertical scroller.
 - The project walk is a card mode like triage. It owns the keyboard while its step is shown, through a `useShortcutScope('review-walk', …)` scope with keys registered in the shortcut table:
-  - `r` reviewed, `q` quick add for this project, `o` open, `a` archive, `j`/Space skip, `k` back.
+  - `r` reviewed, `q` quick add for this project, Enter open, `a` archive, `j`/Space skip, `k` back (`o` is Vim's open-below).
   - `q` is the global quick-add key scoped to the project, which avoids teaching a second "add" key.
 - The Someday step reuses the list's `n` (park or bring back), so its "promote" is the existing operation.
 - The Daily check's `f` (focus) is a new list-scope key, free in the registry today.
