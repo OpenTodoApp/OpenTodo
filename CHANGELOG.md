@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **A roomier sidebar on a computer.** Search sits next to the OpenTodo name, Help joins the icons in one footer row, and **More** opens as a menu instead of pushing your projects down. Filters and Labels appear once you have one, rows are a little tighter with a mouse, and the sidebar has a thin scrollbar with a soft fade where more is hidden. In a 1280×600 window seven projects now fit instead of two. Touch screens keep their larger targets and the inline More group.
+
 ## [0.7.1] - 2026-10-18
 
 OpenTodo 0.7.1 lets a project keep its completed tasks in its own list, in a Completed group you open when you need it, for lists you tick off and reuse such as groceries. It also fixes completed tasks showing an empty circle instead of a ticked one.
@@ -16,10 +20,6 @@ OpenTodo 0.7.1 lets a project keep its completed tasks in its own list, in a Com
 ### Added
 
 - **Keep completed tasks in a project.** Turn on **Show completed tasks** in a project's menu and its completed tasks stay at the end of the list in a **Completed** group, closed until you open it, newest first. Untick one there to put it back on the list, handy for groceries and other lists you reuse. The setting is per project and per device. ([Completed tasks in a project](docs/completed-in-projects.md), #145)
-
-### Changed
-
-- **A roomier sidebar on a computer.** Search sits next to the OpenTodo name, Help joins the icons in one footer row, and **More** opens as a menu instead of pushing your projects down. Filters and Labels appear once you have one, rows are a little tighter with a mouse, and the sidebar has a thin scrollbar with a soft fade where more is hidden. In a 1280×600 window seven projects now fit instead of two. Touch screens keep their larger targets and the inline More group.
 
 ### Fixed
 
