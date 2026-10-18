@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **No "Open menu" bubble over the menu on phones.** Tapping an icon button (such as the menu button) no longer leaves its tooltip on screen, where it covered the first sidebar entry; tooltips still appear on hover and when you move to a button with the keyboard. (#169)
+
 ## [0.8.0] - 2026-10-18
 
 OpenTodo 0.8.0 introduces **Open Loops**, a method of its own for getting everything off your mind, inspired by GTD: catch, clarify, place, do and review. You choose how prominent it is, from not at all to the first screen you see. The weekly review becomes a guided walk through your Inbox, what slipped, what is waiting and every project, joined by a five-minute Daily check and a Monthly look. Nothing changes until you turn it on. Email to task also keeps long messages and turns newsletters into readable, formatted notes. 0.7.2 was prepared but not published on its own: its changes (listed below) arrive with this release.
