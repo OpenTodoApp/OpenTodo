@@ -325,6 +325,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
   const moreEntries: { id: Promotable | 'ask' | 'review' | 'stats'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string }[] = [
+    // The Open Loops views (open-loops-method D7, D9), in every mode.
+    { id: 'next', route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
+    { id: 'waiting', route: { view: 'waiting' }, label: t('Waiting', { context: 'method' }), icon: 'hourglass' },
     { id: 'anytime', route: { view: 'anytime' }, label: t('Anytime'), icon: 'layers' },
     { id: 'someday', route: { view: 'someday' }, label: t('Someday'), icon: 'archive' },
     // Assigned to me only where tasks can be assigned: when the account shares a project.

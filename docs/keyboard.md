@@ -86,6 +86,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
 | <kbd>g</kbd> then <kbd>r</kbd> | Go to the weekly Review |
 | <kbd>g</kbd> then <kbd>Shift+S</kbd> | Go to Statistics: what you completed, created and let slip |
+| <kbd>g</kbd> then <kbd>Shift+N</kbd> | Go to Next: the next action of every project, by context |
+| <kbd>g</kbd> then <kbd>Shift+W</kbd> | Go to Waiting: what is assigned to someone else or blocked |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
 ### Tasks in a list

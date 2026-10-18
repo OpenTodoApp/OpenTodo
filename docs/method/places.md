@@ -4,6 +4,7 @@ summary: The seven homes a task can have in Open Loops - Inbox, Next, Waiting, S
 audience: user
 section: Open Loops
 specs: [start-dates]
+screens: [next#the-next-and-waiting-views, waiting#the-next-and-waiting-views]
 order: 7
 ---
 # Places
@@ -27,6 +28,10 @@ Every task lives in exactly one Place. The Place says what the task is waiting f
 - Assigning a task to someone else, or making it wait for another open task with **Blocked by**, puts it in **Waiting**. Completing the blocker brings it back.
 - A due date puts it in **Scheduled**; a future start date in **Later** until that day comes.
 - **Someday** keeps it out of the way until a review promotes it.
+
+## The Next and Waiting views
+
+**Next** (<kbd>g</kbd> <kbd>Shift+N</kbd>) lists the next action of every project you can edit, grouped by context (labels starting with `@`; a task with two contexts is under both, one without under **Anywhere**). **Waiting** (<kbd>g</kbd> <kbd>Shift+W</kbd>) lists open tasks assigned to someone else, under each person, then the ones blocked by another open task, each naming what it waits for. Both are under **More** in the sidebar, can be pinned there in **Settings → Appearance**, and can be the view a device opens on. The list keys work as in any list, offline too.
 
 ## Projects without a next action
 

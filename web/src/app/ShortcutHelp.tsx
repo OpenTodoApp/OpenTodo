@@ -32,7 +32,7 @@ export function contextSections(ctx: HelpContext | undefined): ShortcutSection[]
   const v = ctx.view ?? ''
   if (ctx.panelOpen) out.push('comments')
   if (ctx.board) out.push('board')
-  if (['inbox', 'today', 'upcoming', 'someday', 'anytime', 'completed', 'assigned', 'project', 'label'].includes(v)) out.push('tasks')
+  if (['inbox', 'today', 'upcoming', 'someday', 'anytime', 'completed', 'assigned', 'project', 'label', 'next', 'waiting'].includes(v)) out.push('tasks')
   if (v === 'day' || v === 'week' || v === 'month') out.push('calendar')
   if (v === 'triage') out.push('triage')
   if (v === 'filter' || v === 'view' || v === 'views') out.push('filter')

@@ -137,6 +137,8 @@ export const SHORTCUTS: Shortcut[] = [
   // Weekly review and Statistics (stats-and-review).
   { id: 'go.review', keys: ['g r'], description: 'Go to the weekly Review', section: 'go', scope: 'global' },
   { id: 'go.stats', keys: ['g Shift+S'], description: 'Go to Statistics: what you completed, created and let slip', section: 'go', scope: 'global' },
+  { id: 'go.next', keys: ['g Shift+N'], description: 'Go to Next: the next action of every project, by context', section: 'go', scope: 'global' },
+  { id: 'go.waiting', keys: ['g Shift+W'], description: 'Go to Waiting: what is assigned to someone else or blocked', section: 'go', scope: 'global' },
   { id: 'go.find', keys: ['g /'], description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
 
   // ---- tasks in a list

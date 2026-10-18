@@ -491,7 +491,7 @@ export const START_VIEW_KEY = 'startView'
  * Built-in views that can be a start view, plus `view:<id>` for a saved view and
  * `display:<path>` for a display route with its options (OpenSpec `display-mode`).
  */
-export const BUILTIN_START_VIEWS = ['inbox', 'today', 'upcoming', 'completed', 'filter'] as const
+export const BUILTIN_START_VIEWS = ['inbox', 'today', 'upcoming', 'completed', 'filter', 'next', 'waiting'] as const
 export type BuiltinStartView = (typeof BUILTIN_START_VIEWS)[number]
 export type StartView = BuiltinStartView | `view:${string}` | `display:${string}`
 

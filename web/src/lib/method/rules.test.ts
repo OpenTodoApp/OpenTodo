@@ -87,3 +87,28 @@ describe('method-views scenarios', () => {
     expect(oldSomeday(tasks, now).map((t) => t.id)).toEqual(['older', 'old'])
   })
 })
+
+describe('Next and Waiting groups', () => {
+  it('Next groups by context, a task under each of its contexts, Anywhere last', async () => {
+    const { nextGroups } = await import('./groups')
+    const input = inputOf(fixture)
+    const g2 = input.tasks.find((x) => x.id === 'g2')!
+    g2.labels = ['calls', 'errands']
+    const labels = [{ id: 'calls', name: '@calls', deleted_at: null }, { id: 'errands', name: '@errands', deleted_at: null }, { id: 'x', name: 'urgent', deleted_at: null }] as Label[]
+    const groups = nextGroups(input, labels)
+    expect(groups.map((g) => g.heading)).toEqual(['@calls', '@errands', 'Anywhere'])
+    expect(groups[0].tasks.map((x) => x.id)).toEqual(['g2'])
+    expect(groups[2].tasks.map((x) => x.id)).toEqual(['t1', 'm2', 'f1', 'me1'])
+  })
+
+  it('Waiting groups by person, then blocked tasks with their first open blocker', async () => {
+    const { waitingGroups } = await import('./groups')
+    const input = inputOf(fixture)
+    ;(input.memberships as Map<string, Membership>).set('household', { projectId: 'household', role: 'editor', ownerId: 'ana', members: [{ userId: 'ana', name: 'Ana', email: 'ana@example.com' }] } as unknown as Membership)
+    const groups = waitingGroups(input)
+    expect(groups.map((g) => g.heading)).toEqual(['Ana', 'Blocked by another task'])
+    expect(groups[0].tasks.map((x) => x.id)).toEqual(['h1'])
+    expect(groups[1].tasks.map((x) => x.id)).toEqual(['g1', 'i1'])
+    expect(groups[1].notes?.get('g1')).toBe('Waits for g2')
+  })
+})

@@ -3691,5 +3691,18 @@
   "Your loops, your server|method": "Seus ciclos, seu servidor",
   "Learn Open Loops": "Conhecer o Open Loops",
   "Open the {method} guide": "Abrir o guia do {method}",
-  "{move}, a move of {method}: open the method guide": "{move}, um passo do {method}: abrir o guia do método"
+  "{move}, a move of {method}: open the method guide": "{move}, um passo do {method}: abrir o guia do método",
+  "Add a next step to a project": "Adicione um próximo passo a um projeto",
+  "Anywhere": "Em qualquer lugar",
+  "Blocked by another task": "Bloqueadas por outra tarefa",
+  "Every project shows its next action here once it has a task you can do now.": "Cada projeto mostra aqui sua próxima ação assim que tiver uma tarefa que você possa fazer agora.",
+  "Go to Next": "Ir para Próximas",
+  "Go to Next: the next action of every project, by context": "Ir para Próximas: a próxima ação de cada projeto, por contexto",
+  "Go to Waiting": "Ir para Aguardando",
+  "Go to Waiting: what is assigned to someone else or blocked": "Ir para Aguardando: o que está atribuído a outra pessoa ou bloqueado",
+  "Nothing is waiting": "Nada está aguardando",
+  "Someone else": "Outra pessoa",
+  "Tasks you assign to someone else, or that wait for another task, appear here.": "Aqui aparecem as tarefas que você atribui a outra pessoa ou que aguardam outra tarefa.",
+  "Waits for {title}": "Aguarda {title}",
+  "Walk your projects": "Revisar seus projetos"
 }

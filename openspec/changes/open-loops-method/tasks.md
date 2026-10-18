@@ -28,8 +28,8 @@
 
 ## 4. Next and Waiting views (design D3, D9)
 
-- [ ] 4.1 Add `/next` and `/waiting` routes, lazy views on the grouped list rendering (context groups with "Anywhere"; assignee groups then "Blocked by another task"), their empty states, and the shortcuts `g` then `Shift+N` and `g` then `Shift+W` in the registry. Verify with component tests for "Complete and continue", "Empty", "Delegated in triage", "Blocker done" and "Two contexts", and with the shortcut registry test (`npm test`).
-- [ ] 4.2 Add `loop`, `next` and `waiting` to the More group, the command palette, the start view choices and the promotable destinations. Verify with `sidebar.test.tsx` cases for "Companion promotes Next" and "Older client", and with the palette test (`npm test`).
+- [x] 4.1 Add `/next` and `/waiting` routes, lazy views on the grouped list rendering (context groups with "Anywhere"; assignee groups then "Blocked by another task"), their empty states, and the shortcuts `g` then `Shift+N` and `g` then `Shift+W` in the registry. Verify with component tests for "Complete and continue", "Empty", "Delegated in triage", "Blocker done" and "Two contexts", and with the shortcut registry test (`npm test`).
+- [x] 4.2 Add `loop`, `next` and `waiting` to the More group, the command palette, the start view choices and the promotable destinations. Verify with `sidebar.test.tsx` cases for "Companion promotes Next" and "Older client", and with the palette test (`npm test`).
 - [ ] 4.3 Pass `MethodLink` on Next (Do) and Waiting (Place), and document both views in `docs/views.md` and `docs/method/places.md`, with screenshots through `make docs-screenshots`. Verify with `npm run docs:check` and `make docs` regenerating `docs/keyboard.md`.
 
 ## 5. The review becomes the Rhythms (design D4, D5, D6)

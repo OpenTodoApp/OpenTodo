@@ -67,7 +67,7 @@ describe('Appearance → Sidebar', () => {
     const r = await render(<SidebarSection />)
     await flush(30)
     const ids = [...document.querySelectorAll('[data-setting-row^="sidebar-"]')].map((e) => e.getAttribute('data-setting-row'))
-    expect(ids).toEqual(['sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
+    expect(ids).toEqual(['sidebar-next', 'sidebar-waiting', 'sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
     const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
     expect(someday.getAttribute('aria-checked')).toBe('false')
     await click(someday)

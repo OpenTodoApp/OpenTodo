@@ -11,11 +11,11 @@ order: 21
 
 <picture><source srcset="images/sidebar-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/sidebar-light.webp" alt="The sidebar with the built-in views at the top, counts next to Inbox, Today, Assigned to me and Trash, then the Views, Projects and Labels groups."></picture>
 
-These are the views OpenTodo comes with. Each is built from the copy of your tasks on your device, so it works offline and updates the moment something changes. Today and Upcoming have [a page of their own](today-and-upcoming.md); for views you make yourself, see [Saved views](saved-views.md).
+Each view is built from the tasks on your device, so it works offline and updates at once. Today and Upcoming have [a page of their own](today-and-upcoming.md); for views you make yourself, see [Saved views](saved-views.md).
 
 ## What each view shows
 
-They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then the letter.
+Press <kbd>g</kbd>, then the letter:
 
 | View | Shows | Shortcut |
 | --- | --- | --- |
@@ -24,6 +24,8 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Upcoming** | Tasks due after today, and undated tasks with a deadline ahead, grouped by day | <kbd>g</kbd> <kbd>u</kbd> |
 | **Anytime** | Open tasks with no date and no start: things to do whenever there is time | <kbd>g</kbd> <kbd>n</kbd> |
 | **Someday** | Tasks you parked for later, by project | <kbd>g</kbd> <kbd>o</kbd> |
+| **Next** | Each project's [next action](method/do.md), by context | <kbd>g</kbd> <kbd>Shift+N</kbd> |
+| **Waiting** | Tasks [waiting](method/places.md) on someone or something | <kbd>g</kbd> <kbd>Shift+W</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
 | **Calendar** | Your dated tasks by Day, Week or Month, as you last left it | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> |
 | **Completed** | What you finished, newest first, under a heading per day; **Show more** at the end reaches older days | <kbd>g</kbd> <kbd>c</kbd> |

@@ -459,6 +459,9 @@
   "Add a next action to {name}": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Add a next step to a project": [
+    "web/src/app/method/MethodListView.tsx"
+  ],
   "Add a note": [
     "web/src/app/ProjectNote.tsx"
   ],
@@ -796,6 +799,9 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Anywhere": [
+    "web/src/lib/method/groups.ts"
   ],
   "App": [
     "web/src/app/settingsSections.ts"
@@ -1175,6 +1181,9 @@
   ],
   "Blocked by": [
     "web/src/app/task-detail/Properties.tsx"
+  ],
+  "Blocked by another task": [
+    "web/src/lib/method/groups.ts"
   ],
   "Blocked by {blockedBy}": [
     "web/src/app/TaskRow.tsx"
@@ -2917,6 +2926,9 @@
   "Every project has a next action.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Every project shows its next action here once it has a task you can do now.": [
+    "web/src/app/method/MethodListView.tsx"
+  ],
   "Every step is done. Finish the review to record it on all your devices.": [
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -3424,6 +3436,12 @@
     "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to Next": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to Next: the next action of every project, by context": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Go to Review": [
     "web/src/app/palette/registry.ts"
   ],
@@ -3462,6 +3480,12 @@
     "web/src/app/palette/registry.ts"
   ],
   "Go to Updates: what changed in your shared projects": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Go to Waiting": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to Waiting: what is assigned to someone else or blocked": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to a view": [
@@ -4046,6 +4070,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/method/MethodListView.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-detail/Properties.tsx",
@@ -4058,6 +4083,7 @@
     "web/src/app/FilterView.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/method/MethodListView.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -4796,6 +4822,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "Next actions": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/lib/review.ts"
   ],
   "Next day": [
@@ -4826,6 +4853,9 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Next|method": [
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/method/MethodListView.tsx",
     "web/src/lib/method/vocabulary.json"
   ],
   "No": [
@@ -5234,6 +5264,9 @@
   ],
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "Nothing is waiting": [
+    "web/src/app/method/MethodListView.tsx"
   ],
   "Nothing left for today": [
     "web/src/app/display/DisplayScreen.tsx"
@@ -7720,6 +7753,9 @@
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "Someone else": [
+    "web/src/lib/method/groups.ts"
+  ],
   "Someone without an account, whose provider confirms their email, gets a member account on first sign-in. Off: only existing accounts (matched by verified email) and open sign-up.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -8031,6 +8067,9 @@
   ],
   "Tasks without a project go to": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Tasks you assign to someone else, or that wait for another task, appear here.": [
+    "web/src/app/method/MethodListView.tsx"
   ],
   "Teal": [
     "web/src/lib/colourNames.ts"
@@ -9845,6 +9884,7 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "Waiting": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Waiting for": [
@@ -9854,6 +9894,9 @@
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "Waiting|method": [
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/method/MethodListView.tsx",
     "web/src/lib/method/vocabulary.json"
   ],
   "Waits for nothing": [
@@ -9864,6 +9907,12 @@
   ],
   "Waits for {tasks}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Waits for {title}": [
+    "web/src/lib/method/groups.ts"
+  ],
+  "Walk your projects": [
+    "web/src/app/method/MethodListView.tsx"
   ],
   "We sent a link to <strong>{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.": [
     "web/src/app/AuthScreen.tsx"
