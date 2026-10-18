@@ -1,5 +1,5 @@
 // The Settings sections (OpenSpec change ux-overhaul, settings-navigation; design
-// D6): one table of nine sections in four groups, shared by the section list, the
+// D6): one table of ten sections in four groups, shared by the section list, the
 // pages, the search index, the palette and the tests.
 import { getHosted } from '../lib/hosted'
 import { isAdministrator } from '../lib/roles'
@@ -51,6 +51,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     description: () => t('Quick add, voice, the bookmarklet and extension, and email to task'),
     demo: () => [msg('email to task')],
   },
+  // welcome-note: the version, docs, website, feedback and support links.
+  { id: 'about', label: msg('About'), group: 'app', icon: 'heart', description: () => t('Version, documentation, website, feedback and support') },
   {
     id: 'integrations', label: msg('Integrations'), group: 'data', icon: 'link',
     description: () => t('Calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP)'),

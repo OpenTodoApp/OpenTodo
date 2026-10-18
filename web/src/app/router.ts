@@ -42,10 +42,10 @@ export type Route =
   | { view: 'review' }
   | { view: 'stats' }
 
-/** Settings sections, each at /settings/<id> (settings-navigation); nine, in list order. */
+/** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
 export const SETTINGS_SECTION_IDS = [
   'account', 'appearance',
-  'general', 'notifications', 'capture',
+  'general', 'notifications', 'capture', 'about',
   'integrations', 'data',
   'people', 'server',
 ] as const

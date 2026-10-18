@@ -242,6 +242,12 @@
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "A star helps other people find it.": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
+  "A star on GitHub helps other people find it.": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "A task can wait for at most {max} tasks": [
     "web/src/lib/dependencies.ts"
   ],
@@ -315,6 +321,12 @@
   ],
   "Abort the whole import": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "About": [
+    "web/src/app/settingsSections.ts"
+  ],
+  "About OpenTodo": [
+    "web/src/app/AboutSection.tsx"
   ],
   "Absolute path on the server. Empty: the backups folder inside the data directory.": [
     "web/src/app/BackupsPanel.tsx"
@@ -1224,6 +1236,10 @@
   ],
   "Button label": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Buy me a coffee": [
+    "web/src/app/WelcomeDialog.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "CSV files and other apps’ exports go through Settings → Data → Import.": [
     "web/src/app/TemplateDialogs.tsx"
@@ -2427,6 +2443,10 @@
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "Documentation": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
+  ],
   "Does not repeat (e.g. {example})": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -3252,6 +3272,9 @@
   "Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title, the text is the description, and attachment names are listed.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "Free and open source (AGPL-3.0) · no tracking, no telemetry": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "Frequency": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -3439,6 +3462,7 @@
     "web/src/lib/richtextEditor.ts"
   ],
   "Help": [
+    "web/src/app/AboutSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/help/HelpLink.tsx",
     "web/src/app/help/HelpPanel.tsx",
@@ -4668,6 +4692,9 @@
   "New webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "News, guides, comparisons and what is new in each release.": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "Next": [
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/FirstRun.tsx"
@@ -5388,6 +5415,7 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "Open Help": [
+    "web/src/app/AboutSection.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Open Help ({keys})": [
@@ -5407,6 +5435,14 @@
   ],
   "Open an authenticator app on your phone (any app that supports time-based codes).": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Open an issue": [
+    "web/src/app/AboutSection.tsx"
+  ],
+  "Open an issue on GitHub. Every report is read.": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/WelcomeDialog.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Open calendar": [
     "web/src/app/datetime/DateField.tsx"
@@ -5504,6 +5540,12 @@
   "OpenTodo export (JSON)": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "OpenTodo has no paid plan: every feature is free. If it saves you a subscription, a coffee helps keep it going.": [
+    "web/src/app/AboutSection.tsx"
+  ],
+  "OpenTodo is free and open source, made by one person in the open. It is yours now: your server, your data, no subscription.": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.": [
     "web/src/app/SettingsView.tsx"
   ],
@@ -5521,6 +5563,9 @@
   ],
   "OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "OpenTodo {version} · free and open source (AGPL-3.0) · no tracking, no telemetry": [
+    "web/src/app/AboutSection.tsx"
   ],
   "OpenTodo {version} · works offline": [
     "web/src/app/help/HelpView.tsx"
@@ -6150,6 +6195,9 @@
   ],
   "Reactivate {name}?": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "Read the docs": [
+    "web/src/app/AboutSection.tsx"
   ],
   "Read what is sent now and accept again.": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -7168,6 +7216,11 @@
   "Share a project to see what others change here.": [
     "web/src/app/FeedView.tsx"
   ],
+  "Share feedback or report a problem": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/WelcomeDialog.tsx",
+    "web/src/app/settingsIndex.ts"
+  ],
   "Share project": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7212,6 +7265,9 @@
   ],
   "Show in Assigned to me": [
     "web/src/app/task-detail/Properties.tsx"
+  ],
+  "Show it again": [
+    "web/src/app/AboutSection.tsx"
   ],
   "Show less": [
     "web/src/app/MonthView.tsx",
@@ -7576,6 +7632,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Source code": [
+    "web/src/app/AboutSection.tsx",
     "web/src/app/SettingsView.tsx"
   ],
   "Speak a task instead of typing it. Applies to this device only.": [
@@ -7583,6 +7640,9 @@
   ],
   "Speech is recognised by your browser, not by OpenTodo.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Star OpenTodo on GitHub": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "Start": [
     "web/src/app/task-detail/Properties.tsx",
@@ -7602,6 +7662,9 @@
   ],
   "Start on <span>(optional; dates move so the earliest lands on this day)</span>": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "Start using OpenTodo": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "Start view": [
     "web/src/app/PreferencesPanels.tsx",
@@ -7704,6 +7767,10 @@
   ],
   "Sunday": [
     "web/src/app/DateTimeSettings.tsx"
+  ],
+  "Support OpenTodo": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Suspicious": [
     "web/src/app/SecurityPanel.tsx"
@@ -7881,6 +7948,9 @@
   "Text": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts"
+  ],
+  "Thanks for installing OpenTodo": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "That address is on a private network (LAN, localhost or similar). The server owner can allow private network targets below.": [
     "web/src/lib/webhooks.ts"
@@ -8060,6 +8130,9 @@
   "The guide to the task panel": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "The guides of this version, inside the app and offline.": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "The history is read from the server; reconnect to see it.": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -8187,6 +8260,10 @@
   ],
   "The restore of <span>{archive}</span> on {instant} failed, and the server kept its previous data. {error}": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "The same guides on the website, with setup and self-hosting.": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "The saved view shown here was deleted.": [
     "web/src/app/DashboardView.tsx"
@@ -8375,6 +8452,10 @@
   ],
   "The test needs the server; go online to run it.": [
     "web/src/lib/push.ts"
+  ],
+  "The thank-you shown the first time you opened this server.": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "The total per account is 0 (no total) to {max} MB.": [
     "web/src/app/AttachmentSettingsPanel.tsx"
@@ -8736,6 +8817,9 @@
   ],
   "This list is public: anyone with the link can see it and tick items.": [
     "web/src/app/PublicListScreen.tsx"
+  ],
+  "This message will not appear again. You can open it from Settings → About.": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "This needs a signed-in browser session, not an API token.": [
     "web/src/lib/i18n/errors.ts"
@@ -9558,6 +9642,9 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/app/RestoreSection.tsx"
   ],
+  "Version, documentation, website, feedback and support": [
+    "web/src/app/settingsSections.ts"
+  ],
   "Versions": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -9644,6 +9731,9 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/settingsIndex.ts"
   ],
+  "Website": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "Week": [
     "web/src/app/CalendarRange.tsx"
   ],
@@ -9665,6 +9755,10 @@
   ],
   "Weeks": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "Welcome note": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.": [
     "web/src/app/AuthScreen.tsx"
