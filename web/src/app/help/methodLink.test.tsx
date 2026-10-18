@@ -49,8 +49,8 @@ describe('References to the method (open-loops)', () => {
     const r = await render(<Inbox />)
     await waitFor(() => !!r.container.querySelector('[data-method-link]'))
     const link = r.container.querySelector<HTMLButtonElement>('[data-method-link="catch"]')!
-    expect(link.textContent).toBe('Catch·Open Loops')
-    expect(link.getAttribute('aria-label')).toContain('Open Loops')
+    expect(link.textContent).toBe('Catch·Open Loops: open the method guide')
+    expect(link.getAttribute('aria-label')).toBeNull()
     await click(link)
     expect(opened).toBe('method/catch')
     expect(r.container.querySelector('[data-page-title]')?.textContent).toBe('Inbox')
@@ -72,7 +72,7 @@ describe('References to the method (open-loops)', () => {
     await setMethodMode('first')
     const r = await render(<WithMethod move="clarify"><span data-progress>4 of 17</span></WithMethod>)
     await waitFor(() => !!r.container.querySelector('[data-method-link="clarify"]'))
-    expect(r.container.textContent).toMatch(/^4 of 17·Clarify·Open Loops$/)
+    expect(r.container.textContent).toMatch(/^4 of 17·Clarify·Open Loops: open the method guide$/)
     await r.unmount()
   })
 

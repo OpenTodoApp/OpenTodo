@@ -13,6 +13,8 @@ Work from your next actions, by context, one step at a time. Choosing what to do
 
 ## The Next view
 
+<picture><source srcset="../images/next-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/next-light.webp" alt="The Next view: the next action of four projects under Anywhere, each with its date and project."></picture>
+
 **Next** (<kbd>g</kbd> <kbd>Shift+N</kbd>) shows the next action of every project: its first task, in the project's order, that you can do now. A task is left out while it waits for another open task, is assigned to someone else, is deferred to a later start date or parked in Someday. Complete one with <kbd>c</kbd> and the project's following step takes its place.
 
 ## Contexts

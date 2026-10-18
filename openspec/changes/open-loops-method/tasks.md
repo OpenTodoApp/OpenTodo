@@ -30,7 +30,7 @@
 
 - [x] 4.1 Add `/next` and `/waiting` routes, lazy views on the grouped list rendering (context groups with "Anywhere"; assignee groups then "Blocked by another task"), their empty states, and the shortcuts `g` then `Shift+N` and `g` then `Shift+W` in the registry. Verify with component tests for "Complete and continue", "Empty", "Delegated in triage", "Blocker done" and "Two contexts", and with the shortcut registry test (`npm test`).
 - [x] 4.2 Add `loop`, `next` and `waiting` to the More group, the command palette, the start view choices and the promotable destinations. Verify with `sidebar.test.tsx` cases for "Companion promotes Next" and "Older client", and with the palette test (`npm test`).
-- [ ] 4.3 Pass `MethodLink` on Next (Do) and Waiting (Place), and document both views in `docs/views.md` and `docs/method/places.md`, with screenshots through `make docs-screenshots`. Verify with `npm run docs:check` and `make docs` regenerating `docs/keyboard.md`.
+- [x] 4.3 Pass `MethodLink` on Next (Do) and Waiting (Place), and document both views in `docs/views.md` and `docs/method/places.md`, with screenshots through `make docs-screenshots`. Verify with `npm run docs:check` and `make docs` regenerating `docs/keyboard.md`.
 
 ## 5. The review becomes the Rhythms (design D4, D5, D6)
 
@@ -40,7 +40,7 @@
 - [x] 5.4 Build the project walk card mode (queue ordered by `project_prefs.reviewed_at`, card contents, the keys `r`/`q`/`o`/`a`/`j`/Space/`k` registered in the shortcut table, the live region, the summary after the last card, touch buttons at 360 px). Verify with component tests for "Add a next action, then mark reviewed", "Resume on another device", "Shared project the user cannot edit", "Archive offline" and both "Personal review stamp" scenarios, and with the layout check at 360 px (`npm test`, `make layout-check`).
 - [x] 5.5 Build the Daily check (`/review/daily`, `g` then `Shift+R`, `f` focus toggle up to three, "Done for today") and the Monthly look (`/review/monthly`: Areas, Old someday, Trend), both in the header menu. Verify with component tests for "Pick a focus", "Next day", "Done for today", "Areas with stalled children" and "Daily and weekly on different devices" (`npm test`).
 - [x] 5.6 Implement the rhythm markers per mode on the sidebar Review entry and the once-a-day daily check toast in `first` mode (a per-device date in local storage). Verify with tests for "Lists only" and "Open Loops first in the morning", plus "Review due" (`npm test`).
-- [ ] 5.7 Rewrite `docs/review-and-statistics.md` for the seven steps, the walk, the Daily check and the Monthly look, and `docs/method/review.md` and `rhythms.md` to match, with new screenshots. Refresh the `weekly-review` assistant skill's instructions to follow the new steps (same id). Verify with `npm run docs:check`, `make docs`, and the assistant skills test still listing five skills (`go test ./internal/assistant/...`).
+- [x] 5.7 Rewrite `docs/review-and-statistics.md` for the seven steps, the walk, the Daily check and the Monthly look, and `docs/method/review.md` and `rhythms.md` to match, with new screenshots. Refresh the `weekly-review` assistant skill's instructions to follow the new steps (same id). Verify with `npm run docs:check`, `make docs`, and the assistant skills test still listing five skills (`go test ./internal/assistant/...`).
 
 ## 6. How you work, the Loop home and the sidebar (design D2, D7, D9)
 
@@ -48,7 +48,7 @@
 - [x] 6.2 Make `sidebarLayout.ts` mode-aware (`first`: Loop home, Inbox, Today, Next, Waiting, Review; promotions set aside but kept) and disable the destination switches in Settings → Appearance in `first` mode. Verify with `sidebar.test.tsx` cases for "Default sidebar" (four destinations), "Open Loops first sidebar", "Promotions kept across modes" and "Open Loops first" (appearance), and with `budget.test.tsx` holding at six (`npm test`).
 - [x] 6.3 Build the Loop home (`/loop`, `g` then `Shift+L`, five tiles with live counts, today's focus rows, one column at 360 px, list semantics). Verify with component tests for "Morning on the Loop home", "A capture from another device" and "Keyboard path", plus an axe check and the layout check at 360 px (`npm test`, `make layout-check`).
 - [x] 6.4 Verify the mode is presentation-only. Write a test that switching through all three modes writes exactly one `user_prefs` op each and no op on any task, project, label or view ("Switching back loses nothing"), and one for "Existing account after upgrade" (`npm test`).
-- [ ] 6.5 Document Settings → You → How you work in `docs/settings-you.md` and `docs/method/set-up.md`, with screenshots of the three sidebars. Verify with `npm run docs:check` and `make docs`.
+- [x] 6.5 Document Settings → You → How you work in `docs/settings-you.md` and `docs/method/set-up.md`, with screenshots of the three sidebars. Verify with `npm run docs:check` and `make docs`.
 
 ## 7. First run (design D10)
 
@@ -60,8 +60,8 @@
 
 ## 9. Roadmap, changelog and integration
 
-- [ ] 9.1 Add the "Open Loops method" row (`open-loops-method`) to section 3 of `ROADMAP.md` and a CHANGELOG entry under Unreleased that mentions the changed "without a next action" definition in the digest. Verify with `make repo-check`.
-- [ ] 9.2 Extend `scripts/e2e-smoke.mjs`:
+- [x] 9.1 Add the "Open Loops method" row (`open-loops-method`) to section 3 of `ROADMAP.md` and a CHANGELOG entry under Unreleased that mentions the changed "without a next action" definition in the digest. Verify with `make repo-check`.
+- [x] 9.2 Extend `scripts/e2e-smoke.mjs`:
   1. Pick Open Loops first.
   2. Check the six sidebar destinations.
   3. Open the Loop home.

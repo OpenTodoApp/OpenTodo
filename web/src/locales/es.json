@@ -3689,8 +3689,6 @@
   "Work from your next actions, by context, one step at a time.": "Trabaja con tus siguientes acciones, por contexto, paso a paso.",
   "Your loops, your server|method": "Tus bucles, tu servidor",
   "Learn Open Loops": "Conocer Open Loops",
-  "Open the {method} guide": "Abrir la guía de {method}",
-  "{move}, a move of {method}: open the method guide": "{move}, un paso de {method}: abrir la guía del método",
   "Add a next step to a project": "Añade un siguiente paso a un proyecto",
   "Anywhere": "En cualquier lugar",
   "Blocked by another task": "Bloqueadas por otra tarea",
@@ -3817,5 +3815,6 @@
   "{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}": "{n, plural, =0 {La Bandeja de entrada está vacía} one {# en la Bandeja de entrada} many {# en la Bandeja de entrada} other {# en la Bandeja de entrada}}",
   "{n, plural, one {# stalled} other {# stalled}}": "{n, plural, one {# estancado} many {# estancados} other {# estancados}}",
   "{n} waiting": "{n} en espera",
-  "How do you want to work?": "¿Cómo quieres trabajar?"
+  "How do you want to work?": "¿Cómo quieres trabajar?",
+  ": open the method guide": ": abrir la guía del método"
 }

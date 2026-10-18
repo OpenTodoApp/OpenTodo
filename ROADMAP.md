@@ -48,6 +48,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |
 | Custom fields per project: text, number, date, choice, link and checkbox values on tasks, in the panel, on cards, as columns and in filters | `custom-fields` |
+| Open Loops, OpenTodo's own method inspired by GTD: the five moves, Next and Waiting views, the Loop home, a weekly review that walks every project with a Daily check and a Monthly look, and a choice of how prominent it is (Lists only, Companion, Open Loops first) | `open-loops-method` |
 | Appearance: light, dark or system, and eight colour themes, synced to every device | `theming` |
 
 ### 4. Time management

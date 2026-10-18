@@ -101,6 +101,9 @@
   "30 minutes before": [
     "web/src/lib/reminderTime.ts"
   ],
+  ": open the method guide": [
+    "web/src/app/help/MethodLink.tsx"
+  ],
   "; {n} dated": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -5859,9 +5862,6 @@
   ],
   "Open the weekly review": [
     "web/src/app/method/LoopHome.tsx"
-  ],
-  "Open the {method} guide": [
-    "web/src/app/help/MethodLink.tsx"
   ],
   "Open view": [
     "web/src/app/DashboardView.tsx"
@@ -11818,9 +11818,6 @@
   ],
   "{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…": [
     "web/src/app/EncryptionPanel.tsx"
-  ],
-  "{move}, a move of {method}: open the method guide": [
-    "web/src/app/help/MethodLink.tsx"
   ],
   "{m} min ago": [
     "web/src/app/CalendarFeedsPanel.tsx",

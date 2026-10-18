@@ -145,6 +145,9 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => primaryOf(r.container)[0] === 'loop')
     expect(primaryOf(r.container)).toEqual(['loop', 'inbox', 'today', 'next', 'waiting', 'review'])
+    // Review is a primary item here, so the closed More row does not repeat its marker.
+    expect(r.container.querySelector('[data-review-due-more]')).toBeNull()
+    expect(r.container.querySelector('[data-destination="review"] [data-review-due]')).not.toBeNull()
     await click(moreToggle(r.container))
     expect(moreItems(r.container).slice(0, 4)).toEqual(['upcoming', 'day', 'anytime', 'someday'])
     expect(moreItems(r.container)).not.toContain('loop')

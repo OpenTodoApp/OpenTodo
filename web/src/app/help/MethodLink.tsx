@@ -24,11 +24,12 @@ export function MethodLink({ move }: { move?: MoveId }) {
   const screen = METHOD_HELP_SCREENS[page]
   return (
     <button type="button" data-method-link={page} data-help-screen={screen} aria-haspopup="dialog"
-      aria-label={label ? t('{move}, a move of {method}: open the method guide', { move: label, method: METHOD_NAME }) : t('Open the {method} guide', { method: METHOD_NAME })}
       className="touch-target inline-flex min-w-0 items-center gap-1 truncate rounded-control text-meta text-muted underline decoration-dotted underline-offset-2 hover:text-default"
       onClick={(e) => openHelp(screen, e.currentTarget)}>
       {label && <><span>{label}</span><span aria-hidden="true">·</span></>}
       <span>{METHOD_NAME}</span>
+      {/* The visible words start the accessible name (WCAG 2.5.3 Label in Name); the purpose follows for screen readers. */}
+      <span className="sr-only">{t(': open the method guide')}</span>
     </button>
   )
 }

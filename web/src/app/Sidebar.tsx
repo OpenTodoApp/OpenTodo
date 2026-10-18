@@ -346,7 +346,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge) }))
   const primaryExtra = first ? [] : more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
   // A due review shows on the closed More heading too, so the marker is never hidden.
-  const moreBadge = unreadBadge ?? (due ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
+  // In Open Loops first the Review entry is a primary item, so More does not repeat its marker.
+  const moreBadge = unreadBadge ?? (due && !first ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
   const rest = more.filter((m) => !primaryExtra.includes(m))
 
   return (

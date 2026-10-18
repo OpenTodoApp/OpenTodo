@@ -43,4 +43,6 @@ It is OpenTodo's own method, inspired by David Allen's GTD and simplified. You c
 
 ## How prominent it is
 
+<picture><source srcset="../images/loop-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/loop-light.webp" alt="The Loop home in Open Loops first: the sidebar shows Loop home, Inbox, Today, Next, Waiting and Review, and five tiles count what is in the Inbox, what to decide, projects without a next action, next actions and what is due to review."></picture>
+
 In **Settings → You → How you work** you choose how much the app shows the method: **Lists only** (no method words at all), **Companion** (screens name the move they serve and link here) or **Open Loops first** (the Loop home opens first and the sidebar is arranged by the Places). See [Set up in ten minutes](set-up.md).

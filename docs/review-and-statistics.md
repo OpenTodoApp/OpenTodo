@@ -9,7 +9,7 @@ order: 24
 ---
 # Weekly review
 
-<picture><source srcset="images/review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-light.webp" alt="The Weekly review screen on its first step, Get clear: four step tabs with counts, two Inbox tasks, and the Finish review button."></picture>
+<picture><source srcset="images/review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-light.webp" alt="The Weekly review screen on its first step, the Inbox: seven step tabs in three phases with counts, the Inbox tasks to process, and the Finish review button."></picture>
 
 Once a week, look back at what happened and set up the week ahead. Open **Review** in the sidebar (under More) or press <kbd>g</kbd> <kbd>r</kbd>. It is the weekly rhythm of [Open Loops](method/review.md); the [Daily check and the Monthly look](method/rhythms.md) are in the page's menu.
 
@@ -31,6 +31,8 @@ The review opens on the first step that is not done. Move between steps with the
 7. **Someday**: what you parked. <kbd>n</kbd> brings a task back.
 
 Lists use the usual keys, offline too.
+
+<picture><source srcset="images/review-walk-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/review-walk-light.webp" alt="The Projects step of the weekly review: one card for the project Home renovation, never reviewed, with its next action and one waiting task, and the buttons Looks good, Add a next action, Open, Archive, Skip and Back with their keys."></picture>
 
 ## Finishing a review
 

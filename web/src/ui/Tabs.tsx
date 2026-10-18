@@ -1,7 +1,7 @@
 // Tabs (OpenSpec change ui-primitives, design D9): WAI-ARIA tabs with roving
 // focus and automatic activation (arrow keys, Home and End). Tabs may carry a
-// group (open-loops-method D6): a group's name is drawn before its first tab and
-// read with each of its tabs. The row scrolls sideways inside itself when it is
+// group (open-loops-method D6): a group's name is drawn before its first tab (from
+// 640 px; a divider on phones) and read with each of its tabs. The row scrolls sideways inside itself when it is
 // wider than the screen, keeping the selected tab in view.
 import { Fragment, useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
 
@@ -35,7 +35,13 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
     onChange(tabs[next].id)
     refs.current[tabs[next].id]?.focus()
   }
-  useEffect(() => { refs.current[value]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }) }, [value])
+  const groupRefs = useRef<Record<string, HTMLSpanElement | null>>({})
+  // The selected tab comes into view with its group's name when they fit, the tab itself first.
+  const group = tabs.find((t) => t.id === value)?.group
+  useEffect(() => {
+    if (group) groupRefs.current[group]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    refs.current[value]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }, [value, group])
   return (
     <div>
       <div role="tablist" aria-label={label} onKeyDown={move} className="ui-scroller flex gap-1 overflow-x-auto overscroll-x-contain border-b border-default" data-tabs-row>
@@ -45,7 +51,7 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
           return (
             <Fragment key={t.id}>
             {startsGroup && (
-              <span aria-hidden="true" data-tab-group={t.group} className={`flex shrink-0 items-center whitespace-nowrap pr-1 text-hint font-semibold uppercase tracking-wide text-faint ${i > 0 ? 'ml-2 border-l border-default pl-3' : 'pl-1'}`}>{t.group}</span>
+              <span aria-hidden="true" ref={(el) => { groupRefs.current[t.group!] = el }} data-tab-group={t.group} className={`flex shrink-0 items-center whitespace-nowrap text-hint font-semibold uppercase tracking-wide text-faint ${i > 0 ? 'ml-1 border-l border-default pl-2 sm:ml-2 sm:pl-3' : ''}`}><span className="hidden pr-1 sm:inline">{t.group}</span></span>
             )}
             <button
               ref={(el) => { refs.current[t.id] = el }}
