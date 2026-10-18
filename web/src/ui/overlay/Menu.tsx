@@ -12,9 +12,11 @@ import { Popover } from './Popover'
  * type-ahead, and an item closes the menu. kind="dialog" (default) stays for
  * panels with form controls (label colours, the project "Move to" select).
  */
-export function Menu({ label, title, trigger, triggerClassName = '', align = 'end', width, className = 'p-1', open: openProp, onOpenChange, kind = 'dialog', children }: {
+export function Menu({ label, title, trigger, triggerClassName = '', align = 'end', width, className = 'p-1', open: openProp, onOpenChange, kind = 'dialog', namedByContent = false, children }: {
   /** Accessible name of the trigger. */
   label: string
+  /** The trigger shows its whole name as text (with a badge, say): it is named by that text, not by `label`. */
+  namedByContent?: boolean
   /** Title of the panel (sheet title on phones); defaults to `label`. */
   title?: string
   trigger: ReactNode
@@ -36,7 +38,7 @@ export function Menu({ label, title, trigger, triggerClassName = '', align = 'en
   const content = typeof children === 'function' ? children(close) : children
   return (
     <>
-      <button ref={ref} type="button" className={triggerClassName} aria-label={label} aria-haspopup={kind} aria-expanded={open}
+      <button ref={ref} type="button" className={triggerClassName} aria-label={namedByContent ? undefined : label} aria-haspopup={kind} aria-expanded={open}
         onClick={() => set(!open)}>{trigger}</button>
       <Popover open={open} onClose={close} anchor={ref} label={title ?? label} align={align} width={width} className={className} role={kind}>
         {kind === 'menu'

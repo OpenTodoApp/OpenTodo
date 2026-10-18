@@ -341,8 +341,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const primaryExtra = more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
   // A due review shows on the closed More heading too, so the marker is never hidden.
   const moreBadge = unreadBadge ?? (due ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
-  // The More menu's accessible name starts with the text it shows, badge included (WCAG 2.5.3).
-  const moreLabel = unread.total > 0 ? `${t('More')} ${formatUnread(unread.total)} ${t('unread updates')}` : due ? `${t('More')} ${t('Review due')}` : t('More')
   const rest = more.filter((m) => !primaryExtra.includes(m))
   const calendarMode = readCalendarMode()
 
@@ -370,7 +368,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           {item({ view: calendarMode }, t('Calendar'), 'calendar-range')}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
-            <MoreMenu entries={rest} badge={moreBadge} label={moreLabel} collapsed={collapsed} hints={hints}
+            <MoreMenu entries={rest} badge={moreBadge} collapsed={collapsed} hints={hints}
               active={rest.some((m) => m.route.view === route.view)} />
           )}
         </nav>
@@ -508,17 +506,16 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 }
 
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
-function MoreMenu({ entries, badge, label, active, collapsed, hints }: {
+function MoreMenu({ entries, badge, active, collapsed, hints }: {
   entries: { id: string; route: Route; label: string; icon: IconName; note?: string }[]
   badge?: ReactNode
-  label: string
   active: boolean
   collapsed: boolean
   hints: boolean
 }) {
   return (
     <div data-sidebar-more-menu>
-      <Menu kind="menu" label={collapsed ? t('More') : label} title={t('More')} align="start" width="sm:w-64"
+      <Menu kind="menu" label={t('More')} namedByContent={!collapsed} title={t('More')} align="start" width="sm:w-64"
         triggerClassName={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised'}`}
         trigger={<>
           <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name="ellipsis" /></span>

@@ -159,7 +159,8 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     await flush(50)
     expect(r.container.querySelector('[data-testid="sidebar-more"]')).toBeNull()
     const trigger = moreButton(r.container)
-    expect(trigger.getAttribute('aria-label')).toBe('More Review due')
+    expect(trigger.getAttribute('aria-label')).toBeNull()
+    expect(trigger.textContent).toBe('MoreReview due')
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     // Never reviewed: the review is due, and the closed More row says so.
     expect(trigger.querySelector('[data-review-due-more]')).not.toBeNull()
