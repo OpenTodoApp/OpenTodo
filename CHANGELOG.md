@@ -4,6 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-18
+
+OpenTodo 0.7.1 lets a project keep its completed tasks in its own list, in a Completed group you open when you need it, for lists you tick off and reuse such as groceries. It also fixes completed tasks showing an empty circle instead of a ticked one.
+
+### Upgrade notes
+
+- **No migration, no new environment variables, no sync or API change.** Replace the image or the binary and restart; `stable` and `:0.7` already point at 0.7.1.
+- **The GitHub release of 0.7.1 has no attached binaries** (the tag was pushed before this changelog section existed, so the release job stopped after publishing the images). Use the container image, or 0.7.2 for binaries.
+
 ### Added
 
 - **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
@@ -524,7 +533,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pixari/opentodo/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/pixari/opentodo/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/pixari/opentodo/compare/v0.5.0...v0.6.0

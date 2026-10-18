@@ -29,7 +29,7 @@ Open `http://<app name>.<your root domain>`. The first visitor creates the owner
 
 | Field | Default | What it does |
 | --- | --- | --- |
-| OpenTodo version | the latest release, for example `0.7.0` | The image tag of `ghcr.io/pixari/opentodo`. |
+| OpenTodo version | the latest release, for example `0.7.1` | The image tag of `ghcr.io/pixari/opentodo`. |
 | Base URL | empty | The https address people open. Leave it empty until https is on (see below). |
 | Setup token | generated, 32 characters | Asked for when the owner account is created, so a stranger cannot claim a new server first. |
 | Open sign-up | `false` | `true` lets anyone who can reach the server create an account. |
