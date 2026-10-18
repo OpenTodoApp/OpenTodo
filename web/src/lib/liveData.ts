@@ -8,7 +8,7 @@ import { db, getMeta } from './db'
 import { cachedWindow, showEvents, type EventsWindow } from './calendarFeeds'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { byPosition } from './ordering'
-import { loadCollapsedSections, loadListColumns, loadViewMode, type ProjectViewMode } from './sections'
+import { loadCollapsedSections, loadListColumns, loadShowCompleted, loadViewMode, type ProjectViewMode } from './sections'
 import type { CalendarEvent, CalendarSubscription, Section, Task } from './types'
 
 // Shared with the rest of the app (web-layering): one live query each, one visibility rule.
@@ -52,6 +52,11 @@ export function useCollapsedSections(projectId: string | null): string[] {
 /** Whether the project's list shows custom fields as columns on this device. */
 export function useListColumnsPref(projectId: string | null): boolean {
   return useLiveQuery(() => (projectId ? loadListColumns(projectId) : Promise.resolve(false)), [projectId], false)
+}
+
+/** Whether the project's list keeps its completed tasks in a Completed group on this device (project-completed-section). */
+export function useShowCompletedPref(projectId: string | null): boolean {
+  return useLiveQuery(() => (projectId ? loadShowCompleted(projectId) : Promise.resolve(false)), [projectId], false)
 }
 
 /**

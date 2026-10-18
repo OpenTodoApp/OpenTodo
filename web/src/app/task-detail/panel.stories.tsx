@@ -20,7 +20,7 @@ function Header({ title, done = false, readOnly = false, priority = 4 }: { title
   return (
     <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2">
       <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
-        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${ring} ${done ? 'bg-faint border-input text-on-accent' : ''}`}>{done && <Icon name="check" size="xs" />}</span>
+        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${done ? 'bg-faint border-input text-on-accent' : ring}`}>{done && <Icon name="check" size="xs" />}</span>
       </button>
       <input className={`min-w-0 flex-1 bg-transparent text-h3 font-semibold text-strong focus:outline-none ${done ? 'text-faint line-through' : ''}`} defaultValue={title} readOnly={readOnly} aria-label="Title" />
       <IconButton icon="ellipsis" label="Task actions" />

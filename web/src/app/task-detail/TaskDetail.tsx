@@ -137,7 +137,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         {(page || phone) && <IconButton icon="arrow-left" label={t('Back to the list')} onClick={onClose} data-task-back className="touch-target" />}
         <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
           className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
-          <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${ring} ${done ? 'bg-faint border-input text-on-accent' : 'hover:bg-success-soft'}`}>
+          <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${done ? 'bg-faint border-input text-on-accent' : `${ring} hover:bg-success-soft`}`}>
             {done && <Icon name="check" size="xs" />}
           </span>
         </button>

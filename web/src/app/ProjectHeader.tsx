@@ -28,6 +28,8 @@ import { roleName } from '../lib/roleNames'
 import { hueName } from '../lib/colourNames'
 import { act } from './actionError'
 import { useOpenTaskCount } from '../lib/liveTasks'
+import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
+import { saveShowCompleted } from '../lib/sections'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -188,6 +190,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
   const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
   const openTasks = useOpenTaskCount(project.id)
+  // "Show completed tasks" (project-completed-section): a list-layout preference of this device.
+  const listLayout = useProjectViewMode(project.id) === 'list'
+  const showCompleted = useShowCompletedPref(project.id)
 
   // Activity and History are occupants of the shell's panel slot (app-shell "The
   // panel slot has an address"), opened from the overflow menu or Shift+H.
@@ -216,6 +221,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const panels: ActionGroup = { items: [
+    ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: t('History'), icon: 'rotate-ccw', onSelect: showHistory },
     // Display mode (display-mode D6): the project in large type, without the shell.

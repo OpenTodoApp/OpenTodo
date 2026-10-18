@@ -27,6 +27,8 @@ import { t } from '../lib/i18n'
 export const MAX_FIELD_BADGES = 3
 
 // Priority tokens (design-system): ring in the priority colour, soft fill behind it.
+// The priority ring of an open task; a done one gets the filled check alone, since both
+// set the border and the background and the ring would win over the check.
 const PRIORITY_RING: Record<number, string> = {
   1: 'border-p1 bg-p1-soft',
   2: 'border-p2 bg-p2-soft',
@@ -252,7 +254,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           disabled={readOnly}
           className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
-          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${PRIORITY_RING[task.priority]} ${checked ? 'bg-faint border-input text-on-accent' : 'group-hover/check:bg-success-soft'} ${completing ? 'row-check-pop' : ''}`}>
+          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${PRIORITY_RING[task.priority]} group-hover/check:bg-success-soft`} ${completing ? 'row-check-pop' : ''}`}>
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>

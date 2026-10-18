@@ -105,7 +105,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "; {n} unestimated (counted as 0)": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "<b>{actor}</b> assigned you <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
@@ -120,7 +120,7 @@
     "web/src/app/help/HelpLink.tsx"
   ],
   "<span>Skill: {name}.</span> {description} <span2>For example: “{example}”</span2>": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "<span>Your own API key (optional)</span><span2>Used instead of the server’s key. It is stored on the server, never shown again and never sent to your browser.</span2>": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -445,40 +445,40 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "Add a someday task…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a subtask": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListRow.tsx"
   ],
   "Add a subtask to the selected task": [
     "web/src/lib/shortcuts.ts"
   ],
   "Add a subtask to this task…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListRow.tsx"
   ],
   "Add a subtask to {title}…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListRow.tsx"
   ],
   "Add a task": [
     "web/src/app/QuickAdd.tsx",
     "web/src/app/QuickAddSheet.tsx",
     "web/src/app/TabBar.tsx",
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task assigned to you…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task due {adding}": [
     "web/src/app/MonthView.tsx"
   ],
   "Add a task for today…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task for tomorrow…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task labelled {label}…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task on {adding}": [
     "web/src/app/MonthView.tsx"
@@ -487,13 +487,13 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Add a task to this project…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task to your Inbox…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task to {project}…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task to {sectionName}": [
     "web/src/app/Sections.tsx"
@@ -508,11 +508,11 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Add a task with this label…": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task…": [
     "web/src/app/QuickAddSheet.tsx",
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -521,7 +521,7 @@
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "Add details, or send as it is…": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Add field": [
     "web/src/app/FieldsDialog.tsx"
@@ -625,7 +625,7 @@
   ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "All projects": [
     "web/src/app/WebhooksPanel.tsx"
@@ -634,10 +634,10 @@
     "web/src/app/FeedView.tsx"
   ],
   "All subtasks done. Complete <b>{title}</b> too?": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "All-day events on {date}": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "Allow AI assistants (MCP endpoint)": [
     "web/src/app/AssistantsPanel.tsx"
@@ -891,7 +891,7 @@
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Ask about your tasks or ask for changes. For example:": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Ask about your tasks, or let a skill do a common job. Changes are proposed for you to review; nothing changes until you apply them.": [
     "web/src/app/assistant/AskEntry.tsx"
@@ -900,7 +900,7 @@
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Ask about your tasks…": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Ask the assistant (Shift+I)": [
     "web/src/app/assistant/AskEntry.tsx"
@@ -912,11 +912,11 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Assign": [
-    "web/src/app/TaskListView.tsx",
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Assign task": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Assign the selected task, or the ticked tasks (type to find a member, Enter assigns)": [
     "web/src/lib/shortcuts.ts"
@@ -960,10 +960,10 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Assistant:": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Assistant: {summary}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "At (minutes count)": [
     "web/src/app/BackupsPanel.tsx"
@@ -1143,8 +1143,8 @@
   ],
   "Blocked": [
     "web/src/app/NotificationsSettings.tsx",
-    "web/src/app/TaskListView.tsx",
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Blocked by": [
     "web/src/app/task-detail/Properties.tsx"
@@ -1162,7 +1162,7 @@
     "web/src/lib/colourNames.ts"
   ],
   "Board": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Board and timeline": [
     "web/src/lib/shortcuts.ts"
@@ -1189,7 +1189,7 @@
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Break “Plan the team offsite” into steps.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Bring back {title} from Someday": [
     "web/src/app/palette/registry.ts"
@@ -1220,7 +1220,7 @@
   ],
   "Busy": [
     "web/src/app/CalendarEvents.tsx",
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "Button label": [
     "web/src/app/SsoPanel.tsx"
@@ -1384,7 +1384,7 @@
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "Changes are proposed for you to review; nothing changes until you apply them.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Changes in this group": [
     "web/src/app/task-detail/ActivityTab.tsx"
@@ -1508,13 +1508,13 @@
     "web/src/app/EstimateField.tsx"
   ],
   "Clear filter": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Clear the dashboard selection": [
     "web/src/lib/shortcuts.ts"
   ],
   "Clear the filter": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Clear the selection": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -1548,7 +1548,7 @@
     "web/src/app/PanelFrame.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/SsoPanel.tsx",
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantSheet.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/ui/overlay/Dialog.tsx",
@@ -1675,9 +1675,9 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Complete": [
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Complete / reopen the selected task (and its subtasks), or the ticked tasks": [
     "web/src/lib/shortcuts.ts"
@@ -1715,6 +1715,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/task-list/ListGroups.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/feed.ts"
   ],
@@ -1815,7 +1816,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Conversation": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Conversations": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -2054,7 +2055,7 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Cut off: the answer reached its length limit.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Cycle the current project through list, board and timeline (remembered per project on this device)": [
     "web/src/lib/shortcuts.ts"
@@ -2406,8 +2407,8 @@
   "Display mode": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectHeader.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Display options": [
@@ -2437,12 +2438,12 @@
     "web/src/app/Markdown.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/ProjectNote.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Done today": [
     "web/src/app/display/DisplayScreen.tsx"
@@ -2483,7 +2484,7 @@
     "web/src/app/TimelineView.tsx"
   ],
   "Drag a task onto a time, or focus one and press {key}.": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Drag tasks onto a time, or press s on one": [
     "web/src/app/CalendarView.tsx"
@@ -2563,10 +2564,10 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Earlier conversations": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Earlier conversations on this device": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Edit": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -2772,7 +2773,7 @@
   ],
   "Enter toggles or creates · Esc closes": [
     "web/src/app/FilterView.tsx",
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Enter your API key for {provider}.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3072,7 +3073,7 @@
     "web/src/app/FilterView.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Filter activity by kind": [
     "web/src/app/ProjectActivity.tsx"
@@ -3081,7 +3082,7 @@
     "web/src/app/ProjectActivity.tsx"
   ],
   "Filter by duration": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Filter feed by kind": [
     "web/src/app/FeedView.tsx"
@@ -3245,8 +3246,8 @@
   ],
   "Former member": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/TaskListView.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/ListGroups.tsx"
   ],
   "Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title, the text is the description, and attachment names are listed.": [
     "web/src/app/EmailInboxPanel.tsx"
@@ -3324,10 +3325,10 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Inbox": [
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TaskPage.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/palette/registry.ts",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Labels": [
@@ -3678,7 +3679,6 @@
     "web/src/app/ArchivedProjects.tsx"
   ],
   "Inbox": [
-    "web/src/app/CalendarView.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/FilterView.tsx",
     "web/src/app/PreferencesPanels.tsx",
@@ -3688,12 +3688,15 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/assistant.ts",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/stats.ts",
     "web/src/lib/trash.ts",
@@ -3861,7 +3864,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Keep open": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Keep text literally": [
     "web/src/lib/shortcuts.ts"
@@ -3939,12 +3942,12 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/ReviewView.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Labels (does not move on, so you can add a label and then decide)": [
     "web/src/lib/shortcuts.ts"
@@ -3952,9 +3955,9 @@
   "Labels for task": [
     "web/src/app/FilterView.tsx",
     "web/src/app/SavedViewView.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/review/ReviewView.tsx"
+    "web/src/app/review/ReviewView.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Labels for {tasks}": [
     "web/src/app/palette/registry.ts"
@@ -4036,8 +4039,8 @@
     "web/src/lib/stats.ts"
   ],
   "Later": [
-    "web/src/app/TaskListView.tsx",
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Leave": [
     "web/src/app/ShareDialog.tsx"
@@ -4127,7 +4130,7 @@
     "web/src/lib/attachments.ts"
   ],
   "List": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Listed in the evening group of Today": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -4190,7 +4193,7 @@
     "web/src/app/TaskPage.tsx"
   ],
   "Loading the assistant": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Loading the editor…": [
     "web/src/app/ProjectNote.tsx"
@@ -4355,7 +4358,7 @@
     "web/src/app/LabelsView.tsx"
   ],
   "Message to the assistant": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Messages travel unencrypted to the mail server. Use this only for a relay on your own network.": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -4413,7 +4416,7 @@
     "web/src/app/ViewsView.tsx"
   ],
   "Move everything overdue to Friday.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Move it one place down": [
     "web/src/lib/shortcuts.ts"
@@ -4760,8 +4763,8 @@
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "No date": [
-    "web/src/app/CalendarView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/views.ts"
   ],
@@ -4854,7 +4857,7 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "No open task carries this label": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "No open task matches.": [
     "web/src/app/task-detail/Properties.tsx"
@@ -4903,10 +4906,11 @@
   "No section": [
     "web/src/app/BoardView.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-list/ListGroups.tsx",
     "web/src/lib/assistant.ts",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts"
   ],
   "No setting matches “{trim}”.": [
@@ -4925,7 +4929,7 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "No task matches this duration filter": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "No task matches this filter.": [
     "web/src/app/FilterView.tsx"
@@ -4954,7 +4958,7 @@
   ],
   "None yet.": [
     "web/src/app/ViewsView.tsx",
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "None yet. Save a query from the Filter view.": [
@@ -5067,7 +5071,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Nothing completed yet": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing delivered yet": [
     "web/src/app/NotificationsSettings.tsx"
@@ -5079,7 +5083,7 @@
     "web/src/app/MonthView.tsx"
   ],
   "Nothing due today": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing fetched yet.": [
     "web/src/app/AssistantsPanel.tsx",
@@ -5087,11 +5091,11 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Nothing here.": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/DashboardView.tsx"
+    "web/src/app/DashboardView.tsx",
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Nothing is assigned to you": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing is due in the next seven days.": [
     "web/src/app/review/ReviewView.tsx"
@@ -5100,7 +5104,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "Nothing is ready to start today": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": [
     "web/src/app/WebhooksPanel.tsx"
@@ -5130,20 +5134,20 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Nothing parked for later": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing planned": [
-    "web/src/app/CalendarView.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayScreen.tsx"
   ],
   "Nothing scheduled yet": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing slipped.": [
     "web/src/app/review/StatsView.tsx"
   ],
   "Nothing to do whenever": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing was completed late.": [
     "web/src/app/review/StatsView.tsx"
@@ -5393,13 +5397,13 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Open Inbox": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Open Settings: {section}": [
     "web/src/app/palette/registry.ts"
   ],
   "Open Today": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Open an authenticator app on your phone (any app that supports time-based codes).": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -5603,12 +5607,12 @@
     "web/src/lib/filters.ts"
   ],
   "Over capacity.": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "Overdue": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/TaskListView.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/views.ts"
   ],
   "Overdue now": [
@@ -5797,19 +5801,19 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Plan": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Plan and change your tasks by talking, with a model provider your server owner chooses (including a model on your own network), or with your own provider and key when the owner allows it. Every change is proposed for you to review and can be undone. Conversations stay on this device.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Plan from": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Plan from a list": [
     "web/src/app/CalendarView.tsx"
   ],
   "Planned estimates against a {minutes} day": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "Planned estimates against a {minutes} day.": [
     "web/src/app/MonthView.tsx"
@@ -5852,13 +5856,13 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Press {g} then {key} to open Today": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Press {g} then {key} to open the Inbox": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Press {key} to add a task": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Preview": [
     "web/src/app/DateTimeSettings.tsx",
@@ -5926,9 +5930,9 @@
     "web/src/app/NotificationsSettings.tsx"
   ],
   "Process the Inbox": [
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/ReviewView.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Process the Inbox one task at a time": [
@@ -5936,7 +5940,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Process {count}": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Profile": [
     "web/src/app/settingsIndex.ts"
@@ -5945,7 +5949,6 @@
     "web/src/app/settingsSections.ts"
   ],
   "Project": [
-    "web/src/app/CalendarView.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/FilterView.tsx",
     "web/src/app/ImportScreen.tsx",
@@ -5955,10 +5958,13 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/stats.ts"
   ],
   "Project archived": [
@@ -5984,7 +5990,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Project layout": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Project menu": [
     "web/src/app/ProjectHeader.tsx"
@@ -6016,16 +6022,16 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Projects": [
-    "web/src/app/CalendarView.tsx",
     "web/src/app/ProjectsSettings.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts"
   ],
   "Properties": [
     "web/src/app/task-detail/Properties.tsx"
   ],
   "Proposal discarded.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Proposal discarded. Nothing was changed.": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -6105,7 +6111,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Quick add (read-only)": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Quick add a task": [
     "web/src/app/palette/registry.ts",
@@ -6162,7 +6168,7 @@
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "Read-only: you are a viewer of this shared project.": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Read-only: you are a viewer of this shared project. You can still comment.": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -6311,7 +6317,7 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "Remove pasted text": [
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Remove saved key": [
@@ -6330,7 +6336,7 @@
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "Remove the skill {name}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Remove {nameOf} from the dashboard": [
     "web/src/app/DashboardView.tsx"
@@ -6946,7 +6952,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Select": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Select the first task of the next column": [
     "web/src/lib/shortcuts.ts"
@@ -6982,7 +6988,7 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Send": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Send a message to another service when tasks change": [
     "web/src/app/settingsIndex.ts"
@@ -7201,6 +7207,9 @@
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Show completed tasks": [
+    "web/src/app/ProjectHeader.tsx"
+  ],
   "Show in Assigned to me": [
     "web/src/app/task-detail/Properties.tsx"
   ],
@@ -7215,7 +7224,7 @@
     "web/src/app/ProjectNote.tsx"
   ],
   "Show more {older}": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListGroups.tsx"
   ],
   "Show or hide the project activity; Tab reaches the person and kind filters": [
     "web/src/lib/shortcuts.ts"
@@ -7438,11 +7447,11 @@
     "web/src/app/AttachmentSettingsPanel.tsx"
   ],
   "Skill: {name}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Skills": [
     "web/src/app/assistant/AskEntry.tsx",
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Skip": [
@@ -7508,7 +7517,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Some items changed since they were proposed and were unchecked. Review and apply again.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Someday": [
     "web/src/app/AppearanceSection.tsx",
@@ -7625,7 +7634,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Stop": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Stop dictating": [
     "web/src/lib/shortcuts.ts"
@@ -7640,7 +7649,7 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Stopped.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Stopped: {reason}": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -7822,7 +7831,7 @@
     "web/src/app/MonthView.tsx"
   ],
   "Tasks to plan": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Tasks waiting for this one": [
     "web/src/app/task-detail/Properties.tsx"
@@ -7941,7 +7950,7 @@
   ],
   "The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.": [
     "web/src/app/assistant/AskEntry.tsx",
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/lib/assistant.ts"
   ],
   "The assistant is busy on this server. Try again in a few seconds.": [
@@ -7950,7 +7959,7 @@
   ],
   "The assistant is not available on the demo instance.": [
     "web/src/app/assistant/AskEntry.tsx",
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/lib/assistant.ts"
   ],
   "The assistant is not enabled on this server.": [
@@ -7961,7 +7970,7 @@
     "web/src/app/assistant/AskEntry.tsx"
   ],
   "The assistant needs a connection.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "The background worker that receives pushes is running.": [
     "web/src/lib/push.ts"
@@ -8137,7 +8146,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "The provider changed while you were reading. Read the updated text and accept again.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "The provider changed. Read the updated disclosure and accept again.": [
     "web/src/lib/i18n/errors.ts"
@@ -8295,7 +8304,7 @@
     "web/src/app/AssistantsPanel.tsx"
   ],
   "The server owner has not turned the assistant on.": [
-    "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "The server owner requires two-factor authentication for this account.": [
@@ -8447,15 +8456,15 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Thinking…": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "This Evening": [
     "web/src/app/QuickAdd.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/activity.ts"
+    "web/src/lib/activity.ts",
+    "web/src/lib/listGroups.ts"
   ],
   "This account has been deactivated. Ask the server owner or an admin to reactivate it.": [
     "web/src/app/AuthScreen.tsx"
@@ -8695,7 +8704,7 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "This label no longer exists.": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "This link can only be used by people who already have an account on this server. Sign in first, or ask the server owner for an account.": [
     "web/src/lib/i18n/errors.ts"
@@ -8771,14 +8780,14 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This project has no open tasks": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "This project is end-to-end encrypted, so it cannot be published: the server cannot read its tasks.": [
     "web/src/app/PublicLinksSection.tsx"
   ],
   "This project no longer exists.": [
-    "web/src/app/TaskListView.tsx",
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "This request is not allowed here.": [
     "web/src/lib/i18n/errors.ts"
@@ -8940,7 +8949,7 @@
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Timeline": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Timeline zoom": [
     "web/src/app/TimelineView.tsx"
@@ -8990,7 +8999,7 @@
     "web/src/app/LabelsView.tsx"
   ],
   "To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Today": [
     "web/src/app/CalendarView.tsx",
@@ -9005,6 +9014,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/dates.ts",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
     "web/src/lib/views.ts"
   ],
@@ -9241,7 +9251,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Type to filter · Enter assigns · Esc closes": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Type to find or create a label…": [
     "web/src/app/LabelPicker.tsx"
@@ -9279,7 +9289,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Undo is available.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Undo last restore": [
     "web/src/app/RestoreSection.tsx"
@@ -9297,17 +9307,17 @@
     "web/src/app/assistant/AssistantRoot.tsx"
   ],
   "Undone, except: {items}.": [
-    "web/src/app/assistant/AssistantPanel.tsx",
-    "web/src/app/assistant/AssistantRoot.tsx"
+    "web/src/app/assistant/AssistantRoot.tsx",
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Undone.": [
-    "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
+    "web/src/app/assistant/useAssistantConversation.ts",
     "web/src/app/bulk/UndoToast.tsx"
   ],
   "Undone: {n} restored.": [
-    "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/useAssistantConversation.ts",
     "web/src/app/bulk/UndoToast.tsx"
   ],
   "Unestimated": [
@@ -9387,11 +9397,11 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Unscheduled": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/TimelineView.tsx"
+    "web/src/app/TimelineView.tsx",
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "Unscheduled on {date}": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.": [
     "web/src/app/AccountSettings.tsx"
@@ -9401,15 +9411,18 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/ReminderToasts.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
     "web/src/lib/localData.ts",
@@ -9504,7 +9517,7 @@
     "web/src/app/UnlockScreen.tsx"
   ],
   "Use the pasted text.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Use the recovery key instead": [
     "web/src/app/UnlockScreen.tsx"
@@ -9663,7 +9676,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "What is due today?": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "What is the next step?": [
     "web/src/app/review/ReviewView.tsx"
@@ -9749,12 +9762,13 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/ListGroups.tsx"
   ],
   "You accepted what is sent.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -9843,7 +9857,7 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "You can view this project but not add tasks": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "You can view this project but not change dates.": [
     "web/src/app/TimelineView.tsx"
@@ -9887,19 +9901,19 @@
     "web/src/lib/push.ts"
   ],
   "You:": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Your API key for {provider}": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Your Inbox is empty": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
   ],
   "Your account uses end-to-end encryption, so the server holds no key to your tasks and cannot pass them to a model. The rest of the app works as usual.": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Your account uses end-to-end encryption. Enter your encryption passphrase to decrypt your tasks on this device. Sync stays paused until then. You only need to do this once per device.": [
     "web/src/app/UnlockScreen.tsx"
@@ -10097,7 +10111,8 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "all day": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx"
   ],
   "and, or, not, grouping · quote names with spaces: @\"follow up\"": [
     "web/src/app/FilterView.tsx"
@@ -10656,11 +10671,11 @@
     "web/src/app/settingsSections.ts"
   ],
   "over capacity": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/MonthView.tsx"
+    "web/src/app/MonthView.tsx",
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "overlaps another item": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "owner": [
     "web/src/lib/roleNames.ts"
@@ -10896,7 +10911,7 @@
   ],
   "the project": [
     "web/src/app/TriageView.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/usePropertiesModel.ts"
   ],
   "the provider": [
     "web/src/app/sso.ts"
@@ -11078,7 +11093,7 @@
     "web/src/app/TaskRow.tsx"
   ],
   "{count} more overlapping items": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "{count} open tasks": [
     "web/src/app/DashboardView.tsx"
@@ -11194,15 +11209,15 @@
     "web/src/app/TaskRow.tsx"
   ],
   "{n, plural, one {# change applied automatically. Undo is available.} other {# changes applied automatically. Undo is available.}}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n, plural, one {# change applied automatically.} other {# changes applied automatically.}}": [
-    "web/src/app/assistant/AssistantPanel.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n, plural, one {# change applied.} other {# changes applied.}}": [
-    "web/src/app/assistant/AssistantPanel.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n, plural, one {# change applied} other {# changes applied}}": [
     "web/src/app/bulk/BulkReview.tsx"
@@ -11232,7 +11247,7 @@
     "web/src/app/PublicLinksSection.tsx"
   ],
   "{n, plural, one {# done} other {# done}}": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/lib/listGroups.ts"
   ],
   "{n, plural, one {# earlier version deleted.} other {# earlier versions deleted.}}": [
     "web/src/app/EncryptionPanel.tsx"
@@ -11294,7 +11309,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "{n, plural, one {# proposed change to review below.} other {# proposed changes to review below.}}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n, plural, one {# reminder} other {# reminders}}": [
     "web/src/app/ImportScreen.tsx"
@@ -11359,7 +11374,7 @@
     "web/src/app/SettingsView.tsx"
   ],
   "{n, plural, one {Assistant: # change applied.} other {Assistant: # changes applied.}}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n, plural, one {Date removed from # task} other {Date removed from # tasks}}": [
     "web/src/lib/bulk.ts"
@@ -11389,10 +11404,10 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "{n, plural, one {One task is waiting for other tasks below.} other {# tasks are waiting for other tasks below.}}": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "{n, plural, one {Pasted text, # line: used as material, not as instructions.} other {Pasted text, # lines: used as material, not as instructions.}}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "{n, plural, one {Pasted text, # line: used as material, not as instructions} other {Pasted text, # lines: used as material, not as instructions}}": [
     "web/src/ui/patterns/AskComposer.tsx"
@@ -11422,7 +11437,7 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "{n, plural, one {pasted text, # line} other {pasted text, # lines}}": [
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "{name} (you)": [
     "web/src/app/ShareDialog.tsx"
@@ -11485,14 +11500,14 @@
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "{n} of {total} changes applied.": [
-    "web/src/app/assistant/AssistantPanel.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n} of {total}: {title}": [
     "web/src/lib/triage.ts"
   ],
   "{n} older": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListGroups.tsx"
   ],
   "{n} overdue: complete them with c, or open one to give it a new date.": [
     "web/src/app/review/ReviewView.tsx"
@@ -11579,13 +11594,13 @@
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "{time} for {duration}": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "{time} in {city}": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "{time}, no estimate": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/DayColumn.tsx"
   ],
   "{title} calendar": [
     "web/src/app/MonthView.tsx"

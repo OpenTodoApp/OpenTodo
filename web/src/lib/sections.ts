@@ -191,5 +191,20 @@ export async function saveListColumns(projectId: string, on: boolean): Promise<v
   await setMeta(columnsKey(projectId), on)
 }
 
+const completedKey = (projectId: string) => `list-completed:${projectId}`
+
+/**
+ * Completed tasks kept in the project's list (project-completed-section): a
+ * Completed group at the end of the list, remembered per project on this device,
+ * never synced, like the columns layout.
+ */
+export async function loadShowCompleted(projectId: string): Promise<boolean> {
+  return (await getMeta<unknown>(completedKey(projectId), false)) === true
+}
+
+export async function saveShowCompleted(projectId: string, on: boolean): Promise<void> {
+  await setMeta(completedKey(projectId), on)
+}
+
 /** Meta keys the UI subscribes to with useLiveQuery. */
-export const prefKeys = { mode: modeKey, collapsed: collapsedKey, columns: columnsKey }
+export const prefKeys = { mode: modeKey, collapsed: collapsedKey, columns: columnsKey, completed: completedKey }

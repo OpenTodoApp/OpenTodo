@@ -26,6 +26,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Change several tasks at once](bulk-actions.md) | Tick tasks with the keyboard, mouse or touch, act on all of them from one menu, preview moves and assignments, and undo the lot in one step. |
 | &nbsp;&nbsp;↳ [Projects and sub-projects](projects.md) | Create projects and nest them, use the Project menu to colour, move, rename, archive or delete, duplicate a project or a task, and what happens when a project is done. |
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
+| &nbsp;&nbsp;↳ [Completed tasks in a project](completed-in-projects.md) | Keep a project's completed tasks at the end of its list in a Completed group, for lists you tick off and reuse such as groceries. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
 | &nbsp;&nbsp;↳ [Weekly review and statistics](review-and-statistics.md) | A guided weekly review with live data, what you completed, created and let slip computed on your device, and an optional weekly digest by email. |

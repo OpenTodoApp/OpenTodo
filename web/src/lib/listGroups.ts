@@ -230,6 +230,14 @@ export function sectionOfRows(board: boolean, columns: readonly ListColumn[], gr
   return m
 }
 
+/** In the collapsed set when the project's Completed group is open on this device; closed by default (project-completed-section). */
+export const completedOpenKey = (projectId: string) => `project:${projectId}:completed:open`
+
+/** Every completed task of a project, most recently completed first, for its Completed group (project-completed-section). */
+export function completedNewestFirst(bySection: Map<string, Task[]>): Task[] {
+  return [...bySection.values()].flat().sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
+}
+
 /** Completed tasks of the project by section key, for "n completed" and Show (task-list-presentation "Empty groups"). */
 export function completedBySection(allTasks: readonly Task[], projectId: string | null, sectionMap: Map<string, Section>): Map<string, Task[]> {
   const m = new Map<string, Task[]>()

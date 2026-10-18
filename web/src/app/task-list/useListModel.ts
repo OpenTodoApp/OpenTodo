@@ -6,8 +6,8 @@ import { blockedMap } from '../../lib/dependencies'
 import { liveFields } from '../../lib/fields'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { habitStatsMap } from '../../lib/habits'
-import { boardColumns, completedBySection, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
-import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectSectionRows, useProjectViewMode } from '../../lib/liveData'
+import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
+import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
@@ -168,6 +168,12 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
   const doneBySection = useMemo(() => completedBySection(allTasks, projectId, layout.sectionMap), [allTasks, projectId, layout.sectionMap])
+  // With "Show completed tasks" on (project-completed-section), the list layout
+  // keeps them in one Completed group at the end, newest first, closed by default.
+  const showCompletedPref = useShowCompletedPref(projectId)
+  const showCompleted = !!projectId && showCompletedPref && !board && !layout.timeline
+  const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
+  const completedOpen = !!projectId && collapsed.has(completedOpenKey(projectId))
 
   return {
     dt, today, zone, projects, projectMap, labels, labelMap, memberMap, isReadOnly, treeView, projectId,
@@ -177,6 +183,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, siblingPos, doneBySection,
+    showCompleted, completedTasks, completedOpen,
   }
 }
 
