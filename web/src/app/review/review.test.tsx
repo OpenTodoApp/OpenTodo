@@ -5,7 +5,7 @@
 // finishing, archiving offline and the sidebar marker.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
@@ -209,6 +209,10 @@ describe('sidebar Review entry', () => {
   it('nine days after the last review carries a due marker with a text alternative', async () => {
     await db.review.put({ id: 'me', completed_at: NOW.getTime() - 9 * 86_400_000, _clock: {} })
     localStorage.setItem('ot.sidebar.more', '1')
+    // The inline More group (a touch screen; the desktop menu shows the marker as the item's description).
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: !/pointer:\s*fine/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    onTestFinished(() => { window.matchMedia = original })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => !!r.container.querySelector('[data-review-due]')?.textContent?.includes('9 days ago'))
     const entry = r.container.querySelector('[data-destination="review"]')!

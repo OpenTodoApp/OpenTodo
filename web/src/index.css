@@ -674,6 +674,32 @@ select.ui-input { @apply truncate; contain: layout paint; }
 /* User-written text wraps instead of pushing the page sideways. */
 .user-text { overflow-wrap: anywhere; }
 }
+
+/* A side scroller (OpenSpec change sidebar-compact-desktop): a thin scrollbar in the
+   border colour, a little stronger while the pointer or focus is inside, and a soft
+   fade at an edge only while content is hidden past it (useScrollEdges sets the
+   attributes). The fade leaves the scrollbar's column alone. */
+@layer components {
+.ui-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ot-border) transparent;
+  --fade-top: 0px;
+  --fade-bottom: 0px;
+  --fade: linear-gradient(to bottom, transparent, black var(--fade-top), black calc(100% - var(--fade-bottom)), transparent);
+}
+.ui-scroller:hover, .ui-scroller:focus-within { scrollbar-color: var(--ot-border-input) transparent; }
+.ui-scroller::-webkit-scrollbar { width: 6px; }
+.ui-scroller::-webkit-scrollbar-thumb { border-radius: 3px; background: var(--ot-border); }
+.ui-scroller:hover::-webkit-scrollbar-thumb { background: var(--ot-border-input); }
+.ui-scroller[data-fade-top] { --fade-top: 0.75rem; }
+.ui-scroller[data-fade-bottom] { --fade-bottom: 1rem; }
+.ui-scroller:is([data-fade-top], [data-fade-bottom]) {
+  mask-image: var(--fade), linear-gradient(black, black);
+  mask-size: calc(100% - 10px) 100%, 10px 100%;
+  mask-position: 0 0, 100% 0;
+  mask-repeat: no-repeat;
+}
+}
 /* Touch screens: an icon control is at least 44 x 44 px (the rule below already
    covers plain buttons; this names the intent and covers other elements). */
 @utility touch-target {

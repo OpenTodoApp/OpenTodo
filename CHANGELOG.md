@@ -9,6 +9,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **A thank-you for new servers.** The first time the owner opens a new server, a short note thanks them for installing OpenTodo and links to the issue tracker, the GitHub repository and Buy Me a Coffee. It shows once per account and never to invited members or on the demo. ([Feedback and support](docs/feedback-and-support.md))
 - **Settings → About.** A new section for everyone with the server's version, Help, the documentation and the website, the issue tracker, the source code and a Buy Me a Coffee button; the owner can show the welcome note again from there.
 
+### Changed
+
+- **A roomier sidebar on a computer.** Search sits next to the OpenTodo name, Help joins the icons in one footer row, and **More** opens as a menu instead of pushing your projects down. Filters and Labels appear once you have one, rows are a little tighter with a mouse, and the sidebar has a thin scrollbar with a soft fade where more is hidden. In a 1280×600 window seven projects now fit instead of two. Touch screens keep their larger targets and the inline More group.
+
 ## [0.7.1] - 2026-10-18
 
 OpenTodo 0.7.1 lets a project keep its completed tasks in its own list, in a Completed group you open when you need it, for lists you tick off and reuse such as groceries. It also fixes completed tasks showing an empty circle instead of a ticked one.
