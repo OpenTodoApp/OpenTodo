@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-labelledby="t d">
+  <title id="t">The Open Loops cycle</title>
+  <desc id="d">Five moves in a loop: Catch leads to Clarify, Clarify to Place, Place to Do, Do to Review, and Review back to Catch.</desc>
+  <rect width="640" height="400" rx="20" fill="#f7f8f7"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#5b6b63"/></marker>
+  </defs>
+  <g fill="none" stroke="#5b6b63" stroke-width="2.5" marker-end="url(#a)">
+    <path d="M232 92 Q320 60 400 92"/>
+    <path d="M470 140 Q520 200 488 252"/>
+    <path d="M150 252 Q118 200 160 148"/>
+  </g>
+  <g font-family="Inter, system-ui, sans-serif" text-anchor="middle">
+    <g transform="translate(170 110)"><circle r="54" fill="#0f766e"/><text y="-2" font-size="20" font-weight="700" fill="#fff">Catch</text><text y="20" font-size="12" fill="#e6f4f1">get it out</text></g>
+    <g transform="translate(470 110)"><circle r="54" fill="#0f766e"/><text y="-2" font-size="20" font-weight="700" fill="#fff">Clarify</text><text y="20" font-size="12" fill="#e6f4f1">decide once</text></g>
+    <g transform="translate(480 290)"><circle r="54" fill="#0f766e"/><text y="-2" font-size="20" font-weight="700" fill="#fff">Place</text><text y="20" font-size="12" fill="#e6f4f1">one home</text></g>
+    <g transform="translate(160 290)"><circle r="54" fill="#0f766e"/><text y="-2" font-size="20" font-weight="700" fill="#fff">Review</text><text y="20" font-size="12" fill="#e6f4f1">on a rhythm</text></g>
+    <g transform="translate(320 200)"><circle r="62" fill="#134e4a"/><text y="-2" font-size="22" font-weight="700" fill="#fff">Do</text><text y="20" font-size="12" fill="#e6f4f1">the next step</text></g>
+  </g>
+  <g fill="none" stroke="#5b6b63" stroke-width="2.5" marker-end="url(#a)">
+    <path d="M430 280 Q390 240 380 228"/>
+    <path d="M262 226 Q235 255 214 280"/>
+  </g>
+</svg>

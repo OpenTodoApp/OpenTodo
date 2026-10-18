@@ -64,7 +64,7 @@ Settings → You SHALL offer "How you work" as three choices. Each choice SHALL 
 - **THEN** the method overview opens in the Help panel beside Settings, and closing it returns to the unchanged choice
 
 ### Requirement: References to the method
-In `companion` and `first` modes, every screen that serves a move SHALL name that move in its page subtitle as a link, with the method's name as its text alternative:
+In `companion` and `first` modes, every screen that serves a move SHALL name that move as a link beside its page title (on phones, in the subtitle line of the page bar), with the method's name in its text alternative:
 
 | Screen | Move |
 | --- | --- |
@@ -80,7 +80,7 @@ The link SHALL open the method page for that move in the Help panel beside the s
 
 #### Scenario: Companion user on the Inbox
 - **WHEN** a user in `companion` mode opens the Inbox
-- **THEN** the subtitle reads "Catch · Open Loops", and activating it opens the Catch page in the Help panel while the Inbox stays as it was
+- **THEN** beside the title it reads "Catch · Open Loops", and activating it opens the Catch page in the Help panel while the Inbox stays as it was
 
 #### Scenario: Lists only
 - **WHEN** a user in `lists` mode opens the Inbox or the weekly review

@@ -16,6 +16,7 @@ import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { useLiveTasks } from '../../lib/liveTasks'
 import type { Project } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { useWithMethod } from '../help/MethodLink'
 import { HelpLink } from '../help/HelpLink'
 import { LabelPicker } from '../LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
@@ -91,6 +92,8 @@ export function ReviewView({ userId }: { userId?: string }) {
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const allDone = !!steps && STEP_IDS.every((s) => steps.done[s])
   const last = finished ?? (review?.completed_at || null)
+  const methodMeta = useWithMethod('review')
+  const subtitle = useWithMethod('review', last ? t('Last review {instant}', { instant: formatInstant(last, 'long') }) : t('No review finished yet'))
 
   const archive = async (p: Project) => {
     await archiveProject(p.id)
@@ -105,8 +108,8 @@ export function ReviewView({ userId }: { userId?: string }) {
 
   return (
     <PageBody width="list">
-      <PageHeader title={t('Weekly review')} icon="clipboard-check"
-        subtitle={last ? t('Last review {instant}', { instant: formatInstant(last, 'long') }) : t('No review finished yet')}
+      <PageHeader title={t('Weekly review')} icon="clipboard-check" meta={methodMeta}
+        subtitle={subtitle}
         actions={<Button size="sm" variant={allDone ? 'primary' : 'secondary'} onClick={() => void (async () => {
           const now = Date.now()
           await finishReview(now)

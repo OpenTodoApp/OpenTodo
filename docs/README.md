@@ -15,6 +15,10 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | --- | --- |
 | [Getting started](getting-started.md) | From the demo or your first sign-in to adding, scheduling and completing your first task, in about five minutes. |
 | &nbsp;&nbsp;↳ [Your first task](your-first-task.md) | The card the Inbox shows on your first visit, adding a task, giving it a date as you type, completing it, and getting the app on your phone. |
+| [Open Loops](method/overview.md) | OpenTodo's own method for everything on your mind, inspired by GTD: five moves, seven principles, and how prominent the app makes it. |
+| &nbsp;&nbsp;↳ [Catch](method/catch.md), [Clarify](method/clarify.md), [Place](method/place.md), [Do](method/do.md), [Review](method/review.md) | The five moves, one page each, with the screen and keys that serve them. |
+| &nbsp;&nbsp;↳ [Places](method/places.md), [Rhythms](method/rhythms.md), [Horizons](method/horizons.md) | Where a task can live, the Daily check, weekly review and Monthly look, and next steps, projects and areas. |
+| &nbsp;&nbsp;↳ [Set up in ten minutes](method/set-up.md), [Coming from GTD](method/coming-from-gtd.md) | Turn the method on and start; the GTD words you know and where they live here. |
 | [Installing the app](install-app.md) | Put OpenTodo on your home screen or desktop so it opens in its own window and works offline, on iPhone, Android, Windows, macOS and Linux. |
 | &nbsp;&nbsp;↳ [Install on your phone](install-phone.md) | Add OpenTodo to the home screen of an iPhone, iPad or Android phone, step by step, so it opens full screen and can show reminders. |
 | [Tasks and projects](tasks-and-projects.md) | Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects. |

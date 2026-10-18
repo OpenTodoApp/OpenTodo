@@ -4,6 +4,7 @@
 // lib/liveData), the keyboard (useListShortcuts), drag (useListDrag), the bindings to
 // the panel and the Vim layer (useListBindings), and the bodies for the list, the
 // board and the timeline.
+import { useWithMethod } from './help/MethodLink'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
@@ -180,6 +181,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
   )
   const { currentProject, currentLabel } = m
+  // The Open Loops move this screen serves (open-loops "References to the method").
+  const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
+  const meta = useWithMethod(methodMove, route.view === 'today' ? m.dt.formatDate(today, 'heading') : route.view === 'label' ? rows.length : undefined)
+  const methodSubtitle = useWithMethod(methodMove)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),
   }[route.view]
@@ -198,7 +203,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // "Nothing between the header and the list"): title, meta, actions, Help.
             <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={pageActions}
               leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
-              meta={route.view === 'today' ? m.dt.formatDate(today, 'heading') : route.view === 'label' ? rows.length : undefined} />
+              meta={meta} subtitle={methodSubtitle} />
           )}
 
           {route.view !== 'completed' && (

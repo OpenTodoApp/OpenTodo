@@ -89,9 +89,9 @@ The new fields are `daily_at`, `monthly_at`, `focus_date` (a `YYYY-MM-DD` string
 
 `sidebarLayout.ts` gets the primary and More lists from the mode (the table in the `app-shell` delta). `first` mode uses a fixed six-item list, so the budget test's six-item limit holds. Promotions are not applied while in `first` mode, but the stored list is untouched. That's why switching back restores the user's sidebar. The new destinations `loop`, `next` and `waiting` are added to the promotable set; older clients ignore them per the existing rule.
 
-### D8. Method links are a subtitle node, not a header action
+### D8. Method links are a meta node, not a header action
 
-A small `MethodLink` component renders "‹Move› · Open Loops" as a link-styled button that calls `openHelp('method/<move>', el)`. It's passed as part of `subtitle` by the screens in the `open-loops` table and renders nothing in `lists` mode. This adds no header row and no action, and the phone bar already shows the subtitle. Each `docs/method/<move>.md` page lists `method/<move>` in its `screens:` front matter, so the docs check guards the ids.
+A small `MethodLink` component renders "‹Move› · Open Loops" as a link-styled button that calls `openHelp('method/<move>', el)`. `useWithMethod(move, existing)` appends it to a header's `meta` (the text beside the title on desktop) and `subtitle` (the phone bar's second line), returning the existing value untouched in `lists` mode. This adds no header row and no action. Each `docs/method/<move>.md` page lists `method/<move>` in its `screens:` front matter, so the docs check guards the ids.
 
 ### D9. Loop home and views
 

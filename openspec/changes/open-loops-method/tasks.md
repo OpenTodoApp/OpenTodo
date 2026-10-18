@@ -15,7 +15,7 @@
 
 ## 3. Method documentation and in-app references (design D8)
 
-- [ ] 3.1 Write `docs/method/`:
+- [x] 3.1 Write `docs/method/`:
   - `overview.md`, with the loop diagram first
   - `catch.md`, `clarify.md`, `place.md`, `do.md`, `review.md`
   - `places.md`, `rhythms.md`, `horizons.md`
@@ -23,8 +23,8 @@
   - `coming-from-gtd.md`, with the glossary and the non-affiliation sentence
 
   Each page is under 600 words with `screens: [method/<id>]` front matter, using the vocabulary's exact names. Verify with `npm run docs:check` in web/ and `make docs`.
-- [ ] 3.2 Add the "Learn Open Loops" entry to the Help landing and link the method chapter from `docs/README.md` / the guide list. Verify with the Help landing test updated to nine entries and the "Learn Open Loops" scenario (`npm test`).
-- [ ] 3.3 Build `MethodLink` (subtitle link, `openHelp('method/<move>')`, nothing in `lists` mode) with a story, and pass it in the subtitles of Inbox, triage, Someday, Review, Daily check and Monthly look. Verify with component tests for "Companion user on the Inbox", "Lists only" (header DOM identical to before) and "Offline", plus `make ui-check` and `budget.test.tsx` (`npm test`, `npm run build`).
+- [x] 3.2 Add the "Learn Open Loops" entry to the Help landing and link the method chapter from `docs/README.md` / the guide list. Verify with the Help landing test updated to nine entries and the "Learn Open Loops" scenario (`npm test`).
+- [x] 3.3 Build `MethodLink` (subtitle link, `openHelp('method/<move>')`, nothing in `lists` mode) with a story, and pass it in the subtitles of Inbox, triage, Someday, Review, Daily check and Monthly look. Verify with component tests for "Companion user on the Inbox", "Lists only" (header DOM identical to before) and "Offline", plus `make ui-check` and `budget.test.tsx` (`npm test`, `npm run build`).
 
 ## 4. Next and Waiting views (design D3, D9)
 

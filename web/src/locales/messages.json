@@ -4147,6 +4147,9 @@
   "Later|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Learn Open Loops": [
+    "web/src/app/help/HelpView.tsx"
+  ],
   "Leave": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -5609,6 +5612,9 @@
   ],
   "Open the task’s panel to edit anything else": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Open the {method} guide": [
+    "web/src/app/help/MethodLink.tsx"
   ],
   "Open view": [
     "web/src/app/DashboardView.tsx"
@@ -11422,6 +11428,9 @@
   ],
   "{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "{move}, a move of {method}: open the method guide": [
+    "web/src/app/help/MethodLink.tsx"
   ],
   "{m} min ago": [
     "web/src/app/CalendarFeedsPanel.tsx",

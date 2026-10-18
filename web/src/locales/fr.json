@@ -3688,5 +3688,8 @@
   "Waits for someone or something else first.": "Attend d’abord quelqu’un ou autre chose.",
   "Weekly review|method": "Revue hebdomadaire",
   "Work from your next actions, by context, one step at a time.": "Travaillez à partir de vos prochaines actions, par contexte, une étape à la fois.",
-  "Your loops, your server|method": "Vos boucles, votre serveur"
+  "Your loops, your server|method": "Vos boucles, votre serveur",
+  "Learn Open Loops": "Découvrir Open Loops",
+  "Open the {method} guide": "Ouvrir le guide {method}",
+  "{move}, a move of {method}: open the method guide": "{move}, une étape de {method} : ouvrir le guide de la méthode"
 }

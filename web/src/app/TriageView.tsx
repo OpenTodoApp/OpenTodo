@@ -3,6 +3,7 @@
 // labels, y someday, c complete, Delete trash, j or Space skip, k back, Enter
 // open). Each decision is the same operation the list writes, with its Undo
 // toast, so it applies locally first, works offline and converges like any edit.
+import { useWithMethod } from './help/MethodLink'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader, Dialog } from '../ui'
@@ -87,6 +88,8 @@ export function TriageView() {
   const task = curId ? byId.get(curId) : undefined
   const p = state ? progress(state) : { n: 0, total: 0, done: true }
   const delegates = useMemo(() => delegateEntries(memberships, projects, me), [memberships, projects, me])
+  const meta = useWithMethod('clarify', p.total > 0 && !p.done ? <span data-triage-progress className="tabular-nums text-muted">{t('{n} of {total}', { n: p.n, total: p.total })}</span> : undefined)
+  const methodSubtitle = useWithMethod('clarify')
   const reminders = useReminderRows(curId)
 
   // A position whose task is gone (trashed this session) is passed over in the direction of travel.
@@ -219,7 +222,7 @@ export function TriageView() {
   return (
     <PageBody data-triage>
       <PageHeader title={t('Process the Inbox')} help="inbox/triage" back={{ label: t('Inbox'), onClick: leave }}
-        meta={p.total > 0 && !p.done ? <span data-triage-progress className="tabular-nums text-muted">{t('{n} of {total}', { n: p.n, total: p.total })}</span> : undefined} />
+        meta={meta} subtitle={methodSubtitle} />
       <p className="sr-only" role="status" aria-live="polite" data-triage-live>{announce}</p>
       {notice && <div className="mb-3"><Notice>{notice}</Notice></div>}
       {!state ? null : !task ? (
