@@ -9,6 +9,8 @@ order: 10
 ---
 # Switch from Todoist
 
+Todoist is an excellent task manager: quick to capture into, polished on every platform, and the app that shaped how many people, OpenTodo's author included, think about tasks. This guide is not advice to leave it. It is for people who have decided they want to host their tasks themselves, or who want to try OpenTodo with their real data.
+
 Your projects, sections, subtasks, labels, priorities, due dates and recurring tasks come with you. It takes a few minutes, and you can undo the whole import with one click.
 
 ## Export from Todoist
@@ -39,14 +41,18 @@ Projects that were boards in Todoist open as boards on this device. Your other d
 - Due dates and times, in the language you used Todoist in (English, German, French, Italian, Spanish or Portuguese). Dates without a year take the year of the backup.
 - Recurring dates such as `every monday` or `jeden Montag`, when OpenTodo's [recurrence rules](../recurrence.md) can express them.
 - Reminders with a time or an offset.
+- Deadlines, as the task's [deadline](../tasks-and-projects.md#deadlines). One that cannot be read is kept as a "Deadline: …" line in the description.
 
 The full mapping is in [Import formats](../import.md#todoist-todoist-csv-todoist-backup).
 
 ## What does not
 
 - **Comments** are added to the task's description under "Comments", because their authors cannot be kept.
-- **Deadlines** are kept as a "Deadline: …" line in the description; OpenTodo has no deadline field yet.
 - **Assignees** are dropped; invite people and [share the project](../sharing.md) instead.
 - Dates or rules OpenTodo cannot read leave the task without a due date, with a warning that quotes them.
 
 Changed your mind? [Undo the import](../import.md#jobs-limits-and-undo) from the list of past imports.
+
+---
+
+Todoist is a trademark of Doist. OpenTodo is an independent open-source project, not affiliated with or endorsed by Doist.

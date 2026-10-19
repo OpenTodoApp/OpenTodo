@@ -59,6 +59,8 @@ When an id already exists in the account the row is skipped (`exists`), unless t
 
 ### Todoist (`todoist-csv`, `todoist-backup`)
 
+Todoist is a trademark of Doist; OpenTodo is not affiliated with or endorsed by Doist.
+
 Todoist exports one project as CSV from the project's menu, and keeps backups of every project as a ZIP in its settings (Backups). The backup is the better choice: its file names carry the project names (`Work [2203306141].csv`), so projects keep their names. A single CSV does not name its project, so its tasks go to the target project.
 
 | Todoist | Becomes |

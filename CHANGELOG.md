@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **The Todoist guide is fairer to Todoist.** It says what Todoist does well, that it is not advice to leave it, and that OpenTodo is not affiliated with Doist; it also says that deadlines now carry over. ([Switch from Todoist](docs/switch/todoist.md))
+
 ### Fixed
 
 - **The `latest` image reports which build it is.** Images built from the main branch reported their version as `main`; they now report `dev+<commit>`, the commit they were built from, in Settings → About, `/healthz` and the log. ([Docker](docs/self-hosting/docker.md), #160)
