@@ -742,8 +742,10 @@ function overlayGeometry(el) {
 // WebKit sometimes loses its IndexedDB server process under load (four browsers at once in
 // CI): the app's local database is gone, the session reads as signed out, and every later
 // screen of that combination fails. That is the engine, not the app, so such a combination
-// is run once more from a fresh browser; a second loss is reported as usual.
-const ENGINE_DB_LOST = /Connection to Indexed Database server lost|unknown transient reason/i
+// is run once more from a fresh browser; a second loss is reported as usual. The loss
+// also shows as a screen that never loads while /auth/status says signed out (the
+// retry below appends "the session was signed out"), so that counts too.
+const ENGINE_DB_LOST = /Connection to Indexed Database server lost|unknown transient reason|the session was signed out/i
 
 // A combination that stops making progress (WebKit's web process can stall inside an
 // evaluate or a close under load, which no Playwright timeout covers) is stopped after

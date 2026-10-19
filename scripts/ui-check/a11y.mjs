@@ -28,6 +28,12 @@ for (const id of ids) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
     await page.goto(`${server.url}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`)
     await page.waitForFunction(() => document.querySelector('#storybook-root')?.childElementCount > 0, null, { timeout: 15000 })
+    // A story that changes a control's colour once its data arrives (the review's
+    // "Finish review" turns primary when every step is done) is mid-transition for
+    // 120 ms; axe would then measure a blended background and report a contrast
+    // violation that no person can see. Finish every transition before measuring.
+    await page.addStyleTag({ content: '*, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }' })
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     await page.addScriptTag({ content: AXE })
     const violations = await page.evaluate(async (tags) => {
       // The a11y addon may still be running its own pass in the iframe; axe refuses to overlap, so wait for it.

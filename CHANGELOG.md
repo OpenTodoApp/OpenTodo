@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **The Loop home reads in one second.** The Open Loops home screen now opens with a capture field, shows the five moves on one rail with a large count each and exactly one move lit as your next move with the page's only button, puts today's focus below with how many of the chosen tasks are done, and says when the loop is closed. A new **Loop pulse** under the focus shows tasks done this week against last week, how many of the items you caught in the last fourteen days have left the Inbox, the age of the oldest Inbox item and completions per day, all computed on the device with the same definitions as Statistics; nothing is stored or sent. ([Open Loops](docs/method/overview.md))
+
 ### Fixed
 
 - **The `latest` image reports which build it is.** Images built from the main branch reported their version as `main`; they now report `dev+<commit>`, the commit they were built from, in Settings → About, `/healthz` and the log. ([Docker](docs/self-hosting/docker.md), #160)

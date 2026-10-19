@@ -17,7 +17,7 @@ Five minutes, usually in the morning: open it from the Review screen's menu, the
 
 1. **Process the Inbox** if anything is in it.
 2. Look at what is **overdue**: complete it, or give it a new date.
-3. Pick **today's focus**: press <kbd>f</kbd> on up to three of today's tasks. They are shown on the Loop home on every device.
+3. Pick **today's focus**: press <kbd>f</kbd> on up to three of today's tasks. They are shown on the Loop home on every device, with how many of them are done.
 
 **Done for today** records the check. In Open Loops first, the app offers it once a day.
 
