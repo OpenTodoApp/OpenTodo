@@ -21,6 +21,14 @@ export const PAIRS: Pair[] = [
     ...text(`${s}-soft-text`, [`${s}-soft`]),
   ]),
   ...text('highlight-text', ['highlight']),
+  // The Loop home's lit move (loop-home-refresh D5): numerals, secondary text and the
+  // rhythm markers on the accent-soft card; the pulse's deltas on a plain card.
+  ...text('text-strong', ['accent-soft']),
+  ...text('success', ['accent-soft']),
+  ...text('warning-soft-text', ['surface']),
+  ...text('success-soft-text', ['surface']),
+  ...ui('warning', ['surface', 'accent-soft']),
+  ...ui('success', ['surface', 'accent-soft']),
   ...ui('border-input', ['canvas', 'surface', 'sunken']),
   // The three surfaces and the board column (ux-overhaul task 8.6): a row, a card and
   // an overlay keep their text pairs on `sunken` and `raised` in dark too (covered by

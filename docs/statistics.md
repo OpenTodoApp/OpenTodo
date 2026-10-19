@@ -25,7 +25,7 @@ Charts show completions per day, per week, per weekday and per project (the top 
 
 In a shared project a completed task counts for whoever completed it. Older tasks that do not record that count for their assignee, or for you when unassigned.
 
-Statistics are computed on this device from your tasks. Nothing is sent to the server or stored, they work offline, and every synced device shows the same numbers. With end-to-end encryption the numbers are the same and project names are decrypted on your device.
+Statistics are computed on this device from your tasks. Nothing is sent to the server or stored, they work offline, and every synced device shows the same numbers. The [Loop home](method/overview.md)'s Loop pulse uses the same definitions for what was completed this week, last week and per day, so the two screens never disagree. With end-to-end encryption the numbers are the same and project names are decrypted on your device.
 
 ## Weekly digest by email
 

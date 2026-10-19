@@ -16,7 +16,7 @@ The app SHALL offer a Loop home at `/loop`, reachable in every mode from the Mor
 | Do | next actions, waiting tasks, and the next actions per context as chips | Next |
 | Review | the Daily check, the weekly review and the Monthly look, each with when it was last done and whether it is due | the due rhythm, else the weekly review |
 
-   Counts SHALL be shown as numerals with tabular figures, with the unit as secondary text. A move whose count is zero and that has nothing due SHALL show a done mark in the success colour instead of the numeral and SHALL have no disabled control. Exactly one move SHALL be marked as the **next move** and SHALL carry the page's only primary action; the next move is the first of Clarify (Inbox not empty), Place (a project without a next action), Review (a rhythm due), Do (a next action exists), else Catch. Context chips on Do SHALL open Next.
+   Counts SHALL be shown as numerals with tabular figures, with the unit as secondary text. Catch, Clarify and Place at zero SHALL show a done mark in the success colour instead of the numeral; no move SHALL have a disabled control. Exactly one move SHALL be marked as the **next move** and SHALL carry the page's only primary action; the next move is the first of Clarify (Inbox not empty), Place (a project without a next action), Review (a rhythm due), Do (a next action exists), else Catch. Context chips on Do SHALL open Next.
 3. **Today's focus** from the Daily check, with the usual row actions and an indicator of how many of the chosen tasks are done. When no focus is chosen the section SHALL offer to start the Daily check.
 4. **The Loop pulse** (see the Loop pulse requirement).
 
