@@ -758,6 +758,9 @@ select.ui-input { @apply truncate; contain: layout paint; }
 }
 
 @layer components {
+/* Focus (OpenSpec change focus-mode, design D6): the timer's digits, from the type
+   tokens, with tabular figures so they do not jump each second; fit at 360 px. */
+.focus-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-h1) * 2.75), 20vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 /* Display mode (OpenSpec change display-mode, design D4): one view at a large type
    scale for a tablet or an e-ink panel. Sizes derive from the type tokens times
    --display-scale (set per size on the display's root), so they follow the

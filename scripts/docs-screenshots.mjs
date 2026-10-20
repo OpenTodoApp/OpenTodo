@@ -224,6 +224,16 @@ const shots = [
   // display-mode: Today full screen in large type, without the shell.
   { name: 'display-today', server: D, async run(p) { await go(p, demoBase, '/display/today', () => p.locator('[data-screen="display"] [data-display-row]').first().waitFor()) } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
+  // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
+  { name: 'focus', server: D, async run(p) {
+    await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())
+    if (await p.locator('[data-empty-state="focus"]').count()) {
+      await p.getByRole('button', { name: 'Choose a task' }).click()
+      await p.getByRole('option').first().click()
+      await p.locator('[data-focus-timer]').waitFor()
+    }
+    await p.locator('[data-focus-toggle]').click(); await settle(p, 1200)
+  } },
   // stats-and-review: the weekly review on its first unfinished step, and Statistics.
   { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('#review-step-title').waitFor()); await settle(p, 300) } },
   // Open Loops (open-loops-method): the Loop home with the sidebar by the Places, Next, and the project walk.

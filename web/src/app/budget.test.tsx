@@ -95,6 +95,25 @@ describe('scroll regions', () => {
   })
 })
 
+describe('the Focus screen (focus-mode)', () => {
+  it('Phone width: one row of chrome above the timer, and no scroll region of its own', async () => {
+    const id = await createTask({ title: 'Write the report', description: Array.from({ length: 80 }, (_, i) => `Line ${i} of long notes.`).join('\n\n') })
+    navigate({ view: 'focus', id })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!r.container.querySelector('[data-focus-timer]'))
+    const page = r.container.querySelector('[data-focus]')!
+    const before: Element[] = []
+    for (const child of page.children) {
+      if (child.querySelector('[data-focus-timer]') || child.matches('[data-focus-timer]')) break
+      if (!child.classList.contains('sr-only')) before.push(child)
+    }
+    expect(before.map((e) => e.tagName)).toEqual(['HEADER'])
+    expect(scrollers(page)).toEqual([])
+    expect(scrollers(r.container).length).toBeLessThanOrEqual(MAX_SCROLLERS)
+    await r.unmount()
+  })
+})
+
 describe('chrome above the first task', () => {
   it('flat lists have the header and the quick add only; the project page stays within its allowance', async () => {
     const { project } = await seed()

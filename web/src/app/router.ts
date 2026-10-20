@@ -47,6 +47,8 @@ export type Route =
   | { view: 'next' }
   | { view: 'waiting' }
   | { view: 'loop' }
+  // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
+  | { view: 'focus'; id?: string }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -180,6 +182,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
+    case 'focus':
+      return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
     default:
       return { view: 'inbox' }
   }
@@ -247,6 +251,8 @@ export function routePath(r: Route): string {
     }
     case 'review':
       return r.step ? `/review/${r.step}` : '/review'
+    case 'focus':
+      return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:
@@ -264,10 +270,22 @@ export function addressOf(loc: Pick<Location, 'pathname' | 'search'>): string {
 
 const listeners = new Set<() => void>()
 let current = typeof location !== 'undefined' ? addressOf(location) : '/'
+// The last address outside the Focus screen, where its Esc returns (focus-mode D7).
+let beforeFocus = current.startsWith('/focus') ? '/' : current
+const isFocusPath = (p: string) => p === '/focus' || p.startsWith('/focus/')
+function track(next: string): void {
+  if (!isFocusPath(current) && isFocusPath(next)) beforeFocus = current
+  current = next
+}
+
+/** The view to go back to from the Focus screen: the last one shown before it, else the Inbox. */
+export function routeBeforeFocus(): Route {
+  return parseRoute(beforeFocus)
+}
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    current = addressOf(location)
+    track(addressOf(location))
     listeners.forEach((fn) => fn())
   })
 }
@@ -278,7 +296,7 @@ export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   if (path === current) return
   if (opts.replace) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
-  current = path
+  track(path)
   listeners.forEach((fn) => fn())
 }
 

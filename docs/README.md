@@ -36,6 +36,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Weekly review](review-and-statistics.md) | A guided weekly review with live data in seven steps, from the Inbox through every project, one card at a time, to Someday. |
 | &nbsp;&nbsp;↳ [Statistics and the weekly digest](statistics.md) | What you completed, created and let slip computed on your device, and an optional weekly digest by email. |
 | &nbsp;&nbsp;↳ [Process the Inbox](process-the-inbox.md) | Walk the Inbox one task at a time and decide each with a single key: today, schedule, move, delegate, label, Someday, complete or trash, with Undo. |
+| &nbsp;&nbsp;↳ [Focus](focus.md) | One task and a timer: Pomodoro, Flowtime or Countdown, breaks and a break reminder, and the time worked logged on the task. |
 | &nbsp;&nbsp;↳ [Today and Upcoming](today-and-upcoming.md) | How Today orders overdue, started, evening and blocked tasks, how deadlines and start dates bring tasks in, and how Upcoming lays out the days ahead. |
 | &nbsp;&nbsp;↳ [Saved views](saved-views.md) | Turn a filter query into a view pinned to the sidebar, group and sort it, manage it from its menu, and put up to six views on one dashboard. |
 | &nbsp;&nbsp;↳ [Display mode](display-mode.md) | Show Today, Upcoming, a project or a saved view full screen in large type, for a tablet on the fridge or an e-ink panel on the wall. |

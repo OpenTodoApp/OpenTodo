@@ -44,6 +44,7 @@ import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, u
 import { t } from '../lib/i18n'
 import { useRunningRepair } from '../lib/timeEntries'
 import { TrackingPill } from './TrackingIndicator'
+import { BreakReminder } from './focus/BreakReminder'
 import { SkipLink, usePageFocus } from './pageFocus'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
@@ -66,6 +67,8 @@ const DailyCheck = lazy(() => import('./review/ReviewBundle').then((m) => ({ def
 const MonthlyLook = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.MonthlyLook })))
 const NextView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.NextView })))
 const WaitingView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.WaitingView })))
+// Focus (focus-mode D6): its own chunk; the engine that ends a session on time is the break reminder, always mounted.
+const FocusView = lazy(() => import('./focus/FocusView').then((m) => ({ default: m.FocusView })))
 const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
 // The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
 const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
@@ -171,6 +174,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
+    'go.focus': go({ view: 'focus' }),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -265,6 +269,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}><LoopHome /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
+          ) : route.view === 'focus' ? (
+            <Suspense fallback={null}><FocusView id={route.id} /></Suspense>
           ) : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
@@ -303,6 +309,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
       <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
       <ReminderToasts />
+      <BreakReminder />
       <UndoToast />
       <DailyCheckToast />
       <TemplateDialogHost />

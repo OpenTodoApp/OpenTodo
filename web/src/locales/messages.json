@@ -242,6 +242,9 @@
   "A newer version of OpenTodo is required to read your data.": [
     "web/src/app/App.tsx"
   ],
+  "A notice on any screen after a long stretch of work without a break.": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "A part of life you keep up, made of projects.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -262,6 +265,12 @@
   ],
   "A reset email was sent to {email}.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "A session is running": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "A short tone when a session or a break ends, while the app is shown.": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
@@ -588,6 +597,9 @@
   ],
   "Add label…": [
     "web/src/app/LabelPicker.tsx"
+  ],
+  "Add notes": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Add notes…": [
     "web/src/app/NotesEditor.tsx",
@@ -1162,6 +1174,9 @@
   "Back to the previous task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Back to the previous view (the session keeps running)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Back to today": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -1273,6 +1288,16 @@
   ],
   "Break down “{title}”": [
     "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Break over": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx",
+    "web/src/app/focus/useFocusTimer.ts",
+    "web/src/lib/focus/timer.ts"
+  ],
+  "Break reminder": [
+    "web/src/app/focus/BreakReminder.tsx",
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Break this down": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -1446,6 +1471,7 @@
     "web/src/app/VoiceSettings.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -1495,6 +1521,9 @@
   ],
   "Change settings": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Change task": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Change your password": [
     "web/src/app/settingsIndex.ts"
@@ -1579,11 +1608,21 @@
   "Choose a passphrase you will enter once on each device. Long and memorable beats short and complex.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Choose a task": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Choose a task to focus on.": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
   "Choose a type.": [
     "web/src/lib/fields.ts"
   ],
   "Choose an archive…": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Choose another task": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Choose files for the comment": [
     "web/src/app/task-detail/Composer.tsx"
@@ -1605,6 +1644,9 @@
   ],
   "Choose the tasks the selected task waits for (Blocked by)": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Choose today’s focus in the Daily check": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Choose what {title} waits for": [
     "web/src/app/palette/registry.ts"
@@ -1811,6 +1853,7 @@
   "Complete": [
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/focus/FocusView.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Complete / reopen the selected task (and its subtasks), or the ticked tasks": [
@@ -1831,12 +1874,19 @@
   "Complete the selected task of the dashboard panel": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Complete the task": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Complete the task and end the session": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Complete {tasks}": [
     "web/src/app/palette/registry.ts"
   ],
   "Complete {title}": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/display/DisplayColumn.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -2056,6 +2106,9 @@
   ],
   "Count: move the selection that many tasks (clamped)": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Countdown": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Create": [
     "web/src/app/ProjectsView.tsx",
@@ -2629,6 +2682,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/ListChrome.tsx"
@@ -2723,6 +2777,7 @@
   "Due {date}": [
     "web/public/push-sw.js",
     "web/src/app/TriageView.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/assistant.ts"
   ],
   "Due {from} → {to}": [
@@ -2804,6 +2859,9 @@
   ],
   "Edit the estimate of {title}": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Edit the notes": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Edit the options of {name}": [
     "web/src/app/FieldsDialog.tsx"
@@ -2937,6 +2995,9 @@
   ],
   "End": [
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "End the break": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "End-to-end encryption": [
     "web/src/app/EncryptionPanel.tsx",
@@ -3391,6 +3452,7 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "Find a task…": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
   "Find an option…": [
@@ -3446,11 +3508,28 @@
   "Floating:": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
+  "Flowtime": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
+  "Focus": [
+    "web/src/app/focus/FocusSettings.tsx",
+    "web/src/app/focus/FocusView.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Focus on this task": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Focus on {title}": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Focus the first row": [
     "web/src/lib/shortcuts.ts"
   ],
   "Focus the last row": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Focus timer": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Folder": [
     "web/src/app/BackupsPanel.tsx"
@@ -3538,6 +3617,13 @@
   "From the backup destination": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "From {min} to {max} minutes": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "From {min} to {max} sessions": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "From {text}": [
     "web/src/app/OriginChip.tsx"
   ],
@@ -3604,6 +3690,12 @@
     "web/src/app/palette/registry.ts"
   ],
   "Go to Filters: saved views, boards and dashboards": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Go to Focus": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to Focus: one task, a timer, a break when you need one": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Inbox": [
@@ -3754,6 +3846,7 @@
   "Help": [
     "web/src/app/AboutSection.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/focus/FocusView.tsx",
     "web/src/app/help/HelpLink.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/help/HelpView.tsx",
@@ -3813,6 +3906,9 @@
   ],
   "Hourly": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "How Focus works": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "How dates and times look and where weeks start, on all your devices. System follows this browser.": [
     "web/src/app/DateTimeSettings.tsx"
@@ -4440,6 +4536,9 @@
   "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Length in minutes": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
   "Let an assistant that supports the Model Context Protocol (MCP) read your projects and tasks with a token you create. Read-only by default; the server itself contacts no one.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
@@ -4621,6 +4720,16 @@
   ],
   "Locked on this device": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Logged as time on this task": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
+  "Long break": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Long break after": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Look ahead": [
     "web/src/lib/review.ts"
@@ -5135,6 +5244,13 @@
   "Next step|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Next task": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Next task of today's focus": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Next week": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/bulk/BulkActions.tsx"
@@ -5319,6 +5435,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "No open task matches.": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
   "No open tasks in this project.": [
@@ -5499,7 +5616,8 @@
   ],
   "Not now": [
     "web/src/app/ArchivePrompt.tsx",
-    "web/src/app/ProjectInviteScreen.tsx"
+    "web/src/app/ProjectInviteScreen.tsx",
+    "web/src/app/focus/BreakReminder.tsx"
   ],
   "Not run yet.": [
     "web/src/lib/push.ts"
@@ -5726,6 +5844,9 @@
   "Off until you save an issuer and client id.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Off. When on, the reminder comes after {n} minutes of work.": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "Off: assistants can only read, whatever people choose for their own account.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
@@ -5861,6 +5982,9 @@
   "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "One task, a timer, a break when you need one": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
   "Only accept mail from (optional)": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -5987,6 +6111,9 @@
   ],
   "Open the command line (Tab completes, Enter runs, Esc cancels)": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Open the focus guide": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Open the focused dashboard panel’s view": [
     "web/src/lib/shortcuts.ts"
@@ -6311,8 +6438,15 @@
   "Path-style addressing (MinIO, Garage and most self-hosted stores)": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Pause": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
   "Paused": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/webhooks.ts"
+  ],
+  "Paused: the time entry was stopped on another device. Start again to go on.": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Pending": [
     "web/src/app/MembersPanel.tsx",
@@ -6416,6 +6550,18 @@
   ],
   "Policy for this server": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Pomodoro": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
+  "Pomodoro alternates work and breaks, Flowtime counts up until you stop, Countdown runs a length you choose each time.": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Pomodoro work length in minutes": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Pomodoro, Flowtime or Countdown, the lengths, breaks and the sound": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Port": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -6799,6 +6945,9 @@
   "Read-only: you are a viewer of this shared project. You can still comment.": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Ready: {mode}": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
   "Received on this device at {time}. If no banner appeared, the operating system hid it.": [
     "web/src/lib/push.ts"
   ],
@@ -6882,6 +7031,9 @@
   ],
   "Remembered browsers": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Remind me after": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Remind {date}, {time}": [
     "web/src/app/QuickAdd.tsx"
@@ -7030,6 +7182,7 @@
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/display/DisplayColumn.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -7209,6 +7362,9 @@
   ],
   "Results": [
     "web/src/app/palette/CommandPalette.tsx"
+  ],
+  "Resume": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Retention": [
     "web/src/app/BackupsPanel.tsx"
@@ -7715,6 +7871,15 @@
   "Session": [
     "web/src/app/AccountSettings.tsx"
   ],
+  "Session done": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx",
+    "web/src/app/focus/useFocusTimer.ts",
+    "web/src/lib/focus/timer.ts"
+  ],
+  "Session started": [
+    "web/src/lib/focus/timer.ts"
+  ],
   "Set a new password": [
     "web/src/app/ResetScreen.tsx"
   ],
@@ -7784,6 +7949,7 @@
   "Settings": [
     "web/src/app/SettingsView.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/focus/FocusView.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -7855,6 +8021,10 @@
   ],
   "Sharing projects": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "Short break": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Shortcuts": [
     "web/src/app/ShortcutHelp.tsx"
@@ -8255,9 +8425,18 @@
   "Sorted by date (or their own rule): no drag or Alt moves there": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Sound": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Sound at the end of a session": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "Source code": [
     "web/src/app/AboutSection.tsx",
     "web/src/app/SettingsView.tsx"
+  ],
+  "Space starts and pauses, Enter completes, {b} takes a break, {n} is the next task, Esc goes back.": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Speak a task instead of typing it. Applies to this device only.": [
     "web/src/app/VoiceSettings.tsx"
@@ -8287,6 +8466,12 @@
   "Start again: choose a passphrase.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Start another session": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Start breaks automatically": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "Start date": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -8296,14 +8481,26 @@
   "Start on <span>(optional; dates move so the earliest lands on this day)</span>": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "Start or pause the session": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Start or stop tracking time on the open task while the panel has focus": [
     "web/src/lib/shortcuts.ts"
   ],
   "Start or stop tracking time on the selected task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Start the break": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
   "Start the daily check": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "Start the next session": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Start the next session automatically": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Start tracking": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -8335,6 +8532,10 @@
   "Starts {date}": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/task-detail/Properties.tsx"
+  ],
+  "Start|timer": [
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Statistics": [
     "web/src/app/Sidebar.tsx",
@@ -8413,6 +8614,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Subtasks": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Subtasks follow their parent task’s section.": [
@@ -8503,6 +8705,14 @@
   "TLS on port 465, STARTTLS on others. Plain is only for a relay without a password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "Take a break": [
+    "web/src/app/focus/BreakReminder.tsx",
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Take a break now, or end the break": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Taken from OPENTODO_BASE_URL.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -8517,6 +8727,7 @@
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Task completed": [
+    "web/src/app/focus/FocusView.tsx",
     "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
   ],
@@ -8538,6 +8749,9 @@
   ],
   "Task title": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "Task to focus on": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Task updated": [
     "web/src/lib/webhooks.ts"
@@ -8653,6 +8867,9 @@
   ],
   "That task": [
     "web/src/lib/dependencies.ts"
+  ],
+  "That task is not available any more, so today’s focus is shown.": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "That task left the Inbox on another device, so the next one is shown.": [
     "web/src/app/TriageView.tsx"
@@ -8804,6 +9021,9 @@
   "The guide is in English.": [
     "web/src/app/help/EnglishGuideNote.tsx"
   ],
+  "The guide to Focus": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
   "The guide to the task panel": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -8950,6 +9170,9 @@
   ],
   "The saved view shown here was deleted.": [
     "web/src/app/DashboardView.tsx"
+  ],
+  "The screen, the three modes, the keys and what is logged as time.": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.": [
     "web/src/app/ShareCapture.tsx"
@@ -9139,6 +9362,9 @@
   "The thank-you shown the first time you opened this server.": [
     "web/src/app/AboutSection.tsx",
     "web/src/app/settingsIndex.ts"
+  ],
+  "The timer of the Focus screen: its mode, the lengths, breaks and the sound. Synced to your devices.": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "The total per account is 0 (no total) to {max} MB.": [
     "web/src/app/AttachmentSettingsPanel.tsx"
@@ -9714,6 +9940,9 @@
   "Time entries": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Time for a break?": [
+    "web/src/app/focus/BreakReminder.tsx"
+  ],
   "Time format": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/settingsIndex.ts"
@@ -9763,6 +9992,12 @@
   ],
   "Timeline: show the previous week (or four with the week zoom)": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Timer": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
+  "Timer mode": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
@@ -9824,6 +10059,9 @@
   ],
   "Today’s focus holds {n} tasks. Take one out first.": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Today’s focus is done.": [
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Todoist backup (ZIP)": [
     "web/src/app/ImportScreen.tsx"
@@ -10249,6 +10487,8 @@
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
+    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/ProjectWalk.tsx",
@@ -10625,8 +10865,20 @@
   "Work in progress": [
     "web/src/lib/review.ts"
   ],
+  "Work session": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Work session {n} of {total}": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
+  "Work sessions before a long break": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "Working hours and day length for the Day and Week views (go to them with {kbd} and {kbd2}). Each device keeps its own; they are not synced.": [
     "web/src/app/CalendarSettings.tsx"
+  ],
+  "Working, counting up": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Working…": [
     "web/src/app/ImportScreen.tsx"
@@ -12257,6 +12509,12 @@
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "{n, plural, one {# minute left} other {# minutes left}}": [
+    "web/src/lib/focus/timer.ts"
+  ],
+  "{n, plural, one {# minute worked} other {# minutes worked}}": [
+    "web/src/lib/focus/timer.ts"
+  ],
   "{n, plural, one {# minute} other {# minutes}}": [
     "web/src/lib/time.ts"
   ],
@@ -12436,6 +12694,9 @@
   ],
   "{n, plural, one {You completed # task this week.} other {You completed # tasks this week.}}": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "{n, plural, one {You have worked # minute without a break.} other {You have worked # minutes without a break.}}": [
+    "web/src/app/focus/BreakReminder.tsx"
   ],
   "{n, plural, one {day} other {days}}": [
     "web/src/app/method/LoopHome.tsx"
@@ -12640,6 +12901,9 @@
   ],
   "{time} in {city}": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "{time} worked": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "{time}, no estimate": [
     "web/src/app/calendar/DayColumn.tsx"

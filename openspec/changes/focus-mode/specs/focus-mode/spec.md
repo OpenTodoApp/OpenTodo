@@ -132,7 +132,7 @@ When a session or break ends while the tab is hidden and the browser permission 
 - **THEN** both show the done state and at most one system notification is shown
 
 ### Requirement: Sessions are time entries
-Where time tracking (`time-tracking`, collection `time_entries`) is present, starting a work session SHALL start a time entry on the task, pausing SHALL pause it, resuming SHALL resume it, and completing the task, leaving the session, ending a Flowtime session or starting a break SHALL stop it; breaks SHALL never be logged. The entries are ordinary ops: written offline through the outbox and converging per field. Without time tracking the timer SHALL work the same and write nothing.
+Where time tracking (`time-tracking`, collection `time_entries`) is present, starting a work session SHALL start a time entry on the task, pausing SHALL end it and resuming SHALL start a new one (time tracking has no paused entry: each stretch of work is one entry), and completing the task, leaving the session, ending a Flowtime session or starting a break SHALL stop it; breaks SHALL never be logged. The entries are ordinary ops: written offline through the outbox and converging per field. When time cannot be logged the timer SHALL work the same and write nothing.
 
 #### Scenario: Session logged
 - **WHEN** time tracking is present and the user runs a 25 minute session on "Write the report", then completes it
@@ -140,14 +140,14 @@ Where time tracking (`time-tracking`, collection `time_entries`) is present, sta
 
 #### Scenario: Pause is not work
 - **WHEN** the user pauses for ten minutes in the middle of a session and resumes
-- **THEN** the entry excludes the ten minutes, as the time-tracking capability defines a paused entry
+- **THEN** no time entry covers the ten minutes: the pause ended the session's entry and resuming started a second one, as the time-tracking capability records each stretch of work
 
 #### Scenario: Break not logged
 - **WHEN** a Pomodoro work session ends and its break runs for five minutes
 - **THEN** no time entry covers the break
 
 #### Scenario: Degraded without time tracking
-- **WHEN** the app runs without the time-tracking capability
+- **WHEN** time cannot be logged on the device (the time-tracking capability is not available)
 - **THEN** sessions start, pause and end exactly as above, the done state shows the time worked, and no op is written for the session
 
 #### Scenario: Entry stopped elsewhere

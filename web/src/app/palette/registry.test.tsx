@@ -3,7 +3,8 @@
 // the project, view, label and section menus has a palette command for that row.
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Label, Project, Section, User, View } from '../../lib/types'
+import type { Label, Project, Section, Task, User, View } from '../../lib/types'
+import type { ListState } from '../listActions'
 import { render } from '../../ui/test-utils'
 import { labelMenuGroups } from '../LabelsView'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
@@ -74,5 +75,24 @@ describe('registry completeness', () => {
   it('names a planted menu item that has no command', async () => {
     const planted = await menuLabels([{ items: [{ kind: 'action', id: 'x', label: 'Teleport', onSelect: noop }] }])
     expect(planted.filter((l) => !available.has(`project|${norm(l)}`))).toEqual(['Teleport'])
+  })
+})
+
+describe('Focus commands (focus-mode D8)', () => {
+  const task = { id: 't1', title: 'Write the report', completed_at: null, deleted_at: null } as unknown as Task
+  const list = { readOnly: () => false, open: () => {}, toggleComplete: () => {} } as unknown as ListState
+  const base: PaletteContext = { ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'inbox' } }
+  const focusLabels = (c: PaletteContext) => commands(c).filter((x) => /focus/i.test(x.label)).map((x) => x.label)
+
+  it('lists "Focus on <title>" for the selected task, running the same navigation as the panel menu', () => {
+    const cmds = commands({ ...base, list, task })
+    expect(focusLabels({ ...base, list, task })).toEqual(['Focus on “Write the report”', 'Go to Focus'])
+    cmds.find((x) => x.id === 'task:focus')!.run()
+    expect(location.pathname).toBe('/focus/t1')
+  })
+
+  it('without a selected task only "Go to Focus", with its shortcut', () => {
+    expect(focusLabels(base)).toEqual(['Go to Focus'])
+    expect(commands(base).find((x) => x.id === 'go:focus')?.shortcut).toBe('g Shift+F')
   })
 })

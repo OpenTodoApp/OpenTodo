@@ -52,6 +52,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'general', label: msg('My day starts at'), description: msg('Work done before this time counts for the previous day.'), anchor: 'date-time-heading', keywords: 'day start night owl midnight end of day' },
   { section: 'general', label: msg('Calendar grid'), description: msg('When the Day and Week grid starts and ends, and your day length'), anchor: 'calendar-heading', keywords: 'capacity hours' },
   { section: 'general', label: msg('Show shortcut hints'), description: msg('Print the keys in the app, next to quick add and in prompts'), anchor: 'shortcut-hints', keywords: 'keyboard shortcuts kbd badges' },
+  { section: 'general', label: msg('Focus timer'), description: msg('Pomodoro, Flowtime or Countdown, the lengths, breaks and the sound'), anchor: 'focus-heading', keywords: 'focus pomodoro flowtime countdown timer session break reminder sound tone' },
   { section: 'general', label: msg('Vim keybindings'), description: msg('Keyboard navigation with hjkl'), anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
   // Notifications
   { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), anchor: 'notifications-heading', keywords: 'reminders' },

@@ -168,6 +168,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {parent && <MenuItem label={t('Open parent task')} icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label={t('Open recurring task')} icon="repeat" onSelect={() => onOpen?.(series.id)} />}
           {!readOnly && <TrackMenuItem task={task} />}
+          {!readOnly && !done && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => navigate({ view: 'focus', id: task.id })} />}
           {!readOnly && <MenuItem label={t('Duplicate')} icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
           {!readOnly && assistant?.available && <MenuItem label={t('Break this down')} icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
@@ -248,7 +249,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 }
 
 /** "Add subtask" input: creates on Enter and stays focused for the next entry. */
-function AddSubtask({ parent }: { parent: Task }) {
+export function AddSubtask({ parent }: { parent: Task }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLInputElement>(null)
   async function submit(e: FormEvent) {

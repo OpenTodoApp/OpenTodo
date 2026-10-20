@@ -17,6 +17,9 @@ import { Kbd } from './shortcuts/Kbd'
 import { resolveLanguage, t } from '../lib/i18n'
 import { act } from './actionError'
 
+// Settings → General → Focus (focus-mode) lives beside its screen; listed here with the other General cards.
+export { FocusSection } from './focus/FocusSettings'
+
 /** Settings → General → Language (OpenSpec app-localization, design D9): synced, applied without a reload. */
 export function LanguageSection() {
   const row = useUserPrefsRow()

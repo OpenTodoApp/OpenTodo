@@ -91,6 +91,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>Shift+N</kbd> | Go to Next: the next action of every project, by context |
 | <kbd>g</kbd> then <kbd>Shift+W</kbd> | Go to Waiting: what is assigned to someone else or blocked |
 | <kbd>g</kbd> then <kbd>Shift+R</kbd> | Go to the Daily check: the Inbox, what is overdue, today's focus |
+| <kbd>g</kbd> then <kbd>Shift+F</kbd> | Go to Focus: one task, a timer, a break when you need one |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
 ### Tasks in a list
@@ -219,6 +220,15 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>k</kbd> | Back to the previous task |
 | <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
 | <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
+
+### Focus
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>Space</kbd> | Start or pause the session |
+| <kbd>Enter</kbd> | Complete the task and end the session |
+| <kbd>b</kbd> | Take a break now, or end the break |
+| <kbd>n</kbd> | Next task of today's focus |
 
 ### Reviews
 
