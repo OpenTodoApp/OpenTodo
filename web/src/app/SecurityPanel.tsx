@@ -196,7 +196,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
         adding ? addForm : (
           <EmptyState icon="key-round" title={t('No passkeys yet')}
             body={t('A passkey is the fastest way to sign in: no password to type, and it cannot be phished.')}
-            action={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
+            control={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
         )
       ) : (
         <>

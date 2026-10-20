@@ -1,6 +1,6 @@
 ---
 title: Your first task
-summary: The card the Inbox shows on your first visit, adding a task, giving it a date as you type, completing it, and getting the app on your phone.
+summary: The start guide that opens on your first visit, adding a task, giving it a date as you type, completing it, and getting the app on your phone.
 audience: user
 section: Get started
 specs: [task-management]
@@ -15,9 +15,9 @@ You are signed in (see [Getting started](getting-started.md)). This page adds a 
 
 ## Your first visit
 
-The first time an account opens the app, the Inbox shows a short card with three steps instead of an empty list: add your first task, choose [how you work](method/set-up.md) (Lists only, Companion or Open Loops first) and light or dark, and install the app. Every step has a **Skip** button, and **Skip all** closes the card at once. It never comes back on that account, on any of your devices.
+The first time an account opens the Inbox, a start guide opens over it, one step at a time: add your first task (the guide has its own box, and the task lands in the Inbox behind it), choose [how you work](method/set-up.md) (Lists only, Companion or Open Loops first) and light or dark, and install the app. On a phone it is a sheet at the bottom, with the Inbox visible above. Every step has a **Skip** button, and **Skip all**, the × button, <kbd>Esc</kbd> or a tap outside close it at once. It never comes back on its own on that account, on any of your devices; **Show the start guide again** in **Settings → Account → How you work** opens it once more.
 
-The card also offers **Show me around**. It creates one project, "Show me around", with six tasks that demonstrate a date, a deadline, a label, a subtask, a repeat and notes. They are ordinary tasks: edit them, complete them, or delete the project when you are done and it goes to the Trash like any other.
+The guide also offers **Show me around**. It creates one project, "Show me around", with six tasks that demonstrate a date, a deadline, a label, a subtask, a repeat and notes. They are ordinary tasks: edit them, complete them, or delete the project when you are done and it goes to the Trash like any other.
 
 ## Add your first task
 

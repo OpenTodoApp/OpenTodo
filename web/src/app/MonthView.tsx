@@ -3,7 +3,7 @@
 // Moving a task, by drag onto a day or with the arrows, is one due edit that keeps
 // its time and zone; `q` adds a task due on the focused day. Works offline.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, hueFor, PageBody, PageHeader, useMediaQuery, Dialog } from '../ui'
+import { Button, EmptyState, hueFor, PageBody, PageHeader, useMediaQuery } from '../ui'
 import { calendarTasks, dayLoad, formatLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, dueFromView, formatTime, viewedTask, dateLocaleOf } from '../lib/dates'
@@ -11,7 +11,7 @@ import { getTask, useMembershipMap, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import { formatMinutes } from '../lib/duration'
 import { cellTasks, monthGrid, visibleRows } from '../lib/month'
-import { createTask, updateTask } from '../lib/ops'
+import { updateTask } from '../lib/ops'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import type { Task } from '../lib/types'
@@ -19,7 +19,8 @@ import { CalendarRangeSwitch } from './CalendarRange'
 import { useGridPrefs } from './CalendarView'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { setPanelTaskId, usePanelTaskId } from './panel'
-import { QuickAdd } from './QuickAdd'
+import { AddOnDayDialog } from './calendar/AddOnDayDialog'
+import { keysOf } from '../lib/shortcuts'
 import { navigate } from './router'
 import { useShortcutScope } from './shortcuts'
 import { setDueWithUndo } from './undoable'
@@ -253,7 +254,7 @@ export function MonthView({ date }: { date?: string }) {
       {narrow && (
         <section aria-label={t('Tasks on {focused}', { focused })} className="mt-3 space-y-1" data-month-day-list>
           {focusedTasks.length === 0
-            ? <p className="px-1 py-2 text-meta text-faint">{t('Nothing due on this day. Press q to add a task.')}</p>
+            ? <EmptyState compact title={t('Nothing planned.')} action={{ label: t('Add a task'), onClick: () => setAdding(focused), shortcut: keysOf('month.quick-add') }} />
             : focusedTasks.map((task) => row(task, false))}
         </section>
       )}
@@ -261,14 +262,7 @@ export function MonthView({ date }: { date?: string }) {
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}
         {shownRaw.some((task) => task.estimate_minutes) ? ` ${t('Planned estimates against a {minutes} day.', { minutes: formatMinutes(prefs.dayLength) })}` : ''}
       </p>
-      {adding && (
-        <Dialog title={t('Add a task on {adding}', { adding })} onClose={() => setAdding(null)} size="md">
-          <QuickAdd autoFocus hideHint placeholder={t('Task name')} label={t('Add a task due {adding}', { adding })} projects={projects} onAdd={async (input) => {
-            await createTask({ due: { date: adding }, ...input })
-            setAdding(null)
-          }} />
-        </Dialog>
-      )}
+      {adding && <AddOnDayDialog date={adding} projects={projects} onClose={() => setAdding(null)} />}
     </PageBody>
   )
 }

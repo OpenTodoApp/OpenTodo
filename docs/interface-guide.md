@@ -63,6 +63,7 @@ Nine sections (Account, Appearance, General, Notifications, Capture, Integration
 - Metadata: tone text for the date and deadline (evening and repeat as suffixes of the date), label chips, neutral chips for estimate, progress, comments, attachments and project. No icon-only glyphs.
 - Counts use tabular figures in the interface face, never a monospace face.
 - Icon sizes: 16 px in rows, 20 px in headers, 12 px in chips.
+- Empty views: one sentence, one primary action, one optional link; the key in the tooltip. Every task view renders them through `EmptyState` in `web/src/ui` with data (`title`, `action: { label, onClick, shortcut }`, `secondary`), never nodes, so a view cannot add an icon, a second line or a second button. `compact` is for an empty day inside a list of days. The `icon`, `body` and `control` slots are kept for the settings panels only, until those move to the same rule.
 
 ## Copy
 
@@ -75,9 +76,9 @@ Every change that touches a screen states in its design how it stays inside thes
 | Limit | Value | Test |
 | --- | --- | --- |
 | Vertical scroll regions per screen | 3 | `budget.test.tsx`, layout check |
-| Rows of chrome above a list's first item | 2 (header, quick add) | `budget.test.tsx` |
+| Rows of chrome above a list's first item | 2 (header, quick add); nothing under the quick add, first-run guidance only as an overlay | `budget.test.tsx` |
 | Task properties visible by default | 7 | `budget.test.tsx` (with the panel redesign) |
 | Primary sidebar destinations | 6 | `budget.test.tsx` (with the navigation change) |
 | New shortcuts | registered, no conflict | the shortcut registry test |
 
-When a feature needs more than the budget allows, the answer is a menu, a chip, a panel occupant or a preference, not another row.
+When a feature needs more than the budget allows, the answer is a menu, a chip, a panel occupant or a preference, not another row. Guidance that has to interrupt (the start guide) is a `Dialog`, with `placement="sheet"` so a phone keeps the page visible above it; the demo banner is one line above the shell at every width.

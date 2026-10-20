@@ -1,4 +1,6 @@
-import { Button, Icon, PageBody, PageHeader } from '../ui'
+import { Button, EmptyState, Icon, PageBody, PageHeader } from '../ui'
+import { keysOf } from '../lib/shortcuts'
+import { navigate } from './router'
 import { useEffect, useMemo, useState } from 'react'
 import { useAllProjects, useDeletedTasks, useMembershipMap, useMeta } from '../lib/localData'
 import { restoreProject, restoreTask } from '../lib/ops'
@@ -87,7 +89,9 @@ export function TrashView() {
         </div>
       )}
       {items.length === 0 ? (
-        <p className="py-12 text-center text-body text-faint">{t('The Trash is empty.')}</p>
+        <div data-empty-state="trash">
+          <EmptyState title={t('The Trash is empty.')} action={{ label: t('Open Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
+        </div>
       ) : (
         <ul className="divide-y divide-(--ot-border)" aria-label={t('Deleted items')}>
           {items.map((it, i) => {

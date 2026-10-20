@@ -318,7 +318,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.identities.length === 0 ? (
-        <EmptyState icon="link" title={t('Nothing linked yet')} body={t('Link your {name} account to sign in with it.', { name })} action={link || undefined} />
+        <EmptyState icon="link" title={t('Nothing linked yet')} body={t('Link your {name} account to sign in with it.', { name })} control={link || undefined} />
       ) : (
         <>
           <div className="-mx-3 py-1">

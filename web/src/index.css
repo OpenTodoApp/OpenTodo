@@ -783,3 +783,14 @@ select.ui-input { @apply truncate; contain: layout paint; }
   .display-board[data-split] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 2rem; align-items: start; }
 }
 }
+
+/* Dialog placement="sheet" (OpenSpec change lean-chrome D3): below 640 px the card
+   slides up from the bottom within --duration-ui; under reduced motion it only fades.
+   From 640 px up it is the ordinary centred card, without motion. */
+@layer components {
+@keyframes dialog-sheet-up { from { transform: translateY(1.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes dialog-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+.dialog-sheet { animation: dialog-sheet-up var(--duration-ui) var(--ease-calm, ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .dialog-sheet { animation-name: dialog-sheet-fade; } }
+@media (min-width: 640px) { .dialog-sheet { animation: none; } }
+}

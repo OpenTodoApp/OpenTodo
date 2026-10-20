@@ -15,7 +15,7 @@ Today (<kbd>g</kbd> <kbd>t</kbd>) and Upcoming (<kbd>g</kbd> <kbd>u</kbd>) are t
 
 ## Plan your day with Today
 
-Today is where most people start. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today's tasks, sorted by time.
+Today is where most people start; a task you add here with [quick add](quick-add.md) is due today. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today's tasks, sorted by time.
 
 A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Overdue**. Each task is listed once, and the Today count in the sidebar counts the same tasks.
 
@@ -27,7 +27,7 @@ Anything you add here with quick add is due today, unless you type another date.
 
 ## Plan your week with Upcoming
 
-Upcoming lists everything that has a date after today, under headings like **Tomorrow** and the weekday names. It's a good place for a short weekly review: scan the next few days, move what won't fit, and spot empty days.
+A task you add here with [quick add](quick-add.md) is due tomorrow unless you type a date. Upcoming lists everything that has a date after today, under headings like **Tomorrow** and the weekday names. It's a good place for a short weekly review: scan the next few days, move what won't fit, and spot empty days.
 
 <picture><source srcset="images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays."></picture>
 

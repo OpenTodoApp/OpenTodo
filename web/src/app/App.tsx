@@ -28,10 +28,13 @@ import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
-import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
+import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
 import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
+import { DemoBanner } from './DemoBanner'
+
+export { DemoBanner }
 
 // Display mode (display-mode): its own chunk, fetched when a display route opens.
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
@@ -313,16 +316,6 @@ async function clearDeviceData() {
   forgetMemoryKeys()
   localStorage.removeItem('opentodo.user')
   cacheMfa(null)
-}
-
-/** Shown on every screen of a demo instance (OpenSpec `demo-mode`, `demo-sandboxes`), with the write-limit notice when it applies. */
-export function DemoBanner({ notice }: { notice?: string }) {
-  return (
-    <div role="status" data-testid="demo-banner" className="border-b border-info bg-info-soft px-4 py-1.5 text-center text-body text-on-info-soft">
-      {t(DEMO_BANNER)}
-      {notice && <span className="mt-0.5 block font-medium text-on-warning-soft" data-testid="demo-limit">{notice}</span>}
-    </div>
-  )
 }
 
 /** The sandbox of this browser was deleted; the local copy is already gone (OpenSpec `demo-sandboxes`). */

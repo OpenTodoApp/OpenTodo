@@ -78,7 +78,7 @@ export function ProjectWalk({ walk, now, onAdd, paused }: { walk: readonly WalkP
         <p className="sr-only" role="status" aria-live="polite">{announce}</p>
         <EmptyState icon="clipboard-check" title={live.length ? t('Every project walked') : t('No project to walk')}
           body={remaining.length ? t('{n, plural, one {# project still has no next action: {names}.} other {# projects still have no next action: {names}.}}', { n: remaining.length, names: remaining.map((w) => w.project.name).join(', ') }) : t('Every project has a next action.')}
-          action={live.length > 0 ? <Button onClick={() => setIndex(0)}>{t('Walk again')}</Button> : undefined} />
+          control={live.length > 0 ? <Button onClick={() => setIndex(0)}>{t('Walk again')}</Button> : undefined} />
       </div>
     )
   }

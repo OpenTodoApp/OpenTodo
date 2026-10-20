@@ -4,7 +4,6 @@ summary: Add, complete and delete tasks, change them with one key, undo, and put
 audience: user
 section: Guides
 specs: [task-management, manual-ordering, task-list-presentation]
-screens: [quick-add#add-a-task]
 order: 15
 ---
 # Work from the list

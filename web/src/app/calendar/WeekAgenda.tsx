@@ -4,7 +4,7 @@ import { dateLocaleOf } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
-import { hueFor } from '../../ui'
+import { EmptyState, hueFor } from '../../ui'
 import { formatTime } from './grid'
 
 /**
@@ -12,7 +12,7 @@ import { formatTime } from './grid'
  * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
  * same selection, keyboard order and panel as the grid.
  */
-export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId, onSelect, onOpen }: {
+export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId, onSelect, onOpen, onAdd }: {
   days: DayData[]
   today: string
   prefs: GridPrefs
@@ -22,6 +22,8 @@ export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, sel
   selectedId: string | null
   onSelect: (id: string) => void
   onOpen: (id: string) => void
+  /** An empty day's "Add a task": quick add with that day as the date. */
+  onAdd: (date: string) => void
 }) {
   const row = (task: Task, time: string | null) => (
     <li key={task.id}>
@@ -49,7 +51,7 @@ export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, sel
               <span className={`font-mono text-hint ${load.over ? 'text-danger' : 'text-muted'}`} data-capacity data-over={load.over || undefined}>{formatLoad(load, prefs.dayLength)}</span>
             </div>
             {d.lane.length === 0 && blocks.length === 0
-              ? <p className="px-2 py-2 text-meta text-faint">{t('Nothing planned')}</p>
+              ? <EmptyState compact title={t('Nothing planned.')} action={{ label: t('Add a task'), onClick: () => onAdd(d.date) }} />
               : (
                 <ul className="mt-1 space-y-0.5">
                   {d.lane.map((tk) => row(tk, null))}

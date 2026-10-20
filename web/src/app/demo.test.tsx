@@ -4,7 +4,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api, ApiError } from '../lib/api'
-import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, getDemo, isDemoRestricted, sandboxErrorMessage, setDemo, startSandbox } from '../lib/demo'
+import { demoBannerText, demoDetailsText, DEMO_LIMIT_NOTICE, expireSandboxIfGone, getDemo, isDemoRestricted, sandboxErrorMessage, setDemo, startSandbox } from '../lib/demo'
 import type { AuthStatus, DemoInfo, Project, User } from '../lib/types'
 import { DemoBanner, DemoExpiredScreen } from './App'
 import { AuthScreen } from './AuthScreen'
@@ -45,10 +45,15 @@ describe('sign-in screen', () => {
 })
 
 describe('banner and state', () => {
-  it('uses the fixed banner text', () => {
-    expect(DEMO_BANNER).toBe("Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don't store anything personal.")
+  it('reads the idle lifetime from the demo record (lean-chrome D2)', () => {
+    expect(demoBannerText(info)).toBe("Demo: private sandbox, deleted after 2 h of inactivity. Don't store anything personal.")
+    expect(demoBannerText({ sandboxHours: { idle: 3, max: 24 } })).toBe("Demo: private sandbox, deleted after 3 h of inactivity. Don't store anything personal.")
+    expect(demoDetailsText({ sandboxHours: { idle: 3, max: 12 }, resetsAt: 0 })).toBe("This demo sandbox is private to you. It is deleted after 3 hours of inactivity, 12 hours after it was created at the latest, and at the nightly reset. Don't store anything personal.")
+    setDemo({ ...info, sandboxHours: { idle: 3, max: 24 } })
     const html = renderToStaticMarkup(<DemoBanner />)
-    expect(html).toContain('Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don&#x27;t store anything personal.')
+    expect(html).toContain('Demo: private sandbox, deleted after 3 h of inactivity.')
+    expect(html).toContain('role="status"')
+    expect(html).toContain('data-testid="demo-banner"')
     expect(html).not.toContain('demo-limit')
   })
 

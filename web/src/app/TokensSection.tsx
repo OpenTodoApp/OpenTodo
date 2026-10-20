@@ -73,7 +73,7 @@ export function TokensView(p: TokensViewProps) {
       {p.tokens && p.tokens.length === 0 && (
         <EmptyState icon="key-round" title={t('No API tokens yet')}
           body={t('A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time.')}
-          action={newButton} />
+          control={newButton} />
       )}
       {p.tokens && p.tokens.length > 0 && (
         <div className="-mx-3">

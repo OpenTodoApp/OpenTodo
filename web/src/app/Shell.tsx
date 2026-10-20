@@ -26,7 +26,7 @@ import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
-import { QuickAddSheet } from './QuickAddSheet'
+import { onQuickAddSheetRequest, QuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { getTask } from '../lib/localData'
@@ -64,6 +64,8 @@ const MonthlyLook = lazy(() => import('./review/ReviewBundle').then((m) => ({ de
 const NextView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.NextView })))
 const WaitingView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.WaitingView })))
 const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
+// The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
+const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -140,6 +142,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [showHelp, setShowHelp] = useState(false)
   // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
   const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => onQuickAddSheetRequest(() => setAddOpen(true)), [])
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
@@ -290,6 +293,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {paletteLoaded && paletteOpen && <PanelBoundary resetKey={paletteOpen}><Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} />
+      {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
+      <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
       <ReminderToasts />
       <UndoToast />
       <DailyCheckToast />

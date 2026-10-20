@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildAll, OUT_SITE, writeAll } from './build.mjs'
-import { runChecks } from './check.mjs'
+import { quickAddLinkProblems, runChecks } from './check.mjs'
 import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
 // A 1×1 WebP (VP8L).
@@ -119,5 +119,11 @@ describe('docs check', () => {
     expect(await runChecks(root)).toEqual([])
     rmSync(join(root, SHOTS_DIR, `${SCREENSHOTS[0]}.webp`))
     expect((await runChecks(root)).join('\n')).toContain(`${SHOTS_DIR}/${SCREENSHOTS[0]}.webp: named by the site bundle but missing`)
+  })
+
+  it('reports a list screen whose section does not link the quick-add guide, naming the section (lean-chrome D1)', () => {
+    const body = '# Views\n\n## What each view shows\n\nAdd with [quick add](quick-add.md).\n\n## Park ideas in Someday\n\nParked tasks.\n\n### More\n\nSee [quick add](quick-add.md).\n'
+    const pages = [{ rel: 'views.md', body, fm: { screens: ['inbox#what-each-view-shows', 'someday#park-ideas-in-someday', 'board-view#park-ideas-in-someday'] } }]
+    expect(quickAddLinkProblems(pages)).toEqual(['docs/views.md: section "#park-ideas-in-someday" (screen "someday") does not link the quick-add guide (quick-add.md) before its first subheading'])
   })
 })

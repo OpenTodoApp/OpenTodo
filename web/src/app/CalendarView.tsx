@@ -33,6 +33,7 @@ import { formatTime, minutesOf, PX_PER_MIN, type Placement, type Preview } from 
 import { PLAN_PANEL, PlanPanel, type PlanActions } from './calendar/PlanPanel'
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
+import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 
 /** Live preferences of this device (Dexie meta, never synced); MonthView and the settings read them too. */
 export { useGridPrefs }
@@ -101,6 +102,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const prefs = useGridPrefs()
 
   const projects = useLiveProjects()
+  /** The day an empty day's "Add a task" adds to (the week's agenda, lean-chrome D7). */
+  const [adding, setAdding] = useState<string | null>(null)
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const rawTasks = useLiveTasks() ?? NO_TASKS
   // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
@@ -222,7 +225,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
             <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
-              onSelect={select} onOpen={open} />
+              onSelect={select} onOpen={open} onAdd={setAdding} />
           ) : (
             <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} taskMap={taskMap} projectMap={projectMap}
               subMap={feeds.subMap} zone={zone} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded} drag={drag} dragTask={dragTask}
@@ -231,6 +234,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         </div>
       </div>
 
+      {adding && <AddOnDayDialog date={adding} projects={projects} onClose={() => setAdding(null)} />}
       {drag && dragTask && (
         <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || t('Untitled')}

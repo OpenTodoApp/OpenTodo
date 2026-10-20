@@ -12,21 +12,21 @@ import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
 import { createTask } from '../lib/ops'
-import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
+import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, PageHeader } from '../ui'
+import { Button, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
-import { FirstRunCard, useFirstRun } from './FirstRun'
 import { taskDefaults } from './listActions'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { ProjectHeader } from './ProjectHeader'
 import { ProjectNote } from './ProjectNote'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
+import { requestQuickAddSheet } from './QuickAddSheet'
 import type { Route } from './router'
 import { AddSection } from './Sections'
 import { useSelection } from './selection'
@@ -87,8 +87,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const openId = usePanelTaskId()
   const quickAddRef = useRef<HTMLInputElement>(null)
   const focusQuickAdd = useCallback(() => quickAddRef.current?.focus(), [])
-  // The first run (first-run "Three-step first run"): the Inbox shows the card instead of its empty state.
-  const showFirstRun = useFirstRun() && route.view === 'inbox'
+  // An empty view's "Add a task": the quick-add sheet on a touch device, the view's own field otherwise.
+  const fine = useFinePointer()
+  const addFromEmpty = useCallback(() => { if (fine || !requestQuickAddSheet()) focusQuickAdd() }, [fine, focusQuickAdd])
   const listRoot = useRef<HTMLDivElement>(null)
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
@@ -214,8 +215,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             </div>
           )}
 
-          {showFirstRun && <FirstRunCard onFocusQuickAdd={focusQuickAdd} />}
-
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
             onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} />
           {actionsOpen && ticked.length === 0 && selectedId && (
@@ -236,9 +235,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               </Button>
             </div>
           )}
-          {rows.length === 0 && !showFirstRun && !(board || m.liveSections.length > 0) && (m.duration
+          {rows.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
             ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
-            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} onAdd={focusQuickAdd} />)}
+            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} onAdd={addFromEmpty}
+                completed={!m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0}
+                onShowCompleted={projectId ? () => act(saveShowCompleted(projectId, true)) : undefined} />)}
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}

@@ -352,6 +352,9 @@
   "About OpenTodo": [
     "web/src/app/AboutSection.tsx"
   ],
+  "About this demo": [
+    "web/src/app/DemoBanner.tsx"
+  ],
   "Absolute path on the server. Empty: the backups folder inside the data directory.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -474,7 +477,7 @@
   "Add a next action to {name}": [
     "web/src/app/review/ReviewView.tsx"
   ],
-  "Add a next step to a project": [
+  "Add a next step to a project.": [
     "web/src/app/method/MethodListView.tsx"
   ],
   "Add a note": [
@@ -499,16 +502,19 @@
     "web/src/app/task-list/ListRow.tsx"
   ],
   "Add a task": [
+    "web/src/app/FirstRun.tsx",
+    "web/src/app/MonthView.tsx",
     "web/src/app/QuickAdd.tsx",
     "web/src/app/QuickAddSheet.tsx",
     "web/src/app/TabBar.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task assigned to you…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task due {adding}": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
   "Add a task for today…": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -520,7 +526,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task on {adding}": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
   "Add a task to the selected task’s column": [
     "web/src/lib/shortcuts.ts"
@@ -1373,6 +1379,9 @@
   "Calendars unavailable offline for these days": [
     "web/src/app/CalendarView.tsx"
   ],
+  "Call the dentist tomorrow at 3pm": [
+    "web/src/app/FirstRun.tsx"
+  ],
   "Calls to return": [
     "web/src/lib/review.ts"
   ],
@@ -1603,6 +1612,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Clear the filter": [
+    "web/src/app/FilterView.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Clear the selection": [
@@ -2434,7 +2444,7 @@
   "Demo limit · {n} waiting": [
     "web/src/app/SyncStatus.tsx"
   ],
-  "Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don't store anything personal.": [
+  "Demo: private sandbox, deleted after {idle} h of inactivity.": [
     "web/src/lib/demo.ts"
   ],
   "Density": [
@@ -2473,6 +2483,7 @@
   ],
   "Details": [
     "web/src/app/AuditPanel.tsx",
+    "web/src/app/DemoBanner.tsx",
     "web/src/app/ImportScreen.tsx"
   ],
   "Detect automatically": [
@@ -2525,6 +2536,7 @@
   "Dismiss": [
     "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
+    "web/src/app/DemoBanner.tsx",
     "web/src/app/QuickAdd.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
@@ -2563,6 +2575,9 @@
   ],
   "Does not repeat (e.g. {example})": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Don't store anything personal.": [
+    "web/src/lib/demo.ts"
   ],
   "Done": [
     "web/src/app/AssistantsPanel.tsx",
@@ -2760,6 +2775,9 @@
   ],
   "Edit the query of a saved view; Enter saves it, Esc discards": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Edit the view": [
+    "web/src/app/SavedViewView.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -3005,9 +3023,6 @@
   "Every project has a next action.": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
-  "Every project shows its next action here once it has a task you can do now.": [
-    "web/src/app/method/MethodListView.tsx"
-  ],
   "Every project walked": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -3016,9 +3031,6 @@
   ],
   "Every stored client address will be erased from the audit log. This cannot be undone.": [
     "web/src/app/AuditPanel.tsx"
-  ],
-  "Every task in the Inbox has a place. Nice work.": [
-    "web/src/app/TriageView.tsx"
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
@@ -3947,7 +3959,7 @@
     "web/src/lib/trash.ts",
     "web/src/lib/views.ts"
   ],
-  "Inbox zero": [
+  "Inbox zero: every task has a place.": [
     "web/src/app/TriageView.tsx"
   ],
   "Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group's destinations sit next to them, on every device.": [
@@ -4307,6 +4319,9 @@
   ],
   "Learn Open Loops": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "Learn more": [
+    "web/src/app/DemoBanner.tsx"
   ],
   "Learn the method: {method}": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -5193,7 +5208,7 @@
   "No open task can block this one.": [
     "web/src/app/task-detail/Properties.tsx"
   ],
-  "No open task carries this label": [
+  "No open task carries this label.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "No open task matches.": [
@@ -5268,7 +5283,7 @@
   "No task holds a value for it.": [
     "web/src/app/FieldsDialog.tsx"
   ],
-  "No task matches this duration filter": [
+  "No task matches this duration filter.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "No task matches this filter.": [
@@ -5420,7 +5435,7 @@
   "Nothing completed or created in this period yet. Tasks you complete, including each day of a recurring task, are counted here.": [
     "web/src/app/review/StatsView.tsx"
   ],
-  "Nothing completed yet": [
+  "Nothing completed yet.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing delivered yet": [
@@ -5429,10 +5444,7 @@
   "Nothing delivered yet; send a test.": [
     "web/src/lib/push.ts"
   ],
-  "Nothing due on this day. Press q to add a task.": [
-    "web/src/app/MonthView.tsx"
-  ],
-  "Nothing due today": [
+  "Nothing due today.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing fetched yet.": [
@@ -5444,7 +5456,7 @@
     "web/src/app/DashboardView.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
-  "Nothing is assigned to you": [
+  "Nothing is assigned to you.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing is due in the next seven days.": [
@@ -5459,13 +5471,13 @@
   "Nothing is parked in Someday.": [
     "web/src/app/review/ReviewView.tsx"
   ],
-  "Nothing is ready to start today": [
+  "Nothing is ready to start today.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": [
     "web/src/app/WebhooksPanel.tsx"
   ],
-  "Nothing is waiting": [
+  "Nothing is waiting on anyone.": [
     "web/src/app/method/MethodListView.tsx"
   ],
   "Nothing is waiting.": [
@@ -5498,20 +5510,23 @@
   "Nothing on a board: cards are not nested": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Nothing parked for later": [
+  "Nothing parked for later.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing planned": [
-    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayScreen.tsx"
   ],
-  "Nothing scheduled yet": [
+  "Nothing planned.": [
+    "web/src/app/MonthView.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx"
+  ],
+  "Nothing scheduled yet.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing slipped.": [
     "web/src/app/review/StatsView.tsx"
   ],
-  "Nothing to do whenever": [
+  "Nothing waiting for a free moment.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing was completed late.": [
@@ -5776,6 +5791,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Open Inbox": [
+    "web/src/app/TrashView.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Open Loops first": [
@@ -5784,10 +5800,16 @@
   "Open Loops first arranges the sidebar by the Places, so these choices wait until you switch to Lists only or Companion in Settings → Account. They are kept.": [
     "web/src/app/AppearanceSection.tsx"
   ],
+  "Open Next": [
+    "web/src/app/method/MethodListView.tsx"
+  ],
   "Open Settings: {section}": [
     "web/src/app/palette/registry.ts"
   ],
   "Open Today": [
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Open Upcoming": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Open an authenticator app on your phone (any app that supports time-based codes).": [
@@ -6291,14 +6313,8 @@
   "Preparing…": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
-  "Press {g} then {key} to open Today": [
-    "web/src/app/task-list/ListChrome.tsx"
-  ],
-  "Press {g} then {key} to open the Inbox": [
-    "web/src/app/task-list/ListChrome.tsx"
-  ],
-  "Press {key} to add a task": [
-    "web/src/app/task-list/ListChrome.tsx"
+  "Press {key}": [
+    "web/src/ui/patterns/EmptyState.tsx"
   ],
   "Preview": [
     "web/src/app/DateTimeSettings.tsx",
@@ -6581,7 +6597,6 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Quick add": [
-    "web/src/app/QuickAdd.tsx",
     "web/src/app/QuickAddSettings.tsx",
     "web/src/app/settingsIndex.ts"
   ],
@@ -7753,6 +7768,9 @@
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": [
     "web/src/app/vim/commands.ts"
   ],
+  "Show the start guide again": [
+    "web/src/app/method/HowYouWorkSection.tsx"
+  ],
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
@@ -8348,7 +8366,7 @@
     "web/src/lib/webhooks.ts"
   ],
   "Task name": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
   "Task reopened": [
     "web/src/lib/undoActions.ts",
@@ -8388,9 +8406,6 @@
   ],
   "Tasks without a project go to": [
     "web/src/app/ImportScreen.tsx"
-  ],
-  "Tasks you assign to someone else, or that wait for another task, appear here.": [
-    "web/src/app/method/MethodListView.tsx"
   ],
   "Teal": [
     "web/src/lib/colourNames.ts"
@@ -8483,7 +8498,6 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "The Inbox is empty.": [
-    "web/src/app/TriageView.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -9149,6 +9163,12 @@
   "This demo sandbox has reached its limit. Try again later.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset at {time}. Don't store anything personal.": [
+    "web/src/lib/demo.ts"
+  ],
+  "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset. Don't store anything personal.": [
+    "web/src/lib/demo.ts"
+  ],
   "This demo sandbox reached its limit of changes. Your latest edits stay on this device and are saved when the limit allows.": [
     "web/src/lib/demo.ts"
   ],
@@ -9371,7 +9391,7 @@
   "This project cannot be shared: another account has a project with the same id. Duplicate it and share the copy.": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "This project has no open tasks": [
+  "This project has no open tasks.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "This project is end-to-end encrypted, so it cannot be published: the server cannot read its tasks.": [
@@ -9838,7 +9858,7 @@
   "Type a date such as fri or 3/11 and press Enter. Esc cancels.": [
     "web/src/app/TriageView.tsx"
   ],
-  "Type a line in the box above and press Enter. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": [
+  "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": [
     "web/src/app/FirstRun.tsx"
   ],
   "Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.": [
@@ -10565,7 +10585,7 @@
   "Your API key for {provider}": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Your Inbox is empty": [
+  "Your Inbox is empty.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
@@ -12102,6 +12122,9 @@
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/lib/assistant.ts"
   ],
+  "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": [
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
   "{n, plural, one {+# more reminder} other {+# more reminders}}": [
     "web/src/app/ReminderToasts.tsx"
   ],
@@ -12138,9 +12161,6 @@
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
     "web/src/app/task-detail/Properties.tsx"
   ],
-  "{n, plural, one {One task is waiting for other tasks below.} other {# tasks are waiting for other tasks below.}}": [
-    "web/src/app/task-list/ListChrome.tsx"
-  ],
   "{n, plural, one {Pasted text, # line: used as material, not as instructions.} other {Pasted text, # lines: used as material, not as instructions.}}": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
@@ -12155,6 +12175,9 @@
   ],
   "{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "{n, plural, one {Show # completed} other {Show # completed}}": [
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "{n, plural, one {The # item it created will be deleted on every device. Items it updated are kept.} other {The # items it created will be deleted on every device. Items it updated are kept.}}": [
     "web/src/app/ImportScreen.tsx"

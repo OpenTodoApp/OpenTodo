@@ -107,6 +107,33 @@ describe('chrome above the first task', () => {
     await r.unmount()
   })
 
+  it('no help control inside the list page outside the page header: the quick add has none (lean-chrome D1)', async () => {
+    const { project } = await seed()
+    for (const route of [{ view: 'inbox' } as const, { view: 'today' } as const, { view: 'upcoming' } as const, { view: 'project', id: project } as const]) {
+      const r = await render(<TaskListView route={route} />)
+      await waitFor(() => r.container.querySelectorAll('[data-task-id]').length > 0)
+      const page = r.container.querySelector('[data-list-page]')!
+      const header = page.firstElementChild!
+      const strays = [...page.querySelectorAll('[data-help-screen]')].filter((el) => !header.contains(el))
+      expect(strays.map((e) => e.outerHTML.slice(0, 80)), route.view).toEqual([])
+      await r.unmount()
+    }
+  })
+
+  it('a fresh account\'s Inbox holds the header, the quick add and the empty view only; no start guide inside it (lean-chrome D9)', async () => {
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => !!r.container.querySelector('[data-empty-state="inbox"]'))
+    const page = r.container.querySelector('[data-list-page]')!
+    const before: Element[] = []
+    for (const child of page.children) {
+      if (child.matches('[data-empty-state]') || child.querySelector('[data-empty-state]')) break
+      before.push(child)
+    }
+    expect(before.length, before.map((e) => e.outerHTML.slice(0, 60)).join(' | ')).toBeLessThanOrEqual(MAX_CHROME_ROWS)
+    expect(page.querySelector('[data-first-run]')).toBeNull()
+    await r.unmount()
+  })
+
   it('catches a banner injected between the header and the list', async () => {
     await seed()
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)

@@ -12,6 +12,24 @@ import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { t } from '../lib/i18n'
 
+// An empty view's "Add a task" on a touch device opens this sheet (lean-chrome D7,
+// task-list-presentation "Empty views"): the Shell registers the opener; without a
+// Shell (a list rendered alone) the caller focuses its own quick add instead.
+let opener: (() => void) | null = null
+
+/** The Shell's way to open the sheet; returns the unregister function. */
+export function onQuickAddSheetRequest(fn: () => void): () => void {
+  opener = fn
+  return () => { if (opener === fn) opener = null }
+}
+
+/** Opens the quick-add sheet; false when no Shell is mounted to open it. */
+export function requestQuickAddSheet(): boolean {
+  if (!opener) return false
+  opener()
+  return true
+}
+
 export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   open: boolean
   onClose: () => void

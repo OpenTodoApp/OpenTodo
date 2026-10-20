@@ -371,7 +371,7 @@ export function LabelsView({ route }: { route: Route }) {
       </div>
       {labels.length === 0 && !adding && (
         <EmptyState icon="tag" title={t('No labels yet')} body={<>{t.rich('Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.', { kbd: <Kbd k={keysOf('list.labels')} /> })}</>}
-          action={<button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={() => setAdding(true)}><Icon name="plus" /> {t('New label')}</button>} />
+          control={<button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={() => setAdding(true)}><Icon name="plus" /> {t('New label')}</button>} />
       )}
       {confirm.element}
     </PageBody>

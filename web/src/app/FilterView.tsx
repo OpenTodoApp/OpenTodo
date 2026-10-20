@@ -1,7 +1,7 @@
 // Filter view (OpenSpec change `filter-query-language`): a query input over the
 // local store. Parsing and evaluation are pure (lib/filter); results are a live
 // query, so local edits and synced ops update them without a reload, offline too.
-import { Button, PageBody, PageHeader, Dialog } from '../ui'
+import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { useAllLabels, useProjects } from '../lib/localData'
@@ -252,7 +252,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           </div>
 
           {!good.ast && <UsageHint />}
-          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-body text-faint">{t('No task matches this filter.')}</p>}
+          {result && rows.length === 0 && (
+            <div data-empty-state="filter">
+              <EmptyState title={t('No task matches this filter.')} action={{ label: t('Clear the filter'), onClick: () => { setQuery(''); inputRef.current?.focus() } }} />
+            </div>
+          )}
 
           {bulk.render(selectedId)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>

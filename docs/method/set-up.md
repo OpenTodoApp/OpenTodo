@@ -10,7 +10,7 @@ order: 10
 
 ## 1. Choose how you work
 
-In **Settings → You → How you work** (or on the first-run card):
+In **Settings → You → How you work** (or in the start guide on your first visit):
 
 - **Lists only**: OpenTodo as a plain task app, no method words.
 - **Companion**: your sidebar stays as it is; screens name the move they serve and link to the method.

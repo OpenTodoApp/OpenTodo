@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
 import { useRef, useState } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { click, flush, key, render } from '../test-utils'
 import { ConfirmDialog } from './ConfirmDialog'
+import { EmptyState } from './EmptyState'
 import { ListRow } from './ListRow'
 import { SettingRow, SettingsSection } from './SettingsSection'
 import { SidebarGroup, SidebarItem } from './Sidebar'
@@ -100,6 +102,62 @@ describe('SidebarGroup', () => {
     expect(heading().textContent).toContain('Projects')
     expect(container.querySelector('[data-sidebar-item]')).toBeNull()
     expect(container.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded')).toBe('false')
+    await unmount()
+  })
+})
+
+describe('EmptyState (lean-chrome D7, task-list-presentation "Empty views")', () => {
+  afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
+  function pointer(kind: 'fine' | 'coarse') {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes(kind), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false }))
+  }
+
+  it('is one region headed by its sentence, with exactly one button and an optional link', async () => {
+    pointer('coarse')
+    const onAdd = vi.fn()
+    const onLink = vi.fn()
+    const { container, unmount } = await render(
+      <EmptyState title="Nothing due today." action={{ label: 'Add a task', onClick: onAdd, shortcut: 'q' }} secondary={{ label: 'Open Upcoming', onClick: onLink }} />,
+    )
+    const region = container.querySelector('section')!
+    expect(container.querySelectorAll('section')).toHaveLength(1)
+    const heading = region.querySelector('h2')!
+    expect(heading.textContent).toBe('Nothing due today.')
+    expect(region.getAttribute('aria-labelledby')).toBe(heading.id)
+    expect(region.querySelector('svg')).toBeNull()
+    expect(region.querySelector('[data-empty-action]')!.textContent).toBe('Add a task')
+    expect(region.querySelectorAll('.ui-btn')).toHaveLength(1)
+    expect(region.querySelector('kbd')).toBeNull()
+    await click(region.querySelector('[data-empty-action]')!)
+    await click(region.querySelector('[data-empty-secondary]')!)
+    expect(onAdd).toHaveBeenCalledOnce()
+    expect(onLink).toHaveBeenCalledOnce()
+    await unmount()
+  })
+
+  it('shows the key in the tooltip with a fine pointer and never with a coarse one', async () => {
+    pointer('fine')
+    const fine = await render(<EmptyState title="Nothing due today." action={{ label: 'Add a task', onClick: () => {}, shortcut: 'q' }} />)
+    const button = fine.container.querySelector('[data-empty-action]')!
+    expect(fine.container.querySelector('kbd')).toBeNull()
+    await act(async () => { button.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
+    expect(document.querySelector('[role="tooltip"]')!.textContent).toBe('Press q')
+    await fine.unmount()
+    document.body.innerHTML = ''
+
+    pointer('coarse')
+    const coarse = await render(<EmptyState title="Nothing due today." action={{ label: 'Add a task', onClick: () => {}, shortcut: 'q' }} />)
+    const b2 = coarse.container.querySelector('[data-empty-action]')!
+    await act(async () => { b2.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    await coarse.unmount()
+  })
+
+  it('renders the sentence alone when there is no action', async () => {
+    pointer('coarse')
+    const { container, unmount } = await render(<EmptyState title="Nothing planned." />)
+    expect(container.querySelector('h2')!.textContent).toBe('Nothing planned.')
+    expect(container.querySelector('button')).toBeNull()
     await unmount()
   })
 })
