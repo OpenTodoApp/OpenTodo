@@ -11,6 +11,7 @@ import type { Op } from '../../lib/types'
 import { click, flush, key, render, spokenText, visibleText } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
 import { TaskRow } from '../TaskRow'
+import { requestAttach } from './attachRequest'
 import { AttachmentsRow, pastedName, typeLabel } from './AttachmentsRow'
 
 let n = 0
@@ -56,16 +57,14 @@ const item = (name: string) => [...document.querySelectorAll<HTMLElement>('[data
 describe('AttachmentsRow', () => {
   it('adds a file from the picker and opens an uploaded one with Enter, by keyboard only', async () => {
     const v = await mount()
-    const add = v.container.querySelector<HTMLButtonElement>('button[aria-label="Attach"]')!
     const input = v.container.querySelector<HTMLInputElement>('[data-testid="attachment-picker"]')!
     const pick = vi.spyOn(input, 'click').mockImplementation(() => {})
-    add.focus()
-    await key(add, 'Enter')
-    await click(add)
-    await flush(20)
-    expect(document.activeElement?.textContent).toContain('Choose files')
-    await click(document.activeElement!) // Enter on a native button activates it
+    // With no file yet, Attach comes from the Add menu or the header menu (task-panel-facets D4).
+    await act(async () => { requestAttach(task) })
     expect(pick).toHaveBeenCalled()
+    pick.mockClear()
+    await act(async () => { requestAttach('another-task') })
+    expect(pick).not.toHaveBeenCalled()
     Object.defineProperty(input, 'files', { value: [new File(['%PDF'], 'Q3 report.pdf', { type: 'application/pdf' })], configurable: true })
     await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })) })
     await waitFor(() => names().includes('Q3 report.pdf'))
@@ -151,16 +150,24 @@ describe('AttachmentsRow', () => {
     expect(v.container.querySelector('[aria-label="Rename Ana.pdf"]')).toBeNull()
   })
 
-  it('shows no heading at rest, only Attach; the heading and the list come with the first file', async () => {
+  it('shows nothing at rest; the heading, the list and Attach come with the first file', async () => {
     const v = await mount()
     await flush()
     expect(v.container.querySelector('h3')).toBeNull()
     expect(v.container.textContent).not.toContain('Attachments')
-    expect(v.container.querySelector('button[aria-label="Attach"]')).toBeTruthy()
+    expect(v.container.querySelector('button[aria-label="Attach"]')).toBeNull()
     expect(v.container.querySelector('[data-drop-zone]')).toBeNull()
     await remoteFile('a-first', 'First.pdf')
     await waitFor(() => names().includes('First.pdf'))
     expect(v.container.querySelector('h3')!.textContent).toContain('Attachments')
+    expect(v.container.querySelector('button[aria-label="Attach"]')).toBeTruthy()
+  })
+
+  it('a link request opens the link form', async () => {
+    const v = await mount()
+    await act(async () => { requestAttach(task, 'link') })
+    await flush()
+    expect(v.container.querySelector('form input')).toBeTruthy()
   })
 
   it('shows the drop zone only while files are dragged over the panel', async () => {

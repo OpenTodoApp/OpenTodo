@@ -136,7 +136,7 @@ describe('keys (3.3)', () => {
     await waitFor(() => text(r.container).includes('Renew passport'))
     await key(document.body, 'j')
     await key(document.body, 'N', { shiftKey: true })
-    await waitFor(() => document.activeElement instanceof HTMLInputElement && !!document.activeElement.closest('[data-property="when"]'))
+    await waitFor(() => document.activeElement instanceof HTMLInputElement && !!document.activeElement.closest('[data-facet-editor] [data-when-segment="start"]'))
     const input = document.activeElement as HTMLInputElement
     await type(input, '21/10')
     await key(input, 'Enter')

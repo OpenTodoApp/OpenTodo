@@ -27,7 +27,9 @@ describe('assignee in personal scopes', () => {
     expect(v.row('assignee').textContent).toContain('You')
     // Assigned to me lists explicitly assigned tasks.
     expect((await db.tasks.where('assignee_id').equals(ME).toArray()).map((t) => t.id)).toEqual([id])
-    await click(v.row('assignee').querySelector('button[aria-label="Clear assignee"]')!)
+    await click(v.valueButton('assignee'))
+    await settle()
+    await click(v.editor()!.querySelector('[data-facet-clear]')!)
     await settle()
     expect((await db.tasks.get(id))!.assignee_id).toBeNull()
     await waitFor(() => !v.row('assignee'))
@@ -35,7 +37,7 @@ describe('assignee in personal scopes', () => {
     await act(async () => { await membership(p, ME, 'u-bob') })
     await waitFor(() => !!v.row('assignee'))
     expect(v.row('assignee').textContent).toContain('Unassigned')
-    expect(v.row('assignee').querySelector('[role="switch"]')).toBeNull()
+    expect(v.editor()).toBeNull()
     await v.unmount()
   })
 

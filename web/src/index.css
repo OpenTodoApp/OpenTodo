@@ -607,6 +607,8 @@ select.ui-input { @apply truncate; contain: layout paint; }
 /* At rest the notes are a quiet block of text (one placeholder line when empty);
    while focused they grow into a bordered editor (ux-overhaul, "Task panel layout"). */
 .notes-host { @apply -mx-2; }
+/* Long notes at rest in the panel (task-panel-facets D4): eight lines and a fade; not a scroller. */
+.notes-clamp[data-clamped] > :first-child { max-height: calc(8lh + 0.5rem); overflow: hidden; mask-image: linear-gradient(to bottom, black 75%, transparent); }
 .notes-editor {
   @apply relative min-h-8 w-full space-y-2 rounded-control border border-transparent px-2 py-1 text-body text-default
     focus:outline-none;
@@ -665,6 +667,8 @@ select.ui-input { @apply truncate; contain: layout paint; }
 @keyframes row-check-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
 .row-check-pop { animation: row-check-pop var(--duration-emphasis) var(--ease-calm, ease-out) both; }
 :root[data-density="compact"] .row-pad { padding-block: 0.25rem; }
+/* The task panel's facet lines follow the density too (task-panel-facets D4). */
+:root[data-density="compact"] .facet-line [data-part], :root[data-density="compact"] .facet-line > span:first-child { min-height: 1.5rem; height: auto; }
 :root[data-density="compact"] [data-sidebar-item] { min-height: 2rem; padding-block: 0.25rem; }
 :root[data-density="compact"] [data-group-header] { min-height: 2rem; }
 @media (pointer: coarse) {

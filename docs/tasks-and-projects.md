@@ -26,7 +26,7 @@ New tasks without a project land in the **Inbox**. See [Work from the list](work
 
 ## Edit a task
 
-Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel: the title, the notes and the properties as chips. Every change is saved as you make it. See [The task panel](task-panel.md) and [Notes, subtasks and dependencies](notes-and-subtasks.md).
+Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel: the title, the notes and the properties in four short lines. Every change is saved as you make it. See [The task panel](task-panel.md) and [Notes, subtasks and dependencies](notes-and-subtasks.md).
 
 ### Quick changes from the list
 

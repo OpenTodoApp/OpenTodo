@@ -189,6 +189,11 @@ describe('CommentsView', () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
     const v = await render(<CommentsView {...props({ composerHost: host })} />)
+    // Pinned, it rests as one line until clicked (task-panel-facets D4), then the composer.
+    expect(host.querySelector('[data-composer-resting]')).toBeTruthy()
+    expect(host.querySelector('#comment-composer')).toBeNull()
+    await click(host.querySelector('[data-composer-resting]')!)
+    await flush()
     expect(host.querySelector('#comment-composer')).toBeTruthy()
     expect(v.container.querySelector('#comment-composer')).toBeNull()
     await v.unmount()
@@ -231,11 +236,33 @@ describe('composer pinned to the panel (ux-overhaul "Task panel tabs")', () => {
     const { setupPanelDb, openPanel } = await import('./pinnedComposer.testkit')
     await setupPanelDb()
     const { container, unmount } = await openPanel(30)
-    const composer = container.querySelector('#comment-composer')!
+    // At rest the composer is one line, pinned in the footer outside the scroller.
+    const composer = container.querySelector('[data-composer-resting]')!
     expect(composer).toBeTruthy()
+    expect(composer.textContent).toContain('Write a comment')
     expect(composer.closest('.overflow-y-auto')).toBeNull()
     expect(composer.closest('[data-panel-footer]')).toBeTruthy()
+    expect(container.querySelector('[data-panel-footer] button[type="submit"], [data-panel-footer] [aria-label="Attach files"]')).toBeNull()
     expect(container.querySelectorAll('[data-thread]').length).toBe(30)
     await unmount()
+  })
+})
+
+describe('resting composer (task-panel-facets D4)', () => {
+  it('expands with a draft, with a reply target and on request, and rests again when left empty', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    writeDraft('t1', 'Half a thought')
+    const a = await render(<CommentsView {...props({ composerHost: host })} />)
+    expect(host.querySelector('#comment-composer')).toBeTruthy()
+    await a.unmount()
+    writeDraft('t1', '')
+    const b = await render(<CommentsView {...props({ composerHost: host })} />)
+    expect(host.querySelector('[data-composer-resting]')).toBeTruthy()
+    await b.rerender(<CommentsView {...props({ composerHost: host, expand: 1 })} />)
+    await flush(30)
+    expect(host.querySelector('#comment-composer')).toBeTruthy()
+    await b.unmount()
+    host.remove()
   })
 })

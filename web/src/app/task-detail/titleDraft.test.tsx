@@ -14,12 +14,12 @@ setupTaskDetailTests()
 const remoteTitle = (id: string, title: string, ts: number) =>
   applyOps([{ id: `op-${ts}`, entity: 'task', entityId: id, field: 'title', value: title, ts, device: 'other-device' }])
 
-function titleInput(): HTMLInputElement {
-  return document.querySelector<HTMLInputElement>('input[aria-label="Title"]')!
+function titleInput(): HTMLTextAreaElement {
+  return document.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!
 }
 
-function type(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+function type(input: HTMLTextAreaElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
   setter.call(input, value)
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }

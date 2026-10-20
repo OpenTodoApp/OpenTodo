@@ -11,7 +11,7 @@ order: 14
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, its notes and its properties."></picture>
 
-In the task panel, **Notes** sits under the title. Below the property chips are the **Subtasks** as a checklist, with an **Add subtask…** line under them, the **Attach** action (the list of files appears with the first one; you can also paste or drop files on the panel, see [Attachments](attachments.md)), and the **Comments**, **Activity** and **History** tabs. The comment box stays at the bottom of the panel while Comments is shown. Activity starts with when the task was created and completed.
+In the task panel, **Notes** sits under the title. Below the property lines are the **Subtasks** as a checklist, with an **Add subtask…** line under them, the attachments once there is one (attach from **Add** or the **⋯** menu, or paste or drop files on the panel, see [Attachments](attachments.md)), and the **Comments**, **Activity** and **History** tabs. The comment box rests as one line at the bottom of the panel while Comments is shown and opens when you click it or press <kbd>Shift</kbd>+<kbd>C</kbd>. Activity starts with when the task was created and completed.
 
 ## Write notes
 
@@ -36,4 +36,4 @@ Some tasks can't start until another is done: you can't book flights before the 
 
 While at least one of those tasks is open, the task is **blocked**: its row is dimmed and shows a lock with the number it's waiting for, on boards too, and in Today it moves to a folded **Blocked** group at the end. As soon as the last one is completed (or deleted), the task is ready again, on every device. You can still open, edit and complete a blocked task; completing it doesn't touch the tasks it waited for. A repeating task keeps blocking until its series ends, and **Blocked by** says "repeats" next to it.
 
-**Blocks** in the panel counts the open tasks waiting for this one; open the chip to see them and select one to open it. In a shared project, blockers are tasks of the same project, and the person a blocked task is assigned to gets a notification when it's ready to start. Filter for `blocked` or `unblocked` to list them (see [Labels and filters](labels-and-filters.md)).
+"blocks 2" on the **Who** line counts the open tasks waiting for this one; click it to see them and select one to open it. In a shared project, blockers are tasks of the same project, and the person a blocked task is assigned to gets a notification when it's ready to start. Filter for `blocked` or `unblocked` to list them (see [Labels and filters](labels-and-filters.md)).

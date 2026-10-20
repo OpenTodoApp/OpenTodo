@@ -1,15 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect } from 'react'
 import { Badge, Icon, IconButton, Tabs } from '../../ui'
-import { LabelChip } from '../LabelPicker'
-import { PRIORITIES } from './Properties'
-import { PropertyChip } from './PropertyChip'
-import { useTask } from '../../lib/localData'
-import { seedTracking, seeded, withSeed } from '../stories/fixtures'
+import type { FacetPart } from '../../lib/facets'
+import { useLabels, useProjects, useTask } from '../../lib/localData'
+import { seedInbox, seedTracking, seeded, withSeed } from '../stories/fixtures'
+import { Facets } from './Facets'
+import { FacetLine } from './FacetLine'
 import { TimeTab } from './TimeTab'
 
-// The task panel's anatomy (OpenSpec change ux-overhaul, web-app "Task panel
-// layout"): sticky header, quiet notes, breadcrumb, property chips with Add, the
-// subtasks checklist and the tabs. Static fixtures keep the stories independent of
+// The task panel's anatomy (OpenSpec change task-panel-facets, web-app "Task panel
+// layout"): sticky header, quiet notes, the four facet lines with Add, the subtasks
+// checklist and the tabs. Static fixtures keep the stories independent of
 // local data and of today's date; the workbench captures each in light and dark at
 // 375 and 1280.
 const meta: Meta = { title: 'Task/Panel' }
@@ -44,9 +45,24 @@ function Notes({ text, editing = false }: { text?: string; editing?: boolean }) 
 
 function AddControl() {
   return (
-    <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-8 items-center rounded-control border border-dashed border-input px-2.5 py-1 text-muted">
-      <span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />Add</span>
-    </button>
+    <div className="pl-7">
+      <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-7 items-center rounded-control px-1 text-muted">
+        <span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />Add</span>
+      </button>
+    </div>
+  )
+}
+
+/** The facet lines of a fixture: Where, When, How and, when given, Who. */
+function Lines({ where, when, how, who = [], readOnly = false }: { where: FacetPart[]; when: FacetPart[]; how: FacetPart[]; who?: FacetPart[]; readOnly?: boolean }) {
+  return (
+    <section aria-label="Properties" className="space-y-0.5" data-facets>
+      <FacetLine facet="where" icon="folder" name="Where" parts={where} readOnly={readOnly} />
+      <FacetLine facet="when" icon="calendar-days" name="When" parts={when} readOnly={readOnly} />
+      <FacetLine facet="how" icon="flag" name="How" parts={how} readOnly={readOnly} />
+      {who.length > 0 && <FacetLine facet="who" icon="users" name="Who" parts={who} readOnly={readOnly} />}
+      {!readOnly && <AddControl />}
+    </section>
   )
 }
 
@@ -69,65 +85,35 @@ function TabsArea({ count = 0 }: { count?: number }) {
   )
 }
 
-/** A task with nothing but a title: the breadcrumb, Do on, Priority and Add. */
+/** A task with nothing but a title: Where (Inbox), When "Not scheduled", How "P4" and Add. */
 export const EmptyTask: StoryObj = {
   render: () => (
     <Panel>
       <Header title="Call the bank" />
       <div className="min-w-0 space-y-4 p-4">
         <Notes />
-        <section aria-label="Properties" className="space-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="project" icon="folder" label="Project" value={<span className="flex items-center gap-1.5"><Icon name="inbox" size="xs" className="text-faint" />Inbox</span>} editor={() => null} />
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="due" icon="calendar-days" label="Do on" empty placeholder="Do on" editor={() => null} />
-            <PropertyChip id="priority" icon="flag" label="Priority" tone="text-muted" value="P4" editor={() => null} />
-            <AddControl />
-          </div>
-        </section>
+        <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
         <section aria-label="Subtasks" className="flex items-center gap-2 px-1 text-faint">
           <Icon name="plus" size="xs" /><span className="text-body">Add subtask…</span>
         </section>
-        <button type="button" aria-label="Attach" className="ui-btn ui-btn--ghost ui-btn--sm -mx-2 text-muted"><Icon name="paperclip" size="sm" />Attach</button>
       </div>
       <TabsArea />
     </Panel>
   ),
 }
 
-/** Every property set, the priority editor open, subtasks and a comment count. */
+/** Every property set: four lines in the row's words, subtasks and an attachment. */
 export const FullTask: StoryObj = {
   render: () => (
     <Panel>
       <Header title="Prepare the quarterly report" priority={2} />
       <div className="min-w-0 space-y-4 p-4">
         <Notes text="Numbers from finance land on Monday; the deck needs the three charts and a one-page summary." />
-        <section aria-label="Properties" className="space-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="project" icon="folder" label="Project" value={<span className="flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--ot-hue-blue-solid)' }} />Acme</span>} editor={() => null} />
-            <span aria-hidden="true" className="text-faint"><Icon name="chevron-right" size="xs" /></span>
-            <PropertyChip id="section" icon="kanban" label="Section" value="Doing" editor={() => null} />
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="due" icon="calendar-days" label="Do on" tone="text-default" value={<span>Thu 15 Oct · 09:00</span>} editor={() => null} />
-            <PropertyChip id="priority" icon="flag" label="Priority" tone={PRIORITIES[1].cls.split(' ')[0]} value="P2" editing onEditingChange={noop}
-              editor={() => (
-                <div className="flex gap-1.5" role="group" aria-label="Priority">
-                  {PRIORITIES.map(({ p, label: l, cls }) => (
-                    <button key={p} type="button" aria-pressed={p === 2} className={`min-w-11 rounded-control border px-2.5 py-1 text-meta ${cls} ${p === 2 ? 'bg-sunken font-semibold dark:bg-raised' : 'border-dashed'}`}>{l}</button>
-                  ))}
-                </div>
-              )} />
-            <PropertyChip id="deadline" icon="hourglass" label="Deadline" value={<span>Fri 24 Oct<span className="ml-1 text-faint">in 9 days</span></span>} editor={() => null} onClear={noop} />
-            <PropertyChip id="estimate" icon="clock" label="Estimate" value="2h" editor={() => null} onClear={noop} />
-            <PropertyChip id="repeat" icon="repeat" label="Repeat" value="every 3 months" editor={() => null} />
-            <PropertyChip id="labels" icon="tag" label="Labels" value={<span className="flex flex-wrap gap-1"><LabelChip label={label('l1', 'finance', 'var(--ot-hue-green-solid)')} /><LabelChip label={label('l2', 'deck', 'var(--ot-hue-violet-solid)')} /></span>} editor={() => null} />
-            <PropertyChip id="assignee" icon="user-check" label="Assignee" value="Ana" editor={() => null} />
-            <PropertyChip id="blocked-by" icon="lock" label="Blocked by" value="Collect the numbers" editor={() => null} />
-            <AddControl />
-          </div>
-        </section>
+        <Lines
+          where={[{ id: 'project', text: 'Acme' }, { id: 'section', text: 'Doing', sep: '›' }]}
+          when={[{ id: 'due', text: 'Tomorrow 09:00', tone: 'soon' }, { id: 'repeat', text: 'every 3 months' }, { id: 'deadline', text: 'deadline Sat, Oct 24, 9 days' }, { id: 'when', text: 'since Wed, Oct 14' }, { id: 'reminders', text: '2 reminders' }]}
+          how={[{ id: 'priority', text: 'P2' }, { id: 'estimate', text: '2h' }, { id: 'labels', text: 'finance, deck', labels: [label('l1', 'finance', 'var(--ot-hue-green-solid)'), label('l2', 'deck', 'var(--ot-hue-violet-solid)')] }]}
+          who={[{ id: 'assignee', text: 'Ana' }, { id: 'blocked-by', text: 'waits for Collect the numbers' }]} />
         <section aria-label="Subtasks">
           <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="list" className="text-faint" />Subtasks<span className="font-normal text-faint">1/3</span></h3>
           <ul className="space-y-0.5" aria-label="Subtasks">
@@ -150,23 +136,14 @@ export const FullTask: StoryObj = {
   ),
 }
 
-/** A viewer of a shared project: values read as text, nothing to edit. */
+/** A viewer of a shared project: the lines read as text, nothing to edit, no Add. */
 export const Viewer: StoryObj = {
   render: () => (
     <Panel readOnly>
       <Header title="Book the venue" readOnly priority={3} />
       <div className="min-w-0 space-y-4 p-4">
         <Notes text="Ask for the Thursday slot; the Friday one is already taken." />
-        <section aria-label="Properties" className="space-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="project" icon="folder" label="Project" readOnly value="Team offsite" />
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="due" icon="calendar-days" label="Do on" readOnly tone="text-default" value="Tue 21 Oct" />
-            <PropertyChip id="priority" icon="flag" label="Priority" readOnly tone={PRIORITIES[2].cls.split(' ')[0]} value="P3" />
-            <PropertyChip id="assignee" icon="user-check" label="Assignee" readOnly value="Jo" />
-          </div>
-        </section>
+        <Lines readOnly where={[{ id: 'project', text: 'Team offsite' }]} when={[{ id: 'due', text: 'Tue, Oct 21', tone: 'later' }]} how={[{ id: 'priority', text: 'P3' }]} who={[{ id: 'assignee', text: 'Jo' }]} />
       </div>
       <TabsArea count={2} />
     </Panel>
@@ -180,36 +157,48 @@ export const NotesEditing: StoryObj = {
       <Header title="Call the bank" />
       <div className="min-w-0 space-y-4 p-4">
         <Notes editing />
-        <section aria-label="Properties" className="flex flex-wrap items-center gap-1.5">
-          <PropertyChip id="due" icon="calendar-days" label="Do on" empty placeholder="Do on" editor={() => null} />
-          <PropertyChip id="priority" icon="flag" label="Priority" tone="text-muted" value="P4" editor={() => null} />
-          <AddControl />
-        </section>
+        <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
       </div>
     </Panel>
   ),
 }
 
-/** Origins in the panel (task-origin): an issue and a page open their source on click or Enter, a mail has no link; each can be removed. */
+/** Origins in the panel (task-origin): the source is a part of the Where line, opened on click. */
 export const WithOrigins: StoryObj = {
   render: () => (
     <Panel>
       <Header title="Fix the login timeout" priority={2} />
       <div className="min-w-0 space-y-4 p-4">
-        <section aria-label="Properties" className="space-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PropertyChip id="due" icon="calendar-days" label="Do on" empty placeholder="Do on" editor={() => null} />
-            <PropertyChip id="priority" icon="flag" label="Priority" tone={PRIORITIES[1].cls} value="P2" editor={() => null} />
-            <PropertyChip id="origin" icon="link" label="Origin" value="o/r#7" tip="Login times out after 30 seconds" onActivate={noop} onClear={noop} />
-            <PropertyChip id="origin-page" icon="link" label="Origin" value="example.org" tip="Interesting article" onActivate={noop} onClear={noop} />
-            <PropertyChip id="origin-mail" icon="at-sign" label="Origin" value="Email" onClear={noop} />
-            <AddControl />
-          </div>
-        </section>
+        <Lines where={[{ id: 'project', text: 'Web app' }, { id: 'origin', text: 'o/r#7' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P2' }]} />
       </div>
       <TabsArea />
     </Panel>
   ),
+}
+
+/** The When popover, opened from the Do on part of a seeded task: one segment at a time, Clear and Done. */
+function SeededWhen() {
+  const task = useTask(seeded.inboxTask)
+  const projects = useProjects()
+  const labels = useLabels()
+  useEffect(() => {
+    if (!task) return
+    const id = requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[data-facet="when"] [data-part="due"]')?.click())
+    return () => cancelAnimationFrame(id)
+  }, [task?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- open once the task is there
+  if (!task) return null
+  return (
+    <Panel>
+      <div className="p-4">
+        <Facets task={task} readOnly={false} projects={projects} labelMap={new Map(labels.map((l) => [l.id, l]))} childCount={0} />
+      </div>
+    </Panel>
+  )
+}
+
+export const WhenPopover: StoryObj = {
+  ...withSeed(seedInbox),
+  render: () => <SeededWhen />,
 }
 
 /** The Time tab (time-tracking D5) of a task with two past entries, from the local data a seed writes. */

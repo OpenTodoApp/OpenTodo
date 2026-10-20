@@ -38,14 +38,17 @@ export async function open(taskId: string, opts: { readOnly?: boolean; onClose?:
   const projects = (await db.projects.toArray()) as Project[]
   const labels = new Map(((await db.labels.toArray()) as Label[]).map((l) => [l.id, l]))
   const r = await render(<TaskDetail taskId={taskId} userId={ME} projects={projects} labelMap={labels} onClose={opts.onClose ?? (() => {})} onOpen={opts.onOpen} readOnly={opts.readOnly} />)
-  await waitFor(() => !!r.container.querySelector('[data-property-chips]'), 'the task panel')
+  await waitFor(() => !!r.container.querySelector('[data-facets]'), 'the task panel')
   await settle()
-  /** The property's element (null while the chip is not shown). */
-  const row = (name: string) => r.container.querySelector(`[data-property="${name}"]`) as HTMLElement
-  const valueButton = (name: string) => row(name).querySelector('button[aria-labelledby]') as HTMLButtonElement
-  const options = (name: string) => [...row(name).querySelectorAll('[role="option"]')].map((o) => o.textContent ?? '')
-  const pick = async (name: string, text: string) => {
-    await click([...row(name).querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes(text))!)
+  /** The property's part on its facet line (null while it is not shown). */
+  const row = (name: string) => r.container.querySelector(`[data-part="${name}"]`) as HTMLElement
+  /** The part's button, which opens its editor. */
+  const valueButton = (name: string) => row(name) as HTMLButtonElement
+  /** The open editor (a popover in a portal, task-panel-facets D2). */
+  const editor = () => document.querySelector('[data-facet-editor]') as HTMLElement | null
+  const options = (_name?: string) => [...(editor()?.querySelectorAll('[role="option"]') ?? [])].map((o) => o.textContent ?? '')
+  const pick = async (_name: string, text: string) => {
+    await click([...editor()!.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes(text))!)
     await settle()
   }
   const addButton = () => r.container.querySelector('button[aria-label="Add a property"]') as HTMLButtonElement
@@ -54,14 +57,14 @@ export async function open(taskId: string, opts: { readOnly?: boolean; onClose?:
     await settle()
     return [...document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]')]
   }
-  /** Picks `label` from the Add menu: the chip appears with its editor open. */
+  /** Picks `label` from the Add menu: the part appears with its editor open. */
   const add = async (label: string) => {
     const item = (await addItems()).find((i) => i.textContent?.includes(label))
     expect(item, `Add menu offers ${label}`).toBeTruthy()
     await click(item!)
     await settle()
   }
-  return { ...r, row, valueButton, options, pick, addButton, addItems, add }
+  return { ...r, row, valueButton, editor, options, pick, addButton, addItems, add }
 }
 
 export async function membership(projectId: string, ...members: string[]) {

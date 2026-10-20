@@ -196,8 +196,9 @@ describe('visible properties', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => r.container.textContent!.includes('Blank'))
     r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()
-    await waitFor(() => !!document.querySelector('aside[data-detail-for] [data-property-chips]'))
-    const items = document.querySelectorAll('aside[data-detail-for] [data-property], aside[data-detail-for] button[aria-label="Add a property"]')
+    await waitFor(() => !!document.querySelector('aside[data-detail-for] [data-facets]'))
+    // Facet lines plus the Add control (task-panel-facets D6).
+    const items = document.querySelectorAll('aside[data-detail-for] [data-facet], aside[data-detail-for] button[aria-label="Add a property"]')
     expect(items.length).toBeLessThanOrEqual(MAX_EMPTY_TASK_ITEMS)
     await r.unmount()
   })

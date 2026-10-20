@@ -51,7 +51,7 @@ The header is sticky inside the content column. A string title is truncated; pas
 
 ## The task panel
 
-Sticky header (checkbox, title, menu, close); notes as one placeholder line until focused; the project breadcrumb; property chips for properties with a value, Do on and Priority always present; an Add menu for the rest; subtasks as a checklist; Comments, Activity and History tabs with the composer pinned to the bottom. The words are **Do on**, **Start**, **Deadline**, **Evening**.
+Sticky header (checkbox, title wrapping to two lines, menu, close); notes as one placeholder line until focused, clamped to about eight lines at rest; four facet lines built by `facetsOf` in `web/src/lib/facets.ts` (Where, When, How always; Who when set) whose parts open `FacetEditor` popovers with Clear and Done, the When parts on one segment of the When popover; an Add menu grouped by facet; subtasks as a checklist; Comments, Activity, History and Time tabs with the composer resting as one line at the bottom. Parts use the row's words; no clear buttons between values. The words are **Do on**, **Start**, **Deadline**, **Evening**.
 
 ## Settings
 

@@ -98,14 +98,14 @@ describe('task panel (3.3)', () => {
     await key(document.body, 'b')
     await waitFor(() => !!document.querySelector('aside[data-detail-for]'))
     await flush(50)
-    await waitFor(() => !!document.querySelector('[data-property="blocked-by"] [role="listbox"]'))
-    const options = () => [...document.querySelectorAll('[data-property="blocked-by"] [role="option"]')].map((o) => o.textContent ?? '')
+    await waitFor(() => !!document.querySelector('[data-facet-editor] [role="listbox"]'))
+    const options = () => [...document.querySelectorAll('[data-facet-editor] [role="option"]')].map((o) => o.textContent ?? '')
     const panelTask = document.querySelector('aside[data-detail-for]')!.getAttribute('data-detail-for')
     const self = (await db.tasks.get(panelTask!))!.title
     expect(options().some((o) => o.includes(self))).toBe(false)
     if (self === 'Plan trip') expect(options().some((o) => o.includes('Book flights'))).toBe(false)
     expect(options().some((o) => o.includes('Renew passport'))).toBe(true)
-    const pick = [...document.querySelectorAll<HTMLElement>('[data-property="blocked-by"] [role="option"]')].find((o) => o.textContent?.includes('Renew passport'))!
+    const pick = [...document.querySelectorAll<HTMLElement>('[data-facet-editor] [role="option"]')].find((o) => o.textContent?.includes('Renew passport'))!
     await click(pick)
     await waitFor(async () => ((await db.tasks.get(panelTask!))?.blocked_by ?? []).length === 1 + (self === 'Book flights' ? 1 : 0))
     expect(hotel).toBeTruthy()
@@ -118,12 +118,12 @@ describe('task panel (3.3)', () => {
     const onOpen = vi.fn()
     const r = await render(<TaskDetail taskId={trip} userId="me" projects={[]} labelMap={new Map()} onClose={() => {}} onOpen={onOpen} />)
     mounted.push(r)
-    await waitFor(() => !!document.querySelector('[data-property="blocks"]'))
-    // The chip counts the dependents; opening it lists them.
-    expect(document.querySelector('[data-property="blocks"]')!.textContent).toContain('Blocks 1')
-    await click(document.querySelector<HTMLButtonElement>('[data-property="blocks"] button[aria-labelledby]')!)
+    await waitFor(() => !!document.querySelector('[data-part="blocks"]'))
+    // The Who line counts the dependents; opening the part lists them.
+    expect(document.querySelector('[data-part="blocks"]')!.textContent).toContain('blocks 1')
+    await click(document.querySelector<HTMLButtonElement>('[data-part="blocks"]')!)
     await flush(40)
-    const link = [...document.querySelectorAll<HTMLElement>('[data-property="blocks"] button')].find((b) => b.textContent === 'Book flights')!
+    const link = [...document.querySelectorAll<HTMLElement>('[data-facet-editor] button')].find((b) => b.textContent === 'Book flights')!
     await click(link)
     expect(onOpen).toHaveBeenCalledWith(flights)
   })

@@ -110,7 +110,7 @@ describe('d on a list row (3.2)', () => {
     await waitFor(() => r.container.textContent!.includes('Write report'))
     await key(document.body, 'j')
     await key(document.body, 'd')
-    await waitFor(() => document.activeElement instanceof HTMLInputElement && !!document.activeElement.closest('[data-property="deadline"]'))
+    await waitFor(() => document.activeElement instanceof HTMLInputElement && !!document.activeElement.closest('[data-facet-editor] [data-when-segment="deadline"]'))
     const input = document.activeElement as HTMLInputElement
     await type(input, '2026-11-06')
     await key(input, 'Enter')
@@ -127,7 +127,7 @@ describe('d on a list row (3.2)', () => {
     other.focus()
     await key(other, 'd')
     await flush(40)
-    expect(document.querySelector('[data-property="deadline"]')).toBeNull()
+    expect(document.querySelector('[data-part="deadline"]')).toBeNull()
     expect(document.activeElement).toBe(other)
   })
 })

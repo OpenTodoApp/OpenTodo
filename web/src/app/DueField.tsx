@@ -16,7 +16,7 @@ import { act } from './actionError'
 /** `z` with the panel open (not typing) toggles the zone; the handler lives in ZoneControl. */
 export { ZONE_TOGGLE_KEY } from './task-detail/ZoneControl'
 
-export function DueField({ task, readOnly = false }: { task: Task; readOnly?: boolean }) {
+export function DueField({ task, readOnly = false, clearable = true }: { task: Task; readOnly?: boolean; /** The When popover clears from its footer instead. */ clearable?: boolean }) {
   const zone = useViewerZone()
   const view = localDueOf(task.due, zone)
   const hint = zoneHint(task.due, zone)
@@ -31,7 +31,7 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
           onChange={(date) => setView(date ? { date, ...(view?.time ? { time: view.time } : {}) } : null)} />
         <TimeField label={t('Due time')} hideLabel value={view?.time ?? null} disabled={!view}
           onChange={(time) => view && setView(time ? { date: view.date, time } : { date: view.date })} />
-        {task.due && <IconButton icon="x" label={t('Clear due date')} onClick={() => act(setDueWithUndo(task.id, null))} />}
+        {task.due && clearable && <IconButton icon="x" label={t('Clear due date')} onClick={() => act(setDueWithUndo(task.id, null))} />}
       </div>
       {task.due && <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} />}
       {hint && <p className="text-meta text-muted" data-testid="zone-hint">{hint}</p>}

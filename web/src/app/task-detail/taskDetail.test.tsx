@@ -32,34 +32,34 @@ describe('header (2.2)', () => {
   })
 })
 
-describe('property chips (2.3)', () => {
-  it('values read as values: project, priority and the due date in the user format, no input boxes', async () => {
+describe('facet parts (2.3, task-panel-facets)', () => {
+  it('values read as values: project, priority and the due in the row\'s words, no input boxes', async () => {
     const work = await createProject({ name: 'Work' })
     const id = await createTask({ title: 'Plan', project_id: work, priority: 2, due: { date: '2026-10-15', time: '09:00' } })
     const { container, row, unmount } = await open(id)
     expect(row('project').textContent).toContain('Work')
-    expect(row('priority').querySelector('[data-priority-value]')?.textContent).toBe('P2')
-    expect(row('due').textContent).toContain('Thu 15 Oct · 09:00')
+    expect(row('priority').textContent).toBe('P2')
+    expect(row('due').textContent).toContain('Tomorrow 09:00')
     expect(container.querySelector('section[aria-label="Properties"] input')).toBeNull()
-    // An empty property is not a chip; the Add menu offers it.
+    // An empty property is not a part; the Add menu offers it.
     expect(row('estimate')).toBeNull()
     await unmount()
   })
 
-  it('Enter on the Do on chip opens its editor with focus in it; Escape closes it with focus back on the chip', async () => {
+  it('Enter on the Do on part opens its popover with focus in the date; Escape closes it with focus back on the part', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
-    const { row, valueButton, unmount } = await open(id)
+    const { valueButton, editor, unmount } = await open(id)
     const button = valueButton('due')
     button.focus()
     await key(button, 'Enter')
     await click(button) // Enter on a native button activates it
     await settle()
-    const input = row('due').querySelector('input') as HTMLInputElement
+    const input = editor()!.querySelector('input') as HTMLInputElement
     expect(input).toBeTruthy()
-    expect(document.activeElement).toBe(input)
+    await waitFor(() => document.activeElement === input, 'focus in the date field')
     await key(input, 'Escape')
     await settle()
-    expect(row('due').querySelector('input')).toBeNull()
+    expect(editor()).toBeNull()
     expect(document.activeElement).toBe(valueButton('due'))
     await unmount()
   })
@@ -83,10 +83,10 @@ describe('viewer mode (2.5)', () => {
 describe('entity pickers (3.1–3.4)', () => {
   it('Project: creates a project offline and moves the task into it', async () => {
     const id = await createTask({ title: 'Plant tomatoes' })
-    const { row, valueButton, pick, unmount } = await open(id)
+    const { valueButton, editor, pick, unmount } = await open(id)
     await click(valueButton('project'))
     await settle()
-    await type(row('project').querySelector('input[role="combobox"]') as HTMLInputElement, 'Garden')
+    await type(editor()!.querySelector('input[role="combobox"]') as HTMLInputElement, 'Garden')
     await pick('project', 'Create “Garden”')
     await waitFor(async () => {
       const made = (await db.projects.toArray()).find((p) => p.name === 'Garden')
@@ -133,8 +133,10 @@ describe('entity pickers (3.1–3.4)', () => {
     const a = await open(sub)
     await waitFor(() => !!a.row('section'))
     expect(a.row('section').textContent).toContain('Doing')
-    expect(a.row('section').textContent).toContain('follow their parent')
-    expect(a.valueButton('section')).toBeNull()
+    await click(a.valueButton('section'))
+    await settle()
+    expect(a.editor()!.textContent).toContain('follow their parent')
+    expect(a.editor()!.querySelector('input[role="combobox"]')).toBeNull()
     await a.unmount()
 
     const top = await createTask({ title: 'Buy paint', project_id: p })
@@ -188,13 +190,14 @@ describe('entity pickers (3.1–3.4)', () => {
     await v.pick('labels', 'errand')
     await waitFor(async () => (await db.tasks.get(id))!.labels.length === 1, 'the label added')
     expect((await db.tasks.get(id))!.labels).toEqual([errand])
-    const remove = () => v.row('labels')?.querySelector(`button[aria-label="Remove label errand"]`)
+    const remove = () => v.editor()?.querySelector(`button[aria-label="Remove label errand"]`)
     if (!remove()) { await click(v.valueButton('labels')); await waitFor(() => !!remove(), 'the remove control') }
     await click(remove()!)
     await waitFor(async () => (await db.tasks.get(id))!.labels.length === 0, 'the label removed')
     expect((await db.tasks.get(id))!.labels).toEqual([])
     expect((await db.labels.toArray().then(activeLabels)).length).toBe(1)
 
+    if (v.editor()) { await key(v.editor()!, 'Escape'); await settle() }
     expect(v.row('assignee').textContent).toContain('Unassigned')
     await click(v.valueButton('assignee'))
     await settle()
@@ -204,39 +207,39 @@ describe('entity pickers (3.1–3.4)', () => {
   })
 })
 
-describe('deadline chip (OpenSpec deadlines 3.1)', () => {
-  it('typing fri writes the next Friday and leaves the due date alone; the chip shows the date and countdown', async () => {
+describe('deadline part (OpenSpec deadlines 3.1, task-panel-facets)', () => {
+  it('typing fri writes the next Friday and leaves the due date alone; the part shows the date and countdown', async () => {
     const id = await createTask({ title: 'Report', due: { date: '2026-10-15' } })
-    const { row, add, unmount } = await open(id)
+    const { row, add, editor, unmount } = await open(id)
     expect(row('deadline')).toBeNull()
     await add('Deadline')
-    const input = row('deadline').querySelector('[data-when-segment="deadline"] input') as HTMLInputElement
-    expect(document.activeElement).toBe(input)
+    const input = editor()!.querySelector('[data-when-segment="deadline"] input') as HTMLInputElement
+    await waitFor(() => document.activeElement === input, 'focus in the deadline field')
     await type(input, 'fri')
     await key(input, 'Enter')
     await settle()
     const t = (await db.tasks.get(id))!
     expect(t.deadline).toBe('2026-10-16')
     expect(t.due).toEqual({ date: '2026-10-15' })
-    await key(row('deadline').querySelector('[data-when-segment="deadline"] input') ?? input, 'Escape')
+    await key(editor()?.querySelector('[data-when-segment="deadline"] input') ?? input, 'Escape')
     await settle()
     expect(row('deadline').textContent).toContain('Fri 16 Oct')
-    expect(row('deadline').textContent).toContain('in 2 days')
+    expect(row('deadline').textContent).toContain('2 days')
     await unmount()
   })
 
   it('clearing writes null', async () => {
     const id = await createTask({ title: 'Report', deadline: '2026-10-20' })
-    const { row, valueButton, unmount } = await open(id)
+    const { valueButton, editor, unmount } = await open(id)
     await click(valueButton('deadline'))
     await settle()
-    await click(row('deadline').querySelector('[data-when-segment="deadline"] button[aria-label="Clear deadline"]')!)
+    await click(editor()!.querySelector('[data-facet-clear]')!)
     await settle()
     expect((await db.tasks.get(id))!.deadline).toBeNull()
     await unmount()
   })
 
-  it('a viewer sees the deadline as text, and the chip passes axe', async () => {
+  it('a viewer sees the deadline as text, and the part passes axe', async () => {
     const id = await createTask({ title: 'Report', deadline: '2026-10-12' })
     const { row, unmount } = await open(id, { readOnly: true })
     expect(row('deadline').querySelector('button, input')).toBeNull()
@@ -248,19 +251,19 @@ describe('deadline chip (OpenSpec deadlines 3.1)', () => {
   })
 })
 
-describe('when chip and evening (OpenSpec someday-and-evening 3.2)', () => {
+describe('start part and evening (OpenSpec someday-and-evening 3.2, task-panel-facets)', () => {
   it('a start after the due date is refused in the field', async () => {
     const id = await createTask({ title: 'Report', due: { date: '2026-10-16' } })
-    const { row, add, unmount } = await open(id)
+    const { row, add, editor, unmount } = await open(id)
     expect(row('when')).toBeNull()
     await add('Start')
-    expect(row('when').textContent).toContain('Anytime')
-    const input = row('when').querySelector('[data-when-segment="start"] input') as HTMLInputElement
-    expect(document.activeElement).toBe(input)
+    expect(row('when').textContent).toContain('Start')
+    const input = editor()!.querySelector('[data-when-segment="start"] input') as HTMLInputElement
+    await waitFor(() => document.activeElement === input, 'focus in the start field')
     await type(input, '2026-10-21')
     await key(input, 'Enter')
     await settle()
-    expect(row('when').textContent).toContain('on or before the due date')
+    expect(editor()!.textContent).toContain('on or before the due date')
     expect((await db.tasks.get(id))!.start ?? null).toBeNull()
     await type(input, '2026-10-15')
     await key(input, 'Enter')
@@ -269,18 +272,19 @@ describe('when chip and evening (OpenSpec someday-and-evening 3.2)', () => {
     await unmount()
   })
 
-  it('parks from the chip, adds This Evening, and passes axe', async () => {
+  it('parks from the Start segment, adds This Evening, and passes axe', async () => {
     const id = await createTask({ title: 'Idea', due: { date: '2026-10-16' } })
-    const { row, add, unmount } = await open(id)
+    const { row, add, editor, unmount } = await open(id)
     await add('Start')
-    await click([...row('when').querySelectorAll('button')].find((b) => b.textContent?.includes('Someday'))!)
+    await click([...editor()!.querySelectorAll('button')].find((b) => b.textContent?.includes('Someday'))!)
     await settle()
+    if (editor()) { await key(editor()!, 'Escape'); await settle() }
     expect(await db.tasks.get(id)).toMatchObject({ start: 'someday', due: null })
     expect(row('evening')).toBeNull()
     await add('This Evening')
     await waitFor(() => !!row('evening'))
     expect((await db.tasks.get(id))!.evening).toBe(true)
-    expect(row('evening').textContent).toContain('This Evening')
+    expect(row('evening').textContent).toContain('evening')
     const axe = (await import('axe-core')).default
     for (const name of ['when', 'evening']) {
       const res = await axe.run(row(name), { rules: { 'color-contrast': { enabled: false } } })

@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
+import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { useSubtasks, useTask } from '../../lib/localData'
 import { markTaskNotificationsRead } from '../../lib/notifications'
@@ -10,7 +10,6 @@ import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
-import { Badge } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
 import { Markdown } from '../Markdown'
@@ -23,7 +22,8 @@ import { AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
 import { TrackMenuItem } from './TimeTab'
 import { FieldsGroup } from './FieldsGroup'
-import { Properties } from './Properties'
+import { requestAttach } from './attachRequest'
+import { Facets } from './Facets'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { toggleTracking } from '../../lib/timeEntries'
@@ -72,7 +72,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   // change from another device does not overwrite a title being typed
   // (client-sync-robustness); the draft is committed on blur as usual.
   const titleBase = useRef('')
-  const titleField = useRef<HTMLInputElement>(null)
+  const titleField = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     if (!task) return
     const focused = !!titleField.current && titleField.current === document.activeElement
@@ -81,6 +81,14 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     setTitle(task.title)
   }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the stored title only; the draft is read, not a trigger
   useEffect(() => setCopied(false), [taskId])
+  // The title grows to two lines, then stops (it scrolls inside itself while being edited).
+  useLayoutEffect(() => {
+    const el = titleField.current
+    if (!el) return
+    el.style.height = 'auto'
+    const line = parseFloat(getComputedStyle(el).lineHeight) || 24
+    el.style.height = `${Math.min(el.scrollHeight, Math.ceil(line * 2))}px`
+  }, [title, task?.id])
   // Opening a task reads its notifications (task-assignment); works offline.
   useEffect(() => {
     void markTaskNotificationsRead(taskId)
@@ -152,19 +160,20 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
             {done && <Icon name="check" size="xs" />}
           </span>
         </button>
-        <input
-          className={`min-w-0 flex-1 bg-transparent font-semibold text-strong focus:outline-none ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
+        {/* The title wraps to at most two lines instead of truncating (task-panel-facets D4); Enter commits. */}
+        <textarea
+          rows={1}
+          className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent font-semibold leading-snug text-strong focus:outline-none ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
           value={title}
           readOnly={readOnly}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value.replace(/\n/g, ' '))}
           ref={titleField}
           onBlur={commitTitle}
-          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLTextAreaElement).blur() } }}
           aria-label={t('Title')}
           data-task-title
           placeholder={t('Untitled')}
         />
-        {progress.total > 0 && <Badge hue="slate" title={t('Completed subtasks')}>{progress.done}/{progress.total}</Badge>}
         {copied && <span role="status" className="text-meta text-muted">{t('Link copied')}</span>}
         <Menu kind="menu" label={t('Task actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
           <MenuItem label={t('Copy link')} icon="link" onSelect={copyLink} />
@@ -175,6 +184,9 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {!readOnly && <TrackMenuItem task={task} />}
           {!readOnly && !done && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => navigate({ view: 'focus', id: task.id })} />}
           {!readOnly && <MenuItem label={t('Duplicate')} icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
+          {!readOnly && <MenuItem label={t('Attach')} icon="paperclip" description={t('Or paste or drop files on the task')} onSelect={() => requestAttach(task.id)} />}
+          {/* The origin's Remove lives here; its part on the Where line opens the source (task-panel-facets). */}
+          {!readOnly && task.origin && <MenuItem label={t('Remove origin')} icon="x" onSelect={() => act(updateTask(task.id, { origin: null }))} />}
           {!readOnly && assistant?.available && <MenuItem label={t('Break this down')} icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
           {!readOnly && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={remove} />}
@@ -203,13 +215,15 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
               </button>
             </Tooltip>
           )}
-          <NotesBoundary task={task} readOnly={readOnly}>
-            <Suspense fallback={<NotesPreview text={task.description} />}>
-              <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
-            </Suspense>
-          </NotesBoundary>
+          <NotesClamp taskId={task.id} enabled={!page}>
+            <NotesBoundary task={task} readOnly={readOnly}>
+              <Suspense fallback={<NotesPreview text={task.description} />}>
+                <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
+              </Suspense>
+            </NotesBoundary>
+          </NotesClamp>
 
-          <Properties task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
+          <Facets task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={parent ?? undefined} childCount={children.length} onOpen={onOpen} />
 
           {/* Custom field values of the task's project (custom-fields). */}
@@ -282,6 +296,45 @@ export function AddSubtask({ parent }: { parent: Task }) {
 }
 
 /** The note as rendered Markdown while the editor chunk loads. */
+/** Lines of notes shown at rest in the panel before "Show all" (task-panel-facets D4). */
+export const NOTES_CLAMP_LINES = 8
+
+/**
+ * Long notes rest clamped in the panel (web-app "Task panel notes clamp"): about eight
+ * lines and a "Show all" line, so the facts below stay in view. Focusing the notes or
+ * Show all expands them until another task is opened; the task page never clamps, and
+ * notes only a line over the limit are never clamped, so short notes do not flicker.
+ */
+function NotesClamp({ taskId, enabled, children }: { taskId: string; enabled: boolean; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [expanded, setExpanded] = useState(false)
+  const [tall, setTall] = useState(false)
+  useEffect(() => { setExpanded(false) }, [taskId])
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el || !enabled) return
+    const measure = () => {
+      const content = el.firstElementChild as HTMLElement | null
+      if (!content) return
+      const line = parseFloat(getComputedStyle(content).lineHeight) || 24
+      setTall(content.scrollHeight > line * (NOTES_CLAMP_LINES + 1))
+    }
+    measure()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    if (ro && el.firstElementChild) ro.observe(el.firstElementChild)
+    return () => ro?.disconnect()
+  }, [enabled, taskId])
+  const clamped = enabled && tall && !expanded
+  return (
+    <div ref={box} className="notes-clamp" data-clamped={clamped || undefined} onFocusCapture={() => setExpanded(true)}>
+      {children}
+      {clamped && (
+        <button type="button" className="mt-1 text-meta text-accent hover:underline" onClick={() => setExpanded(true)} data-notes-show-all>{t('Show all')}</button>
+      )}
+    </div>
+  )
+}
+
 function NotesPreview({ text }: { text: string }) {
   return (
     <div className="notes-host" aria-busy="true">
