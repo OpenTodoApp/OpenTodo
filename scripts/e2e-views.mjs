@@ -211,7 +211,7 @@ assert(await focusedPanel() === 'Waiting', 'Tab → second panel')
 await pageA.keyboard.press('Shift+Tab')
 assert(await focusedPanel() === 'Today p1', 'Shift+Tab → first panel')
 await pageA.keyboard.press('j')
-await pageA.locator('section[aria-label="Today p1"] li.ring-1').waitFor()
+await pageA.locator('section[aria-label="Today p1"] li[aria-current]').waitFor()
 step('Live update: completing a task through the API updates the panel')
 const tasks = (await get('tasks')).tasks
 const parcel = tasks.find((t) => t.title === 'Pick up parcel')
