@@ -43,7 +43,8 @@ describe('facet lines', () => {
     const where = container.querySelector('[data-facet="where"]')!
     expect(where.contains(row('project'))).toBe(true)
     expect(where.contains(row('section'))).toBe(true)
-    expect(lineText(container, 'where')).toMatch(/Home\s*›\s*Doing/)
+    expect(lineText(container, 'where')).toMatch(/Home\s*Doing/)
+    expect(container.querySelectorAll('[data-facet="where"] svg').length).toBe(2)
     await unmount()
   })
 

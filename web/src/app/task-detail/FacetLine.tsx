@@ -46,7 +46,9 @@ export function FacetLine({ facet, icon, name, parts, readOnly = false, open = n
             : <span className="truncate">{p.text}</span>
           return (
             <Fragment key={p.id}>
-              {i > 0 && <span aria-hidden="true" className="text-faint">{p.sep ?? '·'}</span>}
+              {i > 0 && (p.sep === 'chevron'
+                ? <Icon name="chevron-right" size="xs" className="text-faint" />
+                : <span aria-hidden="true" className="text-faint">·</span>)}
               {readOnly || p.fixed ? (
                 <span className={`inline-flex min-h-7 max-w-full items-center px-1 ${tone}`} data-part={p.id}>{content}</span>
               ) : withTip(p.tip, (

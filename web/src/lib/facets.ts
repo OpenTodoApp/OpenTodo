@@ -30,8 +30,8 @@ export interface FacetPart {
   fixed?: boolean
   /** A tooltip (the origin's stored title). */
   tip?: string
-  /** The separator before this part ("›" between a project and its section); "·" otherwise. */
-  sep?: string
+  /** The separator before this part: a chevron between a project and its section, a middle dot otherwise. */
+  sep?: 'chevron'
 }
 
 export interface FacetContext {
@@ -79,8 +79,8 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
 
   // Where: project › section, the parent, the origin.
   const where: FacetPart[] = [{ id: 'project', text: ctx.projectArchived ? `${ctx.projectName} ${t('(archived)')}` : ctx.projectName }]
-  if (ctx.sectionName) where.push({ id: 'section', text: ctx.sectionName, sep: '›' })
-  else if (revealed.has('section')) where.push({ id: 'section', text: t('No section'), empty: true, sep: '›' })
+  if (ctx.sectionName) where.push({ id: 'section', text: ctx.sectionName, sep: 'chevron' })
+  else if (revealed.has('section')) where.push({ id: 'section', text: t('No section'), empty: true, sep: 'chevron' })
   if (ctx.parentTitle != null) where.push({ id: 'parent', text: t('under {title}', { title: ctx.parentTitle || t('Untitled') }) })
   else if (revealed.has('parent')) where.push({ id: 'parent', text: t('No parent'), empty: true })
   if (ctx.originText) where.push({ id: 'origin', text: ctx.originText, tip: ctx.originTitle || undefined, fixed: !ctx.originLinked })

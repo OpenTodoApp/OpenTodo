@@ -34,7 +34,7 @@ describe('facetsOf', () => {
       labels: [label('l1', 'finance'), label('l2', 'deck'), label('l3', 'deep-work')], assigneeName: 'You', blockerTitles: ['Collect the numbers'],
     }))
     expect(texts(f.where)).toEqual(['Website launch', 'Doing'])
-    expect(f.where[1].sep).toBe('›')
+    expect(f.where[1].sep).toBe('chevron')
     expect(texts(f.when)).toEqual(['Tomorrow 09:00', 'every 3 months', 'deadline Fri 23 Oct, 9 days', 'since Mon 12 Oct', '2 reminders'])
     expect(texts(f.how)).toEqual(['P2', '2h', 'finance, deck, deep-work'])
     expect(f.how[2].labels).toHaveLength(3)

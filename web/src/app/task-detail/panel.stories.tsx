@@ -110,7 +110,7 @@ export const FullTask: StoryObj = {
       <div className="min-w-0 space-y-4 p-4">
         <Notes text="Numbers from finance land on Monday; the deck needs the three charts and a one-page summary." />
         <Lines
-          where={[{ id: 'project', text: 'Acme' }, { id: 'section', text: 'Doing', sep: '›' }]}
+          where={[{ id: 'project', text: 'Acme' }, { id: 'section', text: 'Doing', sep: 'chevron' }]}
           when={[{ id: 'due', text: 'Tomorrow 09:00', tone: 'soon' }, { id: 'repeat', text: 'every 3 months' }, { id: 'deadline', text: 'deadline Sat, Oct 24, 9 days' }, { id: 'when', text: 'since Wed, Oct 14' }, { id: 'reminders', text: '2 reminders' }]}
           how={[{ id: 'priority', text: 'P2' }, { id: 'estimate', text: '2h' }, { id: 'labels', text: 'finance, deck', labels: [label('l1', 'finance', 'var(--ot-hue-green-solid)'), label('l2', 'deck', 'var(--ot-hue-violet-solid)')] }]}
           who={[{ id: 'assignee', text: 'Ana' }, { id: 'blocked-by', text: 'waits for Collect the numbers' }]} />
