@@ -152,6 +152,7 @@
       "group_by",
       "kind",
       "name",
+      "on_drop",
       "panels",
       "pinned",
       "position",

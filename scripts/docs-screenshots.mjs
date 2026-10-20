@@ -25,6 +25,7 @@ import { join } from 'node:path'
 import { startFakeLLM } from './fake-llm.mjs'
 
 const OUT = 'docs/images'
+let eisenhowerPath = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -302,6 +303,16 @@ const shots = [
   } },
   { name: 'dashboard', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today'); await sidebar(p).getByRole('button', { name: /^Weekly review/ }).click(); await settle(p, 1000)
+  } },
+  // The Eisenhower board (rule-boards 4.2): created from its template once, opened again for the dark shot.
+  { name: 'eisenhower', server: D, async run(p) {
+    if (!eisenhowerPath) {
+      await go(p, demoBase, '/views', () => p.getByRole('button', { name: 'New board' }).waitFor())
+      await p.getByRole('button', { name: 'New board' }).click(); await p.locator('[data-board-choice="eisenhower"] input').check()
+      await p.getByRole('button', { name: 'Next' }).click(); await p.getByRole('button', { name: 'Create' }).click()
+      await p.locator('section[aria-label="Urgent and important"]').waitFor(); eisenhowerPath = new URL(p.url()).pathname
+    } else await go(p, demoBase, eisenhowerPath, () => p.locator('section[aria-label="Urgent and important"]').waitFor())
+    await settle(p, 800)
   } },
   { name: 'repeat', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Run club')

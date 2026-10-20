@@ -199,6 +199,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>s</kbd> | In Filter results: save the Filter query as a view, pinned to the sidebar |
 | <kbd>/</kbd> | In a saved view: edit the query of a saved view; Enter saves it, Esc discards |
 | <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view |
+| <kbd>Shift+←</kbd> | On a board: move the selected card to the previous panel that has a rule, applying it (the card stays selected) |
+| <kbd>Shift+→</kbd> | On a board: move the selected card to the next panel that has a rule, applying it |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | In the filter query: recall recent queries on this device |
 
 ### Trash and projects

@@ -185,6 +185,9 @@
   "A backup is running. Try again when it has finished.": [
     "web/src/lib/restore.ts"
   ],
+  "A card dropped on this column gets these changes.": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "A choice field needs at least one option.": [
     "web/src/lib/fields.ts"
   ],
@@ -597,6 +600,9 @@
   "Add field": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Add labels": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "Add labels to {title}": [
     "web/src/app/palette/registry.ts"
   ],
@@ -639,7 +645,7 @@
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Add up to six saved filters as panels.": [
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/NewBoardDialog.tsx"
   ],
   "Add up to six saved filters with “Add panel”.": [
     "web/src/app/DashboardView.tsx"
@@ -1288,7 +1294,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Board name": [
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/NewBoardDialog.tsx"
   ],
   "Boards": [
     "web/src/app/ViewsView.tsx"
@@ -1471,11 +1477,13 @@
     "web/src/app/LinkDialog.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NamePrompt.tsx",
+    "web/src/app/NewBoardDialog.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PasswordSection.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RestoreSection.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareCapture.tsx",
     "web/src/app/Sidebar.tsx",
@@ -1710,6 +1718,9 @@
   "Clear the selection": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Clear the start": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "Clear {lowerCase}": [
     "web/src/app/task-detail/PropertyChip.tsx"
   ],
@@ -1899,6 +1910,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Complete": [
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/focus/FocusView.tsx",
@@ -2160,10 +2172,10 @@
     "web/src/lib/focus/prefs.ts"
   ],
   "Create": [
+    "web/src/app/NewBoardDialog.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/TemplateDialogs.tsx"
   ],
   "Create a link…": [
     "web/src/app/InviteLinksSection.tsx"
@@ -2350,6 +2362,7 @@
   ],
   "Date": [
     "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/lib/fields.ts"
@@ -2945,6 +2958,12 @@
   "Edit…": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Eisenhower": [
+    "web/src/lib/boardTemplates.ts"
+  ],
+  "Eisenhower matrix": [
+    "web/src/lib/boardTemplates.ts"
+  ],
   "Email": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/EmailScreens.tsx",
@@ -3000,6 +3019,9 @@
   ],
   "Empty Trash": [
     "web/src/app/TrashView.tsx"
+  ],
+  "Empty board": [
+    "web/src/app/NewBoardDialog.tsx"
   ],
   "Enable": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -3482,7 +3504,8 @@
     "web/src/app/palette/entries.ts"
   ],
   "Find a label…": [
-    "web/src/app/LabelsView.tsx"
+    "web/src/app/LabelsView.tsx",
+    "web/src/app/RuleEditor.tsx"
   ],
   "Find a member…": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -3651,6 +3674,9 @@
   ],
   "Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title, the text is the description, and attachment names are listed.": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "Four filters over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
+    "web/src/lib/boardTemplates.ts"
   ],
   "Free and open source (AGPL-3.0) · no tracking, no telemetry": [
     "web/src/app/AboutSection.tsx"
@@ -4087,6 +4113,9 @@
   "Import: {note}": [
     "web/src/app/DataSettings.tsx"
   ],
+  "Important, not urgent": [
+    "web/src/lib/boardTemplates.ts"
+  ],
   "Importing…": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -4330,6 +4359,9 @@
   "It disappears from your devices.": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "It does not match the column’s filter.": [
+    "web/src/lib/undoActions.ts"
+  ],
   "It expires {when} and works once.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
@@ -4389,6 +4421,9 @@
   ],
   "Joining…": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "Keep": [
+    "web/src/app/RuleEditor.tsx"
   ],
   "Keep as sections": [
     "web/src/app/ImportScreen.tsx"
@@ -5201,6 +5236,9 @@
   "Moved to the Trash: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
+  "Moved to {column}: {changes}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Moved to {project}.": [
     "web/src/lib/triage.ts"
   ],
@@ -5243,6 +5281,9 @@
   "Needs a subscription first.": [
     "web/src/lib/push.ts"
   ],
+  "Neither": [
+    "web/src/lib/boardTemplates.ts"
+  ],
   "Never": [
     "web/src/app/PublicLinksSection.tsx"
   ],
@@ -5263,6 +5304,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "New board": [
+    "web/src/app/NewBoardDialog.tsx",
     "web/src/app/ViewsView.tsx"
   ],
   "New conversation": [
@@ -5326,7 +5368,8 @@
     "web/src/app/AboutSection.tsx"
   ],
   "Next": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/NewBoardDialog.tsx"
   ],
   "Next action": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -5364,6 +5407,7 @@
   "Next week": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Next {n} days": [
@@ -5445,10 +5489,14 @@
   "No changes waiting.": [
     "web/src/app/DataSettings.tsx"
   ],
+  "No changes: this column is not a drop target.": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "No comments yet. Ask a question or leave a note; comments work offline.": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "No date": [
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
@@ -5510,6 +5558,9 @@
   ],
   "No labels yet": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "No labels yet.": [
+    "web/src/app/RuleEditor.tsx"
   ],
   "No labels yet. Type a name and press Enter.": [
     "web/src/app/LabelPicker.tsx"
@@ -5598,8 +5649,12 @@
   "No review finished yet": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "No rule": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "No section": [
     "web/src/app/BoardView.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/Properties.tsx",
@@ -5734,6 +5789,9 @@
   ],
   "Not found. It may have been deleted.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "Not matching": [
+    "web/src/app/DashboardView.tsx"
   ],
   "Not now": [
     "web/src/app/ArchivePrompt.tsx",
@@ -6052,11 +6110,20 @@
   "On Windows, check Settings → System → Notifications → your browser, and Do Not Disturb.": [
     "web/src/lib/push.ts"
   ],
+  "On a board: move the selected card to the next panel that has a rule, applying it": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On a board: move the selected card to the previous panel that has a rule, applying it (the card stays selected)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view": [
     "web/src/lib/shortcuts.ts"
   ],
   "On a phone": [
     "web/src/app/CaptureSettings.tsx"
+  ],
+  "On drop: {rule}": [
+    "web/src/app/DashboardView.tsx"
   ],
   "On iPhone and iPad, push works only in the app installed to the Home Screen: check Settings → Notifications → OpenTodo, and Focus.": [
     "web/src/lib/push.ts"
@@ -6776,6 +6843,7 @@
   ],
   "Priority": [
     "web/src/app/QuickAdd.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/Properties.tsx"
@@ -6793,6 +6861,7 @@
     "web/src/app/PublicListScreen.tsx"
   ],
   "Priority {p}": [
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/lib/views.ts"
   ],
@@ -6831,6 +6900,7 @@
     "web/src/app/FilterView.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/QuickAdd.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ShareCapture.tsx",
     "web/src/app/TaskListView.tsx",
@@ -7227,6 +7297,9 @@
   "Remove label {name}": [
     "web/src/ui/Chips.tsx"
   ],
+  "Remove labels": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "Remove link": [
     "web/src/app/LinkDialog.tsx"
   ],
@@ -7273,6 +7346,9 @@
   "Remove {title} from This Evening": [
     "web/src/app/palette/registry.ts"
   ],
+  "Removed label": [
+    "web/src/app/RuleEditor.tsx"
+  ],
   "Removed view": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -7318,6 +7394,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Reopen": [
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Reopen task": [
@@ -7642,6 +7719,13 @@
   "Rows with errors": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Rule": [
+    "web/src/app/DashboardView.tsx"
+  ],
+  "Rule for {name}": [
+    "web/src/app/DashboardView.tsx",
+    "web/src/app/RuleEditor.tsx"
+  ],
   "Run your own server": [
     "web/src/app/help/HelpView.tsx"
   ],
@@ -7693,6 +7777,7 @@
     "web/src/app/NamePrompt.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/RemindersField.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareCapture.tsx",
@@ -7873,6 +7958,7 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Section": [
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
   "Section menu for {title}": [
@@ -8514,6 +8600,7 @@
   "Someday": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/QuickAdd.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
@@ -8605,6 +8692,7 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Start": [
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/method/DailyCheckToast.tsx",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -8624,6 +8712,9 @@
   ],
   "Start date": [
     "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Start from": [
+    "web/src/app/NewBoardDialog.tsx"
   ],
   "Start on": [
     "web/src/app/TemplateDialogs.tsx"
@@ -8697,6 +8788,7 @@
   ],
   "Status": [
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -10196,6 +10288,7 @@
     "web/src/app/PlanView.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/QuickAdd.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
@@ -10249,6 +10342,7 @@
   ],
   "Tomorrow": [
     "web/src/app/QuickAdd.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/lib/dates.ts",
@@ -10663,13 +10757,15 @@
     "web/src/lib/localData.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/subtasks.ts",
-    "web/src/lib/trash.ts"
+    "web/src/lib/trash.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Untitled project": [
     "web/src/lib/trash.ts"
   ],
   "Untitled section": [
     "web/src/app/BoardView.tsx",
+    "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
@@ -10717,6 +10813,12 @@
   ],
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": [
     "web/src/app/UnlockScreen.tsx"
+  ],
+  "Urgent and important": [
+    "web/src/lib/boardTemplates.ts"
+  ],
+  "Urgent, not important": [
+    "web/src/lib/boardTemplates.ts"
   ],
   "Usage": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -11399,6 +11501,9 @@
   "a public link": [
     "web/src/lib/history.ts"
   ],
+  "a removed project": [
+    "web/src/lib/rules.ts"
+  ],
   "a section": [
     "web/src/lib/assistant.ts"
   ],
@@ -11428,6 +11533,9 @@
   ],
   "address": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "adds {labels}": [
+    "web/src/lib/rules.ts"
   ],
   "admin": [
     "web/src/lib/assistants.ts",
@@ -11541,6 +11649,9 @@
   "completed|version": [
     "web/src/lib/historyVersions.ts"
   ],
+  "completes": [
+    "web/src/lib/rules.ts"
+  ],
   "compressed": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -11615,6 +11726,15 @@
   ],
   "due in the period, not done by its end": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "due next week": [
+    "web/src/lib/rules.ts"
+  ],
+  "due today": [
+    "web/src/lib/rules.ts"
+  ],
+  "due tomorrow": [
+    "web/src/lib/rules.ts"
   ],
   "due, not done yet": [
     "web/src/app/HabitHistory.tsx"
@@ -11867,6 +11987,9 @@
   "moved|version": [
     "web/src/lib/historyVersions.ts"
   ],
+  "moves to Someday": [
+    "web/src/lib/rules.ts"
+  ],
   "must start with \"every\"": [
     "web/src/lib/recurrence.ts"
   ],
@@ -11896,7 +12019,8 @@
     "web/src/lib/history.ts"
   ],
   "no date": [
-    "web/src/lib/activity.ts"
+    "web/src/lib/activity.ts",
+    "web/src/lib/rules.ts"
   ],
   "no deadline": [
     "web/src/app/RemindersField.tsx"
@@ -12098,6 +12222,9 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/calendar/PlanRow.tsx"
   ],
+  "priority {p}": [
+    "web/src/lib/rules.ts"
+  ],
   "project": [
     "web/src/lib/activityRuns.ts",
     "web/src/lib/history.ts"
@@ -12107,6 +12234,9 @@
   ],
   "project label filter": [
     "web/src/app/palette/registry.ts"
+  ],
+  "project {project}": [
+    "web/src/lib/rules.ts"
   ],
   "projected": [
     "web/src/app/calendar/PlanRow.tsx"
@@ -12143,6 +12273,9 @@
   "removed the due date": [
     "web/src/lib/activity.ts"
   ],
+  "removes {labels}": [
+    "web/src/lib/rules.ts"
+  ],
   "renamed the task": [
     "web/src/lib/activityRuns.ts"
   ],
@@ -12157,6 +12290,9 @@
   ],
   "reopened|version": [
     "web/src/lib/historyVersions.ts"
+  ],
+  "reopens": [
+    "web/src/lib/rules.ts"
   ],
   "repeat rule": [
     "web/src/lib/activityRuns.ts"
@@ -12187,6 +12323,9 @@
   ],
   "section is not in the task’s project": [
     "web/src/lib/sections.ts"
+  ],
+  "section {section} of {project}": [
+    "web/src/lib/rules.ts"
   ],
   "secure connection failed": [
     "web/src/app/auditFormat.ts"
@@ -12223,6 +12362,9 @@
   ],
   "smtp.example.com": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "start cleared": [
+    "web/src/lib/rules.ts"
   ],
   "stopped waiting for other tasks": [
     "web/src/lib/activity.ts"
@@ -13095,6 +13237,9 @@
   ],
   "{tasks, plural, one {It leaves the sidebar with # open task} other {It leaves the sidebar with # open tasks}} {subs, plural, one {and its sub-project} other {and its # sub-projects}}. You can unarchive it from Settings → Data.": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "{task} already matches {column}": [
+    "web/src/lib/undoActions.ts"
   ],
   "{text} and {n} more": [
     "web/src/lib/activityRuns.ts"

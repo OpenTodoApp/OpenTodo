@@ -82,6 +82,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | view | `kind`, `group_by`, `sort_by`, `sort_dir` | string (enumeration, see "Saved views") |
 | view | `pinned` | boolean |
 | view | `panels` | array of strings (view ids) |
+| view | `on_drop` | null or an on-drop rule object (see "Saved views") |
 | view | `position`, `created_at` | number |
 | view | `deleted_at` | number or null |
 | reminder | `task_id` | string (task id, required) |
@@ -281,6 +282,7 @@ A `view` is a saved filter query with its presentation options (OpenSpec `custom
 - `query` is the query string exactly as typed, in the grammar of `docs/filters.md`, never a parsed form. Each client parses it when the view is shown; a query a client cannot parse (for example a term added by a newer version) shows the parse error and no results instead of wrong results.
 - `kind` is `list` or `dashboard`; `group_by` is `project`, `due`, `priority`, `label` or `none`; `sort_by` is `due`, `priority`, `position`, `created` or `title`; `sort_dir` is `asc` or `desc`. On the wire these are plain strings so a future value is additive. The op schema accepts any string; a client that meets a value it does not know shows the default (`list`, `project`, `due`, `asc`) without rewriting the field, so the newer device keeps its choice. Only the REST API rejects unknown values, because REST requests are sequential and safe to refuse.
 - `panels` holds the ordered view ids shown by a dashboard (empty for lists). Like `task.labels` it is a single LWW register: two devices editing the panel list offline end with the newer list. A panel whose view is missing or deleted is shown as a placeholder; clients refuse to add a dashboard as a panel.
+- `on_drop` (OpenSpec `rule-boards`) is a list view's on-drop rule: `null` or an object of at most one choice per kind, `add_labels` / `remove_labels` (up to 32 label ids each), `priority` 1–4, `due` `today` / `tomorrow` / `next-week` / `clear`, `start` `someday` / `clear`, `section` `{project_id, section_id | null}` and `state` `complete` / `reopen`. The op schema checks this shape (unknown keys are refused; a new key is a server-first schema addition) but never that the ids exist. It is one LWW register, like `panels`: two devices setting a rule offline end with the newer rule, whole. Older clients keep the field in the row and ignore it, and their edits of other fields leave it alone. A rule acts only when a device drops a card on a board column showing the view: that device turns it into ordinary task field ops (its logical today resolves the dates), so nothing is evaluated on the server. Which card a board keeps showing after a drop is device state, never synced. Not a content field: it holds ids and enumerations only.
 - The start view (the view a device opens on launch) is **not** synced: it lives in the device's `meta` table under `startView`, like the collapsed projects.
 
 ### Encrypted values

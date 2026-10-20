@@ -663,6 +663,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `position` | number | sidebar order; defaults to the creation time |
 | `color` | string | CSS colour; default `#64748b` |
 | `panels` | string[] | dashboards only: up to 6 ids of existing, non-deleted **list** views, no duplicates, never the dashboard itself; replaced as a whole on PATCH |
+| `on_drop` | object or null | list views only: what a card dropped on a board column showing this view gets (OpenSpec `rule-boards`); `null` (the default) or an object with at most these keys: `add_labels` and `remove_labels` (up to 32 ids of existing, non-deleted labels each), `priority` (1–4), `due` (`"today"`, `"tomorrow"`, `"next-week"` or `"clear"`), `start` (`"someday"` or `"clear"`), `section` (`{"project_id":"…","section_id":"…"\|null}`, a section of that project or none) and `state` (`"complete"` or `"reopen"`). Unknown keys, values outside these sets and any rule on a dashboard are refused with 400 naming the field; replaced as a whole on PATCH; every representation and the export carry it, `null` when unset |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
 Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by` and `sort_dir` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
@@ -1638,7 +1639,17 @@ Save a view and pin it (the response carries `id`, `position` and the default gr
 curl -sS "$OT/api/v1/views" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"name":"Waiting","query":"@waiting","pinned":true}'
 # 201 {"color":"#64748b","created_at":1760090000000,"group_by":"project","id":"…","kind":"list","name":"Waiting",
-#      "panels":[],"pinned":true,"position":1760090000000,"query":"@waiting","sort_by":"due","sort_dir":"asc"}
+#      "on_drop":null,"panels":[],"pinned":true,"position":1760090000000,"query":"@waiting","sort_by":"due","sort_dir":"asc"}
+```
+
+Give it an on-drop rule, so a card dropped on its board column gets priority 1 and today's date (the date is resolved on the device that applies the drop):
+
+```bash
+curl -sS -X PATCH "$OT/api/v1/views/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"on_drop":{"priority":1,"due":"today"}}'
+curl -sS -X PATCH "$OT/api/v1/views/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"on_drop":{"due":"friday"}}'
+# 400 {"error":{"code":"invalid_input","message":"view.on_drop: due must be one of [today tomorrow next-week clear]"}}
 ```
 
 Group it by due date with priority 1 first, then build a dashboard from it:

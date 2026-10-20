@@ -116,6 +116,11 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 			return invalidView("view.query: %s", err.Error())
 		}
 	}
+	if raw, has := body["on_drop"]; has {
+		if err := s.checkOnDrop(ctx, uid, kind, raw); err != nil {
+			return err
+		}
+	}
 	if raw, has := body["panels"]; has {
 		var panels []string
 		if json.Unmarshal(raw, &panels) != nil {
@@ -145,6 +150,60 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 			}
 			if kindOf(nil, p) != "list" {
 				return invalidView("view.panels: view %q is not a list view (dashboards cannot be nested)", pid)
+			}
+		}
+	}
+	return nil
+}
+
+// checkOnDrop validates a view's on-drop rule against current state (OpenSpec
+// change rule-boards, design D2): list views only, the shape of the op kind, label
+// ids that exist and are not deleted, and a section of the named project. The
+// value is written whole, so a patch replaces the rule.
+func (s *Server) checkOnDrop(ctx context.Context, uid, kind string, raw json.RawMessage) error {
+	if string(raw) == "null" {
+		return nil
+	}
+	if kind != "list" {
+		return invalidView("view.on_drop is only allowed on list views")
+	}
+	rule, err := opsync.ParseRule(raw)
+	if err != nil {
+		return invalidView("view.on_drop: %s", err.Error())
+	}
+	live := func(entity, id string) (opsync.Entity, error) {
+		e, err := s.sync.Get(ctx, uid, entity, id)
+		if err != nil || e == nil || e.Deleted() {
+			return nil, err
+		}
+		return e, nil
+	}
+	for field, ids := range map[string][]string{"add_labels": rule.AddLabels, "remove_labels": rule.RemoveLabels} {
+		for _, lid := range ids {
+			l, err := live("label", lid)
+			if err != nil {
+				return err
+			}
+			if l == nil {
+				return invalidView("view.on_drop.%s references unknown or deleted label %q", field, lid)
+			}
+		}
+	}
+	if sec := rule.Section; sec != nil {
+		p, err := live("project", sec.ProjectID)
+		if err != nil {
+			return err
+		}
+		if p == nil {
+			return invalidView("view.on_drop.section references unknown or deleted project %q", sec.ProjectID)
+		}
+		if sec.SectionID != nil {
+			row, err := live("section", *sec.SectionID)
+			if err != nil {
+				return err
+			}
+			if row == nil || idOf(row["project_id"]) != sec.ProjectID {
+				return invalidView("view.on_drop.section: section %q is not a section of project %q", *sec.SectionID, sec.ProjectID)
 			}
 		}
 	}

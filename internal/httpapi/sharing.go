@@ -208,6 +208,16 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 		}
 		return nil
 	}
+	if entity == "view" {
+		// Every view representation carries on_drop, null when unset
+		// (OpenSpec change rule-boards, "Views API and export").
+		for _, e := range list {
+			if _, has := e["on_drop"]; e != nil && !has {
+				e["on_drop"] = json.RawMessage("null")
+			}
+		}
+		return nil
+	}
 	if entity != "project" || len(list) == 0 {
 		return nil
 	}

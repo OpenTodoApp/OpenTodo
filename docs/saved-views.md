@@ -1,6 +1,6 @@
 ---
 title: Saved views
-summary: Turn a filter query into a view in the sidebar, pin it to Favourites, group and sort it, manage it from its menu, and put up to six views on one dashboard.
+summary: Turn a filter query into a view in the sidebar, pin it to Favourites, group and sort it, manage it from its menu, and put up to six views on one board whose columns re-plan the cards dropped on them.
 audience: user
 section: Guides
 specs: [custom-views]
@@ -34,10 +34,20 @@ Every saved view has the same menu, wherever you open it: the **⋯** button on 
 
 ## Build a dashboard
 
-A dashboard puts up to six saved views side by side, each showing its count and first ten tasks. It's handy for a morning review: "Due this week", "Deep work" and "Waiting on others" on one screen.
+A dashboard (a board) puts up to six saved views side by side, each with its count and first ten tasks: "Due this week" and "Waiting on others" for a morning review.
 
 <picture><source srcset="images/dashboard-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/dashboard-light.webp" alt="The Weekly review dashboard with three panels: Due this week, Deep work and Waiting on others."></picture>
 
-Open the views list (<kbd>g</kbd> <kbd>v</kbd>), choose **+ New dashboard**, name it, then add saved views as panels from the dashboard's header. On a phone the panels stack. Move between panels with <kbd>Tab</kbd>, and through a panel's tasks with <kbd>j</kbd> / <kbd>k</kbd>.
+Open the views list (<kbd>g</kbd> <kbd>v</kbd>), choose **New board**, then **Empty board**, name it, then add saved views as panels from the dashboard's header. Panels stack on a phone. Move between panels with <kbd>Tab</kbd>, and through a panel's tasks with <kbd>j</kbd> / <kbd>k</kbd>.
+
+### Sort work by dropping cards
+
+In **Arrange**, choose **Rule** next to a panel to set what a dropped card gets: labels added or removed, a priority, a date (today, tomorrow, next week or none), Someday, a section, completed or reopened. A bolt marks a column with a rule; others take no drops.
+
+Drag a card onto a column, or press <kbd>Shift</kbd>+<kbd>→</kbd> / <kbd>Shift</kbd>+<kbd>←</kbd> to move the selected card to the next column with a rule. A message names the changes, with Undo. A card that still doesn't match the column's filter stays there, marked **Not matching**, until you leave the board.
+
+**New board** also offers the **Eisenhower matrix**: four filters by priority and date, **Urgent and important** to **Neither**, each with a rule.
+
+<picture><source srcset="images/eisenhower-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/eisenhower-light.webp" alt="The Eisenhower board with four quadrants: Urgent and important, Important, not urgent, Urgent, not important, and Neither."></picture>
 
 Each device can open on a saved view or a dashboard: see [Choose where the app opens](views.md#choose-where-the-app-opens).

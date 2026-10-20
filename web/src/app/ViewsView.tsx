@@ -3,10 +3,11 @@
 // the start view, which is a per-device preference in local meta.
 import { useMemo, useState } from 'react'
 import type { View } from '../lib/types'
-import { createView, deleteView, evaluateViews, isDashboard, reorderView, setStartView, updateView } from '../lib/views'
+import { deleteView, evaluateViews, isDashboard, reorderView, setStartView, updateView } from '../lib/views'
 import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
 import { useFavourites } from './useFavourites'
 import { NamePrompt } from './NamePrompt'
+import { NewBoardDialog } from './NewBoardDialog'
 import { navigate } from './router'
 import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { useStartView, useViewData, useViews } from './useViews'
@@ -132,15 +133,7 @@ export function ViewsView() {
       <ListGroupHeader title={t('Boards')} count={boards.length} />
       <ul className="space-y-0.5">{boards.map(row)}</ul>
       {boards.length === 0 && <p className="px-2 text-body text-faint">{t('None yet.')}</p>}
-      {creating && (
-        <NamePrompt title={t('New board')} label={t('Board name')} confirm={t('Create')} hint={t('Add up to six saved filters as panels.')}
-          onCancel={() => setCreating(false)}
-          onSubmit={async (name) => {
-            const id = await createView({ name, kind: 'dashboard' })
-            setCreating(false)
-            navigate({ view: 'view', id })
-          }} />
-      )}
+      {creating && <NewBoardDialog onCancel={() => setCreating(false)} onCreated={(id) => { setCreating(false); navigate({ view: 'view', id }) }} />}
     </PageBody>
   )
 }

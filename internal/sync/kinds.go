@@ -36,6 +36,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kFieldValue:     checkFieldValue,
 	kInstant:        orNull(checkInstant),
 	kOrigin:         origin.CheckValue,
+	kRule:           orNull(checkRule),
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }

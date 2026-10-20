@@ -221,7 +221,7 @@ func userIDOf(t *testing.T, e *env) string {
 
 func TestExportIncludesViews(t *testing.T) {
 	e := registeredEnv(t)
-	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting"})
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting", "on_drop": map[string]any{"priority": 2}})
 	e.mustStatus(resp, 201, out)
 	resp, out = e.do("POST", "/api/v1/views", map[string]any{"name": "Old", "query": "p1"})
 	e.mustStatus(resp, 201, out)
@@ -243,9 +243,127 @@ func TestExportIncludesViews(t *testing.T) {
 	if deleted != 1 {
 		t.Fatalf("export should keep the deleted view, got %d deleted", deleted)
 	}
+	// Every exported view carries on_drop: the rule, or null (rule-boards).
+	for _, v := range views {
+		m := v.(map[string]any)
+		r, has := m["on_drop"]
+		switch {
+		case !has:
+			t.Fatalf("exported view without on_drop: %v", m)
+		case m["name"] == "Waiting" && r.(map[string]any)["priority"] != float64(2):
+			t.Fatalf("exported rule = %v", r)
+		case m["name"] == "Old" && r != nil:
+			t.Fatalf("view without a rule exported on_drop %v", r)
+		}
+	}
 	for _, k := range []string{"projects", "tasks", "labels"} {
 		if _, ok := out[k]; !ok {
 			t.Fatalf("export lost %s: %v", k, out)
 		}
+	}
+}
+
+// TestViewsOnDrop covers the REST side of on-drop rules (OpenSpec change
+// rule-boards): the null default, a valid patch replacing the rule whole, every
+// case of the spec's "Invalid rule" and authentication.
+func TestViewsOnDrop(t *testing.T) {
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting", "pinned": true})
+	e.mustStatus(resp, 201, out)
+	if v, has := out["on_drop"]; !has || v != nil {
+		t.Fatalf("created view on_drop = %v (has %v)", v, has)
+	}
+	list := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/views", map[string]any{"name": "Dash", "kind": "dashboard"})
+	e.mustStatus(resp, 201, out)
+	dash := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	errand := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "gone"})
+	e.mustStatus(resp, 201, out)
+	gone := out["id"].(string)
+	resp, out = e.do("DELETE", "/api/v1/labels/"+gone, nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Home"})
+	e.mustStatus(resp, 201, out)
+	home := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Work"})
+	e.mustStatus(resp, 201, out)
+	work := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/sections", map[string]any{"name": "Doing", "project_id": home})
+	e.mustStatus(resp, 201, out)
+	doing := out["id"].(string)
+
+	resp, out = e.do("PATCH", "/api/v1/views/"+list, map[string]any{"on_drop": map[string]any{"priority": 1, "due": "today"}})
+	e.mustStatus(resp, 200, out)
+	if r, _ := out["on_drop"].(map[string]any); r["priority"] != float64(1) || r["due"] != "today" {
+		t.Fatalf("patched on_drop = %v", out["on_drop"])
+	}
+	// A patch replaces the rule whole.
+	rule := map[string]any{"add_labels": []string{errand}, "section": map[string]any{"project_id": home, "section_id": doing}, "state": "reopen"}
+	resp, out = e.do("PATCH", "/api/v1/views/"+list, map[string]any{"on_drop": rule})
+	e.mustStatus(resp, 200, out)
+	if r, _ := out["on_drop"].(map[string]any); r["priority"] != nil || r["state"] != "reopen" {
+		t.Fatalf("replaced on_drop = %v", out["on_drop"])
+	}
+	resp, out = e.do("PATCH", "/api/v1/views/"+list, map[string]any{"on_drop": map[string]any{"section": map[string]any{"project_id": work, "section_id": nil}}})
+	e.mustStatus(resp, 200, out)
+
+	cases := []struct {
+		id   string
+		rule any
+		msg  string
+	}{
+		{list, map[string]any{"priority": 5}, "priority must be from 1"},
+		{list, map[string]any{"due": "friday"}, "due must be one of"},
+		{list, map[string]any{"add_labels": []string{"nope"}}, "unknown or deleted label"},
+		{list, map[string]any{"remove_labels": []string{gone}}, "unknown or deleted label"},
+		{list, map[string]any{"colour": "red"}, "unknown rule key"},
+		{list, map[string]any{"section": map[string]any{"project_id": work, "section_id": doing}}, "is not a section of project"},
+		{list, map[string]any{"section": map[string]any{"project_id": "nope", "section_id": nil}}, "unknown or deleted project"},
+		{list, "priority 1", "must be null or an object"},
+		{dash, map[string]any{"priority": 1}, "only allowed on list views"},
+	}
+	for _, c := range cases {
+		resp, out = e.do("PATCH", "/api/v1/views/"+c.id, map[string]any{"on_drop": c.rule})
+		e.mustStatus(resp, 400, out)
+		if errCode(out) != "invalid_input" || !strings.Contains(errMessage(out), "view.on_drop") || !strings.Contains(errMessage(out), c.msg) {
+			t.Errorf("on_drop %v: error = %v, want message containing %q", c.rule, out, c.msg)
+		}
+	}
+	resp, out = e.do("POST", "/api/v1/views", map[string]any{"name": "Dash2", "kind": "dashboard", "on_drop": map[string]any{"priority": 1}})
+	e.mustStatus(resp, 400, out)
+	// Nothing was written by the rejected patches.
+	resp, out = e.do("GET", "/api/v1/views/"+list, nil)
+	e.mustStatus(resp, 200, out)
+	if r, _ := out["on_drop"].(map[string]any); r["section"].(map[string]any)["project_id"] != work {
+		t.Fatalf("on_drop changed by rejected patches: %v", out["on_drop"])
+	}
+	resp, out = e.do("PATCH", "/api/v1/views/"+list, map[string]any{"on_drop": nil})
+	e.mustStatus(resp, 200, out)
+	if out["on_drop"] != nil {
+		t.Fatalf("cleared on_drop = %v", out["on_drop"])
+	}
+	resp, out = newClientFor(e).do("PATCH", "/api/v1/views/"+list, map[string]any{"on_drop": map[string]any{"priority": 1}})
+	e.mustStatus(resp, 401, out)
+}
+
+// TestViewsAcceptEisenhowerQueries posts the four queries of the Eisenhower
+// matrix template (spec "Template parses on the server"); the web test of
+// boardTemplates.ts uses the same literal strings.
+func TestViewsAcceptEisenhowerQueries(t *testing.T) {
+	e := registeredEnv(t)
+	for _, c := range []struct {
+		name, query string
+		rule        map[string]any
+	}{
+		{"Urgent and important", "(p1 | p2) & (due <= tomorrow | deadline <= tomorrow)", map[string]any{"priority": 1, "due": "today"}},
+		{"Important, not urgent", "(p1 | p2) & !(due <= tomorrow | deadline <= tomorrow) & !someday", map[string]any{"priority": 2, "due": "next-week"}},
+		{"Urgent, not important", "!(p1 | p2) & (due <= tomorrow | deadline <= tomorrow)", map[string]any{"priority": 3, "due": "today"}},
+		{"Neither", "!(p1 | p2) & !(due <= tomorrow | deadline <= tomorrow) & !someday", map[string]any{"priority": 4, "due": "clear"}},
+	} {
+		resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": c.name, "query": c.query, "kind": "list", "on_drop": c.rule})
+		e.mustStatus(resp, 201, out)
 	}
 }

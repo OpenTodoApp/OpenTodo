@@ -277,6 +277,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'dashboard.open-view', keys: ['o'], description: 'Open the focused dashboard panel’s view', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
   { id: 'dashboard.complete', keys: ['c'], description: 'Complete the selected task of the dashboard panel', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
   { id: 'dashboard.escape', keys: ['Esc'], description: 'Clear the dashboard selection', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
+  { id: 'dashboard.move-prev', keys: ['Shift+←'], description: 'On a board: move the selected card to the previous panel that has a rule, applying it (the card stays selected)', section: 'filter', scope: 'view', views: ['dashboard'] },
+  { id: 'dashboard.move-next', keys: ['Shift+→'], description: 'On a board: move the selected card to the next panel that has a rule, applying it', section: 'filter', scope: 'view', views: ['dashboard'] },
   { id: 'filter.history', keys: ['↑', '↓'], description: 'In the filter query: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
 
   // ---- trash, projects and updates

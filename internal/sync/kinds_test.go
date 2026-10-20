@@ -8,7 +8,7 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kOrigin; k++ {
+	for k := kString; k <= kRule; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -103,6 +103,29 @@ func TestCheckKindTable(t *testing.T) {
 		{"origin long title", kOrigin, `{"kind":"email","id":"1","title":"` + strings.Repeat("t", 600) + `"}`, "title must be at most 500"},
 		{"origin long id", kOrigin, `{"kind":"email","id":"` + strings.Repeat("i", 513) + `"}`, "id must be at most 512"},
 		{"origin long url", kOrigin, `{"kind":"url","url":"https://a.example/` + strings.Repeat("u", 2048) + `"}`, "at most 2048"},
+		// On-drop rule (OpenSpec change rule-boards, design D2).
+		{"rule null", kRule, `null`, ""},
+		{"rule empty", kRule, `{}`, ""},
+		{"rule priority due", kRule, `{"priority":1,"due":"today"}`, ""},
+		{"rule labels", kRule, `{"add_labels":["l1"],"remove_labels":["l2"]}`, ""},
+		{"rule start someday", kRule, `{"start":"someday"}`, ""},
+		{"rule start clear", kRule, `{"start":"clear","due":"clear"}`, ""},
+		{"rule next week", kRule, `{"due":"next-week"}`, ""},
+		{"rule section", kRule, `{"section":{"project_id":"p1","section_id":"s1"}}`, ""},
+		{"rule section none", kRule, `{"section":{"project_id":"p1","section_id":null}}`, ""},
+		{"rule state", kRule, `{"state":"complete"}`, ""},
+		{"rule reopen", kRule, `{"state":"reopen"}`, ""},
+		{"rule unknown key", kRule, `{"colour":"red"}`, "unknown rule key"},
+		{"rule priority 5", kRule, `{"priority":5}`, "priority must be from 1"},
+		{"rule due friday", kRule, `{"due":"friday"}`, "due must be one of"},
+		{"rule state other", kRule, `{"state":"archive"}`, "state must be one of"},
+		{"rule string", kRule, `"priority 1"`, "must be null or an object"},
+		{"rule array", kRule, `[]`, "must be null or an object"},
+		{"rule label type", kRule, `{"add_labels":"l1"}`, "wrong type"},
+		{"rule label empty", kRule, `{"add_labels":[""]}`, "ids must be 1 to"},
+		{"rule too many labels", kRule, `{"add_labels":[` + strings.TrimSuffix(strings.Repeat(`"l",`, MaxRuleLabels+1), ",") + `]}`, "at most 32"},
+		{"rule section without project", kRule, `{"section":{"section_id":"s1"}}`, "project_id must be"},
+		{"rule section extra", kRule, `{"section":{"project_id":"p1","x":1}}`, "only project_id and section_id"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

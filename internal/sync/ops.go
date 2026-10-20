@@ -144,6 +144,11 @@ const (
 	// {kind, provider?, id?, url?, title?} validated by internal/origin
 	// (closed kind list, http(s) URL only, bounded lengths, no unknown members).
 	kOrigin
+	// kRule is a saved list view's on-drop rule (OpenSpec change rule-boards,
+	// design D2): null or an object of at most one choice per kind, checked in
+	// rule.go (closed key set, enumerations, bounded label lists). Sync checks
+	// the shape only; REST resolves the ids.
+	kRule
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -373,6 +378,7 @@ var Schema = map[string]map[string]kind{
 		"position":   kNumber,
 		"color":      kString,
 		"panels":     kStringList,
+		"on_drop":    kRule,
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},

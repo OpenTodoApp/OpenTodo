@@ -185,6 +185,9 @@ const mk = async (name, query) => { await post('views', { name, query, pinned: f
 await mk('Today p1', 'today & p1')
 await mk('Errands', '@errand')
 await pageA.getByRole('button', { name: 'New board' }).click()
+// The chooser (rule-boards): Empty board is preselected.
+await pageA.locator('[data-board-choice="empty"] input').check()
+await pageA.getByRole('button', { name: 'Next' }).click()
 await pageA.getByLabel('Board name').fill('Morning')
 await pageA.getByLabel('Board name').press('Enter')
 await pageA.getByRole('heading', { name: 'Morning' }).waitFor()

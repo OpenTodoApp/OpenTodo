@@ -259,9 +259,30 @@ export interface View {
   position: number
   color: string
   panels: string[]
+  /** List views only: what a drop into a board column showing this view changes (OpenSpec change `rule-boards`). */
+  on_drop: OnDropRule | null
   created_at: number
   deleted_at: number | null
   _clock: Clock
+}
+
+export const RULE_DUE = ['today', 'tomorrow', 'next-week', 'clear'] as const
+export const RULE_START = ['someday', 'clear'] as const
+export const RULE_STATE = ['complete', 'reopen'] as const
+
+/**
+ * A saved list view's on-drop rule (rule-boards D2): at most one choice per kind.
+ * Synced as one whole value; a key this build does not know is kept in the row
+ * and ignored when planning.
+ */
+export interface OnDropRule {
+  add_labels?: string[]
+  remove_labels?: string[]
+  priority?: Priority
+  due?: (typeof RULE_DUE)[number]
+  start?: (typeof RULE_START)[number]
+  section?: { project_id: string; section_id: string | null }
+  state?: (typeof RULE_STATE)[number]
 }
 
 /** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
@@ -1247,7 +1268,7 @@ export const REMINDER_FIELDS = [
 ] as const
 
 export const VIEW_FIELDS = [
-  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels',
+  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels', 'on_drop',
   'created_at', 'deleted_at',
 ] as const
 
