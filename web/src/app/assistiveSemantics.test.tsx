@@ -93,10 +93,15 @@ describe('row text for screen readers', () => {
   } as Task)
 
   it('the open button reads the title and every chip; an undecryptable title is read as the warning', async () => {
-    const r = await render(<ul><TaskRow task={task({ title: 'Buy milk', description: 'two litres' })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    const r = await render(<ul><TaskRow task={task({ title: 'Buy milk', description: 'two litres' })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} detail="detailed" /></ul>)
     expect(spokenText(r.container.querySelector('[data-row-open]')!)).toMatch(/^Buy milk\s*Has notes$/)
     expect(r.container.querySelector('[data-row-controls] button')!.getAttribute('aria-label')).toBe('Complete Buy milk')
     await r.unmount()
+    // Calm rows (calm-rows D7): the counts follow the open button in the row and are read there.
+    const c = await render(<ul><TaskRow task={task({ title: 'Buy milk', description: 'two litres' })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    expect(spokenText(c.container.querySelector('[data-row-open]')!)).toBe('Buy milk')
+    expect(spokenText(c.container.querySelector('[data-row-counts]')!)).toBe('Has notes')
+    await c.unmount()
     const e = await render(<ul><TaskRow task={task({ title: 'b64:AAAA', _e2ee: { raw: { title: 'b64:AAAA' } } } as Partial<Task>)} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
     expect(spokenText(e.container.querySelector('[data-row-title]')!)).toBe("This title could not be decrypted with this device's key")
     // The ciphertext is never read out as the task's name.

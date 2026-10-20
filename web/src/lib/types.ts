@@ -346,6 +346,8 @@ export interface UserPrefs {
   sidebar_destinations: string
   /** Row density (ux-overhaul): comfortable (default) or compact; unknown values read as comfortable. */
   density: string
+  /** Row detail (calm-rows): calm (default) or detailed; unknown values read as calm. */
+  row_detail: string
   /** The first-run card (ux-overhaul, first-run): "done" once finished or skipped on any device. */
   first_run: string
   /** Interface language (app-localization D1): 'system' or a shipped code; unknown values read as 'system'. */

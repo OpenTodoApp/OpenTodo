@@ -19,6 +19,8 @@ import type { ListRoute } from './useListModel'
 
 export interface RowContext {
   view: ListRoute['view']
+  /** The open label's id in a label's view: its own chip is left out of Calm rows (calm-rows D3). */
+  labelId?: string
   userId?: string
   projectMap: Map<string, Project>
   labelMap: Map<string, Label>
@@ -60,6 +62,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           ? (r.task.assignee_id === c.userId ? t('You') : memberName(r.task.assignee_id, c.memberMap) ?? t('Former member')) : null}
         assignedToMe={!!c.userId && r.task.assignee_id === c.userId}
         showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox'}
+        implied={r.implied}
+        omitLabel={c.view === 'label' ? c.labelId : undefined}
         selected={r.task.id === c.selectedId}
         progress={c.progress.get(r.task.id)}
         blockedBy={c.blocked.get(r.task.id)}

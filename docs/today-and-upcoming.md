@@ -15,7 +15,7 @@ Today (<kbd>g</kbd> <kbd>t</kbd>) and Upcoming (<kbd>g</kbd> <kbd>u</kbd>) are t
 
 ## Plan your day with Today
 
-Today is where most people start; a task you add here with [quick add](quick-add.md) is due today. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today's tasks, sorted by time.
+Today is where most people start; a task you add here with [quick add](quick-add.md) is due today. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today's tasks, sorted by time; a timed task shows its time alone, since the heading already says Today.
 
 A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Overdue**. Each task is listed once, and the Today count in the sidebar counts the same tasks.
 

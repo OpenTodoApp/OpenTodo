@@ -1385,6 +1385,15 @@
   "Calls to return": [
     "web/src/lib/review.ts"
   ],
+  "Calm": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
+  "Calm leaves out what the view already says, colours only what needs attention and keeps counts quiet until you hover. Detailed shows every chip.": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
+  "Calm or detailed task rows": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "Can tick items": [
     "web/src/app/PublicLinksSection.tsx"
   ],
@@ -2480,6 +2489,9 @@
   ],
   "Destination works: a test file was written and deleted.": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Detailed": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Details": [
     "web/src/app/AuditPanel.tsx",
@@ -4242,6 +4254,9 @@
   ],
   "Labels: {labels}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Labels: {names}": [
+    "web/src/ui/Chips.tsx"
   ],
   "Language": [
     "web/src/app/PreferencesPanels.tsx",
@@ -7199,6 +7214,10 @@
   ],
   "Row": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Rows": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Rows with errors": [
     "web/src/app/ImportScreen.tsx"

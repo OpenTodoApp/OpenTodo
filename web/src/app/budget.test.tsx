@@ -7,6 +7,8 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { setDateTime } from '../lib/dates'
+import { createComment } from '../lib/comments'
+import { setCurrentUserId } from '../lib/sharing'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
@@ -26,6 +28,8 @@ export const MAX_CHROME_ROWS = 2
 const PROJECT_CHROME_ALLOWANCE = 3
 /** An empty task's panel: the breadcrumb, Do on, Priority and Add, never a form of empty rows. */
 export const MAX_EMPTY_TASK_ITEMS = 7
+/** A Calm row in Today: at most four metadata items at full contrast; the counts are quiet (calm-rows D10). */
+export const MAX_CALM_ROW_ITEMS = 4
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -157,6 +161,23 @@ describe('visible properties', () => {
     await waitFor(() => !!document.querySelector('aside[data-detail-for] [data-property-chips]'))
     const items = document.querySelectorAll('aside[data-detail-for] [data-property], aside[data-detail-for] button[aria-label="Add a property"]')
     expect(items.length).toBeLessThanOrEqual(MAX_EMPTY_TASK_ITEMS)
+    await r.unmount()
+  })
+
+  it('a busy Calm row in Today shows at most four full-contrast metadata items, with the counts in a quiet group', async () => {
+    const project = await createProject({ name: 'Home' })
+    const labels = [await createLabel({ name: 'errand' }), await createLabel({ name: 'call' }), await createLabel({ name: 'home' })]
+    const id = await createTask({ title: 'Busy', project_id: project, due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 30, labels })
+    await createTask({ title: 'Sub one', project_id: project, parent_id: id })
+    await createTask({ title: 'Sub two', project_id: project, parent_id: id })
+    await setCurrentUserId('u1')
+    await createComment({ taskId: id, body: 'A note' })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-row-counts] [data-comments]`), 'the busy row with its counts')
+    const row = r.container.querySelector(`[data-task-id="${id}"]`)!
+    const items = [...row.querySelector('[data-row-meta]')!.children]
+    expect(items.length, items.map((e) => e.outerHTML.slice(0, 60)).join(' | ')).toBeLessThanOrEqual(MAX_CALM_ROW_ITEMS)
+    expect(row.querySelector('[data-row-counts] [data-progress]')).toBeTruthy()
     await r.unmount()
   })
 })

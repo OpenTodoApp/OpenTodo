@@ -42,7 +42,9 @@ describe('Today groups (2.3)', () => {
     expect(ev).toBeGreaterThan(t.indexOf('Morning run'))
     expect(ev).toBeGreaterThan(t.indexOf('Email Sam'))
     expect(t.indexOf('Read a chapter')).toBeGreaterThan(ev)
-    expect(r.container.querySelector('[data-evening]')).not.toBeNull()
+    // Calm rows (calm-rows D3): the heading says "This Evening", so the row carries no date text.
+    const row = [...r.container.querySelectorAll('[data-task-id]')].find((li) => li.textContent?.includes('Read a chapter'))!
+    expect(row.querySelector('[data-date]')).toBeNull()
   })
 
   it('a hard date wins over deferral; a started task shows its chip', async () => {

@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"errors"
 	"slices"
 	"testing"
 )
@@ -89,5 +90,25 @@ func TestUserPrefsArePersonalAndConverge(t *testing.T) {
 	}
 	if got := f.field("bob", "user_prefs", "me", "language"); got != "" {
 		t.Fatalf("bob sees alice's language: %s", got)
+	}
+}
+
+// TestRowDetailValidates (calm-rows D1): the row detail preference is an additive
+// string field of user_prefs; a sync batch carrying it is accepted, another kind refused.
+func TestRowDetailValidates(t *testing.T) {
+	op := Op{ID: "o", Entity: "user_prefs", EntityID: "me", Field: "row_detail", TS: 1, Device: "D", Value: []byte(`"detailed"`)}
+	if err := Validate(op); err != nil {
+		t.Fatalf("row_detail = detailed refused: %v", err)
+	}
+	op.Value = []byte(`true`)
+	if err := Validate(op); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("row_detail = true accepted (err %v)", err)
+	}
+	f := newSharing(t)
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "row_detail", `"detailed"`)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("batch with row_detail: %+v", res)
+	}
+	if got := f.field("alice", "user_prefs", "me", "row_detail"); got != `"detailed"` {
+		t.Fatalf("row_detail = %s", got)
 	}
 }

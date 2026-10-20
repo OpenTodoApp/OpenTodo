@@ -270,15 +270,17 @@ export function compareDue(a: Due | null, b: Due | null, zone?: string): number 
   return ta < tb ? -1 : ta > tb ? 1 : 0
 }
 
-export function describeDue(due: Due | null, today = todayISO(), zone?: string, p: ResolvedDateTime = current): { label: string; tone: 'overdue' | 'today' | 'soon' | 'later' } | null {
+export function describeDue(due: Due | null, today = todayISO(), zone?: string, p: ResolvedDateTime = current): { label: string; tone: 'overdue' | 'today' | 'soon' | 'later'; time: string | null } | null {
   if (!due) return null
   const local = localDueOf(due, zone)
-  const time = local.time ? ` ${formatTime(local.time, p)}` : ''
-  if (local.date < today) return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'overdue' }
-  if (local.date === today) return { label: `${t('Today')}${time}`, tone: 'today' }
-  if (local.date === addDaysISO(today, 1)) return { label: `${t('Tomorrow')}${time}`, tone: 'soon' }
-  if (local.date < addDaysISO(today, 7)) return { label: `${weekday(local.date)}${time}`, tone: 'soon' }
-  return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later' }
+  // The time on its own (calm-rows D4): a row under a heading that already names the day shows only this.
+  const at = local.time ? formatTime(local.time, p) : null
+  const time = at ? ` ${at}` : ''
+  if (local.date < today) return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'overdue', time: at }
+  if (local.date === today) return { label: `${t('Today')}${time}`, tone: 'today', time: at }
+  if (local.date === addDaysISO(today, 1)) return { label: `${t('Tomorrow')}${time}`, tone: 'soon', time: at }
+  if (local.date < addDaysISO(today, 7)) return { label: `${weekday(local.date)}${time}`, tone: 'soon', time: at }
+  return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later', time: at }
 }
 
 /** Whole days from calendar date `from` to `to` (both `YYYY-MM-DD`; negative when `to` is earlier). */

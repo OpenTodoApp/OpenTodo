@@ -3852,5 +3852,11 @@
   "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": "Scrivi una riga qui e premi Invio; finisce in In arrivo. Prova <em>Chiamare il dentista domani alle 15</em>: data e ora diventano parte dell’attività.",
   "Your Inbox is empty.": "In arrivo è vuoto.",
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": "{n, plural, one {# in attesa di altre attività} other {# in attesa di altre attività}}",
-  "{n, plural, one {Show # completed} other {Show # completed}}": "{n, plural, one {Mostra # completata} other {Mostra # completate}}"
+  "{n, plural, one {Show # completed} other {Show # completed}}": "{n, plural, one {Mostra # completata} other {Mostra # completate}}",
+  "Calm": "Essenziale",
+  "Calm leaves out what the view already says, colours only what needs attention and keeps counts quiet until you hover. Detailed shows every chip.": "Essenziale tralascia ciò che la vista dice già, colora solo ciò che richiede attenzione e tiene discreti i conteggi finché non passi sopra con il puntatore. Dettagliata mostra ogni indicatore.",
+  "Calm or detailed task rows": "Righe delle attività essenziali o dettagliate",
+  "Detailed": "Dettagliata",
+  "Labels: {names}": "Etichette: {names}",
+  "Rows": "Righe"
 }

@@ -59,8 +59,9 @@ Nine sections (Account, Appearance, General, Notifications, Capture, Integration
 
 ## Rows and chips
 
-- A row: a 24 px leading slot (chevron only with children), the checkbox, the title, and a metadata line only when there is metadata.
-- Metadata: tone text for the date and deadline (evening and repeat as suffixes of the date), label chips, neutral chips for estimate, progress, comments, attachments and project. No icon-only glyphs.
+- A row: a 24 px leading slot (chevron only with children), the checkbox, the title, a metadata line only when there is metadata, and, in Calm rows, a trailing counts group (`data-row-counts`: progress, notes, comments, attachments) in `text-faint` that turns `text-muted` on hover or focus within the row. It is never hidden and never a control.
+- Two details, the user's `row_detail` preference (`useRowDetail()`): **Calm** (default) and **Detailed**. Detailed: tone text for the date and deadline (evening and repeat as suffixes of the date), label chips, neutral chips for estimate, progress, comments, attachments and project. Calm: the date muted except overdue (danger) and a timed today (accent), repeat as a muted `repeat` icon with its word, the priority ring coloured for P1 and P2 only, labels as `LabelDots`. No icon-only glyphs in either.
+- A row leaves out only what its view or heading states: `ListRow.implied` from `listGroups()` (the day a heading names, This Evening, Someday), `omitLabel` in a label's view and `showProject`. A new fact a heading can imply is one more field there; a new count is one more entry in `rowCounts()`.
 - Counts use tabular figures in the interface face, never a monospace face.
 - Icon sizes: 16 px in rows, 20 px in headers, 12 px in chips.
 - Empty views: one sentence, one primary action, one optional link; the key in the tooltip. Every task view renders them through `EmptyState` in `web/src/ui` with data (`title`, `action: { label, onClick, shortcut }`, `secondary`), never nodes, so a view cannot add an icon, a second line or a second button. `compact` is for an empty day inside a list of days. The `icon`, `body` and `control` slots are kept for the settings panels only, until those move to the same rule.

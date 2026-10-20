@@ -71,6 +71,9 @@ Priority: **P0** blocks the "premium" impression and is cheap to fix; **P1** is 
 | B9 | "No section 0" and "Done 0" groups are shown in list and board because completed tasks are hidden. | Empty groups collapse to the header only in list view; "No section" is hidden when empty; a section that only has completed tasks shows "3 completed" with a reveal link. | P1 | S |
 | B10 | The complete action has no reward: the row re-sorts immediately. | A 250 ms completion animation (check draws, row fades, count ticks), within `--duration-emphasis`, and a single "Undo" toast for the last completion. | P2 | M |
 | B11 | Bulk selection: a checkbox appears on hover before the priority circle, shifting the row. | The checkbox replaces the priority circle while hovering or ticked, with no layout shift. | P2 | S |
+| B12 | Row metadata repeats what the heading says: "Today" on every row of Today, the date words under each Upcoming day, "evening" under This Evening, "Someday" in Someday, the open label's chip in its own view. | Calm rows leave out what the view or group heading implies, by one table in `task-list-presentation`; the time, the repeat mark and everything not implied stay. OpenSpec change `calm-rows`. | P1 | S |
+| B13 | Colour on every property: the priority ring for P3 and P4, the date in green or violet, "repeats" in violet, every label as a coloured chip. | Calm rows colour only what needs attention: the ring for P1 and P2, the date for overdue (danger) and a timed today (accent); repeat is a muted icon with its word, labels are dots with the first name and "+n". Detailed keeps the old language. OpenSpec change `calm-rows`. | P1 | S |
+| B14 | Counts (subtask progress, comments, attachments, notes) are at full contrast in the metadata line of every row. | A quiet trailing group at the end of the row, faint until hover or focus within, never hidden and read in full. OpenSpec change `calm-rows`. | P2 | S |
 
 ### C. The task panel
 
