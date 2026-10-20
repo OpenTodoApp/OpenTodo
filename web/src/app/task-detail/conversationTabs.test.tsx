@@ -87,3 +87,47 @@ describe('ConversationTabs', () => {
     await v.unmount()
   })
 })
+
+// Conversation tabs stay reachable (OpenSpec change task-panel-polish, web-app
+// "Conversation tabs stay reachable"): the bar is sticky, a tab change never scrolls
+// the panel vertically, and a pinned bar stays where it is with the new tab under it.
+describe('a calm conversation', () => {
+  it('pins the tab bar and keeps the panel still when switching tabs', async () => {
+    const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {})
+    const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
+    await settle()
+    const bar = v.container.querySelector('[data-conversation] [role="tablist"]')!
+    expect(bar.className).toContain('sticky')
+    await click(tab(v.container, 'Activity'))
+    await settle()
+    expect(selected(v.container)).toContain('Activity')
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+    await v.unmount()
+  })
+
+  it('a pinned bar keeps its place: the new tab starts under it with room to stay pinned', async () => {
+    // A scroller around the section, with the section scrolled above its top and the bar stuck at 0.
+    const scroller = document.createElement('div')
+    scroller.style.overflowY = 'auto'
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, get: () => 600 })
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, get: () => 2000 })
+    scroller.getBoundingClientRect = () => ({ top: 0, left: 0, right: 400, bottom: 600, width: 400, height: 600, x: 0, y: 0, toJSON() {} })
+    document.body.append(scroller)
+    const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
+    scroller.append(v.container)
+    await settle()
+    const section = v.container.querySelector<HTMLElement>('[data-conversation]')!
+    const bar = section.querySelector<HTMLElement>('[role="tablist"]')!
+    section.getBoundingClientRect = () => ({ top: -500, left: 0, right: 400, bottom: 100, width: 400, height: 600, x: 0, y: -500, toJSON() {} })
+    bar.getBoundingClientRect = () => ({ top: 0, left: 0, right: 400, bottom: 40, width: 400, height: 40, x: 0, y: 0, toJSON() {} })
+    Object.defineProperty(bar, 'offsetHeight', { configurable: true, get: () => 40 })
+    scroller.scrollTop = 800
+    await click(tab(v.container, 'Activity'))
+    await settle()
+    const panel = section.querySelector<HTMLElement>('[role="tabpanel"]')!
+    expect(panel.style.minHeight).toBe('560px')
+    await v.unmount()
+    scroller.remove()
+  })
+})

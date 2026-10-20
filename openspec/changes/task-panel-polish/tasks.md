@@ -4,8 +4,8 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 
 ## 1. The conversation
 
-- [ ] 1.1 Make the tab bar sticky under the panel header (header height as a CSS variable) and keep its on-screen position on tab change (layout effect, `overflow-anchor: none`, min-height on the tab content); verify with `conversationTabs.test.tsx` (scrollTop restored so the bar's top is unchanged after switching from 14 comments to 3 activity entries) and a `Task/Panel` story at 1280×800 scrolled into the thread.
-- [ ] 1.2 Move comment actions into the header line without reserved height (hover and focus on fine pointers, a "More actions" menu on coarse pointers), set thread spacing, and scroll a posted comment into view; verify with `commentsTab.test.tsx` (no action row height at rest, the menu on coarse pointers offers Reply, Edit and Delete for own comments, a posted comment's element is scrolled into view) and the `Task/Comments` story baselines via `make ui-check`.
+- [x] 1.1 Make the tab bar sticky under the panel header (header height as a CSS variable) and keep its on-screen position on tab change (layout effect, `overflow-anchor: none`, min-height on the tab content); verify with `conversationTabs.test.tsx` (scrollTop restored so the bar's top is unchanged after switching from 14 comments to 3 activity entries) and a `Task/Panel` story at 1280×800 scrolled into the thread.
+- [x] 1.2 Move comment actions into the header line without reserved height (hover and focus on fine pointers, a "More actions" menu on coarse pointers), set thread spacing, and scroll a posted comment into view; verify with `commentsTab.test.tsx` (no action row height at rest, the menu on coarse pointers offers Reply, Edit and Delete for own comments, a posted comment's element is scrolled into view) and the `Task/Comments` story baselines via `make ui-check`.
 
 ## 2. Toggle and the date picker
 
@@ -25,3 +25,7 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 - [ ] 4.1 Update `docs/task-panel.md`, `docs/dates-and-times.md`, `docs/deadlines-and-start-dates.md`, `docs/recurring-tasks.md` and the matching Help pages; verify with `npm run docs:check`.
 - [ ] 4.2 Run `make check`; verify it passes, and record the panel chunk size difference here.
 - [ ] 4.3 Run `make openspec-validate`; verify it passes.
+
+## Implementation notes
+
+- Group 1 found a second cause of the jumping panel: `Tabs` revealed the selected tab with `scrollIntoView`, which also scrolled the panel vertically on every tab change. It now scrolls its own row sideways only (`ui/Tabs.tsx`).
