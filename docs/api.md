@@ -652,7 +652,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
 | `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"` or `"title"` | default `due` (undated tasks last) |
 | `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
-| `pinned` | boolean | shown in the sidebar's Filters group; default `false` |
+| `pinned` | boolean | shown in the sidebar's Favourites group (every view is listed in the Filters group); default `false` |
 | `position` | number | sidebar order; defaults to the creation time |
 | `color` | string | CSS colour; default `#64748b` |
 | `panels` | string[] | dashboards only: up to 6 ids of existing, non-deleted **list** views, no duplicates, never the dashboard itself; replaced as a whole on PATCH |
@@ -1636,7 +1636,7 @@ Export everything:
 curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-export.json
 ```
 
-The export includes saved views (`views`, deleted ones too) next to projects, tasks and labels. It resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours.
+The export includes saved views (`views`, deleted ones too) next to projects, tasks and labels. It resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours. Your preferences are in `user_prefs` (one row, `id` `"me"`): date and time formats, appearance, the promoted sidebar destinations, and `favourites`, the sidebar's Favourites group as an ordered, comma-separated list of `project:<id>`, `label:<id>` and `view:<id>` entries (see [sync](sync.md)).
 
 Follow live updates (the response is a `text/event-stream` that stays open; `-N` disables curl's buffering):
 

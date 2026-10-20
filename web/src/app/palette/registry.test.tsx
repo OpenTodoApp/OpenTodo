@@ -43,9 +43,9 @@ async function menuLabels(groups: ActionGroup[], header?: React.ReactNode): Prom
 
 const noop = () => {}
 const menus: [string, () => Promise<string[]>][] = [
-  ['project', () => menuLabels(projectMenuGroups(project, ctx.project!, { rename: noop }), <>{HUES.map((h) => <button key={h.name} data-menu-label={`Colour ${h.name}`} />)}</>)],
+  ['project', () => menuLabels(projectMenuGroups(project, ctx.project!, { rename: noop, pin: noop }), <>{HUES.map((h) => <button key={h.name} data-menu-label={`Colour ${h.name}`} />)}</>)],
   ['view', () => menuLabels(viewMenuGroups(other, ctx.view!.peers, false, { rename: noop, move: noop, pin: noop, startView: noop, remove: noop }))],
-  ['label', () => menuLabels(labelMenuGroups(label2, ctx.label!.labels, { edit: noop, rename: noop, move: noop }))],
+  ['label', () => menuLabels(labelMenuGroups(label2, ctx.label!.labels, { edit: noop, rename: noop, move: noop, pin: { checked: false, toggle: noop } }))],
   ['section', () => menuLabels(sectionMenuGroups('Backlog', ctx.section!, { rename: noop, move: noop, remove: noop }))],
 ]
 
@@ -58,6 +58,17 @@ describe('registry completeness', () => {
     expect(labels.length).toBeGreaterThan(2)
     const missing = labels.filter((l) => !available.has(`${kind}|${norm(l)}`))
     expect(missing, `no palette command for the ${kind} menu item(s): ${missing.join(', ')}`).toEqual([])
+  })
+
+  it('Pin to sidebar is a command for projects and labels too (sidebar-favourites)', () => {
+    expect(available.has('project|Pin to sidebar')).toBe(true)
+    expect(available.has('label|Pin to sidebar')).toBe(true)
+    expect(available.has('view|Pin to sidebar')).toBe(true)
+  })
+
+  it('Go to Projects opens the All projects page with g Shift+P', () => {
+    const go = commands(ctx).find((c) => c.label === 'Go to Projects')
+    expect(go?.shortcut).toBe('g Shift+P')
   })
 
   it('names a planted menu item that has no command', async () => {

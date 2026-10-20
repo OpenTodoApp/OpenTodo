@@ -45,6 +45,11 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetSidebarLayout() })
 
+/** Labels and Filters start folded on a new device (sidebar-favourites D5): open them as a device that stored it. */
+function openGroups(...ids: ('labels' | 'filters')[]) {
+  for (const id of ids) localStorage.setItem(`ot.sidebar.group.${id}`, '1')
+}
+
 async function waitFor(ok: () => boolean, ms = 2000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
   expect(ok()).toBe(true)
@@ -54,6 +59,7 @@ describe('one scroller', () => {
   it('only the middle part scrolls; More and labels live in it, the account row and the primary navigation outside it', async () => {
     for (let i = 0; i < 40; i++) await createProject({ name: `Project ${i}` })
     await createLabel({ name: 'errand' })
+    openGroups('labels')
     const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
     await waitFor(() => r.container.textContent!.includes('Project 39') && r.container.textContent!.includes('errand'))
     const side = r.container.querySelector('[data-sidebar]')!
@@ -243,11 +249,12 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     expect(groups()).toEqual(['Projects'])
     expect(r.container.textContent).not.toContain('Save a filter')
     expect(r.container.textContent).not.toContain('No labels yet')
-    await createView({ name: 'Errands', query: 'today' })
+    await createView({ name: 'Errands', query: 'today', pinned: false })
     await waitFor(() => groups().includes('Filters'))
     await createLabel({ name: 'errand' })
     await waitFor(() => groups().includes('Labels'))
-    expect(groups()).toEqual(['Filters', 'Projects', 'Labels'])
+    // The order is Projects, Labels, Filters (sidebar-favourites D5); an unpinned filter adds no Favourites group.
+    expect(groups()).toEqual(['Projects', 'Labels', 'Filters'])
     await r.unmount()
   })
 
@@ -355,6 +362,7 @@ describe('collapsible groups (sidebar-groups 1.2)', () => {
   it('Filters folds with its count on the heading, remembers it on the device, and keeps its All action', async () => {
     await createProject({ name: 'Home' })
     for (let i = 1; i <= 6; i++) await createView({ name: `Filter ${i}`, query: 'p1', pinned: true })
+    openGroups('filters')
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelectorAll('[data-view-id]').length === 6)
     expect(groupOf(r.container, 'Filters').querySelector('[data-group-count]')).toBeNull()
@@ -382,6 +390,7 @@ describe('collapsible groups (sidebar-groups 1.2)', () => {
   it('every group folds; a folded group takes one line, and adding a label reopens Labels', async () => {
     await createProject({ name: 'Home' })
     await createLabel({ name: 'errand' })
+    openGroups('labels')
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
     for (const g of ['Projects', 'Labels']) await click(headingOf(r.container, g))
@@ -466,6 +475,7 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
     await createProject({ name: 'Home' })
     await createLabel({ name: 'waiting' })
     await createView({ name: 'Waiting for', query: '@waiting', pinned: true })
+    openGroups('labels', 'filters')
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelector('[data-view-id]') !== null && r.container.querySelector('[data-label-row]') !== null)
     await click(opener(r.container))
@@ -486,6 +496,7 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
   it('Escape clears, restores a collapsed group and returns focus to the opener', async () => {
     await createProject({ name: 'Home' })
     await createLabel({ name: 'errand' })
+    openGroups('labels')
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
     await click(headingOf(r.container, 'Labels'))
@@ -573,6 +584,118 @@ describe('find in the drawer and the budget (sidebar-groups 3.4)', () => {
     const scrollers = [...r.container.querySelectorAll('*')].filter((el) => /\boverflow-y-auto\b/.test(el.className))
     expect(scrollers).toHaveLength(1)
     expect(scrollers[0].contains(r.container.querySelector('[data-sidebar-find]'))).toBe(true)
+    await r.unmount()
+  })
+})
+
+describe('favourites (sidebar-favourites 2.2, 2.3, 3.2)', () => {
+  const favRows = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-favourite-row]')].map((row) => {
+    const name = row.querySelector('[data-sidebar-item] .truncate')?.textContent ?? ''
+    const n = row.querySelector('[data-sidebar-item] [data-count]')?.textContent
+    return n ? `${name} ${n}` : name
+  })
+  const groups = (root: ParentNode) => [...root.querySelectorAll('[data-sidebar-group]')].map((g) => g.getAttribute('data-sidebar-group'))
+
+  it('Mixed kinds in order: each with its own count, Move up from the menu, and each row opens its view', async () => {
+    const { pin } = await import('../lib/favourites')
+    const site = await createProject({ name: 'Website launch' })
+    const design = await createProject({ name: 'Design', parent_id: site })
+    for (let i = 0; i < 4; i++) await createTask({ title: `Site ${i}`, project_id: site, priority: 1 })
+    await createTask({ title: 'Mock-ups', project_id: design })
+    const errand = await createLabel({ name: 'errand' })
+    for (let i = 0; i < 3; i++) await createTask({ title: `Errand ${i}`, labels: [errand] })
+    const deep = await createView({ name: 'Deep work', query: 'p1', pinned: false })
+    await pin('project', site)
+    await pin('view', deep)
+    await pin('label', errand)
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => favRows(r.container).length === 3)
+    // The Website launch count is its whole subtree's (5), whatever the tree's fold state.
+    await waitFor(() => favRows(r.container).join('|') === 'Website launch 5|Deep work 4|errand 3')
+    expect(groups(r.container)).toEqual(['Favourites', 'Projects', 'Labels', 'Filters'])
+    // Move "Deep work" to the top from its menu in the Favourites group.
+    const deepRow = r.container.querySelector(`[data-favourite-row="view:${deep}"]`)!
+    await click(deepRow.querySelector('button[aria-label="Menu for view Deep work"]')!)
+    await waitFor(() => !!menuItem('Move up'))
+    await click(menuItem('Move up'))
+    await waitFor(() => favRows(r.container).join('|') === 'Deep work 4|Website launch 5|errand 3')
+    // Its position among the saved filters is unchanged: only the preference was written.
+    expect((await db.outbox.toArray()).filter((o) => o.entity === 'view' && o.field === 'position')).toHaveLength(1)
+    await click(r.container.querySelector(`[data-favourite="label:${errand}"]`)!)
+    expect(location.pathname).toBe(`/label/${errand}`)
+    await click(r.container.querySelector(`[data-favourite="view:${deep}"]`)!)
+    expect(location.pathname).toBe(`/view/${deep}`)
+    await click(r.container.querySelector(`[data-favourite="project:${site}"]`)!)
+    expect(location.pathname).toBe(`/project/${site}`)
+    // Alt+↓ moves a row by keyboard and keeps the focus on it.
+    const row = r.container.querySelector<HTMLElement>(`[data-favourite="view:${deep}"]`)!
+    row.focus()
+    await key(row, 'ArrowDown', { altKey: true })
+    await waitFor(() => favRows(r.container)[1] === 'Deep work 4')
+    await waitFor(() => document.activeElement?.getAttribute('data-favourite') === `view:${deep}`)
+    await r.unmount()
+  })
+
+  it('Pinned item removed: an archive on another device takes it out without a reload, a restore brings it back', async () => {
+    const { pin } = await import('../lib/favourites')
+    const garden = await createProject({ name: 'Garden' })
+    await pin('project', garden)
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => favRows(r.container).includes('Garden'))
+    const ts = Date.now() + 10_000
+    await applyOps([{ id: 'x1', entity: 'project', entityId: garden, field: 'archived', value: true, ts, device: '~other' } as unknown as Op])
+    await waitFor(() => r.container.querySelector('[data-sidebar-group="Favourites"]') === null)
+    await applyOps([{ id: 'x2', entity: 'project', entityId: garden, field: 'archived', value: false, ts: ts + 1, device: '~other' } as unknown as Op])
+    await waitFor(() => favRows(r.container).includes('Garden'))
+    await r.unmount()
+  })
+
+  it('Pinned offline: a pinned label shows at once, is queued for sync and survives a reload', async () => {
+    const errand = await createLabel({ name: 'errand' })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-sidebar-group="Labels"]') !== null)
+    // Labels is folded on this new device: open it, then pin from the row's menu.
+    await click(headingOf(r.container, 'Labels'))
+    await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
+    await db.outbox.clear()
+    await click(r.container.querySelector('[data-label-row] button[aria-label="Menu for label errand"]')!)
+    await waitFor(() => !!document.querySelector('[role="menuitemcheckbox"]'))
+    await click([...document.querySelectorAll<HTMLElement>('[role="menuitemcheckbox"]')].find((el) => el.textContent?.includes('Pin to sidebar'))!)
+    await waitFor(() => favRows(r.container).includes('errand'))
+    expect((await db.outbox.toArray()).map((o) => `${o.entity}.${o.field}`)).toEqual(['user_prefs.favourites'])
+    await r.unmount()
+    const again = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => favRows(again.container).includes('errand'))
+    expect(again.container.querySelector(`[data-favourite="label:${errand}"]`)).not.toBeNull()
+    await again.unmount()
+  })
+
+  it('a new device folds Labels and Filters, a stored state wins, and Filters lists an unpinned filter', async () => {
+    await createProject({ name: 'Home' })
+    await createLabel({ name: 'errand' })
+    await createView({ name: 'Later', query: 'p4', pinned: false })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-sidebar-group="Filters"]') !== null)
+    expect(headingOf(r.container, 'Labels').getAttribute('aria-expanded')).toBe('false')
+    expect(headingOf(r.container, 'Filters').getAttribute('aria-expanded')).toBe('false')
+    expect(headingOf(r.container, 'Projects').getAttribute('aria-expanded')).toBe('true')
+    expect(groupOf(r.container, 'Filters').querySelector('[data-group-count]')?.textContent).toBe('1')
+    expect(r.container.querySelector('[data-sidebar-group="Favourites"]')).toBeNull()
+    await r.unmount()
+    openGroups('filters')
+    const again = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => again.container.querySelector('[data-view-id]') !== null)
+    expect(again.container.querySelector('[data-view-id] .truncate')?.textContent).toBe('Later')
+    expect(headingOf(again.container, 'Labels').getAttribute('aria-expanded')).toBe('false')
+    await again.unmount()
+  })
+
+  it('the Projects header has an All action that opens the All projects page', async () => {
+    await createProject({ name: 'Home' })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector('[data-project-id]') !== null)
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="All projects"]')!)
+    expect(location.pathname).toBe('/projects')
     await r.unmount()
   })
 })

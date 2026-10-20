@@ -9,7 +9,8 @@ import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type GroupBy, type SortBy, type SortDir, type View } from '../lib/types'
-import { runView, setPinned, updateView, viewOptions } from '../lib/views'
+import { runView, updateView, viewOptions } from '../lib/views'
+import { setFavourite } from '../lib/favourites'
 import { DashboardView } from './DashboardView'
 import { LabelPicker } from './LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from './panel'
@@ -127,7 +128,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     <PageBody width="list">
           <PageHeader title={view.name} meta={count !== null ? count : undefined} help="saved-filter"
             leading={<span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />}
-            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => act(setPinned(view.id, !view.pinned))}>{view.pinned ? t('Unpin') : t('Pin')}</Button>}
+            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => act(setFavourite('view', view.id, !view.pinned))}>{view.pinned ? t('Unpin') : t('Pin')}</Button>}
             menu={<ViewMenu view={view} />} />
 
           <div className="mb-3 border-b border-default pb-2">

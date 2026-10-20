@@ -10,6 +10,7 @@ import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
+import { ProjectsView } from './ProjectsView'
 import { SavedViewRoute } from './SavedViewView'
 import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
@@ -161,7 +162,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       setPaletteOpen(true)
     },
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
-    'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
+    'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }), 'go.projects': go({ view: 'projects' }),
     'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     // Weekly review and Statistics (stats-and-review).
@@ -236,6 +237,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <ImportScreen />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
+          ) : route.view === 'projects' ? (
+            <ProjectsView archived={route.archived} />
           ) : route.view === 'filter' ? (
             <FilterView key={route.q ?? ''} initialQuery={route.q} />
           ) : route.view === 'views' ? (

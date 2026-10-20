@@ -1769,7 +1769,6 @@
   "Pin {name}": "{name} anheften",
   "Ping delivered: {outcome}": "Ping zugestellt: {outcome}",
   "Ping failed: {outcome}": "Ping fehlgeschlagen: {outcome}",
-  "Pinned to sidebar": "An die Seitenleiste angeheftet",
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": "Platzierungsmodus für die ausgewählte Aufgabe: Pfeiltasten bewegen die Vorschau, Enter platziert, Esc bricht ab",
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": "<b>{title}</b> wird um {time} platziert · Pfeiltasten bewegen · Enter platziert · Esc bricht ab",
   "Plaintext history": "Klartextverlauf",
@@ -3858,5 +3857,14 @@
   "Calm or detailed task rows": "Ruhige oder ausführliche Aufgabenzeilen",
   "Detailed": "Ausführlich",
   "Labels: {names}": "Labels: {names}",
-  "Rows": "Zeilen"
+  "Rows": "Zeilen",
+  "Favourites": "Favoriten",
+  "Pin to sidebar": "An die Seitenleiste anheften",
+  "Menu for project {name}": "Menü für Projekt {name}",
+  "Label menu": "Label-Menü",
+  "Go to Projects": "Zu Projekte",
+  "Go to All projects: the whole tree, find a project, archived projects": "Zu Alle Projekte: der ganze Baum, ein Projekt suchen, archivierte Projekte",
+  "Find a project": "Projekt suchen",
+  "Show archived projects": "Archivierte Projekte anzeigen",
+  "Listed on the All projects page, where each can be restored.": "Auf der Seite Alle Projekte aufgeführt, wo sich jedes wiederherstellen lässt."
 }

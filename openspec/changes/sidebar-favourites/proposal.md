@@ -8,7 +8,7 @@ With `sidebar-groups` the sidebar folds and keeps its headers in view, but the t
 
 - **One pin for everything.** "Pin to sidebar" (checkable) appears in the menu of every project, label and saved filter, in the sidebar, on overview pages and in headers. Pinned items form a **Favourites** group at the top of the sidebar's scroller, mixed, in the user's order (Move up and Move down in the same menus), each with its icon or colour and its live open-task count, synced to the user's devices.
 - **Filters lists every saved filter**, not only the pinned ones; a pinned filter is in Favourites. A saved filter's existing "Pinned to sidebar" item becomes the shared "Pin to sidebar", and its `pinned` field keeps its meaning for the API, the CLI and older devices.
-- **All projects page** at `/projects`, reached from `g r`, the palette and an "All" action on the Projects header: the whole tree with counts, a find field, New project and From a template, and the archived projects behind a disclosure with their restore actions. Settings → Data links to it.
+- **All projects page** at `/projects`, reached from `g Shift+P`, the palette and an "All" action on the Projects header: the whole tree with counts, a find field, New project and From a template, and the archived projects behind a disclosure with their restore actions. Settings → Data links to it.
 - **Group order** becomes Favourites (when any), Projects, Labels, Filters; Labels and Filters start collapsed on a device that has not stored a group state, since their items can be pinned.
 - The favourites list is a new additive, synced user preference, like the promoted destinations; unknown kinds and missing ids are ignored, and saved filters pinned on an older device still appear.
 

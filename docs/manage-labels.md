@@ -13,7 +13,7 @@ order: 41
 
 ## The labels page
 
-**All** next to **Labels** in the sidebar (or <kbd>g</kbd> <kbd>l</kbd>) opens the labels page: every label with its colour, its number of open tasks, a drag handle and a **⋯** menu. The sidebar rows have the same menu.
+**All** next to **Labels** in the sidebar (or <kbd>g</kbd> <kbd>l</kbd>) opens the labels page: every label with its colour, its number of open tasks, a drag handle and a **⋯** menu. The sidebar rows and the label's own page have the same menu, with **Pin to sidebar** to add the label to **Favourites**.
 
 ## Rename, recolour and reorder
 

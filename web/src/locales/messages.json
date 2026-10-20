@@ -676,6 +676,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All projects": [
+    "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
   "All shared projects": [
@@ -735,6 +736,7 @@
   ],
   "Already first": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
@@ -746,6 +748,7 @@
   ],
   "Already last": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
@@ -901,7 +904,9 @@
     "web/src/app/ProjectHeader.tsx"
   ],
   "Archived projects": [
-    "web/src/app/ArchivedProjects.tsx"
+    "web/src/app/ArchivedProjects.tsx",
+    "web/src/app/ProjectsSettings.tsx",
+    "web/src/app/ProjectsView.tsx"
   ],
   "Archived {join}: no open tasks for 30 days.": [
     "web/src/app/ArchivePrompt.tsx"
@@ -1684,6 +1689,7 @@
     "web/src/app/ReauthDialog.tsx"
   ],
   "Collapse all": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Collapse or expand the sidebar (from 1024 px)": [
@@ -1699,6 +1705,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Collapse {name}": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Collection URL": [
@@ -2035,6 +2042,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Create": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/ViewsView.tsx"
@@ -3103,6 +3111,7 @@
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Expand all": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Expand sidebar": [
@@ -3115,6 +3124,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Expand {name}": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
@@ -3206,6 +3216,9 @@
   ],
   "Failure": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Favourites": [
+    "web/src/app/FavouritesGroup.tsx"
   ],
   "Feed URL": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -3314,6 +3327,9 @@
   "Find a person…": [
     "web/src/app/TriageView.tsx"
   ],
+  "Find a project": [
+    "web/src/app/ProjectsView.tsx"
+  ],
   "Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -3323,6 +3339,7 @@
   "Find a project…": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ProjectPickerField.tsx",
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Find a section…": [
@@ -3470,6 +3487,7 @@
   ],
   "From a template…": [
     "web/src/app/ImportScreen.tsx",
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "From address": [
@@ -3504,6 +3522,9 @@
   ],
   "Give every item one home: a project, a date, Waiting or Someday.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Go to All projects: the whole tree, find a project, archived projects": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Go to Anytime": [
     "web/src/app/palette/registry.ts",
@@ -3557,6 +3578,9 @@
   ],
   "Go to Next: the next action of every project, by context": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Go to Projects": [
+    "web/src/app/palette/registry.ts"
   ],
   "Go to Review": [
     "web/src/app/palette/registry.ts"
@@ -4202,6 +4226,9 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TaskListView.tsx"
   ],
+  "Label menu": [
+    "web/src/app/LabelsView.tsx"
+  ],
   "Label name": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/palette/registry.ts"
@@ -4434,6 +4461,9 @@
   "Listed in the evening group of Today": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "Listed on the All projects page, where each can be restored.": [
+    "web/src/app/ProjectsSettings.tsx"
+  ],
   "Lists only": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
@@ -4662,6 +4692,9 @@
   "Menu for label {name}": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Menu for project {name}": [
+    "web/src/app/ProjectRowMenu.tsx"
+  ],
   "Menu for view {name}": [
     "web/src/app/ViewsView.tsx"
   ],
@@ -4752,6 +4785,7 @@
   ],
   "Move down": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
@@ -4838,6 +4872,7 @@
   ],
   "Move up": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
@@ -4990,6 +5025,7 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "New project": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/palette/registry.ts"
   ],
@@ -5262,6 +5298,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "No projects yet.": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "No recent activity.": [
@@ -5511,6 +5548,7 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Nothing matches.": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Nothing matches. Try fewer letters, or a filter query.": [
@@ -6249,6 +6287,9 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ViewsView.tsx"
   ],
+  "Pin to sidebar": [
+    "web/src/app/menus/pinItem.ts"
+  ],
   "Pin {name}": [
     "web/src/app/ViewsView.tsx"
   ],
@@ -6257,9 +6298,6 @@
   ],
   "Ping failed: {outcome}": [
     "web/src/app/WebhooksPanel.tsx"
-  ],
-  "Pinned to sidebar": [
-    "web/src/app/ViewsView.tsx"
   ],
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": [
     "web/src/lib/shortcuts.ts"
@@ -6469,6 +6507,7 @@
   ],
   "Project name": [
     "web/src/app/ProjectHeader.tsx",
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/palette/registry.ts"
   ],
@@ -6516,6 +6555,7 @@
   ],
   "Projects": [
     "web/src/app/ProjectsSettings.tsx",
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
@@ -6879,6 +6919,7 @@
     "web/src/app/ViewsView.tsx"
   ],
   "Rename label": [
+    "web/src/app/LabelsView.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Rename project": [
@@ -7745,6 +7786,9 @@
   ],
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "Show archived projects": [
+    "web/src/app/ProjectsSettings.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx"
@@ -12056,6 +12100,7 @@
   "{n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/ArchivedProjects.tsx",
     "web/src/app/LabelsView.tsx",
+    "web/src/app/ProjectsView.tsx",
     "web/src/ui/patterns/ListGroupHeader.tsx"
   ],
   "{n, plural, one {# panel} other {# panels}}": [

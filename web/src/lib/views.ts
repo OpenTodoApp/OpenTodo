@@ -202,14 +202,15 @@ export async function setPinned(id: string, pinned: boolean): Promise<void> {
 }
 
 /**
- * Move a view one step up (-1) or down (+1) among its peers: the pinned views as shown
- * in the sidebar, or the unpinned ones in the overview. Swaps two positions in one batch.
+ * Move a view one step up (-1) or down (+1) among the saved views, as the sidebar's
+ * Filters group and the overview list them (sidebar-favourites: every saved filter is
+ * listed, pinned or not). Swaps two positions in one batch.
  */
 export async function reorderView(id: string, delta: -1 | 1): Promise<void> {
   const all = await liveViews()
   const self = all.find((v) => v.id === id)
   if (!self) return
-  const list = all.filter((v) => v.pinned === self.pinned)
+  const list = all
   const i = list.findIndex((v) => v.id === id)
   const j = i + delta
   if (j < 0 || j >= list.length) return

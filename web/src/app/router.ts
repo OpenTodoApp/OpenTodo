@@ -19,6 +19,8 @@ export type Route =
   | { view: 'task'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
+  // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
+  | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
   | { view: 'views' }
   | { view: 'view'; id: string }
@@ -77,7 +79,8 @@ function isSettingsSection(s: string | undefined): s is SettingsSectionId {
 }
 
 export function parseRoute(pathname: string): Route {
-  const [path, query = ''] = pathname.split('?')
+  const [address, hash = ''] = pathname.split('#')
+  const [path, query = ''] = address.split('?')
   const parts = path.split('/').filter(Boolean)
   switch (parts[0]) {
     case undefined:
@@ -110,6 +113,8 @@ export function parseRoute(pathname: string): Route {
       return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
+    case 'projects':
+      return hash === 'archived' ? { view: 'projects', archived: true } : { view: 'projects' }
     case 'filter': {
       // An initial query from the command palette (search-and-command-palette D4).
       const q = new URLSearchParams(query).get('q') ?? undefined
@@ -228,6 +233,8 @@ export function routePath(r: Route): string {
       return r.section ? `/settings/${r.section}` : '/settings'
     case 'import':
       return '/settings/import'
+    case 'projects':
+      return r.archived ? '/projects#archived' : '/projects'
     case 'feed':
       return '/updates'
     case 'ask':

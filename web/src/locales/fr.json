@@ -1769,7 +1769,6 @@
   "Pin {name}": "Épingler {name}",
   "Ping delivered: {outcome}": "Ping livré : {outcome}",
   "Ping failed: {outcome}": "Échec du ping : {outcome}",
-  "Pinned to sidebar": "Épinglé à la barre latérale",
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": "Mode placement pour la tâche sélectionnée : les flèches déplacent l’aperçu, Entrée la place, Échap annule",
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": "Placement de <b>{title}</b> à {time} · flèches pour déplacer · Entrée pour placer · Échap pour annuler",
   "Plaintext history": "Historique en clair",
@@ -3858,5 +3857,14 @@
   "Calm or detailed task rows": "Lignes de tâches calmes ou détaillées",
   "Detailed": "Détaillé",
   "Labels: {names}": "Étiquettes : {names}",
-  "Rows": "Lignes"
+  "Rows": "Lignes",
+  "Favourites": "Favoris",
+  "Pin to sidebar": "Épingler à la barre latérale",
+  "Menu for project {name}": "Menu du projet {name}",
+  "Label menu": "Menu de l’étiquette",
+  "Go to Projects": "Aller aux Projets",
+  "Go to All projects: the whole tree, find a project, archived projects": "Aller à Tous les projets : toute l’arborescence, rechercher un projet, projets archivés",
+  "Find a project": "Rechercher un projet",
+  "Show archived projects": "Afficher les projets archivés",
+  "Listed on the All projects page, where each can be restored.": "Listés sur la page Tous les projets, où chacun peut être restauré."
 }

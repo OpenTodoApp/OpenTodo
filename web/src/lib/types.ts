@@ -348,6 +348,8 @@ export interface UserPrefs {
   density: string
   /** Row detail (calm-rows): calm (default) or detailed; unknown values read as calm. */
   row_detail: string
+  /** Favourites (sidebar-favourites D1): ordered, comma-separated `kind:id` entries; unknown kinds and missing items are ignored. */
+  favourites: string
   /** The first-run card (ux-overhaul, first-run): "done" once finished or skipped on any device. */
   first_run: string
   /** Interface language (app-localization D1): 'system' or a shipped code; unknown values read as 'system'. */

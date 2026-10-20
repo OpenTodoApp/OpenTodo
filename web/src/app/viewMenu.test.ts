@@ -16,7 +16,7 @@ describe('view menu groups (labels-and-menus 2.1)', () => {
   it('shows pinned and start view as checked states', () => {
     const v = view('a', true)
     const items = flat(viewMenuGroups(v, [v], true, noop))
-    expect(items.find((i) => i.id === 'pin')).toMatchObject({ kind: 'check', checked: true, label: 'Pinned to sidebar' })
+    expect(items.find((i) => i.id === 'pin')).toMatchObject({ kind: 'check', checked: true, label: 'Pin to sidebar' })
     expect(items.find((i) => i.id === 'start')).toMatchObject({ kind: 'check', checked: true, disabled: true })
   })
 

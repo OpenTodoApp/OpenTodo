@@ -29,4 +29,4 @@ These cards connect OpenTodo to other tools. Some appear only when the person ru
 
 **Download export (JSON)** saves everything you have in one file, and **Download export with files (ZIP)** adds your attached files. **Import data…** brings in tasks from a file. See [Import and export](import-export.md). **Attachments** shows how much of your total your files use and how large one file may be (see [Attachments](attachments.md)). The sync status of this device is shown too.
 
-**Projects**: archive projects automatically after 30 days without open tasks, and bring back archived projects with **Restore**. See [Trash and history](trash-and-history.md#archived-projects).
+**Projects**: archive projects automatically after 30 days without open tasks. **Show archived projects** opens the Projects page at its archived projects, where **Restore** brings one back. See [Archived projects](archived-projects.md#bring-back-an-archived-project).

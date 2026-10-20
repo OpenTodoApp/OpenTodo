@@ -4,29 +4,29 @@ Depends on `sidebar-groups` being archived. Backend tasks are verified with `go 
 
 ## 1. The preference
 
-- [ ] 1.1 Add `favourites` (string) to the `user_prefs` entry of `Schema` in `internal/sync/ops.go`, to `UserPrefs` in `web/src/lib/types.ts` and to `USER_PREFS_DEFAULTS` in `web/src/lib/ops.ts`; verify with `go test ./internal/sync/...` (an op carrying the field is accepted and forwarded, an op without it still applies) and `npm test` (the defaults test).
-- [ ] 1.2 Add `web/src/lib/favourites.ts` with `favouritesOf(prefs, { projects, labels, views })`, `pin(kind, id)`, `unpin(kind, id)` and `moveFavourite(kind, id, dir)` writing through `mutate()`, pinning and unpinning a view in one batch with its `pinned` flag; verify with `favourites.test.ts`: unknown kinds kept and ignored, missing or archived items dropped without a write, a view pinned on an "older device" appended after the list, unpinning clears both, de-duplication, offline write then sync.
-- [ ] 1.3 Document the field in `docs/api.md` (the preferences in the export) and `docs/sync.md` if it lists preference fields; verify with `npm run docs:check`.
+- [x] 1.1 Add `favourites` (string) to the `user_prefs` entry of `Schema` in `internal/sync/ops.go`, to `UserPrefs` in `web/src/lib/types.ts` and to `USER_PREFS_DEFAULTS` in `web/src/lib/ops.ts`; verify with `go test ./internal/sync/...` (an op carrying the field is accepted and forwarded, an op without it still applies) and `npm test` (the defaults test).
+- [x] 1.2 Add `web/src/lib/favourites.ts` with `favouritesOf(prefs, { projects, labels, views })`, `pin(kind, id)`, `unpin(kind, id)` and `moveFavourite(kind, id, dir)` writing through `mutate()`, pinning and unpinning a view in one batch with its `pinned` flag; verify with `favourites.test.ts`: unknown kinds kept and ignored, missing or archived items dropped without a write, a view pinned on an "older device" appended after the list, unpinning clears both, de-duplication, offline write then sync.
+- [x] 1.3 Document the field in `docs/api.md` (the preferences in the export) and `docs/sync.md` if it lists preference fields; verify with `npm run docs:check`.
 
 ## 2. Pin menus and the Favourites group
 
-- [ ] 2.1 Add the shared "Pin to sidebar" checkable item and Move up / Move down handling for favourites, and use it in the project menus (sidebar row, project header), the label menus (sidebar row, labels overview, label view header) and `ViewMenu` (replacing "Pinned to sidebar"); verify with `sectionMenu.test.tsx`-style tests per menu: the item reflects the state, toggles write one preference op (plus the view flag for views), and a shared project's pin writes no project op.
-- [ ] 2.2 Render the Favourites group first in the sidebar's scroller with mixed rows (project mark and subtree count, label dot and count, filter icon and evaluated count), active state, menus and keyboard reorder; verify with `sidebar.test.tsx` covering "Mixed kinds in order", "Pinned item removed" and "Pinned offline" from the app-shell delta.
-- [ ] 2.3 Reorder the groups to Favourites, Projects, Labels, Filters, make Labels and Filters closed by default without a stored state, and list every saved filter in Filters; verify with `sidebar.test.tsx` (defaults on a fresh device, stored state respected, an unpinned filter listed) and `budget.test.tsx` unchanged.
-- [ ] 2.4 Update the `Screens/Sidebar` stories (Favourites with three kinds) and regenerate baselines; verify with `make ui-check`.
-- [ ] 2.5 Update `docs/projects.md`, `docs/labels-and-filters.md` and `docs/saved-views.md` (Pin to sidebar, the Favourites group, the Filters group lists every filter); verify with `npm run docs:check`.
+- [x] 2.1 Add the shared "Pin to sidebar" checkable item and Move up / Move down handling for favourites, and use it in the project menus (sidebar row, project header), the label menus (sidebar row, labels overview, label view header) and `ViewMenu` (replacing "Pinned to sidebar"); verify with `sectionMenu.test.tsx`-style tests per menu: the item reflects the state, toggles write one preference op (plus the view flag for views), and a shared project's pin writes no project op.
+- [x] 2.2 Render the Favourites group first in the sidebar's scroller with mixed rows (project mark and subtree count, label dot and count, filter icon and evaluated count), active state, menus and keyboard reorder; verify with `sidebar.test.tsx` covering "Mixed kinds in order", "Pinned item removed" and "Pinned offline" from the app-shell delta.
+- [x] 2.3 Reorder the groups to Favourites, Projects, Labels, Filters, make Labels and Filters closed by default without a stored state, and list every saved filter in Filters; verify with `sidebar.test.tsx` (defaults on a fresh device, stored state respected, an unpinned filter listed) and `budget.test.tsx` unchanged.
+- [ ] 2.4 Update the `Screens/Sidebar` stories (Favourites with three kinds) and regenerate baselines; verify with `make ui-check`. *Stories written and type-checked; baselines need a Docker daemon (`make ui-baselines`) and come from CI's ui-check-report artifact (see design.md, Implementation notes).*
+- [x] 2.5 Update `docs/projects.md`, `docs/labels-and-filters.md` and `docs/saved-views.md` (Pin to sidebar, the Favourites group, the Filters group lists every filter); verify with `npm run docs:check`.
 
 ## 3. The All projects page
 
-- [ ] 3.1 Add the `projects` route (`/projects`, `#archived` anchor) to `router.ts`, `ProjectsView.tsx` with the page template (title, New project, From a template, overflow with Collapse all and Expand all), the tree with counts and menus, the find field over `matchSidebar`, and the archived projects disclosure; verify with `projectsView.test.tsx` covering the three scenarios of "All projects page" and "Archived projects list" in the project-organization delta.
-- [ ] 3.2 Register `go.projects` (`g r`), add the palette entry and the "All" action on the sidebar's Projects header; verify with the registry conflict test, `palette.test.tsx` and `sidebar.test.tsx`.
-- [ ] 3.3 Replace the archived projects list in Settings → Data with a link to `/projects#archived` and move `ArchivedProjects.tsx` under the page; verify with `settingsSections.test.tsx` and `projectsView.test.tsx` (the link opens the page with the disclosure expanded, restore still works offline).
-- [ ] 3.4 Update `docs/archived-projects.md`, `docs/settings-data.md`, `docs/projects.md` and `docs/keyboard.md` (regenerated by `make docs`); verify with `npm run docs:check`.
+- [x] 3.1 Add the `projects` route (`/projects`, `#archived` anchor) to `router.ts`, `ProjectsView.tsx` with the page template (title, New project, From a template, overflow with Collapse all and Expand all), the tree with counts and menus, the find field over `matchSidebar`, and the archived projects disclosure; verify with `projectsView.test.tsx` covering the three scenarios of "All projects page" and "Archived projects list" in the project-organization delta.
+- [x] 3.2 Register `go.projects` (`g Shift+P`), add the palette entry and the "All" action on the sidebar's Projects header; verify with the registry conflict test, `palette.test.tsx` and `sidebar.test.tsx`.
+- [x] 3.3 Replace the archived projects list in Settings → Data with a link to `/projects#archived` and move `ArchivedProjects.tsx` under the page; verify with `settingsSections.test.tsx` and `projectsView.test.tsx` (the link opens the page with the disclosure expanded, restore still works offline).
+- [x] 3.4 Update `docs/archived-projects.md`, `docs/settings-data.md`, `docs/projects.md` and `docs/keyboard.md` (regenerated by `make docs`); verify with `npm run docs:check`.
 
 ## 4. Integration
 
-- [ ] 4.1 Run `make check` and `ENGINES=chromium make layout-check` with the new page in the screen list; verify both pass.
-- [ ] 4.2 Run `npx @fission-ai/openspec validate --all --strict`; verify it passes.
+- [x] 4.1 Run `make check` and `ENGINES=chromium make layout-check` with the new page in the screen list; verify both pass. *`make check` passes; the full chromium layout run passed every screen except `projects-archived` (the fragment link did not open the disclosure while the page was already open), which was fixed and re-run with `ONLY=projects,projects-archived` (LAYOUT OK).*
+- [x] 4.2 Run `npx @fission-ai/openspec validate --all --strict`; verify it passes.
 
 ## Workflow follow-up
 

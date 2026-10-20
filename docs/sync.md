@@ -113,6 +113,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
+| user_prefs | `favourites` | string: an ordered, comma-separated list of `kind:id` entries (`project:<id>`, `label:<id>`, `view:<id>`), the sidebar's Favourites group; entries of an unknown kind or for a missing, archived or deleted item are ignored and kept |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
 | review | `daily_at`, `monthly_at` | number (Unix ms: the last Daily check and Monthly look) |
 | review | `focus_date`, `focus` | string: the local date (`YYYY-MM-DD`) today's focus was chosen on, and up to three comma-separated task ids |

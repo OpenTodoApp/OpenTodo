@@ -9,7 +9,8 @@ import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
 import type { Label, Project, ProjectRole, Section, Task, User, View } from '../../lib/types'
-import { createView, deleteView, reorderView, setPinned, setStartView, updateView } from '../../lib/views'
+import { createView, deleteView, reorderView, setStartView, updateView } from '../../lib/views'
+import { setFavourite } from '../../lib/favourites'
 import { HUES } from '../../ui'
 import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
@@ -38,9 +39,9 @@ export interface PaletteContext {
   /** The selected (or open) task, when the list has one. */
   task?: Task
   /** The project, saved view or label of the current route, and the selected task's section. */
-  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }
+  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean }
   view?: { row: View; peers: View[]; isStart: boolean }
-  label?: { row: Label; labels: Label[] }
+  label?: { row: Label; labels: Label[]; pinned?: boolean }
   section?: { row: Section; first: boolean; last: boolean; layout: 'list' | 'board'; count: number }
   /** The Filter view's current valid query, on the Filter view. */
   filterQuery: string | null
@@ -76,6 +77,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Calendar (Day)'), route: { view: 'day' }, icon: 'clock', shortcut: keysOf('go.day'), keywords: 'day calendar' },
   { label: msg('Go to Calendar (Week)'), route: { view: 'week' }, icon: 'calendar-range', shortcut: keysOf('go.week'), keywords: 'week calendar' },
   { label: msg('Go to Completed'), route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
+  { label: msg('Go to Projects'), route: { view: 'projects' }, icon: 'folder', shortcut: keysOf('go.projects'), keywords: 'all projects archived tree' },
   { label: msg('Go to Labels'), route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
   { label: msg('Go to Filter'), route: { view: 'filter' }, icon: 'filter', shortcut: keysOf('go.filter') },
   { label: msg('Go to Filters'), route: { view: 'views' }, icon: 'list', shortcut: keysOf('go.views'), keywords: 'views saved filters boards dashboards' },
@@ -162,6 +164,7 @@ export function commands(ctx: PaletteContext): Command[] {
     const name = p.row.name
     out.push(...fromMenu(t('Project “{name}”', { name }), projectMenuGroups(p.row, p, {
       rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => updateProject(p.row.id, { name: v.trim() })),
+      pin: () => setFavourite('project', p.row.id, !p.pinned),
     }), 'project'))
     if (p.role !== 'viewer') {
       out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
@@ -172,7 +175,7 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push(...fromMenu(t('View “{name}”', { name: v.row.name }), viewMenuGroups(v.row, v.peers, v.isStart, {
       rename: () => prompt(t('Rename view'), t('View name'), v.row.name, (n) => updateView(v.row.id, { name: n })),
       move: (d) => reorderView(v.row.id, d),
-      pin: (pinned) => setPinned(v.row.id, pinned),
+      pin: (pinned) => setFavourite('view', v.row.id, pinned),
       startView: () => setStartView(`view:${v.row.id}`),
       remove: () => deleteView(v.row.id).then(() => navigate({ view: 'views' })),
     }), 'view'))
@@ -183,6 +186,7 @@ export function commands(ctx: PaletteContext): Command[] {
       edit: () => navigate({ view: 'labels' }),
       rename: () => prompt(t('Rename label'), t('Label name'), l.row.name, (n) => updateLabel(l.row.id, { name: n })),
       move: (to) => reorderLabel(l.row.id, to),
+      pin: { checked: !!l.pinned, toggle: () => setFavourite('label', l.row.id, !l.pinned) },
     }), 'label'))
   }
   if (ctx.section) {

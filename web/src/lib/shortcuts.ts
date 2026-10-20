@@ -128,6 +128,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.assigned', keys: ['g a'], description: 'Go to Assigned to me', section: 'go', scope: 'global' },
   { id: 'go.completed', keys: ['g c'], description: 'Go to Completed', section: 'go', scope: 'global' },
   { id: 'go.labels', keys: ['g l'], description: 'Go to Labels', section: 'go', scope: 'global' },
+  { id: 'go.projects', keys: ['g Shift+P'], description: 'Go to All projects: the whole tree, find a project, archived projects', section: 'go', scope: 'global' },
   { id: 'go.filter', keys: ['g f'], description: 'Go to Filter', section: 'go', scope: 'global' },
   { id: 'go.views', keys: ['g v'], description: 'Go to Filters: saved views, boards and dashboards', section: 'go', scope: 'global' },
   { id: 'go.day', keys: ['g d'], description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },

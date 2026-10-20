@@ -17,12 +17,15 @@ import { dailyDue, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
 import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
-import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
+import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Project, Review, User } from '../lib/types'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
+import { FavouritesGroup } from './FavouritesGroup'
+import { ProjectRowMenu } from './ProjectRowMenu'
+import { useFavourites } from './useFavourites'
 import { useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
@@ -48,7 +51,12 @@ export const MORE_MENU_QUERY = '(min-width: 768px) and (pointer: fine)'
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 0.75
 
-/** Whether a group is open on this device: More is closed by default, Filters, Projects and Labels open (app-shell "Sidebar structure"). */
+/**
+ * Whether a group is open on this device (app-shell "Sidebar structure"): More is closed
+ * by default, Projects open, Labels and Filters closed until the device stores a state,
+ * since their items can be pinned to Favourites (sidebar-favourites D5). Favourites
+ * itself has no chevron and is always open.
+ */
 const MORE_KEY = 'ot.sidebar.more'
 type GroupId = 'filters' | 'projects' | 'labels'
 const groupKey = (id: GroupId) => `ot.sidebar.group.${id}`
@@ -91,7 +99,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeOpen(MORE_KEY, open) }
   // Every group folds and remembers it per device (sidebar-groups 1.2).
   const [groupOpen, setGroupOpenState] = useState<Record<GroupId, boolean>>(() => ({
-    filters: readOpen(groupKey('filters'), true), projects: readOpen(groupKey('projects'), true), labels: readOpen(groupKey('labels'), true),
+    filters: readOpen(groupKey('filters'), false), projects: readOpen(groupKey('projects'), true), labels: readOpen(groupKey('labels'), false),
   }))
   const setGroupOpen = (id: GroupId, open: boolean) => { setGroupOpenState((s) => ({ ...s, [id]: open })); writeOpen(groupKey(id), open) }
   const toggleGroup = (id: GroupId) => setGroupOpen(id, !groupOpen[id])
@@ -160,28 +168,29 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const { labels, counts: labelCounts, duplicates } = useLabelData()
   const labelDrag = useLabelDrag()
 
-  // Pinned saved views with live open-task counts: every pinned list view's compiled
-  // query runs over the open tasks this sidebar already observes, in one pass.
+  // Every saved view with its live open-task count (the Filters group lists them all,
+  // sidebar-favourites): each list view's compiled query runs over the open tasks this
+  // sidebar already observes, in one pass.
   const views = useViews()
-  const pinnedViews = useMemo(() => views.filter((v) => v.pinned), [views])
   const viewCounts = useMemo(
-    () => evaluateViews(pinnedViews, { today, labels, projects: allProjects, tasks: openTasks }, 0),
-    [pinnedViews, labels, allProjects, openTasks, today],
+    () => evaluateViews(views, { today, labels, projects: allProjects, tasks: openTasks }, 0),
+    [views, labels, allProjects, openTasks, today],
   )
+  const favourites = useFavourites()
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')
 
   const found = useMemo(() => (searching ? matchSidebar(query, {
     rows: rows.map((n) => ({ id: n.id, parent: n.parent, name: n.item.name })),
     labels: labels.map((l) => ({ id: l.id, name: l.name })),
-    views: pinnedViews.map((v) => ({ id: v.id, name: v.name })),
-  }) : null), [searching, query, rows, labels, pinnedViews])
+    views: views.map((v) => ({ id: v.id, name: v.name })),
+  }) : null), [searching, query, rows, labels, views])
   const shownRows = useMemo(() => (found ? rows.filter((n) => found.projects.has(n.id)) : rows), [found, rows])
   const shownLabels = useMemo(() => (found ? labels.filter((l) => found.labels.has(l.id)) : labels), [found, labels])
-  const shownViews = useMemo(() => (found ? pinnedViews.filter((v) => found.views.has(v.id)) : pinnedViews), [found, pinnedViews])
+  const shownViews = useMemo(() => (found ? views.filter((v) => found.views.has(v.id)) : views), [found, views])
   const groupShown = (n: number) => (found ? n > 0 : true)
   // A group with nothing in it takes no room (sidebar-compact-desktop): Filters appears with
-  // the first saved filter (pinned or not, so "All" stays reachable), Labels with the first label.
+  // the first saved filter, Labels with the first label, Favourites with the first pin.
   const filtersShown = found ? shownViews.length > 0 : views.length > 0
   const labelsShown = found ? shownLabels.length > 0 : labels.length > 0 || addingLabel
   const isOpen = (id: GroupId) => (found ? true : groupOpen[id])
@@ -387,25 +396,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
       {!moreAsMenu && <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
         {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
       </SidebarGroup>}
-      {filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
-        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
-        {shownViews.map((v) => {
-          const active = route.view === 'view' && route.id === v.id
-          const c = viewCounts.get(v.id)
-          return (
-            <div key={v.id} className="group flex items-center">
-              <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
-                data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
-                leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
-                count={!isDashboard(v) && c && c.ok ? c.count : undefined}
-                badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
-              {!collapsed && <ViewMenu view={v} className="hover-reveal" />}
-            </div>
-          )
-        })}
-      </SidebarGroup>}
+      {/* Favourites first (sidebar-favourites D5); while finding, the matches show in their own groups. */}
+      {!found && favourites.length > 0 && (
+        <FavouritesGroup favourites={favourites} route={route} collapsed={collapsed} projects={projects}
+          tree={tree} openTasks={openTasks} today={today} labelCounts={labelCounts} viewCounts={viewCounts} />
+      )}
       {/* Projects stays while finding: its header holds the field's opener. */}
       {(finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
+        <SidebarGroupAction active={route.view === 'projects'} onClick={() => navigate({ view: 'projects' })} aria-label={t('All projects')}>{t('All')}</SidebarGroupAction>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
         <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
           triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
@@ -427,7 +425,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
               <li key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-drop-target={`project:${n.id}`}
                 onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`relative flex items-center rounded-control ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: collapsed ? 0 : `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
+                className={`group relative flex items-center rounded-control ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: collapsed ? 0 : `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
                 {(drop === 'before' || drop === 'after') && (
                   <span aria-hidden="true" data-drop-indicator={drop}
                     className={`pointer-events-none absolute inset-x-0 h-0.5 rounded-control bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
@@ -461,6 +459,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                   count={count}
                   aria-description={count && isCollapsed && has ? t('Open tasks including sub-projects') : undefined}
                 />
+                {!collapsed && <ProjectRowMenu project={p} movable={movable(n.id)} edges={siblingEdges(tree, n)} className="hover-reveal" />}
               </li>
             )
           })}
@@ -486,6 +485,23 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         </>}>
         {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
+      </SidebarGroup>}
+      {filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
+        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
+        {shownViews.map((v) => {
+          const active = route.view === 'view' && route.id === v.id
+          const c = viewCounts.get(v.id)
+          return (
+            <div key={v.id} className="group flex items-center">
+              <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
+                data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
+                leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
+                count={!isDashboard(v) && c && c.ok ? c.count : undefined}
+                badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
+              {!collapsed && <ViewMenu view={v} className="hover-reveal" />}
+            </div>
+          )
+        })}
       </SidebarGroup>}
       </div>
       <SidebarFooter route={route} user={user} collapsed={collapsed} row={footerRow} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} />

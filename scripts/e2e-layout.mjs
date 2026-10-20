@@ -221,6 +221,9 @@ function screens(ids) {
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
     { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'label-edit', 'label-merge-picker', 'confirm-dialog', 'new-label'] },
     { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
+    // All projects (sidebar-favourites D6): the tree, the find field, and the archived projects opened from Settings → Data.
+    { name: 'projects', path: '/projects', ready: heading('Projects') },
+    { name: 'projects-archived', path: '/projects#archived', ready: (p) => p.getByText('No archived projects').first().waitFor() },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
     // From 1024 px /settings opens the first section (settings-navigation), so the page title reads Account there.

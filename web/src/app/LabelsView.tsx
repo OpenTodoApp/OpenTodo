@@ -22,6 +22,10 @@ import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { navigate, type Route } from './router'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
+import { useFavourites, useIsFavourite } from './useFavourites'
+import { NamePrompt } from './NamePrompt'
+import { pinItem } from './menus/pinItem'
 
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
@@ -97,18 +101,25 @@ export function deleteConfirm(label: Label): ConfirmSpec {
   }
 }
 
-/** The label menu as data (labels-and-menus 5.1). */
-export function labelMenuGroups(label: Label, labels: Label[], a: { edit: () => void; rename: () => void; move: (to: -1 | 1) => unknown }): ActionGroup[] {
+/**
+ * The label menu as data (labels-and-menus 5.1). `pin` adds the checkable "Pin to sidebar"
+ * (sidebar-favourites D3); `edges` replaces the label order for Move up and Move down when
+ * the menu is opened from the Favourites group.
+ */
+export function labelMenuGroups(label: Label, labels: Label[], a: { edit: () => void; rename: () => void; move: (to: -1 | 1) => unknown; pin?: { checked: boolean; toggle: () => unknown } }, edges?: { first: boolean; last: boolean }): ActionGroup[] {
   const i = labels.findIndex((l) => l.id === label.id)
   const others = labels.filter((l) => l.id !== label.id)
+  const first = edges ? edges.first : i <= 0
+  const last = edges ? edges.last : i < 0 || i === labels.length - 1
   return [
     { items: [
       { kind: 'action', id: 'edit', label: t('Edit…'), icon: 'palette', onSelect: a.edit },
       { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename },
     ] },
+    ...(a.pin ? [{ items: [pinItem(a.pin.checked, a.pin.toggle)] }] : []),
     { items: [
-      { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', shortcut: 'Alt+↑', disabled: i <= 0, reason: t('Already first'), onSelect: () => a.move(-1) },
-      { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', shortcut: 'Alt+↓', disabled: i < 0 || i === labels.length - 1, reason: t('Already last'), onSelect: () => a.move(1) },
+      { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', shortcut: 'Alt+↑', disabled: first, reason: t('Already first'), onSelect: () => a.move(-1) },
+      { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', shortcut: 'Alt+↓', disabled: last, reason: t('Already last'), onSelect: () => a.move(1) },
     ] },
     { items: [
       { kind: 'picker', id: 'merge', label: t('Merge into'), icon: 'merge', tone: 'danger', disabled: others.length === 0, reason: t('There is no other label'), picker: {
@@ -296,7 +307,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   const startRename = () => { setName(label.name); setEditing(true) }
   const move = (to: -1 | 1 | 'top' | 'bottom') => { refocus.current = true; act(reorderLabel(label.id, to)) }
   const onKeyDown = useRowMenuShortcut({ openMenu: () => setMenuOpen(true), rename: startRename, move })
-  const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move })
+  const pinned = useIsFavourite('label', label.id)
+  const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move, pin: { checked: pinned, toggle: () => setFavourite('label', label.id, !pinned) } })
 
   return (
     <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-active={active || undefined} data-find-active={findActive || undefined}
@@ -328,6 +340,44 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
       <span role="status" aria-live="polite" className="sr-only">{announce}</span>
       {panelOpen && <LabelEditPanel label={label} labels={labels} anchor={row} onClose={() => setPanelOpen(false)} />}
     </div>
+  )
+}
+
+/**
+ * A label's menu outside its row (sidebar-favourites): the label view header and the
+ * Favourites group. Rename asks in a dialog, Edit opens the panel beside the trigger;
+ * from the Favourites group (`within`) Move up and Move down reorder the favourites.
+ */
+export function LabelMenu({ label, within, className = '' }: { label: Label; within?: 'favourites'; className?: string }) {
+  const labels = useLabels()
+  const favourites = useFavourites()
+  const pinned = useIsFavourite('label', label.id)
+  const [renaming, setRenaming] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const inFavourites = within === 'favourites'
+  const groups = labelMenuGroups(label, labels, {
+    edit: () => setPanelOpen(true),
+    rename: () => setRenaming(true),
+    move: (d) => (inFavourites ? moveFavourite('label', label.id, d) : reorderLabel(label.id, d)),
+    pin: { checked: pinned, toggle: () => setFavourite('label', label.id, !pinned) },
+  }, inFavourites ? favouriteEdges(favourites, 'label', label.id) : undefined)
+  return (
+    <span ref={anchor} className="inline-flex">
+      {inFavourites ? (
+        <ActionMenu label={t('Menu for label {name}', { name: label.name })} title={label.name} groups={groups}
+          triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
+      ) : (
+        // The page header's menu (app-shell "Page template"), styled like the project header's.
+        <ActionMenu label={t('Label menu')} title={label.name} groups={groups} trigger={<Icon name="ellipsis" size="md" />}
+          triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" />
+      )}
+      {renaming && (
+        <NamePrompt title={t('Rename label')} label={t('Label name')} initial={label.name} onCancel={() => setRenaming(false)}
+          onSubmit={async (name) => { await updateLabel(label.id, { name }); setRenaming(false) }} />
+      )}
+      {panelOpen && <LabelEditPanel label={label} labels={labels} anchor={anchor} onClose={() => setPanelOpen(false)} />}
+    </span>
   )
 }
 

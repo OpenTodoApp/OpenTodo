@@ -456,6 +456,12 @@ var Schema = map[string]map[string]kind{
 		// Row detail (OpenSpec change calm-rows, design D1): "calm" or
 		// "detailed"; an unknown or empty value reads as calm.
 		"row_detail": kString,
+		// Favourites (OpenSpec change sidebar-favourites, design D1): an ordered,
+		// comma-separated list of kind:id entries (project:<id>, label:<id>,
+		// view:<id>) shown in the sidebar's Favourites group. Ids only, never
+		// content; one string so the order is one last-writer-wins value.
+		// Clients ignore entries of an unknown kind or whose item is missing.
+		"favourites": kString,
 		// The first-run card (ux-overhaul, first-run): "done" once the account has
 		// finished or skipped it, so a second device does not show it again after sync.
 		"first_run": kString,

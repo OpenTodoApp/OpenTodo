@@ -111,6 +111,7 @@
     "user_prefs": [
       "date_format",
       "density",
+      "favourites",
       "first_run",
       "language",
       "method_mode",

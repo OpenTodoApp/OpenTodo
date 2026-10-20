@@ -71,3 +71,20 @@ export const PhoneDrawer: StoryObj = {
     </div>
   ),
 }
+
+/** Favourites (sidebar-favourites): a pinned saved filter, project and label, mixed in the user's order above Projects; Labels and Filters folded on this new device. */
+async function seedFavourites() {
+  await seedInbox()
+  const { createView } = await import('../lib/views')
+  const { pin } = await import('../lib/favourites')
+  seeded.deepWorkView = await createView({ name: 'Deep work', query: '@deep-work', pinned: false })
+  await pin('view', seeded.deepWorkView)
+  await pin('project', seeded.website)
+  await pin('label', seeded.errand)
+}
+export const Favourites: StoryObj = {
+  ...withSeed(seedFavourites),
+  render: () => (
+    <Column><Sidebar route={{ view: 'view', id: seeded.deepWorkView }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+  ),
+}

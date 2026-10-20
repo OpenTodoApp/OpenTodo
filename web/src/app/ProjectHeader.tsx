@@ -27,6 +27,9 @@ import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
 import { hueName } from '../lib/colourNames'
 import { act } from './actionError'
+import { setFavourite } from '../lib/favourites'
+import { useIsFavourite } from './useFavourites'
+import { pinItem } from './menus/pinItem'
 import { useOpenTaskCount } from '../lib/liveTasks'
 import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
@@ -78,9 +81,12 @@ function ColourSwatches({ project }: { project: Project }) {
 /**
  * The project menu as data (labels-and-menus D1), shared by the project header and
  * the command palette (search-and-command-palette D5) so both run the same handlers.
+ * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
+ * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
+  const pin: ActionGroup[] = a.pin ? [{ items: [pinItem(!!o.pinned, a.pin)] }] : []
   const subsText = subCount ? ` ${t('{n, plural, one {Its sub-project moves up one level.} other {Its # sub-projects move up one level.}}', { n: subCount })}` : ''
   // Copies only read the project, so every role may make them (project-templates D6).
   const copies: ActionGroup[] = a.duplicate || a.saveTemplate ? [{ items: [
@@ -91,8 +97,9 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
   const fields: ActionGroup[] = a.fields && canEditTasks(role) ? [{ items: [
     { kind: 'action', id: 'fields', label: t('Fields…'), icon: 'list', shortcut: keysOf('project.fields'), onSelect: a.fields },
   ] }] : []
-  if (!canEditProject(role)) return [...copies, ...fields]
+  if (!canEditProject(role)) return [...pin, ...copies, ...fields]
   return [
+    ...pin,
     ...copies,
     ...fields,
     { items: [
@@ -190,6 +197,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
   const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
   const openTasks = useOpenTaskCount(project.id)
+  const pinned = useIsFavourite('project', project.id)
   // "Show completed tasks" (project-completed-section): a list-layout preference of this device.
   const listLayout = useProjectViewMode(project.id) === 'list'
   const showCompleted = useShowCompletedPref(project.id)
@@ -229,8 +237,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
-    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks },
-      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields') }),
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned },
+      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     panels,
   ]
 

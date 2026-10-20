@@ -1769,7 +1769,6 @@
   "Pin {name}": "Fijar {name}",
   "Ping delivered: {outcome}": "Ping entregado: {outcome}",
   "Ping failed: {outcome}": "Ping fallido: {outcome}",
-  "Pinned to sidebar": "Fijado en la barra lateral",
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": "Modo de colocación de la tarea seleccionada: las flechas mueven la vista previa, Intro la coloca, Esc cancela",
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": "Colocando <b>{title}</b> a las {time} · flechas para mover · Intro para colocar · Esc para cancelar",
   "Plaintext history": "Historial sin cifrar",
@@ -3858,5 +3857,14 @@
   "Calm or detailed task rows": "Filas de tareas tranquilas o detalladas",
   "Detailed": "Detallada",
   "Labels: {names}": "Etiquetas: {names}",
-  "Rows": "Filas"
+  "Rows": "Filas",
+  "Favourites": "Favoritos",
+  "Pin to sidebar": "Fijar en la barra lateral",
+  "Menu for project {name}": "Menú del proyecto {name}",
+  "Label menu": "Menú de la etiqueta",
+  "Go to Projects": "Ir a Proyectos",
+  "Go to All projects: the whole tree, find a project, archived projects": "Ir a Todos los proyectos: el árbol completo, buscar un proyecto, proyectos archivados",
+  "Find a project": "Buscar un proyecto",
+  "Show archived projects": "Mostrar proyectos archivados",
+  "Listed on the All projects page, where each can be restored.": "Aparecen en la página Todos los proyectos, donde se puede restaurar cada uno."
 }

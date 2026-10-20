@@ -112,3 +112,30 @@ func TestRowDetailValidates(t *testing.T) {
 		t.Fatalf("row_detail = %s", got)
 	}
 }
+
+// TestFavouritesValidates (sidebar-favourites D1): the favourites list is an
+// additive string field of user_prefs; a batch carrying it is accepted and
+// stored, a batch without it still applies, and another kind is refused.
+func TestFavouritesValidates(t *testing.T) {
+	op := Op{ID: "o", Entity: "user_prefs", EntityID: "me", Field: "favourites", TS: 1, Device: "D", Value: []byte(`"project:p1,view:v1"`)}
+	if err := Validate(op); err != nil {
+		t.Fatalf("favourites refused: %v", err)
+	}
+	op.Value = []byte(`["project:p1"]`)
+	if err := Validate(op); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("favourites as an array accepted (err %v)", err)
+	}
+	f := newSharing(t)
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "density", `"compact"`)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("batch without favourites: %+v", res)
+	}
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "favourites", `"label:l1,future:x"`)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("batch with favourites: %+v", res)
+	}
+	if got := f.field("alice", "user_prefs", "me", "favourites"); got != `"label:l1,future:x"` {
+		t.Fatalf("favourites = %s", got)
+	}
+	if got := f.field("bob", "user_prefs", "me", "favourites"); got != "<none>" {
+		t.Fatalf("bob sees alice's favourites: %s", got)
+	}
+}

@@ -24,6 +24,7 @@ import { useCollapsedGroups } from './collapsedGroups'
 import { taskDefaults } from './listActions'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { ProjectHeader } from './ProjectHeader'
+import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { requestQuickAddSheet } from './QuickAddSheet'
@@ -204,7 +205,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // "Nothing between the header and the list"): title, meta, actions, Help.
             <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={pageActions}
               leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
-              meta={meta} subtitle={methodSubtitle} />
+              meta={meta} subtitle={methodSubtitle}
+              menu={route.view === 'label' && currentLabel ? <LabelMenu label={currentLabel} /> : undefined} />
           )}
 
           {route.view !== 'completed' && (
