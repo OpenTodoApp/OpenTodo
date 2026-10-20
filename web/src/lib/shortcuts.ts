@@ -30,6 +30,11 @@ export interface Shortcut {
   keys: string[]
   /** What it does, the action first. */
   description: string
+  /**
+   * A short name (at most 24 characters) where space is short: the sequence spotlight
+   * and the cheat sheet. Required for sequences. `Name|context` picks a catalog context.
+   */
+  label?: string
   section: ShortcutSection
   scope: ShortcutScope
   /** For the `view` scope: the route views it applies to. */
@@ -123,40 +128,40 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'global.undo-bulk', keys: ['Ctrl+Z', '⌘+Z'], description: 'Undo the last bulk action', section: 'everywhere', scope: 'global', when: 'while its notice is shown' },
 
   // ---- go to
-  { id: 'go.inbox', keys: ['g i'], description: 'Go to Inbox', section: 'go', scope: 'global' },
-  { id: 'go.today', keys: ['g t'], description: 'Go to Today', section: 'go', scope: 'global' },
-  { id: 'go.upcoming', keys: ['g u'], description: 'Go to Upcoming', section: 'go', scope: 'global' },
-  { id: 'go.anytime', keys: ['g n'], description: 'Go to Anytime', section: 'go', scope: 'global' },
-  { id: 'go.someday', keys: ['g o'], description: 'Go to Someday', section: 'go', scope: 'global' },
-  { id: 'go.assigned', keys: ['g a'], description: 'Go to Assigned to me', section: 'go', scope: 'global' },
-  { id: 'go.completed', keys: ['g c'], description: 'Go to Completed', section: 'go', scope: 'global' },
-  { id: 'go.labels', keys: ['g l'], description: 'Go to Labels', section: 'go', scope: 'global' },
-  { id: 'go.projects', keys: ['g Shift+P'], description: 'Go to All projects: the whole tree, find a project, archived projects', section: 'go', scope: 'global' },
-  { id: 'go.filter', keys: ['g f'], description: 'Go to Filter', section: 'go', scope: 'global' },
-  { id: 'go.views', keys: ['g v'], description: 'Go to Filters: saved views, boards and dashboards', section: 'go', scope: 'global' },
-  { id: 'go.day', keys: ['g d'], description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
-  { id: 'go.week', keys: ['g w'], description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
-  { id: 'go.month', keys: ['g m'], description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
+  { id: 'go.inbox', keys: ['g i'], label: 'Inbox', description: 'Go to Inbox', section: 'go', scope: 'global' },
+  { id: 'go.today', keys: ['g t'], label: 'Today', description: 'Go to Today', section: 'go', scope: 'global' },
+  { id: 'go.upcoming', keys: ['g u'], label: 'Upcoming', description: 'Go to Upcoming', section: 'go', scope: 'global' },
+  { id: 'go.anytime', keys: ['g n'], label: 'Anytime', description: 'Go to Anytime', section: 'go', scope: 'global' },
+  { id: 'go.someday', keys: ['g o'], label: 'Someday', description: 'Go to Someday', section: 'go', scope: 'global' },
+  { id: 'go.assigned', keys: ['g a'], label: 'Assigned to me', description: 'Go to Assigned to me', section: 'go', scope: 'global' },
+  { id: 'go.completed', keys: ['g c'], label: 'Completed', description: 'Go to Completed', section: 'go', scope: 'global' },
+  { id: 'go.labels', keys: ['g l'], label: 'Labels', description: 'Go to Labels', section: 'go', scope: 'global' },
+  { id: 'go.projects', keys: ['g Shift+P'], label: 'All projects', description: 'Go to All projects: the whole tree, find a project, archived projects', section: 'go', scope: 'global' },
+  { id: 'go.filter', keys: ['g f'], label: 'Filter', description: 'Go to Filter', section: 'go', scope: 'global' },
+  { id: 'go.views', keys: ['g v'], label: 'Filters', description: 'Go to Filters: saved views, boards and dashboards', section: 'go', scope: 'global' },
+  { id: 'go.day', keys: ['g d'], label: 'Day', description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
+  { id: 'go.week', keys: ['g w'], label: 'Week', description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
+  { id: 'go.month', keys: ['g m'], label: 'Month', description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
   // The Plan (planner-view D1): `g p` is the Inbox's triage and `g Shift+P` All projects, so the Calendar's plan takes the shifted C.
-  { id: 'go.plan', keys: ['g Shift+C'], description: 'Go to the Calendar as Plan: the next days as columns with their capacity', section: 'go', scope: 'global' },
-  { id: 'go.trash', keys: ['g x'], description: 'Go to the Trash', section: 'go', scope: 'global' },
-  { id: 'go.triage', keys: ['g p'], description: 'Process the Inbox one task at a time', section: 'go', scope: 'global' },
-  { id: 'go.feed', keys: ['g h'], description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
-  { id: 'go.ask', keys: ['g k'], description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go', scope: 'global' },
-  { id: 'go.settings', keys: ['g s'], description: 'Go to Settings', section: 'go', scope: 'global' },
-  { id: 'go.import', keys: ['g Shift+I'], description: 'Go to Settings → Data → Import data', section: 'go', scope: 'global' },
-  { id: 'go.help', keys: ['g ?'], description: 'Open Help: the user guide, offline, with search', section: 'go', scope: 'global' },
+  { id: 'go.plan', keys: ['g Shift+C'], label: 'Plan', description: 'Go to the Calendar as Plan: the next days as columns with their capacity', section: 'go', scope: 'global' },
+  { id: 'go.trash', keys: ['g x'], label: 'Trash', description: 'Go to the Trash', section: 'go', scope: 'global' },
+  { id: 'go.triage', keys: ['g p'], label: 'Process Inbox', description: 'Process the Inbox one task at a time', section: 'go', scope: 'global' },
+  { id: 'go.feed', keys: ['g h'], label: 'Updates', description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
+  { id: 'go.ask', keys: ['g k'], label: 'Ask', description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go', scope: 'global' },
+  { id: 'go.settings', keys: ['g s'], label: 'Settings', description: 'Go to Settings', section: 'go', scope: 'global' },
+  { id: 'go.import', keys: ['g Shift+I'], label: 'Import data', description: 'Go to Settings → Data → Import data', section: 'go', scope: 'global' },
+  { id: 'go.help', keys: ['g ?'], label: 'Help', description: 'Open Help: the user guide, offline, with search', section: 'go', scope: 'global' },
   // Weekly review and Statistics (stats-and-review).
-  { id: 'go.review', keys: ['g r'], description: 'Go to the weekly Review', section: 'go', scope: 'global' },
-  { id: 'go.stats', keys: ['g Shift+S'], description: 'Go to Statistics: what you completed, created and let slip', section: 'go', scope: 'global' },
-  { id: 'go.loop', keys: ['g Shift+L'], description: 'Go to the Loop home: the five moves of Open Loops at a glance', section: 'go', scope: 'global' },
-  { id: 'go.next', keys: ['g Shift+N'], description: 'Go to Next: the next action of every project, by context', section: 'go', scope: 'global' },
-  { id: 'go.waiting', keys: ['g Shift+W'], description: 'Go to Waiting: what is assigned to someone else or blocked', section: 'go', scope: 'global' },
-  { id: 'go.daily', keys: ['g Shift+R'], description: 'Go to the Daily check: the Inbox, what is overdue, today\'s focus', section: 'go', scope: 'global' },
+  { id: 'go.review', keys: ['g r'], label: 'Review', description: 'Go to the weekly Review', section: 'go', scope: 'global' },
+  { id: 'go.stats', keys: ['g Shift+S'], label: 'Statistics', description: 'Go to Statistics: what you completed, created and let slip', section: 'go', scope: 'global' },
+  { id: 'go.loop', keys: ['g Shift+L'], label: 'Loop home', description: 'Go to the Loop home: the five moves of Open Loops at a glance', section: 'go', scope: 'global' },
+  { id: 'go.next', keys: ['g Shift+N'], label: 'Next|method', description: 'Go to Next: the next action of every project, by context', section: 'go', scope: 'global' },
+  { id: 'go.waiting', keys: ['g Shift+W'], label: 'Waiting|method', description: 'Go to Waiting: what is assigned to someone else or blocked', section: 'go', scope: 'global' },
+  { id: 'go.daily', keys: ['g Shift+R'], label: 'Daily check|method', description: 'Go to the Daily check: the Inbox, what is overdue, today\'s focus', section: 'go', scope: 'global' },
   // Close the day (close-the-day D6): `g d` is the Day calendar and `Shift+D` alone duplicates in a list; a `g` sequence meets neither.
-  { id: 'go.close', keys: ['g Shift+D'], description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
-  { id: 'go.focus', keys: ['g Shift+F'], description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
-  { id: 'go.find', keys: ['g /'], description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
+  { id: 'go.close', keys: ['g Shift+D'], label: 'Close the day', description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
+  { id: 'go.focus', keys: ['g Shift+F'], label: 'Focus', description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
+  { id: 'go.find', keys: ['g /'], label: 'Find in sidebar', description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
 
   // ---- tasks in a list
   { id: 'list.down', keys: ['j', '↓'], description: 'Move the selection down', section: 'tasks', scope: 'list' },
@@ -358,11 +363,11 @@ export const SHORTCUTS: Shortcut[] = [
 
   // ---- vim (listed while the layer is on)
   { id: 'vim.count', keys: ['3j', '5k', '2↓'], description: 'Count: move the selection that many tasks (clamped)', section: 'vim', scope: 'vim', note: true },
-  { id: 'vim.first', keys: ['g g'], description: 'Select the first task; 4gg selects the fourth', section: 'vim', scope: 'vim' },
+  { id: 'vim.first', keys: ['g g'], label: 'First task', description: 'Select the first task; 4gg selects the fourth', section: 'vim', scope: 'vim' },
   { id: 'vim.last', keys: ['Shift+G'], description: 'Select the last task; 4G selects the fourth', section: 'vim', scope: 'vim' },
   { id: 'vim.move-down', keys: ['Shift+J'], description: 'Move the selected task down one place (with a count, that many; manually ordered views only)', section: 'vim', scope: 'vim' },
   { id: 'vim.move-up', keys: ['Shift+K'], description: 'Move the selected task up one place', section: 'vim', scope: 'vim', overrides: ['list.skip', 'panel.skip'] },
-  { id: 'vim.delete', keys: ['d d'], description: 'Delete the selected task (d alone does nothing after 1 s)', section: 'vim', scope: 'vim', overrides: ['list.deadline'] },
+  { id: 'vim.delete', keys: ['d d'], label: 'Delete task', description: 'Delete the selected task (d alone does nothing after 1 s)', section: 'vim', scope: 'vim', overrides: ['list.deadline'] },
   { id: 'vim.complete', keys: ['x'], description: 'Complete / reopen the selected task (same as c); Space ticks', section: 'vim', scope: 'vim', overrides: ['list.tick'] },
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
@@ -386,6 +391,34 @@ export const QUICK_ADD_SYNTAX: [string, string][] = [
 export function displayKeys(s: Pick<Shortcut, 'keys' | 'when'>): string {
   const keys = s.keys.join(' / ')
   return s.when ? `${keys} (${s.when})` : keys
+}
+
+/** The label's catalog message and context (`Next|method`); falls back to the description. */
+export function labelMessage(s: Pick<Shortcut, 'label' | 'description'>): { message: string; context?: string } {
+  if (!s.label) return { message: s.description }
+  const bar = s.label.lastIndexOf('|')
+  return bar < 0 ? { message: s.label } : { message: s.label.slice(0, bar), context: s.label.slice(bar + 1) }
+}
+
+/** Groups of the sequence spotlight (shortcut-spotlight D3), by id; the rest are Tools. */
+export type SpotlightGroup = 'views' | 'calendar' | 'method' | 'tools'
+const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
+  'go.inbox': 'views', 'go.today': 'views', 'go.upcoming': 'views', 'go.anytime': 'views', 'go.someday': 'views', 'go.assigned': 'views',
+  'go.completed': 'views', 'go.labels': 'views', 'go.projects': 'views', 'go.filter': 'views', 'go.views': 'views', 'go.trash': 'views', 'go.feed': 'views',
+  'go.day': 'calendar', 'go.week': 'calendar', 'go.month': 'calendar', 'go.plan': 'calendar',
+  'go.triage': 'method', 'go.review': 'method', 'go.loop': 'method', 'go.next': 'method', 'go.waiting': 'method', 'go.daily': 'method',
+  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method',
+}
+export function spotlightGroup(id: string): SpotlightGroup {
+  return SPOTLIGHT_GROUPS[id] ?? 'tools'
+}
+
+/** The second half of a sequence as shown on a keycap ("t", "Shift+P"). */
+export function chordText(c: Chord): string {
+  const named: Record<string, string> = { escape: 'Esc', enter: 'Enter', ' ': 'Space', arrowup: '↑', arrowdown: '↓', arrowleft: '←', arrowright: '→' }
+  const key = named[c.key] ?? (c.key.length === 1 ? (c.shift && !c.symbol && /[a-z]/.test(c.key) ? c.key.toUpperCase() : c.key) : c.key)
+  const mods = [c.ctrl === 'ctrl' ? 'Ctrl' : c.ctrl === 'meta' ? '⌘' : c.ctrl === 'either' ? 'Ctrl' : '', c.alt ? 'Alt' : '', c.shift && !c.symbol ? 'Shift' : ''].filter(Boolean)
+  return [...mods, key].join('+')
 }
 
 /** The entry with this id. */

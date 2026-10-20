@@ -10,7 +10,7 @@ export interface DialogProps {
   onClose: () => void
   children: ReactNode
   /** Width of the card from 640 px up. */
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   /** A tap outside closes (default). Off for destructive confirmations. */
   dismissable?: boolean
   role?: 'dialog' | 'alertdialog'
@@ -29,7 +29,7 @@ export interface DialogProps {
   placement?: 'center' | 'sheet'
 }
 
-const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg' }
+const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', xl: 'sm:max-w-5xl' }
 const HEADER = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[env(safe-area-inset-top)] sm:-top-4 sm:rounded-t-card'
 // The sheet sits at the bottom, below the notch: no top inset, its own curved corners.
 const HEADER_SHEET = 'sticky top-0 z-10 flex items-center gap-2 rounded-t-card border-b border-default bg-inherit pl-4 pr-1 sm:-top-4'

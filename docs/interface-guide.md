@@ -17,7 +17,7 @@ The [design system](design-system.md) says which tokens and building blocks exis
 2. **One page template.** Every view renders `PageHeader` above `PageBody`. One title size, at most two visible actions, an overflow menu, one Help action. Enforced by `pageTemplate.test.ts`.
 3. **Show what is set, offer what is not.** An empty property is an entry in an "Add" menu, not a row. A task shows at most seven things by default.
 4. **Chrome above content, never between.** Filters, layout switches, disclosures and hints live in the page header or its menus. Enforced by `budget.test.tsx`.
-5. **Keyboard hints are discoverable, not printed.** Shortcuts appear in tooltips, menus, the palette and the cheat sheet, never as badges in the chrome, unless the "Show shortcut hints" preference is on.
+5. **Keyboard hints are discoverable, not printed.** Shortcuts appear in tooltips, menus, the palette, the cheat sheet and the sequence spotlight (the card that waits after a hesitated `g`), never as badges in the chrome, unless the "Show shortcut hints" preference is on. Keys are drawn with `Keys` from `web/src/app/shortcuts/Kbd.tsx`: one keycap per chord, "then" and "or" between them, and a keycap never wraps.
 6. **One row, one chip system.** All task rows come from `TaskRow`; metadata uses three styles (tone text, label chip, neutral chip).
 7. **One settings pattern.** A setting is a `SettingRow` inside a `SettingsSection`; one Help action per page.
 8. **Tokens or nothing.** No raw palette, size, radius or shadow class in a screen; no legacy `btn-*`, `.input` or `.kbd` class; no native `title` attribute. Enforced by `lint.test.ts` (the not-yet lists in `notYetMigrated.ts` only shrink).

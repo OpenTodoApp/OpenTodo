@@ -8,12 +8,12 @@ describe('ShortcutHelp', () => {
     const on = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} vim extraSections={[VIM_HELP]} />)
     expect(on).toContain('data-help-section="Vim keybindings"')
     expect(on).toContain('data-help-section="Vim command line"')
-    for (const k of ['g g', 'Shift+G', 'd d', '3j / 5k / 2↓', ':project &lt;name&gt;', ':new &lt;title&gt;', ':help']) expect(on).toContain(k)
+    for (const k of ['>Shift+G<', '>First task<', '>Delete task<', '3j', ':project &lt;name&gt;', ':new &lt;title&gt;', ':help']) expect(on).toContain(k)
     expect(on).not.toContain('data-vim-hint')
 
     const off = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} />)
     expect(off).not.toContain('Vim keybindings</h3>')
-    expect(off).not.toContain('>d d<')
+    expect(off).not.toContain('>Delete task<')
     expect(off).toContain('data-vim-hint')
     expect(off).toContain('Vim keybindings can be enabled in Settings')
     // The default list is unchanged.

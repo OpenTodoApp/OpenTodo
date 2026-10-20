@@ -20,7 +20,7 @@ A key does one thing at a time: the shortcuts of where you are (the task panel, 
 
 ## See them in the app
 
-Press <kbd>?</kbd> at any time for the cheat sheet. The shortcuts for where you are come first (the list, the board, the calendar, the task panel), then the ones that work everywhere and the **Go to** keys, and a search box at the top finds a shortcut by key or by what it does. It's the same list as on this page, generated from the same source, so the two always match.
+Press <kbd>?</kbd> at any time for the cheat sheet. The shortcuts for where you are come first (the list, the board, the calendar, the task panel), then the ones that work everywhere and the **Go to** keys, and a search box at the top finds a shortcut by key or by what it does. Each line shows what a shortcut does and its keys; hover it for the full description. It's the same list as on this page, generated from the same source, so the two always match.
 
 ## The ones to learn first
 
@@ -34,7 +34,7 @@ Press <kbd>?</kbd> at any time for the cheat sheet. The shortcuts for where you 
 | <kbd>g</kbd> then <kbd>t</kbd> | Go to Today (<kbd>i</kbd> for Inbox, <kbd>u</kbd> for Upcoming) |
 | <kbd>Esc</kbd> | Close the panel |
 
-A two-step shortcut like <kbd>g</kbd> then <kbd>t</kbd> means: press <kbd>g</kbd>, let go, then press <kbd>t</kbd>.
+A two-step shortcut like <kbd>g</kbd> then <kbd>t</kbd> means: press <kbd>g</kbd>, let go, then press <kbd>t</kbd>. Pause after <kbd>g</kbd> and a card in the middle of the screen waits for the second key and lists every key that can follow; press or click one, or press <kbd>Esc</kbd> to cancel.
 
 With a screen reader, <kbd>j</kbd> / <kbd>k</kbd> move focus to the selected row, so it reads the task with its dates, counts and notes; subtasks are read with their level. Going to another page moves focus to the page's heading and the browser tab names the page. The first <kbd>Tab</kbd> on a page reaches **Skip to content**, which jumps past the sidebar.
 

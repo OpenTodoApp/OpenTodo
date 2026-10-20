@@ -58,11 +58,19 @@ export function hasScope(scope: ShortcutScope): boolean {
 
 let pending: Chord[] = []
 let pendingTimer: ReturnType<typeof setTimeout> | undefined
+// While held (the sequence spotlight is open), the prefix does not expire.
+let held = false
+const prefixListeners = new Set<() => void>()
+
+function notifyPrefix(): void {
+  prefixListeners.forEach((fn) => fn())
+}
 
 function armPrefix(seq: Chord[]): void {
   pending = seq
   clearTimeout(pendingTimer)
-  pendingTimer = setTimeout(() => { pending = [] }, PREFIX_MS)
+  if (!held) pendingTimer = setTimeout(clearPrefix, PREFIX_MS)
+  notifyPrefix()
 }
 
 /** A sequence is under way (`g` was pressed): single keys wait for its second half. */
@@ -71,8 +79,30 @@ export function isPrefixPending(): boolean {
 }
 
 export function clearPrefix(): void {
+  const had = pending.length > 0
   pending = []
+  held = false
   clearTimeout(pendingTimer)
+  if (had) notifyPrefix()
+}
+
+/** The chords pressed so far of a sequence under way (empty when none). */
+export function pendingPrefix(): Chord[] {
+  return pending
+}
+
+/** Calls `fn` whenever a sequence starts, extends or ends; returns the unsubscribe function. */
+export function subscribePrefix(fn: () => void): () => void {
+  prefixListeners.add(fn)
+  return () => { prefixListeners.delete(fn) }
+}
+
+/** Holds the pending prefix (no expiry) while the spotlight shows it; `false` restarts the expiry. */
+export function holdPrefix(on: boolean): void {
+  if (!pending.length) return
+  held = on
+  clearTimeout(pendingTimer)
+  if (!on) pendingTimer = setTimeout(clearPrefix, PREFIX_MS)
 }
 
 /** Arms the `g` prefix from outside (the Vim layer's `gg` shares it). */
@@ -98,7 +128,8 @@ export function isActivationTarget(target: EventTarget | null): boolean {
 }
 
 function dialogOpen(): boolean {
-  return typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]')
+  // The sequence spotlight is a hint over the page, not a modal: it does not mute the scopes.
+  return typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]:not([data-spotlight])')
 }
 
 function focusInside(frame: ScopeFrame): boolean {
@@ -205,6 +236,36 @@ export function dispatch(e: KeyboardEvent): boolean {
     return true
   }
   return false
+}
+
+/** One way to finish the pending sequence: the entry and the chord that completes it. */
+export interface Continuation { entry: Shortcut; next: Chord }
+
+/**
+ * What can complete the pending sequence right now (shortcut-spotlight D3): entries of
+ * the active, unpaused frames that have a handler, one per completing chord, innermost
+ * scope first. Empty when nothing is pending.
+ */
+export function pendingContinuations(): Continuation[] {
+  const pend = pending
+  if (!pend.length) return []
+  const out: Continuation[] = []
+  const seen = new Set<string>()
+  for (const frame of sortedFrames()) {
+    if (!focusInside(frame)) continue
+    for (const entry of byScope.get(frame.scope) ?? []) {
+      if (frame.scope === 'view' && entry.views && (!frame.view || !entry.views.includes(frame.view))) continue
+      if (!frame.handlers[entry.id]) continue
+      for (const seq of chordsOf(entry)) {
+        if (seq.length !== pend.length + 1 || !prefixMatches(seq, pend)) continue
+        const k = chordKey([seq[pend.length]])
+        if (seen.has(k)) continue
+        seen.add(k)
+        out.push({ entry, next: seq[pend.length] })
+      }
+    }
+  }
+  return out
 }
 
 function chordOf(e: KeyboardEvent): Chord {

@@ -184,7 +184,7 @@ function screens(ids) {
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'public-list', path: `/public/${ids.publicLink}`, anon: true, ready: (p) => p.locator('[data-public-task]').first().waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog'] },
+    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
@@ -332,6 +332,14 @@ const OVERLAYS = {
     const overlay = p.getByRole('dialog', { name: 'Search and commands' })
     await overlay.getByRole('option').first().waitFor()
     return { overlay, trigger, kind: 'dialog' }
+  },
+  async spotlight(p) {
+    // The sequence spotlight (shortcut-spotlight): `g` and a pause, from the list with nothing focused.
+    await p.locator('main').click({ position: { x: 5, y: 5 } }).catch(() => {})
+    await p.keyboard.press('g')
+    const overlay = p.locator('[data-spotlight]')
+    await overlay.waitFor({ state: 'visible', timeout: 3000 })
+    return { overlay, kind: 'popover' }
   },
   async help(p, ctx) {
     if (ctx.width < 768) await openSidebar(p)
