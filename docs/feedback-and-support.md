@@ -1,6 +1,6 @@
 ---
 title: Feedback and support
-summary: Where to report a problem or suggest an idea, how to star OpenTodo on GitHub, and how to buy the maintainer a coffee.
+summary: Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee.
 audience: user
 section: Reference
 specs: [first-run, settings-navigation]
@@ -17,6 +17,10 @@ OpenTodo is free and open source, made by one person in the open. These are the 
 
 If you found a security problem, do not open a public issue: follow `SECURITY.md` in the repository instead.
 
+## Talk to other people
+
+[Join the OpenTodo server on Discord](https://discord.gg/Jmj7WuRQ) to ask a question, show how you use the app or see what other people build. It is the place for conversation; a bug report is still best as an issue, so it is not lost in the chat. Nothing in the app talks to Discord: the link opens it in a new tab only when you choose to.
+
 ## Help other people find it
 
 [Star OpenTodo on GitHub](https://github.com/pixari/opentodo). Stars are how many people discover open-source projects, so a star is a real help. Telling a friend who pays for a task app works too.
@@ -27,7 +31,7 @@ If OpenTodo saves you a subscription, [a coffee](https://buymeacoffee.com/pixari
 
 ## Settings → About
 
-**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the source code and the coffee button.
+**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the source code and the coffee button.
 
 ## The welcome note
 
