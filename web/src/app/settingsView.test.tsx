@@ -5,10 +5,14 @@
 // action on section pages; focus moves to the heading on navigation.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useState } from 'react'
+import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import type { User } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, type } from '../ui/test-utils'
+import { HelpPanel } from './help/HelpPanel'
 import { navigate } from './router'
 import { SettingsView } from './SettingsView'
+import { emptyDraft, WebhooksView, type WebhookDraft } from './WebhooksPanel'
 
 vi.mock('./SsoPanel', async (orig) => ({ ...(await orig<typeof import('./SsoPanel')>()), SsoPanel: () => <div /> }))
 
@@ -95,5 +99,47 @@ describe('below 1024 px', () => {
     expect(document.activeElement?.getAttribute('data-settings-section')).toBe('account')
     await r.unmount()
     navigate({ view: 'settings' })
+  })
+})
+
+// settings-navigation "Learn more keeps the page" (settings-copy D3, task 2.4): the card's
+// Learn more opens its guide section in the Shell's panel slot, on top of the section; the
+// draft the user typed stays, and closing Help returns focus to the link.
+describe('Learn more on a settings card', () => {
+  const noop = () => {}
+  /** The Webhooks card with its draft held in state, as WebhooksPanel holds it. */
+  function Webhooks() {
+    const [draft, setDraft] = useState<WebhookDraft | null>(emptyDraft())
+    return (
+      <WebhooksView isOwner={false} connected webhooks={[]} projects={[]} allowPrivate={null} busy={false} error={null} draft={draft} secret={null}
+        testResults={{}} log={null} onDraftChange={setDraft} onSave={noop} onDismissSecret={noop} onToggleEnabled={noop} onTest={noop}
+        onDelete={noop} onOpenLog={noop} onRefreshLog={noop} onRedeliver={noop} onPolicyChange={noop} />
+    )
+  }
+  /** The Shell's help slot (Shell.tsx renders the same HelpPanel for a help request). */
+  function HelpSlot() {
+    const req = useHelpRequest()
+    return req ? <HelpPanel key={req.screen} screen={req.screen} trigger={req.trigger} onClose={closeHelp} /> : null
+  }
+
+  it('opens the webhooks guide beside the card, keeps the typed address and returns focus to the link', async () => {
+    const r = await render(<><Webhooks /><HelpSlot /></>)
+    const url = document.querySelector<HTMLInputElement>('input[type="url"]')!
+    await type(url, 'https://n8n.example.com/webhook/garden')
+    const link = r.container.querySelector<HTMLButtonElement>('#webhooks-heading ~ [data-settings-line] [data-learn-more]')!
+    expect(link.dataset.helpScreen).toBe('settings/webhooks')
+    expect(link.getAttribute('aria-label')).toBe('Learn more: Webhooks')
+    await click(link)
+    await waitFor(() => !!document.querySelector('[data-help-panel]'))
+    // The panel opens at the screen's section; the card and its draft are still there underneath.
+    await waitFor(() => /Webhooks|Integrations/.test(document.querySelector('[data-help-panel]')?.textContent ?? ''))
+    expect(document.querySelector<HTMLInputElement>('input[type="url"]')!.value).toBe('https://n8n.example.com/webhook/garden')
+    expect(r.container.querySelector('[data-testid="webhooks-panel"]')).toBeTruthy()
+    await click(document.querySelector('[data-help-panel] [data-overlay-close]')!)
+    await flush(30)
+    expect(document.querySelector('[data-help-panel]')).toBeNull()
+    expect(document.activeElement).toBe(link)
+    expect(document.querySelector<HTMLInputElement>('input[type="url"]')!.value).toBe('https://n8n.example.com/webhook/garden')
+    await r.unmount()
   })
 })

@@ -29,7 +29,7 @@ const button = (html: string, label: string) => buttons(html).find((b) => b.labe
 describe('EncryptionView', () => {
   it('off: explains the boundary and offers set-up', () => {
     const html = render(off)
-    expect(html).toContain('task titles')
+    expect(html).toContain('Your task text is encrypted on your devices')
     expect(html).toContain('due dates, priority')
     expect(html).toContain('Shared projects are not encrypted')
     expect(labels(html)).toEqual(['Set up encryption…'])

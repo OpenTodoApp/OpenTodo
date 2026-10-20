@@ -11,6 +11,7 @@ import { useOnline } from '../lib/online'
 import type { User } from '../lib/types'
 import { navigate } from './router'
 import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote } from './WelcomeDialog'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 export const WEBSITE_URL = 'https://open-todo.app'
 export const DOCS_URL = 'https://open-todo.app/docs/'
@@ -42,29 +43,25 @@ export function AboutSection({ user }: { user: User }) {
   const [note, setNote] = useState(false)
   return (
     <>
-      <SettingsSection title={t('About OpenTodo')} headingId="about-heading"
-        description={version
-          ? t('OpenTodo {version} · free and open source (AGPL-3.0) · no tracking, no telemetry', { version })
-          : t('Free and open source (AGPL-3.0) · no tracking, no telemetry')}>
-        <SettingRow id="about-help" label={t('Help')} description={t('The guides of this version, inside the app and offline.')}
+      <SettingsSection {...cardCopy('about', { variant: version ? 'version' : 'plain', values: { version } })}>
+        <SettingRow id="about-help" {...rowCopy('about', 'help')}
           control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={() => navigate({ view: 'help' })} data-about-help>{t('Open Help')}</button>} />
-        <SettingRow id="about-docs" label={t('Documentation')} description={t('The same guides on the website, with setup and self-hosting.')}
+        <SettingRow id="about-docs" {...rowCopy('about', 'docs')}
           control={<ExternalLink href={DOCS_URL} label={t('Read the docs')} testId="docs" />} />
-        <SettingRow id="about-website" label={t('Website')} description={t('News, guides, comparisons and what is new in each release.')}
+        <SettingRow id="about-website" {...rowCopy('about', 'website')}
           control={<ExternalLink href={WEBSITE_URL} label="open-todo.app" testId="website" />} />
-        <SettingRow id="about-feedback" label={t('Share feedback or report a problem')} description={t('Open an issue on GitHub. Every report is read.')}
+        <SettingRow id="about-feedback" {...rowCopy('about', 'feedback')}
           control={<ExternalLink href={ISSUES_URL} label={t('Open an issue')} testId="issues" />} />
-        <SettingRow id="about-community" label={t('Community')} description={t('Questions, ideas and other people who use OpenTodo, on Discord.')}
+        <SettingRow id="about-community" {...rowCopy('about', 'community')}
           control={<ExternalLink href={DISCORD_URL} label={t('Join on Discord')} testId="discord" />} />
-        <SettingRow id="about-source" label={t('Source code')} description={t('A star on GitHub helps other people find it.')}
+        <SettingRow id="about-source" {...rowCopy('about', 'source')}
           control={<ExternalLink href={REPO_URL} label="GitHub" testId="source" />} />
         {user.role === 'owner' && (
-          <SettingRow id="about-welcome" label={t('Welcome note')} description={t('The thank-you shown the first time you opened this server.')}
+          <SettingRow id="about-welcome" {...rowCopy('about', 'welcome')}
             control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={() => setNote(true)} data-about-welcome>{t('Show it again')}</button>} />
         )}
       </SettingsSection>
-      <SettingsSection title={t('Support OpenTodo')} headingId="about-support-heading"
-        description={t('OpenTodo has no paid plan: every feature is free. If it saves you a subscription, a coffee helps keep it going.')}>
+      <SettingsSection {...cardCopy('about-support')}>
         <div className="pt-1"><CoffeeButton className="sm:w-64" /></div>
       </SettingsSection>
       {note && <WelcomeNote onClose={() => setNote(false)} />}

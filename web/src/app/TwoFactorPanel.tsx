@@ -15,6 +15,7 @@ import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
 import { relativeTime } from './SecurityPanel'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → Two-factor authentication and the enrolment wizard (OpenSpec
 // `mfa-totp`). The server is authoritative; the last known status is cached
@@ -280,11 +281,10 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   const st = p.online ? p.status : null
   const few = !!st?.enrolled && st.recoveryCodesRemaining <= 3
   return (
-    <SettingsSection title={t('Two-factor authentication')} headingId="mfa-heading" testId="mfa-panel"
-      description={t('After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.')}>
-      {!p.online && <Notice>{t('You are offline. Two-factor authentication needs a connection to your server.')}</Notice>}
+    <SettingsSection {...cardCopy('mfa')} testId="mfa-panel">
+      {!p.online && <Notice>{noticeCopy('mfa', 'offline')}</Notice>}
       {st && (
-        <SettingRow label={t('Status')} status={
+        <SettingRow {...rowCopy('mfa', 'status')} status={
           <span className="flex flex-wrap items-center gap-2" data-testid="mfa-status">
             <Badge hue={st.enrolled ? (few ? 'orange' : 'green') : 'slate'}>{st.enrolled ? t('On') : t('Off')}</Badge>
             {st.enrolled && <span>{t('{recoveryCodesRemaining} of 10 recovery codes left', { recoveryCodesRemaining: st.recoveryCodesRemaining })}</span>}
@@ -292,9 +292,9 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
           </span>
         } control={!st.enrolled && <Button variant="primary" disabled={disabled} onClick={p.onStart}>{t('Set up two-factor authentication')}</Button>} />
       )}
-      {few && <Notice tone="warning">{t('Few recovery codes left. Generate a new set and store it safely.')}</Notice>}
+      {few && <Notice tone="warning">{noticeCopy('mfa', 'few')}</Notice>}
       {st?.enrolled && (
-        <SettingRow label={t('Recovery codes')} description={t('Use one to sign in if you lose your phone. Each works once.')}
+        <SettingRow {...rowCopy('mfa', 'recovery')}
           control={<Button variant={few ? 'primary' : 'secondary'} disabled={disabled} onClick={p.onRegenerate}>{t('New recovery codes')}</Button>} />
       )}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
@@ -323,7 +323,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
       )}
 
       {st?.enrolled && (
-        <SettingRow label={t('Turn off')} description={st.required ? t('The server owner requires two-factor authentication for your account, so it cannot be turned off.') : t('Sign-in will need only your password, and remembered browsers are forgotten.')}
+        <SettingRow {...rowCopy('mfa', 'off', { variant: st.required ? 'required' : 'optional' })}
           control={<Button variant="danger" disabled={disabled || st.required} onClick={p.onDisable}>{t('Turn off')}</Button>} />
       )}
       {p.isOwner && (
@@ -449,9 +449,8 @@ export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   onPolicy: (p: MfaPolicy) => void
 }) {
   return (
-    <SettingsSection title={t('Two-factor policy')} headingId="mfa-policy-heading" testId="mfa-policy-panel"
-      description={t('Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until they do. API tokens are never affected.')}>
-      <SettingRow label={t('Policy for this server')} htmlFor="mfa-policy-select"
+    <SettingsSection {...cardCopy('mfa-policy')} testId="mfa-policy-panel">
+      <SettingRow {...rowCopy('mfa-policy', 'policy')} htmlFor="mfa-policy-select"
         status={policy ? <Badge hue={policy === 'none' ? 'slate' : 'green'}>{POLICY_LABEL[policy]}</Badge> : undefined}
         control={
           <Select id="mfa-policy-select" className="max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}

@@ -197,7 +197,7 @@ describe('Which assistant you use', () => {
   it('keeps a choice the owner no longer allows, with a way to forget it', () => {
     const html = render({ ...ownStatus, allow_member_keys: false, source: 'server', provider: 'anthropic', provider_label: 'Anthropic (Claude)' })
     expect(html).not.toContain('Which assistant you use')
-    expect(html).toContain('Your own provider (OpenAI) is kept but not used')
+    expect(html).toContain('Your own provider (OpenAI) is kept but unused')
     expect(html).toContain('Forget my provider and key')
   })
   it('validates the form before sending', () => {

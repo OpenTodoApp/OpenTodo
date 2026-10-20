@@ -31,7 +31,7 @@ Your account and how the app looks for you: [Settings: You](settings-you.md).
 
 ### Account
 
-[Account](settings-you.md#account): your profile, **Sign out of this device**, password, two-factor authentication, passkeys, linked accounts, end-to-end encryption and recent activity.
+[Account](settings-you.md#account): your profile, **Sign out here**, password, two-factor authentication, passkeys, linked accounts, end-to-end encryption and recent activity.
 
 ### Appearance
 

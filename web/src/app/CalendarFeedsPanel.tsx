@@ -8,6 +8,7 @@ import { useOnline } from '../lib/online'
 import type { CalendarFeed, CalendarSubscription } from '../lib/types'
 import { SecretReveal } from './TokensSection'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → Integrations → Calendar feeds (OpenSpec change calendar-feeds, design
 // D9): the owner's switch, the user's subscribed calendars, and the private task
@@ -76,14 +77,11 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
   const on = p.enabled === true
   const subs = p.subscriptions ?? []
   return (
-    <SettingsSection title={t('Calendar feeds')} headingId="calendar-feeds-heading" testId="calendar-feeds-panel"
-      description={t('Show your other calendars in Day and Week, and subscribe to your tasks from Google Calendar, Outlook or Apple Calendar.')}>
-      {!p.connected && <Notice>{t('A connection is required to change calendar feeds. You are seeing the last loaded state.')}</Notice>}
+    <SettingsSection {...cardCopy('calendar-feeds')} testId="calendar-feeds-panel">
+      {!p.connected && <Notice>{noticeCopy('calendar-feeds', 'offline')}</Notice>}
       {p.enabled !== null && (
-        <SettingRow label={t('Calendar feeds on this server')}
-          description={p.isOwner
-            ? t('Let people subscribe to calendar addresses (fetched by this server) and create a private feed of their tasks. Private network addresses follow the webhooks setting.')
-            : on ? undefined : t('The owner has not enabled calendar feeds on this server.')}
+        <SettingRow label={rowCopy('calendar-feeds', 'server', { variant: 'owner' }).label}
+          description={p.isOwner || !on ? rowCopy('calendar-feeds', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
           status={<Badge hue={on ? 'green' : 'slate'}>{on ? t('On') : t('Off')}</Badge>}
           control={p.isOwner && <Switch checked={on} disabled={disabled} onChange={p.onToggle} label={t('Allow calendar feeds on this server')} hideLabel />} />
       )}
@@ -99,7 +97,7 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
               </div>
               <Button size="sm" icon="plus" disabled={disabled} onClick={() => p.onDraftChange(emptyDraft())}>{t('Add calendar')}</Button>
             </div>
-            {p.encrypted && <Notice>{t('Events from other calendars are stored unencrypted on the server.')}</Notice>}
+            {p.encrypted && <Notice>{noticeCopy('calendar-feeds', 'eventsPlain')}</Notice>}
             {p.subscriptions && subs.length === 0 && <p className="py-2 text-meta text-faint">{t('No calendars yet.')}</p>}
             <div className="-mx-3">
               {subs.map((s) => (
@@ -128,11 +126,11 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
           <div className="space-y-2 py-3" data-testid="calendar-task-feed">
             <h3 className="text-body font-medium text-default">{t('Your tasks as a calendar')}</h3>
             <p className="text-meta text-muted">{t('A private, read-only address that calendar apps can subscribe to. Anyone with the address can read your open dated tasks.')}</p>
-            {p.encrypted && <Notice>{t('Titles appear as “Encrypted item” in calendar apps, because the server cannot read them.')}</Notice>}
+            {p.encrypted && <Notice>{noticeCopy('calendar-feeds', 'titlesEncrypted')}</Notice>}
             {p.feed === undefined ? null : p.feed === null ? (
               <Button size="sm" icon="link" disabled={disabled} onClick={p.onCreateFeed}>{t('Create feed URL')}</Button>
             ) : (
-              <SettingRow label={t('Feed URL')}
+              <SettingRow {...rowCopy('calendar-feeds', 'feed')}
                 status={<span className="text-muted">{p.feed.lastUsedAt ? t('Created {ago} · last used {used}', { ago: ago(p.feed.createdAt, now), used: ago(p.feed.lastUsedAt, now) }) : t('Created {ago} · never used', { ago: ago(p.feed.createdAt, now) })}</span>}
                 control={<>
                   <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setConfirmFeed('rotate')}>{t('Rotate')}</Button>

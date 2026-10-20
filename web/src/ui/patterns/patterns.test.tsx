@@ -23,6 +23,39 @@ describe('SettingsSection', () => {
     expect(a.getAttribute('aria-labelledby')).toBe(a.querySelector('h2')!.id)
     await unmount()
   })
+
+  it('ends the line with Learn more, announced with the title, before the first control (settings-copy D3)', async () => {
+    const { closeHelp, useHelpRequest } = await import('../../lib/helpRequest')
+    function Probe() {
+      const r = useHelpRequest()
+      return <output data-probe>{r ? `${r.screen}:${r.trigger?.dataset.learnMore !== undefined}` : ''}</output>
+    }
+    const { container, unmount } = await render(
+      <>
+        <Probe />
+        <SettingsSection title="Webhooks" description="Notify any HTTP endpoint." learnMore="settings/webhooks">
+          <SettingRow label="Add a webhook" control={<button type="button">Add webhook</button>} />
+        </SettingsSection>
+        <SettingsSection title="Password" description="Changing it signs out your other sessions."><p>…</p></SettingsSection>
+      </>,
+    )
+    const [a, b] = container.querySelectorAll('section')
+    const line = a.querySelector('[data-settings-line]')!
+    const link = line.querySelector<HTMLButtonElement>('button[data-learn-more]')!
+    expect(link.textContent).toBe('Learn more')
+    expect(link.getAttribute('aria-label')).toBe('Learn more: Webhooks')
+    expect(link.dataset.helpScreen).toBe('settings/webhooks')
+    expect(line.textContent).toBe('Notify any HTTP endpoint. Learn more')
+    // Tab order: the heading is not focusable, so Learn more comes first, then the rows' controls.
+    const focusables = [...a.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea')]
+    expect(focusables.map((el) => el.textContent)).toEqual(['Learn more', 'Add webhook'])
+    expect(a.querySelector('h2')!.querySelector('button')).toBeNull()
+    await click(link)
+    expect(container.querySelector('[data-probe]')!.textContent).toBe('settings/webhooks:true')
+    expect(b.querySelector('[data-learn-more]')).toBeNull()
+    await act(async () => closeHelp())
+    await unmount()
+  })
 })
 
 function Harness({ onConfirm }: { onConfirm: () => void }) {

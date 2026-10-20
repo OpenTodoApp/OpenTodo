@@ -37,9 +37,9 @@ A push message goes through your browser's push service (run by the browser make
 
 ## When notifications don't arrive
 
-- **"Notifications are blocked for this site"**: you said no when the browser asked. Allow notifications for your OpenTodo address in the browser's site settings, then select **Re-enable**.
+- **"Notifications are blocked in your browser settings"**: you said no when the browser asked. Allow notifications for your OpenTodo address in the browser's site settings, then select **Re-enable**.
 - **"Push notifications are turned off on this server"**: the person running your server has switched push off. Reminders still show inside the app.
-- **"This browser does not support push notifications"**: try the installed app, or open OpenTodo over `https://`.
+- **"This browser cannot receive push notifications"**: try the installed app, or open OpenTodo over `https://`.
 - **The test says accepted but not received**: the push left your server but didn't reach this device. On a Mac, check **System Settings → Notifications** for your browser; on Windows, **Settings → System → Notifications**; on Android, the browser's or app's notification settings; on iPhone and iPad, the installed app's notification settings. Focus and do-not-disturb modes hide notifications too.
 - **Nothing arrives on a phone**: check that the operating system allows notifications for the app (or the browser), and that battery saving or focus modes aren't holding them back.
 - **Running OpenTodo from source with `make dev`**: development builds have no service worker, so push can't work there and the delivery check says so. Use the production build (`make run`, http://localhost:8080) to test push.

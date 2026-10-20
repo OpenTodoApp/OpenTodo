@@ -74,7 +74,7 @@ describe('the Focus card', () => {
     const card = document.querySelector('[data-testid="focus-settings"]')!
     expect(card.textContent).toContain('Work session')
     expect(card.textContent).toContain('Break reminder')
-    await click(card.querySelector('[data-focus-guide]')!)
+    await click(card.querySelector('[data-learn-more]')!)
     expect(document.querySelector('[data-help-probe]')?.textContent).toBe('settings/focus')
     closeHelp()
     expect(searchSettings('pomodoro', member)[0]).toMatchObject({ section: { id: 'general' } })

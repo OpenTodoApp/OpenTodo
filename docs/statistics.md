@@ -4,7 +4,7 @@ summary: See what you completed, created and let slip, all computed on your devi
 audience: user
 section: Guides
 specs: [statistics, email-digest]
-screens: [stats#statistics]
+screens: [stats#statistics, settings/digest#weekly-digest-by-email]
 order: 25
 ---
 # Statistics and the weekly digest

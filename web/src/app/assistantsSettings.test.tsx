@@ -34,7 +34,7 @@ describe('AssistantsView', () => {
     expect(button(off, 'Create read-only token')?.attrs).not.toContain('disabled')
     const on = render({ status: { enabled: true, endpoint } })
     expect(on).toContain('aria-checked="true"')
-    expect(on).toContain('sees only its own data')
+    expect(on).toContain('connect an assistant with its own token')
   })
 
   it('shows members the status without a toggle', () => {
@@ -48,7 +48,7 @@ describe('AssistantsView', () => {
 
   it('shows the last fetched state offline with actions disabled', () => {
     const html = render({ connected: false, status: { enabled: true, endpoint } })
-    expect(html).toContain('You are offline')
+    expect(html).toContain('Offline: these settings live on the server')
     expect(html).toContain(endpoint)
     expect(switches(html).every((b) => b.includes('disabled=""'))).toBe(true)
     expect(button(html, 'Create read-only token')?.attrs).toContain('disabled')
@@ -90,8 +90,8 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     expect(render()).not.toContain('AI assistants may make changes')
     const html = render({ status: { enabled: true, writes_enabled: false, endpoint } })
     expect(html).toContain('AI assistants may make changes')
-    expect(html).toContain('assistants can only read')
-    expect(render({ status: on })).toContain('create, edit, complete, reschedule and move')
+    expect(html).toContain('Assistants can only read')
+    expect(render({ status: on })).toContain('with a dedicated token change their tasks')
     // Members get no owner switches, only their own.
     const member = render({ isOwner: false, status: on })
     expect(member).not.toContain('AI assistants may make changes</span>')
@@ -101,8 +101,8 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
 
   it('shows every user their own switch with what assistants can and cannot do', () => {
     const html = render({ isOwner: false, status: { enabled: true, endpoint } })
+    expect(html).toContain('Changes to my tasks')
     expect(html).toContain('Allow AI assistants to make changes to my tasks')
-    expect(html).toContain('cannot delete anything permanently')
     expect(html).toContain('has not allowed assistants to make changes')
     expect(html).toContain('aria-describedby="assistant-writes-help"')
     expect(render({ status: on, access: { allow_writes: true, owner_allows_writes: true } })).not.toContain('has not allowed assistants')
@@ -126,7 +126,7 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     for (const b of boxes) expect(b).toContain('disabled=""')
     expect(boxes.every((b) => b.includes('aria-checked="true"'))).toBe(true)
     expect(button(html, AGENT)?.attrs).toContain('disabled')
-    expect(html).toContain('needs a connection')
+    expect(html).toContain('this is the last state fetched')
   })
 })
 

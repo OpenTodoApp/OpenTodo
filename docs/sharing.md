@@ -30,7 +30,7 @@ An invite link adds one person to the project, with or without an account. In **
 
 ### Who can bring new people
 
-A link creates a new account only when its creator is the owner or an admin of the server, open sign-up is on, or the server owner switched on **Members can invite new people with project links** (**Settings → People → Project invite links**). See [Who can bring new people](invite-people.md#who-can-bring-new-people).
+A link creates a new account only when its creator is the owner or an admin of the server, open sign-up is on, or the server owner switched on **Invite new people** (**Settings → People → Project invite links**). See [Who can bring new people](invite-people.md#who-can-bring-new-people).
 
 ## Share with a public link
 

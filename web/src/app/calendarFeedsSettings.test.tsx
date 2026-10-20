@@ -104,7 +104,7 @@ describe('calendar feeds panel', () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     serve({})
     const r = await render(<CalendarFeedsPanel isOwner />)
-    await waitFor(() => r.container.textContent!.includes('A connection is required'))
+    await waitFor(() => r.container.textContent!.includes('Changing calendar feeds needs a connection'))
     expect(r.container.textContent).toContain('Work')
     expect([...r.container.querySelectorAll('button')].find((b) => b.textContent === 'Add calendar')!.hasAttribute('disabled')).toBe(true)
     vi.restoreAllMocks()

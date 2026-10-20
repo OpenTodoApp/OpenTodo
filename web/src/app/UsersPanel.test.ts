@@ -9,6 +9,10 @@ import type { AdminUser, User } from '../lib/types'
 import { PasswordView } from './PasswordSection'
 import { AdministrationSections, confirmCopy, DeleteDialog, describeUserError, TransferDialog, UsersView, type UsersViewProps } from './UsersPanel'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const owner: User = { id: 'o', email: 'owner@example.com', name: 'Owner', role: 'owner', createdAt: 0 }
 const admin: User = { id: 'a', email: 'admin@example.com', name: 'Admin', role: 'admin', createdAt: 0 }
 const member: User = { id: 'm', email: 'member@example.com', name: 'Member', role: 'member', createdAt: 0 }
@@ -41,7 +45,7 @@ describe('UsersView', () => {
     expect(html).toContain('>Active<')
     expect(html).toContain('tabindex="0"')
     expect(html).toContain('3 accounts · 1 admin')
-    expect(html).not.toContain('data-help-screen')
+    expect(withoutLearnMore(html)).not.toContain('data-help-screen')
   })
 
   it('offers no action menu on rows the viewer may not act on', () => {

@@ -94,6 +94,13 @@ describe('docs check', () => {
     expect(problems).toContainEqual('docs/boards.md: screen "board-menu" is not used by any help link in the app')
   })
 
+  it('reports a settings card whose Learn more names a screen no page declares (settings-copy D4)', async () => {
+    write('web/src/lib/settingsCopy.ts', "export const SETTINGS_COPY = { webhooks: { learnMore: 'settings/nonsense' }, boards: { learnMore: 'board-view' } }\n")
+    const problems = await runChecks(root)
+    expect(problems).toContainEqual('web/src/lib/settingsCopy.ts: help screen "settings/nonsense" is not named by any page\'s "screens"')
+    expect(problems.filter((p) => p.includes('board-view'))).toEqual([])
+  })
+
   it('reports a skipped heading level', async () => {
     write('docs/boards.md', read('docs/boards.md').replace('## Switch to a board', '### Switch to a board'))
     expect(await runChecks(root)).toContainEqual('docs/boards.md: heading "Switch to a board" skips a level (h1 to h3)')

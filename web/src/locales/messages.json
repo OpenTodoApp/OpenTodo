@@ -194,12 +194,6 @@
   "A code from your phone on top of your password, and recovery codes": [
     "web/src/app/settingsIndex.ts"
   ],
-  "A compressed archive of the whole server. Keep it private: it contains every account’s sign-in data.": [
-    "web/src/app/ServerArchivePanel.tsx"
-  ],
-  "A connection is required to change calendar feeds. You are seeing the last loaded state.": [
-    "web/src/app/CalendarFeedsPanel.tsx"
-  ],
   "A dashboard cannot be shown in display mode. Open one of its views instead.": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
@@ -230,8 +224,8 @@
   "A line for tomorrow": [
     "web/src/lib/review.ts"
   ],
-  "A microphone button appears in quick add, and dictation also starts with {kbd}. Spoken words become quick-add text (“hashtag home priority two” → {example}); nothing is saved until you press Enter.": [
-    "web/src/app/VoiceSettings.tsx"
+  "A microphone in quick add, or {kbd}; nothing is saved until you press Enter.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "A name has at most {n} characters.": [
     "web/src/lib/fields.ts"
@@ -249,7 +243,7 @@
     "web/src/app/App.tsx"
   ],
   "A notice on any screen after a long stretch of work without a break.": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "A part of life you keep up, made of projects.": [
     "web/src/lib/method/vocabulary.json"
@@ -276,16 +270,19 @@
     "web/src/app/focus/FocusView.tsx"
   ],
   "A short tone when a session or a break ends, while the app is shown.": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "A six-digit code from an authenticator app after your password.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "A star helps other people find it.": [
     "web/src/app/WelcomeDialog.tsx"
   ],
   "A star on GitHub helps other people find it.": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "A system works only while you trust it, and you trust it by reviewing it.": [
     "web/src/lib/method/vocabulary.json"
@@ -318,7 +315,7 @@
     "web/src/app/FirstRun.tsx"
   ],
   "A token is shown once, when you create it.": [
-    "web/src/app/TokensSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time.": [
     "web/src/app/TokensSection.tsx"
@@ -336,7 +333,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "AI assistants": [
-    "web/src/app/AssistantsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "AI assistants (MCP)": [
     "web/src/app/auditFormat.ts",
@@ -360,9 +357,9 @@
     "web/src/app/auditFormat.ts"
   ],
   "API tokens": [
-    "web/src/app/TokensSection.tsx",
     "web/src/app/settingsIndex.ts",
-    "web/src/app/settingsSections.ts"
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Abort the whole import": [
     "web/src/app/ImportScreen.tsx"
@@ -371,7 +368,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "About OpenTodo": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "About this demo": [
     "web/src/app/DemoBanner.tsx"
@@ -421,10 +418,7 @@
     "web/src/app/auditFormat.ts"
   ],
   "Accounts": [
-    "web/src/app/UsersPanel.tsx"
-  ],
-  "Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until they do. API tokens are never affected.": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Accounts, passwords, sessions and tokens go back to the state in the backup. Anyone whose session started after it, possibly you, signs in again.": [
     "web/src/app/RestoreSection.tsx"
@@ -589,7 +583,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a webhook": [
-    "web/src/app/WebhooksPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Add calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -663,7 +657,7 @@
     "web/src/app/ShareDialog.tsx"
   ],
   "Adding files is turned off on this server.": [
-    "web/src/app/DataSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Address": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -685,9 +679,6 @@
   ],
   "After signing out here, people who signed in with the provider are sent to its sign-out page.": [
     "web/src/app/SsoPanel.tsx"
-  ],
-  "After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.": [
-    "web/src/app/TwoFactorPanel.tsx"
   ],
   "All": [
     "web/src/app/Sidebar.tsx",
@@ -726,6 +717,9 @@
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
+  "Allow AI assistants": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Allow AI assistants (MCP endpoint)": [
     "web/src/app/AssistantsPanel.tsx"
   ],
@@ -736,7 +730,8 @@
     "web/src/app/AssistantsPanel.tsx"
   ],
   "Allow attachments": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/app/AttachmentSettingsPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Allow calendar apps to sync with this server": [
     "web/src/app/CaldavPanel.tsx"
@@ -760,7 +755,8 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Allow private network targets": [
-    "web/src/app/WebhooksPanel.tsx"
+    "web/src/app/WebhooksPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Allow this provider": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -790,8 +786,8 @@
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
-  "An OpenTodo export, a CSV file or another task manager’s JSON export (open this with {kbd}).": [
-    "web/src/app/DataSettings.tsx"
+  "An OpenTodo export, a CSV file or another app’s JSON export; open it with {kbd}.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "An account with this email already exists.": [
     "web/src/lib/i18n/errors.ts"
@@ -805,14 +801,14 @@
   "An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.": [
     "web/src/app/RestoreSection.tsx"
   ],
-  "An assistant with a token for making changes can create, edit, complete, reschedule and move tasks, create projects and labels, and comment. It cannot delete anything permanently or change sharing, members, tokens or settings, and it can move to the Trash only tasks it created. Every change shows in the task’s history as made by an AI assistant and can be undone. The server limits what it can do (at most 50 items per request).": [
-    "web/src/app/AssistantsPanel.tsx"
+  "An assistant with a token for changes can edit your tasks; you can undo each one.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "An email on your review day with last week's numbers": [
     "web/src/app/settingsIndex.ts"
   ],
-  "An email on your review day with last week's numbers, what is overdue and due soon, projects without a next action, and a link to your weekly review.": [
-    "web/src/app/DigestCard.tsx"
+  "An email on your review day with last week's numbers and what is due.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "An invitation is a single-use link that lets one person create an account here.": [
     "web/src/app/MembersPanel.tsx"
@@ -884,9 +880,9 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Appearance": [
-    "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
-    "web/src/app/settingsSections.ts"
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Applied": [
     "web/src/app/review/CloseDay.tsx"
@@ -918,7 +914,7 @@
     "web/src/app/ArchivePrompt.tsx"
   ],
   "Archive automatically": [
-    "web/src/app/ProjectsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Archive file": [
     "web/src/app/RestoreSection.tsx"
@@ -936,7 +932,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Archive projects after 30 days without open tasks. Each device keeps its own setting.": [
-    "web/src/app/ProjectsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Archive projects automatically after 30 days without open tasks (this device)": [
     "web/src/app/ProjectsSettings.tsx"
@@ -952,8 +948,8 @@
   ],
   "Archived projects": [
     "web/src/app/ArchivedProjects.tsx",
-    "web/src/app/ProjectsSettings.tsx",
-    "web/src/app/ProjectsView.tsx"
+    "web/src/app/ProjectsView.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Archived {join}: no open tasks for 30 days.": [
     "web/src/app/ArchivePrompt.tsx"
@@ -1024,10 +1020,10 @@
     "web/src/app/assistant/AskEntry.tsx"
   ],
   "Ask the server owner to turn it on.": [
-    "web/src/app/CaldavPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Asks for your passphrase again before showing your tasks.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Assign": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -1077,14 +1073,20 @@
     "web/src/app/SidebarFooter.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
-    "web/src/app/assistant/AssistantSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Assistant:": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Assistant: {summary}": [
     "web/src/app/assistant/useAssistantConversation.ts"
+  ],
+  "Assistants can only read, whatever people choose.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Assistants may make changes": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "At (minutes count)": [
     "web/src/app/BackupsPanel.tsx"
@@ -1129,10 +1131,9 @@
     "web/src/lib/attachments.ts"
   ],
   "Attachments": [
-    "web/src/app/AttachmentSettingsPanel.tsx",
-    "web/src/app/DataSettings.tsx",
     "web/src/app/settingsIndex.ts",
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/app/task-detail/AttachmentsRow.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Attachments are turned off on this server, so the files are not attached.": [
     "web/src/app/ShareCapture.tsx"
@@ -1145,8 +1146,8 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Audit log": [
-    "web/src/app/AuditPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Audit log exported": [
     "web/src/app/auditFormat.ts"
@@ -1233,9 +1234,8 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Backups": [
-    "web/src/app/BackupsPanel.tsx",
-    "web/src/app/DataSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": [
     "web/src/app/BackupsPanel.tsx"
@@ -1265,7 +1265,7 @@
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
   "Between 7 and 3650 days. Older events are deleted.": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Blocked": [
     "web/src/app/NotificationsSettings.tsx",
@@ -1306,7 +1306,7 @@
     "web/src/lib/richtextEditor.ts"
   ],
   "Bookmarklet": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Bookmarklet and extension": [
     "web/src/app/settingsIndex.ts"
@@ -1322,7 +1322,8 @@
   ],
   "Break reminder": [
     "web/src/app/focus/BreakReminder.tsx",
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/app/focus/FocusSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Break this down": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -1343,7 +1344,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Browser extension": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Browser supports push": [
     "web/src/lib/push.ts"
@@ -1378,11 +1379,11 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "CalDAV status is available when you are online.": [
-    "web/src/app/CaldavPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Calendar": [
-    "web/src/app/CalendarSettings.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Calendar address": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -1394,14 +1395,11 @@
     "web/src/app/auditFormat.ts"
   ],
   "Calendar apps (CalDAV)": [
-    "web/src/app/CaldavPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP)": [
     "web/src/app/settingsSections.ts"
-  ],
-  "Calendar apps on this server": [
-    "web/src/app/CaldavPanel.tsx"
   ],
   "Calendar apps refresh subscriptions on their own schedule, from every few minutes to once a day.": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -1422,14 +1420,11 @@
     "web/src/app/auditFormat.ts"
   ],
   "Calendar feeds": [
-    "web/src/app/CalendarFeedsPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Calendar feeds are not enabled on this server.": [
     "web/src/lib/i18n/errors.ts"
-  ],
-  "Calendar feeds on this server": [
-    "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "Calendar grid": [
     "web/src/app/settingsIndex.ts"
@@ -1459,8 +1454,8 @@
   "Calm": [
     "web/src/app/AppearanceSection.tsx"
   ],
-  "Calm leaves out what the view already says, colours only what needs attention and keeps counts quiet until you hover. Detailed shows every chip.": [
-    "web/src/app/AppearanceSection.tsx"
+  "Calm leaves out what the view says and keeps counts quiet; Detailed shows every chip.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Calm or detailed task rows": [
     "web/src/app/settingsIndex.ts"
@@ -1516,8 +1511,8 @@
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "Capture": [
-    "web/src/app/CaptureSettings.tsx",
-    "web/src/app/settingsSections.ts"
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Carry over": [
     "web/src/lib/review.ts"
@@ -1574,17 +1569,23 @@
   "Changes in this group": [
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
+  "Changes to my tasks": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Changes to this task show up here, also while offline.": [
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
   "Changes: {summary}": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "Changing calendar feeds needs a connection. You are seeing the last loaded state.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Changing it asks every person to accept the disclosure again.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.": [
-    "web/src/app/PasswordSection.tsx"
+  "Changing it signs out your other sessions; this one stays signed in.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Check / uncheck item": [
     "web/src/lib/richtextEditor.ts"
@@ -1730,8 +1731,8 @@
   "Cleared.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.": [
-    "web/src/app/AccountSettings.tsx"
+  "Clears your tasks from this device after uploading unsynced changes.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Click to sync now": [
     "web/src/app/SyncStatus.tsx"
@@ -1898,17 +1899,17 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Community": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Compact": [
     "web/src/app/AppearanceSection.tsx"
   ],
-  "Compact makes task rows, group headers and the sidebar tighter. Touch targets stay full size on touch screens.": [
-    "web/src/app/AppearanceSection.tsx"
+  "Compact tightens rows, headers and the sidebar; touch targets stay full size.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Companion": [
-    "web/src/app/method/MethodModeChooser.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Compatible endpoint": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -2076,7 +2077,7 @@
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Conversations": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Copied": [
     "web/src/app/AssistantsPanel.tsx",
@@ -2089,10 +2090,10 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Copied.": [
-    "web/src/app/EmailInboxPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Copied. Create a bookmark and paste it as the address.": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Copy": [
     "web/src/app/TokensSection.tsx"
@@ -2249,7 +2250,7 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Create tasks from email": [
-    "web/src/app/EmailInboxPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Create tasks from email sent to this address": [
     "web/src/app/EmailInboxPanel.tsx"
@@ -2298,8 +2299,8 @@
   "Created {names}.": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
-  "Creates an API token that you paste into the assistant. Read-only is the safe default.": [
-    "web/src/app/AssistantsPanel.tsx"
+  "Creates an API token to paste into the assistant. Read-only is the safe default.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Creating your account needs a connection to the server. The page will retry when the network returns.": [
     "web/src/app/EmailScreens.tsx"
@@ -2375,7 +2376,7 @@
     "web/src/lib/fields.ts"
   ],
   "Date and time": [
-    "web/src/app/DateTimeSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Date changed": [
     "web/src/lib/undoActions.ts"
@@ -2384,14 +2385,14 @@
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Date format": [
-    "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Date removed": [
     "web/src/lib/undoActions.ts"
   ],
-  "Dates and times (“tomorrow at 3pm”), {project}, {label}, {p1}–{p4} and estimates ({estimate}). Put text in \"double quotes\" to keep it literal.": [
-    "web/src/app/QuickAddSettings.tsx"
+  "Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; \"quotes\" keep text as is.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Day": [
     "web/src/app/BackupsPanel.tsx",
@@ -2408,7 +2409,8 @@
     "web/src/app/review/CloseDay.tsx"
   ],
   "Day length": [
-    "web/src/app/CalendarSettings.tsx"
+    "web/src/app/CalendarSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Day, Week, Month and Plan calendar": [
     "web/src/lib/shortcuts.ts"
@@ -2581,7 +2583,7 @@
     "web/src/app/TrashView.tsx"
   ],
   "Deleted items stay in the <a>Trash</a> until restored or purged.": [
-    "web/src/app/ProjectsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Deleted label": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -2604,6 +2606,15 @@
   "Delivery log": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Demo instance": [
+    "web/src/app/SettingsView.tsx"
+  ],
+  "Demo instance: {features} are disabled here.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Demo instance: {features} is disabled here.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Demo limit reached": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -2615,7 +2626,8 @@
   ],
   "Density": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Depending on the browser, your audio may be sent to the browser vendor’s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.": [
     "web/src/app/VoiceSettings.tsx"
@@ -2639,7 +2651,8 @@
     "web/src/lib/assistant.ts"
   ],
   "Destination": [
-    "web/src/app/BackupsPanel.tsx"
+    "web/src/app/BackupsPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Destination type": [
     "web/src/app/BackupsPanel.tsx"
@@ -2675,6 +2688,9 @@
   ],
   "Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Dictate tasks": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Dictate tasks into quick add": [
     "web/src/app/VoiceSettings.tsx",
@@ -2739,8 +2755,8 @@
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Documentation": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Does not repeat (e.g. {example})": [
     "web/src/app/RecurrenceField.tsx"
@@ -2797,8 +2813,8 @@
     "web/src/app/DataSettings.tsx"
   ],
   "Download your data": [
-    "web/src/app/ServerArchivePanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Download your data and the audit log": [
     "web/src/app/settingsSections.ts"
@@ -2809,8 +2825,8 @@
   "Do|method": [
     "web/src/lib/method/vocabulary.json"
   ],
-  "Drag <strong>Add to OpenTodo</strong> to your bookmarks bar. On any page, click it to add the page, its title and the selected text in a small window. It holds no password or token; it uses your sign-in on this server.": [
-    "web/src/app/CaptureSettings.tsx"
+  "Drag <strong>Add to OpenTodo</strong> to your bookmarks bar, then click it on any page.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Drag a bar to move its dates, or its ends to set the start and deadline. ← → move the selected task, Shift+← → its deadline.": [
     "web/src/app/TimelineView.tsx"
@@ -2984,8 +3000,8 @@
   "Email <span>(optional, only they can use it)</span>": [
     "web/src/app/InviteLinksSection.tsx"
   ],
-  "Email me a weekly digest": [
-    "web/src/app/DigestCard.tsx"
+  "Email me the digest": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Email not sent": [
     "web/src/app/auditFormat.ts"
@@ -3000,14 +3016,14 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Email to task": [
-    "web/src/app/EmailInboxPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Email to task is not enabled on this server.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "Email to task settings are available when you are online.": [
-    "web/src/app/EmailInboxPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Email-to-task address created": [
     "web/src/app/auditFormat.ts"
@@ -3054,7 +3070,8 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Encryption": [
-    "web/src/app/BackupsPanel.tsx"
+    "web/src/app/BackupsPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Encryption is not enabled for this account, or the key record is not available offline.": [
     "web/src/lib/e2ee.ts"
@@ -3080,9 +3097,6 @@
   "Encryption was already set up on another device. Unlock with that passphrase instead.": [
     "web/src/lib/e2ee.ts"
   ],
-  "Encrypts {ENCRYPTED_FIELDS} on your devices before they are synced, so your server, its backups and integrations only see ciphertext.": [
-    "web/src/app/EncryptionPanel.tsx"
-  ],
   "End": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -3090,15 +3104,15 @@
     "web/src/app/focus/FocusParts.tsx"
   ],
   "End-to-end encryption": [
-    "web/src/app/EncryptionPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "End-to-end encryption is not enabled for this account.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "Endpoint": [
-    "web/src/app/AssistantsPanel.tsx",
-    "web/src/app/BackupsPanel.tsx"
+    "web/src/app/BackupsPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "English is always on.": [
     "web/src/app/QuickAddSettings.tsx"
@@ -3203,10 +3217,13 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Events from other calendars are stored unencrypted on the server.": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
-  "Every action has a shortcut; press ? anywhere to list them.": [
-    "web/src/app/PreferencesPanels.tsx"
+  "Every account can connect an assistant with its own token.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Every action has a shortcut; press ? to list them.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Every assistant conversation stored in this browser is deleted. Your tasks and changes already applied stay as they are.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3216,6 +3233,9 @@
   ],
   "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": [
     "web/src/app/AccountSettings.tsx"
+  ],
+  "Every device, plus your API tokens and app passwords.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
@@ -3254,17 +3274,14 @@
   "Everyone uses {provider}.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Everyone with an account on this server. As an admin you can deactivate, reset and delete members.": [
-    "web/src/app/UsersPanel.tsx"
-  ],
-  "Everyone with an account on this server. You can manage every account and choose admins; admins manage members.": [
-    "web/src/app/UsersPanel.tsx"
-  ],
   "Everyone with an account, their role and last sign-in": [
     "web/src/app/settingsIndex.ts"
   ],
-  "Everything on this server — every account, project, task, comment, file and setting — as one backup archive. Restore it into your own OpenTodo server with {command}; devices then sync with the new address.": [
-    "web/src/app/ServerArchivePanel.tsx"
+  "Everyone with an account; admins can deactivate, reset and delete members.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Everyone with an account; you manage every account and choose admins.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Everything stays on your devices and your own server, private by design.": [
     "web/src/lib/method/vocabulary.json"
@@ -3272,11 +3289,11 @@
   "Everything that has your attention gets a home.": [
     "web/src/lib/method/vocabulary.json"
   ],
-  "Everything you can see as one JSON file, including the Trash. Keep it as a personal copy or move to another server.": [
-    "web/src/app/DataSettings.tsx"
+  "Everything you can see as one JSON file, including the Trash.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Everything you see is stored on this device and on your server.": [
-    "web/src/app/DataSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Everywhere": [
     "web/src/lib/shortcuts.ts"
@@ -3375,8 +3392,8 @@
     "web/src/app/InviteLinksSection.tsx"
   ],
   "Export": [
-    "web/src/app/DataSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Export (NDJSON)": [
     "web/src/app/AuditPanel.tsx"
@@ -3413,7 +3430,10 @@
     "web/src/app/FavouritesGroup.tsx"
   ],
   "Feed URL": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Feedback and problems": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Fetching more…": [
     "web/src/app/AuditPanel.tsx"
@@ -3425,7 +3445,7 @@
     "web/src/app/FeedView.tsx"
   ],
   "Few recovery codes left. Generate a new set and store it safely.": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Field names": [
     "web/src/app/FilterView.tsx"
@@ -3460,10 +3480,10 @@
     "web/src/app/ShareCapture.tsx"
   ],
   "Files may be up to {bytes} each.": [
-    "web/src/app/DataSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
-  "Files people add to tasks and comments are stored on this server, under the data directory, and included in backups.": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+  "Files on tasks and comments, stored under the data directory and backed up.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Files to attach": [
     "web/src/app/task-detail/Composer.tsx"
@@ -3566,7 +3586,6 @@
     "web/src/app/RemindersField.tsx"
   ],
   "First day of the week": [
-    "web/src/app/DateTimeSettings.tsx",
     "web/src/app/settingsIndex.ts"
   ],
   "Five minutes: the Inbox to zero, what is overdue, and today's focus.": [
@@ -3603,8 +3622,8 @@
     "web/src/lib/focus/prefs.ts"
   ],
   "Focus": [
-    "web/src/app/focus/FocusSettings.tsx",
     "web/src/app/focus/FocusView.tsx",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Focus on this task": [
@@ -3635,13 +3654,10 @@
     "web/src/app/VoiceSettings.tsx"
   ],
   "For Chromium and Firefox, in the repository under {path}.": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "For Gmail and similar services, an app password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
-  ],
-  "For everyone on this server. Needed when a receiver runs on your LAN or this machine, for example Home Assistant at 192.168.x.x. Leave off on a public server.": [
-    "web/src/app/WebhooksPanel.tsx"
   ],
   "For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -3649,8 +3665,11 @@
   "For example: “{example}”": [
     "web/src/app/assistant/AskEntry.tsx"
   ],
-  "For scripts, the ot command and AI assistants. Send it as {header}.": [
-    "web/src/app/TokensSection.tsx"
+  "For receivers on your LAN or this machine. Leave off on a public server.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "For scripts, the ot command and AI assistants. Sent as {header}.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Forget all browsers": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -3668,7 +3687,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Forgot your passphrase?": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Format": [
     "web/src/app/ImportScreen.tsx"
@@ -3679,14 +3698,11 @@
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/ListGroups.tsx"
   ],
-  "Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title, the text is the description, and attachment names are listed.": [
-    "web/src/app/EmailInboxPanel.tsx"
-  ],
   "Four filters over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
   ],
-  "Free and open source (AGPL-3.0) · no tracking, no telemetry": [
-    "web/src/app/AboutSection.tsx"
+  "Free and open source · no tracking, no telemetry.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Frequency": [
     "web/src/app/BackupsPanel.tsx"
@@ -3741,6 +3757,9 @@
   ],
   "Get current": [
     "web/src/lib/review.ts"
+  ],
+  "Get reminders while the app is closed. Each device decides for itself.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Get whatever is on your mind into the Inbox the moment it appears.": [
     "web/src/lib/method/vocabulary.json"
@@ -3911,13 +3930,13 @@
     "web/src/app/CalendarSettings.tsx"
   ],
   "Grid ends": [
-    "web/src/app/CalendarSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Grid start hour": [
     "web/src/app/CalendarSettings.tsx"
   ],
   "Grid starts": [
-    "web/src/app/CalendarSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Group": [
     "web/src/app/SavedViewView.tsx"
@@ -3944,13 +3963,13 @@
     "web/src/lib/review.ts"
   ],
   "Help": [
-    "web/src/app/AboutSection.tsx",
     "web/src/app/SidebarFooter.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/help/HelpLink.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/help/HelpView.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/lib/settingsCopy.ts",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
   "Help could not be loaded. Reload the app and try again.": [
@@ -4009,20 +4028,17 @@
   "Hourly": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "How Focus works": [
-    "web/src/app/focus/FocusSettings.tsx"
-  ],
-  "How dates and times look and where weeks start, on all your devices. System follows this browser.": [
-    "web/src/app/DateTimeSettings.tsx"
+  "How dates and times look and where weeks start, on all your devices.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "How do you want to work?": [
     "web/src/app/FirstRun.tsx"
   ],
-  "How much the app shows Open Loops, its method for everything on your mind. Saved to your account; switching never changes a task.": [
-    "web/src/app/method/HowYouWorkSection.tsx"
+  "How much the app shows its method, Open Loops. Synced; never changes a task.": [
+    "web/src/lib/settingsCopy.ts"
   ],
-  "How quick add reads what you type. Applies to this device only.": [
-    "web/src/app/QuickAddSettings.tsx"
+  "How quick add reads what you type, on this device.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "How the day went": [
     "web/src/lib/review.ts"
@@ -4035,9 +4051,9 @@
     "web/src/app/FirstRun.tsx"
   ],
   "How you work": [
-    "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/app/method/MethodModeChooser.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "I have an account: sign in to join": [
     "web/src/app/ProjectInviteScreen.tsx"
@@ -4085,8 +4101,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Import": [
-    "web/src/app/DataSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Import completed": [
     "web/src/lib/webhooks.ts"
@@ -4130,10 +4146,10 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "In MB; 0 means no total. Removing a file frees its space at once.": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "In Month: add a task due on the focused day": [
     "web/src/lib/shortcuts.ts"
@@ -4280,9 +4296,6 @@
   "Inbox zero: every task has a place.": [
     "web/src/app/TriageView.tsx"
   ],
-  "Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group's destinations sit next to them, on every device.": [
-    "web/src/app/AppearanceSection.tsx"
-  ],
   "Inbox, unlabelled, has a parent task": [
     "web/src/app/FilterView.tsx"
   ],
@@ -4290,7 +4303,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Include task titles": [
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Indent list item (Shift-Tab: outdent)": [
     "web/src/lib/richtextEditor.ts"
@@ -4312,7 +4326,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Install the app and use your phone's share menu.": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.": [
     "web/src/app/FirstRun.tsx"
@@ -4321,7 +4335,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "Interface language": [
-    "web/src/app/PreferencesPanels.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Invalid date \"{date}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -4343,10 +4357,14 @@
     "web/src/app/MembersPanel.tsx"
   ],
   "Invitations": [
-    "web/src/app/MembersPanel.tsx"
+    "web/src/app/MembersPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Invite link": [
     "web/src/app/InviteLinksSection.tsx"
+  ],
+  "Invite new people": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Invite people with a single-use link": [
     "web/src/app/settingsIndex.ts"
@@ -4354,8 +4372,8 @@
   "Invite someone below to give them an account on this server.": [
     "web/src/app/UsersPanel.tsx"
   ],
-  "Invite someone with a single-use link. Sign-up stays closed for everyone else.": [
-    "web/src/app/MembersPanel.tsx"
+  "Invite someone with a single-use link; sign-up stays closed.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Invite with a link": [
     "web/src/app/InviteLinksSection.tsx"
@@ -4389,6 +4407,9 @@
   ],
   "It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.": [
     "web/src/app/InviteScreen.tsx"
+  ],
+  "It names your tasks and projects and goes to your account’s email address.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "It will no longer sign you in. Your password and other passkeys keep working.": [
     "web/src/app/SecurityPanel.tsx"
@@ -4442,13 +4463,16 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Keep events for": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Keep in Today": [
     "web/src/app/review/CloseDay.tsx"
   ],
-  "Keep it private: anyone who knows it can add tasks (at most {hourlyLimit} per hour). If it leaks, make a new one; the old address stops working at once.": [
-    "web/src/app/EmailInboxPanel.tsx"
+  "Keep it private: anyone who knows it can add tasks. If it leaks, make a new one.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Keep it private: it holds every account’s sign-in data.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Keep it secret. With it, anyone who can sign in to your account can read your encrypted tasks.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -4488,7 +4512,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Keyboard": [
-    "web/src/app/PreferencesPanels.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Keyboard guide": [
     "web/src/app/ShortcutHelp.tsx"
@@ -4585,8 +4609,8 @@
     "web/src/ui/Chips.tsx"
   ],
   "Language": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Language, start view, date and time, calendar and keyboard": [
     "web/src/app/settingsSections.ts"
@@ -4665,7 +4689,13 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Learn more": [
-    "web/src/app/DemoBanner.tsx"
+    "web/src/app/DemoBanner.tsx",
+    "web/src/app/SettingsView.tsx",
+    "web/src/ui/patterns/SettingsSection.tsx"
+  ],
+  "Learn more: {topic}": [
+    "web/src/app/SettingsView.tsx",
+    "web/src/ui/patterns/SettingsSection.tsx"
   ],
   "Learn the method: {method}": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -4697,33 +4727,27 @@
   "Length in minutes": [
     "web/src/app/focus/FocusParts.tsx"
   ],
-  "Let an assistant that supports the Model Context Protocol (MCP) read your projects and tasks with a token you create. Read-only by default; the server itself contacts no one.": [
-    "web/src/app/AssistantsPanel.tsx"
+  "Let an MCP assistant read your tasks with a token; read-only by default.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Let calendar apps sync with this server.": [
-    "web/src/app/CaldavPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Let members bring their own key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Let people sign in with an OpenID Connect provider you already run (Authentik, Keycloak, Authelia, a hosted login service). The server only contacts the issuer you enter.": [
-    "web/src/app/SsoPanel.tsx"
-  ],
-  "Let people subscribe to calendar addresses (fetched by this server) and create a private feed of their tasks. Private network addresses follow the webhooks setting.": [
-    "web/src/app/CalendarFeedsPanel.tsx"
-  ],
-  "Lets this server mail password resets, sign-up confirmations and invitations. Nothing is sent until it is configured.": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+  "Lets this server mail password resets, confirmations and invitations.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Light": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FirstRun.tsx"
   ],
+  "Light or dark, colour and row density, on all your devices.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Light or dark, colour theme, density and the sidebar": [
     "web/src/app/settingsSections.ts"
-  ],
-  "Light or dark, the colour of buttons, links and selection, and how tight the rows are. Saved to your account, so all your devices follow.": [
-    "web/src/app/AppearanceSection.tsx"
   ],
   "Line break": [
     "web/src/lib/richtextEditor.ts"
@@ -4750,8 +4774,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Linked accounts": [
-    "web/src/app/SsoPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Linked. You can now sign in with the provider.": [
     "web/src/app/SsoPanel.tsx"
@@ -4767,10 +4791,10 @@
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Listed on the All projects page, where each can be restored.": [
-    "web/src/app/ProjectsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Lists only": [
-    "web/src/app/method/MethodModeChooser.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Lists only, Companion or Open Loops first: how much the app shows its method": [
     "web/src/app/settingsIndex.ts"
@@ -4884,10 +4908,10 @@
   ],
   "Long break": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Long break after": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Look ahead": [
     "web/src/lib/review.ts"
@@ -4914,19 +4938,19 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Lost both keys?": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Made by": [
     "web/src/app/RestoreSection.tsx"
-  ],
-  "Mail sent to your address becomes a task. Turn it off to pause without losing the address.": [
-    "web/src/app/EmailInboxPanel.tsx"
   ],
   "Mail sent to your current address will no longer create tasks. Update anything that forwards to it.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
   "Mail server": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Mail to your address becomes a task. Turn it off to pause and keep the address.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Make a standalone copy of this occurrence and move the series on": [
     "web/src/app/RecurrenceField.tsx"
@@ -4983,10 +5007,10 @@
     "web/src/lib/roleNames.ts"
   ],
   "Members": [
-    "web/src/app/MembersPanel.tsx",
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ShareDialog.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Members can invite new people with project links": [
     "web/src/app/ProjectInvitePolicyPanel.tsx",
@@ -4999,7 +5023,7 @@
     "web/src/app/ProjectHeader.tsx"
   ],
   "Members’ own keys": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Mention a member": [
     "web/src/app/task-detail/Composer.tsx"
@@ -5034,8 +5058,8 @@
   "Messages to answer": [
     "web/src/lib/review.ts"
   ],
-  "Messages travel unencrypted to the mail server. Use this only for a relay on your own network.": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+  "Messages travel unencrypted to the mail server; use it only for a relay on your network.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.": [
     "web/src/lib/voice/dictation.ts"
@@ -5057,7 +5081,8 @@
   ],
   "Mode": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Model": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -5089,7 +5114,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Monthly tokens per person": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "More": [
     "web/src/app/Sidebar.tsx",
@@ -5265,8 +5291,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "My day starts at": [
-    "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "My own provider and key": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -5293,6 +5319,9 @@
   ],
   "Needs a subscription first.": [
     "web/src/lib/push.ts"
+  ],
+  "Needs outgoing email, set up by the server owner under Settings → Server.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Neither": [
     "web/src/lib/boardTemplates.ts"
@@ -5372,13 +5401,14 @@
     "web/src/lib/assistant.ts"
   ],
   "New token": [
-    "web/src/app/TokensSection.tsx"
+    "web/src/app/TokensSection.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "New webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
   "News, guides, comparisons and what is new in each release.": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Next": [
     "web/src/app/EncryptionPanel.tsx",
@@ -5521,6 +5551,9 @@
   "No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.": [
     "web/src/app/RemindersField.tsx"
   ],
+  "No effect yet: the server owner has not allowed assistants to make changes.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "No estimate yet": [
     "web/src/lib/filters.ts"
   ],
@@ -5625,6 +5658,9 @@
   ],
   "No other project can hold this one": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "No paid plan: if it saves you a subscription, a coffee helps.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "No panels yet.": [
     "web/src/app/DashboardView.tsx"
@@ -5737,8 +5773,8 @@
   "Normal text": [
     "web/src/lib/richtextEditor.ts"
   ],
-  "Normal, Insert and Command modes on top of the usual shortcuts: counts, {kbd}, {kbd2}, {kbd3} commands. This device only.": [
-    "web/src/app/PreferencesPanels.tsx"
+  "Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Not a rule I understand: {error}. The previous rule is kept.": [
     "web/src/app/RecurrenceField.tsx"
@@ -5767,11 +5803,14 @@
   "Not asked yet": [
     "web/src/app/NotificationsSettings.tsx"
   ],
-  "Not available for your account: end-to-end encryption is on, and calendar apps cannot read or write encrypted titles.": [
-    "web/src/app/CaldavPanel.tsx"
-  ],
   "Not available offline.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Not available with end-to-end encryption: calendar apps cannot read encrypted titles.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Not available with end-to-end encryption: the email would show your task titles.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Not available with end-to-end encryption: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -5788,8 +5827,8 @@
   "Not configured": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
-  "Not configured. With an SMTP server, people can reset a forgotten password themselves, confirm their address when signing up, and receive invitations by email.": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+  "Not configured: nobody can reset a password or get an invitation by email.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Not done": [
     "web/src/app/Markdown.tsx"
@@ -5969,8 +6008,8 @@
   ],
   "Notifications": [
     "web/src/app/NotificationBell.tsx",
-    "web/src/app/NotificationsSettings.tsx",
-    "web/src/app/settingsSections.ts"
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Notifications allowed": [
     "web/src/lib/push.ts"
@@ -5978,14 +6017,14 @@
   "Notifications are blocked for this site in your browser settings, so this device cannot receive pushes. Reminders still appear inside the app while it is open.": [
     "web/src/app/NotificationsSettings.tsx"
   ],
-  "Notifications are blocked for this site in your browser settings. Reminders still appear inside the app.": [
-    "web/src/app/NotificationsSettings.tsx"
-  ],
   "Notifications are blocked for this site.": [
     "web/src/lib/push.ts"
   ],
   "Notifications are blocked for this site. Allow them in the browser's site settings (the icon next to the address), then reload.": [
     "web/src/lib/push.ts"
+  ],
+  "Notifications are blocked in your browser settings; reminders still appear in the app.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Notifications are not allowed.": [
     "web/src/lib/push.ts"
@@ -5999,8 +6038,8 @@
   "Notifications, {unread} unread": [
     "web/src/app/NotificationBell.tsx"
   ],
-  "Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook's secret.": [
-    "web/src/app/WebhooksPanel.tsx"
+  "Notify any HTTP endpoint when tasks and projects change. Requests are signed.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Number": [
     "web/src/lib/fields.ts"
@@ -6009,7 +6048,7 @@
     "web/src/lib/richtextEditor.ts"
   ],
   "Numeric dates like 12/11": [
-    "web/src/app/QuickAddSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "OK": [
     "web/src/app/NotificationsSettings.tsx"
@@ -6031,14 +6070,14 @@
   "Off (manual backups only)": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "Off by default. Turning it off erases every stored address. Behind a reverse proxy the address comes from <code>X-Forwarded-For</code>.": [
-    "web/src/app/AuditPanel.tsx"
-  ],
   "Off by default. While off, no one sees it and the server contacts no model provider. Each person still has to accept what is sent before their first message.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Off by default: a person who pays with their own key is not held to your limit. One answer at a time per person still applies.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Off by default; turning it off erases every stored address.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Off until you save an issuer and client id.": [
     "web/src/app/SsoPanel.tsx"
@@ -6046,14 +6085,11 @@
   "Off. When on, the reminder comes after {n} minutes of work.": [
     "web/src/app/focus/FocusSettings.tsx"
   ],
-  "Off: assistants can only read, whatever people choose for their own account.": [
-    "web/src/app/AssistantsPanel.tsx"
+  "Off: members' links only work for people who already have an account.": [
+    "web/src/lib/settingsCopy.ts"
   ],
-  "Off: links created by members only work for people who already have an account. Applies to links already handed out too, since they are checked when used.": [
-    "web/src/app/ProjectInvitePolicyPanel.tsx"
-  ],
-  "Off: the endpoint answers “not found” until you turn it on.": [
-    "web/src/app/AssistantsPanel.tsx"
+  "Off: the push carries only encrypted ids and this device adds the title.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Offline": [
     "web/src/app/DataSettings.tsx",
@@ -6069,17 +6105,32 @@
   "Offline: CalDAV is managed on the server.": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Offline: backups run on the server; the status below is the last one fetched.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Offline: changing or testing webhooks needs a connection. This is the last list fetched.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Offline: email to task is managed on the server.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "Offline: invitations live on the server; this is the last list fetched.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Offline: linked accounts are managed on the server.": [
-    "web/src/app/SsoPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Offline: single sign-on is configured on the server.": [
     "web/src/app/SsoPanel.tsx"
   ],
   "Offline: these settings are on the server and read-only until you reconnect.": [
-    "web/src/app/SsoPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Offline: these settings live on the server; this is the last state fetched.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Offline: user administration needs a connection; other accounts are not kept here.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Offset amount": [
     "web/src/app/RemindersField.tsx"
@@ -6133,7 +6184,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "On a phone": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "On drop: {rule}": [
     "web/src/app/DashboardView.tsx"
@@ -6154,8 +6205,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "On this server": [
-    "web/src/app/AssistantsPanel.tsx",
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "On, can make changes": [
     "web/src/app/AssistantsPanel.tsx"
@@ -6165,12 +6215,6 @@
   ],
   "On, {weekday}s at {hour} ({zone})": [
     "web/src/app/DigestCard.tsx"
-  ],
-  "On: each person can let an assistant with a dedicated token create, edit, complete, reschedule and move their tasks.": [
-    "web/src/app/AssistantsPanel.tsx"
-  ],
-  "On: every account on this server can connect an assistant with its own token and sees only its own data.": [
-    "web/src/app/AssistantsPanel.tsx"
   ],
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
@@ -6249,10 +6293,10 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Open Loops first": [
-    "web/src/app/method/MethodModeChooser.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
-  "Open Loops first arranges the sidebar by the Places, so these choices wait until you switch to Lists only or Companion in Settings → Account. They are kept.": [
-    "web/src/app/AppearanceSection.tsx"
+  "Open Loops first arranges the sidebar; these choices apply in the other modes.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Open Next": [
     "web/src/app/method/MethodListView.tsx"
@@ -6273,9 +6317,9 @@
     "web/src/app/AboutSection.tsx"
   ],
   "Open an issue on GitHub. Every report is read.": [
-    "web/src/app/AboutSection.tsx",
     "web/src/app/WelcomeDialog.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Open calendar": [
     "web/src/app/datetime/DateField.tsx"
@@ -6299,7 +6343,7 @@
     "web/src/app/Shell.tsx"
   ],
   "Open on launch": [
-    "web/src/app/PreferencesPanels.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Open on the Loop home": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -6325,9 +6369,6 @@
   ],
   "Open the command line (Tab completes, Enter runs, Esc cancels)": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Open the focus guide": [
-    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Open the focused dashboard panel’s view": [
     "web/src/lib/shortcuts.ts"
@@ -6386,7 +6427,7 @@
     "web/src/app/Sidebar.tsx"
   ],
   "OpenTodo as a plain task app, with no method words.": [
-    "web/src/app/method/MethodModeChooser.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
     "web/src/app/VoiceSettings.tsx"
@@ -6396,9 +6437,6 @@
   ],
   "OpenTodo export (JSON)": [
     "web/src/app/ImportScreen.tsx"
-  ],
-  "OpenTodo has no paid plan: every feature is free. If it saves you a subscription, a coffee helps keep it going.": [
-    "web/src/app/AboutSection.tsx"
   ],
   "OpenTodo is free and open source, made by one person in the open. It is yours now: your server, your data, no subscription.": [
     "web/src/app/WelcomeDialog.tsx"
@@ -6421,8 +6459,8 @@
   "OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry": [
     "web/src/app/AuthScreen.tsx"
   ],
-  "OpenTodo {version} · free and open source (AGPL-3.0) · no tracking, no telemetry": [
-    "web/src/app/AboutSection.tsx"
+  "OpenTodo {version} · free and open source · no tracking, no telemetry.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "OpenTodo {version} · works offline": [
     "web/src/app/help/HelpView.tsx"
@@ -6449,7 +6487,7 @@
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "Optionally bind a link to someone's email so only they can use it.": [
-    "web/src/app/MembersPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Options, one per line": [
     "web/src/app/FieldsDialog.tsx"
@@ -6479,6 +6517,9 @@
   "Other calendars": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Other calendars in Day and Week, and your tasks in a calendar app.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Other edits": [
     "web/src/lib/activity.ts"
   ],
@@ -6493,8 +6534,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Outgoing email": [
-    "web/src/app/OutgoingEmailPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Outgoing email From address": [
     "web/src/app/auditFormat.ts"
@@ -6515,7 +6556,7 @@
     "web/src/app/auditFormat.ts"
   ],
   "Outgoing email settings need a connection to the server.": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Outgoing email username": [
     "web/src/app/auditFormat.ts"
@@ -6576,7 +6617,7 @@
     "web/src/app/review/MonthlyLook.tsx"
   ],
   "Parse natural language": [
-    "web/src/app/QuickAddSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Parse natural language in quick add": [
     "web/src/app/QuickAddSettings.tsx"
@@ -6594,8 +6635,8 @@
     "web/src/app/auditFormat.ts"
   ],
   "Passkeys": [
-    "web/src/app/SecurityPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Passkeys are not available on this server: it must be served over HTTPS.": [
     "web/src/lib/i18n/errors.ts"
@@ -6603,11 +6644,14 @@
   "Passkeys on this server are set up for {rpId}, but this page is open at {host}. Open the app at https://{rpId}, or ask the server owner to set OPENTODO_BASE_URL to https://{host}.": [
     "web/src/lib/passkeys.ts"
   ],
+  "Passkeys will not work at {host}: open the app at {link}, or set {variable} to {url}.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Passphrase": [
     "web/src/app/BackupsPanel.tsx",
-    "web/src/app/EncryptionPanel.tsx",
     "web/src/app/RestoreSection.tsx",
-    "web/src/app/UnlockScreen.tsx"
+    "web/src/app/UnlockScreen.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Passphrase changed. Use the new one on new devices.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -6619,15 +6663,15 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
-    "web/src/app/PasswordSection.tsx",
     "web/src/app/ReauthDialog.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Password changed": [
     "web/src/app/auditFormat.ts"
   ],
   "Password changed. Your other sessions were signed out.": [
-    "web/src/app/PasswordSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Password reset": [
     "web/src/app/auditFormat.ts"
@@ -6673,6 +6717,12 @@
   "People": [
     "web/src/app/settingsSections.ts"
   ],
+  "People can let an assistant with a dedicated token change their tasks.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "People can subscribe to calendar addresses and get a private feed of their tasks.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "People to see or thank": [
     "web/src/lib/review.ts"
   ],
@@ -6716,6 +6766,9 @@
   "Pick up to three in the Daily check": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "Pick which More destinations sit next to Inbox, Today, Upcoming and Calendar.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Pin": [
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ViewsView.tsx"
@@ -6741,15 +6794,21 @@
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": [
     "web/src/app/calendar/CalendarStatus.tsx"
   ],
+  "Plain http: app passwords would travel unencrypted. Use HTTPS outside your home network.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Plain http://: task content travels unencrypted. Use https:// outside a trusted network.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Plaintext history": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Plan": [
     "web/src/app/CalendarRange.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
-  "Plan and change your tasks by talking, with a model provider your server owner chooses (including a model on your own network), or with your own provider and key when the owner allows it. Every change is proposed for you to review and can be undone. Conversations stay on this device.": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+  "Plan and change your tasks by talking. Every change is proposed for review.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Plan from": [
     "web/src/app/calendar/PlanPanel.tsx"
@@ -6772,16 +6831,16 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "Policy for this server": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Pomodoro": [
     "web/src/lib/focus/prefs.ts"
   ],
-  "Pomodoro alternates work and breaks, Flowtime counts up until you stop, Countdown runs a length you choose each time.": [
-    "web/src/app/focus/FocusSettings.tsx"
+  "Pomodoro alternates work and breaks, Flowtime counts up, Countdown runs a set length.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Pomodoro work length in minutes": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Pomodoro, Flowtime or Countdown, the lengths, breaks and the sound": [
     "web/src/app/settingsIndex.ts"
@@ -6796,7 +6855,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Posts a signed request to your endpoint when tasks or projects change.": [
-    "web/src/app/WebhooksPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.": [
     "web/src/app/ShortcutHelp.tsx"
@@ -6817,9 +6876,9 @@
     "web/src/ui/patterns/EmptyState.tsx"
   ],
   "Preview": [
-    "web/src/app/DateTimeSettings.tsx",
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/RestoreSection.tsx"
+    "web/src/app/RestoreSection.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Preview · {format}": [
     "web/src/app/ImportScreen.tsx"
@@ -6848,8 +6907,8 @@
   "Primary destinations": [
     "web/src/app/TabBar.tsx"
   ],
-  "Print the keys in the app itself (next to quick add, in prompts and section headers) as well as in tooltips and menus. This device only.": [
-    "web/src/app/PreferencesPanels.tsx"
+  "Print the keys in the app itself, not only in tooltips. This device only.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Print the keys in the app, next to quick add and in prompts": [
     "web/src/app/settingsIndex.ts"
@@ -6947,8 +7006,8 @@
     "web/src/app/auditFormat.ts"
   ],
   "Project invite links": [
-    "web/src/app/ProjectInvitePolicyPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Project layout": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -6964,9 +7023,6 @@
   ],
   "Project note": [
     "web/src/app/ProjectNote.tsx"
-  ],
-  "Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also create an account for someone new.": [
-    "web/src/app/ProjectInvitePolicyPanel.tsx"
   ],
   "Project timeline": [
     "web/src/app/TimelineView.tsx"
@@ -7005,12 +7061,12 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Projects": [
-    "web/src/app/ProjectsSettings.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
-    "web/src/lib/review.ts"
+    "web/src/lib/review.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Projects|method": [
     "web/src/lib/method/vocabulary.json"
@@ -7058,7 +7114,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Providers allowed": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Public": [
     "web/src/app/ProjectHeader.tsx"
@@ -7091,7 +7147,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Push notifications are turned off on this server. Reminders are shown in the app.": [
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Push notifications for reminders on this device, and the weekly digest by email": [
     "web/src/app/settingsSections.ts"
@@ -7103,12 +7159,12 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Questions, ideas and other people who use OpenTodo, on Discord.": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Quick add": [
-    "web/src/app/QuickAddSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Quick add (read-only)": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -7192,22 +7248,24 @@
   ],
   "Recent activity": [
     "web/src/app/ActivityPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Recent runs": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Recognition language": [
-    "web/src/app/VoiceSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Record client addresses (IP)": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Recovery code": [
     "web/src/app/AuthScreen.tsx"
   ],
   "Recovery codes": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Recovery key": [
     "web/src/app/EncryptionPanel.tsx",
@@ -7265,7 +7323,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Remind me after": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Remind {date}, {time}": [
     "web/src/app/QuickAdd.tsx"
@@ -7295,9 +7353,6 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
-  ],
-  "Reminders always appear inside the app while it is open. Turn on notifications to get them while the app is closed. Each device decides for itself.": [
-    "web/src/app/NotificationsSettings.tsx"
   ],
   "Reminders delivered to this device, and a test": [
     "web/src/app/settingsIndex.ts"
@@ -7374,7 +7429,7 @@
     "web/src/lib/attachments.ts"
   ],
   "Removes earlier versions of encrypted fields from the server's history.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Removes your tasks from this device after uploading pending changes": [
     "web/src/app/settingsIndex.ts"
@@ -7476,6 +7531,9 @@
   ],
   "Required by the server owner": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Required by the server owner for your account, so it cannot be turned off.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Required for every account": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -7606,7 +7664,8 @@
     "web/src/app/focus/FocusView.tsx"
   ],
   "Retention": [
-    "web/src/app/BackupsPanel.tsx"
+    "web/src/app/BackupsPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Retry": [
     "web/src/app/App.tsx",
@@ -7731,7 +7790,8 @@
   ],
   "Rows": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Rows with errors": [
     "web/src/app/ImportScreen.tsx"
@@ -7831,7 +7891,7 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "Save pages and selected text from your browser as tasks.": [
-    "web/src/app/CaptureSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Save retention": [
     "web/src/app/AuditPanel.tsx"
@@ -7880,7 +7940,8 @@
   ],
   "Schedule": [
     "web/src/app/BackupsPanel.tsx",
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageView.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Schedule the selected task: Day view in placement mode": [
     "web/src/lib/shortcuts.ts"
@@ -7897,8 +7958,8 @@
   "Scheduled backups, destinations, recent runs and restore": [
     "web/src/app/settingsIndex.ts"
   ],
-  "Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share, and restored from here.": [
-    "web/src/app/BackupsPanel.tsx"
+  "Scheduled copies of the whole server to a folder, S3 or WebDAV, restored here.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Scheduled for {date}.": [
     "web/src/lib/triage.ts"
@@ -8055,6 +8116,9 @@
   "Send a reset link to <strong>{email}</strong>, or create one to deliver yourself. It works once and expires in 24 hours; any earlier link stops working.": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Send any email to your personal address and it becomes an Inbox task.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Send by email": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx"
@@ -8093,10 +8157,10 @@
     "web/src/app/settingsSections.ts"
   ],
   "Server address": [
-    "web/src/app/CaldavPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Server archive": [
-    "web/src/app/ServerArchivePanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Server configuration warning": [
     "web/src/app/ConfigWarnings.tsx"
@@ -8117,7 +8181,7 @@
     "web/src/lib/push.ts"
   ],
   "Session": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Session done": [
     "web/src/app/focus/FocusParts.tsx",
@@ -8147,7 +8211,7 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "Set on this device; it wins over your date format.": [
-    "web/src/app/QuickAddSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Set priority {p} on {tasks}": [
     "web/src/app/palette/registry.ts"
@@ -8239,7 +8303,6 @@
     "web/src/app/FeedView.tsx"
   ],
   "Share feedback or report a problem": [
-    "web/src/app/AboutSection.tsx",
     "web/src/app/WelcomeDialog.tsx",
     "web/src/app/settingsIndex.ts"
   ],
@@ -8272,7 +8335,7 @@
   ],
   "Short break": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Shortcuts": [
     "web/src/app/ShortcutHelp.tsx"
@@ -8319,8 +8382,8 @@
     "web/src/app/PlanView.tsx"
   ],
   "Show shortcut hints": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Show shortcut hints (this device)": [
     "web/src/app/PreferencesPanels.tsx"
@@ -8339,9 +8402,6 @@
   ],
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": [
     "web/src/app/settingsIndex.ts"
-  ],
-  "Show your other calendars in Day and Week, and subscribe to your tasks from Google Calendar, Outlook or Apple Calendar.": [
-    "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "Show {name} among the primary items": [
     "web/src/app/AppearanceSection.tsx"
@@ -8362,7 +8422,7 @@
     "web/src/app/review/CloseDay.tsx"
   ],
   "Sidebar": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sidebar destinations": [
     "web/src/app/settingsIndex.ts"
@@ -8400,14 +8460,17 @@
   "Sign in with a passkey": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Sign in with an OpenID Connect provider you run; only that issuer is contacted.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sign in with an app password, never your account password.": [
-    "web/src/app/CaldavPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sign in with it, or reset its password if you forgot it.": [
     "web/src/app/EmailScreens.tsx"
   ],
-  "Sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working; add a passkey on a second device so losing one is never a problem.": [
-    "web/src/app/SecurityPanel.tsx"
+  "Sign in with your fingerprint, face or PIN instead of your password.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sign in with your fingerprint, face or device PIN": [
     "web/src/app/settingsIndex.ts"
@@ -8418,8 +8481,8 @@
   "Sign in with {name}": [
     "web/src/app/AuthScreen.tsx"
   ],
-  "Sign in with {name} instead of a password. Linking also lets you confirm sensitive changes with {name}.": [
-    "web/src/app/SsoPanel.tsx"
+  "Sign in with {name} instead of a password.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sign out": [
     "web/src/app/AccountSettings.tsx",
@@ -8434,7 +8497,8 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "Sign out everywhere": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/AccountSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sign out everywhere?": [
     "web/src/app/AccountSettings.tsx"
@@ -8442,8 +8506,10 @@
   "Sign out first to accept it, or keep using your current account.": [
     "web/src/app/InviteScreen.tsx"
   ],
+  "Sign out here": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sign out of this device": [
-    "web/src/app/AccountSettings.tsx",
     "web/src/app/settingsIndex.ts"
   ],
   "Sign out of this device?": [
@@ -8455,6 +8521,9 @@
   "Sign-in failed": [
     "web/src/app/auditFormat.ts"
   ],
+  "Sign-in needs only your password; remembered browsers are forgotten.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sign-in provider linked": [
     "web/src/app/auditFormat.ts"
   ],
@@ -8464,17 +8533,17 @@
   "Sign-in will need only your password, and remembered browsers are forgotten.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Sign-ins and token changes from the last 90 days; revoke tokens if one is not yours.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sign-ins and token changes on your account over the last 90 days": [
     "web/src/app/settingsIndex.ts"
-  ],
-  "Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.": [
-    "web/src/app/ActivityPanel.tsx"
   ],
   "Sign-ins and token changes on your account will show up here.": [
     "web/src/app/ActivityPanel.tsx"
   ],
-  "Sign-ins, tokens, invitations, exports and setting changes on this server. Task content is never recorded.": [
-    "web/src/app/AuditPanel.tsx"
+  "Sign-ins, tokens, invitations, exports and setting changes. Never task content.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sign-up confirmation": [
     "web/src/app/auditFormat.ts"
@@ -8508,15 +8577,12 @@
   "Signing in with {provider} did not work. Try again; if it keeps failing, ask the server owner to check the single sign-on settings.": [
     "web/src/app/sso.ts"
   ],
-  "Signs out every device and browser, including this one, and revokes your API tokens and app passwords.": [
-    "web/src/app/AccountSettings.tsx"
-  ],
   "Single occurrence of {title}": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Single sign-on": [
-    "web/src/app/SsoPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Single sign-on failed. Try again.": [
     "web/src/lib/i18n/errors.ts"
@@ -8524,11 +8590,11 @@
   "Single sign-on identities linked to your account": [
     "web/src/app/settingsIndex.ts"
   ],
-  "Single sign-on is currently off on this server; these links are kept for when it returns.": [
-    "web/src/app/SsoPanel.tsx"
-  ],
   "Single sign-on is not configured on this server.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "Single sign-on is off on this server; your links are kept.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Six panels at most": [
     "web/src/app/DashboardView.tsx"
@@ -8537,7 +8603,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Size per file": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Skill: {name}": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -8594,6 +8660,9 @@
   ],
   "Slowed down": [
     "web/src/app/DataSettings.tsx"
+  ],
+  "Small changes without review": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Snooze 10 min": [
     "web/public/push-sw.js",
@@ -8680,20 +8749,20 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Sound": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sound at the end of a session": [
     "web/src/app/focus/FocusSettings.tsx"
   ],
   "Source code": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/SettingsView.tsx"
+    "web/src/app/SettingsView.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Space starts and pauses, Enter completes, {b} takes a break, {n} is the next task, Esc goes back.": [
     "web/src/app/focus/FocusView.tsx"
   ],
-  "Speak a task instead of typing it. Applies to this device only.": [
-    "web/src/app/VoiceSettings.tsx"
+  "Speak a task instead of typing it, on this device.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Speech is recognised by your browser, not by OpenTodo.": [
     "web/src/app/VoiceSettings.tsx"
@@ -8725,7 +8794,8 @@
     "web/src/app/focus/FocusView.tsx"
   ],
   "Start breaks automatically": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/app/focus/FocusSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Start date": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -8757,9 +8827,6 @@
   "Start the next session": [
     "web/src/app/focus/FocusView.tsx"
   ],
-  "Start the next session automatically": [
-    "web/src/app/focus/FocusSettings.tsx"
-  ],
   "Start tracking": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
@@ -8768,8 +8835,8 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Start view": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Start view on this device": [
     "web/src/app/PreferencesPanels.tsx",
@@ -8780,6 +8847,9 @@
   ],
   "Start with…": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Start work automatically": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Start your daily check: the Inbox, what is overdue and today’s focus.": [
     "web/src/app/method/DailyCheckToast.tsx"
@@ -8804,10 +8874,8 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Status": [
-    "web/src/app/EncryptionPanel.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/SsoPanel.tsx",
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Step {n} of {count}": [
     "web/src/app/FirstRun.tsx"
@@ -8853,7 +8921,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Stored only on this device, never on the server.": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Stored. Leave empty to keep it.": [
     "web/src/app/BackupsPanel.tsx"
@@ -8899,8 +8967,8 @@
     "web/src/app/DateTimeSettings.tsx"
   ],
   "Support OpenTodo": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Suspicious": [
     "web/src/app/SecurityPanel.tsx"
@@ -8915,7 +8983,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Sync": [
-    "web/src/app/DataSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sync a calendar": [
     "web/src/app/help/HelpView.tsx"
@@ -8930,8 +8998,8 @@
   "Sync status": [
     "web/src/app/settingsIndex.ts"
   ],
-  "Sync your tasks with Apple Reminders, Thunderbird or Nextcloud Tasks. Each project is a list, and the Inbox is its own list.": [
-    "web/src/app/CaldavPanel.tsx"
+  "Sync your tasks with calendar and reminder apps; each project is a list.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Synced": [
     "web/src/app/SyncStatus.tsx"
@@ -8957,7 +9025,7 @@
     "web/src/app/DateTimeSettings.tsx"
   ],
   "System follows your device's light or dark setting.": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "System, light or dark": [
     "web/src/app/settingsIndex.ts"
@@ -9141,12 +9209,15 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/app/SecurityPanel.tsx"
   ],
+  "The Focus timer: mode, lengths, breaks and sound. Synced to your devices.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The Inbox is empty.": [
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
-  "The Loop home opens first, the sidebar follows the Places, and a daily check is offered each day.": [
-    "web/src/app/method/MethodModeChooser.tsx"
+  "The Loop home first, a sidebar by the Places, a daily check.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message": [
     "web/src/app/settingsIndex.ts"
@@ -9163,8 +9234,8 @@
   "The archive is damaged: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "The assistant can’t read end-to-end encrypted tasks, so it is not available for your account.": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+  "The assistant cannot read end-to-end encrypted tasks, so it is off for your account.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.": [
     "web/src/app/assistant/AskEntry.tsx",
@@ -9263,6 +9334,9 @@
   "The end is before the start; edit it to repair": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "The endpoint answers “not found” until turned on.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -9291,7 +9365,7 @@
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "The guides of this version, inside the app and offline.": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "The history is read from the server; reconnect to see it.": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -9302,14 +9376,11 @@
   "The invitation was sent to {sentTo}.": [
     "web/src/app/MembersPanel.tsx"
   ],
-  "The language could not be loaded on this device. Your choice is saved and applies as soon as it can be loaded, for example when you are back online.": [
-    "web/src/app/PreferencesPanels.tsx"
-  ],
   "The language of the app on all your devices": [
     "web/src/app/settingsIndex.ts"
   ],
-  "The language of the app on all your devices. Your tasks are not translated.": [
-    "web/src/app/PreferencesPanels.tsx"
+  "The language of the app on all your devices. Tasks are not translated.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The last attempt failed ({outcome}); it is retried for six hours": [
     "web/src/app/DigestCard.tsx"
@@ -9334,9 +9405,6 @@
   ],
   "The mail server refused the message": [
     "web/src/app/OutgoingEmailPanel.tsx"
-  ],
-  "The message contains task and project names and goes to your account's email address.": [
-    "web/src/app/DigestCard.tsx"
   ],
   "The microphone is used only while you dictate; the browser asks for permission the first time.": [
     "web/src/app/VoiceSettings.tsx"
@@ -9370,7 +9438,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "The owner has not enabled calendar feeds on this server.": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -9415,7 +9483,7 @@
     "web/src/lib/push.ts"
   ],
   "The push service stopped accepting notifications for this device.": [
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "The query must not be empty": [
     "web/src/app/SavedViewView.tsx",
@@ -9428,14 +9496,11 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "The same guides on the website, with setup and self-hosting.": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "The saved view shown here was deleted.": [
     "web/src/app/DashboardView.tsx"
-  ],
-  "The screen, the three modes, the keys and what is logged as time.": [
-    "web/src/app/focus/FocusSettings.tsx"
   ],
   "The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.": [
     "web/src/app/ShareCapture.tsx"
@@ -9529,7 +9594,7 @@
     "web/src/lib/webhooks.ts"
   ],
   "The server operator has not enabled email to task. See docs/email.md to set it up.": [
-    "web/src/app/EmailInboxPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "The server owner changed the model provider.": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -9543,15 +9608,12 @@
   "The server owner has enabled AI assistant access and allows assistants to make changes. Your assistant sees only your own projects and the shared projects you are a member of.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
-  "The server owner has not allowed assistants to make changes, so this has no effect yet.": [
-    "web/src/app/AssistantsPanel.tsx"
-  ],
   "The server owner has not enabled AI assistant access on this server, so assistants cannot connect yet.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
   "The server owner has not turned the assistant on.": [
     "web/src/app/assistant/AssistantPanelBody.tsx",
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "The server owner requires two-factor authentication for this account.": [
     "web/src/lib/i18n/errors.ts"
@@ -9623,11 +9685,8 @@
     "web/src/lib/push.ts"
   ],
   "The thank-you shown the first time you opened this server.": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
-  ],
-  "The timer of the Focus screen: its mode, the lengths, breaks and the sound. Synced to your devices.": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "The total per account is 0 (no total) to {max} MB.": [
     "web/src/app/AttachmentSettingsPanel.tsx"
@@ -9647,20 +9706,17 @@
   "The view this device opens on": [
     "web/src/app/settingsIndex.ts"
   ],
-  "The view this device opens on launch. Each device keeps its own choice; it is not synced.": [
-    "web/src/app/PreferencesPanels.tsx"
-  ],
-  "The weekly digest is not available for accounts with end-to-end encryption, because the message would contain your task titles.": [
-    "web/src/app/DigestCard.tsx"
+  "The view this device opens on. Not synced.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The weekly digest is not available on this demo instance: it would send email.": [
-    "web/src/app/DigestCard.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "The weekly digest is set on the server, so changing it needs a connection.": [
-    "web/src/app/DigestCard.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
-  "The weekly digest needs outgoing email, which the server owner has to configure first (Settings → Server → Outgoing email).": [
-    "web/src/app/DigestCard.tsx"
+  "The whole server as one archive, to restore into your own OpenTodo server.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The whole server as one backup archive, to move to your own OpenTodo server": [
     "web/src/app/settingsIndex.ts"
@@ -9675,8 +9731,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Theme": [
-    "web/src/app/AppearanceSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "There are no labels yet": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -9753,9 +9809,6 @@
   "This address is on a private network. The server owner can allow private targets.": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "This address uses plain http: app passwords would travel unencrypted. Put the server behind HTTPS and set OPENTODO_BASE_URL before connecting devices outside your home network.": [
-    "web/src/app/CaldavPanel.tsx"
-  ],
   "This archive comes from a newer version of OpenTodo. Update this server first. ({detail})": [
     "web/src/lib/restore.ts"
   ],
@@ -9777,20 +9830,20 @@
   "This browser cannot receive push notifications (private windows and some browsers cannot). Reminders still appear inside the app.": [
     "web/src/lib/push.ts"
   ],
+  "This browser cannot receive push notifications; installing the app may help.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "This browser cannot recognise {name}; listening in the browser’s default language instead.": [
     "web/src/lib/voice/dictation.ts"
   ],
-  "This browser does not provide speech recognition, so voice capture is not available here. Typing works as usual.": [
-    "web/src/app/VoiceSettings.tsx"
-  ],
   "This browser does not support passkeys.": [
-    "web/src/app/SecurityPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "This browser does not support push notifications.": [
     "web/src/lib/push.ts"
   ],
-  "This browser does not support push notifications. Installing the app, or opening it over https, may help.": [
-    "web/src/app/NotificationsSettings.tsx"
+  "This browser has no speech recognition, so voice capture is not available here.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "This browser refused the push subscription ({detail}). Private windows and some browsers cannot receive push; reminders still appear inside the app.": [
     "web/src/lib/push.ts"
@@ -9832,8 +9885,7 @@
     "web/src/lib/demo.ts"
   ],
   "This device": [
-    "web/src/app/EncryptionPanel.tsx",
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "This device encrypts your content, but the server says it has no encryption key record. This happens when the server was restored from an older backup or another device turned encryption off. Sync is paused, so nothing is uploaded unencrypted. Choose how to continue.": [
     "web/src/app/UnlockScreen.tsx"
@@ -9869,10 +9921,13 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "This device is signed in to your server.": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "This device now opens on the Loop home.": [
     "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": [
     "web/src/lib/sync.ts"
@@ -9934,9 +9989,6 @@
   "This invite link was issued for a different email address.": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "This is a plain http:// address: task content will travel unencrypted. Prefer https:// unless the receiver is on a network you trust.": [
-    "web/src/app/WebhooksPanel.tsx"
-  ],
   "This is a public demo of OpenTodo.": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -9973,6 +10025,9 @@
   ],
   "This label no longer exists.": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "This language could not be loaded; your choice applies once it can be.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "This link can only be used by people who already have an account on this server. Sign in first, or ask the server owner for an account.": [
     "web/src/lib/i18n/errors.ts"
@@ -10028,9 +10083,6 @@
   ],
   "This page expired. Reload it and try again.": [
     "web/src/lib/demo.ts"
-  ],
-  "This page is open at {host}, so passkeys will not work here. Open the app at {link}, or set {variable} to {url} and redeploy.": [
-    "web/src/app/SecurityPanel.tsx"
   ],
   "This page reloads when the server is back, usually within a few seconds.": [
     "web/src/app/RestoreSection.tsx"
@@ -10136,7 +10188,7 @@
     "web/src/lib/restore.ts"
   ],
   "This setting is available when you are online.": [
-    "web/src/app/ProjectInvitePolicyPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "This setting is managed by the server configuration.": [
     "web/src/lib/i18n/errors.ts"
@@ -10191,7 +10243,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Tied to <span>{domain}</span>.": [
-    "web/src/app/SecurityPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Time": [
     "web/src/app/AuditPanel.tsx",
@@ -10207,8 +10259,8 @@
     "web/src/app/focus/BreakReminder.tsx"
   ],
   "Time format": [
-    "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Time spent": [
     "web/src/app/QuickAdd.tsx",
@@ -10260,7 +10312,7 @@
     "web/src/app/focus/FocusParts.tsx"
   ],
   "Timer mode": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
@@ -10276,8 +10328,8 @@
   "Title:": [
     "web/src/app/QuickAdd.tsx"
   ],
-  "Titles appear as “Encrypted item” in calendar apps, because the server cannot read them.": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+  "Titles appear as “Encrypted item” in calendar apps: the server cannot read them.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "To": [
     "web/src/app/AuditPanel.tsx"
@@ -10349,7 +10401,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Token for an assistant": [
-    "web/src/app/AssistantsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Token name": [
     "web/src/app/TokensSection.tsx"
@@ -10430,7 +10482,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "Total per account": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Total {duration}": [
     "web/src/app/task-detail/TimeTab.tsx"
@@ -10486,7 +10538,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Turn off": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/app/TwoFactorPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Turn off Vim keybindings": [
     "web/src/app/palette/registry.ts"
@@ -10502,7 +10555,8 @@
   ],
   "Turn off encryption": [
     "web/src/app/EncryptionPanel.tsx",
-    "web/src/app/UnlockScreen.tsx"
+    "web/src/app/UnlockScreen.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Turn off encryption on this device…": [
     "web/src/app/UnlockScreen.tsx"
@@ -10538,15 +10592,12 @@
   "Turning on…": [
     "web/src/app/EncryptionPanel.tsx"
   ],
-  "Turning this off stops all your assistants from making changes at once, without revoking their tokens.": [
-    "web/src/app/AssistantsPanel.tsx"
-  ],
   "Twenty minutes: your areas, old someday items and the four-week trend.": [
     "web/src/lib/method/vocabulary.json"
   ],
   "Two-factor authentication": [
-    "web/src/app/TwoFactorPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Two-factor authentication is already turned on for this account.": [
     "web/src/lib/i18n/errors.ts"
@@ -10558,8 +10609,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Two-factor policy": [
-    "web/src/app/TwoFactorPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Two-factor policy for this server": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -10786,9 +10837,6 @@
     "web/src/app/Sections.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
-  "Up to 3 existing tasks: completing, dates, priority or labels. Creating, moving, deleting or editing text always asks you. An Undo button always appears.": [
-    "web/src/app/assistant/AssistantSettings.tsx"
-  ],
   "Up to date": [
     "web/src/app/DataSettings.tsx"
   ],
@@ -10838,7 +10886,7 @@
     "web/src/lib/boardTemplates.ts"
   ],
   "Usage": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Usage: {usage}": [
     "web/src/app/vim/commands.ts"
@@ -10865,7 +10913,7 @@
     "web/src/app/ReauthDialog.tsx"
   ],
   "Use one to sign in if you lose your phone. Each works once.": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Use the keyboard": [
     "web/src/app/help/HelpView.tsx"
@@ -10886,21 +10934,22 @@
     "web/src/app/assistant/AskEntry.tsx"
   ],
   "Used to sign in on new devices.": [
-    "web/src/app/PasswordSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Used {relativeTime} · until {instant}": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "User name": [
-    "web/src/app/CaldavPanel.tsx",
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Username": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Users": [
     "web/src/app/UsersPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Users, invitations and members": [
     "web/src/app/settingsSections.ts"
@@ -10950,8 +10999,8 @@
     "web/src/app/vim/help.ts"
   ],
   "Vim keybindings": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Vim keybindings (this device)": [
@@ -10967,8 +11016,8 @@
     "web/src/lib/colourNames.ts"
   ],
   "Voice capture": [
-    "web/src/app/VoiceSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Voice capture is unavailable right now. Typing works as usual.": [
     "web/src/lib/voice/dictation.ts"
@@ -11023,11 +11072,11 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Webhooks": [
-    "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Website": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Week": [
     "web/src/app/CalendarRange.tsx"
@@ -11038,12 +11087,15 @@
   "Week of {date}": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "Week starts on": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Weekly": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Weekly digest": [
-    "web/src/app/DigestCard.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Weekly review": [
     "web/src/app/review/DailyCheck.tsx",
@@ -11063,8 +11115,8 @@
     "web/src/app/TimelineView.tsx"
   ],
   "Welcome note": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.": [
     "web/src/app/AuthScreen.tsx"
@@ -11105,7 +11157,7 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "When off, nobody can add files or links; existing ones stay and can still be opened.": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "When the Day and Week grid starts and ends, and your day length": [
     "web/src/app/settingsIndex.ts"
@@ -11116,11 +11168,17 @@
   "Whether members can bring new people with project links": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Whether project links can also create accounts for new people.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Which assistant you use": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Who must use two-factor authentication. API tokens are never affected.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Windows PC": [
     "web/src/app/SecurityPanel.tsx"
@@ -11128,24 +11186,21 @@
   "Withdraw consent": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Without encryption, a user name and password cannot be used, and messages travel in the clear.": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+  "Without encryption, no sign-in can be used and messages travel in the clear.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Without it, encrypted backups are unreadable, for you and for anyone else. Store it in a password manager.": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "Without titles a push carries only ids, encrypted; this device shows the title from its own copy of the task. With titles the notification is complete even before this device has synced. Descriptions are never sent.": [
-    "web/src/app/NotificationsSettings.tsx"
-  ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Work done before this time counts for the previous day.": [
-    "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Work from your next actions, by context, one step at a time.": [
     "web/src/lib/method/vocabulary.json"
@@ -11154,16 +11209,16 @@
     "web/src/lib/review.ts"
   ],
   "Work session": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Work session {n} of {total}": [
     "web/src/app/focus/FocusParts.tsx"
   ],
   "Work sessions before a long break": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
-  "Working hours and day length for the Day and Week views (go to them with {kbd} and {kbd2}). Each device keeps its own; they are not synced.": [
-    "web/src/app/CalendarSettings.tsx"
+  "Working hours and day length for Day and Week, on this device.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Working, counting up": [
     "web/src/app/focus/FocusParts.tsx"
@@ -11229,41 +11284,32 @@
   "You are not allowed to do this: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "You are offline. Backups run on the server, so changing settings and starting a backup need a connection. The status below is the last one fetched.": [
-    "web/src/app/BackupsPanel.tsx"
-  ],
   "You are offline. Changing your password needs a connection to your server.": [
-    "web/src/app/PasswordSection.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. Import needs a connection to your server; the file picker is disabled until you are back online.": [
     "web/src/app/ImportScreen.tsx"
-  ],
-  "You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.": [
-    "web/src/app/MembersPanel.tsx"
   ],
   "You are offline. Invite links live on the server, so creating and revoking them needs a connection.": [
     "web/src/app/InviteLinksSection.tsx"
   ],
   "You are offline. Managing passkeys needs a connection to your server.": [
-    "web/src/app/SecurityPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. Public links live on the server, so creating and revoking them needs a connection.": [
     "web/src/app/PublicLinksSection.tsx"
   ],
   "You are offline. The download needs a connection to the server.": [
-    "web/src/app/ServerArchivePanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
-  "You are offline. The {what} lives on the server and needs a connection; nothing is shown until you are back online.": [
-    "web/src/app/AuditPanel.tsx"
+  "You are offline. The {what} needs a connection and is not shown until you are back.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. These settings live on the server and need a connection.": [
-    "web/src/app/assistant/AssistantSettings.tsx"
-  ],
-  "You are offline. These settings live on the server; what you see is the last state fetched, and changing them needs a connection.": [
-    "web/src/app/AssistantsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. These settings need a connection to the server.": [
-    "web/src/app/AttachmentSettingsPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. This needs a connection to your server.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -11272,16 +11318,10 @@
     "web/src/app/TokensSection.tsx"
   ],
   "You are offline. Two-factor authentication needs a connection to your server.": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. Two-factor settings need a connection to your server.": [
     "web/src/app/TwoFactorPanel.tsx"
-  ],
-  "You are offline. User administration needs a connection to the server; nothing about other accounts is kept on this device.": [
-    "web/src/app/UsersPanel.tsx"
-  ],
-  "You are offline. Webhooks are delivered by the server, so changing or testing them requires a connection. The list below is the last one fetched.": [
-    "web/src/app/WebhooksPanel.tsx"
   ],
   "You are offline: the weekly digest is set on the server. Try again when connected.": [
     "web/src/app/DigestCard.tsx"
@@ -11361,25 +11401,25 @@
     "web/src/app/UnlockScreen.tsx"
   ],
   "Your address": [
-    "web/src/app/EmailInboxPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your answers still count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Your assistant": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your content is decrypted on this device and synced in plaintext again; the key record is deleted from the server. You will be asked to confirm your password.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Your content is not re-encrypted; other devices keep working.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your content is not re-encrypted; other devices keep working. New devices use the new passphrase.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Your content is synced in plaintext again.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your content will be uploaded to the server in plaintext again. Only do this if you turned encryption off on purpose.": [
     "web/src/app/UnlockScreen.tsx"
@@ -11391,10 +11431,10 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Your daily capacity; the Day view warns when planned work goes over it.": [
-    "web/src/app/CalendarSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your data": [
-    "web/src/app/DataSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your data is safe on this device and on the server.": [
     "web/src/app/ErrorBoundary.tsx",
@@ -11430,8 +11470,8 @@
   "Your own API key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Your own provider ({provider_label}) is kept but not used: the server owner does not allow members’ own keys right now, so the server’s assistant answers.": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+  "Your own provider ({provider_label}) is kept but unused: own keys are not allowed now.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your password": [
     "web/src/app/UsersPanel.tsx"
@@ -11449,7 +11489,7 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Your recovery key sets a new one and is then replaced.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your recovery key. It is shown once; store it somewhere safe and separate from this device (a password manager or paper):": [
     "web/src/app/EncryptionPanel.tsx"
@@ -11467,14 +11507,17 @@
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/ServerArchivePanel.tsx"
   ],
-  "Your sidebar stays as it is; screens name the move they serve and link to the method.": [
-    "web/src/app/method/MethodModeChooser.tsx"
+  "Your sidebar as it is; screens name the move they serve.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your start view was deleted, so the Inbox opened instead.": [
     "web/src/app/Shell.tsx"
   ],
   "Your task feed URL": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Your task text is encrypted on your devices before it syncs.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your tasks as a calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -12996,9 +13039,6 @@
   ],
   "{n, plural, one {+# more reminder} other {+# more reminders}}": [
     "web/src/app/ReminderToasts.tsx"
-  ],
-  "{n, plural, one {<b>Demo instance.</b> Here, {features} is disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use it; it takes one container.} other {<b>Demo instance.</b> Here, {features} are disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use them; it takes one container.}}": [
-    "web/src/app/SettingsView.tsx"
   ],
   "{n, plural, one {Assistant: # change applied.} other {Assistant: # changes applied.}}": [
     "web/src/app/assistant/useAssistantConversation.ts"

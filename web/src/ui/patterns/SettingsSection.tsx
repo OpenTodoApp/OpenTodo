@@ -2,7 +2,11 @@
 // settings-navigation "Panel cards and rows"): a card with heading, one-sentence
 // description and rows. No actions and no help link in the header: the page
 // header carries Help, and a section's primary action is a row's control.
+// settings-copy D3: the one line may end with "Learn more", which opens the card's
+// guide section beside the page; it is part of the line, never a header action.
 import { useId, type ReactNode } from 'react'
+import { openHelp } from '../../lib/helpRequest'
+import { t } from '../../lib/i18n'
 
 export interface SettingsSectionProps {
   title: string
@@ -12,11 +16,13 @@ export interface SettingsSectionProps {
   id?: string
   /** A stable heading id (kept from the earlier layout for links and tests); generated when absent. */
   headingId?: string
+  /** A Help screen id: the line ends with a Learn more link that opens it beside the page. */
+  learnMore?: string
   testId?: string
   children: ReactNode
 }
 
-export function SettingsSection({ title, description, level = 2, id, headingId: fixedId, testId, children }: SettingsSectionProps) {
+export function SettingsSection({ title, description, level = 2, id, headingId: fixedId, learnMore, testId, children }: SettingsSectionProps) {
   const generated = useId()
   const headingId = fixedId ?? generated
   const H = level === 2 ? 'h2' : 'h3'
@@ -24,7 +30,13 @@ export function SettingsSection({ title, description, level = 2, id, headingId: 
     <section id={id} aria-labelledby={headingId} data-testid={testId} data-settings-card className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-6">
       <div className="min-w-0">
         <H id={headingId} className="text-h3 font-semibold text-default outline-none">{title}</H>
-        {description && <p className="mt-1 text-meta text-muted">{description}</p>}
+        {(description || learnMore) && (
+          <p className="mt-1 text-meta text-muted" data-settings-line>
+            {description}
+            {learnMore && <>{description ? ' ' : ''}<button type="button" className="text-meta text-accent underline" data-help-screen={learnMore} data-learn-more
+              aria-label={t('Learn more: {topic}', { topic: title })} aria-haspopup="dialog" onClick={(e) => openHelp(learnMore, e.currentTarget)}>{t('Learn more')}</button></>}
+          </p>
+        )}
       </div>
       <div className="mt-4 divide-y divide-(--ot-border)">{children}</div>
     </section>

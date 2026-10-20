@@ -18,6 +18,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 const EXPIRY_OPTIONS: [number, string][] = [
   [1, '1 hour'],
@@ -160,11 +161,9 @@ export function MembersView(p: MembersViewProps) {
   }
 
   return (
-    <SettingsSection title={t('Members')} headingId="members-heading"
-      description={t('Invite someone with a single-use link. Sign-up stays closed for everyone else.')}>
-      {p.offline && <Notice>{t('You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.')}</Notice>}
-      <SettingRow label={t('Invitations')} status={p.invitations ? <span data-testid="invitations-summary">{t('{pending} pending', { pending })}</span> : undefined}
-        description={t('Optionally bind a link to someone\'s email so only they can use it.')}
+    <SettingsSection {...cardCopy('members')}>
+      {p.offline && <Notice>{noticeCopy('members', 'offline')}</Notice>}
+      <SettingRow {...rowCopy('members', 'invitations')} status={p.invitations ? <span data-testid="invitations-summary">{t('{pending} pending', { pending })}</span> : undefined}
         control={<Button variant="primary" icon="plus" disabled={disabled} onClick={p.onNew}>{t('New invitation')}</Button>} />
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 

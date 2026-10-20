@@ -7,6 +7,10 @@ import type { Invitation } from '../lib/types'
 import { click, flush, key, render } from '../ui/test-utils'
 import { MembersView, type MembersViewProps, NewInvitationDialog } from './MembersPanel'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const noop = () => {}
 const inv = (id: string, status: Invitation['status'], email: string | null): Invitation => ({
   id, status, email, role: 'member', createdBy: 'o', createdByName: 'Owner', createdAt: 0, expiresAt: 1, acceptedAt: null, acceptedBy: null, revokedAt: null,
@@ -21,7 +25,7 @@ describe('MembersView', () => {
   it('lists invitations with a status badge and counts the pending ones', () => {
     const h = html()
     expect(h).toContain('id="members-heading"')
-    expect(h).not.toContain('data-help-screen')
+    expect(withoutLearnMore(h)).not.toContain('data-help-screen')
     expect(h).toContain('data-invitation="i1"')
     expect(h).toContain('>Pending<')
     expect(h).toContain('>Accepted<')
@@ -35,7 +39,7 @@ describe('MembersView', () => {
   it('shows an empty state and an offline note', () => {
     expect(html({ invitations: [] })).toContain('No invitations yet')
     const off = html({ offline: true })
-    expect(off).toContain('You are offline')
+    expect(off).toContain('Offline: invitations live on the server')
     expect(off).toMatch(/<button[^>]*disabled=""[^>]*>(<[^>]+>)*New invitation/)
   })
 

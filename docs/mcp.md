@@ -18,7 +18,7 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 
 ## 1. Enable it (owner)
 
-**Settings → Integrations → AI assistants → Allow AI assistants (MCP endpoint)**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).
+**Settings → Integrations → AI assistants → Allow AI assistants**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).
 
 For deployments managed as code, the optional `OPENTODO_MCP=true` presets the toggle on the **first** start. After that the value in Settings wins, so the owner can still turn it off. Members see the status in the same section but no switch.
 
@@ -153,8 +153,8 @@ Errors: a missing or malformed argument (for example `priority: 7`) is a JSON-RP
 
 Write tools are offered only when **all three** of these hold, and they are checked again on every request:
 
-1. **The owner allows it.** Settings → Integrations → AI assistants → **AI assistants may make changes** (owner only, off by default; `PUT /api/v1/settings/mcp` with `{"writes_enabled": true}`). The optional `OPENTODO_MCP_WRITES=true` presets it on the first start only, like `OPENTODO_MCP`.
-2. **You allow it for your account.** Settings → Integrations → AI assistants → **Allow AI assistants to make changes to my tasks** (off by default; `PUT /api/v1/me/agent-access`). Only you can change it, signed in or with a full-access token; no assistant token can. Turning it off stops all your assistants from making changes at once, without revoking their tokens.
+1. **The owner allows it.** Settings → Integrations → AI assistants → **Assistants may make changes** (owner only, off by default; `PUT /api/v1/settings/mcp` with `{"writes_enabled": true}`). The optional `OPENTODO_MCP_WRITES=true` presets it on the first start only, like `OPENTODO_MCP`.
+2. **You allow it for your account.** Settings → Integrations → AI assistants → **Changes to my tasks** (off by default; `PUT /api/v1/me/agent-access`). Only you can change it, signed in or with a full-access token; no assistant token can. Turning it off stops all your assistants from making changes at once, without revoking their tokens.
 3. **The assistant uses an `agent` token.** Once both switches are on, Settings → Integrations → AI assistants offers **Create a token for an assistant that can make changes** (or pick **AI assistant, can make changes** in Settings → Integrations → API tokens, or run `ot token create desk-assistant --scope agent`). Read-only and full-access tokens never get write tools.
 
 An `agent` token reads like a read-only token. It can make changes through the write tools below, and through the same tools behind a short list of REST routes (create and edit tasks, projects, labels and comments) that the [`ot` command-line client](cli.md#using-ot-from-an-agent) uses; see [agent tokens in the API](api.md#agent-tokens). Every other REST route that writes refuses it, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and your own switch: it cannot mint tokens, raise its own permissions, change settings, sharing or members, or submit raw operations.
@@ -228,7 +228,7 @@ What remains possible: an injected instruction could make your assistant resched
 - Prefer clients that ask before calling tools marked destructive, and read what they propose before confirming bulk changes.
 - Be careful with assistants that also read untrusted sources (web pages, inboxes) in the same conversation.
 - Give each assistant its own token so history and the audit log tell them apart, and revoke a token you no longer use.
-- If something looks wrong, switch off **Allow AI assistants to make changes** (immediate), then review the audit log and history.
+- If something looks wrong, switch off **Changes to my tasks** (immediate), then review the audit log and history.
 
 ### Try it by hand
 
@@ -278,4 +278,4 @@ The server holds no key. For an account with [end-to-end encryption](e2ee.md), e
 - **Batches**: JSON-RPC batches are only part of protocol revision 2025-03-26 (requests without an `MCP-Protocol-Version` header count as that revision). Under 2025-06-18 or later a batch is refused with `-32600` (HTTP 400). Otherwise a batch holds at most 20 messages, and once its replies reach 4 MB the remaining requests are not run and get `-32603`; send them on their own.
 - **Logging**: tool calls are logged at debug level with the JSON-RPC method and duration only, never with arguments or results. Write calls of `agent` tokens are also recorded in the audit log as `agent.write`, without content.
 - **Network**: the MCP server makes no outbound requests. A reverse proxy in front of OpenTodo should not log `Authorization` headers.
-- **Disable**: turn the endpoint or assistant changes off in Settings (immediate), switch off your own **Allow AI assistants to make changes**, or revoke the assistant's token.
+- **Disable**: turn the endpoint or assistant changes off in Settings (immediate), switch off your own **Changes to my tasks**, or revoke the assistant's token.

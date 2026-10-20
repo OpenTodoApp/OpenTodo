@@ -12,6 +12,7 @@ import { useDemo } from '../lib/demo'
 import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, currentLocale, preferredLanguages } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 /** The digest's languages, as the server's message templates (internal/mail). */
 export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português' }
@@ -87,33 +88,32 @@ export function DigestView(p: DigestViewProps) {
   const d = s.kind === 'ready' ? s.digest : null
   const outcome = d ? digestOutcome(d) : null
   return (
-    <SettingsSection title={t('Weekly digest')} headingId="email-digest-heading"
-      description={t('An email on your review day with last week\'s numbers, what is overdue and due soon, projects without a next action, and a link to your weekly review.')}>
+    <SettingsSection {...cardCopy('email-digest')}>
       {s.kind === 'loading' ? (
         <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : s.kind === 'offline' ? (
-        <Notice>{t('The weekly digest is set on the server, so changing it needs a connection.')}</Notice>
+        <Notice>{noticeCopy('email-digest', 'offline')}</Notice>
       ) : s.kind === 'error' ? (
         <Notice tone="danger">{s.message}</Notice>
       ) : p.demo ? (
-        <Notice>{t('The weekly digest is not available on this demo instance: it would send email.')}</Notice>
+        <Notice>{noticeCopy('email-digest', 'demo')}</Notice>
       ) : !d!.available ? (
-        <Notice>{t('The weekly digest needs outgoing email, which the server owner has to configure first (Settings → Server → Outgoing email).')}</Notice>
+        <Notice>{noticeCopy('email-digest', 'noEmail')}</Notice>
       ) : d!.encryption ? (
-        <Notice>{t('The weekly digest is not available for accounts with end-to-end encryption, because the message would contain your task titles.')}</Notice>
+        <Notice>{noticeCopy('email-digest', 'encrypted')}</Notice>
       ) : (
         <>
-          <SettingRow label={t('Email me a weekly digest')} status={
+          <SettingRow {...rowCopy('email-digest', 'email')} status={
             <span className="flex flex-wrap items-center gap-2" data-testid="digest-summary">
               <Badge hue={d!.enabled ? 'green' : 'slate'}>{digestSummary(d!)}</Badge>
               {d!.enabled && d!.nextSendAt !== null && <span className="text-muted">{t('Next: {instant}', { instant: formatInstant(d!.nextSendAt, 'long') })}</span>}
               {outcome && <span className={outcome.tone === 'warn' ? 'text-warning' : 'text-muted'} data-testid="digest-outcome">{outcome.text}</span>}
             </span>
-          } description={t('The message contains task and project names and goes to your account\'s email address.')}
+          }
             control={
               <>
                 <Button size="sm" aria-expanded={p.editing} aria-disabled={p.busy} onClick={() => { if (!p.busy) p.onEdit() }}>{t('Change')}</Button>
-                <Switch checked={d!.enabled} disabled={p.busy} onChange={p.onToggle} label={t('Email me a weekly digest')} hideLabel />
+                <Switch checked={d!.enabled} disabled={p.busy} onChange={p.onToggle} label={rowCopy('email-digest', 'email').label} hideLabel />
               </>
             } />
           {p.editing && (

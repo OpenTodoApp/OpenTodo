@@ -23,6 +23,11 @@ describe('settings cards', () => {
     expect(offenders).toEqual([])
   })
 
+  it('reach Help only through a card\'s Learn more (settings-copy D3)', () => {
+    const offenders = panels.filter(([, src]) => /\bopenHelp\(|data-help-screen=/.test(src)).map(([path]) => path)
+    expect(offenders).toEqual([])
+  })
+
   it('use the design-system Select, never a native select, in settings panels', () => {
     const offenders = panels.filter(([, src]) => /<select\b/.test(src)).map(([path]) => path)
     expect(offenders).toEqual([])

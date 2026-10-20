@@ -15,6 +15,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 const POLL_MS = 1000
 
@@ -92,11 +93,10 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
   }
 
   return (
-    <SettingsSection title={t('Backups')} headingId="backups-heading"
-      description={<>{t('Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share, and restored from here.')}</>}>
+    <SettingsSection {...cardCopy('backups')}>
       {offline && (
         <div data-testid="backups-offline" className="py-3 first:pt-0">
-          <Notice tone="warning">{t('You are offline. Backups run on the server, so changing settings and starting a backup need a connection. The status below is the last one fetched.')}</Notice>
+          <Notice tone="warning">{noticeCopy('backups', 'offline')}</Notice>
         </div>
       )}
 
@@ -135,11 +135,11 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
       {!editing && (
         <>
-          <SettingRow label={t('Destination')} status={<><span className="font-medium">{DESTINATION_LABEL[draft.destination]}</span> <span className="user-text text-muted">· {destinationSummary(draft)}</span></>}
+          <SettingRow {...rowCopy('backups', 'destination')} status={<><span className="font-medium">{DESTINATION_LABEL[draft.destination]}</span> <span className="user-text text-muted">· {destinationSummary(draft)}</span></>}
             control={<Button variant="secondary" icon="pencil" disabled={offline} onClick={() => setEditing(true)}>{t('Change settings')}</Button>} />
-          <SettingRow label={t('Schedule')} status={schedule} />
-          <SettingRow label={t('Retention')} status={retention} />
-          <SettingRow label={t('Encryption')} status={flags.hasPassphrase ? <Badge hue="green"><Icon name="lock" size="xs" /> {t('Encrypted with your passphrase')}</Badge> : t('Not encrypted')} />
+          <SettingRow {...rowCopy('backups', 'schedule')} status={schedule} />
+          <SettingRow {...rowCopy('backups', 'retention')} status={retention} />
+          <SettingRow {...rowCopy('backups', 'encryption')} status={flags.hasPassphrase ? <Badge hue="green"><Icon name="lock" size="xs" /> {t('Encrypted with your passphrase')}</Badge> : t('Not encrypted')} />
         </>
       )}
 

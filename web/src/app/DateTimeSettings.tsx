@@ -12,6 +12,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useToday } from './useViews'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { act } from './actionError'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 const DATE_NAMES = translatedMap<DateFormatPref>({ system: msg('System'), 'day-month': msg('Day-month'), 'month-day': msg('Month-day'), iso: 'ISO' })
 const TIME_NAMES = translatedMap<TimeFormatPref>({ system: msg('System'), '12h': msg('12-hour'), '24h': msg('24-hour') })
@@ -61,31 +62,30 @@ export function DateTimeView({ prefs, resolved, onChange, today = logicalToday()
   }, [resolved, today])
 
   return (
-    <SettingsSection title={t('Date and time')} headingId="date-time-heading"
-      description={t('How dates and times look and where weeks start, on all your devices. System follows this browser.')}>
-      <SettingRow label={t('Date format')} htmlFor="date-format-select" control={
+    <SettingsSection {...cardCopy('date-time')}>
+      <SettingRow {...rowCopy('date-time', 'dateFormat')} htmlFor="date-format-select" control={
         <Select id="date-format-select" className="sm:w-56" value={prefs.date_format} onChange={(e) => onChange('date_format', e.target.value as DateFormatPref)}>
           {DATE_FORMATS.map((f) => <option key={f} value={f}>{`${DATE_NAMES[f]} (${formatDate(today, 'numeric', sample({ date_format: f }), today)})`}</option>)}
         </Select>
       } />
-      <SettingRow label={t('Time format')} htmlFor="time-format-select" control={
+      <SettingRow {...rowCopy('date-time', 'timeFormat')} htmlFor="time-format-select" control={
         <Select id="time-format-select" className="sm:w-56" value={prefs.time_format} onChange={(e) => onChange('time_format', e.target.value as TimeFormatPref)}>
           {TIME_FORMATS.map((f) => <option key={f} value={f}>{f === 'system' ? t('System (as this browser)') : `${TIME_NAMES[f]} (${formatTime('15:00', sample({ time_format: f }))})`}</option>)}
         </Select>
       } />
-      <SettingRow label={t('First day of the week')} htmlFor="week-start-select" control={
+      <SettingRow {...rowCopy('date-time', 'weekStart')} htmlFor="week-start-select" control={
         <Select id="week-start-select" className="sm:w-56" value={prefs.week_start} onChange={(e) => onChange('week_start', e.target.value as WeekStartPref)}>
           {WEEK_STARTS.map((f) => <option key={f} value={f}>{f === 'system' ? t('System ({weekdayName})', { weekdayName: weekdayName(sys.weekStart) }) : WEEK_NAMES[f]}</option>)}
         </Select>
       } />
-      <SettingRow label={t('My day starts at')} htmlFor="day-start-select" description={t('Work done before this time counts for the previous day.')} control={
+      <SettingRow {...rowCopy('date-time', 'dayStart')} htmlFor="day-start-select" control={
         <Select id="day-start-select" className="sm:w-56" value={hhmm(dayStart)} onChange={(e) => onDayStartChange?.(e.target.value as DayStartPref)}>
           {/* A value with minutes from a newer client is shown as it is, so the select never misstates it. */}
           {(DAY_STARTS as readonly string[]).includes(hhmm(dayStart)) ? null : <option value={hhmm(dayStart)}>{formatTime(hhmm(dayStart), resolved)}</option>}
           {DAY_STARTS.map((v) => <option key={v} value={v}>{v === '00:00' ? t('Midnight (default)') : formatTime(v, resolved)}</option>)}
         </Select>
       } />
-      <SettingRow label={t('Preview')} control={
+      <SettingRow {...rowCopy('date-time', 'preview')} control={
         <div data-testid="date-time-preview" aria-live="polite" className="flex min-w-0 flex-col gap-2 sm:items-end">
           <dl className="grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 text-meta">
             <dt className="text-muted">{t('Today')}</dt><dd className="text-default" data-testid="preview-today">{preview.today}</dd>

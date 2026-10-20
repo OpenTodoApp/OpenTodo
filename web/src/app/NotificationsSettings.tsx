@@ -14,6 +14,7 @@ import {
 } from '../lib/push'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 /**
  * Settings → Notifications (OpenSpec change `reminders`): per device, enable or
@@ -114,17 +115,16 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 }) {
   const sub = s?.subscription ?? null
   return (
-    <SettingsSection title={t('Notifications')} headingId="notifications-heading"
-      description={t('Reminders always appear inside the app while it is open. Turn on notifications to get them while the app is closed. Each device decides for itself.')}>
+    <SettingsSection {...cardCopy('notifications')}>
       {!s ? (
         <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : !s.available ? (
-        <Notice>{t('Push notifications are turned off on this server. Reminders are shown in the app.')}</Notice>
+        <Notice>{noticeCopy('notifications', 'serverOff')}</Notice>
       ) : !s.supported ? (
-        <Notice>{t('This browser does not support push notifications. Installing the app, or opening it over https, may help.')}</Notice>
+        <Notice>{noticeCopy('notifications', 'unsupported')}</Notice>
       ) : (
         <>
-          <SettingRow label={t('This device')} status={
+          <SettingRow {...rowCopy('notifications', 'device')} status={
             <span className="flex flex-wrap items-center gap-2" data-testid="push-summary">
               <Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? t('On') : t('Off')}</Badge>
               <Badge hue={PERMISSION[s.permission].hue} tone="solid">{t('Permission: {label}', { label: PERMISSION[s.permission].label })}</Badge>
@@ -136,13 +136,13 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
               )}
             </span>
           } control={<Switch checked={s.enabled} disabled={busy} onChange={onEnable} label={t('Enable notifications on this device')} hideLabel />} />
-          {s.permission === 'denied' && <Notice tone="warning">{t('Notifications are blocked for this site in your browser settings. Reminders still appear inside the app.')}</Notice>}
+          {s.permission === 'denied' && <Notice tone="warning">{noticeCopy('notifications', 'blocked')}</Notice>}
           {s.needsRenewal && (
             <Notice tone="warning" action={<Button size="sm" variant="primary" disabled={busy} onClick={onRenew}>{t('Re-enable')}</Button>}>
-              {t('The push service stopped accepting notifications for this device.')}
+              {noticeCopy('notifications', 'renew')}
             </Notice>
           )}
-          <SettingRow label={t('Include task titles')} description={t('Without titles a push carries only ids, encrypted; this device shows the title from its own copy of the task. With titles the notification is complete even before this device has synced. Descriptions are never sent.')}
+          <SettingRow {...rowCopy('notifications', 'titles')}
             control={<Switch checked={s.includeContent} disabled={busy} onChange={onIncludeContent} label={t('Include task titles')} hideLabel />} />
           {delivery && <div className="py-3">{delivery}</div>}
         </>

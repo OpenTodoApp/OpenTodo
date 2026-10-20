@@ -12,7 +12,7 @@ card: quick-add
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view: the sidebar with Inbox, Today, Upcoming and projects on the left, and today's tasks with an Overdue group on the right."></picture>
 
-This guide takes you from your first visit to a task added, dated and ticked off, in about five minutes. Follow along in the demo or on your own server.
+This guide takes you from your first visit to a task added, dated and ticked off. Follow along in the demo or on your own server.
 
 ## Open OpenTodo
 
@@ -20,9 +20,9 @@ There are three ways in.
 
 ### Try the demo
 
-Go to [demo.open-todo.app](https://demo.open-todo.app) and select **Try the demo**. You get a private sandbox with sample projects and tasks that only you can see. It is deleted after two hours without activity and every night, so don't keep anything personal there.
+Go to [demo.open-todo.app](https://demo.open-todo.app) and select **Try the demo**. You get a private sandbox with sample projects and tasks that only you can see. It is deleted after two hours without activity and every night, so keep personal things on your own server, which takes one container.
 
-In the sandbox, one line at the top says so: **Details** shows the full text, **Learn more** opens this section and **Dismiss** hides the line until you close the tab.
+In the sandbox, one line at the top says so: **Details** shows the full text, **Learn more** opens this section and **Dismiss** hides it until you close the tab.
 
 <picture><source srcset="images/demo-signin-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/demo-signin-light.webp" alt="The demo sign-in card with a short explanation and a green Try the demo button."></picture>
 

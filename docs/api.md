@@ -457,7 +457,7 @@ curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempot
 
 ### Agent tokens
 
-An `agent` token may write through REST on this fixed list of routes only, and only while the owner's **AI assistants may make changes** and the user's **Allow AI assistants to make changes** are both on:
+An `agent` token may write through REST on this fixed list of routes only, and only while the owner's **Assistants may make changes** and the user's **Changes to my tasks** are both on:
 
 | Route | What an agent token may send |
 | --- | --- |
@@ -1088,7 +1088,7 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 # 201 {"user":{…,"role":"member"},"projectId":"…","role":"editor"} + session cookie
 ```
 
-The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Members can invite new people with project links** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
+The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Invite new people** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
 
 ### Public links
 

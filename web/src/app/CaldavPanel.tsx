@@ -15,6 +15,7 @@ import type { AppPassword, CaldavSetting } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → Calendar apps (OpenSpec change `caldav`): the owner's toggle, the
 // server address with per-client setup hints, and per-user app passwords. The
@@ -60,28 +61,27 @@ export function CaldavView(p: CaldavViewProps) {
   const revoked = (p.passwords ?? []).filter((x) => x.revokedAt)
   const newButton = <Button size="sm" icon="plus" disabled={p.busy || p.setting === null} onClick={p.onNew}>{t('New app password')}</Button>
   return (
-    <SettingsSection title={t('Calendar apps (CalDAV)')} headingId="caldav-heading" testId="caldav-panel"
-      description={t('Sync your tasks with Apple Reminders, Thunderbird or Nextcloud Tasks. Each project is a list, and the Inbox is its own list.')}>
+    <SettingsSection {...cardCopy('caldav')} testId="caldav-panel">
       {p.setting === null ? (
-        <Notice>{t('CalDAV status is available when you are online.')}</Notice>
+        <Notice>{noticeCopy('caldav', 'offline')}</Notice>
       ) : (
-        <SettingRow label={t('Calendar apps on this server')}
-          description={p.isOwner ? t('Let calendar apps sync with this server.') : on ? undefined : t('Ask the server owner to turn it on.')}
+        <SettingRow label={rowCopy('caldav', 'server', { variant: 'owner' }).label}
+          description={p.isOwner || !on ? rowCopy('caldav', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
           status={<span className="flex items-center gap-2"><Badge hue={on ? 'green' : 'slate'}>{on ? t('On') : t('Off')}</Badge>{!p.isOwner && <span>{on ? t('CalDAV is on for this server.') : t('CalDAV is off.')}</span>}</span>}
           control={p.isOwner && <Switch checked={on} disabled={p.busy} onChange={p.onToggle} label={t('Allow calendar apps to sync with this server')} hideLabel />} />
       )}
       {p.setting?.encryption && (
         <Notice tone="warning">
-          {t('Not available for your account: end-to-end encryption is on, and calendar apps cannot read or write encrypted titles.')}
+          {noticeCopy('caldav', 'encrypted')}
         </Notice>
       )}
       {p.setting && on && !p.setting.encryption && (
         <>
-          <SettingRow label={t('Server address')} status={<CopyValue value={p.setting.url} label={t('server address')} />} />
-          <SettingRow label={t('User name')} status={<CopyValue value={p.email} label={t('user name')} />} description={t('Sign in with an app password, never your account password.')} />
+          <SettingRow {...rowCopy('caldav', 'address')} status={<CopyValue value={p.setting.url} label={t('server address')} />} />
+          <SettingRow {...rowCopy('caldav', 'user')} status={<CopyValue value={p.email} label={t('user name')} />} />
           {!p.setting.secure && (
             <Notice tone="danger">
-              {t('This address uses plain http: app passwords would travel unencrypted. Put the server behind HTTPS and set OPENTODO_BASE_URL before connecting devices outside your home network.')}
+              {noticeCopy('caldav', 'plainHttp')}
             </Notice>
           )}
           <details className="py-3 text-body">

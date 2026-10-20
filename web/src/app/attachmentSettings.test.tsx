@@ -18,7 +18,7 @@ describe('AttachmentSettingsView', () => {
   it('saves changed limits and refuses values out of bounds', async () => {
     const onSave = vi.fn()
     const v = await render(<AttachmentSettingsView value={value} online busy={false} error={null} saved={false} onSave={onSave} />)
-    expect(v.container.querySelector('[data-help-screen]')).toBeNull()
+    expect(v.container.querySelector('[data-help-screen]:not([data-learn-more])')).toBeNull()
     const save = [...v.container.querySelectorAll('button')].find((b) => b.textContent === 'Save')!
     expect(save.disabled).toBe(true)
     const perFile = v.container.querySelector<HTMLInputElement>('#attachments-max-file')!

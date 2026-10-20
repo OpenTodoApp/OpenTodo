@@ -30,7 +30,7 @@ describe('EmailInboxView', () => {
     expect(html).toContain('aria-checked="true"')
     expect(html).toContain('>On<')
     expect(html).toContain('<textarea')
-    expect(html).toContain('at most 60 per hour')
+    expect(html).toContain('anyone who knows it can add tasks')
   })
 
   it('says when the operator has not enabled the feature, with no controls', () => {

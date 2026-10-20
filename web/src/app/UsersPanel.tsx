@@ -22,6 +22,7 @@ import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 /** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
 export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
@@ -254,13 +255,10 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <SettingsSection title={t('Users')} headingId="users-heading"
-      description={isOwner
-        ? t('Everyone with an account on this server. You can manage every account and choose admins; admins manage members.')
-        : t('Everyone with an account on this server. As an admin you can deactivate, reset and delete members.')}>
-      {p.offline && <Notice>{t('You are offline. User administration needs a connection to the server; nothing about other accounts is kept on this device.')}</Notice>}
+    <SettingsSection {...cardCopy('users', { variant: isOwner ? 'owner' : 'admin' })}>
+      {p.offline && <Notice>{noticeCopy('users', 'offline')}</Notice>}
       {p.users && (
-        <SettingRow label={t('Accounts')} status={
+        <SettingRow {...rowCopy('users', 'accounts')} status={
           <span data-testid="users-summary">
             {[
               t('{n, plural, one {# account} other {# accounts}}', { n: p.users.length }),

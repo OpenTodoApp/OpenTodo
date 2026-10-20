@@ -12,6 +12,10 @@ import { DateTimeSection, DateTimeView } from './DateTimeSettings'
 import { DateTimePrefsProvider, useDateTimeFormat } from './DateTimePrefsProvider'
 import { useToday } from './useViews'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const SYSTEM = { date_format: 'system', time_format: 'system', week_start: 'system' } as const
 const sys = { order: 'MD' as const, hour12: false, weekStart: 1 }
 const settle = () => act(async () => { for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 20)) })
@@ -45,7 +49,7 @@ describe('DateTimeView', () => {
   it('labels each option with today in that format, has a Help link and the three selects', () => {
     const html = renderToStaticMarkup(<DateTimeView prefs={SYSTEM} resolved={resolveDateTime(SYSTEM, sys)} onChange={() => {}} today="2026-10-14" />)
     expect(html).toContain('Date and time')
-    expect(html).not.toContain('data-help-screen')
+    expect(withoutLearnMore(html)).not.toContain('data-help-screen')
     expect(html).toContain('Day-month (14/10/2026)')
     expect(html).toContain('Month-day (10/14/2026)')
     expect(html).toContain('ISO (2026-10-14)')

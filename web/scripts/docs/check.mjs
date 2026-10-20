@@ -13,7 +13,7 @@ import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 import { missingScreenshots } from '../../../scripts/site-bundle.mjs'
 
-/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, <SettingsSection helpId="id">, data-help-screen="id" or helpScreen('id'). */
+/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, <SettingsSection helpId="id">, data-help-screen="id", helpScreen('id') or a settings card's learnMore: 'id'. */
 export function appScreenIds(repoRoot) {
   const ids = new Map()
   const walk = (dir) => {
@@ -27,6 +27,8 @@ export function appScreenIds(repoRoot) {
       for (const m of src.matchAll(/<Help(?:Link|Heading)\b[^>]*?\bscreen=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
       // The page template's Help action (ux-overhaul): <PageHeader … help="id" />, or help={`settings/${id}`} resolved by HELP_SCREENS.
       for (const m of src.matchAll(/\shelp=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
+      // A settings card's Learn more (settings-copy D4): `learnMore: 'id'` in the settings copy table.
+      for (const m of src.matchAll(/\blearnMore:\s*["'`]([^"'`]+)["'`]/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
       for (const m of src.matchAll(/HELP_SCREENS[^]*?\{([^}]*)\}/g)) for (const id of m[1].matchAll(/['"]([a-z0-9/#-]+)['"]/g)) ids.set(id[1], p.slice(repoRoot.length + 1))
       // Stories render panels with fixture data; only the app's own components count.
       if (!/\.stories\./.test(name)) for (const m of src.matchAll(/\bhelpId=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))

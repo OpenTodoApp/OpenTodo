@@ -4,7 +4,7 @@ summary: Pick the language of the app once and every device follows: English, Ge
 audience: user
 section: Guides
 specs: [localization]
-screens: []
+screens: [settings/language]
 order: 143
 ---
 # The app in your language

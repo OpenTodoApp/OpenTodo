@@ -55,7 +55,7 @@ Sticky header (checkbox, title, menu, close); notes as one placeholder line unti
 
 ## Settings
 
-Nine sections (Account, Appearance, General, Notifications, Capture, Integrations, Data, People, Server) in one layout: the section list beside the content from 1024 px, list-then-page below. A section is a card with a title, one sentence and rows; it has no header action and no help link of its own. A row shows state as a badge beside its label; a primary action is the control of the last row.
+Nine sections (Account, Appearance, General, Notifications, Capture, Integrations, Data, People, Server) in one layout: the section list beside the content from 1024 px, list-then-page below. A section is a card with a title, one line and rows; it has no header action. Its line may end with **Learn more** (`SettingsSection` `learnMore`, a Help screen id), which opens the card's guide section beside the page: the only way a card reaches Help (`settingsAnatomy.test.tsx`). A row shows state as a badge beside its label; a primary action is the control of the last row. The English text of every card, row, option and notice is one table, `web/src/lib/settingsCopy.ts`, keyed by the card's heading id; panels spread `cardCopy()` and `rowCopy()` into the primitives and never pass a description of their own.
 
 ## Rows and chips
 
@@ -68,7 +68,7 @@ Nine sections (Account, Appearance, General, Notifications, Capture, Integration
 
 ## Copy
 
-Name the action first and the key second, and the key only on fine-pointer devices. Say what happens ("Moved to Home · Undo"), not what the system did. One idea per sentence. The product words are listed in `docs/views.md` and `docs/tasks-and-projects.md`; four different things are never called the same name.
+Name the action first and the key second, and the key only on fine-pointer devices. Say what happens ("Moved to Home · Undo"), not what the system did. One idea per sentence. In Settings a title or label has at most 4 words, a card's, row's or notice's line at most 90 characters in English (a translation at most 120), and an option of a choice card at most 60; anything longer goes to the guide section the card's Learn more opens, and a safety warning keeps a one-line pointer on the card. `web/src/lib/settingsCopy.test.ts` checks all of it; confirmation dialogs keep their full consequence. The product words are listed in `docs/views.md` and `docs/tasks-and-projects.md`; four different things are never called the same name.
 
 ## The interface budget
 

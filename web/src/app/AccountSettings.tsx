@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api } from '../lib/api'
 import { t } from '../lib/i18n'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 /**
  * Ends every session of the account on the server (route-authorization-policy),
@@ -35,10 +36,10 @@ export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; 
 export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere }: { onLogout: () => void; onSignOutEverywhere?: () => Promise<void> }) {
   const [confirming, setConfirming] = useState<'device' | 'everywhere' | null>(null)
   return (
-    <SettingsSection title={t('Session')} headingId="session-heading" description={t('This device is signed in to your server.')}>
-      <SettingRow label={t('Sign out of this device')} description={t('Clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.')}
+    <SettingsSection {...cardCopy('session')}>
+      <SettingRow {...rowCopy('session', 'device')}
         control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
-      <SettingRow label={t('Sign out everywhere')} description={t('Signs out every device and browser, including this one, and revokes your API tokens and app passwords.')}
+      <SettingRow {...rowCopy('session', 'everywhere')}
         control={<Button variant="secondary" icon="log-out" onClick={() => setConfirming('everywhere')}>{t('Sign out everywhere')}</Button>} />
       {confirming === 'device' && <SignOutDialog onConfirm={onLogout} onCancel={() => setConfirming(null)} />}
       {confirming === 'everywhere' && (
