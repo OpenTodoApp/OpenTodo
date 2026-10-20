@@ -580,6 +580,40 @@ describe('evaluate: origin terms (OpenSpec task-origin 3.3)', () => {
   })
 })
 
+describe('evaluate: tracked time (OpenSpec time-tracking 7.1)', () => {
+  const L: Task[] = [task('long', { project_id: 'p-work' }), task('short', { project_id: 'p-work' }), task('none', { project_id: 'p-work' }), task('home')]
+  const tracked = new Map([['long', 70], ['short', 20], ['home', 61]])
+  const run = (q: string) => {
+    const r = runFilter(q, L, { ...CTX, tracked })
+    return r.ok ? r.tasks.map((x) => x.id).sort() : r.error
+  }
+  it('Any tracked time: tracked & #Work and its negation', () => {
+    expect(run('tracked & #Work')).toEqual(['long', 'short'])
+    expect(run('!tracked & #Work')).toEqual(['none'])
+  })
+  it('Over an hour: 40 + 30 minutes is over 1h, and not <= 1h', () => {
+    expect(run('tracked > 1h')).toEqual(['home', 'long'])
+    expect(run('tracked <= 1h')).toEqual(['none', 'short'])
+    expect(run('tracked >= 1h30')).toEqual([])
+    expect(run('tracked = 20') ).toEqual(['short'])
+    expect(run('tracked < 1.5h & #Work')).toEqual(['long', 'none', 'short'])
+  })
+  it('Invalid duration: the same message as the server', () => {
+    expect(errorOf('tracked > soon').message).toBe('Expected a duration such as 30m or 1h30 after ">" at position 11')
+    expect(errorOf('tracked >').message).toBe('Expected a duration such as 30m or 1h30 after ">" at position 9')
+    expect(errorOf('tracked = 1h75').message).toBe('Expected a duration such as 30m or 1h30 after "=" at position 11')
+  })
+  it('Reserved word: tracked compares tracked time; a field named tracked needs its quoted name', () => {
+    expect(parse('tracked > 10')).toEqual({ kind: 'tracked', op: '>', minutes: 10 })
+    expect(parse('"tracked" > 10')).toMatchObject({ kind: 'field', name: 'tracked' })
+    expect(printQuery(parse('tracked >= 1h')!)).toBe('tracked >= 60')
+  })
+  it('matches nothing without the tracked map', () => {
+    const r = runFilter('tracked', L, CTX)
+    expect(r.ok && r.tasks).toEqual([])
+  })
+})
+
 describe('evaluate: warnings and graceful degradation', () => {
   it('unknown label warns and rest still matches', () => {
     const r = runFilter('@errands | p1', TASKS, CTX)

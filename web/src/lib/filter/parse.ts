@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+import { durationMinutes } from '../time'
 // Filter query language (OpenSpec change `filter-query-language`): tokenizer,
 // recursive-descent parser and date expressions. Pure and dependency-free; the
 // grammar is documented in docs/filters.md and this file accepts exactly it.
@@ -10,6 +11,7 @@ import { t } from '../i18n'
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
 //            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
 //            | "origin:" value                        (task origins, OpenSpec task-origin)
+//            | "tracked" cmp duration                 (tracked time, OpenSpec time-tracking)
 //            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
 //   date    := day | period   (a day is a period of one day; see resolveRange)
 //   field   := a word that is not a reserved word | '"' chars '"'
@@ -154,7 +156,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit' | 'origin' | 'no origin'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit' | 'origin' | 'no origin' | 'tracked'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -185,6 +187,8 @@ export type Node =
   | { kind: 'field'; name: string; op: Cmp; value: FieldValueExpr; pos: number; opPos: number }
   /** `no name`: a project defining the field, no value. */
   | { kind: 'nofield'; name: string; pos: number }
+  /** `tracked cmp duration`: the task's tracked minutes (time-tracking D9). */
+  | { kind: 'tracked'; op: Cmp; minutes: number }
 
 /** The right-hand side of a field term; the field's type decides how it compares. */
 export type FieldValueExpr =
@@ -306,6 +310,20 @@ export function parse(src: string): Node | null {
       if (!op || !c) return fail(t('Expected a comparison (<, <=, =, >=, >, before or after) after "{after}" at position {pos}', { after: entry.raw, pos: entry.pos + 1 }), entry.pos, CMP_EXPECTED)
       i++
       return { kind: 'date', field: w, op, date: parseDate(c) }
+    }
+    // Tracked time (time-tracking D9): the keyword, or `tracked cmp duration`. A
+    // reserved word: a field named "tracked" is reachable only quoted.
+    if (w === 'tracked') {
+      const c = peek()
+      if (c?.type !== 'cmp') return { kind: 'keyword', keyword: 'tracked' }
+      i++
+      const v = peek()
+      const message = (pos: number) => t('Expected a duration such as 30m or 1h30 after "{after}" at position {pos}', { after: c.raw, pos: pos + 1 })
+      if (!v || v.type !== 'word') return fail(message(c.pos), c.pos, ['duration'])
+      const minutes = durationMinutes(v.value)
+      if (minutes === null) return fail(message(v.pos), v.pos, ['duration'])
+      i++
+      return { kind: 'tracked', op: c.op, minutes }
     }
     if (w === 'no') {
       const nt = peek()
@@ -550,5 +568,7 @@ export function printQuery(n: Node): string {
       return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`
     case 'nofield':
       return `no ${quoteAlways(n.name)}`
+    case 'tracked':
+      return `tracked ${n.op} ${n.minutes}`
   }
 }

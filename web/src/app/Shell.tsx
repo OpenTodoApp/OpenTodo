@@ -42,6 +42,8 @@ import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
+import { useRunningRepair } from '../lib/timeEntries'
+import { TrackingPill } from './TrackingIndicator'
 import { SkipLink, usePageFocus } from './pageFocus'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
@@ -80,6 +82,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
+  // Two devices started tracking while offline: keep one running entry (time-tracking D2).
+  useRunningRepair()
 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
@@ -345,6 +349,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
         <PageBarTitle>{bar?.title}</PageBarTitle>
         {bar?.subtitle && <p className="truncate text-meta text-muted" data-phone-subtitle>{bar.subtitle}</p>}
       </div>
+      <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
         {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>

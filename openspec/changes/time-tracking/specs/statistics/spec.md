@@ -43,7 +43,7 @@ The Statistics screen SHALL show completions per day of the period (up to 4 week
 ## ADDED Requirements
 
 ### Requirement: Time entries export
-The Statistics screen SHALL offer "Export time entries" in the page header's overflow menu, producing the CSV defined by the time-tracking capability for the chosen period from local data, so it works offline and matches the server's CSV for the same entries. Nothing SHALL be sent to produce it.
+The Statistics screen SHALL offer "Export time entries" in the menu beside the period chooser (after it, so the period chooser stays the first focusable control), producing the CSV defined by the time-tracking capability for the chosen period from local data, so it works offline and matches the server's CSV for the same entries. Nothing SHALL be sent to produce it.
 
 #### Scenario: Export the last 4 weeks
 - **WHEN** the user chooses the last 4 weeks and Export time entries

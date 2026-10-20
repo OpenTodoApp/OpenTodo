@@ -27,6 +27,11 @@ export interface FilterContext {
    * `no name`; names resolve against the live ones of every project, ignoring case.
    */
   fields?: readonly FieldDef[]
+  /**
+   * Every member's tracked minutes per task, a running entry to the current minute
+   * (time-tracking D4), for `tracked` and `tracked cmp duration`; none tracked without it.
+   */
+  tracked?: ReadonlyMap<string, number>
 }
 
 export interface CompiledFilter {
@@ -289,6 +294,14 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
       }
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
+      case 'tracked': {
+        const minutes = n.minutes
+        const op = n.op
+        return (task) => {
+          const m = ctx.tracked?.get(task.id) ?? 0
+          return op === '<' ? m < minutes : op === '<=' ? m <= minutes : op === '=' ? m === minutes : op === '>=' ? m >= minutes : m > minutes
+        }
+      }
       case 'keyword':
         switch (n.keyword) {
           case 'overdue': return (task) => task.due !== null && localDueOf(task.due).date < today
@@ -310,6 +323,8 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'habit': return (task) => task.habit === true
           case 'origin': return (task) => originOf(task) !== null
           case 'no origin': return (task) => originOf(task) === null
+          // At least one minute of live tracked time (time-tracking D9).
+          case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
           case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
         }

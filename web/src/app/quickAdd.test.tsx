@@ -31,3 +31,31 @@ describe('no help under the field', () => {
     await r.unmount()
   })
 })
+
+describe('spent and estimate (OpenSpec time-tracking 8.2)', () => {
+  it('Spent and estimate: `30m/2h` shows a Spent chip beside the estimate and hands both to the task', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    const input = r.container.querySelector('input')!
+    await type(input, 'Draft the offer 30m/2h')
+    await flush(20)
+    const chips = [...r.container.querySelectorAll('[data-chip]')].map((c) => [c.getAttribute('data-chip'), c.textContent])
+    expect(chips.map((c) => c[0])).toEqual(['estimate', 'spent'])
+    expect(chips[1][1]).toContain('Spent 30 min')
+    await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await flush(20)
+    expect(added[0]).toMatchObject({ title: 'Draft the offer', estimate_minutes: 120, spent_minutes: 30 })
+    await r.unmount()
+  })
+
+  it('Plus stays an estimate only', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    await type(r.container.querySelector('input')!, 'Draft the offer +30m')
+    await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await flush(20)
+    expect(added[0]).toMatchObject({ title: 'Draft the offer', estimate_minutes: 30 })
+    expect(added[0].spent_minutes).toBeUndefined()
+    await r.unmount()
+  })
+})

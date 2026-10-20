@@ -306,7 +306,7 @@ const shots = [
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
   { name: 'comments', server: D, card: true, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity and history' }), 8)
+    await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity, history and time' }), 8)
   } },
   { name: 'notifications', card: true, server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())

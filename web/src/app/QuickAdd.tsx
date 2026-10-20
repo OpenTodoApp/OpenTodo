@@ -27,6 +27,7 @@ const CHIP_HUE: Record<Chip['kind'], HueName> = {
   label: 'cyan',
   priority: 'orange',
   estimate: 'green',
+  spent: 'lime',
   recurrence: 'teal',
   reminder: 'yellow',
 }
@@ -93,10 +94,12 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
       return `P${String(chip.value)}`
     case 'estimate':
       return formatMinutes(chip.value as number)
+    case 'spent':
+      return t('Spent {duration}', { duration: (chip.value as number) < 60 ? t('{n} min', { n: chip.value as number }) : formatMinutes(chip.value as number) })
   }
 }
 
-const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
 
 /**
  * Single-line capture. With natural-language parsing on (per-device setting), the

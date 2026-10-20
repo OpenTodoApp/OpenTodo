@@ -11,6 +11,7 @@ import { SignOutDialog } from './AccountSettings'
 import { NotificationBell } from './NotificationBell'
 import { navigate, type Route } from './router'
 import { SyncStatus } from './SyncStatus'
+import { TrackingIndicator } from './TrackingIndicator'
 
 const ACTIVE = 'bg-accent-soft font-medium text-on-accent-soft'
 const IDLE = 'text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised'
@@ -35,6 +36,8 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
   const current = route.view === 'settings' || route.view === 'import' || route.view === 'help'
   return (
     <div className={`shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer data-footer-row={!collapsed || undefined}>
+      {/* The running time entry (time-tracking D6): a status item like the sync dot, shown only while one runs. */}
+      <TrackingIndicator collapsed={collapsed} />
       <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : 'min-w-0'}`} data-footer-icons>
         <Menu kind="menu" label={collapsed ? t('Account menu for {name}', { name }) : name} namedByContent={!collapsed} title={name}
           align="start" width="sm:w-64" tip={name} tipSide={collapsed ? 'right' : 'top'}

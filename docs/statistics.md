@@ -21,7 +21,11 @@ Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose
 - **Slipped**: due in the period, before today, and not done by the end of the period.
 - **Overdue now**: open and due before today, outside archived projects.
 
-Charts show completions per day, per week, per weekday and per project (the top five and "other"). Every value is printed, and screen readers get a table. Tasks in the Trash are left out.
+- **Time tracked**: your own [time entries](time-tracking.md) that started in the period, a running one up to now. An entry counts whole for the day it started, even across midnight. Other members' entries on shared tasks count nothing here.
+
+Charts show completions per day, per week, per weekday and per project (the top five and "other"). When the period holds time entries, two more show the time tracked per day (up to 4 weeks) and per project, in hours and minutes, with Inbox for tasks without a project. Every value is printed, and screen readers get a table. Tasks in the Trash are left out.
+
+**Export time entries** in the menu next to the period chooser downloads a CSV of the period's entries, made on this device: it works offline and sends nothing. The columns are those of the [server's CSV](time-tracking.md#export).
 
 In a shared project a completed task counts for whoever completed it. Older tasks that do not record that count for their assignee, or for you when unassigned.
 

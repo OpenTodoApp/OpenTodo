@@ -31,6 +31,8 @@ import { fieldBadges } from '../lib/fields'
 import { useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
 import { originOf } from '../lib/taskOrigin'
+import { trackedLabel, trackedText } from '../lib/time'
+import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
 
 /** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
@@ -82,7 +84,7 @@ export function calmDateText(due: { label: string; time: string | null } | null,
 
 /** One count of a row: subtask progress, notes, comments, attachments (calm-rows D7). */
 export interface RowCount {
-  key: 'progress' | 'notes' | 'comments' | 'attachments'
+  key: 'progress' | 'notes' | 'comments' | 'attachments' | 'tracked'
   icon?: IconName
   /** The visible text; none for an icon-only marker (notes). */
   text?: string
@@ -94,8 +96,10 @@ export interface RowCount {
  * A row's counts in display order. Both details render this list: Detailed as chips
  * in the metadata line, Calm in the quiet trailing group. A new count is one more entry.
  */
-export function rowCounts(c: { progress?: Progress; notes: boolean; comments: number; attachments: number }): RowCount[] {
+export function rowCounts(c: { progress?: Progress; notes: boolean; comments: number; attachments: number; tracked?: { tracked: number; estimate: number | null } }): RowCount[] {
   const out: RowCount[] = []
+  // Tracked time (time-tracking, calm-rows' model): first in the quiet group of a Calm row.
+  if (c.tracked) out.push({ key: 'tracked', icon: 'timer', text: trackedText(c.tracked.tracked, c.tracked.estimate), label: trackedLabel(c.tracked.tracked, c.tracked.estimate) })
   if (c.progress && c.progress.total > 0) out.push({ key: 'progress', text: `${c.progress.done}/${c.progress.total}`, label: t('{done} of {total} subtasks completed', { done: c.progress.done, total: c.progress.total }) })
   if (c.notes) out.push({ key: 'notes', icon: 'list', label: t('Has notes') })
   if (c.comments > 0) out.push({ key: 'comments', icon: 'message-circle', text: String(c.comments), label: t('{n, plural, one {# comment} other {# comments}}', { n: c.comments }) })
@@ -183,6 +187,8 @@ export interface TaskRowProps {
   implied?: RowImplied
   /** The label whose view is open: Calm rows leave out its dot and name. */
   omitLabel?: string
+  /** Every member's tracked minutes on the task, when it has entries (time-tracking D4); a running entry counts to the minute. */
+  tracked?: number
 }
 
 /**
@@ -190,7 +196,10 @@ export interface TaskRowProps {
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
  */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, detail: detailProp, implied, omitLabel }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, detail: detailProp, implied, omitLabel, tracked: trackedProp }: TaskRowProps) {
+  // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
+  const trackedLive = useTaskTracked(task.id)
+  const tracked = trackedProp ?? trackedLive
   const dt = useDateTimeFormat()
   const preferred = useRowDetail()
   const calm = (detailProp ?? preferred) === 'calm'
@@ -225,7 +234,9 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   // Calm: the repeat mark is a muted icon with its word after the date, never a suffix (calm-rows D4).
   const repeat = task.recurrence || task.series_id ? (task.recurrence ? t('repeats') : t('occurrence')) : null
   const showStart = !!startText && !(calm && start === 'someday' && implied?.someday)
-  const counts = rowCounts({ progress, notes: !!task.description, comments, attachments })
+  // Tracked time joins the estimate chip in Detailed and the quiet group in Calm: one figure, never a second chip.
+  const trackedCount = tracked !== undefined ? { tracked, estimate: task.estimate_minutes ?? null } : undefined
+  const counts = rowCounts({ progress, notes: !!task.description, comments, attachments, tracked: calm ? trackedCount : undefined })
   const streak = habit && !done ? habit : null
   // Custom field values of the task's project (custom-fields): three badges, then "+n".
   const fieldDefs = useFieldDefs()
@@ -233,7 +244,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const moreBadges = badges.slice(MAX_FIELD_BADGES)
   const shownLabels = calm && omitLabel ? labels.filter((l) => l.id !== omitLabel) : labels
   // In Calm the counts are not metadata: a row with only counts stays one line (calm-rows D7).
-  const hasMeta = !!(badges.length > 0 || breadcrumb || date || streak || deadline || showStart || (calm ? !!repeat : (!due && !task.evening && repeat)) || task.estimate_minutes || (blockedBy > 0 && !done)
+  const hasMeta = !!(badges.length > 0 || breadcrumb || date || streak || deadline || showStart || (calm ? !!repeat : (!due && !task.evening && repeat)) || (task.estimate_minutes && !(calm && trackedCount)) || (!calm && trackedCount) || (blockedBy > 0 && !done)
     || (assignee && task.assignee_id) || (!calm && counts.length > 0) || shownLabels.length > 0 || (showProject && (project || !task.project_id)))
 
   // Completion feedback: the check mark animates and the row fades within the
@@ -284,7 +295,9 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
         </ToneText>
       )}
       {showStart && <ToneText tone="muted" icon={start === 'someday' ? 'archive' : 'calendar-days'} data-start="">{startText}</ToneText>}
-      {task.estimate_minutes ? <NeutralChip data-estimate="" label={t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) })}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
+      {!calm && trackedCount
+        ? <NeutralChip data-estimate="" data-tracked="" label={trackedLabel(trackedCount.tracked, trackedCount.estimate)}>{trackedText(trackedCount.tracked, trackedCount.estimate)}</NeutralChip>
+        : task.estimate_minutes && !(calm && trackedCount) ? <NeutralChip data-estimate="" label={t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) })}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
       {badges.slice(0, MAX_FIELD_BADGES).map((b) => <NeutralChip key={b.def.id} data-field-badge={b.def.id}>{b.text}</NeutralChip>)}
       {moreBadges.length > 0 && (
         <NeutralChip data-field-more="" label={t('{count} more fields: {join}', { count: moreBadges.length, join: moreBadges.map((b) => b.text).join(', ') })}>

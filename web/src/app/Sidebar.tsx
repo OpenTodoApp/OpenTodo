@@ -18,7 +18,8 @@ import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
-import type { Project, Review, User } from '../lib/types'
+import type { Label, Project, Review, Task, User, View } from '../lib/types'
+import { useTrackedTotals } from '../lib/timeEntries'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
@@ -76,6 +77,16 @@ function writeOpen(key: string, open: boolean): void {
  * rhythm text, weekly-review "Rhythm markers") is its tooltip.
  */
 export const openTasksLabel = (n: number | undefined): string | undefined => (n ? t('{n, plural, one {# open task} other {# open tasks}}', { n }) : undefined)
+
+/**
+ * Every saved view with its live open-task count over the sidebar's open tasks, in
+ * one pass; tracked time is part of the context so `tracked` views count too
+ * (time-tracking D4).
+ */
+function useViewCounts(views: View[], today: string, labels: Label[], projects: Project[], tasks: Task[]) {
+  const tracked = useTrackedTotals()
+  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, tracked }, 0), [views, today, labels, projects, tasks, tracked])
+}
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {
   route: Route
@@ -179,10 +190,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   // sidebar-favourites): each list view's compiled query runs over the open tasks this
   // sidebar already observes, in one pass.
   const views = useViews()
-  const viewCounts = useMemo(
-    () => evaluateViews(views, { today, labels, projects: allProjects, tasks: openTasks }, 0),
-    [views, labels, allProjects, openTasks, today],
-  )
+  const viewCounts = useViewCounts(views, today, labels, allProjects, openTasks)
   const favourites = useFavourites()
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')

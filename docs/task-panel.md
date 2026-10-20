@@ -15,7 +15,7 @@ Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter
 
 ## The top of the panel
 
-The top of the panel stays in view while you scroll: the task's **checkbox**, its **title** (edit it in place), a **⋯** menu with **Copy link**, **Expand** (the task as a full page), **Open parent task**, **Open recurring task**, **Break this down** and **Delete**, and the **×** that closes it. Below is **Notes**: one quiet line until you click it, then an editor with headings, bold and italic text, links, and bullet, numbered and check lists (see [Write notes](notes-and-subtasks.md#write-notes)).
+The top of the panel stays in view while you scroll: the task's **checkbox**, its **title** (edit it in place), a **⋯** menu with **Copy link**, **Expand** (the task as a full page), **Open parent task**, **Open recurring task**, **Start tracking** (or **Stop tracking**), **Break this down** and **Delete**, and the **×** that closes it. Below is **Notes**: one quiet line until you click it, then an editor with headings, bold and italic text, links, and bullet, numbered and check lists (see [Write notes](notes-and-subtasks.md#write-notes)).
 
 ## Properties as chips
 
@@ -31,7 +31,7 @@ Then come the task's properties as chips. A chip reads its value ("Thu 15 Oct ·
 
 A chip with a value has an **×** that clears it without opening the editor.
 
-Below the chips: subtasks, attachments and the Comments, Activity and History tabs, described in [Notes, subtasks and dependencies](notes-and-subtasks.md).
+Below the chips: subtasks, attachments and the Comments, Activity and History tabs, described in [Notes, subtasks and dependencies](notes-and-subtasks.md), and **Time**, the task's time entries (see [Time tracking](time-tracking.md)).
 
 ## Viewers
 

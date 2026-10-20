@@ -10,6 +10,8 @@ import { setDateTime } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, createSubtask, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { createSection, saveViewMode } from '../../lib/sections'
+import { setCurrentUserId } from '../../lib/sharing'
+import { logTime, startTracking } from '../../lib/timeEntries'
 import type { Label, Project, Task, User } from '../../lib/types'
 import { HUES, type HueName } from '../../ui'
 import { resetPanel } from '../panel'
@@ -140,6 +142,20 @@ const hue = (name: HueName): string => HUES.find((h) => h.name === name)!.hex
 export const HEX = { red: hue('red'), orange: hue('orange'), green: hue('green'), teal: hue('teal'), blue: hue('blue'), violet: hue('violet'), pink: hue('pink'), slate: hue('slate') } as const
 
 // ---- seeds ----
+
+/**
+ * Time entries (OpenSpec time-tracking): the story user's past entries on the Inbox
+ * task and one entry running for 1 h 5 min on another task (the indicator stories).
+ */
+export async function seedTracking(): Promise<void> {
+  await seedInbox()
+  await setCurrentUserId(storyUser.id)
+  const now = Date.now()
+  await logTime(seeded.inboxTask, now - 26 * 3600000, now - 26 * 3600000 + 25 * 60000, 'Forms printed')
+  await logTime(seeded.inboxTask, now - 3 * 3600000, now - 3 * 3600000 + 10 * 60000)
+  seeded.trackedTask = await createTask({ title: 'Write the report', estimate_minutes: 90 })
+  await startTracking(seeded.trackedTask, { now: now - 65 * 60000 })
+}
 
 /** Projects and labels every list story shares. */
 async function seedBase() {

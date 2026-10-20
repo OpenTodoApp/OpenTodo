@@ -8,6 +8,7 @@ import { logicalToday, onViewerZoneChange, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { useTrackedTotals } from '../lib/timeEntries'
 import { useFieldDefs } from './useFields'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
@@ -66,8 +67,10 @@ export function useViewData(): ViewData {
   const zone = useViewerZone()
   // A new context on a zone change re-groups zoned dues (absolute-datetimes).
   const fields = useFieldDefs()
+  // Tracked minutes per task, ticking while an entry runs (time-tracking D4): `tracked > 1h` views follow it live.
+  const tracked = useTrackedTotals()
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const ctx = useMemo(() => ({ today, labels, projects, tasks, fields }), [today, labels, projects, tasks, fields, zone])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks, fields, tracked }), [today, labels, projects, tasks, fields, tracked, zone])
   return { views, projects, labels, tasks, ctx }
 }
 

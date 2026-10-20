@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Shell } from './Shell'
 import { openTask } from './signals'
-import { seedInbox, seeded, storyUser, withSeed } from './stories/fixtures'
+import { seedInbox, seedTracking, seeded, storyUser, withSeed } from './stories/fixtures'
 
 // Core screen: the shell (OpenSpec change ux-overhaul, task 8.7; app-shell "Three
 // columns, three scrollers", "The panel slot has an address"). The real shell over
@@ -32,5 +32,11 @@ export const ListWithPanel: StoryObj = {
     // takes it when it mounts, selects the row and opens the panel (openTaskInList).
     openTask.set(seeded.inboxTask)
   }),
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
+}
+
+/** An entry running for 1 h 5 min (time-tracking D6): the sidebar footer's indicator, the phone bar's pill below 768 px. */
+export const Tracking: StoryObj = {
+  ...withSeed(seedTracking),
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }

@@ -27,8 +27,9 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 | comment | `body` (your comments on your own tasks) |
 | attachment | `name`, `mime` (the file type), `url` (a link's address), and the file itself, as an encrypted file (see below) |
 | custom field | the field's `name` and `options`, and every text, link, date and choice value on a task (`fields.<id>` with a string value) |
+| time entry | `note` (the [time entry](time-tracking.md)'s note) |
 
-Everything else stays **plaintext**, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: `due` (date, time, zone), `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, `labels` (the list of label ids on a task), `recurrence`, `estimate_minutes`, `assignee_id`, number and checkbox values of [custom fields](custom-fields.md), a custom field's `type` and `project_id`, project `color` and `archived`, reminder times, an attachment's `size` and `sha256` (of the encrypted file) and `encrypted` flag, and all timestamps and device ids of operations.
+Everything else stays **plaintext**, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: `due` (date, time, zone), `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, `labels` (the list of label ids on a task), `recurrence`, `estimate_minutes`, `assignee_id`, number and checkbox values of [custom fields](custom-fields.md), a custom field's `type` and `project_id`, project `color` and `archived`, reminder times, a time entry's `task_id`, `user_id`, `started_at`, `ended_at`, `device_id`, `created_at` and `deleted_at` (so the server can total and export tracked time; its CSV and AI assistants show `[encrypted]` for the note), an attachment's `size` and `sha256` (of the encrypted file) and `encrypted` flag, and all timestamps and device ids of operations.
 
 Empty values (`""`) and `null` are not encrypted. The length of a ciphertext reveals the approximate length of the text.
 

@@ -4,16 +4,19 @@
 // offline and every synced device shows the same numbers.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { PageBody, PageHeader } from '../../ui'
+import { Icon, Menu, MenuItem, PageBody, PageHeader } from '../../ui'
 import { useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
 import { formatDate, dateLocaleOf } from '../../lib/dates'
 import { currentUserId } from '../../lib/sharing'
 import { compute, periodFor, PERIOD_KINDS, PERIOD_LABELS, sharedIds, type PeriodKind, type Stats } from '../../lib/stats'
-import type { Membership, Project, Task } from '../../lib/types'
+import type { Membership, Project, Task, TimeEntry } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { HelpLink } from '../help/HelpLink'
 import { useToday } from '../useViews'
 import { Bars } from './Bars'
+import { formatMinutes } from '../../lib/duration'
+import { useLiveEntries, useMinuteNow } from '../../lib/timeEntries'
+import { useTimeExport } from './timeExport'
 import { t } from '../../lib/i18n'
 
 const PERIOD_KEY = 'ot.stats.period'
@@ -68,8 +71,13 @@ const NUMBERS: { key: keyof Pick<Stats, 'completed' | 'created' | 'late' | 'slip
 ]
 
 /** The screen's content for given rows; the view below feeds it live rows. */
-export function StatsContent({ tasks, projects, memberships, me, today, weekStart, period, onPeriod, chooserRef }: {
+export function StatsContent({ tasks, projects, memberships, me, today, weekStart, period, onPeriod, chooserRef, entries, now, menu }: {
   tasks: readonly Task[]
+  /** The screen's menu (Export time entries), after the period chooser. */
+  menu?: React.ReactNode
+  /** Time entries this device holds (time-tracking); the user's own count. */
+  entries?: readonly TimeEntry[]
+  now?: number
   projects: readonly Project[]
   memberships: readonly Membership[]
   me: string | null
@@ -80,8 +88,8 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
   chooserRef?: React.Ref<HTMLDivElement>
 }) {
   const range = useMemo(() => periodFor(period, today, weekStart), [period, today, weekStart])
-  const stats = useMemo(() => compute({ tasks, projects, shared: sharedIds(memberships), me, today }, range, weekStart),
-    [tasks, projects, memberships, me, today, range, weekStart])
+  const stats = useMemo(() => compute({ tasks, projects, shared: sharedIds(memberships), me, today, entries, now }, range, weekStart),
+    [tasks, projects, memberships, me, today, range, weekStart, entries, now])
   const names = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects])
   const empty = stats.completed === 0 && stats.created === 0
   const wd = (iso: string) => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`))
@@ -95,13 +103,16 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <PeriodChooser value={period} onChange={onPeriod} chooserRef={chooserRef} />
+        <div className="flex items-center gap-2">
+          <PeriodChooser value={period} onChange={onPeriod} chooserRef={chooserRef} />
+          {menu && <span className="ml-auto">{menu}</span>}
+        </div>
         <p className="flex flex-wrap items-center gap-2 text-meta text-muted" data-testid="stats-local">
           {t('{date} – {date2}. Computed on this device from your tasks; nothing is sent anywhere.', { date: formatDate(range.start, 'long'), date2: formatDate(range.end, 'long') })}
           <HelpLink screen="stats" topic={t('Statistics')} />
         </p>
       </div>
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5" data-testid="stats-numbers">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" data-testid="stats-numbers">
         {NUMBERS.map((n) => (
           <div key={n.key} className="rounded-card border border-default bg-surface p-3" data-number={n.key}>
             <dt className="text-meta text-muted">{n.label}</dt>
@@ -109,6 +120,11 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
             <dd className="text-hint text-faint">{n.hint}</dd>
           </div>
         ))}
+        <div className="rounded-card border border-default bg-surface p-3" data-number="tracked">
+          <dt className="text-meta text-muted">{t('Time tracked')}</dt>
+          <dd className="text-h2 font-semibold tabular-nums text-default">{formatMinutes(stats.trackedMinutes)}</dd>
+          <dd className="text-hint text-faint">{t('your own time entries')}</dd>
+        </div>
       </dl>
       {empty ? (
         <p className="rounded-card border border-dashed border-input p-4 text-body text-muted" data-testid="stats-empty">
@@ -120,6 +136,14 @@ export function StatsContent({ tasks, projects, memberships, me, today, weekStar
           {range.weeks > 1 && <Bars title={t('Completed per week')} bars={stats.perWeek.map((w) => ({ label: formatDate(w.start, 'compact'), name: t('Week of {date}', { date: formatDate(w.start, 'long') }), value: w.count }))} />}
           {range.weeks > 1 && <Bars title={t('Completed per weekday')} bars={stats.perWeekday.map((w) => ({ label: weekdayLabel(w.weekday), name: weekdayName(w.weekday), value: w.count }))} />}
           {stats.perProject.length > 0 && <Bars title={t('Completed per project')} bars={stats.perProject.map((p) => ({ label: p.name, value: p.count }))} />}
+        </div>
+      )}
+      {stats.trackedEntries > 0 && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2" data-testid="stats-tracked">
+          {range.weeks <= 4 && <Bars title={t('Tracked per day')} unit={t('tracked')} format={formatMinutes}
+            bars={stats.trackedPerDay.map((d, i) => ({ label: range.weeks === 1 ? wd(d.date) : i % 7 === 0 ? formatDate(d.date, 'compact') : '', name: formatDate(d.date, 'heading'), value: d.minutes }))} />}
+          <Bars title={t('Tracked per project')} unit={t('tracked')} format={formatMinutes}
+            bars={stats.trackedPerProject.map((p) => ({ label: p.name, value: p.minutes }))} />
         </div>
       )}
       <TaskList title={t('Completed late')} empty={t('Nothing was completed late.')} tasks={stats.lateTasks} projectOf={projectOf} />
@@ -154,14 +178,22 @@ export function StatsView() {
   const projects = useAllProjects()
   const memberships = useMemberships()
   const me = useLiveQuery(() => currentUserId(), [], null)
+  const entries = useLiveEntries()
+  const now = useMinuteNow(entries.some((e) => e.ended_at === null))
   const [period, setPeriod] = useState<PeriodKind>(readPeriod)
+  const exportCsv = useTimeExport(entries, tasks, projects, period, today, weekStart)
   const title = useRef<HTMLHeadingElement>(null)
   // The heading takes focus, so Tab reaches the period chooser first (statistics "Keyboard").
   useEffect(() => { title.current?.focus() }, [])
   return (
     <PageBody width="full" className="max-w-5xl">
       <PageHeader title={t('Statistics')} icon="chart-column" titleRef={title} titleTabIndex={-1} />
-      <StatsContent tasks={tasks} projects={projects} memberships={memberships} me={me} today={today} weekStart={weekStart}
+      <StatsContent menu={(
+        // After the period chooser, which stays the first stop (statistics "Statistics screen").
+        <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1" width="sm:w-64" align="end">
+          <MenuItem label={t('Export time entries')} icon="download" description={t('A CSV of the period, made on this device')} onSelect={exportCsv} data-export-time />
+        </Menu>
+      )} tasks={tasks} projects={projects} memberships={memberships} me={me} today={today} weekStart={weekStart} entries={entries} now={now}
         period={period} onPeriod={(p) => { setPeriod(p); writePeriod(p) }} />
     </PageBody>
   )

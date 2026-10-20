@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence and quick-add-nth-weekday. Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -26,6 +26,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -55,6 +56,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 3 days after completion",
     "reminders": []
    }
@@ -84,6 +86,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd tuesday until 2026-12-31",
     "reminders": []
    }
@@ -114,6 +117,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every day",
     "reminders": []
    }
@@ -141,6 +145,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -170,6 +175,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every month",
     "reminders": []
    }
@@ -200,6 +206,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every month",
     "reminders": []
    }
@@ -229,6 +236,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every weekday for 10 times",
     "reminders": []
    }
@@ -258,6 +266,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday, wednesday, friday",
     "reminders": []
    }
@@ -287,6 +296,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every last friday",
     "reminders": []
    }
@@ -316,6 +326,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 15th",
     "reminders": []
    }
@@ -343,6 +354,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -373,6 +385,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -408,6 +421,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -444,6 +458,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -471,6 +486,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -501,6 +517,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -536,6 +553,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -571,6 +589,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -604,6 +623,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -637,6 +657,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -670,6 +691,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -704,6 +726,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -733,6 +756,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -762,6 +786,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -791,6 +816,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -820,6 +846,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -849,6 +876,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 3 days after completion",
     "reminders": []
    }
@@ -879,6 +907,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -914,6 +943,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -949,6 +979,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -984,6 +1015,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -1018,6 +1050,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": [
      {
@@ -1051,6 +1084,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1080,6 +1114,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every weekday",
     "reminders": []
    }
@@ -1111,6 +1146,7 @@
     ],
     "priority": 2,
     "estimateMinutes": 15,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1141,6 +1177,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1170,6 +1207,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1199,6 +1237,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1229,6 +1268,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1258,6 +1298,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1287,6 +1328,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1316,6 +1358,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1345,6 +1388,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1374,6 +1418,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1403,6 +1448,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1432,6 +1478,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1461,6 +1508,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1490,6 +1538,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1519,6 +1568,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1548,6 +1598,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1577,6 +1628,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1606,6 +1658,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1635,6 +1688,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1664,6 +1718,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1693,6 +1748,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1720,6 +1776,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1749,6 +1806,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1778,6 +1836,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1807,6 +1866,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1836,6 +1896,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1865,6 +1926,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1894,6 +1956,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1923,6 +1986,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1952,6 +2016,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1979,6 +2044,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2008,6 +2074,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2037,6 +2104,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2066,6 +2134,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2095,6 +2164,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2124,6 +2194,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2153,6 +2224,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2182,6 +2254,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2211,6 +2284,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd monday",
     "reminders": []
    }
@@ -2240,6 +2314,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every last friday",
     "reminders": []
    }
@@ -2269,6 +2344,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -2298,6 +2374,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday, wednesday",
     "reminders": []
    }
@@ -2325,6 +2402,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2352,6 +2430,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2380,6 +2459,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2407,6 +2487,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2434,6 +2515,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2461,6 +2543,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2488,6 +2571,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -2517,7 +2601,227 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every month",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (en)",
+   "line": "Draft the offer 30m/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Draft the offer",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 30,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (de)",
+   "line": "Angebot schreiben 30m/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Angebot schreiben",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 30,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (fr)",
+   "line": "Rédiger l'offre 1h/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Rédiger l'offre",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 60,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "French hour stays a clock time",
+   "line": "Réunion 15h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Réunion",
+    "due": {
+     "date": "2026-10-09",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (es)",
+   "line": "Redactar la oferta 45min/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Redactar la oferta",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 45,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (it)",
+   "line": "Scrivere l'offerta 1h/1h30",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Scrivere l'offerta",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 90,
+    "spentMinutes": 60,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (pt)",
+   "line": "Escrever a proposta 30min/1h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Escrever a proposta",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 60,
+    "spentMinutes": 30,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dates are not durations",
+   "line": "Pay rent 30/12",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-12-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Plus stays an estimate only",
+   "line": "Draft the offer +30m",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Draft the offer",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 30,
+    "spentMinutes": null,
+    "recurrence": null,
     "reminders": []
    }
   }

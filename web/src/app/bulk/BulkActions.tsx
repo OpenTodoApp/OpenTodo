@@ -9,7 +9,9 @@ import { useMemo, useState } from 'react'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan } from '../../lib/bulk'
 import { useAllLabels, useLiveSections, useProjects } from '../../lib/localData'
 import { projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
-import { membershipMap } from '../../lib/sharing'
+import { membershipMap, roleOf } from '../../lib/sharing'
+import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
+import { act } from '../actionError'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { Icon, Dialog } from '../../ui'
 import { Tooltip } from '../../ui'
@@ -31,7 +33,19 @@ const itemKey = (i: PickerItem) => i.key
 const itemLabel = (i: PickerItem) => i.label
 const itemPath = (i: PickerItem) => i.path
 
-interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership> }
+interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null }
+
+/**
+ * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
+ * Start for an open task the user may edit; nothing for a completed or deleted one.
+ */
+export function trackingItem(task: Task | undefined, runningTask: string | null | undefined, memberships: Map<string, Membership>): ActionGroup['items'] {
+  if (!task || task.deleted_at || roleOf(task.project_id, memberships) === 'viewer') return []
+  const stop = runningTask === task.id
+  if (!stop && task.completed_at) return []
+  return [{ kind: 'action', id: 'track', label: stop ? t('Stop tracking') : t('Start tracking'), icon: 'timer', shortcut: keysOf('list.track'),
+    onSelect: () => act(toggleTracking(task.id)) }]
+}
 
 /** The menu's groups for the given tasks (exported for the palette and tests). */
 export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void }): ActionGroup[] {
@@ -45,6 +59,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const members = shared ? d.memberships.get(shared)?.members ?? [] : []
   const run = (action: BulkAction) => () => runBulk(ids, action)
   return [
+    ...(n === 1 ? [{ items: trackingItem(d.tasks[0], d.runningTask, d.memberships) }] : []),
     { items: [
       { kind: 'action', id: 'complete', label: reopen ? t('Reopen') : t('Complete'), icon: 'check', shortcut: keysOf('list.complete'), onSelect: run({ kind: 'complete' }) },
     ] },
@@ -92,7 +107,8 @@ function useBulkData(ids: readonly string[]): Data {
   const projects = useProjects()
   const sections = useLiveSections()
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
-  return { tasks, labels, projects, sections, memberships }
+  const runningTask = useRunningEntry()?.task_id ?? null
+  return { tasks, labels, projects, sections, memberships, runningTask }
 }
 
 /**

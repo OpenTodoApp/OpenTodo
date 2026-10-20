@@ -15,7 +15,7 @@ describe('shared quick-add vectors (quick-add-recurrence)', () => {
       const r = parse(c.line, c.ctx)
       expect({
         title: r.title, due: r.due, projectId: r.projectId, labels: r.labels, priority: r.priority,
-        estimateMinutes: r.estimateMinutes, recurrence: r.recurrence, reminders: r.reminders,
+        estimateMinutes: r.estimateMinutes, spentMinutes: r.spentMinutes, recurrence: r.recurrence, reminders: r.reminders,
       }).toEqual(c.expect)
     })
   }

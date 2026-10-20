@@ -39,8 +39,13 @@ A dismissed chip stays dismissed while you keep typing; it comes back only if yo
 | `@name` | Label, matched to an existing label ignoring case. A name with no label yet creates one when you press Enter, with the next free colour, exactly like creating it from the label picker; its chip says *new* until then. Use as many as you like. | `@call`, `@waiting-for` |
 | `p1`–`p4` | Priority, 1 highest, 4 default. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
+| `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
 
 Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when French, Spanish or Portuguese is active, because those languages write times as `15h`.
+
+### Time spent
+
+`Draft the offer 30m/2h` creates the task with a two-hour estimate and one closed [time entry](time-tracking.md) of 30 minutes ending now, in the same step; the preview shows a **Spent 30 min** chip beside the estimate, and the row reads `30m / 2h`. Both parts need a unit (`h`, `m`, `min`), so `Pay rent 30/12` stays a date, and `Réunion 15h` with French active is still a meeting at 15:00. `+30m` remains an estimate only. Units are not translated: the token works the same in all six languages. Backspace on the chip keeps the text in the title, like every token.
 
 ## Dates and times
 

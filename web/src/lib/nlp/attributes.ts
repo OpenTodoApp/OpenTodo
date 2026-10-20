@@ -77,6 +77,35 @@ export function matchPriority(token: string): Priority | null {
   return m ? (Number(m[1]) as Priority) : null
 }
 
+const SPENT_PART = '(\\d+(?:[.,]\\d+)?h(?:\\d{1,2}(?:m|min)?)?|\\d+(?:m|min|mins|minutes))'
+const SPENT = new RegExp(`^${SPENT_PART}/${SPENT_PART}$`)
+
+/** One part of a spent token in minutes, or null (both parts carry a unit). */
+function spentPart(s: string): number | null {
+  let m = /^(\d+(?:[.,]\d+)?)h(?:(\d{1,2})(?:m|min)?)?$/.exec(s)
+  let v: number | null = null
+  if (m) {
+    const mins = m[2] ? Number(m[2]) : 0
+    if (mins > 59) return null
+    v = Math.round(Number(m[1].replace(',', '.')) * 60 + mins)
+  } else if ((m = /^(\d+)(?:m|min|mins|minutes)$/.exec(s))) v = Number(m[1])
+  return v !== null && v >= 1 && v <= MAX_ESTIMATE_MINUTES ? v : null
+}
+
+/**
+ * Time already spent and an estimate, `<spent>/<estimate>` (OpenSpec time-tracking,
+ * design D10): `30m/2h`, `1h/1h30`, `45min/2h`. Both parts need a unit, so a
+ * day-month date such as `30/12` never matches, and there is no `+`. Mirrors
+ * matchSpent in internal/quickadd.
+ */
+export function matchSpent(token: string): { spent: number; estimate: number } | null {
+  const m = SPENT.exec(token.replace(/[,;]+$/, '').toLowerCase())
+  if (!m) return null
+  const spent = spentPart(m[1])
+  const estimate = spentPart(m[2])
+  return spent !== null && estimate !== null ? { spent, estimate } : null
+}
+
 /**
  * Durations. With a leading `+` any of `+30`, `+30m`, `+45min`, `+2h`, `+1.5h`,
  * `+1h30`, `+1h30m` is an estimate in minutes. Without the `+`, `45min` and `2h`

@@ -31,4 +31,4 @@
 
 #### Scenario: No write tool for entries
 - **WHEN** an `agent` token with every write switch on calls `tools/list`
-- **THEN** no tool that starts, stops or edits a time entry is listed, and `tools/call` for such a name is a method-not-found error
+- **THEN** no tool that starts, stops or edits a time entry is listed, and `tools/call` for such a name is refused like every unknown tool (JSON-RPC `-32602`)

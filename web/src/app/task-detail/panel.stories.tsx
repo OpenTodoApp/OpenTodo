@@ -3,6 +3,9 @@ import { Badge, Icon, IconButton, Tabs } from '../../ui'
 import { LabelChip } from '../LabelPicker'
 import { PRIORITIES } from './Properties'
 import { PropertyChip } from './PropertyChip'
+import { useTask } from '../../lib/localData'
+import { seedTracking, seeded, withSeed } from '../stories/fixtures'
+import { TimeTab } from './TimeTab'
 
 // The task panel's anatomy (OpenSpec change ux-overhaul, web-app "Task panel
 // layout"): sticky header, quiet notes, breadcrumb, property chips with Add, the
@@ -58,7 +61,7 @@ function Panel({ children, readOnly = false }: { children: React.ReactNode; read
 
 function TabsArea({ count = 0 }: { count?: number }) {
   return (
-    <section className="mt-auto border-t border-default px-4 pb-4 pt-1" aria-label="Comments, activity and history">
+    <section className="mt-auto border-t border-default px-4 pb-4 pt-1" aria-label="Comments, activity, history and time">
       <Tabs label="Task conversation" value="comments" onChange={noop} tabs={[{ id: 'comments', label: 'Comments', count }, { id: 'activity', label: 'Activity' }, { id: 'history', label: 'History' }]}>
         <p className="text-meta text-faint">No comments yet. Ask a question or leave a note; comments work offline.</p>
       </Tabs>
@@ -207,4 +210,15 @@ export const WithOrigins: StoryObj = {
       <TabsArea />
     </Panel>
   ),
+}
+
+/** The Time tab (time-tracking D5) of a task with two past entries, from the local data a seed writes. */
+function SeededTimeTab() {
+  const task = useTask(seeded.inboxTask)
+  return task ? <Panel><div className="px-4 pb-4">{<TimeTab task={task} readOnly={false} />}</div></Panel> : null
+}
+
+export const Time: StoryObj = {
+  ...withSeed(seedTracking),
+  render: () => <SeededTimeTab />,
 }

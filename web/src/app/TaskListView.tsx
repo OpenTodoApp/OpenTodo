@@ -12,6 +12,8 @@ import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
 import { createTask } from '../lib/ops'
+import { dayTotalsText } from '../lib/time'
+import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
@@ -185,7 +187,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { currentProject, currentLabel } = m
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
-  const meta = useWithMethod(methodMove, route.view === 'today' ? m.dt.formatDate(today, 'heading') : route.view === 'label' ? rows.length : undefined)
+  // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
+  const listedTasks = useMemo(() => (route.view === 'today' ? rows.map((r) => r.task) : []), [route.view, rows])
+  const totals = useDayTotals(listedTasks, today, route.view === 'today')
+  const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
+  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : undefined)
   const methodSubtitle = useWithMethod(methodMove)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),

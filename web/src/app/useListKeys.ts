@@ -10,6 +10,7 @@ import { registerListState } from './listActions'
 import type { BulkList } from './bulk/useBulkList'
 import { runBulk } from './bulk/BulkActions'
 import { act } from './actionError'
+import { toggleTracking } from '../lib/timeEntries'
 
 export interface KeyRow {
   key: string
@@ -114,6 +115,8 @@ export function useListKeys(opts: ListKeys): void {
       o.setSelected(o.rows[idx + 1]?.key ?? o.rows[idx - 1]?.key ?? null)
     },
     'list.estimate': openWith(estimateFocus),
+    // Start or stop tracking (time-tracking D5); a completed task offers no start.
+    'list.track': () => { if (!row) return false; act(toggleTracking(row.id, { canStart: !row.completed_at })) },
     'list.deadline': openWith(deadlineFocus),
     'list.defer': openWith(deferFocus),
     'list.blocked-by': openWith(blockedByFocus),

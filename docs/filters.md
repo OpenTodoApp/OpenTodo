@@ -31,6 +31,7 @@ term     := "@" name                       label
           | keyword
           | "search:" text
           | "origin:" text                              where the task came from
+          | "tracked" ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
           | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
           | "no" field                                  custom field without a value
 field    := a word that is not a reserved word | '"' chars '"'
@@ -44,7 +45,8 @@ weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturd
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "habit"
-          | "origin" | "no origin"
+          | "origin" | "no origin" | "tracked"
+duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -97,12 +99,14 @@ text     := word | '"' chars '"'
 | `origin` | tasks that know where they came from: a captured page, an email, an issue or an import (see [Where a task came from](capture.md#where-a-task-came-from)) |
 | `no origin` | tasks without an origin |
 | `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail); quotes allowed |
+| `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now |
+| `tracked <cmp> duration` | tasks whose tracked time compares as asked: `tracked > 1h`, `tracked <= 30m`, `tracked >= 1h30`, `tracked < 1.5h`, `tracked = 0`; a bare number is minutes |
 | `name <cmp> value` | tasks whose [custom field](custom-fields.md) of that name compares as asked (see [Custom fields](#custom-fields)) |
 | `no name` | tasks of a project that defines the field, with no value for it |
 
 ### Custom fields
 
-A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
+A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
 
 | Type | Terms |
 | --- | --- |
@@ -165,6 +169,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `completed > 2 weeks` | `Expected "ago" after "weeks" at position 15` |
 | `no &` | `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1` |
 | `cost >` | `Expected a value after ">" at position 6` |
+| `tracked > soon` | `Expected a duration such as 30m or 1h30 after ">" at position 11` |
 
 An empty query shows a short usage hint and no results.
 
@@ -316,4 +321,22 @@ origin: github & open
 
 ```filter
 (origin: url | origin: email) & no project
+```
+
+### 22. Anything I have spent time on
+
+```filter
+tracked
+```
+
+### 23. Over an hour tracked and due by today
+
+```filter
+tracked > 1h & due <= today
+```
+
+### 24. Work not started yet
+
+```filter
+!tracked & #Work
 ```

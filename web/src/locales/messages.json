@@ -101,6 +101,9 @@
   "30 minutes before": [
     "web/src/lib/reminderTime.ts"
   ],
+  "45m, 1h30 or 90 (minutes); it ends now, or at 17:00 on another day": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   ": open the method guide": [
     "web/src/app/help/MethodLink.tsx"
   ],
@@ -172,6 +175,9 @@
   ],
   "@work & due <= tomorrow & p1": [
     "web/src/app/FilterView.tsx"
+  ],
+  "A CSV of the period, made on this device": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "A backup is already running.": [
     "web/src/app/BackupsPanel.tsx"
@@ -425,6 +431,9 @@
   "Actions for this identity": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Actions for this time entry": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "Actions for webhook {url}": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -601,6 +610,9 @@
   ],
   "Add subtask…": [
     "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Add time": [
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Add to OpenTodo": [
     "web/src/app/CaptureSettings.tsx",
@@ -1436,6 +1448,7 @@
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
+    "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
     "web/src/ui/patterns/ConfirmDialog.tsx"
   ],
@@ -1774,7 +1787,7 @@
   "Comments and notes": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Comments, activity and history": [
+  "Comments, activity, history and time": [
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "Common tasks": [
@@ -2260,7 +2273,8 @@
   "Day": [
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarRange.tsx",
-    "web/src/app/DigestCard.tsx"
+    "web/src/app/DigestCard.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Day calendar": [
     "web/src/app/CalendarView.tsx"
@@ -2348,7 +2362,8 @@
     "web/src/app/RestoreSection.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
-    "web/src/app/task-detail/TaskDetail.tsx"
+    "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Delete account": [
     "web/src/app/UsersPanel.tsx"
@@ -2763,7 +2778,8 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/task-detail/CommentsTab.tsx"
+    "web/src/app/task-detail/CommentsTab.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Edit calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -2919,6 +2935,9 @@
   "Encrypts {ENCRYPTED_FIELDS} on your devices before they are synced, so your server, its backups and integrations only see ciphertext.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "End": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "End-to-end encryption": [
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/settingsIndex.ts"
@@ -2936,6 +2955,9 @@
   "Enter a date.": [
     "web/src/lib/fields.ts"
   ],
+  "Enter a duration instead": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "Enter a link starting with http:// or https://.": [
     "web/src/lib/fields.ts"
   ],
@@ -2947,6 +2969,12 @@
   ],
   "Enter a number.": [
     "web/src/lib/fields.ts"
+  ],
+  "Enter a start and an end": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "Enter a start and an end time": [
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Enter a whole number.": [
     "web/src/app/RemindersField.tsx"
@@ -3155,6 +3183,9 @@
   "Expected a date after \"{after}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Expected a duration such as 30m or 1h30 after \"{after}\" at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
   "Expected a label name after \"{after}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
@@ -3198,6 +3229,9 @@
   ],
   "Export (NDJSON)": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Export time entries": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "Export, import, sync status and archived projects": [
     "web/src/app/settingsSections.ts"
@@ -3471,6 +3505,7 @@
   ],
   "Former member": [
     "web/src/app/AssigneePicker.tsx",
+    "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/ListGroups.tsx"
   ],
@@ -4794,6 +4829,7 @@
     "web/src/app/TabBar.tsx"
   ],
   "More actions": [
+    "web/src/app/review/StatsView.tsx",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
   "Move": [
@@ -5370,6 +5406,9 @@
   "No thanks": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
+  "No time tracked yet.": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -5490,6 +5529,9 @@
   ],
   "Not you? <a>Sign out</a> and use another account.": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "Note": [
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Notes": [
     "web/src/app/NotesEditor.tsx",
@@ -5847,6 +5889,7 @@
     "web/src/app/ConfigWarnings.tsx"
   ],
   "Open": [
+    "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -5974,6 +6017,9 @@
   ],
   "Open the task’s panel to edit anything else": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Open the tracked task": [
+    "web/src/app/TrackingIndicator.tsx"
   ],
   "Open the weekly review": [
     "web/src/app/method/LoopHome.tsx"
@@ -7351,7 +7397,8 @@
     "web/src/app/ShareCapture.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/task-detail/CommentsTab.tsx"
+    "web/src/app/task-detail/CommentsTab.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Save as template": [
     "web/src/app/TemplateDialogs.tsx"
@@ -8218,6 +8265,9 @@
   "Speech is recognised by your browser, not by OpenTodo.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Spent {duration}": [
+    "web/src/app/QuickAdd.tsx"
+  ],
   "Stalled": [
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
@@ -8228,6 +8278,7 @@
   "Start": [
     "web/src/app/method/DailyCheckToast.tsx",
     "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Start a new sandbox": [
@@ -8245,8 +8296,18 @@
   "Start on <span>(optional; dates move so the earliest lands on this day)</span>": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "Start or stop tracking time on the open task while the panel has focus": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Start or stop tracking time on the selected task": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Start the daily check": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "Start tracking": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Start using OpenTodo": [
     "web/src/app/WelcomeDialog.tsx"
@@ -8309,6 +8370,11 @@
   ],
   "Stop repeating": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Stop tracking": [
+    "web/src/app/TrackingIndicator.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Stopped.": [
     "web/src/app/assistant/useAssistantConversation.ts"
@@ -8710,6 +8776,12 @@
   ],
   "The encryption key was created or changed on another device. Unlock with the existing passphrase.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The end is before the start": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "The end is before the start; edit it to repair": [
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -9639,9 +9711,19 @@
   "Time (server time)": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Time entries": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "Time format": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/settingsIndex.ts"
+  ],
+  "Time spent": [
+    "web/src/app/QuickAdd.tsx",
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "Time tracked": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "Time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -9657,6 +9739,9 @@
   ],
   "Time zone: {text}": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Time · {duration}": [
+    "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "Timeline": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -9681,6 +9766,9 @@
   ],
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
+  ],
+  "Time|tracking": [
+    "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "Title": [
     "web/src/app/ImportScreen.tsx",
@@ -9834,8 +9922,29 @@
   "Total per account": [
     "web/src/app/AttachmentSettingsPanel.tsx"
   ],
+  "Total {duration}": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "Track as a habit": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Tracked per day": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "Tracked per project": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "Tracking stopped": [
+    "web/src/app/TrackingIndicator.tsx"
+  ],
+  "Tracking time": [
+    "web/src/app/TrackingIndicator.tsx"
+  ],
+  "Tracking time on {title}": [
+    "web/src/app/TrackingIndicator.tsx"
+  ],
+  "Tracking {text}": [
+    "web/src/app/TrackingIndicator.tsx"
   ],
   "Transfer ownership": [
     "web/src/app/UsersPanel.tsx"
@@ -10134,6 +10243,7 @@
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TimelineView.tsx",
+    "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
@@ -10213,6 +10323,9 @@
   ],
   "Use a code from the app": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Use a duration such as 45m, 1h30 or 90": [
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Use a recovery code": [
     "web/src/app/AuthScreen.tsx"
@@ -10549,6 +10662,7 @@
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/ListGroups.tsx"
   ],
@@ -11424,6 +11538,9 @@
   "nothing waiting": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "now": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "now waits for {tasks}": [
     "web/src/lib/activity.ts"
   ],
@@ -11767,6 +11884,9 @@
   "this is not a valid recovery key; check for typos": [
     "web/src/lib/crypto.ts"
   ],
+  "time tracked on the task: any, or compared with 30m, 1h30, 90": [
+    "web/src/app/FilterView.tsx"
+  ],
   "title or notes contain the text": [
     "web/src/app/FilterView.tsx"
   ],
@@ -11789,6 +11909,9 @@
   ],
   "too many attempts": [
     "web/src/app/auditFormat.ts"
+  ],
+  "tracked": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "unarchived the project": [
     "web/src/lib/activity.ts"
@@ -11901,6 +12024,9 @@
   ],
   "you@example.com": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "your own time entries": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "your task": [
     "web/src/app/NotificationBell.tsx"
@@ -12119,6 +12245,9 @@
   "{n, plural, one {# hour before} other {# hours before}}": [
     "web/src/lib/nlp/reminders.ts"
   ],
+  "{n, plural, one {# hour} other {# hours}}": [
+    "web/src/lib/time.ts"
+  ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -12127,6 +12256,9 @@
   ],
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "{n, plural, one {# minute} other {# minutes}}": [
+    "web/src/lib/time.ts"
   ],
   "{n, plural, one {# more file was left out: a share takes at most 10.} other {# more files were left out: a share takes at most 10.}}": [
     "web/src/app/ShareCapture.tsx"
@@ -12372,6 +12504,9 @@
     "web/src/app/review/ReviewProgress.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
+  "{n} min": [
+    "web/src/app/QuickAdd.tsx"
+  ],
   "{n} min after": [
     "web/src/lib/nlp/reminders.ts"
   ],
@@ -12458,6 +12593,9 @@
   "{pending} pending": [
     "web/src/app/MembersPanel.tsx"
   ],
+  "{planned} planned · {tracked} tracked": [
+    "web/src/lib/time.ts"
+  ],
   "{projectOf} · due": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -12520,6 +12658,12 @@
   ],
   "{title}: {total} {unit} in total; {values}": [
     "web/src/app/review/Bars.tsx"
+  ],
+  "{tracked} tracked": [
+    "web/src/lib/time.ts"
+  ],
+  "{tracked} tracked of {estimate} estimated": [
+    "web/src/lib/time.ts"
   ],
   "{turns, plural, one {This month: {tokens, number} tokens in # answer} other {This month: {tokens, number} tokens in # answers}}": [
     "web/src/app/assistant/AssistantSettings.tsx"

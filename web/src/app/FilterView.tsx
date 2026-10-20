@@ -27,6 +27,7 @@ import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { useTrackedTotals } from '../lib/timeEntries'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg } from '../lib/i18n'
 import { act } from './actionError'
@@ -81,18 +82,18 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   if (parsed.ok && good.src !== debounced) setGood({ src: debounced, ast: parsed.ast })
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
-
-  const fieldDefs = useFieldDefs()
+  // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
+  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
   const compiled = useMemo(() => {
     if (!good.ast) return null
     try {
-      return { ok: true as const, ...compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs }) }
+      return { ok: true as const, ...compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs, tracked }) }
     } catch (e) {
       // A custom field term its type cannot answer (custom-fields): shown like a syntax error.
       return { ok: false as const, error: (e as Error).message }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [good, allTasks, labels, projects, today, zone, weekStart, fieldDefs])
+  }, [good, allTasks, labels, projects, today, zone, weekStart, fieldDefs, tracked])
   const result = useMemo(() => {
     if (!compiled || !compiled.ok) return null
     // Like the other cross-project views, tasks of archived projects stay out.
@@ -319,6 +320,7 @@ const HINT: [string[], string][] = [
   [['no project', 'no labels', 'subtask'], msg('Inbox, unlabelled, has a parent task')],
   [['completed', 'open', 'completed = last week'], msg('open tasks only unless one of these, or a completion date, appears')],
   [['search: "oat milk"'], msg('title or notes contain the text')],
+  [['tracked', 'tracked > 1h'], msg('time tracked on the task: any, or compared with 30m, 1h30, 90')],
   [['&', '|', '!', '( )'], msg('and, or, not, grouping · quote names with spaces: @"follow up"')],
 ]
 

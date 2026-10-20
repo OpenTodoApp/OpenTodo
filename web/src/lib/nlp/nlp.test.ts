@@ -547,7 +547,7 @@ describe('parse: escaping and dismissal', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, recurrence: null, reminders: [], chips: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {

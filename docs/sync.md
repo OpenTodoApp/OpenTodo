@@ -107,6 +107,13 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | attachment | `created_at` | number; fixed |
 | attachment | `uploaded_at` | number or null; written only by the server once it stored the bytes |
 | attachment | `deleted_at` | number or null |
+| time_entry | `task_id`, `user_id` | non-empty id string; fixed at creation (`user_id` is the author), see [Time entries](#time-entries) |
+| time_entry | `started_at` | positive number (Unix ms) |
+| time_entry | `ended_at` | positive number (Unix ms) or null while the entry runs |
+| time_entry | `device_id` | string: the device that started or logged it (`server` for the REST API) |
+| time_entry | `note` | string (user-written; encrypted for an encrypted account) |
+| time_entry | `created_at` | number |
+| time_entry | `deleted_at` | number or null |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
 | project_prefs | `reviewed_at` | number (Unix ms: when this user last marked the project reviewed in the weekly review's project walk) |
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
@@ -179,6 +186,16 @@ A `comment` is a threaded markdown note on a task (OpenSpec `comments-and-activi
 - **Delete** sets `deleted_at`; clients show a "comment deleted" placeholder in its place in the thread and the REST API stops serving it. A delete and a concurrent edit resolve per field: the comment stays deleted, whatever body won.
 - **Threads** are derived from `parent_id`: a reply to a reply belongs to the same thread, a reply whose parent is unknown, on another task or part of a cycle starts its own thread. `sync.ThreadOrder` and `web/src/lib/comments.ts` implement the same order.
 - **Reseeding after a restore** re-sends only the device user's own comments (the server would refuse anyone else's).
+
+### Time entries
+
+A `time_entry` is one stretch of work on a task (OpenSpec `time-tracking`, see [the guide](time-tracking.md)). It is an ordinary entity: entries are written offline, queue in the outbox and converge per field, so an edit of the end on one device and of the note on another both survive. Two devices tracking the same task write two rows and never conflict.
+
+- **Scope.** An entry lives in the scope of its task, like a comment; sharing a project relabels its tasks' entries with them, and purging a task purges every entry on it, other members' included, with markers (`timeEntries` in the purge counts). Ops for an entry whose task was purged are discarded.
+- **Authorship, checked per op at receipt.** `user_id` must equal the submitting account on the op that creates the entry; `task_id` and `user_id` never change. `started_at`, `ended_at`, `note`, `device_id` and `created_at` are accepted only from the author; `deleted_at` from the author, a project admin and the owner. Unlike comments, a viewer cannot create entries (tracking is work on the task). A refused op travels back with the stored value (`restore`).
+- **One running entry per user.** Starting an entry writes `ended_at` = the new start on the user's running entry in the same batch. When a device holds two or more running entries of its user after a sync (two devices started offline), it keeps the one with the greatest `started_at` (ties: the greatest id) and writes `ended_at` = that start on the others. Every device computes the same values, so the repair converges without a prompt. The server applies the same rule (`internal/timetrack`, shared with `web/src/lib/time.ts` by fixtures) when it starts or stops an entry for the REST API, and never repairs on the sync path. Completing a task on a device ends its running entry in the completion batch; server-side completions do not.
+- **Days.** An entry belongs whole to the logical day its start falls on (the user's day start applies); totals are computed on demand from the rows, never stored.
+- **Reseeding after a restore** re-sends only the device user's own entries.
 
 ### Attachments
 

@@ -116,11 +116,11 @@ ot edit 8c2a --origin-url none                       # forget where it came from
 | `--repeat <rule>` | Recurrence rule in any spelling of the [rule grammar](recurrence.md) (`"Every Week"`, `"every mon, wed"`), checked locally and sent in canonical form; `none` (edit) clears the rule and keeps the date |
 | `--origin-url <url>` | Where the task comes from: an `http` or `https` URL, sent as the task's [origin](capture.md#where-a-task-came-from). A GitHub, GitLab, Jira or Linear issue link becomes `{kind: "issue", provider, id}` (`o/r#7`, `ENG-123`), derived on your machine with the same table as the web app; any other link is a `url` origin. `ot` never requests the URL. Another scheme (`ftp:`, `file:`) exits 2 before any request; `none` (edit) clears the origin |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
-| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
+| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
 | `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |
 | `--idempotency-key <key>` | `ot add` only: a retry with the same key returns the same task, see [Retry-safe creates](#retry-safe-creates). Reminders send `<key>.r1`, `<key>.r2`, …, so a retry also converges to one set of reminders |
 
-`ot add` prints the new task's id (the whole task with `--json`, `origin` included). Priority, time, date, rule, origin URL and reminder phrases are validated locally before any request is sent. Reminders are created after the task with one `POST /api/v1/reminders` each (a dry run lists them, referring to the planned task as `(planned-1)`); if one fails, the command exits 1 and names the created task so you can add the reminder by hand.
+`ot add` prints the new task's id (the whole task with `--json`, `origin` included). Priority, time, date, rule, origin URL and reminder phrases are validated locally before any request is sent. Reminders are created after the task with one `POST /api/v1/reminders` each (a dry run lists them, referring to the planned task as `(planned-1)`); if one fails, the command exits 1 and names the created task so you can add the reminder by hand. A `30m/2h` token in a `--natural` line also logs the time already spent: one `POST /api/v1/time-entries` after the task, ending now (`<key>.t` with an idempotency key).
 
 `--natural` uses the same grammar as the web app, pinned by shared test cases, with two differences because `ot` cannot read your preferences: weeks start on Monday (`next week`), and numeric dates such as `3/11` follow the first language (day first in German, month first in English) rather than your date-format setting.
 
@@ -148,6 +148,25 @@ ot project rm Garden [--yes]
 ```
 
 Projects are referenced by name (case-insensitive), full id or unique id prefix.
+
+## Time
+
+[Time tracking](time-tracking.md) from the shell: start and stop a running entry, log past work, list and export entries.
+
+```bash
+ot time start 8c2a [--note "review"]     # stops the running entry first
+ot time stop                             # exit 1 when nothing runs
+ot time log 8c2a 1h30 --on yesterday --note "review"
+ot time log 8c2a --from 09:00 --to 09:25 [--on 2026-10-12]
+ot time list --from 2026-10-12 --to 2026-10-18 [--task 8c2a] [--running] [--limit 50]
+ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv
+```
+
+A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 before a request. Without `--on` a duration ends now; on another day (`--on yesterday`, a weekday meaning the last one, or `YYYY-MM-DD`) it ends at 17:00 local time. `--from` and `--to` are times on that day. `start`, `stop` and `log` write, so `--dry-run`, `--read-only` and token scope apply: a `read` token exits 5 (`insufficient_scope`) before anything is sent, while `list` and `export` work with it. `ot time list` prints the id prefix, day, `09:00–09:25`, duration, task and project, newest first; `--json` prints the [`time_entry`](#machine-readable-help-ot-schema) objects (`endedAt: null` while running). `ot time export` downloads the server's CSV for those local days in your time zone; with `-o` and `--json` it reports the file and the row count. A weekly export for cron:
+
+```bash
+0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
+```
 
 ## Tokens and export
 

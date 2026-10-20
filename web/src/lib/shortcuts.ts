@@ -177,6 +177,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the selected task, or of the ticked tasks', section: 'tasks', scope: 'list' },
   { id: 'list.labels', keys: ['Shift+L'], description: 'Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)', section: 'tasks', scope: 'list' },
   { id: 'list.estimate', keys: ['e'], description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks', scope: 'list' },
+  // Time tracking (time-tracking D5): `y` is free in the list scope; the Inbox
+  // triage's `y` is a view entry on a route without a task list.
+  { id: 'list.track', keys: ['y'], description: 'Start or stop tracking time on the selected task', section: 'tasks', scope: 'list' },
   { id: 'list.deadline', keys: ['d'], description: 'Set the deadline of the selected task (type fri, 2026-11-06; Enter)', section: 'tasks', scope: 'list' },
   { id: 'list.blocked-by', keys: ['b'], description: 'Choose the tasks the selected task waits for (Blocked by)', section: 'tasks', scope: 'list' },
   { id: 'list.duplicate', keys: ['Shift+D'], description: 'Duplicate the selected task and its subtasks', section: 'tasks', scope: 'list' },
@@ -194,6 +197,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.delete', keys: ['Delete', 'Backspace'], description: 'Move the selected task (and its subtasks), or the ticked tasks, to the Trash', section: 'tasks', scope: 'list' },
   { id: 'panel.zone', keys: ['z'], description: 'Fix a timed due to your time zone, or release it to a floating time', section: 'tasks', scope: 'panel', when: 'task panel open' },
   { id: 'panel.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.priority'] },
+  { id: 'panel.track', keys: ['y'], description: 'Start or stop tracking time on the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.track'] },
   { id: 'panel.skip', keys: ['Shift+K'], description: 'Skip the current occurrence of the open recurring task', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.skip'] },
   { id: 'panel.escape', keys: ['Esc'], description: 'Close the panel', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.escape', 'calendar.escape'] },
   { id: 'list.archive-offer', keys: ['Enter'], description: 'Archive the project after completing its last task; any other key dismisses the offer', section: 'trash', scope: 'list', when: 'archive offered', overrides: ['list.open'] },

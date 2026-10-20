@@ -162,7 +162,13 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/time-entries` | yes | time entries you can read, newest first; `task`, `from`, `to`, `tz`, `running`, `limit`, `cursor`, `format=csv`, see [Time entries](#time-entries) |
+| GET | `/api/v1/tasks/{id}/time-entries` | yes | one task's live time entries, newest first |
+| POST | `/api/v1/time-entries` | yes (not `read`, not `agent`) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
+| POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
+| PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
+| DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -1152,11 +1158,11 @@ curl -sS "$OT/api/v1/tasks/$ID/history" -H "Authorization: Bearer $TOKEN"
 
 # Permanently delete a trashed task (its operations, values and reminders)
 curl -sS -X DELETE "$OT/api/v1/tasks/$ID/purge" -H "Authorization: Bearer $TOKEN"
-# 200 {"purged":{"tasks":1,"projects":0,"reminders":0,"sections":0,"comments":0}}
+# 200 {"purged":{"tasks":1,"projects":0,"reminders":0,"sections":0,"comments":0,"attachments":0,"timeEntries":0}}
 # 409 {"error":{"code":"not_deleted","message":"only items in the Trash can be permanently deleted; delete it first"}}
 ```
 
-Purging a project also purges every task that references it; purging a task also purges its deleted subtasks. In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
+Purging a project also purges every task that references it; purging a task also purges its deleted subtasks and every time entry on it, other members' included (`timeEntries`). In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
 
 ### Attachments
 
@@ -1219,6 +1225,30 @@ curl -sS "$OT/api/v1/projects/$P/activity?limit=2" -H "Authorization: Bearer $TO
 ```
 
 Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`, `assigned`, `unassigned`, `moved`, `archived`, `unarchived`, `edited`, `commented`, `comment_edited`, `comment_deleted`. A malformed `before` or a `limit` outside 1–200 answers `400 invalid_input`.
+
+### Time entries
+
+A time entry (OpenSpec `time-tracking`, see [the guide](time-tracking.md)) is one stretch of work on a task, stored in the operation log in the task's sharing scope like a comment. Every route needs authentication (`401 unauthorized`). Reads are open to every token scope; the writes refuse `read` and `agent` tokens with `403 insufficient_scope` before anything is written, so an AI assistant can report tracked time but never start or change it. A task or entry you cannot read answers `404 not_found`, exactly as an unknown id. Viewers of a shared project cannot track; only the author changes an entry (`403 forbidden`), and the author, project admins and the owner may delete it. Writes wake your devices like every REST write.
+
+An entry is returned as `{id, taskId, userId, startedAt, endedAt, minutes, note, deviceId, taskTitle, projectId, projectName}`: Unix milliseconds, `endedAt` `null` while it runs, `minutes` whole minutes up to the server time for a running one. A user has one running entry: a start closes the running one at the new start in the same batch. `endedAt` before `startedAt` (on create or by a PATCH) is `400 invalid_input` naming both fields.
+
+```sh
+curl -sS -X POST "$OT/api/v1/time-entries" -H "Authorization: Bearer $TOKEN" -d '{"taskId":"<task>"}'
+# 201 {"id":"…","taskId":"<task>","userId":"<you>","startedAt":1760950800000,"endedAt":null,"minutes":0,"note":"",…}
+
+curl -sS -X POST "$OT/api/v1/time-entries" -H "Authorization: Bearer $TOKEN" \
+  -d '{"taskId":"<task>","startedAt":1760950800000,"endedAt":1760954400000,"note":"review"}'
+# 201 … "minutes":60, "note":"review"
+
+curl -sS -X POST "$OT/api/v1/time-entries/stop" -H "Authorization: Bearer $TOKEN"
+# 404 {"error":{"code":"not_found","message":"no time entry is running"}} when nothing runs
+
+curl -sS "$OT/api/v1/time-entries?from=2026-10-12&to=2026-10-18&tz=Europe/Berlin&format=csv" -H "Authorization: Bearer $TOKEN" -o week.csv
+```
+
+`GET /api/v1/time-entries` parameters, all optional: `task` (a task id), `from` and `to` (local days `YYYY-MM-DD` in `tz`, an IANA zone, UTC by default, with your day start; an entry belongs to the day it started), `running=true`, `limit` (1–500, default 100) and `cursor` (the `nextCursor` of the previous page). A bad day, zone or cursor is `400 invalid_input` naming the parameter. The JSON answer is `{entries, nextCursor?, serverTime}`.
+
+With `format=csv` the answer is a `text/csv` download, `time-entries-<from>-<to>.csv`, with an `X-Row-Count` header. It starts with a UTF-8 byte-order mark and has a header row: `date,start,end,minutes,task,project,labels,note`, then one column per custom field of the projects present (the union by name, in the projects' field order). One row per live entry of a live task, oldest first; times `HH:MM` in `tz`, labels joined by `;`, an empty `end` and minutes up to now for a running entry, RFC 4180 quoting, and a leading apostrophe on a text starting with `=`, `+`, `-` or `@` so a spreadsheet never runs it as a formula. An end-to-end encrypted title, name or note reads `[encrypted]`. The web app's Statistics export writes the same file from local data.
 
 ### Activity feed
 
