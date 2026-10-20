@@ -903,7 +903,7 @@
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": "Esperado “&” ou “|” antes de “{before}”, na posição {pos}",
   "Expected \"&\", \"|\" or \")\" before \"{before}\" at position {pos}": "Esperado “&”, “|” ou “)” antes de “{before}”, na posição {pos}",
   "Expected \"ago\" after \"{after}\" at position {pos}": "Esperado “ago” depois de “{after}”, na posição {pos}",
-  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\" or a field name after \"no\" at position {pos}": "Esperado “date”, “project”, “labels”, “time”, “deadline”, “start” ou um nome de campo depois de “no”, na posição {pos}",
+  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\", \"origin\" or a field name after \"no\" at position {pos}": "Esperado “date”, “project”, “labels”, “time”, “deadline”, “start”, “origin” ou um nome de campo depois de “no”, na posição {pos}",
   "Expected \"days\", \"weeks\" or \"months\" after \"{after}\" at position {pos}": "Esperado “days”, “weeks” ou “months” depois de “{after}”, na posição {pos}",
   "Expected \"week\" or \"month\" after \"{after}\" at position {pos}": "Esperado “week” ou “month” depois de “{after}”, na posição {pos}",
   "Expected a comparison (<, <=, =, >=, >, before or after) after \"{after}\" at position {pos}": "Esperada uma comparação (<, <=, =, >=, >, before ou after) depois de “{after}”, na posição {pos}",
@@ -3872,5 +3872,13 @@
   "Listed on the All projects page, where each can be restored.": "Listados na página Todos os projetos, onde cada um pode ser restaurado.",
   "Midnight (default)": "Meia-noite (padrão)",
   "My day starts at": "Meu dia começa às",
-  "Work done before this time counts for the previous day.": "O que você fizer antes desse horário conta para o dia anterior."
+  "Work done before this time counts for the previous day.": "O que você fizer antes desse horário conta para o dia anterior.",
+  "Expected a provider or kind after \"origin:\" at position {pos}": "Esperado um fornecedor ou um tipo depois de “origin:”, na posição {pos}",
+  "From {text}": "De {text}",
+  "Opens the source {text}": "Abre a fonte {text}",
+  "Origin": "Origem",
+  "Origin values": "Valores de origem",
+  "Origins:": "Origens:",
+  "origin": "origem",
+  "the origin": "a origem"
 }

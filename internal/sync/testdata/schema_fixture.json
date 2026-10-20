@@ -97,6 +97,7 @@
       "ical_extra",
       "labels",
       "notes_doc",
+      "origin",
       "parent_id",
       "position",
       "priority",
@@ -172,6 +173,7 @@
       "description",
       "ical_extra",
       "notes_doc",
+      "origin",
       "title"
     ],
     "view": [

@@ -93,6 +93,13 @@ describe('index (2.1)', () => {
     expect(list.map((e) => e.key)).toEqual(['task:a', 'task:d', 'task:b'])
     expect(list.find((e) => e.key === 'task:b')!.marker).toBe('completed')
   })
+  it('finds a task by its origin id and title, from local data (task-origin 3.4)', () => {
+    const [e] = entries([task({ id: 'o', title: 'Fix the login timeout', origin: { kind: 'issue', provider: 'linear', id: 'ENG-123', title: 'Login times out' } })])
+    expect(finds('eng-123', e.label, e.secondary)).toBe(true)
+    expect(finds('times out', e.label, e.secondary)).toBe(true)
+    const [plain] = entries([task({ id: 'p', title: 'Fix the login timeout' })])
+    expect(finds('eng-123', plain.label, plain.secondary)).toBe(false)
+  })
   it('undecryptable rows are indexed by the shown text, never ciphertext', () => {
     const [e] = entries([task({ id: 'x', title: 'eyJjaXBoZXJ0ZXh0', description: 'eyJub3Rlcw', _e2ee: { raw: { title: 'eyJjaXBoZXJ0ZXh0' } } } as unknown as Partial<Task>)])
     expect(e.label).toBe('[Cannot decrypt]')

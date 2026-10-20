@@ -30,7 +30,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | REST API and API tokens for scripts | `bootstrap-core-platform` |
 | Command-line client | `cli-client` |
 | Email to task (forward to an inbox address) | `email-to-task` |
-| Browser extension and mobile share-sheet target | `share-capture` |
+| Browser extension and mobile share-sheet target (the captured page, or a recognised GitHub, GitLab, Jira or Linear issue, now stays on the task as its origin chip: `task-origin`) | `share-capture` |
 | Voice capture via the Web Speech API | `voice-capture` |
 
 ### 3. Organisation, views and GTD
@@ -78,7 +78,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- |
 | JSON export | `bootstrap-core-platform` |
 | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
-| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each (Linear estimates are still dropped with a warning; a follow-up can now map them to a number field of `custom-fields`) | `named-importers` |
+| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each (Linear estimates are still dropped with a warning; a follow-up can now map them to a number field of `custom-fields`). Imported tasks keep their source on the task as an origin (`task-origin`), the first step toward `issue-import` | `named-importers` |
 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |

@@ -63,6 +63,10 @@ describe('history', () => {
     expect(page.changeSets.map((cs) => cs.changes.map((c) => c.opId))).toEqual([['b']])
     expect(formatValue('due', { date: '2026-10-11', time: '09:00' })).toBe('2026-10-11 09:00')
     expect(formatValue('title', null)).toBe('—')
+    // A task's origin reads as its id or host (task-origin D12).
+    expect(formatValue('origin', { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' })).toBe('o/r#7')
+    expect(formatValue('origin', { kind: 'url', url: 'https://www.example.org/post' })).toBe('example.org')
+    expect(formatValue('origin', { kind: 'email', id: '<a1@mail.example>' })).toBe('Email')
     expect(formatValue('assignee_id', 'u1', (f, id) => (f === 'assignee_id' && id === 'u1' ? 'Bob Okafor' : undefined))).toBe('Bob Okafor')
     expect(formatValue('project_id', 'gone', () => undefined)).toBe('unknown')
   })

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/origin"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -150,6 +151,16 @@ func taskOps(userID string, msg *Parsed, now time.Time, ts int64) []opsync.Op {
 		{"priority", json.RawMessage("4")},
 		{"created_at", num},
 		{"position", num},
+	}
+	// The Message-ID as the task's origin, in the same batch (task-origin D5): no
+	// URL, no title, never the sender. A message without a real Message-ID, or
+	// one over the origin id limit, gives a task without an origin.
+	if o := (origin.Origin{Kind: origin.KindEmail, ID: msg.HeaderMessageID}); msg.HeaderMessageID != "" && o.Validate() == nil {
+		raw, _ := json.Marshal(o)
+		fields = append(fields, struct {
+			name  string
+			value json.RawMessage
+		}{"origin", raw})
 	}
 	ops := make([]opsync.Op, len(fields))
 	for i, f := range fields {

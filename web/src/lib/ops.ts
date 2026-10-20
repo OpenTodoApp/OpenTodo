@@ -10,7 +10,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -57,7 +57,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {},
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -588,6 +588,8 @@ export type NewTaskInput = {
   assignee_id?: string | null
   /** Section of `project_id` (board-view); only sent when set. */
   section_id?: string | null
+  /** Where the task came from (task-origin); only sent when set. */
+  origin?: Origin | null
   /**
    * Reminders typed in quick add (quick-add-recurrence D3), resolved against the
    * task's final due and written in the same batch as the task.
@@ -616,6 +618,8 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   // Only parked, deferred or evening tasks carry these (someday-and-evening).
   if (input.start) extra.start = input.start
   if (input.evening) extra.evening = true
+  // Only captured, mailed or imported tasks carry the field (task-origin).
+  if (input.origin) extra.origin = input.origin
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
@@ -697,7 +701,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -719,6 +723,8 @@ function copyTasks(
     // field existed hold undefined, which must never be sent).
     // A copy carries the note's document only when there is one (collaborative-rich-text).
     if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
+    // The copy keeps where the task came from (task-origin); none needs no op.
+    if (!patch.origin || typeof patch.origin !== 'object') delete patch.origin
     // Custom field values travel with the copy (custom-fields), one op each.
     if (tk.fields && Object.keys(tk.fields).length) patch.fields = { ...tk.fields }
     // The copy keeps who completed it (completed-date-filters D5); unknown stays null.

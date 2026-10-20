@@ -903,7 +903,7 @@
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": "Se esperaba «&» o «|» antes de «{before}», en la posición {pos}",
   "Expected \"&\", \"|\" or \")\" before \"{before}\" at position {pos}": "Se esperaba «&», «|» o «)» antes de «{before}», en la posición {pos}",
   "Expected \"ago\" after \"{after}\" at position {pos}": "Se esperaba «ago» después de «{after}», en la posición {pos}",
-  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\" or a field name after \"no\" at position {pos}": "Se esperaba «date», «project», «labels», «time», «deadline», «start» o un nombre de campo después de «no», en la posición {pos}",
+  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\", \"origin\" or a field name after \"no\" at position {pos}": "Se esperaba «date», «project», «labels», «time», «deadline», «start», «origin» o un nombre de campo después de «no», en la posición {pos}",
   "Expected \"days\", \"weeks\" or \"months\" after \"{after}\" at position {pos}": "Se esperaba «days», «weeks» o «months» después de «{after}», en la posición {pos}",
   "Expected \"week\" or \"month\" after \"{after}\" at position {pos}": "Se esperaba «week» o «month» después de «{after}», en la posición {pos}",
   "Expected a comparison (<, <=, =, >=, >, before or after) after \"{after}\" at position {pos}": "Se esperaba una comparación (<, <=, =, >=, >, before o after) después de «{after}», en la posición {pos}",
@@ -3872,5 +3872,13 @@
   "Listed on the All projects page, where each can be restored.": "Aparecen en la página Todos los proyectos, donde se puede restaurar cada uno.",
   "Midnight (default)": "Medianoche (predeterminado)",
   "My day starts at": "Mi día empieza a las",
-  "Work done before this time counts for the previous day.": "Lo que hagas antes de esta hora cuenta para el día anterior."
+  "Work done before this time counts for the previous day.": "Lo que hagas antes de esta hora cuenta para el día anterior.",
+  "Expected a provider or kind after \"origin:\" at position {pos}": "Se esperaba un proveedor o un tipo después de «origin:», en la posición {pos}",
+  "From {text}": "Desde {text}",
+  "Opens the source {text}": "Abre el origen {text}",
+  "Origin": "Origen",
+  "Origin values": "Valores de origen",
+  "Origins:": "Orígenes:",
+  "origin": "origen",
+  "the origin": "el origen"
 }

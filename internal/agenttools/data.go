@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/origin"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/zoned"
 )
@@ -259,6 +260,23 @@ type taskText struct {
 	// Fields holds the string custom field values (text, link, date, choice)
 	// keyed by definition id: people wrote them (custom-fields).
 	Fields map[string]string `json:"fields,omitempty"`
+	// Origin holds the free text of the task's origin, its page title and URL
+	// (OpenSpec change task-origin, design D11); kind, provider and id are in
+	// taskOut.Origin.
+	Origin *originText `json:"origin,omitempty"`
+}
+
+// originText is the user-written part of a task's origin.
+type originText struct {
+	Title string `json:"title,omitempty"`
+	URL   string `json:"url,omitempty"`
+}
+
+// originOut is the structural part of a task's origin.
+type originOut struct {
+	Kind     string `json:"kind"`
+	Provider string `json:"provider,omitempty"`
+	ID       string `json:"id,omitempty"`
 }
 
 type taskOut struct {
@@ -293,6 +311,9 @@ type taskOut struct {
 	// the task's project's definitions keyed by definition id; string values are
 	// in untrusted_text.fields (custom-fields).
 	Fields map[string]any `json:"fields"`
+	// Origin is where the task came from, null when unset or encrypted
+	// (OpenSpec change task-origin); its title and URL are in untrusted_text.
+	Origin *originOut `json:"origin"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -335,6 +356,14 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.EstimateMinutes = &m
 	}
 	out.Fields, out.Untrusted.Fields = snap.fieldValues(t)
+	if e2ee.IsCiphertextJSON(t["origin"]) {
+		out.Encrypted = true
+	} else if o, err := origin.Decode(t["origin"]); err == nil {
+		out.Origin = &originOut{Kind: o.Kind, Provider: o.Provider, ID: o.ID}
+		if o.Title != "" || o.URL != "" {
+			out.Untrusted.Origin = &originText{Title: o.Title, URL: o.URL}
+		}
+	}
 	if d := taskDue(t); d != nil {
 		o := &dueOut{due: *d}
 		date, clock := localDue(d, loc)

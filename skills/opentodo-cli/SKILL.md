@@ -56,6 +56,7 @@ ot today --json
 ot list --project Home --json
 ot add "Call the plumber" --due tomorrow --time 09:00 --priority 2 --json --idempotency-key plumber-1
 ot add "Backup check" --due monday --time 09:00 --repeat "every week" --remind "30 min before" --json
+ot add "Fix the login timeout" --origin-url https://github.com/o/r/issues/7 --json
 ot edit 8c2a41f0 --due friday --json
 ot done 8c2a41f0 91f04c2e --dry-run --json
 ot done 8c2a41f0 91f04c2e --json

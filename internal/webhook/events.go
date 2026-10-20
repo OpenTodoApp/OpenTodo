@@ -98,6 +98,10 @@ func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, ent
 				// Custom field values as one object, like the REST API (custom-fields D3);
 				// a change names the value it touched as `fields.<id>`.
 				e = opsync.FoldFieldValues(e)
+				// origin travels like every field, null when unset (task-origin).
+				if _, has := e["origin"]; !has {
+					e["origin"] = json.RawMessage("null")
+				}
 			}
 			data[entityKind] = e
 		}

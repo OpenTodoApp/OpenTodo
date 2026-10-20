@@ -16,7 +16,7 @@ import {
 } from './crypto'
 import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './db'
 import {
-  CONTENT_FIELDS, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
+  CONTENT_FIELDS, contentFromString, contentToString, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
 } from './e2ee'
 import { getDeviceId, mutateMany, mutationTables, readField, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
@@ -73,8 +73,11 @@ async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: strin
   }
 }
 
-function encryptable(op: Op): op is Op & { value: string } {
-  return isContentField(op.entity, op.field) && typeof op.value === 'string' && op.value !== '' && !isEnvelope(op.value)
+/** The plaintext an outgoing op encrypts, or null when it stays as it is (not content, empty, null, already an envelope). */
+function plaintextOf(op: Op): string | null {
+  if (!isContentField(op.entity, op.field) || isEnvelope(op.value)) return null
+  const text = contentToString(op.entity, op.field, op.value)
+  return text ? text : null
 }
 
 /**
@@ -92,8 +95,9 @@ export async function prepareOutgoing(ops: Op[]): Promise<Op[]> {
   const personal = await personalResolver(ops)
   const out: Op[] = []
   for (const op of ops) {
-    if (encryptable(op) && (await personal(op.entity, op.entityId))) {
-      out.push({ ...op, value: await encryptValue(key, op.entity, op.entityId, op.field, op.value) })
+    const text = plaintextOf(op)
+    if (text !== null && (await personal(op.entity, op.entityId))) {
+      out.push({ ...op, value: await encryptValue(key, op.entity, op.entityId, op.field, text) })
     } else {
       out.push(op)
     }
@@ -124,16 +128,18 @@ export async function decryptIncoming(ops: Op[]): Promise<Incoming> {
   const key = await currentKey()
   let personal: ((e: Entity, id: string) => Promise<boolean>) | null = null
   for (const op of ops) {
-    if (!isContentField(op.entity, op.field) || typeof op.value !== 'string') {
+    // An object-valued content field (task.origin) is plaintext as an object, ciphertext as a string.
+    const text = isContentField(op.entity, op.field) && !isEnvelope(op.value) ? contentToString(op.entity, op.field, op.value) : null
+    if (!isEnvelope(op.value) && text === null) {
       res.ops.push(op)
       continue
     }
-    if (isEnvelope(op.value)) {
+    if (isEnvelope(op.value) && isContentField(op.entity, op.field)) {
       res.ciphertext = true
       if (!key) res.needsKey = true
       try {
         if (!key) throw new Error('no key')
-        const value = await decryptValue(key, op.entity, op.entityId, op.field, op.value)
+        const value = contentFromString(op.entity, op.field, await decryptValue(key, op.entity, op.entityId, op.field, op.value))
         res.ops.push({ ...op, value })
         res.wire.set(op.id, { kind: 'c' })
       } catch {
@@ -143,7 +149,7 @@ export async function decryptIncoming(ops: Op[]): Promise<Incoming> {
       continue
     }
     res.ops.push(op)
-    if (op.value === '') continue
+    if (!text) continue
     personal ??= await personalResolver(ops)
     if (await personal(op.entity, op.entityId)) {
       res.plaintext = true
@@ -294,7 +300,7 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
     const keys = entity === 'task' ? [...fields, ...Object.keys((row.fields ?? {}) as object).map((id) => FIELD_VALUE_PREFIX + id)] : fields
     for (const f of keys) {
       const v = readField(row, f)
-      if (typeof v !== 'string' || v === '' || row._e2ee?.raw?.[f]) continue
+      if (!contentToString(entity, f, v) || row._e2ee?.raw?.[f]) continue
       if (row._e2ee?.wire?.[f] === target) continue
       patch[f] = v
     }

@@ -3,6 +3,7 @@
 // list reserves the same leading slot, so checkboxes align across flat and tree
 // views, and the metadata line exists only when there is metadata.
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
@@ -307,6 +308,72 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     const after = [...r.container.querySelector('[data-task-id]')!.children].map((c) => (c.hasAttribute('data-leading-slot') ? 'slot' : c.hasAttribute('data-row-controls') ? 'controls' : c.tagName.toLowerCase()))
     expect(after).toEqual(children)
     expect(r.container.querySelector('[data-row-controls]')!.hasAttribute('data-selecting')).toBe(true)
+    await r.unmount()
+  })
+})
+
+// Task origins (OpenSpec change task-origin, task-list-presentation "Metadata language").
+describe('origin chip', () => {
+  const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
+  const row = (over: Partial<Task>, extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) =>
+    render(<ul><TaskRow task={task(over)} selected={false} showProject={false} onToggle={() => {}} onOpen={extra.onOpen ?? (() => {})} {...extra} /></ul>)
+
+  for (const detail of ['calm', 'detailed'] as const) {
+    it(`${detail}: an issue chip is a link to the issue whose click does not open the row`, async () => {
+      const onOpen = vi.fn()
+      const r = await row({ origin: issue }, { detail, onOpen })
+      const chip = r.container.querySelector<HTMLAnchorElement>('a[data-origin]')!
+      expect(chip.getAttribute('href')).toBe(issue.url)
+      expect(chip.target).toBe('_blank')
+      expect(chip.rel).toBe('noopener noreferrer')
+      expect(chip.getAttribute('aria-label')).toBe('Opens the source o/r#7')
+      expect(visibleText(chip)).toBe('o/r#7')
+      // A link never sits inside the row's open button.
+      expect(chip.closest('[data-row-open]')).toBeNull()
+      chip.addEventListener('click', (e) => e.preventDefault())
+      chip.click()
+      expect(onOpen).not.toHaveBeenCalled()
+      await r.unmount()
+    })
+  }
+
+  it('Calm: the chip is quiet like the counts and never one of the metadata items', async () => {
+    const r = await row({ origin: issue, estimate_minutes: 30 }, { detail: 'calm', progress: { done: 1, total: 2 } })
+    const trailing = r.container.querySelector('li > [data-row-trailing]')!
+    expect(trailing.querySelector('[data-origin]')).toBeTruthy()
+    expect(trailing.querySelector('[data-row-counts]')).toBeTruthy()
+    expect(trailing.querySelector('[data-origin] .text-faint')!.className).toContain('group-hover:text-muted')
+    expect(r.container.querySelector('[data-row-meta] [data-origin]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('an email origin reads "Email" with the at sign, is not a link and never shows the Message-ID', async () => {
+    const r = await row({ origin: { kind: 'email', id: '<a1@mail.example>' } }, { detail: 'detailed' })
+    const chip = r.container.querySelector('[data-origin="email"]')!
+    expect(chip.tagName).toBe('SPAN')
+    expect(r.container.querySelector('a[data-origin]')).toBeNull()
+    expect(visibleText(chip)).toBe('Email')
+    expect(spokenText(chip)).toBe('From Email')
+    expect(r.container.textContent).not.toContain('a1@mail.example')
+    await r.unmount()
+  })
+
+  it('a task without an origin has no chip; the card variant shows it, with the page title as tooltip', async () => {
+    const bare = await row({}, { card: true })
+    expect(bare.container.querySelector('[data-origin]')).toBeNull()
+    await bare.unmount()
+    const card = await row({ origin: { kind: 'url', url: 'https://example.org/post', title: 'Interesting article' } }, { card: true, detail: 'detailed' })
+    const chip = card.container.querySelector<HTMLAnchorElement>('a[data-origin="url"]')!
+    expect(visibleText(chip)).toBe('example.org')
+    // The stored page title is the chip's tooltip, never a second line.
+    await act(async () => { chip.focus() })
+    expect(document.querySelector('[data-tooltip]')?.textContent).toBe('Interesting article')
+    await card.unmount()
+  })
+
+  it('an undecryptable origin shows no chip', async () => {
+    const r = await row({ origin: '[Cannot decrypt]' })
+    expect(r.container.querySelector('[data-origin]')).toBeNull()
     await r.unmount()
   })
 })

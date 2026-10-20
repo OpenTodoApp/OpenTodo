@@ -30,6 +30,18 @@
     "estimate_minutes": {"type": ["integer", "null"]},
     "recurrence": {"type": ["string", "null"]},
     "series_id": {"type": ["string", "null"]},
-    "assignee_id": {"type": ["string", "null"]}
+    "assignee_id": {"type": ["string", "null"]},
+    "origin": {
+      "type": ["object", "string", "null"],
+      "description": "where the task came from; a string only for an end-to-end encrypted account (ciphertext). title and url are user-written",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["url", "email", "issue", "import"]},
+        "provider": {"type": "string", "description": "e.g. github, gitlab, jira, linear, todoist"},
+        "id": {"type": "string", "description": "the issue id, Message-ID or source id"},
+        "url": {"type": "string", "description": "http or https"},
+        "title": {"type": "string"}
+      }
+    }
   }
 }

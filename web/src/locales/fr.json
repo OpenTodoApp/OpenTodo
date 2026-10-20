@@ -903,7 +903,7 @@
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": "« & » ou « | » attendu avant « {before} », à la position {pos}",
   "Expected \"&\", \"|\" or \")\" before \"{before}\" at position {pos}": "« & », « | » ou « ) » attendu avant « {before} », à la position {pos}",
   "Expected \"ago\" after \"{after}\" at position {pos}": "« ago » attendu après « {after} », à la position {pos}",
-  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\" or a field name after \"no\" at position {pos}": "« date », « project », « labels », « time », « deadline », « start » ou un nom de champ attendu après « no », à la position {pos}",
+  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\", \"origin\" or a field name after \"no\" at position {pos}": "« date », « project », « labels », « time », « deadline », « start », « origin » ou un nom de champ attendu après « no », à la position {pos}",
   "Expected \"days\", \"weeks\" or \"months\" after \"{after}\" at position {pos}": "« days », « weeks » ou « months » attendu après « {after} », à la position {pos}",
   "Expected \"week\" or \"month\" after \"{after}\" at position {pos}": "« week » ou « month » attendu après « {after} », à la position {pos}",
   "Expected a comparison (<, <=, =, >=, >, before or after) after \"{after}\" at position {pos}": "Comparaison (<, <=, =, >=, >, before ou after) attendue après « {after} », à la position {pos}",
@@ -3872,5 +3872,13 @@
   "Listed on the All projects page, where each can be restored.": "Listés sur la page Tous les projets, où chacun peut être restauré.",
   "Midnight (default)": "Minuit (par défaut)",
   "My day starts at": "Ma journée commence à",
-  "Work done before this time counts for the previous day.": "Ce qui est fait avant cette heure compte pour la veille."
+  "Work done before this time counts for the previous day.": "Ce qui est fait avant cette heure compte pour la veille.",
+  "Expected a provider or kind after \"origin:\" at position {pos}": "Fournisseur ou type attendu après « origin: », à la position {pos}",
+  "From {text}": "Provenance : {text}",
+  "Opens the source {text}": "Ouvre la source {text}",
+  "Origin": "Provenance",
+  "Origin values": "Valeurs de provenance",
+  "Origins:": "Provenances :",
+  "origin": "provenance",
+  "the origin": "la provenance"
 }

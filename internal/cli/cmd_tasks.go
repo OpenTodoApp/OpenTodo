@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/origin"
 	"github.com/pixari/opentodo/internal/quickadd"
 	"github.com/pixari/opentodo/internal/recurrence"
 )
@@ -201,7 +202,16 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	for _, p := range projects {
 		byID[p.ID] = p
 	}
-	tbl := newTable("ID", "P", "DUE", "PROJECT", "TITLE")
+	// The origin's id or host as a column, only when a listed task has one (task-origin).
+	showOrigin := false
+	for _, t := range tasks {
+		showOrigin = showOrigin || t.originLabel() != ""
+	}
+	headers := []string{"ID", "P", "DUE", "PROJECT", "TITLE"}
+	if showOrigin {
+		headers = []string{"ID", "P", "DUE", "PROJECT", "ORIGIN", "TITLE"}
+	}
+	tbl := newTable(headers...)
 	for _, t := range tasks {
 		dueText, overdue := describeDue(t.Due, today)
 		dueCell := plain(dueText)
@@ -224,7 +234,11 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		if t.CompletedAt != nil {
 			title = "[done] " + title
 		}
-		tbl.add(cell{text: shortID(t.ID), style: styleCyan}, pr, dueCell, plain(projName), plain(title))
+		cells := []cell{{text: shortID(t.ID), style: styleCyan}, pr, dueCell, plain(projName)}
+		if showOrigin {
+			cells = append(cells, plain(t.originLabel()))
+		}
+		tbl.add(append(cells, plain(title))...)
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil
@@ -452,6 +466,8 @@ type taskFlags struct {
 	priority                             int
 	labels                               stringList
 	repeat                               string
+	// originURL is --origin-url (task-origin): the page or issue the task comes from.
+	originURL string
 	// add only (quick-add-recurrence D6)
 	remind  stringList
 	natural bool
@@ -469,6 +485,7 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 	fs.Var(&f.labels, "label", "label (repeatable; edit replaces the list)")
 	fs.StringVar(&f.note, "note", "", "description")
 	fs.StringVar(&f.repeat, "repeat", "", "recurrence rule, e.g. \"every monday\" (edit: `none` clears)")
+	fs.StringVar(&f.originURL, "origin-url", "", "http(s) URL the task comes from; GitHub, GitLab, Jira and Linear issues are recognised (edit: `none` clears)")
 	if !edit {
 		fs.Var(&f.remind, "remind", "reminder: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)")
 		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
@@ -491,7 +508,34 @@ func (f *taskFlags) validateLocal(set map[string]bool) error {
 			return usageErr("--repeat: %v", err)
 		}
 	}
+	if set["origin-url"] && !strings.EqualFold(f.originURL, "none") {
+		if _, err := origin.FromURL(f.originURL, ""); err != nil {
+			return usageErr("--origin-url must be an http or https URL, got %q", f.originURL)
+		}
+	}
 	return nil
+}
+
+// addOrigin puts the --origin-url origin into an `ot add` body.
+func (f *taskFlags) addOrigin(set map[string]bool, body map[string]any) error {
+	if !set["origin-url"] {
+		return nil
+	}
+	if strings.EqualFold(f.originURL, "none") {
+		return usageErr("--origin-url none only makes sense with `ot edit`")
+	}
+	body["origin"] = f.originValue()
+	return nil
+}
+
+// originValue is the origin --origin-url sends: derived on this machine through
+// internal/origin (nothing is requested from the URL), or nil for `none`.
+func (f *taskFlags) originValue() any {
+	if strings.EqualFold(f.originURL, "none") {
+		return nil
+	}
+	o, _ := origin.FromURL(f.originURL, "")
+	return o
 }
 
 // quickLanguages are the --lang languages, else the locale's (LC_ALL,
@@ -581,6 +625,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	if set["note"] {
 		body["description"] = f.note
+	}
+	if err := f.addOrigin(set, body); err != nil {
+		return err
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -747,6 +794,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if set["note"] {
 		patch["description"] = f.note
 	}
+	if set["origin-url"] {
+		patch["origin"] = f.originValue()
+	}
 	if set["repeat"] {
 		if strings.EqualFold(f.repeat, "none") || f.repeat == "" {
 			patch["recurrence"] = nil
@@ -761,8 +811,8 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 	}
-	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat")
+	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] {
+		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {

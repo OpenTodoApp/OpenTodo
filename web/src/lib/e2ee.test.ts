@@ -718,3 +718,51 @@ describe('weekly digest (stats-and-review)', () => {
     expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false })
   })
 })
+
+describe('task origins (task-origin 1.3)', () => {
+  const ORIGIN = { kind: 'url', url: 'https://example.org/post', title: 'Interesting article' }
+
+  it('an origin leaves as one ciphertext string and comes back as the object on another device', async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    await mutate('task', 't1', { origin: ORIGIN })
+    await syncNow()
+    const sent = sentAfter(mark).filter((o) => o.field === 'origin')
+    expect(sent).toHaveLength(1)
+    expect(isEnvelope(sent[0].value)).toBe(true)
+    expect(JSON.stringify(server.log)).not.toMatch(/example\.org|Interesting article/)
+    expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
+  })
+
+  it('a plaintext origin written by the server is re-encrypted on sight', async () => {
+    await enableOnA()
+    const mail = { kind: 'email', id: '<a1@mail.example>' }
+    server.log.push({ id: 'mail1', entity: 'task', entityId: 't1', field: 'origin', value: mail, ts: Date.now(), device: 'server', seq: ++server.seq })
+    await syncNow()
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.origin).toEqual(mail)
+    expect(isEnvelope(current('task', 't1', 'origin'))).toBe(true)
+    expect(notYetEncrypted((await db.tasks.get('t1')) as never, 'task')).toBe(false)
+  })
+
+  it('enabling encrypts an existing origin and disabling decrypts it again', async () => {
+    await on('A')
+    await seedTasks()
+    await mutate('task', 't1', { origin: ORIGIN })
+    await syncNow()
+    expect(current('task', 't1', 'origin')).toEqual(ORIGIN)
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    expect(isEnvelope(current('task', 't1', 'origin'))).toBe(true)
+    await disableEncryption()
+    await startMigration('decrypt')
+    await syncNow()
+    expect(current('task', 't1', 'origin')).toEqual(ORIGIN)
+    expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
+  })
+})

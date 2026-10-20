@@ -200,6 +200,11 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 	if entity == "task" {
 		for _, e := range list {
 			foldFieldsInPlace(e)
+			// Every task representation carries origin, null when unset
+			// (OpenSpec change task-origin, "Task origin in representations").
+			if _, has := e["origin"]; e != nil && !has {
+				e["origin"] = json.RawMessage("null")
+			}
 		}
 		return nil
 	}

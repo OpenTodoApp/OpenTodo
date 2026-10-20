@@ -3,8 +3,8 @@
 // editor on click or Enter; Escape or a committed edit closes the editor and puts
 // focus back on the chip. The editor renders below the chip row (a full-width
 // flex item), so pickers stay inside the property's own element.
-import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
-import { Icon, type IconName } from '../../ui'
+import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactElement, type ReactNode } from 'react'
+import { Icon, Tooltip, type IconName } from '../../ui'
 import { t } from '../../lib/i18n'
 
 const FOCUSABLE = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -34,9 +34,16 @@ export interface PropertyChipProps {
   note?: ReactNode
   /** A clear action on the chip (removes the value without opening the editor). */
   onClear?: () => void
+  /**
+   * An action instead of an editor (the Origin chip opens its source, task-origin
+   * D8): click or Enter runs it, also on a read-only task.
+   */
+  onActivate?: () => void
+  /** Tooltip of the chip (the Origin chip's stored page title). */
+  tip?: string
 }
 
-export function PropertyChip({ id, icon, label, value, empty, placeholder, readOnly, editor, editing: editingProp, onEditingChange, tone = '', aside, editorLabel, note, onClear }: PropertyChipProps) {
+export function PropertyChip({ id, icon, label, value, empty, placeholder, readOnly, editor, editing: editingProp, onEditingChange, tone = '', aside, editorLabel, note, onClear, onActivate, tip }: PropertyChipProps) {
   const uid = useId()
   const labelId = `${uid}-label`
   const valueId = `${uid}-value`
@@ -74,16 +81,22 @@ export function PropertyChip({ id, icon, label, value, empty, placeholder, readO
   }
 
   const shown = empty ? <span className="text-faint">{placeholder}</span> : value
-  const chipClass = `inline-flex max-w-full min-h-8 items-center gap-1.5 rounded-control border px-2.5 py-1 text-meta ${editing ? 'border-focus bg-sunken dark:bg-raised' : empty ? 'border-dashed border-input' : 'border-default bg-surface'} ${readOnly || !editor ? '' : 'hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:hover:bg-raised'} ${tone}`
+  const withTip = (el: ReactElement<Record<string, unknown>>) => (tip ? <Tooltip label={tip}>{el}</Tooltip> : el)
+  const action = !editor && onActivate
+  const chipClass = `inline-flex max-w-full min-h-8 items-center gap-1.5 rounded-control border px-2.5 py-1 text-meta ${editing ? 'border-focus bg-sunken dark:bg-raised' : empty ? 'border-dashed border-input' : 'border-default bg-surface'} ${(readOnly || !editor) && !action ? '' : 'hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:hover:bg-raised'} ${tone}`
 
   return (
     <div data-property={id} className="contents">
       <span id={labelId} className="sr-only">{label}</span>
       <span className="inline-flex max-w-full items-center gap-1">
-        {readOnly || !editor ? (
+        {action ? withTip(
+          <button type="button" id={valueId} aria-labelledby={`${labelId} ${valueId}`} className={chipClass} onClick={onActivate}>
+            <Icon name={icon} size="xs" className="shrink-0 text-faint" /><span className="min-w-0 truncate">{shown}</span>
+          </button>,
+        ) : readOnly || !editor ? withTip(
           <span id={valueId} className={chipClass}>
             <Icon name={icon} size="xs" className="shrink-0 text-faint" /><span className="min-w-0 truncate">{shown}</span>
-          </span>
+          </span>,
         ) : (
           <button ref={button} type="button" id={valueId} aria-labelledby={`${labelId} ${valueId}`} aria-expanded={editing} className={chipClass} onClick={() => setEditing(!editing)}>
             <Icon name={icon} size="xs" className="shrink-0 text-faint" /><span className="min-w-0 truncate">{shown}</span>

@@ -30,6 +30,8 @@ import { dragFeedback } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
+import { originOf } from '../lib/taskOrigin'
+import { OriginChip } from './OriginChip'
 
 /** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
 export const MAX_FIELD_BADGES = 3
@@ -254,6 +256,10 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
 
   const progressCount = counts.find((c) => c.key === 'progress')
   const quiet = calm && counts.length > 0 ? <RowCounts counts={counts} card={card} /> : null
+  // Where the task came from (task-origin D7): a trailing chip outside the open button,
+  // quiet in Calm (see OriginChip for the Calm rule).
+  const origin = originOf(task)
+  const originChip = origin ? <OriginChip origin={origin} quiet={calm} /> : null
   const meta = (hasMeta || (card && quiet)) && (
     <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-2 gap-y-0.5`} data-row-meta>
       {breadcrumb && <NeutralChip icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb })} data-breadcrumb="">{breadcrumb}</NeutralChip>}
@@ -375,7 +381,9 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
         </div>
         {meta}
       </button>
-      {!card && quiet}
+      {originChip
+        ? <span className="ml-auto flex shrink-0 items-start gap-2" data-row-trailing>{originChip}{!card && quiet}</span>
+        : !card && quiet}
     </li>
   )
 })

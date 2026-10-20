@@ -36,7 +36,9 @@ const Placeholder = "Encrypted item"
 // task.labels holds label ids, so the label names are encrypted instead).
 // Keep in step with CONTENT_FIELDS in web/src/lib/e2ee.ts.
 var ContentFields = map[string][]string{
-	"task":    {"title", "description", "ical_extra", "notes_doc"},
+	// A task's origin (OpenSpec change task-origin, design D2) is an object;
+	// devices serialise it and encrypt it whole into one ciphertext string.
+	"task":    {"title", "description", "ical_extra", "notes_doc", "origin"},
 	"project": {"name", "description", "notes_doc"},
 	"label":   {"name"},
 	"section": {"name"},

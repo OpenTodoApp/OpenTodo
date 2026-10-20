@@ -6,7 +6,8 @@
 import { api } from './api'
 import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
-import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
+import type { ChangeSet, HistoryPage, Membership, Origin, Project, Task } from './types'
+import { originLabel } from './taskOrigin'
 import { formatDate, formatInstant } from './dates'
 import { fieldValueLabel } from './fieldNames'
 import { t, msg, translatedMap } from './i18n'
@@ -75,7 +76,7 @@ export async function restoreValue(entity: 'task' | 'project', id: string, field
 /** Reference fields whose ids the timeline shows by name, and their labels. */
 const REF_LABELS = translatedMap<string>({ assignee_id: msg('assignee'), project_id: msg('project'), section_id: msg('section'), parent_id: msg('parent') })
 /** Labels of fields whose name alone reads badly. */
-const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes') })
+const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes'), origin: msg('origin') })
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {
@@ -99,6 +100,8 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
   if (field === 'start' && typeof value === 'string') return value === 'someday' ? t('Someday') : formatDate(value, 'compact')
   if (field === 'evening' && typeof value === 'boolean') return value ? t('on') : t('off')
   if (field === 'priority') return `P${String(value)}`
+  // A task's origin (task-origin D12): its id or host, "Email" for a mail.
+  if (field === 'origin' && typeof value === 'object') return originLabel(value as Origin) || t('Email')
   if (field === 'estimate_minutes' && typeof value === 'number') return t('{value} min', { value })
   if (field === 'blocked_by' && Array.isArray(value) && names) return value.length ? value.map((id) => names('parent_id', String(id)) ?? t('unknown')).join(', ') : '—'
   if (Array.isArray(value)) return value.length ? t('{n, plural, one {# item} other {# items}}', { n: value.length }) : '—'

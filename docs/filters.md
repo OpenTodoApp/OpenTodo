@@ -30,6 +30,7 @@ term     := "@" name                       label
           | ("due" | "created" | "deadline" | "start" | "completed") cmp date
           | keyword
           | "search:" text
+          | "origin:" text                              where the task came from
           | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
           | "no" field                                  custom field without a value
 field    := a word that is not a reserved word | '"' chars '"'
@@ -43,6 +44,7 @@ weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturd
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "habit"
+          | "origin" | "no origin"
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -92,12 +94,15 @@ text     := word | '"' chars '"'
 | `completed` | completed tasks; the record a skipped habit day leaves is not one |
 | `open` | open (not completed) tasks |
 | `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
+| `origin` | tasks that know where they came from: a captured page, an email, an issue or an import (see [Where a task came from](capture.md#where-a-task-came-from)) |
+| `no origin` | tasks without an origin |
+| `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail); quotes allowed |
 | `name <cmp> value` | tasks whose [custom field](custom-fields.md) of that name compares as asked (see [Custom fields](#custom-fields)) |
 | `no name` | tasks of a project that defines the field, with no value for it |
 
 ### Custom fields
 
-A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
+A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
 
 | Type | Terms |
 | --- | --- |
@@ -158,7 +163,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `due > 7` | `Expected "days", "weeks" or "months" after "7" at position 7` |
 | `due = last year` | `Expected "week" or "month" after "last" at position 7` |
 | `completed > 2 weeks` | `Expected "ago" after "weeks" at position 15` |
-| `no &` | `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1` |
+| `no &` | `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1` |
 | `cost >` | `Expected a value after ">" at position 6` |
 
 An empty query shows a short usage hint and no results.
@@ -299,4 +304,16 @@ completed = last week
 
 ```filter
 status = "Quote" & no client
+```
+
+### 20. Open issues from GitHub
+
+```filter
+origin: github & open
+```
+
+### 21. Captured pages and mail still unfiled
+
+```filter
+(origin: url | origin: email) & no project
 ```

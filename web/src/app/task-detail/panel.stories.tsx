@@ -186,3 +186,25 @@ export const NotesEditing: StoryObj = {
     </Panel>
   ),
 }
+
+/** Origins in the panel (task-origin): an issue and a page open their source on click or Enter, a mail has no link; each can be removed. */
+export const WithOrigins: StoryObj = {
+  render: () => (
+    <Panel>
+      <Header title="Fix the login timeout" priority={2} />
+      <div className="min-w-0 space-y-4 p-4">
+        <section aria-label="Properties" className="space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <PropertyChip id="due" icon="calendar-days" label="Do on" empty placeholder="Do on" editor={() => null} />
+            <PropertyChip id="priority" icon="flag" label="Priority" tone={PRIORITIES[1].cls} value="P2" editor={() => null} />
+            <PropertyChip id="origin" icon="link" label="Origin" value="o/r#7" tip="Login times out after 30 seconds" onActivate={noop} onClear={noop} />
+            <PropertyChip id="origin-page" icon="link" label="Origin" value="example.org" tip="Interesting article" onActivate={noop} onClear={noop} />
+            <PropertyChip id="origin-mail" icon="at-sign" label="Origin" value="Email" onClear={noop} />
+            <AddControl />
+          </div>
+        </section>
+      </div>
+      <TabsArea />
+    </Panel>
+  ),
+}

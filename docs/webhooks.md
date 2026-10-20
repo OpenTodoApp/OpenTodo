@@ -53,7 +53,7 @@ Every delivery is a `POST` with a JSON body:
     "task": {
       "id": "…", "title": "Water plants", "description": "", "project_id": null, "parent_id": null,
       "priority": 4, "due": {"date": "2026-10-10"}, "labels": [], "position": 1760000000000,
-      "created_at": 1760000000000, "completed_at": 1760060000000, "deleted_at": null
+      "created_at": 1760000000000, "completed_at": 1760060000000, "deleted_at": null, "origin": null
     }
   },
   "changes": {
@@ -74,11 +74,13 @@ Every delivery is a `POST` with a JSON body:
 | `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). `ping` carries `data: {}` |
 | `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before. `notes_doc` is never listed, and a change that only touched it (a merged note republished with the same text) sends no event |
 
+A task's `origin` (where it came from, `null` when unset; see [Where a task came from](capture.md#where-a-task-came-from)) travels like every field: a task created from a shared GitHub issue page arrives as `task.created` with `"origin": {"kind": "issue", "provider": "github", "id": "o/r#7", "url": "https://github.com/o/r/issues/7", "title": "…"}` in `data.task` and `"origin": {"from": null, "to": {…}}` in `changes`, so a receiver can link the task back to the issue without a second request.
+
 A task's [custom field](custom-fields.md) values are in `data.task.fields`, an object keyed by field definition id like the REST API's; a changed value is listed in `changes` as `fields.<id>` (for example `"fields.f1": {"from": 120, "to": 150}`), with the `task.updated` event.
 
 ### Encrypted accounts
 
-For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
+For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`, a task's `origin`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
 
 ### Imports
 

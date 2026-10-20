@@ -65,13 +65,14 @@ func init() {
 			"estimate_minutes": estimateProp,
 			"recurrence":       recurProp,
 			"fields":           fieldsProp,
+			"origin_url":       originURLProp,
 		})
 		return writeDef("create_tasks", "Create tasks",
 			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order.", PerCall),
 			object([]string{"items"}, map[string]any{
 				"items":             map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": item},
 				"client_request_id": requestIDProp,
-			}), false, false, []string{"title", "description"}, true)
+			}), false, false, []string{"title", "description", "origin_url", "origin"}, true)
 	}, plan: (*Registry).planCreateTasks})
 
 	register(tool{def: func(c Caller) Definition {
@@ -87,13 +88,14 @@ func init() {
 		if !c.Encrypted {
 			props["title"] = titleProp
 			props["description"] = descProp
-			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
+			props["origin_url"] = originURLClearProp
+			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence, origin or custom field values of up to %d tasks", PerCall)
 		}
 		desc += ". Use schedule_tasks for due dates, move_tasks for projects and complete_tasks to complete."
 		return writeDef("update_tasks", "Update tasks", desc,
 			object([]string{"updates"}, map[string]any{
 				"updates": map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": object([]string{"id"}, props)},
-			}), true, true, []string{"title", "description"}, false)
+			}), true, true, []string{"title", "description", "origin_url", "origin"}, false)
 	}, plan: (*Registry).planUpdateTasks})
 
 	register(tool{def: func(Caller) Definition {

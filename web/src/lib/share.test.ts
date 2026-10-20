@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  TEXT_MAX, TITLE_MAX, TRUNCATED_NOTE, bookmarklet, isEmptyShare, lastUrlIn, parseShare, proposedDescription, proposedTitle, safeUrl, shareUrl,
+  TEXT_MAX, TITLE_MAX, TRUNCATED_NOTE, bookmarklet, isEmptyShare, lastUrlIn, parseShare, proposedDescription, proposedOrigin, proposedTitle, safeUrl, shareUrl,
 } from './share'
 
 const q = (o: Record<string, string>) => new URLSearchParams(o).toString()
@@ -111,5 +111,25 @@ describe('shareUrl and bookmarklet', () => {
     run(win, win.getSelection, { href: 'https://news.example/item?id=1' }, { title: 'A story' }, () => {})
     expect(opened).toHaveLength(1)
     expect(parseShare(new URL(opened[0]).search)).toEqual({ title: 'A story', text: 'picked text', url: 'https://news.example/item?id=1' })
+  })
+})
+
+describe('proposedOrigin (task-origin 3.5)', () => {
+  it('a page URL gives a url origin with the shared title', () => {
+    const p = parseShare(q({ title: 'Interesting article', text: 'the quoted paragraph', url: 'https://example.org/post' }))
+    expect(proposedOrigin(p)).toEqual({ kind: 'url', url: 'https://example.org/post', title: 'Interesting article' })
+    // The notes read as before: the text, then the URL.
+    expect(proposedDescription(p)).toBe('the quoted paragraph\n\nhttps://example.org/post')
+  })
+  it('an issue URL gives the recognised issue origin', () => {
+    expect(proposedOrigin(parseShare(q({ title: 'Login times out · Issue #7', url: 'https://github.com/o/r/issues/7' })))).toEqual({
+      kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7', title: 'Login times out · Issue #7',
+    })
+  })
+  it('a text-only share gives none', () => {
+    expect(proposedOrigin(parseShare(q({ text: 'just a thought' })))).toBeNull()
+  })
+  it('a URL without a shared title gives no title', () => {
+    expect(proposedOrigin(parseShare(q({ url: 'https://example.org/a' })))).toEqual({ kind: 'url', url: 'https://example.org/a' })
   })
 })

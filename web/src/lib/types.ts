@@ -154,9 +154,32 @@ export interface Task {
    * definitions of the task's project are shown.
    */
   fields?: Record<string, FieldValue>
+  /**
+   * Where the task came from (OpenSpec change `task-origin`): a page, a mail, an
+   * issue or an import, or null. One last-writer-wins value like `due`. Rows
+   * stored before the field read as undefined, and a value this device could not
+   * decrypt is the placeholder string: read it with `originOf(task)` from
+   * `lib/taskOrigin.ts`.
+   */
+  origin?: Origin | string | null
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
+}
+
+/** A task's origin kind; the list is closed (the server refuses any other). */
+export type OriginKind = 'url' | 'email' | 'issue' | 'import'
+
+/**
+ * A task's origin (task-origin D1): `url` needs `url`, the other kinds need
+ * `id`; `provider` is 1–32 of a-z, 0-9 and "-"; `title` at most 500 characters.
+ */
+export interface Origin {
+  kind: OriginKind
+  provider?: string
+  id?: string
+  url?: string
+  title?: string
 }
 
 /** A custom field value: text, link, date (YYYY-MM-DD) and choice are strings; null clears. */

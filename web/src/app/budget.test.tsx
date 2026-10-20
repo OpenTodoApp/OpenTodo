@@ -180,4 +180,18 @@ describe('visible properties', () => {
     expect(row.querySelector('[data-row-counts] [data-progress]')).toBeTruthy()
     await r.unmount()
   })
+
+  it('an origin keeps a busy Calm row inside the budget: the chip is quiet, outside the metadata line (task-origin)', async () => {
+    const project = await createProject({ name: 'Home' })
+    const labels = [await createLabel({ name: 'errand' }), await createLabel({ name: 'call' })]
+    const id = await createTask({ title: 'Captured', project_id: project, due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 30, labels,
+      origin: { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' } })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-origin]`), 'the row with its origin chip')
+    const row = r.container.querySelector(`[data-task-id="${id}"]`)!
+    expect(row.querySelectorAll('[data-row-meta] > *').length).toBeLessThanOrEqual(MAX_CALM_ROW_ITEMS)
+    expect(row.querySelector('[data-row-meta] [data-origin]')).toBeNull()
+    expect(row.querySelector('[data-row-trailing] [data-origin] .text-faint')).toBeTruthy()
+    await r.unmount()
+  })
 })

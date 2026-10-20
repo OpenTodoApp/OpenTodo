@@ -54,6 +54,11 @@
           "description": "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"
         },
         {
+          "name": "origin-url",
+          "type": "string",
+          "description": "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"
+        },
+        {
           "name": "remind",
           "type": "string_list",
           "description": "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"
@@ -219,6 +224,11 @@
           "name": "repeat",
           "type": "string",
           "description": "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"
+        },
+        {
+          "name": "origin-url",
+          "type": "string",
+          "description": "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"
         }
       ],
       "writes": true,
@@ -1460,6 +1470,43 @@
             "string",
             "null"
           ]
+        },
+        "origin": {
+          "type": [
+            "object",
+            "string",
+            "null"
+          ],
+          "description": "where the task came from; a string only for an end-to-end encrypted account (ciphertext). title and url are user-written",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "url",
+                "email",
+                "issue",
+                "import"
+              ]
+            },
+            "provider": {
+              "type": "string",
+              "description": "e.g. github, gitlab, jira, linear, todoist"
+            },
+            "id": {
+              "type": "string",
+              "description": "the issue id, Message-ID or source id"
+            },
+            "url": {
+              "type": "string",
+              "description": "http or https"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
         }
       }
     },

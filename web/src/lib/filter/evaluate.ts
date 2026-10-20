@@ -6,6 +6,7 @@ import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
+import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 import { t } from '../i18n'
 
@@ -286,6 +287,8 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (task) => task.title.toLocaleLowerCase().includes(needle) || task.description.toLocaleLowerCase().includes(needle)
       }
+      case 'origin':
+        return (task) => originMatches(originOf(task), n.value)
       case 'keyword':
         switch (n.keyword) {
           case 'overdue': return (task) => task.due !== null && localDueOf(task.due).date < today
@@ -305,6 +308,8 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'open': return (task) => task.completed_at === null
           case 'subtask': return (task) => task.parent_id !== null
           case 'habit': return (task) => task.habit === true
+          case 'origin': return (task) => originOf(task) !== null
+          case 'no origin': return (task) => originOf(task) === null
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
           case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
         }

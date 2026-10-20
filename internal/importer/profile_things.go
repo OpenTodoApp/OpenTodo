@@ -338,6 +338,7 @@ func (t *thingsReader) readChecklist() (map[string][]Row, error) {
 		}
 		r := Row{Kind: KindTask, SourceID: "things:" + id, Title: strings.TrimSpace(title), ParentSourceID: "things:" + owner,
 			Completed: status == 3 || status == 2}
+		r.Origin = importedOrigin("things", r.SourceID)
 		if r.Completed && stopped.Valid {
 			r.CompletedAt = int64(stopped.Float64 * 1000)
 		}
@@ -349,6 +350,7 @@ func (t *thingsReader) readChecklist() (map[string][]Row, error) {
 // todoRow is the task row of a to-do.
 func (t *thingsReader) todoRow(k *thingsTask, line int, byID map[string]*thingsTask, tagsOf map[string][]string) Row {
 	row := Row{Line: line, Kind: KindTask, SourceID: "things:" + k.id, Title: strings.TrimSpace(k.title), Labels: tagsOf[k.id]}
+	row.Origin = importedOrigin("things", row.SourceID)
 	if row.Title == "" {
 		row.fail("title is required")
 	}

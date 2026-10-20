@@ -903,7 +903,7 @@
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": "„&“ oder „|“ vor „{before}“ erwartet, an Position {pos}",
   "Expected \"&\", \"|\" or \")\" before \"{before}\" at position {pos}": "„&“, „|“ oder „)“ vor „{before}“ erwartet, an Position {pos}",
   "Expected \"ago\" after \"{after}\" at position {pos}": "„ago“ nach „{after}“ erwartet, an Position {pos}",
-  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\" or a field name after \"no\" at position {pos}": "„date“, „project“, „labels“, „time“, „deadline“, „start“ oder ein Feldname nach „no“ erwartet, an Position {pos}",
+  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\", \"origin\" or a field name after \"no\" at position {pos}": "„date“, „project“, „labels“, „time“, „deadline“, „start“, „origin“ oder ein Feldname nach „no“ erwartet, an Position {pos}",
   "Expected \"days\", \"weeks\" or \"months\" after \"{after}\" at position {pos}": "„days“, „weeks“ oder „months“ nach „{after}“ erwartet, an Position {pos}",
   "Expected \"week\" or \"month\" after \"{after}\" at position {pos}": "„week“ oder „month“ nach „{after}“ erwartet, an Position {pos}",
   "Expected a comparison (<, <=, =, >=, >, before or after) after \"{after}\" at position {pos}": "Vergleich (<, <=, =, >=, >, before oder after) nach „{after}“ erwartet, an Position {pos}",
@@ -3872,5 +3872,13 @@
   "Listed on the All projects page, where each can be restored.": "Auf der Seite Alle Projekte aufgeführt, wo sich jedes wiederherstellen lässt.",
   "Midnight (default)": "Mitternacht (Standard)",
   "My day starts at": "Mein Tag beginnt um",
-  "Work done before this time counts for the previous day.": "Was vor dieser Uhrzeit erledigt wird, zählt für den Vortag."
+  "Work done before this time counts for the previous day.": "Was vor dieser Uhrzeit erledigt wird, zählt für den Vortag.",
+  "Expected a provider or kind after \"origin:\" at position {pos}": "Anbieter oder Art nach „origin:“ erwartet, an Position {pos}",
+  "From {text}": "Aus {text}",
+  "Opens the source {text}": "Öffnet die Quelle {text}",
+  "Origin": "Herkunft",
+  "Origin values": "Herkunftswerte",
+  "Origins:": "Herkünfte:",
+  "origin": "Herkunft",
+  "the origin": "die Herkunft"
 }

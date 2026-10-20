@@ -27,7 +27,8 @@ export const CLIENT_VERSION = 1
  * array (design.md, implementation notes).
  */
 export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
-  task: ['title', 'description', 'ical_extra', 'notes_doc'],
+  // A task's origin is an object, serialised and encrypted whole (task-origin D2).
+  task: ['title', 'description', 'ical_extra', 'notes_doc', 'origin'],
   project: ['name', 'description', 'notes_doc'],
   label: ['name'],
   section: ['name'],
@@ -52,6 +53,35 @@ export const CONTENT_PREFIXES: Partial<Record<Entity, readonly string[]>> = {
 export function isContentField(entity: Entity, field: string): boolean {
   if (CONTENT_FIELDS[entity]?.includes(field)) return true
   return CONTENT_PREFIXES[entity]?.some((p) => field.startsWith(p) && field.length > p.length) ?? false
+}
+
+/** Content values that are objects on the device and one encrypted JSON string on the wire (task-origin D2). */
+const OBJECT_CONTENT: Partial<Record<Entity, readonly string[]>> = { task: ['origin'] }
+
+function isObjectContent(entity: Entity, field: string): boolean {
+  return OBJECT_CONTENT[entity]?.includes(field) ?? false
+}
+
+/**
+ * The plaintext a content value encrypts as: a string as it is, an object-valued
+ * field (task.origin) as its JSON. null, numbers, booleans and a string in an
+ * object-valued field (an envelope or the undecryptable placeholder) give null:
+ * nothing to encrypt.
+ */
+export function contentToString(entity: Entity, field: string, value: unknown): string | null {
+  if (isObjectContent(entity, field)) return value !== null && typeof value === 'object' ? JSON.stringify(value) : null
+  return typeof value === 'string' ? value : null
+}
+
+/** The device value of decrypted plaintext: the object for an object-valued field, else the string. */
+export function contentFromString(entity: Entity, field: string, plaintext: string): unknown {
+  if (!isObjectContent(entity, field)) return plaintext
+  try {
+    const v: unknown = JSON.parse(plaintext)
+    return v !== null && typeof v === 'object' ? v : plaintext
+  } catch {
+    return plaintext
+  }
 }
 
 /** What a field shows when its ciphertext cannot be decrypted with this device's key. */
@@ -470,7 +500,8 @@ export function notYetEncrypted(row: { _e2ee?: { wire?: Record<string, string> }
   if (!snap.enabled || !personal) return false
   const values = entity === 'task' ? Object.entries((row.fields ?? {}) as Record<string, unknown>).map(([id, v]) => [`fields.${id}`, v] as const) : []
   for (const [f, v] of [...(CONTENT_FIELDS[entity] ?? []).map((f) => [f, row[f]] as const), ...values]) {
-    if (typeof v !== 'string' || v === '' || isEnvelope(v)) continue
+    const text = contentToString(entity, f, v)
+    if (!text || isEnvelope(v)) continue
     const w = row._e2ee?.wire?.[f]
     if (w !== 'c' && w !== 'x') return true
   }
@@ -489,7 +520,7 @@ export async function displayValue(entity: Entity, entityId: string, field: stri
   const key = await currentKey()
   if (!key) return UNDECRYPTABLE
   try {
-    return await decryptValue(key, entity, entityId, field, value)
+    return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value))
   } catch {
     return UNDECRYPTABLE
   }

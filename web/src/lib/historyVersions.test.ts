@@ -55,5 +55,6 @@ describe('summarizeVersion', () => {
     expect(summarizeVersion(v(['assignee_id', 'u2'], ['title']))).toBe('Renamed and reassigned')
     expect(summarizeVersion(v(['assignee_id', null]))).toBe('Unassigned')
     expect(summarizeVersion(v(['description'], ['notes_doc']))).toBe('Edited the notes')
+    expect(summarizeVersion(v(['origin', null]))).toBe('Edited the origin')
   })
 })

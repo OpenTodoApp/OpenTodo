@@ -20,6 +20,8 @@ import { LabelChip, LabelPicker } from '../LabelPicker'
 import { Menu } from '../../ui'
 import { ProjectMark } from '../Sidebar'
 import { PropertyChip } from './PropertyChip'
+import { openOrigin, originIcon, originOf } from '../../lib/taskOrigin'
+import { originText } from '../OriginChip'
 import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
 import { WhenControl } from './WhenControl'
@@ -83,6 +85,7 @@ export function Properties(props: PropertiesProps) {
       <div className="flex flex-wrap items-center gap-1.5" data-property-chips>
         <ScheduleChips p={props} m={m} />
         <RelationChips p={props} m={m} />
+        <OriginProperty task={props.task} readOnly={props.readOnly} />
         <AddPropertyMenu p={props} m={m} />
       </div>
     </section>
@@ -287,6 +290,21 @@ function RelationChips({ p: { task, readOnly, userId, onOpen }, m }: GroupProps)
           )} />
       )}
     </>
+  )
+}
+
+/**
+ * Where the task came from (task-origin D8): shown only when set, never in the Add
+ * menu. It reads as the row's chip; click or Enter opens the source in a new tab
+ * when there is a URL, and the clear control removes the origin as one write.
+ */
+function OriginProperty({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const origin = originOf(task)
+  if (!origin) return null
+  return (
+    <PropertyChip id="origin" icon={originIcon(origin)} label={t('Origin')} value={originText(origin)} tip={origin.title || undefined} readOnly={readOnly}
+      onActivate={origin.url ? () => openOrigin(origin) : undefined}
+      onClear={() => act(updateTask(task.id, { origin: null }))} />
   )
 }
 

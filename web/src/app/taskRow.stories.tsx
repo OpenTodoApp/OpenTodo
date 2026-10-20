@@ -222,3 +222,26 @@ export const CalmLabels: StoryObj = {
     </List>
   ),
 }
+
+/** Where tasks came from (task-origin): an issue, a captured page and a mail, in Calm (quiet, trailing) and Detailed (a neutral chip); a card with a page. */
+export const WithOrigins: StoryObj = {
+  render: () => {
+    const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7', title: 'Login times out after 30 seconds' }
+    const page = { kind: 'url' as const, url: 'https://example.org/post', title: 'Interesting article' }
+    const mail = { kind: 'email' as const, id: '<a1@mail.example>' }
+    return (
+      <div className="space-y-3">
+        {(['calm', 'detailed'] as const).map((detail) => (
+          <List key={detail}>
+            <TaskRow {...base} detail={detail} task={task({ id: `${detail}-i`, title: 'Fix the login timeout', priority: 2, due: { date: TODAY }, origin: issue })} />
+            <TaskRow {...base} detail={detail} progress={{ done: 1, total: 2 }} task={task({ id: `${detail}-p`, title: 'Read the article on offline sync', origin: page, description: 'https://example.org/post' })} />
+            <TaskRow {...base} detail={detail} task={task({ id: `${detail}-m`, title: 'Invoice 2026-10', origin: mail })} />
+          </List>
+        ))}
+        <ul className="w-72 rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken">
+          <TaskCard {...base} detail="detailed" task={task({ id: 'c-page', title: 'Summarise the offline sync article', origin: page })} labels={[deepWork]} />
+        </ul>
+      </div>
+    )
+  },
+}

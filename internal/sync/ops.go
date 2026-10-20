@@ -139,6 +139,11 @@ const (
 	// checks a value against its definition: clients, REST and the assistant
 	// tools do, so a value and its definition may arrive in any order.
 	kFieldValue
+	// kOrigin is a task's origin (OpenSpec change task-origin, design D1):
+	// null, an encrypted account's ciphertext string, or the object
+	// {kind, provider?, id?, url?, title?} validated by internal/origin
+	// (closed kind list, http(s) URL only, bounded lengths, no unknown members).
+	kOrigin
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -315,6 +320,9 @@ var Schema = map[string]map[string]kind{
 		// completed-date-filters, design D5); additive. Written beside
 		// completed_at; ApplyStrict fills it in for server-side completions.
 		"completed_by": kNullableString,
+		// Where the task came from (OpenSpec change task-origin): one whole-value
+		// register like due, so concurrent origins never mix; additive.
+		"origin": kOrigin,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;

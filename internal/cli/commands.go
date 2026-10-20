@@ -72,6 +72,7 @@ var (
 		{Name: "label", Type: "string_list", Description: "label name or id, repeatable (created when missing; edit replaces the list)"},
 		{Name: "note", Type: "string", Description: "description"},
 		{Name: "repeat", Type: "string", Description: "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"},
+		{Name: "origin-url", Type: "string", Description: "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"},
 	}
 	// addOnlyFields are the quick-add flags of `ot add` (quick-add-recurrence D6).
 	addOnlyFields = []flagSpec{

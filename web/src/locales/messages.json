@@ -2813,7 +2813,9 @@
   "Email": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/ShareDialog.tsx"
+    "web/src/app/OriginChip.tsx",
+    "web/src/app/ShareDialog.tsx",
+    "web/src/lib/history.ts"
   ],
   "Email (optional)": [
     "web/src/app/MembersPanel.tsx"
@@ -3138,7 +3140,7 @@
   "Expected \"ago\" after \"{after}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
-  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\" or a field name after \"no\" at position {pos}": [
+  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\", \"origin\" or a field name after \"no\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
   "Expected \"days\", \"weeks\" or \"months\" after \"{after}\" at position {pos}": [
@@ -3157,6 +3159,9 @@
     "web/src/lib/filter/parse.ts"
   ],
   "Expected a project name after \"{after}\" at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
+  "Expected a provider or kind after \"origin:\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
   "Expected a term after \"{after}\" at position {pos}": [
@@ -3497,6 +3502,9 @@
   ],
   "From the backup destination": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "From {text}": [
+    "web/src/app/OriginChip.tsx"
   ],
   "Full access": [
     "web/src/app/TokensSection.tsx"
@@ -6035,6 +6043,9 @@
   "Opening the shared files…": [
     "web/src/app/ShareCapture.tsx"
   ],
+  "Opens the source {text}": [
+    "web/src/app/OriginChip.tsx"
+  ],
   "Optional": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -6064,6 +6075,15 @@
   ],
   "Organize": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "Origin": [
+    "web/src/app/task-detail/Properties.tsx"
+  ],
+  "Origin values": [
+    "web/src/app/FilterView.tsx"
+  ],
+  "Origins:": [
+    "web/src/app/FilterView.tsx"
   ],
   "Other": [
     "web/src/lib/feed.ts",
@@ -11465,6 +11485,9 @@
   "order": [
     "web/src/lib/activityRuns.ts"
   ],
+  "origin": [
+    "web/src/lib/history.ts"
+  ],
   "outgoing email": [
     "web/src/app/settingsSections.ts"
   ],
@@ -11696,6 +11719,9 @@
     "web/src/lib/activity.ts"
   ],
   "the order": [
+    "web/src/lib/activity.ts"
+  ],
+  "the origin": [
     "web/src/lib/activity.ts"
   ],
   "the parent task": [

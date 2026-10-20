@@ -129,18 +129,20 @@ A task in a result looks like this (`description`, the note as Markdown text, on
   "untrusted_text": {
     "title": "Water the tomatoes", "description": "…",
     "project": "Garden", "section": "Beds", "labels": ["outside"], "assignee": "Sam",
-    "fields": { "f-client": "Acme" }
+    "fields": { "f-client": "Acme" },
+    "origin": { "title": "Tomato care", "url": "https://example.org/tomatoes" }
   },
   "project_id": "e34e…", "section_id": "…", "parent_id": null, "priority": 2,
   "due": { "date": "2026-03-11", "time": "01:00", "tz": "Asia/Tokyo", "local_date": "2026-03-10", "local_time": "12:00" },
   "overdue": true, "label_ids": ["9c1d…"], "assignee_id": "…",
   "recurrence": "every week", "estimate_minutes": 30,
   "completed": false, "created_at": "2026-03-01T08:00:00Z", "shared": true,
-  "fields": { "f-cost": 120, "f-paid": true }
+  "fields": { "f-cost": 120, "f-paid": true },
+  "origin": { "kind": "url" }
 }
 ```
 
-`local_date` and `local_time` appear for due dates pinned to a time zone and give the wall time in the requested `timezone`. `fields` holds the task's [custom field](custom-fields.md) values for the live definitions of its project, keyed by definition id: numbers, checkboxes and empty values (`null`) directly, text, link, date and choice values in `untrusted_text.fields` (the encrypted placeholder for an encrypted account). Values of definitions of another project or deleted ones are left out. A completed task also carries `completed_at` and, when known, `completed_by` (the account id of whoever completed it). Optional fields are left out when empty; `project` is `"Inbox"` for tasks without a project. (Before the write tools, these strings sat directly on the task; they moved into `untrusted_text` with the same names.)
+`local_date` and `local_time` appear for due dates pinned to a time zone and give the wall time in the requested `timezone`. `fields` holds the task's [custom field](custom-fields.md) values for the live definitions of its project, keyed by definition id: numbers, checkboxes and empty values (`null`) directly, text, link, date and choice values in `untrusted_text.fields` (the encrypted placeholder for an encrypted account). Values of definitions of another project or deleted ones are left out. `origin` is where the task came from (`null` when unset): its `kind` (`url`, `email`, `issue`, `import`), `provider` and `id` (for example `github` and `o/r#7`) on the task, its page `title` and `url` inside `untrusted_text.origin`; for an encrypted account it is `null` and the task carries `encrypted: true`, never the ciphertext. A completed task also carries `completed_at` and, when known, `completed_by` (the account id of whoever completed it). Optional fields are left out when empty; `project` is `"Inbox"` for tasks without a project. (Before the write tools, these strings sat directly on the task; they moved into `untrusted_text` with the same names.)
 
 `attachments` lists the files and links on the task and on the comments shown, without their content: no tool reads a file or adds an attachment. `uploaded` is false for a file that hasn't reached the server yet; a link has a `url` and no `size`.
 
@@ -164,8 +166,8 @@ Every write tool is annotated `readOnlyHint: false`, `openWorldHint: false`; `up
 
 | Tool | Arguments | Notes |
 | --- | --- | --- |
-| `create_tasks` | `items` (1–50: `title` required, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`), `client_request_id` | Returns ids in order. `labels` takes names (case-insensitive) or ids. `fields` sets [custom field](custom-fields.md) values of the task's project, see below. |
-| `update_tasks` | `updates` (1–50: `id` plus any of `title`, `description`, `priority`, `labels`, `estimate_minutes`, `recurrence`, `fields`) | Unknown fields are refused. Each `fields` value is one operation for that field only. |
+| `create_tasks` | `items` (1–50: `title` required, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin_url`), `client_request_id` | Returns ids in order. `labels` takes names (case-insensitive) or ids. `fields` sets [custom field](custom-fields.md) values of the task's project, see below. `origin_url` is the `http(s)` page or issue the task comes from: a GitHub, GitLab, Jira or Linear issue link becomes an `issue` origin with its provider and id, any other link a `url` origin; the server never requests it, and any other value is `-32602` for the whole call. |
+| `update_tasks` | `updates` (1–50: `id` plus any of `title`, `description`, `priority`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin_url`) | Unknown fields are refused. `origin_url: null` removes the origin. Each `fields` value is one operation for that field only. |
 | `complete_tasks` | `ids` (1–50), `timezone` | A recurring task records the occurrence and moves to its next date, exactly like completing it in the app. |
 | `reopen_tasks` | `ids` | |
 | `move_tasks` | `ids`, `project_id` (null for the inbox), `section_id` | Tasks cannot move between projects that are shared differently (`scope_change`). A subtask whose parent stays behind becomes a top-level task. |
@@ -207,7 +209,7 @@ Over a limit the result is `rate_limited` with `retry_after_seconds`, and nothin
 
 ### Encrypted accounts
 
-The server holds no key. For an account with [end-to-end encryption](e2ee.md), the tools that need readable text (`create_tasks`, `create_project`, `create_label`, `add_comment`) are not offered, and `update_tasks` is offered without `title` and `description`. A call that supplies text anyway gets `encryption_enabled` and nothing is written: an assistant never writes readable text into an account whose owner chose encryption. Scheduling, completing, reopening, moving, priorities, labels and `trash_tasks` keep working, because those fields are plaintext by design.
+The server holds no key. For an account with [end-to-end encryption](e2ee.md), the tools that need readable text (`create_tasks`, `create_project`, `create_label`, `add_comment`) are not offered, and `update_tasks` is offered without `title`, `description` and `origin_url`. A call that supplies text anyway gets `encryption_enabled` and nothing is written: an assistant never writes readable text into an account whose owner chose encryption. Scheduling, completing, reopening, moving, priorities, labels and `trash_tasks` keep working, because those fields are plaintext by design.
 
 ### Prompt injection
 

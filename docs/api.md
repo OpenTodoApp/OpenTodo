@@ -162,7 +162,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -455,7 +455,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence`, `origin` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon` (`archived: false` is accepted) |
@@ -501,6 +501,7 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `skipped` | boolean | set by the app on the occurrence record a skipped habit day writes (that record also has `series_id` and `completed_at`). Such records are returned in lists and the export like any task but are not completions: the app hides them from Completed and `completed` filters, and they never count towards `for N times` |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
+| `origin` | object or null | where the task came from, null when unset: `{kind, provider?, id?, url?, title?}` with `kind` one of `url` (a page; needs `url`), `email` (needs `id`, the Message-ID), `issue` (needs `id`, e.g. `o/r#7` or `ENG-123`) or `import` (needs `id`, the source id). `provider` is 1–32 of `a-z`, `0-9` and `-` (`github`, `gitlab`, `jira`, `linear`, `todoist`…); `url` is `http` or `https` with a host, at most 2,048 bytes; `id` at most 512 and `title` at most 500 characters; no other member. Written as one value (last writer wins, never mixed), accepted on create and PATCH (`null` clears) for `full`, `admin` and `agent` tokens; anything else is `400 invalid_input` naming `origin`. The server writes what you send: it derives nothing from the URL and never requests it (`ot add --origin-url` and the MCP tools recognise issue links on their side). Returned by every read, the export and webhook payloads; an end-to-end encrypted account holds one ciphertext string here. See [Where a task came from](capture.md#where-a-task-came-from) |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
 | `fields` | object | custom field values keyed by field definition id, always present (`{}` when none), values included for definitions that were deleted or belong to another project. On create and PATCH, a partial object: each key is validated against the live definitions of the task's project after the write and merged into the existing values, one operation per key; `null` clears a value. `400 invalid_input` naming the id for an unknown or foreign id or a value of the wrong type; a raw `fields.<id>` key is refused. See [Custom fields](#custom-fields) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
@@ -1411,7 +1412,7 @@ Response (201):
 
 ### End-to-end encryption
 
-Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`, `notes_doc`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
+Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`, `notes_doc`, `origin` (the whole object as one ciphertext string); project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
 
 ```
 "enc:v1:" + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) || tag(16))

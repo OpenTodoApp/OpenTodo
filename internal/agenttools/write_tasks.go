@@ -36,7 +36,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	var refused []map[string]any
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields"); err != nil {
+		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.text("title", true, 500)
@@ -112,6 +112,11 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
+		if v, has, err := originPatch(p, it, false); err != nil {
+			return Plan{}, err
+		} else if has {
+			patch["origin"] = v
+		}
 		if it.present("fields") {
 			fp, err := snap.fieldPatch(p, pid, it["fields"], c.Encrypted)
 			if err != nil {
@@ -154,7 +159,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	seen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
-		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields"); err != nil {
+		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -196,6 +201,11 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			if patch["recurrence"], err = canonicalRecurrence(p, v); err != nil {
 				return Plan{}, err
 			}
+		}
+		if v, has, err := originPatch(p, it, true); err != nil {
+			return Plan{}, err
+		} else if has {
+			patch["origin"] = v
 		}
 		if len(patch) == 0 && !it.present("fields") {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")

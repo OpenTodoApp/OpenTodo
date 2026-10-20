@@ -6,7 +6,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMe
 import { blockedMap } from '../lib/dependencies'
 import { useAllLabels, useProjects } from '../lib/localData'
 import { compareDueThenPriority } from '../lib/ordering'
-import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, parse, type Node } from '../lib/filter'
+import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, originSuggestions, parse, type Node } from '../lib/filter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
@@ -100,7 +100,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     const tasks = allTasks.filter((item) => !(item.project_id && archived.has(item.project_id)) && compiled.test(item))
     return { tasks, warnings: compiled.warnings }
   }, [compiled, allTasks, projects])
-  const suggestions = useMemo(() => fieldSuggestions(query, fieldDefs), [query, fieldDefs])
+  // After `origin:` the kinds and providers are offered (task-origin), else field names.
+  const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
+  const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
 
   const groups = useMemo<Group[]>(() => {
     if (!result) return []
@@ -239,8 +241,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
               ) : null}
             </div>
             {suggestions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label={t('Field names')}>
-                <span className="text-faint">{t('Fields:')}</span>
+              <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label={origins.length ? t('Origin values') : t('Field names')}>
+                <span className="text-faint">{origins.length ? t('Origins:') : t('Fields:')}</span>
                 {suggestions.map((s) => (
                   <Button key={s.name} variant="ghost" size="sm" onClick={() => {
                     setQuery(s.query)

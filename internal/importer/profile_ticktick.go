@@ -123,6 +123,7 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		} else {
 			row.SourceID = fmt.Sprintf("ticktick:line:%d", line)
 		}
+		row.Origin = importedOrigin("ticktick", row.SourceID)
 		if p := get("parentId"); p != "" {
 			row.ParentSourceID = "ticktick:" + p
 		}
@@ -142,8 +143,10 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 					continue
 				}
 				n++
-				out.Rows = append(out.Rows, Row{Line: line, Kind: KindTask, SourceID: row.SourceID + ":item:" + strconv.Itoa(n),
-					Title: text, ProjectSourceID: listSource, SectionName: row.SectionName, ParentSourceID: row.SourceID, Completed: done})
+				item := Row{Line: line, Kind: KindTask, SourceID: row.SourceID + ":item:" + strconv.Itoa(n),
+					Title: text, ProjectSourceID: listSource, SectionName: row.SectionName, ParentSourceID: row.SourceID, Completed: done}
+				item.Origin = importedOrigin("ticktick", item.SourceID)
+				out.Rows = append(out.Rows, item)
 			}
 			continue
 		}

@@ -1,4 +1,6 @@
 import { t } from './i18n'
+import { originFromUrl } from './taskOrigin'
+import type { Origin } from './types'
 // Shared-content capture (OpenSpec `share-capture`): parse and sanitise what the
 // share sheet, the bookmarklet or the browser extension hands to `/share`. Pure
 // functions only; nothing here writes data or touches the network. The payload is
@@ -97,6 +99,16 @@ export function proposedTitle(p: SharePayload): string {
 /** The proposed description: the shared text followed by the URL. */
 export function proposedDescription(p: SharePayload): string {
   return [p.text, p.url].filter(Boolean).join('\n\n')
+}
+
+/**
+ * The origin a captured task carries (OpenSpec task-origin): the shared http(s)
+ * URL with the shared title (not the edited task title), recognised as an issue
+ * for a known tracker host, on the device and without any request. None without
+ * a URL. The URL still goes into the description too (proposedDescription).
+ */
+export function proposedOrigin(p: SharePayload): Origin | null {
+  return p.url ? originFromUrl(p.url, p.title || undefined) : null
 }
 
 /** The `/share` URL on `origin` for a page; used by the bookmarklet and mirrored by the extension. */

@@ -4,7 +4,8 @@
 // and closes on Escape with focus back on the chip; Add reveals an empty property with
 // its editor open, and cancelling removes it again; an empty task shows few items.
 import 'fake-indexeddb/auto'
-import { describe, expect, it } from 'vitest'
+import { act } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask } from '../../lib/ops'
 import { click, flush, key, type } from '../../ui/test-utils'
@@ -128,6 +129,42 @@ describe('property chips', () => {
     expect(crumb.contains(row('section'))).toBe(true)
     expect(row('project').textContent).toContain('Home')
     expect(row('section').textContent).toContain('Doing')
+    await unmount()
+  })
+
+  // Task origins (OpenSpec change task-origin, web-app "Task panel property chips").
+  it('an Origin chip opens its URL in a new tab; Remove clears it in one write; it is never offered in Add', async () => {
+    const origin = { kind: 'url' as const, url: 'https://example.org/post', title: 'Interesting article' }
+    const id = await createTask({ title: 'Read', description: 'https://example.org/post', origin })
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const { row, valueButton, addItems, unmount } = await open(id)
+    expect(row('origin').textContent).toContain('example.org')
+    const chip = valueButton('origin')
+    await act(async () => { chip.focus() })
+    expect(document.querySelector('[data-tooltip]')?.textContent).toBe('Interesting article')
+    await click(chip) // Enter on a native button activates it
+    expect(opened).toHaveBeenCalledWith('https://example.org/post', '_blank', expect.stringContaining('noopener'))
+    expect(row('origin').querySelector('[data-property-editor]')).toBeNull()
+    const items = await addItems()
+    expect(items.some((i) => (i.textContent ?? '').includes('Origin'))).toBe(false)
+    await key(document.activeElement!, 'Escape')
+    await settle()
+    await click(row('origin').querySelector('button[aria-label="Clear origin"]')!)
+    await waitFor(async () => (await db.tasks.get(id))!.origin === null, 'the origin cleared')
+    await waitFor(() => !row('origin'), 'the chip removed')
+    expect((await db.tasks.get(id))!.description).toBe('https://example.org/post')
+    const ops = (await db.outbox.toArray()).filter((o) => o.entityId === id && o.field === 'origin')
+    expect(ops.at(-1)?.value).toBeNull()
+    opened.mockRestore()
+    await unmount()
+  })
+
+  it('a task without an origin shows no Origin chip and Add does not offer one', async () => {
+    const id = await createTask({ title: 'Plain' })
+    const { row, addItems, unmount } = await open(id)
+    expect(row('origin')).toBeNull()
+    const items = await addItems()
+    expect(items.some((i) => (i.textContent ?? '').includes('Origin'))).toBe(false)
     await unmount()
   })
 })

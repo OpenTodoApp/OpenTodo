@@ -903,7 +903,7 @@
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": "Atteso «&» o «|» prima di «{before}», alla posizione {pos}",
   "Expected \"&\", \"|\" or \")\" before \"{before}\" at position {pos}": "Atteso «&», «|» o «)» prima di «{before}», alla posizione {pos}",
   "Expected \"ago\" after \"{after}\" at position {pos}": "Atteso «ago» dopo «{after}», alla posizione {pos}",
-  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\" or a field name after \"no\" at position {pos}": "Atteso «date», «project», «labels», «time», «deadline», «start» o un nome di campo dopo «no», alla posizione {pos}",
+  "Expected \"date\", \"project\", \"labels\", \"time\", \"deadline\", \"start\", \"origin\" or a field name after \"no\" at position {pos}": "Atteso «date», «project», «labels», «time», «deadline», «start», «origin» o un nome di campo dopo «no», alla posizione {pos}",
   "Expected \"days\", \"weeks\" or \"months\" after \"{after}\" at position {pos}": "Atteso «days», «weeks» o «months» dopo «{after}», alla posizione {pos}",
   "Expected \"week\" or \"month\" after \"{after}\" at position {pos}": "Atteso «week» o «month» dopo «{after}», alla posizione {pos}",
   "Expected a comparison (<, <=, =, >=, >, before or after) after \"{after}\" at position {pos}": "Atteso un confronto (<, <=, =, >=, >, before o after) dopo «{after}», alla posizione {pos}",
@@ -3872,5 +3872,13 @@
   "Listed on the All projects page, where each can be restored.": "Elencati nella pagina Tutti i progetti, dove ognuno può essere ripristinato.",
   "Midnight (default)": "Mezzanotte (predefinito)",
   "My day starts at": "La mia giornata inizia alle",
-  "Work done before this time counts for the previous day.": "Ciò che fai prima di quest’ora conta per il giorno precedente."
+  "Work done before this time counts for the previous day.": "Ciò che fai prima di quest’ora conta per il giorno precedente.",
+  "Expected a provider or kind after \"origin:\" at position {pos}": "Atteso un fornitore o un tipo dopo «origin:», alla posizione {pos}",
+  "From {text}": "Da {text}",
+  "Opens the source {text}": "Apre la fonte {text}",
+  "Origin": "Origine",
+  "Origin values": "Valori di origine",
+  "Origins:": "Origini:",
+  "origin": "origine",
+  "the origin": "l’origine"
 }

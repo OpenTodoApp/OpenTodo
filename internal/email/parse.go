@@ -66,14 +66,19 @@ type Attachment struct {
 // Parsed is everything the server keeps from a message, plus what routing
 // and filtering need. Header is the top-level header (routing reads it).
 type Parsed struct {
-	Header      mail.Header
-	MessageID   string
-	From        string // sender address, lowercased; "" when unreadable
-	Subject     string // decoded subject
-	Title       string
-	Body        string // body text before truncation and the attachment list
-	Attachments []Attachment
-	Description string
+	Header    mail.Header
+	MessageID string
+	// HeaderMessageID is the message's own Message-ID header when MessageID is
+	// it, "" when MessageID was derived from the bytes (no header, or one longer
+	// than 255 bytes). Only a real Message-ID becomes the task's origin
+	// (OpenSpec change task-origin, design D5).
+	HeaderMessageID string
+	From            string // sender address, lowercased; "" when unreadable
+	Subject         string // decoded subject
+	Title           string
+	Body            string // body text before truncation and the attachment list
+	Attachments     []Attachment
+	Description     string
 }
 
 var wordDecoder = &mime.WordDecoder{CharsetReader: charsetReader}
@@ -92,6 +97,9 @@ func Parse(raw []byte) (*Parsed, error) {
 	}
 	p := &Parsed{Header: msg.Header}
 	p.MessageID = messageID(msg.Header.Get("Message-Id"), raw)
+	if v := strings.TrimSpace(msg.Header.Get("Message-Id")); v == p.MessageID {
+		p.HeaderMessageID = v
+	}
 	if list, err := msg.Header.AddressList("From"); err == nil && len(list) > 0 {
 		p.From = strings.ToLower(list[0].Address)
 	} else if m := angleAddr.FindStringSubmatch(msg.Header.Get("From")); m != nil {

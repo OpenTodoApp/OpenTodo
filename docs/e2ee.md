@@ -19,7 +19,7 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 
 | Entity | Encrypted fields |
 | --- | --- |
-| task | `title`, `description`, `ical_extra`, `notes_doc` (the rich-text note document, encrypted as one opaque string; its ciphertext must fit the 256 KB document limit, so an encrypted note document is capped at about 196 KB) |
+| task | `title`, `description`, `ical_extra`, `notes_doc` (the rich-text note document, encrypted as one opaque string; its ciphertext must fit the 256 KB document limit, so an encrypted note document is capped at about 196 KB), `origin` (where the task came from: the whole object, serialised as JSON and encrypted into one ciphertext string, because its title, link and id name the page, mail or issue; the server accepts that string wherever it accepts the object) |
 | project | `name`, `description` and `notes_doc` (the project's note) |
 | label | `name` |
 | section | `name` |
@@ -126,7 +126,7 @@ The server cannot decrypt. Each feature that needs content degrades explicitly:
 | CalDAV | Refused: `/dav/` answers 403 for the account and creating an app password answers 409 `encryption_enabled`. Calendar clients can neither read ciphertext nor write it back, and placeholders would overwrite real titles. |
 | Calendar feed URL | Encrypted titles appear as "Encrypted item" in calendar apps; dates, times, estimates and recurrence are served as stored. |
 | Subscribed calendars | Events fetched from other calendars are stored on the server unencrypted, like any data the server fetches for the account. The settings panel says so. |
-| MCP (assistants) | Encrypted titles, descriptions, project, label, section and custom field names and text values of custom fields read as "Encrypted item" with `"encrypted": true`; `search_tasks` never matches them. Dates, priorities and structure are still reported. Write tools that need readable text are not offered and are refused with `encryption_enabled`; scheduling, completing, moving, priorities and labels still work. |
+| MCP (assistants) | Encrypted titles, descriptions, project, label, section and custom field names and text values of custom fields read as "Encrypted item" with `"encrypted": true`; `search_tasks` never matches them. Dates, priorities and structure are still reported. A task's origin is left out (`origin: null`). Write tools that need readable text (an `origin_url` included) are not offered and are refused with `encryption_enabled`; scheduling, completing, moving, priorities and labels still work. |
 | Email to task | Creates plaintext Inbox tasks (the mail crossed mail servers in the clear anyway); encrypted on sight; purge removes the plaintext operations. |
 | Webhooks | Payloads carry the stored value: ciphertext for encrypted fields. |
 | Reminder pushes | An encrypted title is never put in the push payload, even for devices that opted in to content; the notification shows the content-free text. |
