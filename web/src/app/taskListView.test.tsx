@@ -104,3 +104,48 @@ describe('list chrome', () => {
     await r.unmount()
   })
 })
+
+// Clearing the selection (OpenSpec change inline-task-editing, task-list-presentation
+// "Clearing the selection" and "Selected row indicator").
+describe('selection', () => {
+  const press = (el: Element) => el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+
+  it('a press on empty space clears the selection and closes the panel; rows, controls and overlays keep it', async () => {
+    const { panelTaskId } = await import('./panel')
+    await createTask({ title: 'Renew passport' })
+    const r = await render(<main><TaskListView route={{ view: 'inbox' }} /></main>)
+    await waitFor(() => r.container.textContent!.includes('Renew passport'))
+    const title = () => r.container.querySelector<HTMLButtonElement>('[data-task-id] [data-row-open]')!
+    await click(title())
+    await waitFor(() => !!r.container.querySelector('[data-task-id][aria-current]'))
+    expect(panelTaskId()).toBeTruthy()
+
+    // A row, a control and an overlay do not clear.
+    press(title())
+    press(r.container.querySelector('input[aria-label="Add a task"]')!)
+    const overlay = document.createElement('div')
+    overlay.setAttribute('data-overlay', 'popover')
+    document.body.querySelector('main')!.append(overlay)
+    press(overlay)
+    await flush()
+    expect(r.container.querySelector('[data-task-id][aria-current]')).toBeTruthy()
+
+    // The empty page does.
+    press(r.container.querySelector('[data-list-page]')!)
+    await waitFor(() => !r.container.querySelector('[data-task-id][aria-current]'))
+    expect(panelTaskId()).toBeNull()
+    await r.unmount()
+  })
+
+  it('marks the selected row with the leading bar, not a ring', async () => {
+    await createTask({ title: 'Renew passport' })
+    const r = await render(<main><TaskListView route={{ view: 'inbox' }} /></main>)
+    await waitFor(() => r.container.textContent!.includes('Renew passport'))
+    await click(r.container.querySelector('[data-task-id] [data-row-open]')!)
+    await waitFor(() => !!r.container.querySelector('[data-task-id][aria-current]'))
+    const row = r.container.querySelector('[data-task-id][aria-current]')!
+    expect(row.className).toContain('row-selected')
+    expect(row.className).not.toMatch(/\bring-/)
+    await r.unmount()
+  })
+})

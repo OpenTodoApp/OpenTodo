@@ -35,7 +35,7 @@ export const Plain: StoryObj = {
   ),
 }
 
-/** The row the keyboard or a click selected: a sunken fill and a thin accent ring. */
+/** The row the keyboard or a click selected: a leading accent bar and a faint tint, no ring (inline-task-editing). */
 export const Selected: StoryObj = {
   render: () => (
     <List>
