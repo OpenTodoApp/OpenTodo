@@ -29,6 +29,7 @@ The task is an ordinary change in the operation log (device `server`), so every 
 | Title | The subject, with reply and forward prefixes removed (`Re:`, `Fwd:`, `FW:`, `AW:`, `WG:`, `SV:`, `TR:`, `RV:`…). Without a subject: the first line of the text, else `(no subject)` |
 | Description | The message as formatted notes: an HTML message keeps its headings, bold and italic text, lists and links (shown as their text, so long tracking addresses stay hidden); hidden preview text, scripts, styles and images are dropped and nothing is loaded. A message without HTML, or whose HTML is only a stub, uses its plain text. Text beyond about 48 KB (what a task's notes hold, also once encrypted) is cut with a note. A message forwarded *as an attachment* is included as a "Forwarded message" block |
 | Attachments | Not stored. Each one is listed at the end of the description with its name and size, so nothing disappears silently |
+| Origin | The Message-ID, as an **Email** origin without a link (`origin: email` in a [filter](filters.md)); never the sender. A message without a Message-ID gets none |
 | Project, priority, due | Inbox, priority 4, no due date. Natural-language parsing of the subject (`tomorrow`, `#project`, `p1`) is not applied yet |
 
 Character sets: UTF-8, US-ASCII, ISO-8859-1, ISO-8859-15 and windows-1252 are decoded, as are encoded subjects (`=?UTF-8?B?…?=`) and file names. Text in other character sets keeps its valid UTF-8 parts.
@@ -101,7 +102,7 @@ Add the variables in the resource's **Environment Variables** tab. For the passw
 
 ## End-to-end encryption
 
-For an account with [end-to-end encryption](e2ee.md) the server creates the task in plaintext like any REST write (it has no key, and the message crossed mail servers in the clear anyway). The next unlocked device that syncs re-writes title and description as ciphertext and marks the task "not yet encrypted" until then; **Purge plaintext history** in Settings removes the plaintext operations afterwards.
+For an account with [end-to-end encryption](e2ee.md) the server creates the task in plaintext like any REST write (it has no key, and the message crossed mail servers in the clear anyway). The next unlocked device that syncs re-writes title, description and origin as ciphertext and marks the task "not yet encrypted" until then; **Purge plaintext history** in Settings removes the plaintext operations afterwards.
 
 ## Limits and what is not included
 

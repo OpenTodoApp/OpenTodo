@@ -9,15 +9,20 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { ListRow } from './ListRow'
 import { Notice } from './Notice'
 import { SettingRow, SettingsSection } from './SettingsSection'
+import { SETTINGS_COPY } from '../../lib/settingsCopy'
 
-function Section() {
+// Card and row text comes from the settings copy table, as in the app (settings-copy D2).
+const MFA = SETTINGS_COPY.mfa
+const TITLES = SETTINGS_COPY.notifications.rows.titles
+
+function Section({ learnMore }: { learnMore?: string }) {
   const [on, setOn] = useState(true)
   return (
     <div className="space-y-4">
-      <SettingsSection title="Two-factor authentication" description="A code from your phone after your password.">
-        <SettingRow label="Status" status={<Badge hue="green">On · Authenticator app</Badge>} control={<Button size="sm">Manage</Button>} />
-        <SettingRow label="Recovery codes" description="Use one if you lose your phone." status="7 of 10 left" control={<Button size="sm">View</Button>} />
-        <SettingRow label="Include task titles" description="Applies immediately on this device." control={<Switch checked={on} onChange={setOn} label="Include task titles" hideLabel />} />
+      <SettingsSection title={MFA.title} description={MFA.description} learnMore={learnMore}>
+        <SettingRow label={MFA.rows.status.label} status={<Badge hue="green">On · Authenticator app</Badge>} control={<Button size="sm">Manage</Button>} />
+        <SettingRow label={MFA.rows.recovery.label} description={MFA.rows.recovery.description} status="7 of 10 left" control={<Button size="sm">View</Button>} />
+        <SettingRow label={TITLES.label} description={TITLES.description} control={<Switch checked={on} onChange={setOn} label={TITLES.label} hideLabel />} />
       </SettingsSection>
       <SettingsSection title="Passkeys" level={2}>
         <ListRow leading={<Icon name="key-round" size="md" />} label="MacBook Touch ID" meta="Used yesterday" menu={<IconButton icon="ellipsis" label="Passkey actions" size="sm" />} />
@@ -42,6 +47,8 @@ function Confirm() {
 const meta: Meta = { title: 'UI/Patterns/Settings' }
 export default meta
 export const SectionAndRows: StoryObj = { render: () => <Section /> }
+/** The card's one line ending with Learn more, which opens the card's guide section beside the page. */
+export const LearnMore: StoryObj = { render: () => <Section learnMore={MFA.learnMore} /> }
 export const ConfirmDanger: StoryObj = { render: () => <Confirm /> }
 export const Notices: StoryObj = {
   render: () => (

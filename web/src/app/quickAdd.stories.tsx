@@ -4,7 +4,7 @@ import { QuickAdd } from './QuickAdd'
 import { HEX, label, withClock } from './stories/fixtures'
 
 // Core screen: quick add (OpenSpec change ux-overhaul, task 8.7; natural-language
-// quick add "Chips for recognised attributes", documentation "Contextual help").
+// quick add "Chips for recognised attributes").
 // Static props and a frozen clock: a prefilled line is parsed like typed text, so
 // the chips (date, project, label, priority, estimate) are the same on every run.
 const meta: Meta = { title: 'Screens/Quick add', decorators: [withClock] }
@@ -23,7 +23,7 @@ function Frame({ children }: { children: ReactNode }) {
   return <div className="max-w-3xl rounded-card border border-default bg-surface px-3 py-2 shadow-1">{children}</div>
 }
 
-/** Empty: the placeholder names the list, and the guide link shows for the first three uses on this device. */
+/** Empty: the placeholder names the list; nothing under the field (lean-chrome D1). */
 export const Empty: StoryObj = {
   render: () => <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>,
 }

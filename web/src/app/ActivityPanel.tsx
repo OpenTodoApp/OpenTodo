@@ -15,6 +15,7 @@ import { AUDIT_LABELS, eventSummary, shortAgent } from './auditFormat'
 import { relativeTime } from './SecurityPanel'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { cardCopy } from '../lib/settingsCopy'
 
 /**
  * Every user's own recent access events (sign-ins, failed sign-ins against the
@@ -69,12 +70,7 @@ export function activityIcon(ev: AuditEvent): IconName {
 export function ActivityView({ status, events, error, now = Date.now() }: { status: LogStatus; events: AuditEvent[]; error?: string | null; now?: number }) {
   const dt = useDateTimeFormat()
   return (
-    <SettingsSection
-      title={t('Recent activity')}
-      headingId="activity-heading"
-      testId="activity-panel"
-      description={t('Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.')}
-    >
+    <SettingsSection {...cardCopy('activity')} testId="activity-panel">
       {status === 'offline' ? (
         <NeedsConnection what={t('activity log')} />
       ) : (

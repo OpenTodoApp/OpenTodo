@@ -19,7 +19,7 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 
 | Entity | Encrypted fields |
 | --- | --- |
-| task | `title`, `description`, `ical_extra`, `notes_doc` (the rich-text note document, encrypted as one opaque string; its ciphertext must fit the 256 KB document limit, so an encrypted note document is capped at about 196 KB) |
+| task | `title`, `description`, `ical_extra`, `notes_doc` (the rich-text note document, encrypted as one opaque string; its ciphertext must fit the 256 KB document limit, so an encrypted note document is capped at about 196 KB), `origin` (where the task came from: the whole object, serialised as JSON and encrypted into one ciphertext string, because its title, link and id name the page, mail or issue; the server accepts that string wherever it accepts the object) |
 | project | `name`, `description` and `notes_doc` (the project's note) |
 | label | `name` |
 | section | `name` |
@@ -27,8 +27,10 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 | comment | `body` (your comments on your own tasks) |
 | attachment | `name`, `mime` (the file type), `url` (a link's address), and the file itself, as an encrypted file (see below) |
 | custom field | the field's `name` and `options`, and every text, link, date and choice value on a task (`fields.<id>` with a string value) |
+| time entry | `note` (the [time entry](time-tracking.md)'s note) |
+| review | `tomorrow_note` (the line for tomorrow you leave when you [close the day](method/rhythms.md#close-the-day)) |
 
-Everything else stays **plaintext**, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: `due` (date, time, zone), `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, `labels` (the list of label ids on a task), `recurrence`, `estimate_minutes`, `assignee_id`, number and checkbox values of [custom fields](custom-fields.md), a custom field's `type` and `project_id`, project `color` and `archived`, reminder times, an attachment's `size` and `sha256` (of the encrypted file) and `encrypted` flag, and all timestamps and device ids of operations.
+Everything else stays **plaintext**, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: `due` (date, time, zone), `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, `labels` (the list of label ids on a task), `recurrence`, `estimate_minutes`, `assignee_id`, number and checkbox values of [custom fields](custom-fields.md), a custom field's `type` and `project_id`, project `color` and `archived`, reminder times, the review record's times and today's focus (`completed_at`, `daily_at`, `monthly_at`, `closed_at`, `focus_date`, `focus`), a time entry's `task_id`, `user_id`, `started_at`, `ended_at`, `device_id`, `created_at` and `deleted_at` (so the server can total and export tracked time; its CSV and AI assistants show `[encrypted]` for the note), an attachment's `size` and `sha256` (of the encrypted file) and `encrypted` flag, and all timestamps and device ids of operations.
 
 Empty values (`""`) and `null` are not encrypted. The length of a ciphertext reveals the approximate length of the text.
 
@@ -126,7 +128,8 @@ The server cannot decrypt. Each feature that needs content degrades explicitly:
 | CalDAV | Refused: `/dav/` answers 403 for the account and creating an app password answers 409 `encryption_enabled`. Calendar clients can neither read ciphertext nor write it back, and placeholders would overwrite real titles. |
 | Calendar feed URL | Encrypted titles appear as "Encrypted item" in calendar apps; dates, times, estimates and recurrence are served as stored. |
 | Subscribed calendars | Events fetched from other calendars are stored on the server unencrypted, like any data the server fetches for the account. The settings panel says so. |
-| MCP (assistants) | Encrypted titles, descriptions, project, label, section and custom field names and text values of custom fields read as "Encrypted item" with `"encrypted": true`; `search_tasks` never matches them. Dates, priorities and structure are still reported. Write tools that need readable text are not offered and are refused with `encryption_enabled`; scheduling, completing, moving, priorities and labels still work. |
+| MCP (assistants) | Encrypted titles, descriptions, project, label, section and custom field names and text values of custom fields read as "Encrypted item" with `"encrypted": true`; `search_tasks` never matches them. Dates, priorities and structure are still reported. A task's origin is left out (`origin: null`). Write tools that need readable text (an `origin_url` included) are not offered and are refused with `encryption_enabled`; scheduling, completing, moving, priorities and labels still work. |
+| Issue connections | Refused: creating or enabling a GitHub or GitLab connection answers 409 `encryption_enabled`, because every poll would write issue titles and bodies into the history in plaintext. Turning encryption on stops the account's connections (`encrypted_account`) and the encryption screen names them; tasks already created stay and are re-written as ciphertext like the rest. See [Issue import](issue-import.md). |
 | Email to task | Creates plaintext Inbox tasks (the mail crossed mail servers in the clear anyway); encrypted on sight; purge removes the plaintext operations. |
 | Webhooks | Payloads carry the stored value: ciphertext for encrypted fields. |
 | Reminder pushes | An encrypted title is never put in the push payload, even for devices that opted in to content; the notification shows the content-free text. |

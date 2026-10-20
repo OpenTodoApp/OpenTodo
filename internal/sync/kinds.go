@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/pixari/opentodo/internal/origin"
 	"github.com/pixari/opentodo/internal/recurrence"
 	"github.com/pixari/opentodo/internal/zoned"
 )
@@ -34,6 +35,8 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kDoc:            checkDoc,
 	kFieldValue:     checkFieldValue,
 	kInstant:        orNull(checkInstant),
+	kOrigin:         origin.CheckValue,
+	kRule:           orNull(checkRule),
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }

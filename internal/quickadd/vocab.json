@@ -251,6 +251,18 @@
    "fourth": 4,
    "last": -1
   },
+  "ordinalArticles": [
+   "the"
+  ],
+  "ordinalOf": [
+   "of"
+  ],
+  "ofMonthWords": [
+   "of the month",
+   "of every month",
+   "of each month"
+  ],
+  "ordinalsBeforeWeekday": {},
   "andWords": [
    "and"
   ],
@@ -535,6 +547,19 @@
    "letzten": -1,
    "letzte": -1
   },
+  "ordinalArticles": [
+   "den"
+  ],
+  "ordinalOf": [
+   "im"
+  ],
+  "ofMonthWords": [
+   "im monat",
+   "des monats",
+   "jeden monats",
+   "jedes monats"
+  ],
+  "ordinalsBeforeWeekday": {},
   "andWords": [
    "und"
   ],
@@ -800,6 +825,16 @@
    "dernier": -1,
    "derniere": -1
   },
+  "ordinalArticles": [],
+  "ordinalOf": [
+   "de"
+  ],
+  "ofMonthWords": [
+   "du mois",
+   "de chaque mois",
+   "de tous les mois"
+  ],
+  "ordinalsBeforeWeekday": {},
   "andWords": [
    "et"
   ],
@@ -1074,6 +1109,15 @@
    "ultimo": -1,
    "ultima": -1
   },
+  "ordinalArticles": [],
+  "ordinalOf": [
+   "di"
+  ],
+  "ofMonthWords": [
+   "del mese",
+   "di ogni mese"
+  ],
+  "ordinalsBeforeWeekday": {},
   "andWords": [
    "e"
   ],
@@ -1348,6 +1392,15 @@
    "ultimo": -1,
    "ultima": -1
   },
+  "ordinalArticles": [],
+  "ordinalOf": [
+   "de"
+  ],
+  "ofMonthWords": [
+   "del mes",
+   "de cada mes"
+  ],
+  "ordinalsBeforeWeekday": {},
   "andWords": [
    "y"
   ],
@@ -1620,6 +1673,20 @@
    "quarto": 4,
    "ultimo": -1,
    "ultima": -1
+  },
+  "ordinalArticles": [],
+  "ordinalOf": [
+   "de"
+  ],
+  "ofMonthWords": [
+   "do mes",
+   "de cada mes",
+   "de todo mes",
+   "de todo o mes"
+  ],
+  "ordinalsBeforeWeekday": {
+   "segunda": 2,
+   "quarta": 4
   },
   "andWords": [
    "e"

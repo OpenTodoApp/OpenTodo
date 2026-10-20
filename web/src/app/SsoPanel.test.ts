@@ -108,7 +108,7 @@ describe('LinkedAccountsView', () => {
 
   it('is hidden when SSO is off and nothing is linked', () => {
     expect(linked({ identities: [], provider: { enabled: false, displayName: '', ssoOnly: false } })).toBe('')
-    expect(linked({ provider: { enabled: false, displayName: '', ssoOnly: false } })).toContain('currently off')
+    expect(linked({ provider: { enabled: false, displayName: '', ssoOnly: false } })).toContain('Single sign-on is off on this server')
   })
 
   it('is read-only offline', () => {

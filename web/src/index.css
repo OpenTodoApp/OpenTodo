@@ -693,6 +693,12 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .ui-scroller:hover::-webkit-scrollbar-thumb { background: var(--ot-border-input); }
 .ui-scroller[data-fade-top] { --fade-top: 0.75rem; }
 .ui-scroller[data-fade-bottom] { --fade-bottom: 1rem; }
+/* A sidebar count shown on hover or focus (quiet-sidebar D1): opacity, not display, so
+   the number keeps its width and the row never moves; always shown where there is no hover. */
+@media (hover: hover) {
+  .ui-count-quiet { opacity: 0; transition: opacity var(--duration-ui); }
+  :is(.group, [data-sidebar-item]):is(:hover, :focus-within) .ui-count-quiet { opacity: 1; }
+}
 .ui-scroller:is([data-fade-top], [data-fade-bottom]) {
   mask-image: var(--fade), linear-gradient(black, black);
   mask-size: calc(100% - 10px) 100%, 10px 100%;
@@ -752,6 +758,9 @@ select.ui-input { @apply truncate; contain: layout paint; }
 }
 
 @layer components {
+/* Focus (OpenSpec change focus-mode, design D6): the timer's digits, from the type
+   tokens, with tabular figures so they do not jump each second; fit at 360 px. */
+.focus-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-h1) * 2.75), 20vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 /* Display mode (OpenSpec change display-mode, design D4): one view at a large type
    scale for a tablet or an e-ink panel. Sizes derive from the type tokens times
    --display-scale (set per size on the display's root), so they follow the
@@ -782,4 +791,15 @@ select.ui-input { @apply truncate; contain: layout paint; }
 @media (min-width: 1024px) {
   .display-board[data-split] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 2rem; align-items: start; }
 }
+}
+
+/* Dialog placement="sheet" (OpenSpec change lean-chrome D3): below 640 px the card
+   slides up from the bottom within --duration-ui; under reduced motion it only fades.
+   From 640 px up it is the ordinary centred card, without motion. */
+@layer components {
+@keyframes dialog-sheet-up { from { transform: translateY(1.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes dialog-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+.dialog-sheet { animation: dialog-sheet-up var(--duration-ui) var(--ease-calm, ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .dialog-sheet { animation-name: dialog-sheet-fade; } }
+@media (min-width: 640px) { .dialog-sheet { animation: none; } }
 }

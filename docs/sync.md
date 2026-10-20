@@ -64,6 +64,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `notes_doc` | document: `""` or an envelope `"<format>:v<n>:<base64>"` of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see [Mergeable documents](#mergeable-documents) |
 | task | `habit` | boolean, default false: the series is tracked as a habit, with streaks and a month history derived on the device (habits, see [Habits](recurrence.md#habits)). Not content, so never encrypted |
 | task | `skipped` | boolean, default false: on an occurrence record of a habit, the occurrence was skipped rather than done; such a record is not a completion (habits) |
+| task | `origin` | null or `{"kind":"url"\|"email"\|"issue"\|"import","provider"?,"id"?,"url"?,"title"?}`: where the task came from (task-origin). `url` kind needs `url`, the others `id`; `provider` 1–32 of `a-z0-9-`; `url` `http(s)` with a host, at most 2,048 bytes; `id` at most 512, `title` at most 500 characters; unknown members refused. One last-writer-wins value like `due`, so concurrent origins never mix. A content field: an encrypted account sends one ciphertext string instead of the object |
 | task | `fields.<id>` | a custom field value: null, a string, a finite number or a boolean; objects and arrays are refused. `<id>` is a field definition id of 1–64 characters `[A-Za-z0-9_-]`. One op per field, so values converge key by key; see [Custom fields](#custom-fields) |
 | section | `name` | string |
 | section | `project_id` | string (project id, required; never changes) |
@@ -81,6 +82,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | view | `kind`, `group_by`, `sort_by`, `sort_dir` | string (enumeration, see "Saved views") |
 | view | `pinned` | boolean |
 | view | `panels` | array of strings (view ids) |
+| view | `on_drop` | null or an on-drop rule object (see "Saved views") |
 | view | `position`, `created_at` | number |
 | view | `deleted_at` | number or null |
 | reminder | `task_id` | string (task id, required) |
@@ -106,16 +108,27 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | attachment | `created_at` | number; fixed |
 | attachment | `uploaded_at` | number or null; written only by the server once it stored the bytes |
 | attachment | `deleted_at` | number or null |
+| time_entry | `task_id`, `user_id` | non-empty id string; fixed at creation (`user_id` is the author), see [Time entries](#time-entries) |
+| time_entry | `started_at` | positive number (Unix ms) |
+| time_entry | `ended_at` | positive number (Unix ms) or null while the entry runs |
+| time_entry | `device_id` | string: the device that started or logged it (`server` for the REST API) |
+| time_entry | `note` | string (user-written; encrypted for an encrypted account) |
+| time_entry | `created_at` | number |
+| time_entry | `deleted_at` | number or null |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
 | project_prefs | `reviewed_at` | number (Unix ms: when this user last marked the project reviewed in the weekly review's project walk) |
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
 | user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
+| user_prefs | `day_start` | string: `"HH:MM"` from `"00:00"` to `"06:00"`, when a new day begins for this person (empty, malformed or out of range reads as `"00:00"`, midnight, and is kept as stored) |
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
+| user_prefs | `favourites` | string: an ordered, comma-separated list of `kind:id` entries (`project:<id>`, `label:<id>`, `view:<id>`), the sidebar's Favourites group; entries of an unknown kind or for a missing, archived or deleted item are ignored and kept |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
 | review | `daily_at`, `monthly_at` | number (Unix ms: the last Daily check and Monthly look) |
 | review | `focus_date`, `focus` | string: the local date (`YYYY-MM-DD`) today's focus was chosen on, and up to three comma-separated task ids |
+| review | `closed_at` | number (Unix ms: the latest Close the day; 0 = never) |
+| review | `tomorrow_note` | string: the one-line note for tomorrow written at that close (content: ciphertext for an encrypted account) |
 
 `actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
@@ -177,6 +190,16 @@ A `comment` is a threaded markdown note on a task (OpenSpec `comments-and-activi
 - **Threads** are derived from `parent_id`: a reply to a reply belongs to the same thread, a reply whose parent is unknown, on another task or part of a cycle starts its own thread. `sync.ThreadOrder` and `web/src/lib/comments.ts` implement the same order.
 - **Reseeding after a restore** re-sends only the device user's own comments (the server would refuse anyone else's).
 
+### Time entries
+
+A `time_entry` is one stretch of work on a task (OpenSpec `time-tracking`, see [the guide](time-tracking.md)). It is an ordinary entity: entries are written offline, queue in the outbox and converge per field, so an edit of the end on one device and of the note on another both survive. Two devices tracking the same task write two rows and never conflict.
+
+- **Scope.** An entry lives in the scope of its task, like a comment; sharing a project relabels its tasks' entries with them, and purging a task purges every entry on it, other members' included, with markers (`timeEntries` in the purge counts). Ops for an entry whose task was purged are discarded.
+- **Authorship, checked per op at receipt.** `user_id` must equal the submitting account on the op that creates the entry; `task_id` and `user_id` never change. `started_at`, `ended_at`, `note`, `device_id` and `created_at` are accepted only from the author; `deleted_at` from the author, a project admin and the owner. Unlike comments, a viewer cannot create entries (tracking is work on the task). A refused op travels back with the stored value (`restore`).
+- **One running entry per user.** Starting an entry writes `ended_at` = the new start on the user's running entry in the same batch. When a device holds two or more running entries of its user after a sync (two devices started offline), it keeps the one with the greatest `started_at` (ties: the greatest id) and writes `ended_at` = that start on the others. Every device computes the same values, so the repair converges without a prompt. The server applies the same rule (`internal/timetrack`, shared with `web/src/lib/time.ts` by fixtures) when it starts or stops an entry for the REST API, and never repairs on the sync path. Completing a task on a device ends its running entry in the completion batch; server-side completions do not.
+- **Days.** An entry belongs whole to the logical day its start falls on (the user's day start applies); totals are computed on demand from the rows, never stored.
+- **Reseeding after a restore** re-sends only the device user's own entries.
+
 ### Attachments
 
 An `attachment` is the metadata of a file or a link on a task or one of its comments (OpenSpec `attachments`). The bytes are never in the log: each file is stored once, immutably, under `<data>/attachments/` and moved with its own routes (see [API](api.md#attachments)).
@@ -206,11 +229,11 @@ Unread counts are computed locally: events of a shared project by another actor 
 
 ### Date and time preferences
 
-`user_prefs` (OpenSpec `date-time-preferences`, design D1) holds one user's date format, time format and first day of the week. Every client writes it with the `entityId` `"me"`; like labels and reminders it resolves to the **author's personal scope**, so each account's `"me"` row is separate, syncs to that account's devices only, and is never shared with project members. Values are enumerations carried as strings: a client reads an unknown value (from a newer client) as `"system"` without rewriting it, so new values stay additive, and an absent row means `"system"` for all three. Concurrent edits converge per field by LWW on `(ts, device)`. The row has no REST collection, derives no activity, and is included in the JSON export as `user_prefs`; importing an own export into an account without preferences restores them. The values are not user-written content, so they stay in plaintext for an encrypted account. The row also carries the interface `language` (OpenSpec `app-localization`, design D1): `"system"` follows the browser, a language code picks the catalog every device of the account loads; a code this client does not ship reads as `"system"`. The service worker reads the same row to write reminder notifications in that language.
+`user_prefs` (OpenSpec `date-time-preferences`, design D1) holds one user's date format, time format and first day of the week. Every client writes it with the `entityId` `"me"`; like labels and reminders it resolves to the **author's personal scope**, so each account's `"me"` row is separate, syncs to that account's devices only, and is never shared with project members. Values are enumerations carried as strings: a client reads an unknown value (from a newer client) as `"system"` without rewriting it, so new values stay additive, and an absent row means `"system"` for all three. Concurrent edits converge per field by LWW on `(ts, device)`. The row has no REST collection, derives no activity, and is included in the JSON export as `user_prefs`; importing an own export into an account without preferences restores them. The values are not user-written content, so they stay in plaintext for an encrypted account. The row also carries the interface `language` (OpenSpec `app-localization`, design D1): `"system"` follows the browser, a language code picks the catalog every device of the account loads; a code this client does not ship reads as `"system"`. The service worker reads the same row to write reminder notifications in that language. The day start `day_start` (OpenSpec `day-boundary`, design D1) is read on each device as a rule for which calendar day is "today" and which day an instant belongs to; applying it writes nothing, so devices converge as before, and the weekly digest reads it from the same row.
 
 ### Weekly review
 
-`review` (OpenSpec `stats-and-review`, design D4) records when the user last finished a weekly review. Like `user_prefs` it is one row with the `entityId` `"me"` in the **author's personal scope**: it syncs to the account's own devices only, two finishes converge by LWW on `(ts, device)` so the later one wins, and an offline finish waits in the outbox. An older server rejects its ops as unknown; the device keeps its local value. The row has no REST collection, derives no activity, is not user-written content (plaintext for an encrypted account), and is included in the JSON export as `review`; importing an own export restores it. Statistics themselves are never synced or stored: they are computed on the device from the task rows (see [statistics.md](statistics.md)). The Open Loops rhythms (OpenSpec `open-loops-method`, design D5) add `daily_at`, `monthly_at`, `focus_date` and `focus` to the same row, each its own LWW register, so a Daily check on the phone never overwrites a weekly finish on the laptop. The per-project review stamp is `project_prefs.reviewed_at`: personal like the feed's seen marker, so a member's review of a shared project never marks it reviewed for the others; it is exported as `project_prefs` and restored by an own-export import.
+`review` (OpenSpec `stats-and-review`, design D4) records when the user last finished a weekly review. Like `user_prefs` it is one row with the `entityId` `"me"` in the **author's personal scope**: it syncs to the account's own devices only, two finishes converge by LWW on `(ts, device)` so the later one wins, and an offline finish waits in the outbox. An older server rejects its ops as unknown; the device keeps its local value. The row has no REST collection, derives no activity, holds no user-written content apart from `tomorrow_note` (below), and is included in the JSON export as `review`; importing an own export restores it. Statistics themselves are never synced or stored: they are computed on the device from the task rows (see [statistics.md](statistics.md)). The Open Loops rhythms (OpenSpec `open-loops-method`, design D5) add `daily_at`, `monthly_at`, `focus_date` and `focus` to the same row, each its own LWW register, so a Daily check on the phone never overwrites a weekly finish on the laptop. Close the day (OpenSpec `close-the-day`, design D5) adds `closed_at` and `tomorrow_note`, again one LWW register each, so two offline closes can keep one device's time and the other's note; `tomorrow_note` is the row's only content field and is encrypted like a title for an encrypted account, everything else on the row stays plaintext. The per-project review stamp is `project_prefs.reviewed_at`: personal like the feed's seen marker, so a member's review of a shared project never marks it reviewed for the others; it is exported as `project_prefs` and restored by an own-export import.
 
 ### Task labels
 
@@ -259,6 +282,7 @@ A `view` is a saved filter query with its presentation options (OpenSpec `custom
 - `query` is the query string exactly as typed, in the grammar of `docs/filters.md`, never a parsed form. Each client parses it when the view is shown; a query a client cannot parse (for example a term added by a newer version) shows the parse error and no results instead of wrong results.
 - `kind` is `list` or `dashboard`; `group_by` is `project`, `due`, `priority`, `label` or `none`; `sort_by` is `due`, `priority`, `position`, `created` or `title`; `sort_dir` is `asc` or `desc`. On the wire these are plain strings so a future value is additive. The op schema accepts any string; a client that meets a value it does not know shows the default (`list`, `project`, `due`, `asc`) without rewriting the field, so the newer device keeps its choice. Only the REST API rejects unknown values, because REST requests are sequential and safe to refuse.
 - `panels` holds the ordered view ids shown by a dashboard (empty for lists). Like `task.labels` it is a single LWW register: two devices editing the panel list offline end with the newer list. A panel whose view is missing or deleted is shown as a placeholder; clients refuse to add a dashboard as a panel.
+- `on_drop` (OpenSpec `rule-boards`) is a list view's on-drop rule: `null` or an object of at most one choice per kind, `add_labels` / `remove_labels` (up to 32 label ids each), `priority` 1–4, `due` `today` / `tomorrow` / `next-week` / `clear`, `start` `someday` / `clear`, `section` `{project_id, section_id | null}` and `state` `complete` / `reopen`. The op schema checks this shape (unknown keys are refused; a new key is a server-first schema addition) but never that the ids exist. It is one LWW register, like `panels`: two devices setting a rule offline end with the newer rule, whole. Older clients keep the field in the row and ignore it, and their edits of other fields leave it alone. A rule acts only when a device drops a card on a board column showing the view: that device turns it into ordinary task field ops (its logical today resolves the dates), so nothing is evaluated on the server. Which card a board keeps showing after a drop is device state, never synced. Not a content field: it holds ids and enumerations only.
 - The start view (the view a device opens on launch) is **not** synced: it lives in the device's `meta` table under `startView`, like the collapsed projects.
 
 ### Encrypted values

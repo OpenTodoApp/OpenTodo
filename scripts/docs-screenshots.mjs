@@ -25,6 +25,7 @@ import { join } from 'node:path'
 import { startFakeLLM } from './fake-llm.mjs'
 
 const OUT = 'docs/images'
+let eisenhowerPath = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -224,6 +225,16 @@ const shots = [
   // display-mode: Today full screen in large type, without the shell.
   { name: 'display-today', server: D, async run(p) { await go(p, demoBase, '/display/today', () => p.locator('[data-screen="display"] [data-display-row]').first().waitFor()) } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
+  // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
+  { name: 'focus', server: D, async run(p) {
+    await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())
+    if (await p.locator('[data-empty-state="focus"]').count()) {
+      await p.getByRole('button', { name: 'Choose a task' }).click()
+      await p.getByRole('option').first().click()
+      await p.locator('[data-focus-timer]').waitFor()
+    }
+    await p.locator('[data-focus-toggle]').click(); await settle(p, 1200)
+  } },
   // stats-and-review: the weekly review on its first unfinished step, and Statistics.
   { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('#review-step-title').waitFor()); await settle(p, 300) } },
   // Open Loops (open-loops-method): the Loop home with the sidebar by the Places, Next, and the project walk.
@@ -239,6 +250,11 @@ const shots = [
     await p.locator('[data-method-mode="lists"]').click(); await settle(p, 300)
   } },
   { name: 'next', server: D, async run(p) { await go(p, demoBase, '/next', () => p.locator('[data-group]').first().waitFor()); await settle(p, 300) } },
+  // close-the-day: the Carry over step with its decisions.
+  { name: 'close-day', server: D, async run(p) {
+    await go(p, demoBase, '/review/close', () => p.locator('#review-step-title').waitFor())
+    await p.keyboard.press(']'); await p.locator('[data-review-step="carry"]').waitFor(); await settle(p, 300)
+  } },
   { name: 'review-walk', server: D, async run(p) { await go(p, demoBase, '/review/projects', () => p.locator('[data-walk-card]').waitFor()); await settle(p, 300) } },
   { name: 'stats', server: D, async run(p) { await go(p, demoBase, '/stats', () => p.locator('[data-period-chooser]').waitFor()); await settle(p, 300) } },
   { name: 'upcoming', server: D, card: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
@@ -288,6 +304,16 @@ const shots = [
   { name: 'dashboard', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today'); await sidebar(p).getByRole('button', { name: /^Weekly review/ }).click(); await settle(p, 1000)
   } },
+  // The Eisenhower board (rule-boards 4.2): created from its template once, opened again for the dark shot.
+  { name: 'eisenhower', server: D, async run(p) {
+    if (!eisenhowerPath) {
+      await go(p, demoBase, '/views', () => p.getByRole('button', { name: 'New board' }).waitFor())
+      await p.getByRole('button', { name: 'New board' }).click(); await p.locator('[data-board-choice="eisenhower"] input').check()
+      await p.getByRole('button', { name: 'Next' }).click(); await p.getByRole('button', { name: 'Create' }).click()
+      await p.locator('section[aria-label="Urgent and important"]').waitFor(); eisenhowerPath = new URL(p.url()).pathname
+    } else await go(p, demoBase, eisenhowerPath, () => p.locator('section[aria-label="Urgent and important"]').waitFor())
+    await settle(p, 800)
+  } },
   { name: 'repeat', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Run club')
     const g = detail(p).getByRole('group', { name: 'Repeat' }); await scrollPanelTo(p, g, 60)
@@ -304,9 +330,11 @@ const shots = [
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
+  // The Plan (planner-view 5.2): two rows of columns with their capacity bars and a dimmed projected row.
+  { name: 'plan', server: D, async run(p) { await go(p, demoBase, '/plan', () => p.locator('[data-plan-grid]').waitFor()); await settle(p, 300) } },
   { name: 'comments', server: D, card: true, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity and history' }), 8)
+    await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity, history and time' }), 8)
   } },
   { name: 'notifications', card: true, server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())

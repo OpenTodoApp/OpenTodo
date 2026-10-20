@@ -18,6 +18,8 @@ import (
 	// Zoned date-times are converted with the IANA database; the distroless image
 	// ships no zoneinfo, so it is embedded (about 450 KB).
 	_ "time/tzdata"
+
+	"github.com/pixari/opentodo/internal/origin"
 )
 
 // Device is the op device id of every imported field.
@@ -52,6 +54,8 @@ const (
 	// feed's seen marker and the review stamp (open-loops-method D4); restored
 	// from an own export like user_prefs, never undone.
 	KindProjectPrefs = "project_prefs"
+	// KindTimeEntry is a time entry on a task (OpenSpec change time-tracking).
+	KindTimeEntry = "time_entry"
 	// KindAttachment is a file or link attachment (OpenSpec change attachments).
 	KindAttachment = "attachment"
 	// KindField is a custom field definition (OpenSpec change custom-fields),
@@ -113,9 +117,29 @@ type Row struct {
 	// assigned to the importer's own email address).
 	AssignSelf bool
 
+	// Origin is where the task came from (OpenSpec change task-origin): an issue
+	// for Linear, the source id for Todoist, Things and TickTick; nil otherwise.
+	Origin *origin.Origin
+
 	// Entity carries an own-export record verbatim (its id plus every field), so the
 	// round trip is exact. Only the opentodo profile sets it.
 	Entity map[string]json.RawMessage
+}
+
+// importedOrigin is the origin of a task read from a named profile's export
+// (task-origin, "Imported origins"): {kind: "import", provider: profile, id: the
+// source id without its "<profile>:" prefix}, the id duplicate detection keys on.
+// A row numbered only by its line has no source identity and gets none.
+func importedOrigin(profile, sourceID string) *origin.Origin {
+	id, ok := strings.CutPrefix(sourceID, profile+":")
+	if !ok || id == "" || strings.HasPrefix(id, "line:") {
+		return nil
+	}
+	o := origin.Origin{Kind: origin.KindImport, Provider: profile, ID: id}
+	if o.Validate() != nil {
+		return nil
+	}
+	return &o
 }
 
 func (r *Row) warn(format string, args ...any) {
@@ -167,6 +191,9 @@ type Parsed struct {
 	ViewHints []ViewHint
 	// Files are the attachment files of an own ZIP export, by attachment id.
 	Files map[string][]byte
+	// ExportedBy is the account id an own export names as its author
+	// (time-tracking D11); "" for older files.
+	ExportedBy string
 	// Template is set for an own export that declares itself a template
 	// (OpenSpec change project-templates, design D7).
 	Template *TemplateInfo

@@ -8,8 +8,10 @@ import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
+import { PlanView } from './PlanView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
+import { ProjectsView } from './ProjectsView'
 import { SavedViewRoute } from './SavedViewView'
 import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
@@ -26,7 +28,7 @@ import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
-import { QuickAddSheet } from './QuickAddSheet'
+import { onQuickAddSheetRequest, QuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { getTask } from '../lib/localData'
@@ -41,6 +43,9 @@ import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
+import { useRunningRepair } from '../lib/timeEntries'
+import { TrackingPill } from './TrackingIndicator'
+import { BreakReminder } from './focus/BreakReminder'
 import { SkipLink, usePageFocus } from './pageFocus'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
@@ -61,9 +66,14 @@ const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ def
 const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
 const DailyCheck = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.DailyCheck })))
 const MonthlyLook = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.MonthlyLook })))
+const CloseDay = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.CloseDay })))
 const NextView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.NextView })))
 const WaitingView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.WaitingView })))
+// Focus (focus-mode D6): its own chunk; the engine that ends a session on time is the break reminder, always mounted.
+const FocusView = lazy(() => import('./focus/FocusView').then((m) => ({ default: m.FocusView })))
 const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
+// The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
+const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -77,6 +87,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
+  // Two devices started tracking while offline: keep one running entry (time-tracking D2).
+  useRunningRepair()
 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
@@ -140,6 +152,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [showHelp, setShowHelp] = useState(false)
   // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
   const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => onQuickAddSheetRequest(() => setAddOpen(true)), [])
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
@@ -158,11 +171,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       setPaletteOpen(true)
     },
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
-    'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
-    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
+    'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }), 'go.projects': go({ view: 'projects' }),
+    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.plan': go({ view: 'plan' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
+    'go.focus': go({ view: 'focus' }), 'go.close': go({ view: 'review', step: 'close' }),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -199,7 +213,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         className={`fixed inset-y-0 left-0 z-[45] flex w-64 max-w-[85vw] transform border-r border-default bg-canvas pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
-          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
+          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
@@ -233,6 +247,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <ImportScreen />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
+          ) : route.view === 'projects' ? (
+            <ProjectsView archived={route.archived} />
           ) : route.view === 'filter' ? (
             <FilterView key={route.q ?? ''} initialQuery={route.q} />
           ) : route.view === 'views' ? (
@@ -245,7 +261,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TaskPage id={route.id} user={user} />
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
-              {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
+              {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
             </Suspense>
           ) : route.view === 'next' ? (
             <Suspense fallback={null}><NextView /></Suspense>
@@ -255,6 +271,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}><LoopHome /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
+          ) : route.view === 'focus' ? (
+            <Suspense fallback={null}><FocusView id={route.id} /></Suspense>
           ) : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
@@ -265,6 +283,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <CalendarView mode={route.view} date={route.date} />
           ) : route.view === 'month' ? (
             <MonthView date={route.date} />
+          ) : route.view === 'plan' ? (
+            <PlanView date={route.date} />
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
@@ -290,7 +310,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {paletteLoaded && paletteOpen && <PanelBoundary resetKey={paletteOpen}><Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} />
+      {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
+      <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
       <ReminderToasts />
+      <BreakReminder />
       <UndoToast />
       <DailyCheckToast />
       <TemplateDialogHost />
@@ -337,6 +360,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
         <PageBarTitle>{bar?.title}</PageBarTitle>
         {bar?.subtitle && <p className="truncate text-meta text-muted" data-phone-subtitle>{bar.subtitle}</p>}
       </div>
+      <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
         {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>

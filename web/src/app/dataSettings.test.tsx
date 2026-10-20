@@ -3,6 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { YourDataView } from './DataSettings'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const idle = { state: 'idle' as const, pending: 0, lastSyncedAt: null, error: null }
 const render = (over: Partial<Parameters<typeof YourDataView>[0]> = {}) =>
   renderToStaticMarkup(<YourDataView demo={false} isOwner={false} sync={idle} {...over} />)
@@ -11,7 +15,7 @@ describe('YourDataView', () => {
   it('shows export and import rows with the help link', () => {
     const html = render()
     expect(html).toContain('id="data-heading"')
-    expect(html).not.toContain('data-help-screen')
+    expect(withoutLearnMore(html)).not.toContain('data-help-screen')
     expect(html).toContain('href="/api/v1/export"')
     expect(html).toContain('Download export (JSON)')
     expect(html).toContain('href="/settings/import"')

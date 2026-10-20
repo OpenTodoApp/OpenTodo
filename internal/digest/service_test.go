@@ -328,6 +328,31 @@ func TestDigestContent(t *testing.T) {
 	}
 }
 
+// TestDigestDayStart (email-digest "Night owl's week"): with a day start of
+// 04:00, a task completed at 01:30 on the Monday that starts a new week counts
+// in the previous week; without one it does not.
+func TestDigestDayStart(t *testing.T) {
+	for _, c := range []struct {
+		dayStart string
+		want     string
+	}{{"04:00", "Completed: 2"}, {"", "Completed: 1"}, {"09:00", "Completed: 1"}} {
+		e := newEnv(t)
+		e.enable("u1")
+		ms := func(s string) int64 { return at(s).UnixMilli() }
+		e.apply("u1", map[string]map[string]any{
+			"task:a":        {"title": "Sunday", "created_at": ms("2026-10-01 09:00"), "completed_at": ms("2026-10-18 21:00")},
+			"task:b":        {"title": "After midnight", "created_at": ms("2026-10-01 09:00"), "completed_at": ms("2026-10-19 01:30")},
+			"user_prefs:me": {"week_start": "mon", "day_start": c.dayStart},
+		})
+		if n := e.tick(e.service(), "2026-10-23 07:02"); n != 1 {
+			t.Fatalf("day start %q: sent %d", c.dayStart, n)
+		}
+		if text := body(e.smtp.Messages()[0]); !strings.Contains(text, c.want) {
+			t.Fatalf("day start %q: digest lacks %q:\n%s", c.dayStart, c.want, text)
+		}
+	}
+}
+
 func TestStoreValidationAndNextSend(t *testing.T) {
 	e := newEnv(t)
 	st := NewStore(e.db, nil)

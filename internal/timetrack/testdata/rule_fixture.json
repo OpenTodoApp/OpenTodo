@@ -1,0 +1,277 @@
+{
+ "about": "The time-tracking rules shared by internal/timetrack (rule_test.go) and web/src/lib/time.ts (time.test.ts), OpenSpec change time-tracking design D2/D3. running: the entry to keep; repairs: the other running entries ended at its start; start_batch: what starting or stopping at now writes besides a new entry; minutes at now; days: the logical day of each entry's start in zone with day_start minutes.",
+ "cases": [
+  {
+   "name": "Two devices start while offline",
+   "user": "u1",
+   "now": 1792488600000,
+   "entries": [
+    {
+     "id": "x",
+     "task_id": "X",
+     "user_id": "u1",
+     "started_at": 1792486800000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "y",
+     "task_id": "Y",
+     "user_id": "u1",
+     "started_at": 1792487400000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "running": "y",
+   "repairs": [
+    {
+     "id": "x",
+     "ended_at": 1792487400000
+    }
+   ],
+   "start_batch": [
+    {
+     "id": "x",
+     "ended_at": 1792487400000
+    },
+    {
+     "id": "y",
+     "ended_at": 1792488600000
+    }
+   ],
+   "minutes": {
+    "x": 30,
+    "y": 20
+   },
+   "zone": "UTC",
+   "day_start": 0,
+   "days": {
+    "x": "2026-10-20",
+    "y": "2026-10-20"
+   }
+  },
+  {
+   "name": "Stop while running",
+   "user": "u1",
+   "now": 1792488330000,
+   "entries": [
+    {
+     "id": "a",
+     "task_id": "A",
+     "user_id": "u1",
+     "started_at": 1792486800000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "b",
+     "task_id": "B",
+     "user_id": "u1",
+     "started_at": 1792483200000,
+     "ended_at": 1792485600000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "o",
+     "task_id": "A",
+     "user_id": "u2",
+     "started_at": 1792487100000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "running": "a",
+   "repairs": [],
+   "start_batch": [
+    {
+     "id": "a",
+     "ended_at": 1792488330000
+    }
+   ],
+   "minutes": {
+    "a": 25,
+    "b": 40,
+    "o": 20
+   },
+   "zone": "UTC",
+   "day_start": 0,
+   "days": {
+    "a": "2026-10-20"
+   }
+  },
+  {
+   "name": "Three running entries after sync, a tie broken by id",
+   "user": "u1",
+   "now": 1792490400000,
+   "entries": [
+    {
+     "id": "e1",
+     "task_id": "A",
+     "user_id": "u1",
+     "started_at": 1792486800000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "e3",
+     "task_id": "B",
+     "user_id": "u1",
+     "started_at": 1792488000000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "e2",
+     "task_id": "C",
+     "user_id": "u1",
+     "started_at": 1792488000000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "gone",
+     "task_id": "D",
+     "user_id": "u1",
+     "started_at": 1792489800000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": 1792490100000
+    }
+   ],
+   "running": "e3",
+   "repairs": [
+    {
+     "id": "e1",
+     "ended_at": 1792488000000
+    },
+    {
+     "id": "e2",
+     "ended_at": 1792488000000
+    }
+   ],
+   "start_batch": [
+    {
+     "id": "e1",
+     "ended_at": 1792488000000
+    },
+    {
+     "id": "e2",
+     "ended_at": 1792488000000
+    },
+    {
+     "id": "e3",
+     "ended_at": 1792490400000
+    }
+   ],
+   "minutes": {
+    "e1": 60,
+    "e2": 40,
+    "e3": 40
+   },
+   "zone": "UTC",
+   "day_start": 0,
+   "days": {}
+  },
+  {
+   "name": "An inverted entry counts zero",
+   "user": "u1",
+   "now": 1792490400000,
+   "entries": [
+    {
+     "id": "inv",
+     "task_id": "A",
+     "user_id": "u1",
+     "started_at": 1792488600000,
+     "ended_at": 1792487400000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "running": null,
+   "repairs": [],
+   "start_batch": [],
+   "minutes": {
+    "inv": 0
+   },
+   "zone": "UTC",
+   "day_start": 0,
+   "days": {
+    "inv": "2026-10-20"
+   }
+  },
+  {
+   "name": "An entry across midnight belongs to its start day",
+   "user": "u1",
+   "now": 1792490400000,
+   "entries": [
+    {
+     "id": "late",
+     "task_id": "A",
+     "user_id": "u1",
+     "started_at": 1792359000000,
+     "ended_at": 1792362600000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "early",
+     "task_id": "A",
+     "user_id": "u1",
+     "started_at": 1792373400000,
+     "ended_at": 1792375200000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "running": null,
+   "repairs": [],
+   "start_batch": [],
+   "minutes": {
+    "late": 60,
+    "early": 30
+   },
+   "zone": "Europe/Berlin",
+   "day_start": 0,
+   "days": {
+    "late": "2026-10-18",
+    "early": "2026-10-19"
+   }
+  },
+  {
+   "name": "Day start moves an early entry to the day before",
+   "user": "u1",
+   "now": 1792490400000,
+   "entries": [
+    {
+     "id": "early",
+     "task_id": "A",
+     "user_id": "u1",
+     "started_at": 1792373400000,
+     "ended_at": 1792375200000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "running": null,
+   "repairs": [],
+   "start_batch": [],
+   "minutes": {
+    "early": 30
+   },
+   "zone": "Europe/Berlin",
+   "day_start": 240,
+   "days": {
+    "early": "2026-10-18"
+   }
+  }
+ ]
+}

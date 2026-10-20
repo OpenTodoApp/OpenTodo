@@ -184,6 +184,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			sum := sha256.Sum256([]byte(key))
 			seen[key]++
 			row.SourceID = fmt.Sprintf("todoist:%s:%d", hex.EncodeToString(sum[:8]), seen[key])
+			row.Origin = importedOrigin("todoist", row.SourceID)
 			out.Rows = append(out.Rows, row)
 			last, lastCommented = &out.Rows[len(out.Rows)-1], false
 			stack = append(stack, row.SourceID)

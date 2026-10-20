@@ -16,6 +16,7 @@ import { AUDIT_EVENT_NAMES, type AuditEvent, type AuditFilters, type AuditSettin
 import { AUDIT_LABELS, EMPTY_FORM, eventAccount, eventSummary, type FilterForm, shortAgent, toFilters } from './auditFormat'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 export type LogStatus = 'loading' | 'ready' | 'offline' | 'error'
 
@@ -25,7 +26,7 @@ const PAGE = 50
 export function NeedsConnection({ what }: { what: string }) {
   return (
     <Notice tone="warning">
-      {t('You are offline. The {what} lives on the server and needs a connection; nothing is shown until you are back online.', { what })}
+      {noticeCopy('audit', 'offline', { values: { what } })}
     </Notice>
   )
 }
@@ -156,12 +157,7 @@ export function AuditPanel() {
   const exportHref = auditExportUrl(applied)
 
   return (
-    <SettingsSection
-      title={t('Audit log')}
-      headingId="audit-heading"
-      testId="audit-panel"
-      description={t('Sign-ins, tokens, invitations, exports and setting changes on this server. Task content is never recorded.')}
-    >
+    <SettingsSection {...cardCopy('audit')} testId="audit-panel">
       {offline ? (
         <NeedsConnection what={t('audit log')} />
       ) : (
@@ -225,8 +221,7 @@ export function AuditPanel() {
             <div className="space-y-3 pt-4" data-testid="audit-settings">
               <h3 className="text-body font-semibold text-default">{t('Audit settings')}</h3>
               <SettingRow
-                label={t('Keep events for')}
-                description={t('Between 7 and 3650 days. Older events are deleted.')}
+                {...rowCopy('audit', 'retention')}
                 control={
                   <form
                     className="flex items-end gap-2"
@@ -243,8 +238,7 @@ export function AuditPanel() {
                 }
               />
               <SettingRow
-                label={t('Record client addresses (IP)')}
-                description={<>{t.rich('Off by default. Turning it off erases every stored address. Behind a reverse proxy the address comes from <code>X-Forwarded-For</code>.', { code: (chunks) => <code>{chunks}</code> })}</>}
+                {...rowCopy('audit', 'addresses')}
                 control={<Switch checked={settings.logIp} onChange={toggleAddresses} label={t('Record client addresses (IP)')} hideLabel />}
               />
               {notice && <Notice tone="success">{notice}</Notice>}

@@ -30,7 +30,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | REST API and API tokens for scripts | `bootstrap-core-platform` |
 | Command-line client | `cli-client` |
 | Email to task (forward to an inbox address) | `email-to-task` |
-| Browser extension and mobile share-sheet target | `share-capture` |
+| Browser extension and mobile share-sheet target (the captured page, or a recognised GitHub, GitLab, Jira or Linear issue, now stays on the task as its origin chip: `task-origin`) | `share-capture` |
 | Voice capture via the Web Speech API | `voice-capture` |
 
 ### 3. Organisation, views and GTD
@@ -43,7 +43,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Subtask trees with parent progress | `subtask-trees` |
 | Labels | `labels` |
 | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
-| Saved filters pinned to the sidebar, custom dashboards | `custom-views` |
+| Saved filters pinned to the sidebar, custom dashboards (boards whose columns carry on-drop rules, with an Eisenhower matrix template: `rule-boards`) | `custom-views` |
 | Filter by completion date (`completed = last week`), period dates (this, last or next week or month) and a Completed logbook (closes #86) | `completed-date-filters` |
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |
@@ -60,7 +60,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Recurring rules incl. "every last weekday", "every 3 days after completion" | `recurring-tasks` |
 | Duration estimates and time-blocking calendar grid | `time-blocking` |
 | Absolute (time-zone aware) times next to floating dates | `absolute-datetimes` |
-| Date, time and week-start preferences | `date-time-preferences` |
+| Date, time and week-start preferences, and when your day starts | `date-time-preferences`, `day-boundary` |
 
 ### 5. Collaboration
 
@@ -78,7 +78,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- |
 | JSON export | `bootstrap-core-platform` |
 | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
-| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each (Linear estimates are still dropped with a warning; a follow-up can now map them to a number field of `custom-fields`) | `named-importers` |
+| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each (Linear estimates are still dropped with a warning; a follow-up can now map them to a number field of `custom-fields`). Imported tasks keep their source on the task as an origin (`task-origin`), the first step toward `issue-import` | `named-importers` |
 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
@@ -150,7 +150,7 @@ Nineteen candidates for after the design refresh, in a suggested order: the firs
 | 18 | **Shipped.** **Custom fields per project**: typed columns per project, such as cost, client, effort or a link | `custom-fields` | Field definitions on the project (text, number, date, choice, link, checkbox), values in an additive `fields` map on tasks, shown in the detail panel, as board badges and as table columns; filterable (`cost > 100`), exported and importable. Linear's and Asana's answer to "a task is more than a title", kept small by refusing formulas and rollups |
 | 19 | **Shipped.** **Habits with streaks and a month history**: recurring tasks that track streaks and allow a skip without breaking the chain | `habits` | An additive `habit` flag on a recurring task with a calendar rule; streaks and a month heat-map are computed on the device from the occurrence records the series already writes, and a skip of a habit leaves a record marked `skipped`, so "skip today" keeps the streak while missed days do not. A `habit` filter keyword lists them. TickTick's habit tracker without a second app |
 
-Considered and set aside for now, so they are not forgotten: a desktop app for macOS and Windows (a thin shell around the embedded server, the single-person answer to "nothing to run"), phone apps from the same web app, a focus timer with time tracking, rules, groups, importers for Microsoft To Do, Google Tasks, Apple Reminders, Trello, Asana and Any.do, custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, a Markdown vault for Obsidian and plain-text people, and scheduled assistant routines. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
+Considered and set aside for now, so they are not forgotten: a desktop app for macOS and Windows (a thin shell around the embedded server, the single-person answer to "nothing to run"), phone apps from the same web app, a focus timer with time tracking, rules (rules fired by a drop on a board column shipped in `rule-boards`; rules on a timer or other triggers stay set aside), groups, importers for Microsoft To Do, Google Tasks, Apple Reminders, Trello, Asana and Any.do, custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, a Markdown vault for Obsidian and plain-text people, and scheduled assistant routines. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
 
 ## Future ideas
 

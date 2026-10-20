@@ -21,10 +21,12 @@ import { navigate } from '../router'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
+import { TrackMenuItem } from './TimeTab'
 import { FieldsGroup } from './FieldsGroup'
 import { Properties } from './Properties'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
+import { toggleTracking } from '../../lib/timeEntries'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
 // note is first opened (collaborative-rich-text, task 3.1).
@@ -90,6 +92,10 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     'panel.priority': (e) => {
       if (!task || readOnly) return false
       act(updateTask(task.id, { priority: Number(e.key) as Priority }))
+    },
+    'panel.track': () => {
+      if (!task || readOnly || task.deleted_at) return false
+      act(toggleTracking(task.id, { canStart: !task.completed_at }))
     },
     'panel.skip': () => {
       if (!task || readOnly || !task.recurrence) return false
@@ -161,6 +167,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {!page && <MenuItem label={t('Expand')} icon="external-link" description={t('Open the task as a page')} onSelect={() => navigate({ view: 'task', id: task.id })} />}
           {parent && <MenuItem label={t('Open parent task')} icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label={t('Open recurring task')} icon="repeat" onSelect={() => onOpen?.(series.id)} />}
+          {!readOnly && <TrackMenuItem task={task} />}
+          {!readOnly && !done && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => navigate({ view: 'focus', id: task.id })} />}
           {!readOnly && <MenuItem label={t('Duplicate')} icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
           {!readOnly && assistant?.available && <MenuItem label={t('Break this down')} icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
@@ -241,7 +249,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 }
 
 /** "Add subtask" input: creates on Enter and stays focused for the next entry. */
-function AddSubtask({ parent }: { parent: Task }) {
+export function AddSubtask({ parent }: { parent: Task }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLInputElement>(null)
   async function submit(e: FormEvent) {

@@ -553,6 +553,12 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"GET", "/api/v1/calendar-feeds/events?from=2026-10-01&to=2026-10-07"},
 		{"GET", "/feeds/otfeed_x/tasks.ics"},
 		{"PUT", "/api/v1/settings/calendar-feeds"},
+		// Issue connections (issue-import 4.3): every method, before authentication.
+		{"POST", "/api/v1/issues/connections"},
+		{"GET", "/api/v1/issues/connections"},
+		{"POST", "/api/v1/issues/connections/x/sync"},
+		{"GET", "/api/v1/settings/issues"},
+		{"PUT", "/api/v1/settings/issues"},
 		// Outgoing email: the anonymous routes and the owner's settings.
 		{"POST", "/api/v1/auth/password-reset"},
 		{"GET", "/api/v1/auth/verify/otv_abc"},

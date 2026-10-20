@@ -75,9 +75,9 @@ describe('WebhooksView', () => {
     expect(html).toContain('New webhook')
     expect((html.match(/type="checkbox"/g) ?? []).length).toBe(11)
     expect(html).toContain('<option value="p1">Garden</option>')
-    expect(html).toContain('travel unencrypted')
-    expect(render({ draft: { ...emptyDraft(), url: 'https://example.com/x' } })).not.toContain('travel unencrypted')
-    expect(render({ draft: { ...emptyDraft(), url: 'http://localhost:5678/x' } })).not.toContain('travel unencrypted')
+    expect(html).toContain('travels unencrypted')
+    expect(render({ draft: { ...emptyDraft(), url: 'https://example.com/x' } })).not.toContain('travels unencrypted')
+    expect(render({ draft: { ...emptyDraft(), url: 'http://localhost:5678/x' } })).not.toContain('travels unencrypted')
   })
 
   it('offers enable/disable in the edit form only', () => {
@@ -93,7 +93,7 @@ describe('WebhooksView', () => {
   it('keeps the last list visible offline, disables actions and says a connection is required', () => {
     const html = render({ connected: false, webhooks: [hook()], isOwner: true, allowPrivate: true })
     expect(html).toContain('https://n8n.example.com/webhook/plants')
-    expect(html).toContain('requires a connection')
+    expect(html).toContain('needs a connection')
     expect(button(html, 'Add webhook')?.tag).toContain('disabled')
     expect(html).toMatch(/role="switch"[^>]*aria-checked="true"[^>]*disabled=""|role="switch"[^>]*disabled=""[^>]*aria-checked="true"/)
     // Online, Add webhook is enabled; the row actions are checked with the menu open (webhooksView.test.tsx).

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "issue_connection",
+  "description": "An issue connection exactly as the REST API returns it (OpenSpec issue-connections). It never carries the token: token_set says whether one is stored.",
+  "type": "object",
+  "required": ["id", "provider", "host", "name", "state", "enabled", "token_set"],
+  "properties": {
+    "id": {"type": "string"},
+    "provider": {"enum": ["github", "gitlab"]},
+    "host": {"type": "string"},
+    "name": {"type": "string"},
+    "project_id": {"type": ["string", "null"], "description": "target project; null for the Inbox"},
+    "filter": {"type": "object", "properties": {"scope": {"enum": ["assigned", "repositories"]}, "repositories": {"type": "array", "items": {"type": "string"}}, "labels": {"type": "array", "items": {"type": "string"}}}},
+    "map_labels": {"type": "boolean"},
+    "enabled": {"type": "boolean"},
+    "interval_minutes": {"type": "integer"},
+    "state": {"enum": ["off", "pending", "ok", "failed", "stopped"]},
+    "next_poll_at": {"type": "integer", "description": "Unix milliseconds"},
+    "last_poll_at": {"type": ["integer", "null"]},
+    "last_success_at": {"type": ["integer", "null"]},
+    "last_error": {"type": "string", "description": "reason code of the last failure, empty when none"},
+    "last_error_at": {"type": ["integer", "null"]},
+    "stopped_reason": {"type": "string", "description": "why polling stopped until the user acts, empty when it did not"},
+    "account_login": {"type": "string"},
+    "can_read_issues": {"type": ["boolean", "null"]},
+    "last_run": {"anyOf": [{"$ref": "#/schemas/issues_run/properties/run"}, {"type": "null"}]},
+    "task_count": {"type": "integer", "description": "issues linked to a task"},
+    "token_set": {"type": "boolean"},
+    "created_at": {"type": "integer"},
+    "updated_at": {"type": "integer"}
+  }
+}

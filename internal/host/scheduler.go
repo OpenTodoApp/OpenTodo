@@ -17,6 +17,7 @@ const (
 	KindCalendars    = "calendars"    // calendar subscriptions to fetch
 	KindHousekeeping = "housekeeping" // Trash retention, audit and log pruning
 	KindDigest       = "digest"       // weekly digest emails (stats-and-review)
+	KindIssues       = "issues"       // issue connections to poll (issue-import)
 )
 
 // Scheduler tuning.
@@ -80,6 +81,16 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 		}
 		if ok {
 			due[KindCalendars] = at
+		}
+	}
+	if t.Issues != nil && t.Issues.Enabled != nil && t.Issues.Enabled(ctx) {
+		// Only while the owner switch is on: a tenant with it off is never opened for it.
+		at, ok, err := t.Issues.Store.NextPoll(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			due[KindIssues] = at
 		}
 	}
 	if t.Digest != nil {
@@ -155,6 +166,10 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			}
 		case KindCalendars:
 			t.Calendar.RunOnce(ctx)
+		case KindIssues:
+			if t.Issues != nil {
+				t.Issues.RunOnce(ctx)
+			}
 		case KindDigest:
 			if t.Digest == nil {
 				continue
@@ -176,6 +191,11 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			}
 			if err := t.Hooks.Prune(ctx); err != nil {
 				log.Error("webhooks: prune failed", "err", err)
+			}
+			if t.Issues != nil {
+				if _, err := t.Issues.Tokens.Sweep(ctx, t.Issues.Store); err != nil {
+					log.Error("issue connections: sweep tokens", "err", err)
+				}
 			}
 			if _, err := t.Inbox.Sweep(ctx); err != nil {
 				log.Warn("notification sweep failed", "err", err)

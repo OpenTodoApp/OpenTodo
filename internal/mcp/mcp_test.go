@@ -228,7 +228,7 @@ func TestToolsListShape(t *testing.T) {
 			t.Fatalf("%s schema = %v", tl["name"], tl["inputSchema"])
 		}
 	}
-	if strings.Join(names, ",") != "list_projects,list_tasks,get_task,search_tasks,today_summary" {
+	if strings.Join(names, ",") != "list_projects,list_tasks,get_task,search_tasks,today_summary,list_time_entries" {
 		t.Fatalf("tools = %v", names)
 	}
 }
@@ -251,7 +251,7 @@ func TestResourcesListShape(t *testing.T) {
 		}
 		uris = append(uris, m["uri"].(string))
 	}
-	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming" {
+	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://integrations/issues" {
 		t.Fatalf("resources = %v", uris)
 	}
 	tpl := f.call("u1", "resources/templates/list", nil)["result"].(map[string]any)
@@ -609,8 +609,8 @@ func ut(m map[string]any) map[string]any {
 }
 
 // TestToolsListReadOnlyUnchanged: every caller without write permission sees
-// exactly today's five read tools, byte-identical to the mcp-server golden
-// (mcp-write-tools task 2.1), however the switches are set.
+// exactly the six read tools (time-tracking added list_time_entries),
+// byte-identical to the golden, however the switches are set.
 func TestToolsListReadOnlyUnchanged(t *testing.T) {
 	f := newFixture(t)
 	want, err := os.ReadFile(filepath.Join("testdata", "tools_list.golden.json"))
@@ -646,10 +646,10 @@ func TestWriteToolsThroughHandle(t *testing.T) {
 	// Listed with readOnlyHint false; instructions mention undo.
 	r := send(agent, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
 	tools := r["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 15 {
+	if len(tools) != 16 {
 		t.Fatalf("tools = %d", len(tools))
 	}
-	for _, tl := range tools[5:] {
+	for _, tl := range tools[6:] {
 		if tl.(map[string]any)["annotations"].(map[string]any)["readOnlyHint"] != false {
 			t.Fatalf("write tool annotations: %v", tl)
 		}
@@ -751,5 +751,16 @@ func TestListTasksCompletionRange(t *testing.T) {
 	open := f.tool("u1", "list_tasks", map[string]any{})
 	if got := strings.Join(titles(open["tasks"]), ","); got != "Still open" {
 		t.Fatalf("default = %s", got)
+	}
+}
+
+// Without the issue connections reader (feature off) the resource is listed
+// and reads as an empty list (issue-import, mcp-server delta).
+func TestIssuesResourceOff(t *testing.T) {
+	f := newFixture(t)
+	r := f.call("u1", "resources/read", map[string]any{"uri": IssuesURI})
+	contents := r["result"].(map[string]any)["contents"].([]any)
+	if text := contents[0].(map[string]any)["text"]; text != `{"connections":[],"enabled":false}` {
+		t.Fatalf("text = %v", text)
 	}
 }

@@ -2,7 +2,7 @@
 // D7; open-loops "Loop pulse"): pure functions over the local rows, computed when
 // shown, nothing stored, nothing sent. "Done this week" and the per-day strip come
 // from the statistics module so the Loop home, Statistics and the digest agree.
-import { addDaysISO, daysBetweenISO, todayISO } from '../dates'
+import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from '../dates'
 import type { Period } from '../stats'
 import { qualifies } from '../triage'
 import type { Task } from '../types'
@@ -16,7 +16,8 @@ type PulseTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'created_at' | '
 /** Inbox membership, as triage defines it (project_id null, top-level, open, live). */
 const inInbox = (t: PulseTask): boolean => qualifies({ ...t, position: 0 })
 
-const dayOf = (ms: number): string => todayISO(new Date(ms))
+/** The logical day of an instant (day-boundary D4), as Statistics counts it. */
+const dayOf = (ms: number): string => logicalDay(ms, currentDayStart())
 
 /** The last `days` local days ending today, as a period `compute()` accepts. */
 export function lastDays(today: string, days = PULSE_DAYS): Pick<Period, 'start' | 'end'> {

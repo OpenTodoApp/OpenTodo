@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/pixari/opentodo/internal/timetrack"
 )
 
 // SyntaxError is a rejected query: a message naming a 1-based position and the
@@ -41,6 +43,8 @@ const (
 	tProject
 	tPriority
 	tSearch
+	// tOrigin is `origin: value` (OpenSpec change task-origin).
+	tOrigin
 	tWord
 	tString
 )
@@ -66,6 +70,7 @@ func fail(offset int, format string, args ...any) error {
 
 var (
 	searchPrefix = regexp.MustCompile(`(?i)^search:`)
+	originPrefix = regexp.MustCompile(`(?i)^origin:`)
 	priorityWord = regexp.MustCompile(`(?i)^p([1-4])$`)
 	anyPriority  = regexp.MustCompile(`^p\d+$`)
 	isoDate      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
@@ -164,26 +169,41 @@ func tokenize(src []rune) ([]token, error) {
 			continue
 		}
 		word := readBare()
+		// `search: text` and `origin: value` (task-origin): the prefix, then the
+		// rest of the word, or the next bare word or quoted string.
+		readPrefixed := func(prefix string) (string, error) {
+			text := string([]rune(word)[len(prefix):])
+			if text != "" {
+				return text, nil
+			}
+			for i < n && unicode.IsSpace(src[i]) {
+				i++
+			}
+			if i < n && src[i] == '"' {
+				return readString()
+			}
+			return readBare(), nil
+		}
 		if searchPrefix.MatchString(word) {
-			text := string([]rune(word)[len("search:"):])
-			if text == "" {
-				for i < n && unicode.IsSpace(src[i]) {
-					i++
-				}
-				if i < n && src[i] == '"' {
-					v, err := readString()
-					if err != nil {
-						return nil, err
-					}
-					text = v
-				} else {
-					text = readBare()
-				}
+			text, err := readPrefixed("search:")
+			if err != nil {
+				return nil, err
 			}
 			if text == "" {
 				return nil, fail(pos, `Expected text after "search:" at position %d`, pos+1)
 			}
 			out = append(out, token{typ: tSearch, pos: pos, raw: string(src[pos:i]), value: text})
+			continue
+		}
+		if originPrefix.MatchString(word) {
+			text, err := readPrefixed("origin:")
+			if err != nil {
+				return nil, err
+			}
+			if text == "" {
+				return nil, fail(pos, `Expected a provider or kind after "origin:" at position %d`, pos+1)
+			}
+			out = append(out, token{typ: tOrigin, pos: pos, raw: string(src[pos:i]), value: text})
 			continue
 		}
 		if priorityWord.MatchString(word) {
@@ -196,8 +216,8 @@ func tokenize(src []rune) ([]token, error) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true, "habit": true}
-	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true, "habit": true, "origin": true}
+	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
 
@@ -288,7 +308,7 @@ func (p *parser) parseNot(prev *token) error {
 func (p *parser) parseTerm(prev *token) error {
 	t := p.peek()
 	switch t.typ {
-	case tLabel, tProject, tPriority, tSearch:
+	case tLabel, tProject, tPriority, tSearch, tOrigin:
 		p.i++
 		return nil
 	case tWord:
@@ -352,13 +372,31 @@ func (p *parser) parseWordTerm(t *token) error {
 		}
 		p.i++
 		return p.parseDate(c)
+	case w == "tracked":
+		// Tracked time (OpenSpec change time-tracking, design D9): the keyword, or
+		// `tracked cmp duration`. A reserved word: a field named "tracked" is
+		// reachable only quoted.
+		c := p.peek()
+		if c == nil || c.typ != tCmp {
+			return nil
+		}
+		p.i++
+		v := p.peek()
+		if v == nil || v.typ != tWord {
+			return fail(c.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, c.pos+1)
+		}
+		if _, ok := timetrack.ParseDuration(v.value); !ok {
+			return fail(v.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, v.pos+1)
+		}
+		p.i++
+		return nil
 	case w == "no":
 		// A keyword, or any other name: a custom field without a value (custom-fields).
 		if nt := p.peek(); noKeywords[lower(nt)] || (nt != nil && (nt.typ == tWord || nt.typ == tString)) {
 			p.i++
 			return nil
 		}
-		return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position %d`, t.pos+1)
+		return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position %d`, t.pos+1)
 	case simpleKeywords[w]:
 		return nil
 	case anyPriority.MatchString(w):

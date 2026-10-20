@@ -13,6 +13,7 @@ import (
 type fixtureCase struct {
 	Name      string `json:"name"`
 	WeekStart int    `json:"weekStart"`
+	DayStart  string `json:"dayStart"`
 	Period    string `json:"period"`
 	Start     string `json:"start"`
 	End       string `json:"end"`
@@ -81,6 +82,8 @@ func TestFixtureMatchesDevice(t *testing.T) {
 			if p.Start != c.Start || p.End != c.End {
 				t.Fatalf("period = %+v, want %s..%s", p, c.Start, c.End)
 			}
+			in := in
+			in.DayStart = DayStart(c.DayStart)
 			s := Compute(in, p)
 			got := []int{s.Completed, s.Created, s.Late, s.Slipped, s.Overdue}
 			want := []int{c.Expected.Completed, c.Expected.Created, c.Expected.Late, c.Expected.Slipped, c.Expected.Overdue}
@@ -103,6 +106,40 @@ func TestWeekStartPreference(t *testing.T) {
 	// Sunday start, Wednesday 2026-10-14 (statistics "Sunday start").
 	if p := WeekPeriod("2026-10-14", 0, -1); p != (Period{"2026-10-04", "2026-10-10"}) {
 		t.Fatalf("last week = %+v", p)
+	}
+}
+
+// TestDayStart (day-boundary D6): the preference reads as minutes, anything
+// invalid or after 06:00 as midnight, and an instant before the day start
+// belongs to the previous day, also across daylight-saving nights.
+func TestDayStart(t *testing.T) {
+	for pref, want := range map[string]int{"": 0, "00:00": 0, "04:00": 240, "03:30": 210, "06:00": 360, "06:01": 0, "09:00": 0, "4am": 0, "4:00": 0, "03:60": 0} {
+		if got := DayStart(pref); got != want {
+			t.Errorf("DayStart(%q) = %d, want %d", pref, got, want)
+		}
+	}
+	zurich, err := time.LoadLocation("Europe/Zurich")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		at       string
+		dayStart int
+		want     string
+	}{
+		{"2026-10-15T01:30:00+02:00", 240, "2026-10-14"},
+		{"2026-10-15T04:00:00+02:00", 240, "2026-10-15"},
+		{"2026-10-15T01:30:00+02:00", 0, "2026-10-15"},
+		{"2027-01-01T02:00:00+01:00", 240, "2026-12-31"},
+		{"2026-03-29T03:30:00+02:00", 240, "2026-03-28"}, // spring forward: 02:00 does not exist
+		{"2026-03-29T04:00:00+02:00", 240, "2026-03-29"},
+		{"2026-10-25T02:30:00+01:00", 180, "2026-10-24"}, // fall back: the second 02:30
+		{"2026-10-25T03:00:00+01:00", 180, "2026-10-25"},
+	} {
+		at, _ := time.Parse(time.RFC3339, c.at)
+		if got := LogicalDay(at, zurich, c.dayStart); got != c.want {
+			t.Errorf("LogicalDay(%s, %d) = %s, want %s", c.at, c.dayStart, got, c.want)
+		}
 	}
 }
 

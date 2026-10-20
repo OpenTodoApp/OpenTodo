@@ -272,6 +272,16 @@ function nthWeekdayOf(y: number, m: number, ordinal: number, wd: number): number
   return first + ((wd - isoWeekday(first) + 7) % 7) + 7 * (ordinal - 1)
 }
 
+/**
+ * The date of the `ordinal`-th `weekday` (1 = Monday … 7 = Sunday) of month `m`
+ * of year `y`, as YYYY-MM-DD; `ordinal` is 1–4, or -1 for the last. Quick add
+ * resolves one-off ordinal weekdays with it ("second Monday", quick-add-nth-weekday
+ * D1), so they always agree with the first occurrence of the matching rule.
+ */
+export function nthWeekdayDate(y: number, m: number, ordinal: number, weekday: number): string {
+  return formatDate(nthWeekdayOf(y, m, ordinal, weekday))
+}
+
 function inMonth(r: Rule, y: number, m: number): number {
   switch (r.kind) {
     case 'monthDay': return daysFromCivil(y, m, Math.min(r.monthDay, monthLen(y, m)))

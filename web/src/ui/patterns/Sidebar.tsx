@@ -2,7 +2,7 @@
 // structure", design D2): one item for destinations, projects, labels and
 // filters, and one group header. The app's Sidebar composes them; drag, keyboard
 // moves and live counts stay in the app.
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type RefObject, useEffect } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode, type RefObject, useEffect } from 'react'
 import { Icon, type IconName } from '../Icon'
 import { Tooltip } from '../Tooltip'
 
@@ -16,6 +16,14 @@ export interface SidebarItemProps extends Omit<ButtonHTMLAttributes<HTMLButtonEl
   leading?: ReactNode
   /** A live count, shown quietly on the right. */
   count?: number
+  /**
+   * When the count is visible (quiet-sidebar D1): `always`, `hover` (while the row is
+   * hovered or focused; it keeps its width, so the row never moves) or `hidden`
+   * (for assistive technology only). `data-open-count` carries it in every mode.
+   */
+  countMode?: 'always' | 'hover' | 'hidden'
+  /** The count as words ("5 open tasks"), part of the row's accessible name. */
+  countLabel?: string
   /** A badge (unread changes) or a small marker (shared), before the count. */
   badge?: ReactNode
   active?: boolean
@@ -27,9 +35,10 @@ export interface SidebarItemProps extends Omit<ButtonHTMLAttributes<HTMLButtonEl
 
 /** A destination or an entity in the sidebar: icon or leading, label, badge, count. */
 export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(function SidebarItem(
-  { label, icon, leading, count, badge, active = false, depth, collapsed = false, className, type = 'button', ...rest },
+  { label, icon, leading, count, countMode = 'always', countLabel, badge, active = false, depth, collapsed = false, className, type = 'button', ...rest },
   ref,
 ) {
+  const quiet = countMode === 'hover' ? ' ui-count-quiet' : countMode === 'hidden' ? ' sr-only' : ''
   const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth}
       className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
@@ -37,7 +46,8 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
       {icon ? <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
       {!collapsed && badge}
-      {!collapsed && count ? <span className="text-meta tabular-nums text-faint" data-count>{count}</span> : null}
+      {!collapsed && count ? <span className={`text-meta tabular-nums text-faint${quiet}`} data-count data-open-count={count} aria-hidden={countLabel ? true : undefined}>{count}</span> : null}
+      {count && countLabel ? <span className="sr-only">{`, ${countLabel}`}</span> : null}
     </button>
   )
   return collapsed && typeof label === 'string' ? <Tooltip label={label} side="right">{button}</Tooltip> : button
@@ -63,6 +73,20 @@ export interface SidebarGroupProps {
   tight?: boolean
   children: ReactNode
   testId?: string
+}
+
+/**
+ * A state marker (quiet-sidebar D4, app-shell "Quiet markers in the sidebar"): a small
+ * dot in the accent colour, its meaning as hidden text, so the text is part of the
+ * name of the row it sits in. Never a filled badge with text.
+ */
+export function StatusDot({ label, className, ...rest }: { label: string } & HTMLAttributes<HTMLSpanElement> & Record<`data-${string}`, string | boolean | undefined>) {
+  return (
+    <span className={`inline-flex shrink-0 items-center${className ? ` ${className}` : ''}`} {...rest}>
+      <span data-dot aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
+      <span className="sr-only">{`, ${label}`}</span>
+    </span>
+  )
 }
 
 /** A titled group of items: Filters, Projects, Labels. */

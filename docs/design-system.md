@@ -150,7 +150,7 @@ Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `
 
 ### Surfaces and patterns
 
-`Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with an optional Help link) and `SettingRow` (label and state beside the control, stacked on phones). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside); the app never uses the browser's `confirm()` or `prompt()`, and code never finds elements by translated text (use a `data-*` attribute), and `ListRow` is the focusable row for lists with a trailing menu.
+`Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with one line that may end with a **Learn more** link, `learnMore`, opening the card's guide section; never a header action) and `SettingRow` (label and state beside the control, stacked on phones), both fed by the settings copy table (`web/src/lib/settingsCopy.ts`; limits in the [interface guide](interface-guide.md#copy)). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside); the app never uses the browser's `confirm()` or `prompt()`, and code never finds elements by translated text (use a `data-*` attribute), and `ListRow` is the focusable row for lists with a trailing menu.
 
 ## The workbench
 

@@ -1,0 +1,44 @@
+# Tasks
+
+## 1. Plan math (design D5)
+
+- [x] 1.1 Create `web/src/lib/plan.ts` with `spanDates(anchor, days)`, `eventMinutes(events, date, zone)` (busy timed occurrences clipped to the day through `eventBlocks`, intervals merged, all-day and free skipped), `planLoad(tasks, projections, events, date, dayLength, zone)`, `formatPlanLoad` and `planLoadTooltip`; verify `npm test -- plan` passes with `web/src/lib/plan.test.ts` covering the "Three sources on one day" (`5h 5m / 8h`, the tooltip text), "Overlapping meetings" (1h 30m), "Calendars hidden" (no event minutes) and "Over capacity" scenarios
+- [x] 1.2 Add `projectedOccurrences(series, allTasks, today, from, to)` on `followingOccurrence` and `completedOccurrences`, completion-relative rules chained as `previewOccurrences` does, a 31-step guard per series; verify `npm test -- plan` covers the "Weekly report" (19th and 26th with the 21-day span), "End condition" (`for 3 times` with two done: none), "Completion-relative rule" (17th and 20th) and "Catch-up series" (from tomorrow) scenarios with dates taken from `recurrence.vectors.json`, and a timing case of 500 tasks with 50 series under 50 ms
+- [x] 1.3 Add `planDays: 7 | 14 | 21` (default 14) to `GridPrefs` and `normalizeGridPrefs` in `web/src/lib/calendar.ts`; verify `npm test -- calendar` passes with cases for a missing value, 21 and an invalid 10 (→ 14)
+
+## 2. Route, mode and shortcuts (design D1, D6, D7)
+
+- [x] 2.1 Add `{ view: 'plan'; date? }` to `web/src/app/router.ts` (`/plan/YYYY-MM-DD`, printed as `/plan` for today), `'plan'` to `CalendarMode` in `web/src/lib/calendarMode.ts`, the fourth button in `web/src/app/CalendarRange.tsx`, the `calendar(v)` test in `web/src/app/Sidebar.tsx`, the route and `go.plan` in `web/src/app/Shell.tsx`, and `plan` → `calendar` in `web/src/lib/help.ts`; verify `npm test -- planView` passes the "Range switch keeps the date" scenario and that `/calendar` opens the Plan after it was used last, and `npm run build` passes
+- [x] 2.2 Register `go.plan` (`g Shift+C`) and the `plan.*` view entries (`move`, `focus`, `next`, `prev`, `open`, `complete`, `quick-add`, `range-prev` overriding `global.sidebar`, `range-next`, `today`, `escape`) with `VIEW_SCOPES.plan = []` in `web/src/lib/shortcuts.ts`, and rename the `calendar` section title to "Day, Week, Month and Plan calendar"; verify `npm test -- shortcuts` passes (no conflict, `g p` still `go.triage`, `g Shift+P` still `go.projects`) and `make docs` regenerates `docs/keyboard.md` with the new rows
+
+## 3. Plan view (design D2, D3, D4, D9)
+
+- [x] 3.1 Move `CalendarStatus` from `web/src/app/CalendarView.tsx` into `web/src/app/calendar/CalendarStatus.tsx` and import it back; verify `npm test -- calendarView` still passes the "says how old the cache is" case
+- [x] 3.2 Build `web/src/app/PlanView.tsx`: the page header (title "Next 14 days" with the span's first and last short dates, prev / Today / next, the Calendars toggle when subscriptions exist, the range switch, the status line, an overflow menu with "7 days / 14 days / 21 days" and "Plan from a list"), the `role="grid"` of seven columns per row from `spanDates`, today marked, each column with the capacity bar and figure from `planLoad`, event rows and all-day chips opening `EventDetails`, task rows from `cellTasks` through a shared `PlanRow` (time, title, estimate, priority), projected rows dimmed with the `repeat` icon and "projected" in the name, and the column's ghost "Add" button; verify `npm test -- planView` passes the "Fourteen days on a desktop" (two rows, no horizontal overflow), "Zoned due on the viewer's day", "Meeting listed with the tasks", "Read with the keyboard" and "Weekly report" scenarios plus an axe run, and `go test ./internal/codesize/...` passes (functions under 150 lines)
+- [x] 3.3 Writes: `beginDrag` with `day:<ISO>` targets on editable rows writing `setDueWithUndo(id, dueFromView(raw.due, { date, time? }))`; keyboard moves through a serial queue with `nudgeDue(due, { days: ±1 | ±7 })` and `follow` navigating the span by whole weeks; no handler for viewer-role, event and projected rows; verify `npm test -- planView` passes "Drag keeps the time", "Move a week offline" (one op queued), "Viewer of a shared project", "Moved past the span", "Projection is read-only", "Projection follows the series" and "Not reordered by hand" (Alt+Up queues nothing)
+- [x] 3.4 Keyboard model with `useShortcutScope('view', …, { view: 'plan' })`: focused day with roving tabindex, `j`/`k` over `data-plan-task` rows in column order, Enter, `c` with `completeWithUndo`, `q` opening the `Dialog` with `QuickAdd` and `createTask({ due: { date: focused } })`, Escape, `[`/`]`/`t`; verify `npm test -- planView` passes "Add on a day", "Select and open", "Week back" and "Completing a task" (row leaves, total drops)
+- [x] 3.5 Span choice: the overflow menu items save `planDays` with `saveGridPrefs`, and the grid re-renders with the new count; verify `npm test -- planView` passes "Span kept on this device" (21 after a re-render from the meta row) and that the header stays one chrome row (`budget.test.tsx` extended with the Plan route)
+- [ ] 3.6 Add the `Plan` story to `web/src/app/calendar.stories.tsx` over `seedCalendarWeek` extended with a `every monday` 45-minute task in `web/src/app/stories/fixtures.tsx`; verify `make storybook` renders it with the three-segment bar and a projected row, and `make ui-check` passes once baselines are generated with the UI baselines workflow
+  - Note: the story is written (over its own `seedCalendarPlan`, see the implementation notes) and type-checks; its visual baselines need `make ui-baselines` (Docker), not available in this session, so they come from CI's ui-check-report artifact. The same view and data shapes were rendered in the bundled Chromium through `make docs-screenshots` (plan) and `scripts/e2e-layout.mjs` (`ONLY=plan`, 360/390/768/1280, light and dark: no overflow, axe clean).
+
+## 4. Phone agenda (design D8)
+
+- [x] 4.1 Build `web/src/app/calendar/PlanAgenda.tsx` rendered below 640 px: one section per day with header, capacity bar, event rows, task rows and projected rows through `PlanRow`, the same select/open and panel sheet; verify `npm test -- planView` passes "Plan on a phone" (no `[role=grid]`, projected rows dimmed, every day listed) and "Open a task from the agenda"
+- [x] 4.2 Add a `plan` entry to `scripts/e2e-layout.mjs` (ready on `[data-plan-grid], [data-plan-agenda]`) at 360, 390 and 768 px; verify `npm run test:browser` after `npm run build` reports no horizontal overflow
+  - Done with `ONLY=plan ENGINES=chromium node scripts/e2e-layout.mjs` against `bin/opentodo` (the app's layout check; `test:browser` is the website's name): LAYOUT OK at 360, 390, 768 and 1280 px in light and dark.
+
+## 5. Docs
+
+- [x] 5.1 Add "Plan the next two weeks" to `docs/calendar-views.md` (columns, the capacity bar's three sources, projected occurrences, drag and keys, the span, the phone agenda; `specs` gains `planner-view`), a short "Plan the next two weeks" section to `docs/time-blocking.md`, one paragraph to `docs/other-calendars.md` (events count only in the Plan) and to `docs/recurrence.md` (projected occurrences are computed, never written), and the `g Shift+C` row to `docs/keyboard.md` via `make docs`; verify `make docs-check` passes
+- [x] 5.2 Add a `plan` shot to `scripts/docs-screenshots.mjs` and generate `docs/images/plan-light.webp` and `plan-dark.webp` with `make docs-screenshots`; verify the images show two rows of columns with a capacity bar and a dimmed projected row
+
+## 6. Integration
+
+- [ ] 6.1 Manual smoke on `make dev`: open the Plan at 1280 px and 390 px, drag a timed task across a row boundary, move one with Right past the last column, hide calendars and watch the bar shrink, move a recurring task and watch its projections follow, go offline and reload; record the result in the change folder notes
+  - Not done by hand (no interactive browser here). Covered by scripts instead: `planView.test.tsx` drags across a row boundary (Projection follows the series, Drag keeps the time), moves past the last column, hides calendars and checks the bar, moves a recurring task and checks its projections, and moves a task offline with one queued op; the bundled Chromium rendered `/plan` at 390 and 1280 px through the layout check and the docs screenshots.
+- [x] 6.2 Run `make check` and verify it passes; add a CHANGELOG.md entry under Unreleased describing the Plan mode (`g` `Shift+C`), its capacity bar with events and projected occurrences, and the per-device span
+
+## Workflow follow-up
+
+- Mark ROADMAP.md `time-blocking` and `month-and-timeline-views` rows as advanced by `planner-view` in the notes column.
+- Archive with `/opsx:archive` and confirm `make openspec-validate` passes afterwards.

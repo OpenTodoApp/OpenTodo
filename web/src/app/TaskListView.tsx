@@ -4,6 +4,7 @@
 // lib/liveData), the keyboard (useListShortcuts), drag (useListDrag), the bindings to
 // the panel and the Vim layer (useListBindings), and the bodies for the list, the
 // board and the timeline.
+import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { t } from '../lib/i18n'
@@ -12,21 +13,24 @@ import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
 import { createTask } from '../lib/ops'
-import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
+import { dayTotalsText } from '../lib/time'
+import { useDayTotals } from '../lib/timeEntries'
+import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, PageHeader } from '../ui'
+import { Button, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
-import { FirstRunCard, useFirstRun } from './FirstRun'
 import { taskDefaults } from './listActions'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { ProjectHeader } from './ProjectHeader'
+import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
+import { requestQuickAddSheet } from './QuickAddSheet'
 import type { Route } from './router'
 import { AddSection } from './Sections'
 import { useSelection } from './selection'
@@ -87,8 +91,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const openId = usePanelTaskId()
   const quickAddRef = useRef<HTMLInputElement>(null)
   const focusQuickAdd = useCallback(() => quickAddRef.current?.focus(), [])
-  // The first run (first-run "Three-step first run"): the Inbox shows the card instead of its empty state.
-  const showFirstRun = useFirstRun() && route.view === 'inbox'
+  // An empty view's "Add a task": the quick-add sheet on a touch device, the view's own field otherwise.
+  const fine = useFinePointer()
+  const addFromEmpty = useCallback(() => { if (fine || !requestQuickAddSheet()) focusQuickAdd() }, [fine, focusQuickAdd])
   const listRoot = useRef<HTMLDivElement>(null)
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
@@ -170,7 +175,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly })
 
   const renderRow = rowRenderer({
-    view: route.view, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked,
+    view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked,
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || selection.ticked.size > 0, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null),
@@ -183,7 +188,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { currentProject, currentLabel } = m
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
-  const meta = useWithMethod(methodMove, route.view === 'today' ? m.dt.formatDate(today, 'heading') : route.view === 'label' ? rows.length : undefined)
+  // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
+  const listedTasks = useMemo(() => (route.view === 'today' ? rows.map((r) => r.task) : []), [route.view, rows])
+  const totals = useDayTotals(listedTasks, today, route.view === 'today')
+  const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
+  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : undefined)
   const methodSubtitle = useWithMethod(methodMove)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),
@@ -203,7 +212,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // "Nothing between the header and the list"): title, meta, actions, Help.
             <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={pageActions}
               leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
-              meta={meta} subtitle={methodSubtitle} />
+              meta={meta} subtitle={methodSubtitle}
+              menu={route.view === 'label' && currentLabel ? <LabelMenu label={currentLabel} /> : undefined} />
           )}
 
           {route.view !== 'completed' && (
@@ -213,8 +223,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               )}
             </div>
           )}
-
-          {showFirstRun && <FirstRunCard onFocusQuickAdd={focusQuickAdd} />}
 
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
             onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} />
@@ -236,9 +244,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               </Button>
             </div>
           )}
-          {rows.length === 0 && !showFirstRun && !(board || m.liveSections.length > 0) && (m.duration
+          {rows.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
             ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
-            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} onAdd={focusQuickAdd} />)}
+            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} onAdd={addFromEmpty}
+                completed={!m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0}
+                onShowCompleted={projectId ? () => act(saveShowCompleted(projectId, true)) : undefined} />)}
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
@@ -253,6 +263,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
+          {route.view === 'today' && <CloseDayRow />}
           {m.logbook && <LogbookMore total={m.logbook.total} limit={m.logbookLimit} onMore={() => m.setLogbookLimit((n) => n + LOGBOOK_PAGE)} />}
           {route.view === 'project' && !board && !timeline && m.projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
         </div>

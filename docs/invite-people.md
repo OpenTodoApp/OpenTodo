@@ -38,7 +38,7 @@ New accounts are created through a project link only when one of these is true:
 
 - the link was created by the **owner or an admin of the server**;
 - open sign-up is on for the server;
-- the server owner switched on **Members can invite new people with project links** in **Settings → People → Project invite links**. It is off by default.
+- the server owner switched on **Invite new people** in **Settings → People → Project invite links**. It is off by default.
 
 When none applies, the Share dialog says so under the new link, which then works only for people who already have an account. The switch is checked when a link is used, so changing it also affects links already sent.
 
@@ -48,4 +48,4 @@ Sign-up on an OpenTodo server is closed by default. The quickest way to bring so
 
 <picture><source srcset="images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation."></picture>
 
-If you're not an admin of the server and your invite link can't create accounts, ask whoever runs it to invite the person, or to switch on **Members can invite new people with project links**. Once they've joined, you can share projects with them yourself.
+If you're not an admin of the server and your invite link can't create accounts, ask whoever runs it to invite the person, or to switch on **Invite new people**. Once they've joined, you can share projects with them yourself.

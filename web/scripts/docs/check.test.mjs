@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildAll, OUT_SITE, writeAll } from './build.mjs'
-import { runChecks } from './check.mjs'
+import { quickAddLinkProblems, runChecks } from './check.mjs'
 import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
 // A 1×1 WebP (VP8L).
@@ -94,6 +94,13 @@ describe('docs check', () => {
     expect(problems).toContainEqual('docs/boards.md: screen "board-menu" is not used by any help link in the app')
   })
 
+  it('reports a settings card whose Learn more names a screen no page declares (settings-copy D4)', async () => {
+    write('web/src/lib/settingsCopy.ts', "export const SETTINGS_COPY = { webhooks: { learnMore: 'settings/nonsense' }, boards: { learnMore: 'board-view' } }\n")
+    const problems = await runChecks(root)
+    expect(problems).toContainEqual('web/src/lib/settingsCopy.ts: help screen "settings/nonsense" is not named by any page\'s "screens"')
+    expect(problems.filter((p) => p.includes('board-view'))).toEqual([])
+  })
+
   it('reports a skipped heading level', async () => {
     write('docs/boards.md', read('docs/boards.md').replace('## Switch to a board', '### Switch to a board'))
     expect(await runChecks(root)).toContainEqual('docs/boards.md: heading "Switch to a board" skips a level (h1 to h3)')
@@ -119,5 +126,11 @@ describe('docs check', () => {
     expect(await runChecks(root)).toEqual([])
     rmSync(join(root, SHOTS_DIR, `${SCREENSHOTS[0]}.webp`))
     expect((await runChecks(root)).join('\n')).toContain(`${SHOTS_DIR}/${SCREENSHOTS[0]}.webp: named by the site bundle but missing`)
+  })
+
+  it('reports a list screen whose section does not link the quick-add guide, naming the section (lean-chrome D1)', () => {
+    const body = '# Views\n\n## What each view shows\n\nAdd with [quick add](quick-add.md).\n\n## Park ideas in Someday\n\nParked tasks.\n\n### More\n\nSee [quick add](quick-add.md).\n'
+    const pages = [{ rel: 'views.md', body, fm: { screens: ['inbox#what-each-view-shows', 'someday#park-ideas-in-someday', 'board-view#park-ideas-in-someday'] } }]
+    expect(quickAddLinkProblems(pages)).toEqual(['docs/views.md: section "#park-ideas-in-someday" (screen "someday") does not link the quick-add guide (quick-add.md) before its first subheading'])
   })
 })

@@ -9,10 +9,10 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { calendarTasks, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
 import { useOnline } from '../lib/online'
-import { ensureEventsFor, eventsStatus, setShowEvents } from '../lib/calendarFeeds'
-import { addDaysISO, dueFromView, formatDate, formatShort, formatTime as formatWallTime, viewedTask } from '../lib/dates'
+import { setShowEvents } from '../lib/calendarFeeds'
+import { addDaysISO, dueFromView, formatDate, formatShort, logicalToday, todayISO, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
-import { getTask, readGridPrefs, useCachedEventsWindow, useCalendarEvents, useCalendarSubscriptions, useGridPrefs, useLiveProjects, useShowEvents } from '../lib/liveData'
+import { getTask, readGridPrefs, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { updateTask } from '../lib/ops'
 import type { CalendarSubscription, Project, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
@@ -29,18 +29,24 @@ import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { DayColumn, DayHeader, HourGutter } from './calendar/DayColumn'
-import { formatTime, minutesOf, PX_PER_MIN, type Placement, type Preview } from './calendar/grid'
+import { formatTime, PX_PER_MIN, type Placement, type Preview } from './calendar/grid'
 import { PLAN_PANEL, PlanPanel, type PlanActions } from './calendar/PlanPanel'
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
+import { AddOnDayDialog } from './calendar/AddOnDayDialog'
+import { CalendarStatus } from './calendar/CalendarStatus'
+import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 
 /** Live preferences of this device (Dexie meta, never synced); MonthView and the settings read them too. */
 export { useGridPrefs }
 
 function useNowMinutes(): number {
+  // Minutes since the logical today's midnight (day-boundary D3): before the day start
+  // the clock is past that day's 24:00, so the now line is not drawn on its column.
   const read = () => {
     const d = new Date()
-    return d.getHours() * 60 + d.getMinutes()
+    const minutes = d.getHours() * 60 + d.getMinutes()
+    return todayISO(d) === logicalToday(undefined, d.getTime()) ? minutes : minutes + 24 * 60
   }
   const [now, setNow] = useState(read)
   useEffect(() => {
@@ -48,19 +54,6 @@ function useNowMinutes(): number {
     return () => clearInterval(id)
   }, [])
   return now
-}
-
-/** Subscribed calendars (calendar-feeds D8): the device cache, refreshed for the range on screen; hidden with the toolbar toggle (per device). */
-function useCalendarFeeds(from: string, to: string) {
-  useEffect(() => { void ensureEventsFor({ from, to }) }, [from, to])
-  const eventsShown = useShowEvents()
-  const events = useCalendarEvents()
-  const subs = useCalendarSubscriptions()
-  const win = useCachedEventsWindow()
-  const subMap = useMemo(() => new Map(subs.map((s) => [s.id, s])), [subs])
-  const visibleEvents = useMemo(() => (eventsShown ? events.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false) : []), [eventsShown, events, subMap])
-  const status = subs.length === 0 || !eventsShown ? null : eventsStatus(win, { from, to })
-  return { eventsShown, subs, subMap, win, visibleEvents, status }
 }
 
 /** Placement mode (`s`): a ghost the keys move, placed with Enter. */
@@ -101,6 +94,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const prefs = useGridPrefs()
 
   const projects = useLiveProjects()
+  /** The day an empty day's "Add a task" adds to (the week's agenda, lean-chrome D7). */
+  const [adding, setAdding] = useState<string | null>(null)
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const rawTasks = useLiveTasks() ?? NO_TASKS
   // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
@@ -129,9 +124,12 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   useEffect(() => rememberCalendarMode(mode), [mode])
 
   // Start at the grid start hour; the hours before and after stay reachable by scrolling.
+  // Only the time grid: the phone agenda is a list of days and starts at its first day.
   useLayoutEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = Math.max(0, prefs.startHour * 60 * PX_PER_MIN - 8)
-  }, [prefs.startHour, mode])
+    if (!scroller.current) return
+    const agenda = mode === 'week' && !wide
+    scroller.current.scrollTop = agenda ? 0 : Math.max(0, prefs.startHour * 60 * PX_PER_MIN - 8)
+  }, [prefs.startHour, mode, wide])
 
   const commit = useCallback((taskId: string, target: DropTarget) => {
     const task = taskMap.get(taskId)
@@ -222,7 +220,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
             <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
-              onSelect={select} onOpen={open} />
+              onSelect={select} onOpen={open} onAdd={setAdding} />
           ) : (
             <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} taskMap={taskMap} projectMap={projectMap}
               subMap={feeds.subMap} zone={zone} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded} drag={drag} dragTask={dragTask}
@@ -231,6 +229,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         </div>
       </div>
 
+      {adding && <AddOnDayDialog date={adding} projects={projects} onClose={() => setAdding(null)} />}
       {drag && dragTask && (
         <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || t('Untitled')}
@@ -241,28 +240,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       )}
     </PageBody>
   )
-}
-
-/** The header's status line: placement mode, or how fresh the subscribed calendars are. */
-function CalendarStatus({ placing, placingTask, status, online, fetchedAt }: {
-  placing: Placement | null
-  placingTask?: Task
-  status: ReturnType<typeof eventsStatus> | null
-  online: boolean
-  fetchedAt?: number
-}) {
-  if (placing) {
-    return (
-      <span role="status" className="rounded-control bg-success-soft px-2 py-0.5 text-meta text-on-success-soft">
-        {t.rich('Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels', { title: placingTask?.title || t('task'), time: formatTime(placing.start), b: (chunks) => <strong>{chunks}</strong> })}
-      </span>
-    )
-  }
-  if (status === 'missing' && !online) return <span data-calendars-status="missing" className="text-meta text-muted">{t('Calendars unavailable offline for these days')}</span>
-  if (fetchedAt !== undefined && (status === 'stale' || (status === 'fresh' && !online))) {
-    return <span data-calendars-status="stale" className="text-meta text-muted">{t('Calendars as of {wallTime}', { wallTime: formatWallTime(toHHMM(minutesOf(fetchedAt))) })}</span>
-  }
-  return null
 }
 
 /** The Day or Week grid: a sticky header (day name, capacity, unscheduled lane) over the hour columns. */

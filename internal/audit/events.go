@@ -43,12 +43,16 @@ const (
 	CalendarFeedRotatedName Name = "calendar_feed.rotated"
 	CalendarFeedRevokedName Name = "calendar_feed.revoked"
 	// Email capture inbox address (OpenSpec `email-to-task`).
-	EmailInboxCreatedName  Name = "email_inbox.created"
-	EmailInboxRotatedName  Name = "email_inbox.rotated"
-	EmailInboxUpdatedName  Name = "email_inbox.updated"
-	InvitationCreatedName  Name = "invitation.created"
-	InvitationAcceptedName Name = "invitation.accepted"
-	InvitationRevokedName  Name = "invitation.revoked"
+	EmailInboxCreatedName Name = "email_inbox.created"
+	EmailInboxRotatedName Name = "email_inbox.rotated"
+	EmailInboxUpdatedName Name = "email_inbox.updated"
+	// Issue connections (OpenSpec `issue-connections`): never the host, token or filter.
+	IssueConnectionCreatedName Name = "issue_connection.created"
+	IssueConnectionUpdatedName Name = "issue_connection.updated"
+	IssueConnectionDeletedName Name = "issue_connection.deleted"
+	InvitationCreatedName      Name = "invitation.created"
+	InvitationAcceptedName     Name = "invitation.accepted"
+	InvitationRevokedName      Name = "invitation.revoked"
 	// Project invite links (OpenSpec `project-invite-links`).
 	ProjectInviteCreatedName  Name = "project_invite.created"
 	ProjectInviteRevokedName  Name = "project_invite.revoked"
@@ -97,6 +101,7 @@ var Names = []Name{
 	AppPasswordCreatedName, AppPasswordRevokedName,
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
+	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
 	PublicLinkCreatedName, PublicLinkRevokedName,
@@ -123,6 +128,7 @@ var PersonalNames = []Name{
 	AppPasswordCreatedName, AppPasswordRevokedName,
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
+	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
 	SignedOutEverywhereName,
@@ -184,7 +190,8 @@ var allowedDetailKeys = map[string]bool{
 	"setting":           true, // settings key, e.g. audit.retention_days
 	"from":              true, // previous value of a setting or role
 	"to":                true, // new value of a setting or role
-	"provider":          true, // identity provider name
+	"provider":          true, // identity provider name, or github | gitlab for an issue connection
+	"connection_id":     true, // id of an issue connection (never its host or token)
 	"format":            true, // export format
 	"count":             true, // number of exported events, or entities an assistant changed
 	"backup_id":         true,
@@ -360,6 +367,26 @@ func EmailInboxRotated(userID string) Event {
 // addresses).
 func EmailInboxUpdated(userID, setting, from, to string) Event {
 	return ev(EmailInboxUpdatedName, Success, userID, "", "setting", setting, "from", from, "to", to)
+}
+
+// ---- issue connections ----
+
+// IssueConnectionCreated records a new issue connection: its id and provider,
+// never the host, the token or the filter.
+func IssueConnectionCreated(userID, connID, provider string) Event {
+	return ev(IssueConnectionCreatedName, Success, userID, "", "connection_id", connID, "provider", provider)
+}
+
+// IssueConnectionUpdated records a change of a connection: setting names what
+// changed (host, filter, project, labels, interval, name, enabled, token; a
+// comma-separated list when several did), never a value.
+func IssueConnectionUpdated(userID, connID, provider, setting string) Event {
+	return ev(IssueConnectionUpdatedName, Success, userID, "", "connection_id", connID, "provider", provider, "setting", setting)
+}
+
+// IssueConnectionDeleted records a deleted connection (its token removed).
+func IssueConnectionDeleted(userID, connID, provider string) Event {
+	return ev(IssueConnectionDeletedName, Success, userID, "", "connection_id", connID, "provider", provider)
 }
 
 // ---- invitations ----

@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pixari/opentodo/internal/recurrence"
 )
 
 // dateCtx mirrors DateContext in web/src/lib/nlp/dates.ts.
@@ -298,6 +300,7 @@ func matchDateAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 				return &dateMatch{date, i, j + n}
 			}
 			consider(wrap(weekdayPhraseAt(tokens, j, v, ctx)))
+			consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
 			consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
 			consider(wrap(inPeriodAt(tokens, j, v, ctx)))
 			consider(wrap(monthDayAt(tokens, j, v, ctx)))
@@ -329,6 +332,104 @@ func weekdayPhraseAt(tokens []token, j int, v *Vocab, ctx *dateCtx) (string, int
 		return nextNextWeekday(ctx.today, wd, ctx.weekStart), k - j, true
 	}
 	return nextWeekday(ctx.today, wd), k - j, true
+}
+
+// ---- ordinal weekdays (quick-add-nth-weekday D1, D3) ----
+
+// ordinalRE is a number from 1 to 4 with an ordinal suffix: dayRE's suffixes plus
+// the French e, ème and re. Used only before a weekday; a bare number is a count.
+var ordinalRE = regexp.MustCompile(`^([1-4])(?:st|nd|rd|th|er|re|eme|e|o|a|º|°|ª|\.)$`)
+
+// weekdayOrdinalAt reads an ordinal directly before a weekday at i: an ordinal
+// word, a word of OrdinalsBeforeWeekday (Portuguese "segunda"), or a suffixed
+// number from 1 to 4, never when a list separator follows it. It returns the
+// tokens consumed (the weekday excluded) and the value (1–4, or -1 for last).
+func weekdayOrdinalAt(tokens []token, i int, v *Vocab, isWeekday func(int) bool) (int, int, bool) {
+	t := tok(tokens, i)
+	if t == nil {
+		return 0, 0, false
+	}
+	direct := func(n int) bool {
+		text := tokens[i+n-1].text
+		return !strings.HasSuffix(text, ",") && !strings.HasSuffix(text, ";") && isWeekday(i+n)
+	}
+	if m := ordinalRE.FindStringSubmatch(t.norm); m != nil {
+		val, _ := strconv.Atoi(m[1])
+		return 1, val, direct(1)
+	}
+	if n, val, ok := lookupAt(tokens, i, v.Ordinals); ok && direct(n) {
+		return n, val, true
+	}
+	if n, val, ok := lookupAt(tokens, i, v.OrdinalsBeforeWeekday); ok && direct(n) {
+		return n, val, true
+	}
+	return 0, 0, false
+}
+
+// ordinalOutOfRangeAt is a suffixed number above four directly before a weekday
+// ("5th Friday"): no fifth weekday is offered, so the parser keeps both tokens
+// literal as a unit. It returns the token count, or 0.
+func ordinalOutOfRangeAt(tokens []token, i int, ctx *dateCtx) int {
+	t := tok(tokens, i)
+	if t == nil || digitsRE.MatchString(t.norm) || dayNumber(t) <= 4 || strings.HasSuffix(t.text, ",") || strings.HasSuffix(t.text, ";") {
+		return 0
+	}
+	for _, v := range ctx.vocabs {
+		if weekdayAt(tokens, i+1, v) >= 0 {
+			return 2
+		}
+	}
+	return 0
+}
+
+// ofMonthAt is the length of an "of the month" phrase at k in any active language.
+func ofMonthAt(tokens []token, k int, ctx *dateCtx) int {
+	n := 0
+	for _, w := range ctx.vocabs {
+		n = max(n, phraseAt(tokens, k, w.OfMonthWords))
+	}
+	return n
+}
+
+// ordinalWeekdayAt reads [article] ordinal weekday [of MONTH [YEAR] | of the
+// month]: that weekday of this month, or of the next once it has passed; with a
+// month, this year or the next; with a year, that year only.
+func ordinalWeekdayAt(tokens []token, j int, v *Vocab, ctx *dateCtx) (string, int, bool) {
+	k := j + phraseAt(tokens, j, v.OrdinalArticles)
+	on, ord, ok := weekdayOrdinalAt(tokens, k, v, func(w int) bool { return weekdayAt(tokens, w, v) >= 0 })
+	if !ok {
+		return "", 0, false
+	}
+	k += on
+	wd := weekdayAt(tokens, k, v) + 1
+	k++
+	ty, tm, _ := fromISO(ctx.today)
+	of := phraseAt(tokens, k, v.OrdinalOf)
+	month := 0
+	if of > 0 {
+		month = monthAt(tokens, k+of, v, true)
+	}
+	if month > 0 {
+		k += of + 1
+		if y := yearAt(tok(tokens, k)); y > 0 {
+			return recurrence.NthWeekdayDate(y, month, ord, wd), k + 1 - j, true
+		}
+		date := recurrence.NthWeekdayDate(ty, month, ord, wd)
+		if date < ctx.today {
+			date = recurrence.NthWeekdayDate(ty+1, month, ord, wd)
+		}
+		return date, k - j, true
+	}
+	k += ofMonthAt(tokens, k, ctx)
+	date := recurrence.NthWeekdayDate(ty, tm, ord, wd)
+	if date < ctx.today {
+		if tm == 12 {
+			date = recurrence.NthWeekdayDate(ty+1, 1, ord, wd)
+		} else {
+			date = recurrence.NthWeekdayDate(ty, tm+1, ord, wd)
+		}
+	}
+	return date, k - j, true
 }
 
 func nextPeriodAt(tokens []token, j int, v *Vocab, ctx *dateCtx) (string, int, bool) {

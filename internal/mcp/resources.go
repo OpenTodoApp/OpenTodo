@@ -32,6 +32,9 @@ type resourceTemplate struct {
 
 const jsonMime = "application/json"
 
+// IssuesURI is the read-only issue connections resource (issue-import D14).
+const IssuesURI = "opentodo://integrations/issues"
+
 func resourceList() []resource {
 	tz := " Dates are evaluated in UTC; append ?tz=<IANA zone> to the URI for another time zone."
 	return []resource{
@@ -39,6 +42,8 @@ func resourceList() []resource {
 		{URI: "opentodo://views/inbox", Name: "inbox", Title: "Inbox", Description: "Open tasks without a project.", MimeType: jsonMime},
 		{URI: "opentodo://views/today", Name: "today", Title: "Today", Description: "Open tasks due today or overdue, overdue first." + tz, MimeType: jsonMime},
 		{URI: "opentodo://views/upcoming", Name: "upcoming", Title: "Upcoming", Description: "Open tasks due after today, soonest first." + tz, MimeType: jsonMime},
+		{URI: IssuesURI, Name: "issue-connections", Title: "Issue connections",
+			Description: "The user's GitHub and GitLab issue connections with their state and last run, never a token. Read from the stored state; no request is made to the provider.", MimeType: jsonMime},
 	}
 }
 
@@ -79,9 +84,14 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		return nil, err
 	}
 	id := strings.TrimPrefix(u.Path, "/")
-	var payload map[string]any
+	var payload any
 	found := true
 	switch {
+	case u.Host == "integrations" && id == "issues":
+		payload = map[string]any{"enabled": false, "connections": []any{}}
+		if s.issues != nil {
+			payload, err = s.issues(ctx, userID)
+		}
 	case u.Host == "projects" && id == "":
 		payload, err = s.tools.ProjectsResource(ctx, userID)
 	case u.Host == "projects" && !strings.Contains(id, "/"):

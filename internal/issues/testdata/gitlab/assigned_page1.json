@@ -1,0 +1,5 @@
+[
+  {"iid": 45, "title": "Pipeline fails on main", "description": "See the job log.", "web_url": "https://gitlab.com/group/sub/project/-/issues/45",
+   "state": "opened", "closed_at": null, "updated_at": "2026-10-01T09:00:00.000Z", "labels": ["ci", "urgent"],
+   "references": {"short": "#45", "relative": "#45", "full": "group/sub/project#45"}}
+]

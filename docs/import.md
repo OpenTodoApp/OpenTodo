@@ -43,7 +43,7 @@ A file matching none of these is refused with `400 unsupported_format`, naming t
 
 The file from **Settings → Data → Download export** or `GET /api/v1/export`. Labels, projects (with their sub-project tree), sections, custom field definitions (`fields`, deleted ones included), tasks (with subtasks, completion, tombstones and their `fields` values), reminders and saved views are recreated with their original ids and field values, so importing an export into an empty account and exporting again gives an equivalent file (comments aside, see below).
 
-Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id`, a task's `blocked_by` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes`, `ical_extra` and every custom field value in `fields`, including values of definitions that were deleted or belong to another project. The preview counts the definitions it creates as `fields`.
+Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id`, a task's `blocked_by` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes`, `ical_extra`, `origin` (where the task came from, unchanged) and every custom field value in `fields`, including values of definitions that were deleted or belong to another project. The preview counts the definitions it creates as `fields`.
 
 What is handled differently, and why:
 
@@ -76,6 +76,7 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `note` row | appended to the task's description under "Comments" (with a warning) |
 | `DEADLINE` | the task's [deadline](tasks-and-projects.md#deadlines), read with `DEADLINE_LANG` like `DATE`; a value that cannot be read is kept as a "Deadline: …" line in the description (with a warning) |
 | `RESPONSIBLE` | dropped with a warning |
+| the row itself | the task's [origin](capture.md#where-a-task-came-from), `{kind: "import", provider: "todoist", id}` with the source id the importer remembers for duplicates (`origin: todoist`) |
 
 `DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish or Portuguese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
 
@@ -98,6 +99,7 @@ TickTick's backup is one CSV, created from its settings (Backup). It starts with
 | `Reminder` | reminders (for example `-PT15M`); on an all-day task the trigger counts from midnight, so `PT9H` fires at 09:00 on the day |
 | `Repeat` (RRULE) | a recurrence rule, when the grammar can express it |
 | `Status` 2 / -1 | completed / completed with the label `canceled` (abandoned) |
+| `taskId` | the task's origin, `{kind: "import", provider: "ticktick", id: <taskId>}` (`origin: ticktick`); a checklist item's id is its task's id with `:item:<n>` |
 
 ### Linear (`linear-csv`)
 
@@ -108,6 +110,7 @@ Linear exports a workspace's issues as CSV from its workspace settings (Import /
 | `Project` (or `Team` when there is none) | a project, which opens as a board on the importing device |
 | `Status` | a section, in the order statuses first appear, so the board shows the same columns |
 | `Title`, `Description` | the title, and the description starting with the issue identifier (`ENG-123`) |
+| `ID` | also the task's origin, `{kind: "issue", provider: "linear", id: "ENG-123"}`: the row shows an `ENG-123` chip without a link (the export has no URLs) and `origin: linear` lists it |
 | `Priority` Urgent / High / Medium / Low / No priority | p1 / p2 / p3 / p4 / p4 |
 | `Labels` | labels |
 | `Due Date` | the due date |
@@ -139,6 +142,7 @@ The file is read from a private copy on the server, read-only, using only Things
 | Someday | the task is [parked](tasks-and-projects.md#when-a-task-starts) (a Someday to-do that also has a date keeps the date, with a warning) |
 | This Evening | the task's evening flag |
 | trashed items | skipped |
+| the to-do's or checklist item's uuid | the task's origin, `{kind: "import", provider: "things", id: <uuid>}` (`origin: things`) |
 
 ### CSV (`csv`)
 
@@ -268,6 +272,10 @@ Reminders are created together with their task (a task that is skipped, for exam
 | `type: "location"` | dropped with a warning |
 
 A relative reminder fires at the due time plus its offset, with a date-only due counting as 09:00, in the chosen time zone. On a task without a due date it is kept but does not fire (the row says so). A reminder whose time has already passed at import time is imported dismissed, with a warning, so no stale notification is sent. Offsets beyond one year are dropped with a warning.
+
+### Origins
+
+Tasks from Todoist, TickTick, Things and Linear keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field and shown as a chip on the row. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
 
 ## Duplicates
 

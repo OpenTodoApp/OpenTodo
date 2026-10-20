@@ -13,7 +13,7 @@ card: settings
 
 <picture><source srcset="images/settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-light.webp" alt="Settings on a wide screen: the list of sections with the profile card and the search field on the left, the Account section open on the right."></picture>
 
-Open **Settings** with the gear next to your name at the bottom of the sidebar, or press <kbd>g</kbd> then <kbd>s</kbd>. On a wide screen the sections are listed in the left column with the first, **Account**, open beside it; on a phone the list comes first and each section is its own page with a **← Settings** link back. The list starts with your profile card (initials, name, email, role) and **Search settings**, then the sections, each with an icon and a line saying what's inside, grouped under **You**, **App**, **Data** and, for the people who run the server, **Server**.
+Open **Settings** from the menu of your name at the bottom of the sidebar, or press <kbd>g</kbd> then <kbd>s</kbd>. On a wide screen the sections are listed in the left column with the first, **Account**, open beside it; on a phone the list comes first and each section is its own page with a **← Settings** link back. The list starts with your profile card (initials, name, email, role) and **Search settings**, then the sections, each with an icon and a line saying what's inside, grouped under **You**, **App**, **Data** and, for the people who run the server, **Server**.
 
 **Search settings** finds a setting by name or by what it does; matches are listed under their section and Enter opens the first with that row focused. The command palette (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>) searches the same index: "passkey" lists **Account › Passkeys**.
 
@@ -31,7 +31,7 @@ Your account and how the app looks for you: [Settings: You](settings-you.md).
 
 ### Account
 
-[Account](settings-you.md#account): your profile, **Sign out of this device**, password, two-factor authentication, passkeys, linked accounts, end-to-end encryption and recent activity.
+[Account](settings-you.md#account): your profile, **Sign out here**, password, two-factor authentication, passkeys, linked accounts, end-to-end encryption and recent activity.
 
 ### Appearance
 

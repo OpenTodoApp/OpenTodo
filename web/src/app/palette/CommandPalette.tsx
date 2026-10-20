@@ -4,7 +4,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLabels, useProjects, useSectionPlace } from '../../lib/localData'
+import { useLabels, useProjects, useSectionPlace, useUserPrefsRow } from '../../lib/localData'
+import { isFavourite } from '../../lib/favourites'
 import { pickScores } from '../../lib/pickRank'
 import { canEditProject, membershipMap, roleOf } from '../../lib/sharing'
 import { loadViewMode } from '../../lib/sections'
@@ -45,6 +46,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useProjects()
   const labels = useLabels()
+  const prefs = useUserPrefsRow()
   const views = useViews()
   const memberships = useLiveQuery(() => membershipMap(), [])
   const scores = useLiveQuery(() => pickScores('palette'), [], new Map<string, number>())
@@ -75,12 +77,13 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
         row: project, role, shared: !!memberships?.get(project.id), targets: moveTargets(project, projects),
         subCount: projects.filter((p) => p.parent_id === project.id).length,
         openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
+        pinned: isFavourite(prefs, 'project', project.id),
       } : undefined,
-      view: view ? { row: view, peers: sorted.filter((v) => v.pinned === view.pinned), isStart: startView === `view:${view.id}` } : undefined,
-      label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position) } : undefined,
+      view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
+      label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   const source = useMemo(() => [...commandEntries(ctx), ...buildEntries({ tasks, projects, labels, views, user, today })], [ctx, tasks, projects, labels, views, user, today])

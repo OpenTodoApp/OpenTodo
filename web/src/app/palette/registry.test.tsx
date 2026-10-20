@@ -3,7 +3,8 @@
 // the project, view, label and section menus has a palette command for that row.
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Label, Project, Section, User, View } from '../../lib/types'
+import type { Label, Project, Section, Task, User, View } from '../../lib/types'
+import type { ListState } from '../listActions'
 import { render } from '../../ui/test-utils'
 import { labelMenuGroups } from '../LabelsView'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
@@ -43,9 +44,9 @@ async function menuLabels(groups: ActionGroup[], header?: React.ReactNode): Prom
 
 const noop = () => {}
 const menus: [string, () => Promise<string[]>][] = [
-  ['project', () => menuLabels(projectMenuGroups(project, ctx.project!, { rename: noop }), <>{HUES.map((h) => <button key={h.name} data-menu-label={`Colour ${h.name}`} />)}</>)],
+  ['project', () => menuLabels(projectMenuGroups(project, ctx.project!, { rename: noop, pin: noop }), <>{HUES.map((h) => <button key={h.name} data-menu-label={`Colour ${h.name}`} />)}</>)],
   ['view', () => menuLabels(viewMenuGroups(other, ctx.view!.peers, false, { rename: noop, move: noop, pin: noop, startView: noop, remove: noop }))],
-  ['label', () => menuLabels(labelMenuGroups(label2, ctx.label!.labels, { edit: noop, rename: noop, move: noop }))],
+  ['label', () => menuLabels(labelMenuGroups(label2, ctx.label!.labels, { edit: noop, rename: noop, move: noop, pin: { checked: false, toggle: noop } }))],
   ['section', () => menuLabels(sectionMenuGroups('Backlog', ctx.section!, { rename: noop, move: noop, remove: noop }))],
 ]
 
@@ -60,8 +61,38 @@ describe('registry completeness', () => {
     expect(missing, `no palette command for the ${kind} menu item(s): ${missing.join(', ')}`).toEqual([])
   })
 
+  it('Pin to sidebar is a command for projects and labels too (sidebar-favourites)', () => {
+    expect(available.has('project|Pin to sidebar')).toBe(true)
+    expect(available.has('label|Pin to sidebar')).toBe(true)
+    expect(available.has('view|Pin to sidebar')).toBe(true)
+  })
+
+  it('Go to Projects opens the All projects page with g Shift+P', () => {
+    const go = commands(ctx).find((c) => c.label === 'Go to Projects')
+    expect(go?.shortcut).toBe('g Shift+P')
+  })
+
   it('names a planted menu item that has no command', async () => {
     const planted = await menuLabels([{ items: [{ kind: 'action', id: 'x', label: 'Teleport', onSelect: noop }] }])
     expect(planted.filter((l) => !available.has(`project|${norm(l)}`))).toEqual(['Teleport'])
+  })
+})
+
+describe('Focus commands (focus-mode D8)', () => {
+  const task = { id: 't1', title: 'Write the report', completed_at: null, deleted_at: null } as unknown as Task
+  const list = { readOnly: () => false, open: () => {}, toggleComplete: () => {} } as unknown as ListState
+  const base: PaletteContext = { ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'inbox' } }
+  const focusLabels = (c: PaletteContext) => commands(c).filter((x) => /focus/i.test(x.label)).map((x) => x.label)
+
+  it('lists "Focus on <title>" for the selected task, running the same navigation as the panel menu', () => {
+    const cmds = commands({ ...base, list, task })
+    expect(focusLabels({ ...base, list, task })).toEqual(['Focus on “Write the report”', 'Go to Focus'])
+    cmds.find((x) => x.id === 'task:focus')!.run()
+    expect(location.pathname).toBe('/focus/t1')
+  })
+
+  it('without a selected task only "Go to Focus", with its shortcut', () => {
+    expect(focusLabels(base)).toEqual(['Go to Focus'])
+    expect(commands(base).find((x) => x.id === 'go:focus')?.shortcut).toBe('g Shift+F')
   })
 })

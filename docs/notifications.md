@@ -16,7 +16,7 @@ OpenTodo tells you about four things: a task someone assigned to you, a comment 
 
 ## The bell
 
-The bell at the top right shows a red count when something new arrived from other people:
+The bell at the bottom of the sidebar shows a small dot when one new thing arrived from other people, and a small count when more did:
 
 - **assigned you**: someone assigned you a task in a shared project,
 - **mentioned you**: someone wrote `@your name` in a comment,
@@ -54,7 +54,7 @@ The text of a notification (**Due** and the date, **Snooze 10 min**, **Dismiss**
 
 ## A weekly digest by email
 
-Besides reminders, you can get one email a week with last week's numbers and what needs attention. Turn it on in **Settings → Notifications → Weekly digest**; see [Statistics and the weekly digest](statistics.md#weekly-digest-by-email).
+Besides reminders, you can get one email a week with last week's numbers and what needs attention. Turn it on in **Settings → Notifications → Weekly digest**; see [Statistics and the weekly digest](statistics.md#weekly-digest-by-email). It counts days from your [day start](dates-and-times.md#when-a-day-ends), like the Statistics screen.
 
 ## When notifications don't arrive
 

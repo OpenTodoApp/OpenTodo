@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/pixari/opentodo/internal/origin"
 )
 
 // Linear's workspace CSV export (OpenSpec change named-importers): one row per
@@ -106,6 +108,9 @@ func (linearProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		row := Row{Line: line, Kind: KindTask, SourceID: "linear:" + ident, ProjectSourceID: projSource, SectionName: get("Status")}
 		if ident == "" {
 			row.SourceID = fmt.Sprintf("linear:line:%d", line)
+		} else if o := (origin.Origin{Kind: origin.KindIssue, Provider: "linear", ID: ident}); o.Validate() == nil {
+			// The identifier is the task's origin (task-origin); the export has no URL.
+			row.Origin = &o
 		}
 		row.Title = get("Title")
 		if row.Title == "" {

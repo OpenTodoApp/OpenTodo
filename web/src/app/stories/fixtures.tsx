@@ -5,11 +5,13 @@
 // October" never change), no network, sequential ids, a known date-time format,
 // and realistic titles. Stories that take plain props use `withClock` only.
 import type { Decorator, StoryObj } from '@storybook/react-vite'
-import { db } from '../../lib/db'
+import { db, setMeta } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, createSubtask, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { createSection, saveViewMode } from '../../lib/sections'
+import { setCurrentUserId } from '../../lib/sharing'
+import { logTime, startTracking } from '../../lib/timeEntries'
 import type { Label, Project, Task, User } from '../../lib/types'
 import { HUES, type HueName } from '../../ui'
 import { resetPanel } from '../panel'
@@ -141,6 +143,20 @@ export const HEX = { red: hue('red'), orange: hue('orange'), green: hue('green')
 
 // ---- seeds ----
 
+/**
+ * Time entries (OpenSpec time-tracking): the story user's past entries on the Inbox
+ * task and one entry running for 1 h 5 min on another task (the indicator stories).
+ */
+export async function seedTracking(): Promise<void> {
+  await seedInbox()
+  await setCurrentUserId(storyUser.id)
+  const now = Date.now()
+  await logTime(seeded.inboxTask, now - 26 * 3600000, now - 26 * 3600000 + 25 * 60000, 'Forms printed')
+  await logTime(seeded.inboxTask, now - 3 * 3600000, now - 3 * 3600000 + 10 * 60000)
+  seeded.trackedTask = await createTask({ title: 'Write the report', estimate_minutes: 90 })
+  await startTracking(seeded.trackedTask, { now: now - 65 * 60000 })
+}
+
 /** Projects and labels every list story shares. */
 async function seedBase() {
   seeded.work = await createProject({ name: 'Work', color: HEX.blue })
@@ -218,6 +234,20 @@ export async function seedCalendarWeek(): Promise<void> {
   await createTask({ title: 'Team retrospective', due: { date: '2026-10-16', time: '14:00' }, estimate_minutes: 60, project_id: seeded.work })
   await createTask({ title: 'Market', due: { date: '2026-10-17', time: '09:00' }, estimate_minutes: 90, project_id: seeded.home })
   await createTask({ title: 'Long run', due: { date: '2026-10-18', time: '08:00' }, estimate_minutes: 120, project_id: seeded.health })
+}
+
+/**
+ * The Plan (planner-view D10): the calendar week, a weekly Monday report of 45
+ * minutes (one row on the 19th, a projection on the 26th) and a subscribed
+ * calendar's meeting tomorrow, so a column shows the three-segment bar.
+ */
+export async function seedCalendarPlan(): Promise<void> {
+  await seedCalendarWeek()
+  await createTask({ title: 'Weekly report', due: { date: '2026-10-19', time: '09:00' }, recurrence: 'every monday', estimate_minutes: 45, project_id: seeded.work })
+  await createTask({ title: 'Ship the newsletter', due: { date: TOMORROW }, recurrence: 'every week', estimate_minutes: 30, project_id: seeded.website })
+  await db.calendarSubscriptions.put({ id: 'story-sub', name: 'Work calendar', color: hue('blue'), enabled: true, lastSuccessAt: Date.parse('2026-10-14T11:00:00') })
+  await db.calendarEvents.put({ id: 'story-ev', subscriptionId: 'story-sub', uid: 'story-ev', summary: 'Team sync', location: 'Room 4', start: { date: TOMORROW, time: '13:00' }, end: { date: TOMORROW, time: '14:30' }, allDay: false, free: false })
+  await setMeta('calendar.events.window', { from: '2026-10-01', to: '2026-11-30', fetchedAt: Date.parse('2026-10-14T11:00:00') })
 }
 
 /** A comment and an attachment on a task, for the count chips (fixture rows, not ops). */

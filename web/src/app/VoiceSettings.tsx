@@ -9,6 +9,7 @@ import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../li
 import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
 import { t, preferredLanguages } from '../lib/i18n'
+import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
@@ -41,20 +42,19 @@ export function VoiceSettingsSection() {
   const followed = resolveLanguages(loadQuickAddSettings(), browser)[0] ?? 'en'
 
   return (
-    <SettingsSection title={t('Voice capture')} headingId="voice-settings-heading"
-      description={t('Speak a task instead of typing it. Applies to this device only.')}>
-      <SettingRow label={t('Dictate tasks into quick add')} description={
+    <SettingsSection {...cardCopy('voice-settings')}>
+      <SettingRow label={rowCopy('voice-settings', 'dictate', { variant: 'supported' }).label} description={
         <span id="voice-settings-note">
           {supported
-            ? <>{t.rich('A microphone button appears in quick add, and dictation also starts with {kbd}. Spoken words become quick-add text (“hashtag home priority two” → {example}); nothing is saved until you press Enter.', { kbd: <Kbd k={keysOf('list.dictate')} />, example: <code>#home p2</code> })}</>
-            : t('This browser does not provide speech recognition, so voice capture is not available here. Typing works as usual.')}
+            ? <>{t.rich(SETTINGS_COPY['voice-settings'].rows.dictate.description.supported, { kbd: <Kbd k={keysOf('list.dictate')} /> })}</>
+            : rowCopy('voice-settings', 'dictate', { variant: 'unsupported' }).description}
         </span>
       } control={
         <Switch checked={supported && s.enabled} disabled={!supported} label={t('Dictate tasks into quick add')} hideLabel
           onChange={(on) => (on ? setConfirming(true) : update({ ...s, enabled: false }))} />
       } />
       {supported && s.enabled && (
-        <SettingRow label={t('Recognition language')} htmlFor="voice-lang" control={
+        <SettingRow {...rowCopy('voice-settings', 'lang')} htmlFor="voice-lang" control={
           <Select id="voice-lang" className="sm:w-56" value={s.lang ?? ''} onChange={(e) => update({ ...s, lang: e.target.value || null })}>
             <option value="">{t('Follow quick add ({language})', { language: LANGUAGE_NAMES[followed] ?? followed })}</option>
             {BUNDLED_LANGUAGES.map((code) => <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>)}

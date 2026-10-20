@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { matchDuration, matchLabel, matchPriority, matchProject, type ProjectRef } from './attributes'
 import { matchDateAt, matchTimeAt, nextNextWeekday, nextWeekday, type DateContext } from './dates'
 import { parse, rebaseDismissed, type ParseContext } from './parse'
+import { logicalToday } from '../dates'
 import { stripSpans, tokenize } from './tokenize'
 import { activeLanguages, normalize, VOCABULARIES, vocabulariesFor } from './vocab'
 
@@ -546,7 +547,7 @@ describe('parse: escaping and dismissal', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, recurrence: null, reminders: [], chips: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {
@@ -702,5 +703,47 @@ describe('someday and evening phrases (OpenSpec someday-and-evening 5.1)', () =>
     const first = at('Learn to sail someday')
     const dismissed = first.chips.find((c) => c.kind === 'someday')!.spans
     expect(at('Learn to sail someday', { dismissed })).toMatchObject({ title: 'Learn to sail someday', start: null })
+  })
+})
+
+describe('ordinal weekdays (OpenSpec quick-add-nth-weekday 2.4)', () => {
+  it('a dismissed ordinal weekday keeps its text in the title and does not come back', () => {
+    const line = 'Review notes from last Friday'
+    const first = parse(line, ctx())
+    expect(first).toMatchObject({ title: 'Review notes from', due: { date: '2026-10-30' } })
+    const due = first.chips.find((c) => c.kind === 'due')!
+    expect(due.spans.map((s) => s.text)).toEqual(['last Friday'])
+    const r = parse(line, ctx({ dismissed: due.spans }))
+    expect(r.title).toBe(line)
+    expect(r.due).toBeNull()
+    expect(r.chips).toEqual([])
+    // Further typing keeps the dismissal while that text is unchanged.
+    const longer = `${line} with Ana`
+    expect(parse(longer, ctx({ dismissed: rebaseDismissed(line, longer, due.spans) })).due).toBeNull()
+  })
+
+  it('a count before a weekday is a literal match: no chip, the line as typed', () => {
+    const r = parse('Board every 2 Mondays', ctx())
+    expect(r.chips).toEqual([])
+    expect(r).toMatchObject({ title: 'Board every 2 Mondays', due: null, recurrence: null })
+    expect(parse('Reunión cada 2 lunes', ctx({ languages: ['es'] })).chips).toEqual([])
+    expect(parse('Treffen alle 2 Montage', ctx({ languages: ['de', 'it'] })).chips).toEqual([])
+  })
+
+  it('resolves against the reference date it is given, which callers set to the logical today', () => {
+    // Tuesday 13 October 2026 at 02:00 with a 04:00 day start is still Monday the 12th.
+    const today = logicalToday(240, new Date(2026, 9, 13, 2, 0).getTime())
+    expect(today).toBe('2026-10-12')
+    expect(parse('Dentist second Monday', ctx({ today })).due).toEqual({ date: '2026-10-12' })
+    expect(parse('Dentist second Monday', ctx({ today: '2026-10-13' })).due).toEqual({ date: '2026-11-09' })
+  })
+
+  it('Portuguese weekday ordinals are listed only where they are weekday names', () => {
+    for (const v of Object.values(VOCABULARIES)) {
+      for (const word of Object.keys(v.ordinalsBeforeWeekday)) {
+        expect(v.weekdays.flat().map(normalize), v.code).toContain(normalize(word))
+      }
+      for (const p of [...v.ordinalArticles, ...v.ordinalOf, ...v.ofMonthWords]) expect(p.trim(), v.code).not.toBe('')
+    }
   })
 })

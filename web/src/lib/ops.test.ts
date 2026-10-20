@@ -461,6 +461,49 @@ describe('project sharing', () => {
   })
 })
 
+describe('task origin (task-origin 1.4)', () => {
+  const ORIGIN = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
+
+  it('a task created without one reads null and sends no origin op', async () => {
+    const id = await createTask({ title: 'Plain' })
+    expect((await db.tasks.get(id))?.origin).toBeNull()
+    expect((await db.outbox.toArray()).some((o) => o.field === 'origin')).toBe(false)
+  })
+
+  it('createTask writes the origin in the same batch as the task', async () => {
+    const id = await createTask({ title: 'Fix the login timeout', origin: ORIGIN })
+    expect((await db.tasks.get(id))?.origin).toEqual(ORIGIN)
+    const ops = await db.outbox.toArray()
+    expect(ops.find((o) => o.field === 'origin')?.value).toEqual(ORIGIN)
+  })
+
+  it('a copy across sharing scopes keeps the origin; one without an origin sends none', async () => {
+    const shared = await createProject({ name: 'Home' })
+    await db.memberships.put({ projectId: shared, role: 'editor', ownerId: 'alice', members: [] })
+    const withOrigin = await createTask({ title: 'Captured', project_id: shared, origin: ORIGIN })
+    const plain = await createTask({ title: 'Typed', project_id: shared })
+    await db.outbox.clear()
+    const copy = await updateTask(withOrigin, { project_id: null })
+    expect((await db.tasks.get(copy))?.origin).toEqual(ORIGIN)
+    await db.outbox.clear()
+    const plainCopy = await updateTask(plain, { project_id: null })
+    expect((await db.tasks.get(plainCopy))?.origin).toBeNull()
+    expect((await db.outbox.toArray()).some((o) => o.field === 'origin')).toBe(false)
+  })
+
+  it('origin converges whole by last-writer-wins', async () => {
+    const page = { kind: 'url', url: 'https://a.example/x' }
+    await applyOps([
+      op({ field: 'title', value: 'T', ts: 1, device: 'A' }),
+      op({ field: 'origin', value: page, ts: 5, device: 'A' }),
+      op({ field: 'origin', value: ORIGIN, ts: 6, device: 'B' }),
+      op({ field: 'title', value: 'Renamed', ts: 7, device: 'A' }),
+    ])
+    expect((await db.tasks.get('t1'))?.origin).toEqual(ORIGIN)
+    expect((await db.tasks.get('t1'))?.title).toBe('Renamed')
+  })
+})
+
 describe('task assignment', () => {
   const member = (userId: string) => ({ userId, name: userId, email: `${userId}@example.com`, role: 'editor' as const })
 

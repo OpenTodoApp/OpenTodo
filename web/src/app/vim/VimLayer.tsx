@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useProjects } from '../../lib/localData'
 import { visibleProjects } from '../../lib/projects'
-import { todayISO } from '../../lib/dates'
+import { logicalToday } from '../../lib/dates'
 import { syncNow } from '../../lib/sync'
 import { navigate, useRoute } from '../router'
 import type { HelpSection } from '../ShortcutHelp'
@@ -97,7 +97,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
   async function run() {
     const res = await runCommand(text, {
       route,
-      today: todayISO(),
+      today: logicalToday(),
       userId,
       projects,
       navigate,

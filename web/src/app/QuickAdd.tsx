@@ -4,8 +4,7 @@ import { useShortcutHints } from './shortcuts/hints'
 import type { HueName } from '../ui'
 import { Tooltip } from '../ui'
 import { Icon } from '../ui'
-import { HelpLink } from './help/HelpLink'
-import { describeDue, formatDate, todayISO } from '../lib/dates'
+import { describeDue, formatDate, logicalToday, todayISO } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
@@ -28,6 +27,7 @@ const CHIP_HUE: Record<Chip['kind'], HueName> = {
   label: 'cyan',
   priority: 'orange',
   estimate: 'green',
+  spent: 'lime',
   recurrence: 'teal',
   reminder: 'yellow',
 }
@@ -41,18 +41,6 @@ function dueInWords(due: Due): string {
   const words = describeDue(due)?.label ?? due.date
   const full = formatDate(due.date, 'long')
   return words.startsWith(t('Today')) || words.startsWith(t('Tomorrow')) ? `${words} · ${full}` : words
-}
-
-/** How many times quick add has been used on this device, for the guide link's first three uses. */
-export const QUICK_ADD_HELP_USES = 3
-const USES_KEY = 'ot.quickAdd.uses'
-export function quickAddUses(): number {
-  try { return Number(localStorage.getItem(USES_KEY)) || 0 } catch { return 0 }
-}
-function countQuickAddUse(): number {
-  const n = quickAddUses() + 1
-  try { localStorage.setItem(USES_KEY, String(n)) } catch { /* device state only */ }
-  return n
 }
 
 /** The picker's helper; a label created meanwhile (another tab, a sync) is reused. */
@@ -84,7 +72,9 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
       return line?.due && !line.datedByPhrase ? `${String(chip.value)} · ${formatDate(line.due.date, 'long')}` : String(chip.value)
     case 'reminder': {
       const r = chip.value as ReminderPhrase
-      const res = resolveReminder(r, line?.due ?? null, todayISO(), nowHHMM())
+      // Reminders are instants: the calendar date and clock of now, not the logical day (day-boundary D2).
+      const now = new Date()
+      const res = resolveReminder(r, line?.due ?? null, todayISO(now), nowHHMM(now))
       if (res.kind === 'absolute') return t('Remind {date}, {time}', { date: formatDate(res.date, 'long'), time: res.time })
       return line?.due ? describeOffset(res.offsetMinutes) : `${describeOffset(res.offsetMinutes)} · ${t('needs a due date')}`
     }
@@ -104,10 +94,12 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
       return `P${String(chip.value)}`
     case 'estimate':
       return formatMinutes(chip.value as number)
+    case 'spent':
+      return t('Spent {duration}', { duration: (chip.value as number) < 60 ? t('{n} min', { n: chip.value as number }) : formatMinutes(chip.value as number) })
   }
 }
 
-const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
 
 /**
  * Single-line capture. With natural-language parsing on (per-device setting), the
@@ -151,7 +143,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     if (!settings.enabled || !value.trim()) return null
     const langs = preferredLanguages()
     return parse(value, {
-      today: todayISO(),
+      today: logicalToday(),
       now: nowHHMM(),
       languages: resolveLanguages(settings, langs),
       dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),
@@ -181,15 +173,11 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     setHighlight(null)
   }
 
-  // The first three uses on this device show the guide link (documentation "Contextual help").
-  const [helpOffered, setHelpOffered] = useState(() => quickAddUses() < QUICK_ADD_HELP_USES)
   async function submit(e: FormEvent) {
     e.preventDefault()
     const line = value.trim()
     if (!line) return
     if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
-    // A real add counts as a use; the link leaves after the third one.
-    if (helpOffered && countQuickAddUse() >= QUICK_ADD_HELP_USES) setHelpOffered(false)
     const snapshot = parsed
     // Clear first so the next entry can be typed while labels are being created.
     valueRef.current = ''
@@ -309,8 +297,6 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           </div>
         )}
       </div>
-      {/* Contextual help (user-documentation; ux-overhaul "Contextual help"): offered on the first three uses on this device. */}
-      {helpOffered && <div className="-mt-0.5 pl-5"><HelpLink screen="quick-add" topic={t('Quick add')} /></div>}
     </form>
   )
 })

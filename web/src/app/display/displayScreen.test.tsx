@@ -7,7 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
-import { setDateTime } from '../../lib/dates'
+import { setDateTime, setDayStart } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { createSection } from '../../lib/sections'
 import { createView } from '../../lib/views'
@@ -45,6 +45,29 @@ function show(target: DisplayTarget, options: Partial<DisplayOptions> = {}) {
 
 const groupText = (c: HTMLElement, id: string) => [...c.querySelectorAll(`[data-display-group="${id}"] [data-display-row]`)].map((r) => r.querySelector('.display-task')!.textContent)
 const headings = (c: HTMLElement) => [...c.querySelectorAll('h2')].map((h) => h.textContent)
+
+describe('day start (day-boundary 2.6)', () => {
+  afterEach(() => setDayStart(0))
+
+  it('at 01:30 with a 04:00 day start the display names the previous day and its completions', async () => {
+    vi.setSystemTime(new Date(2026, 9, 15, 1, 30))
+    setDayStart(240)
+    await createTask({ title: 'Water plants', due: { date: '2026-10-14' } })
+    const late = await createTask({ title: 'Late call', due: { date: '2026-10-14' } })
+    await db.tasks.update(late, { completed_at: new Date(2026, 9, 15, 1, 0).getTime() })
+    const evening = await createTask({ title: 'Evening run', due: { date: '2026-10-14' } })
+    await db.tasks.update(evening, { completed_at: new Date(2026, 9, 14, 20, 0).getTime() })
+    await createTask({ title: 'Dentist', due: { date: '2026-10-15' } })
+    const r = await show({ kind: 'today' })
+    await waitFor(() => r.container.textContent!.includes('Dentist'))
+    expect(r.container.querySelector('[data-clock-date]')!.textContent).toBe('Wednesday 14 October')
+    expect(groupText(r.container, 'overdue')).toEqual([])
+    expect(groupText(r.container, 'today')).toEqual(['Water plants'])
+    expect(groupText(r.container, 'done')).toEqual(['Late call', 'Evening run'])
+    expect(groupText(r.container, '2026-10-15')).toEqual(['Dentist'])
+    await r.unmount()
+  })
+})
 
 describe('display targets', () => {
   it('Today: clock and date, Overdue, Today, Done today and three day columns, without the shell', async () => {

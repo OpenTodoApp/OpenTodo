@@ -45,6 +45,8 @@ type State struct {
 	ProjectPrefs []opsync.Entity
 	// Attachments (including removed ones) let own-export rows detect existing ids.
 	Attachments []opsync.Entity
+	// TimeEntries (including deleted ones) let own-export rows detect existing ids.
+	TimeEntries []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
 	UserID string
 	// Remembered maps source ids recorded by earlier, not undone imports of the
@@ -101,10 +103,12 @@ type Totals struct {
 	// Attachments counts created attachments, files and links (attachments); additive.
 	Attachments int `json:"attachments"`
 	// Fields counts created live custom field definitions (custom-fields); additive.
-	Fields   int `json:"fields"`
-	Entities int `json:"entities"`
-	Written  int `json:"written"`
-	Ops      int `json:"ops"`
+	Fields int `json:"fields"`
+	// TimeEntries counts created time entries (time-tracking); additive.
+	TimeEntries int `json:"timeEntries"`
+	Entities    int `json:"entities"`
+	Written     int `json:"written"`
+	Ops         int `json:"ops"`
 	// Refused counts ops the sync engine refused for authorization reasons (for
 	// example a shared project whose role changed during the import); additive.
 	Refused int `json:"refused,omitempty"`
@@ -224,6 +228,11 @@ type planner struct {
 	implicitSec  map[string]*implicit // sections to create, by the same key
 	secOrder     []*implicit
 
+	// exportedBy is the own export's author; foreignEntries counts the time
+	// entries of other accounts the plan drops (time-tracking D11).
+	exportedBy     string
+	foreignEntries int
+
 	// createdBySource maps a project row's source id to the id of the project this
 	// import creates (for view hints).
 	createdBySource map[string]string
@@ -250,7 +259,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindAttachment: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -258,7 +267,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e
@@ -310,7 +319,11 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		pl.results[i] = RowResult{Row: r.Line, File: r.File, SourceID: r.SourceID, Kind: r.Kind, Title: r.Title, Warnings: r.Warnings}
 	}
 	if parsed.Format == "opentodo" {
+		pl.exportedBy = parsed.ExportedBy
 		p.changes = pl.planOwn(parsed.Rows)
+		if n := pl.foreignEntries; n > 0 {
+			p.Notes = append(p.Notes, fmt.Sprintf("%d %s not imported: they were tracked by another account, and an import writes only under yours", n, plural(n, "time entry of another account is", "time entries of other accounts are")))
+		}
 	} else {
 		p.changes = pl.planForeign(parsed.Rows)
 	}
@@ -358,6 +371,9 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 		if c.created && c.entity == KindAttachment && live {
 			p.Totals.Attachments++
+		}
+		if c.created && c.entity == KindTimeEntry {
+			p.Totals.TimeEntries++
 		}
 	}
 	p.Totals.Entities = len(p.changes)

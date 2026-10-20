@@ -7,7 +7,7 @@ import { useWithMethod } from './help/MethodLink'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader, Dialog } from '../ui'
-import { formatDate, todayISO } from '../lib/dates'
+import { formatDate, logicalToday } from '../lib/dates'
 import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
 import { moveTaskAcrossScopes } from '../lib/ops'
 import { currentUserId } from '../lib/sharing'
@@ -25,6 +25,7 @@ import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { selectTask } from './signals'
 import { completeWithUndo, deleteWithUndo, moveWithUndo, parkWithUndo, setDueWithUndo } from './undoable'
 import { t } from '../lib/i18n'
+import { keysOf } from '../lib/shortcuts'
 import { act } from './actionError'
 
 /** Someday (`y`) needs the `start` field of someday-and-evening, which has landed. */
@@ -132,7 +133,7 @@ export function TriageView() {
     const item = task
     if (!item) return
     switch (kind) {
-      case 'today': await setDueWithUndo(item.id, { ...(item.due ?? {}), date: todayISO() }); next(t('Due today: {title}.', { title: item.title || t('Untitled') })); break
+      case 'today': await setDueWithUndo(item.id, { ...(item.due ?? {}), date: logicalToday() }); next(t('Due today: {title}.', { title: item.title || t('Untitled') })); break
       case 'complete': await completeWithUndo(item.id, true); next(t('Completed: {title}.', { title: item.title || t('Untitled') })); break
       case 'trash': await deleteWithUndo(item.id); next(t('Moved to the Trash: {title}.', { title: item.title || t('Untitled') })); break
       case 'someday': if (HAS_SOMEDAY) { await parkWithUndo(item.id); next(t('Parked in Someday: {title}.', { title: item.title || t('Untitled') })) } break
@@ -226,8 +227,9 @@ export function TriageView() {
       <p className="sr-only" role="status" aria-live="polite" data-triage-live>{announce}</p>
       {notice && <div className="mb-3"><Notice>{notice}</Notice></div>}
       {!state ? null : !task ? (
-        <EmptyState icon="inbox" title={t('Inbox zero')} body={p.total ? t('Every task in the Inbox has a place. Nice work.') : t('The Inbox is empty.')}
-          action={<Button variant="primary" onClick={() => navigate({ view: 'inbox' })}>{t('Back to the Inbox')}</Button>} />
+        <div data-empty-state="triage">
+          <EmptyState title={t('Inbox zero: every task has a place.')} action={{ label: t('Back to the Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
+        </div>
       ) : (
         <>
           <section ref={card} tabIndex={-1} aria-label={t('Task {n} of {total}', { n: p.n, total: p.total })} data-triage-card={task.id}

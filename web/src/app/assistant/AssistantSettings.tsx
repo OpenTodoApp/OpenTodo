@@ -20,6 +20,7 @@ import { formatDate } from '../../lib/dates'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EncryptionOffHint } from './AssistantPanel'
 import { t, msg, translatedMap } from '../../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../../lib/settingsCopy'
 
 const LABEL = translatedMap<ProviderName>({ anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: msg('Compatible endpoint (Ollama, LM Studio, OpenRouter, …)') })
 const SHORT = translatedMap<ProviderName>({ anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: msg('Compatible endpoint') })
@@ -190,7 +191,7 @@ export function OwnerAssistantSummary({ saved, connected, onConfigure }: OwnerSu
   const cap = saved.monthly_token_cap_per_user
   return (
     <div className="divide-y divide-(--ot-border)" data-assistant-owner>
-      <SettingRow label={t('On this server')}
+      <SettingRow {...rowCopy('assistant-settings', 'server')}
         status={(
           <span className="flex flex-wrap items-center gap-2" data-testid="assistant-owner-status">
             <Badge hue={saved.enabled ? 'green' : 'slate'}>{saved.enabled ? t('On') : t('Off')}</Badge>
@@ -200,7 +201,7 @@ export function OwnerAssistantSummary({ saved, connected, onConfigure }: OwnerSu
           </span>
         )}
         control={<Button size="sm" icon="settings" disabled={!connected} onClick={onConfigure}>{t('Configure')}</Button>} />
-      <SettingRow label={t('Providers allowed')}
+      <SettingRow {...rowCopy('assistant-settings', 'providers')}
         status={allowed.length === 0 ? t('None yet.') : (
           <span className="flex flex-wrap gap-1.5">
             {allowed.map((n) => (
@@ -210,8 +211,8 @@ export function OwnerAssistantSummary({ saved, connected, onConfigure }: OwnerSu
             ))}
           </span>
         )} />
-      <SettingRow label={t('Monthly tokens per person')} status={cap ? t('{n, plural, one {# token} other {# tokens}}', { n: cap }) : t('Unlimited')} />
-      <SettingRow label={t('Members’ own keys')}
+      <SettingRow {...rowCopy('assistant-settings', 'cap')} status={cap ? t('{n, plural, one {# token} other {# tokens}}', { n: cap }) : t('Unlimited')} />
+      <SettingRow {...rowCopy('assistant-settings', 'memberKeys')}
         status={saved.allow_member_keys
           ? [
             saved.cap_member_keys ? t('Allowed, counted toward the limit') : t('Allowed'),
@@ -406,13 +407,13 @@ export function UserAssistantSettings(p: UserViewProps) {
   useDateTimeFormat()
   const s = p.status
   if (!s) return null
-  if (s.reason === 'encryption_enabled') return <div className="py-3"><Notice>{t('The assistant can’t read end-to-end encrypted tasks, so it is not available for your account.')}{' '}<EncryptionOffHint /></Notice></div>
-  if (!s.enabled) return <div className="py-3"><Notice>{t('The server owner has not turned the assistant on.')}</Notice></div>
+  if (s.reason === 'encryption_enabled') return <div className="py-3"><Notice>{noticeCopy('assistant-settings', 'encrypted')}{' '}<EncryptionOffHint /></Notice></div>
+  if (!s.enabled) return <div className="py-3"><Notice>{noticeCopy('assistant-settings', 'ownerOff')}</Notice></div>
   const ownSupported = s.source !== undefined
   const keptChoice = !s.allow_member_keys && s.own_provider
   return (
     <div className="divide-y divide-(--ot-border)" data-assistant-user>
-      <SettingRow label={t('Your assistant')}
+      <SettingRow {...rowCopy('assistant-settings', 'yours')}
         status={(
           <span className="block space-y-1">
             <span className="block">{t.rich(s.source === 'own' ? 'Provider: <strong>{provider}</strong>{model}, with your own key.' : 'Provider: <strong>{provider}</strong>{model}.', { provider: s.provider_label, model: s.model ? ` (${s.model})` : '', strong: (chunks) => <strong>{chunks}</strong> })}</span>
@@ -423,19 +424,18 @@ export function UserAssistantSettings(p: UserViewProps) {
           </span>
         )}
         control={s.consented ? <Button size="sm" disabled={!p.connected} onClick={p.onWithdraw}>{t('Withdraw consent')}</Button> : undefined} />
-      {p.usage && <SettingRow label={t('Usage')} status={<span className="text-muted">{usageText(p.usage)}</span>} />}
+      {p.usage && <SettingRow {...rowCopy('assistant-settings', 'usage')} status={<span className="text-muted">{usageText(p.usage)}</span>} />}
       {s.allow_member_keys && (ownSupported ? <OwnProviderForm key={`${s.own_provider?.provider ?? ''}:${s.own_provider?.model ?? ''}`} {...p} status={s} /> : <LegacyOwnKey {...p} status={s} />)}
       {keptChoice && (
         <div className="py-3" data-own-provider-kept>
           <Notice tone="warning" action={<Button size="sm" variant="ghost" disabled={!p.connected} onClick={() => void p.onSaveOwn?.({ own_provider: '' })}>{t('Forget my provider and key')}</Button>}>
-            {t('Your own provider ({provider_label}) is kept but not used: the server owner does not allow members’ own keys right now, so the server’s assistant answers.', { provider_label: keptChoice.provider_label })}
+            {noticeCopy('assistant-settings', 'kept', { values: { provider_label: keptChoice.provider_label } })}
           </Notice>
         </div>
       )}
-      <SettingRow label={t('Apply small changes without review (this device)')}
-        description={t('Up to 3 existing tasks: completing, dates, priority or labels. Creating, moving, deleting or editing text always asks you. An Undo button always appears.')}
+      <SettingRow {...rowCopy('assistant-settings', 'auto')}
         control={<Switch checked={p.autoApply} onChange={p.onAutoApply} label={t('Apply small changes without review (this device)')} hideLabel />} />
-      <SettingRow label={t('Conversations')} description={t('Stored only on this device, never on the server.')}
+      <SettingRow {...rowCopy('assistant-settings', 'conversations')}
         status={p.cleared ? <span role="status" className="text-muted">{t('Cleared.')}</span> : undefined}
         control={<Button size="sm" variant="danger" onClick={p.onClear}>{t('Clear conversations on this device')}</Button>} />
       {p.error && <div className="py-3"><Notice tone="danger">{p.error}</Notice></div>}
@@ -554,9 +554,8 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
   }
 
   return (
-    <SettingsSection title={t('Assistant')} headingId="assistant-settings-heading" testId="assistant-settings"
-      description={t('Plan and change your tasks by talking, with a model provider your server owner chooses (including a model on your own network), or with your own provider and key when the owner allows it. Every change is proposed for you to review and can be undone. Conversations stay on this device.')}>
-      {!connected && <div className="pb-3"><Notice>{t('You are offline. These settings live on the server and need a connection.')}</Notice></div>}
+    <SettingsSection {...cardCopy('assistant-settings')} testId="assistant-settings">
+      {!connected && <div className="pb-3"><Notice>{noticeCopy('assistant-settings', 'offline')}</Notice></div>}
       {error && !configuring && <div className="py-3"><Notice tone="danger">{error}</Notice></div>}
       {msg && !configuring && <div className="py-3"><Notice tone="success">{msg}</Notice></div>}
       {isOwner && settings && isOwnerSettings(settings) && <OwnerAssistantSummary saved={settings} connected={connected} onConfigure={configure} />}

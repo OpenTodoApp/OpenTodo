@@ -10,13 +10,16 @@ import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { getStartView } from '../../lib/views'
 import { click, flush, render } from '../../ui/test-utils'
 import { HowYouWorkSection } from './HowYouWorkSection'
+import { FirstRunGuide } from '../FirstRun'
+import { closeStartGuide } from '../../lib/startGuide'
+import type { User } from '../../lib/types'
 
 let n = 0
 beforeEach(() => {
   useDatabase(`how-you-work-${Date.now()}-${n++}`)
   resetDeviceId()
 })
-afterEach(() => { closeHelp(); document.body.innerHTML = '' })
+afterEach(() => { closeHelp(); closeStartGuide(); document.body.innerHTML = '' })
 
 async function waitFor(ok: () => boolean, ms = 2000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
@@ -85,5 +88,25 @@ describe('The mode is presentation only (open-loops "How you work preference")',
     const ops = (await db.outbox.toArray()).map((o) => [o.entity, o.field, o.value])
     expect(ops).toEqual([['user_prefs', 'method_mode', 'companion'], ['user_prefs', 'method_mode', 'first'], ['user_prefs', 'method_mode', 'lists']])
     expect((await db.tasks.toArray()).map((x) => x.title)).toEqual(['Measure wall'])
+  })
+
+  it('Start guide again: it opens over Settings at step one, and closing it writes nothing (lean-chrome D6)', async () => {
+    await setMethodMode('companion')
+    const user: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: 1 }
+    const r = await render(<><HowYouWorkSection /><FirstRunGuide user={user} /></>)
+    await waitFor(() => radio('companion')?.getAttribute('aria-checked') === 'true')
+    const before = await db.outbox.count()
+    expect(document.querySelector('[data-first-run]')).toBeNull()
+    await click(document.querySelector('[data-start-guide-again]')!)
+    await waitFor(() => !!document.querySelector('[data-overlay="dialog"] [data-first-run]'))
+    expect(document.querySelector('[data-first-run]')!.getAttribute('data-first-run-step')).toBe('task')
+    // Settings stays mounted behind it.
+    expect(document.querySelector('[data-testid="how-you-work"]')).not.toBeNull()
+    await click(document.querySelector('[data-overlay="dialog"] [data-overlay-close]')!)
+    await waitFor(() => !document.querySelector('[data-first-run]'))
+    expect(await db.outbox.count()).toBe(before)
+    expect(readMethodMode(await db.userPrefs.get('me'))).toBe('companion')
+    expect((await db.userPrefs.get('me'))?.first_run ?? '').toBe('')
+    await r.unmount()
   })
 })

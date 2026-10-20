@@ -6,6 +6,10 @@ import { describe, expect, it } from 'vitest'
 import type { Passkey } from '../lib/types'
 import { relativeTime, SecurityPanelView, type SecurityPanelViewProps } from './SecurityPanel'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const now = Date.UTC(2026, 9, 10, 12, 0, 0)
 const keys: Passkey[] = [
   { id: 'a', name: 'Phone', createdAt: now - 86_400_000, lastUsedAt: now - 5_000, suspiciousAt: null, backedUp: true },
@@ -30,7 +34,7 @@ describe('SecurityPanelView', () => {
   it('leads with the count, then a row per passkey with created, last use, a suspicious badge and a menu', () => {
     const html = render({})
     expect(html).toContain('>Passkeys</h2>')
-    expect(html).not.toContain('data-help-screen')
+    expect(withoutLearnMore(html)).not.toContain('data-help-screen')
     expect(html).toContain('2 passkeys')
     expect(html).toContain('Phone')
     expect(html).toContain('used just now')

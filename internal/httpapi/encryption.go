@@ -121,6 +121,16 @@ func (s *Server) handlePutEncryptionKeys(w http.ResponseWriter, r *http.Request)
 			out["digestDisabled"] = true
 			s.audit.Record(ctx, audit.SettingsChanged(uid, "email_digest", "on", "off"))
 		}
+		// Issue polls would write titles and bodies in plaintext (issue-import D11):
+		// the account's connections stop, and the response names them.
+		stopped, err := s.stopIssueConnections(ctx, uid)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if len(stopped) > 0 {
+			out["issueConnectionsStopped"] = stopped
+		}
 	} else {
 		s.audit.Record(ctx, audit.SettingsChanged(uid, "encryption.keys", "v"+strconv.Itoa(rec.Version-1), "v"+strconv.Itoa(rec.Version)))
 	}

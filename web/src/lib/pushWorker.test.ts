@@ -292,3 +292,28 @@ describe('service worker texts in the stored language (app-localization D9)', ()
     expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Snooze 10 min', 'Dismiss'])
   })
 })
+
+describe('focus session notifications (focus-mode D12)', () => {
+  it('a click on a notification with an address brings an open window there', async () => {
+    const scope = loadWorker()
+    const navigated: string[] = []
+    // loadWorker's stub windows cannot navigate: load the worker again over one that can.
+    const win = { navigate: async (url: string) => { navigated.push(url) }, focus: async () => undefined, postMessage: () => undefined }
+    const self = { clients: { matchAll: async () => [win], openWindow: async (url: string) => scope.opened.push(url) } }
+    const code = source.replace("const DB_NAME = 'opentodo'", `const DB_NAME = ${JSON.stringify(db.name)}`)
+    const listeners: Record<string, (ev: unknown) => void> = {}
+    new Function('self', 'fetch', 'indexedDB', code)({ ...self, crypto: globalThis.crypto, registration: {}, addEventListener: (type: string, fn: (ev: unknown) => void) => (listeners[type] = fn) }, undefined, globalThis.indexedDB)
+    await dispatch({ ...scope, listeners }, 'notificationclick', { notification: { data: { url: '/focus' }, close: () => undefined }, action: '' })
+    expect(navigated).toEqual(['/focus'])
+    expect(scope.opened).toEqual([])
+  })
+
+  it('opens the address when no window is open, and reminder clicks behave as before', async () => {
+    const scope = loadWorker()
+    await dispatch(scope, 'notificationclick', { notification: { data: { url: '/focus' }, close: () => undefined }, action: '' })
+    expect(scope.opened).toEqual(['/focus'])
+    const again = loadWorker()
+    await dispatch(again, 'notificationclick', { notification: { data: { reminderId: 'r1', taskId: 't1', fireAt: 1 }, close: () => undefined }, action: '' })
+    expect(again.opened).toEqual(['/?task=t1'])
+  })
+})

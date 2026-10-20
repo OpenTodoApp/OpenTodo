@@ -162,7 +162,13 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/time-entries` | yes | time entries you can read, newest first; `task`, `from`, `to`, `tz`, `running`, `limit`, `cursor`, `format=csv`, see [Time entries](#time-entries) |
+| GET | `/api/v1/tasks/{id}/time-entries` | yes | one task's live time entries, newest first |
+| POST | `/api/v1/time-entries` | yes (not `read`, not `agent`) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
+| POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
+| PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
+| DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -451,11 +457,11 @@ curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempot
 
 ### Agent tokens
 
-An `agent` token may write through REST on this fixed list of routes only, and only while the owner's **AI assistants may make changes** and the user's **Allow AI assistants to make changes** are both on:
+An `agent` token may write through REST on this fixed list of routes only, and only while the owner's **Assistants may make changes** and the user's **Changes to my tasks** are both on:
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence`, `origin` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon` (`archived: false` is accepted) |
@@ -501,6 +507,7 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `skipped` | boolean | set by the app on the occurrence record a skipped habit day writes (that record also has `series_id` and `completed_at`). Such records are returned in lists and the export like any task but are not completions: the app hides them from Completed and `completed` filters, and they never count towards `for N times` |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
+| `origin` | object or null | where the task came from, null when unset: `{kind, provider?, id?, url?, title?}` with `kind` one of `url` (a page; needs `url`), `email` (needs `id`, the Message-ID), `issue` (needs `id`, e.g. `o/r#7` or `ENG-123`) or `import` (needs `id`, the source id). `provider` is 1–32 of `a-z`, `0-9` and `-` (`github`, `gitlab`, `jira`, `linear`, `todoist`…); `url` is `http` or `https` with a host, at most 2,048 bytes; `id` at most 512 and `title` at most 500 characters; no other member. Written as one value (last writer wins, never mixed), accepted on create and PATCH (`null` clears) for `full`, `admin` and `agent` tokens; anything else is `400 invalid_input` naming `origin`. The server writes what you send: it derives nothing from the URL and never requests it (`ot add --origin-url` and the MCP tools recognise issue links on their side). Returned by every read, the export and webhook payloads; an end-to-end encrypted account holds one ciphertext string here. See [Where a task came from](capture.md#where-a-task-came-from) |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
 | `fields` | object | custom field values keyed by field definition id, always present (`{}` when none), values included for definitions that were deleted or belong to another project. On create and PATCH, a partial object: each key is validated against the live definitions of the task's project after the write and merged into the existing values, one operation per key; `null` clears a value. `400 invalid_input` naming the id for an unknown or foreign id or a value of the wrong type; a raw `fields.<id>` key is refused. See [Custom fields](#custom-fields) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
@@ -545,7 +552,7 @@ curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 - the task stays open and its `due` moves to the next occurrence (time and `tz` kept); the response is the task with the new `due`,
 - when the end condition (`until` or `for N times`) is reached, the task is completed normally instead.
 
-"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default). Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
+"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default); the user's day start (`user_prefs.day_start`) is not applied here. The occurrence record is keyed by the occurrence's due date, never by the clock, so a completion between midnight and the day start records the same day as one made in the app; only where a completion-relative rule counts from can differ by a day in that window. Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
 
 ```bash
 # Make a task repeat, then complete the current occurrence
@@ -652,10 +659,11 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
 | `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"` or `"title"` | default `due` (undated tasks last) |
 | `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
-| `pinned` | boolean | shown in the sidebar's Filters group; default `false` |
+| `pinned` | boolean | shown in the sidebar's Favourites group (every view is listed in the Filters group); default `false` |
 | `position` | number | sidebar order; defaults to the creation time |
 | `color` | string | CSS colour; default `#64748b` |
 | `panels` | string[] | dashboards only: up to 6 ids of existing, non-deleted **list** views, no duplicates, never the dashboard itself; replaced as a whole on PATCH |
+| `on_drop` | object or null | list views only: what a card dropped on a board column showing this view gets (OpenSpec `rule-boards`); `null` (the default) or an object with at most these keys: `add_labels` and `remove_labels` (up to 32 ids of existing, non-deleted labels each), `priority` (1–4), `due` (`"today"`, `"tomorrow"`, `"next-week"` or `"clear"`), `start` (`"someday"` or `"clear"`), `section` (`{"project_id":"…","section_id":"…"\|null}`, a section of that project or none) and `state` (`"complete"` or `"reopen"`). Unknown keys, values outside these sets and any rule on a dashboard are refused with 400 naming the field; replaced as a whole on PATCH; every representation and the export carry it, `null` when unset |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
 Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by` and `sort_dir` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
@@ -938,13 +946,15 @@ The server records security-relevant events in its own database (never synced to
 | `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
 | `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
+| `issue_connection.created`, `issue_connection.deleted` | success | actor = user | `connection_id`, `provider` (`github` or `gitlab`); never the host, token, filter or issue content |
+| `issue_connection.updated` | success | actor = user | `connection_id`, `provider`, `setting`: the changed settings by name, comma-separated (`host`, `filter`, `project`, `labels`, `interval`, `name`, `enabled`, `token`), never a value. Polls and the tasks they write are not recorded |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
 | `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
-| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
@@ -1080,7 +1090,7 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 # 201 {"user":{…,"role":"member"},"projectId":"…","role":"editor"} + session cookie
 ```
 
-The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Members can invite new people with project links** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
+The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Invite new people** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
 
 ### Public links
 
@@ -1151,11 +1161,11 @@ curl -sS "$OT/api/v1/tasks/$ID/history" -H "Authorization: Bearer $TOKEN"
 
 # Permanently delete a trashed task (its operations, values and reminders)
 curl -sS -X DELETE "$OT/api/v1/tasks/$ID/purge" -H "Authorization: Bearer $TOKEN"
-# 200 {"purged":{"tasks":1,"projects":0,"reminders":0,"sections":0,"comments":0}}
+# 200 {"purged":{"tasks":1,"projects":0,"reminders":0,"sections":0,"comments":0,"attachments":0,"timeEntries":0}}
 # 409 {"error":{"code":"not_deleted","message":"only items in the Trash can be permanently deleted; delete it first"}}
 ```
 
-Purging a project also purges every task that references it; purging a task also purges its deleted subtasks. In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
+Purging a project also purges every task that references it; purging a task also purges its deleted subtasks and every time entry on it, other members' included (`timeEntries`). In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
 
 ### Attachments
 
@@ -1218,6 +1228,30 @@ curl -sS "$OT/api/v1/projects/$P/activity?limit=2" -H "Authorization: Bearer $TO
 ```
 
 Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`, `assigned`, `unassigned`, `moved`, `archived`, `unarchived`, `edited`, `commented`, `comment_edited`, `comment_deleted`. A malformed `before` or a `limit` outside 1–200 answers `400 invalid_input`.
+
+### Time entries
+
+A time entry (OpenSpec `time-tracking`, see [the guide](time-tracking.md)) is one stretch of work on a task, stored in the operation log in the task's sharing scope like a comment. Every route needs authentication (`401 unauthorized`). Reads are open to every token scope; the writes refuse `read` and `agent` tokens with `403 insufficient_scope` before anything is written, so an AI assistant can report tracked time but never start or change it. A task or entry you cannot read answers `404 not_found`, exactly as an unknown id. Viewers of a shared project cannot track; only the author changes an entry (`403 forbidden`), and the author, project admins and the owner may delete it. Writes wake your devices like every REST write.
+
+An entry is returned as `{id, taskId, userId, startedAt, endedAt, minutes, note, deviceId, taskTitle, projectId, projectName}`: Unix milliseconds, `endedAt` `null` while it runs, `minutes` whole minutes up to the server time for a running one. A user has one running entry: a start closes the running one at the new start in the same batch. `endedAt` before `startedAt` (on create or by a PATCH) is `400 invalid_input` naming both fields.
+
+```sh
+curl -sS -X POST "$OT/api/v1/time-entries" -H "Authorization: Bearer $TOKEN" -d '{"taskId":"<task>"}'
+# 201 {"id":"…","taskId":"<task>","userId":"<you>","startedAt":1760950800000,"endedAt":null,"minutes":0,"note":"",…}
+
+curl -sS -X POST "$OT/api/v1/time-entries" -H "Authorization: Bearer $TOKEN" \
+  -d '{"taskId":"<task>","startedAt":1760950800000,"endedAt":1760954400000,"note":"review"}'
+# 201 … "minutes":60, "note":"review"
+
+curl -sS -X POST "$OT/api/v1/time-entries/stop" -H "Authorization: Bearer $TOKEN"
+# 404 {"error":{"code":"not_found","message":"no time entry is running"}} when nothing runs
+
+curl -sS "$OT/api/v1/time-entries?from=2026-10-12&to=2026-10-18&tz=Europe/Berlin&format=csv" -H "Authorization: Bearer $TOKEN" -o week.csv
+```
+
+`GET /api/v1/time-entries` parameters, all optional: `task` (a task id), `from` and `to` (local days `YYYY-MM-DD` in `tz`, an IANA zone, UTC by default, with your day start; an entry belongs to the day it started), `running=true`, `limit` (1–500, default 100) and `cursor` (the `nextCursor` of the previous page). A bad day, zone or cursor is `400 invalid_input` naming the parameter. The JSON answer is `{entries, nextCursor?, serverTime}`.
+
+With `format=csv` the answer is a `text/csv` download, `time-entries-<from>-<to>.csv`, with an `X-Row-Count` header. It starts with a UTF-8 byte-order mark and has a header row: `date,start,end,minutes,task,project,labels,note`, then one column per custom field of the projects present (the union by name, in the projects' field order). One row per live entry of a live task, oldest first; times `HH:MM` in `tz`, labels joined by `;`, an empty `end` and minutes up to now for a running entry, RFC 4180 quoting, and a leading apostrophe on a text starting with `=`, `+`, `-` or `@` so a spreadsheet never runs it as a formula. An end-to-end encrypted title, name or note reads `[encrypted]`. The web app's Statistics export writes the same file from local data.
 
 ### Activity feed
 
@@ -1315,6 +1349,24 @@ Other calendars shown in Day and Week, and your tasks as a calendar that calenda
 
 Hand-triggered fetches (create, a new URL, refresh) are limited to 12 per account per hour (`429 rate_limited`). The feed answers `404` for an unknown secret, and an address that tries 10 unknown secrets in a minute gets `429`; one feed URL may be fetched 60 times an hour (`429` with `Retry-After`). The secret is no bearer token or app password, and other routes refuse it. Background refreshes follow the calendar's own refresh hint (between 30 minutes and a day, an hour by default), back off from 30 minutes to 6 hours while a calendar fails, and stop for a private target until the subscription is enabled again. A changed calendar sends `event: calendar` on the live updates stream.
 
+### Issue connections
+
+GitHub and GitLab issues assigned to the account become tasks that follow the issue (OpenSpec `issue-connections`; guide: [issue-import.md](issue-import.md)). Every `/api/v1/issues` route answers `404 issues_disabled` while the owner's switch is off, and these routes and the setting answer `403 demo_restricted` on the public demo before authentication. Read and agent tokens may use the `GET` routes only (`403 insufficient_scope` otherwise). Connections are server data: never operations, never synced or exported.
+
+| Method | Route | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` / `PUT` | `/api/v1/settings/issues` | signed in / owner | `{enabled}`, the setting `integrations.issues`; off by default; a change is recorded as `settings.changed` |
+| `GET` | `/api/v1/issues/connections` | session or token | `{connections: [...]}`: `id`, `provider` (`github`, `gitlab`), `host`, `name`, `project_id` (null for the Inbox), `filter` (`{scope: "assigned"\|"repositories", repositories, labels}`), `map_labels`, `enabled`, `interval_minutes`, `state` (`off`, `pending`, `ok`, `failed`, `stopped`), `next_poll_at`, `last_poll_at`, `last_success_at`, `last_error`, `last_error_at`, `stopped_reason`, `account_login`, `can_read_issues`, `last_run` (`{created, completed, reopened, renamed, unlinked, partial}`), `task_count`, `token_set`. Never the token. |
+| `POST` | `/api/v1/issues/connections` | session or full token, fresh sign-in | `{provider, host, token, name?, project_id?, filter?, map_labels?, interval_minutes?, enabled?}`; the token is checked at once; `201 {connection}` |
+| `PATCH` | `/api/v1/issues/connections/{id}` | session or full token | any of the fields above except `provider`; a `token` needs a fresh sign-in (`403 reauth_required`) and clears a stop for a token reason; `enabled: true` clears any stop |
+| `DELETE` | `/api/v1/issues/connections/{id}` | session or full token | `204`; the token is removed, the tasks stay |
+| `POST` | `/api/v1/issues/connections/{id}/test` | session or full token | ask the provider for the token's account: `{ok, login, can_read_issues, reason?, connection}` |
+| `POST` | `/api/v1/issues/connections/{id}/sync` | session or full token | poll now: `{ok, run, reason?, connection}`; `409 connection_stopped`, `409 connection_disabled`, or `409 provider_rate_limited` before the provider's reset, all without a request to the provider |
+
+Validation answers `400 invalid_input` with the field in `error.field` (`provider`, `host`, `token`, `name`, `project_id`, `scope`, `repositories`, `labels`, `interval_minutes`): the host is an `https` URL of at most 2,048 characters (`http` only while the owner allows private network targets), the name at most 100 characters (the host by default), the project an active one you can add tasks to, at most 20 repositories and 10 labels, the interval 15 to 1,440 minutes (30 by default). A host on a private network is refused with `400 private_target` unless the owner allows private targets for webhooks. A sixth connection answers `409 limit_reached`; an encrypted account `409 encryption_enabled` on create and on `enabled: true`. Tests and syncs share a limit of 12 per account per hour (`429 rate_limited`).
+
+Polls run on the jobs leader, at most two at a time: conditional requests (`If-None-Match`) with an updated-since cursor, at most 10 pages of 100 issues per poll, a 20-second timeout and a 2 MB limit per answer, no redirects followed. Tasks and labels are written through the op log with device `issues:<connection-id>`. Reasons on a connection: `unauthorized_provider`, `token_missing`, `private_target` and `encrypted_account` stop it; `redirect_refused`, `too_large`, `timeout`, `connection_failed`, `invalid_response`, `provider_not_found` and a hosted tenant's `limit_*` double the wait up to 6 hours; `provider_rate_limited` waits for the provider's reset. Enabling end-to-end encryption stops the account's connections and `PUT /api/v1/encryption/keys` lists their names in `issueConnectionsStopped`.
+
 ### CalDAV and app passwords
 
 The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV, not this JSON API; see [caldav.md](caldav.md). It authenticates only with HTTP Basic (account email plus an app password). These JSON routes manage it; all require a session or token.
@@ -1411,7 +1463,7 @@ Response (201):
 
 ### End-to-end encryption
 
-Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`, `notes_doc`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
+Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`, `notes_doc`, `origin` (the whole object as one ciphertext string); project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
 
 ```
 "enc:v1:" + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) || tag(16))
@@ -1607,7 +1659,17 @@ Save a view and pin it (the response carries `id`, `position` and the default gr
 curl -sS "$OT/api/v1/views" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"name":"Waiting","query":"@waiting","pinned":true}'
 # 201 {"color":"#64748b","created_at":1760090000000,"group_by":"project","id":"…","kind":"list","name":"Waiting",
-#      "panels":[],"pinned":true,"position":1760090000000,"query":"@waiting","sort_by":"due","sort_dir":"asc"}
+#      "on_drop":null,"panels":[],"pinned":true,"position":1760090000000,"query":"@waiting","sort_by":"due","sort_dir":"asc"}
+```
+
+Give it an on-drop rule, so a card dropped on its board column gets priority 1 and today's date (the date is resolved on the device that applies the drop):
+
+```bash
+curl -sS -X PATCH "$OT/api/v1/views/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"on_drop":{"priority":1,"due":"today"}}'
+curl -sS -X PATCH "$OT/api/v1/views/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"on_drop":{"due":"friday"}}'
+# 400 {"error":{"code":"invalid_input","message":"view.on_drop: due must be one of [today tomorrow next-week clear]"}}
 ```
 
 Group it by due date with priority 1 first, then build a dashboard from it:
@@ -1636,7 +1698,7 @@ Export everything:
 curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-export.json
 ```
 
-The export includes saved views (`views`, deleted ones too) next to projects, tasks and labels. It resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours.
+The export includes saved views (`views`, deleted ones too) next to projects, tasks and labels. It resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours. Your preferences are in `user_prefs` (one row, `id` `"me"`): date and time formats, appearance, the promoted sidebar destinations, and `favourites`, the sidebar's Favourites group as an ordered, comma-separated list of `project:<id>`, `label:<id>` and `view:<id>` entries (see [sync](sync.md)).
 
 Follow live updates (the response is a `text/event-stream` that stays open; `-N` disables curl's buffering):
 
@@ -1670,7 +1732,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:` or `issues:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
@@ -1746,7 +1808,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
-| `limit_reached` | 409 | more than 20 webhooks on one account |
+| `limit_reached` | 409 | more than 20 webhooks or 5 issue connections on one account |
 | `destination_error` | 502 | `POST /backups/test`, the archive list or preparing a restore when the destination refuses or cannot be reached |
 | `passphrase_required` | 422 | preparing an encrypted archive without a passphrase when the stored one is missing |
 | `passphrase_invalid` | 422 | preparing an encrypted archive with a passphrase that does not open it |
@@ -1756,10 +1818,14 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `email_disabled` | 409 | changing or rotating the email-to-task address when the operator has not configured email capture |
 | `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
 | `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |
-| `encryption_enabled` | 409 | sharing a project for the first time, or creating a CalDAV app password, while the account uses end-to-end encryption |
+| `encryption_enabled` | 409 | sharing a project for the first time, creating a CalDAV app password, or creating or enabling an issue connection, while the account uses end-to-end encryption |
 | `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
 | `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |
 | `unsupported_protocol_version` | 400 | `/mcp` with an `MCP-Protocol-Version` header naming an unsupported version |
+| `issues_disabled` | 404 | any `/api/v1/issues` route while the owner has not enabled [issue connections](#issue-connections) |
+| `connection_stopped` | 409 | syncing an issue connection stopped for its token, its host or encryption |
+| `connection_disabled` | 409 | syncing a disabled issue connection |
+| `provider_rate_limited` | 409 | syncing an issue connection before the provider's rate-limit reset |
 
 **In-app assistant**
 

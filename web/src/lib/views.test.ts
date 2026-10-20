@@ -5,7 +5,7 @@ import { applyOps, createProject, deleteProject, getDeviceId, resetDeviceId } fr
 import type { Label, Op, Project, Task, View } from './types'
 import {
   MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, evaluateViews, groupTasks,
-  movePanel, removePanel, reorderView, resolveStartView, runView, setPanels, setPinned, setStartView, updateView, type ViewContext,
+  movePanel, removePanel, reorderView, resolveStartView, runView, setOnDrop, setPanels, setPinned, setStartView, updateView, type ViewContext,
 } from './views'
 
 let n = 0
@@ -32,7 +32,7 @@ function label(p: Partial<Label> & Pick<Label, 'id' | 'name'>): Label {
 function view(p: Partial<View> & Pick<View, 'id' | 'query'>): View {
   return {
     name: p.id, kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: true, position: 0, color: '#000',
-    panels: [], created_at: 0, deleted_at: null, _clock: {}, ...p,
+    panels: [], on_drop: null, created_at: 0, deleted_at: null, _clock: {}, ...p,
   }
 }
 
@@ -111,6 +111,44 @@ describe('createView / updateView / deleteView', () => {
     // local writes in consecutive milliseconds) still resolves in its favour.
     await applyOps([{ id: 'r1', entity: 'view', entityId: id, field: 'sort_by', value: 'priority', ts: local!._clock.group_by.ts - 1, device: '~B' } as Op])
     expect(await db.views.get(id)).toMatchObject({ group_by: 'due', sort_by: 'priority' })
+  })
+})
+
+describe('on-drop rules (rule-boards)', () => {
+  it('a rule set offline is on the row at once and survives a rename from a client without the field', async () => {
+    const id = await createView({ name: 'Errands', query: '@errand' })
+    await setOnDrop(id, { priority: 1 })
+    expect((await db.views.get(id))!.on_drop).toEqual({ priority: 1 })
+    expect((await db.outbox.toArray()).filter((o) => o.field === 'on_drop')).toHaveLength(1)
+    // An older client renames the view: its op names only the field it changed.
+    const ts = (await db.views.get(id))!._clock.on_drop.ts + 1
+    await applyOps([{ id: 'old1', entity: 'view', entityId: id, field: 'name', value: 'Out and about', ts, device: '~old' } as Op])
+    expect(await db.views.get(id)).toMatchObject({ name: 'Out and about', on_drop: { priority: 1 } })
+  })
+
+  it('a rule converges whole: the later of two concurrent rules wins', async () => {
+    const id = await createView({ name: 'Errands', query: '@errand' })
+    await setOnDrop(id, { priority: 1 })
+    const ts = (await db.views.get(id))!._clock.on_drop.ts + 1
+    await applyOps([{ id: 'r1', entity: 'view', entityId: id, field: 'on_drop', value: { add_labels: ['le'] }, ts, device: '~B' } as Op])
+    expect((await db.views.get(id))!.on_drop).toEqual({ add_labels: ['le'] })
+  })
+
+  it('keeps a rule key this build does not know', async () => {
+    await applyOps([{ id: 'n1', entity: 'view', entityId: 'v9', field: 'on_drop', value: { priority: 2, later_key: 'x' }, ts: 5, device: '~new' } as Op])
+    expect((await db.views.get('v9'))!.on_drop).toEqual({ priority: 2, later_key: 'x' })
+  })
+
+  it('clears with null, writes nothing for an unchanged rule and refuses dashboards', async () => {
+    const id = await createView({ name: 'Errands', query: '@errand' })
+    await setOnDrop(id, { due: 'today' })
+    await db.outbox.clear()
+    await setOnDrop(id, { due: 'today' })
+    expect(await db.outbox.count()).toBe(0)
+    await setOnDrop(id, {})
+    expect((await db.views.get(id))!.on_drop).toBeNull()
+    const dash = await createView({ name: 'Board', kind: 'dashboard' })
+    await expect(setOnDrop(dash, { priority: 1 })).rejects.toThrow()
   })
 })
 

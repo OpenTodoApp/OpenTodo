@@ -157,6 +157,8 @@ func init() {
 		{"project", "manage projects: list, add, rename, archive, rm", "ot project list [--all]\not project add <name> [--color <#rrggbb>] [--idempotency-key <key>]\not project rename <ref> <new-name>\not project archive <ref> [--undo]\not project rm <ref> [--yes]", cmdProject},
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name> [--yes]", cmdToken},
 		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token]", cmdMCP},
+		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
+		{"time", "track time: start, stop, log, list, export", "ot time start <ref> [--note <text>]\not time stop\not time log <ref> <duration> [--on <day>] [--note <text>]\not time log <ref> --from HH:MM --to HH:MM [--on <day>] [--note <text>]\not time list [--task <ref>] [--from <day>] [--to <day>] [--running] [--limit <n>]\not time export [--from <day>] [--to <day>] [-o <file>]", cmdTime},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},
 		{"schema", "print commands, flags, exit codes and output schemas as JSON", "ot schema", cmdSchema},
 		{"skill", "print the agent skill file embedded in ot", "ot skill", cmdSkill},

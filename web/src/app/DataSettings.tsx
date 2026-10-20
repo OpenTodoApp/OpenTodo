@@ -15,6 +15,7 @@ import type { HueName } from '../ui'
 import { followLink } from './SettingsView'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 
 const SYNC: Record<SyncState, { label: string; hue: HueName }> = {
   idle: { get label() { return t('Up to date') }, hue: 'green' },
@@ -47,10 +48,8 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
   const dt = useDateTimeFormat()
   const s = SYNC[sync.state] ?? { label: sync.state, hue: 'slate' as HueName }
   return (
-    <SettingsSection title={t('Your data')} headingId="data-heading" testId="data-panel"
-      description={t('Everything you see is stored on this device and on your server.')}>
-      <SettingRow label={t('Export')}
-        description={t('Everything you can see as one JSON file, including the Trash. Keep it as a personal copy or move to another server.')}
+    <SettingsSection {...cardCopy('data')} testId="data-panel">
+      <SettingRow {...rowCopy('data', 'export')}
         control={(
           <>
             <a className={linkButton} href="/api/v1/export" download="opentodo-export.json"><Icon name="download" size="sm" />{t('Download export (JSON)')}</a>
@@ -60,17 +59,16 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
           </>
         )} />
       {!demo && attachments && (attachments.enabled || attachments.used_bytes > 0) && (
-        <SettingRow label={t('Attachments')}
-          description={attachments.enabled ? t('Files may be up to {bytes} each.', { bytes: formatBytes(attachments.max_file_bytes) }) : t('Adding files is turned off on this server.')}
+        <SettingRow {...rowCopy('data', 'attachments', { variant: attachments.enabled ? 'on' : 'off', values: { bytes: formatBytes(attachments.max_file_bytes) } })}
           status={<span data-testid="attachment-usage">{usageText(attachments)}</span>} />
       )}
-      <SettingRow label={t('Import')}
-        description={<>{t.rich('An OpenTodo export, a CSV file or another task manager’s JSON export (open this with {kbd}).', { kbd: <Kbd k={keysOf('go.import')} /> })}</>}
+      <SettingRow label={rowCopy('data', 'import').label}
+        description={<>{t.rich(SETTINGS_COPY.data.rows.import.description, { kbd: <Kbd k={keysOf('go.import')} /> })}</>}
         status={demo ? <span id="demo-import-note" className="text-muted">{t('Import: {note}', { note: t(DEMO_RESTRICTED_NOTE) })}</span> : undefined}
         control={demo
           ? <Button size="sm" disabled aria-describedby="demo-import-note">{t('Import data…')}</Button>
           : <a className={linkButton} href="/settings/import" onClick={(e) => followLink(e, { view: 'import' })}><Icon name="upload" size="sm" />{t('Import data…')}</a>} />
-      <SettingRow label={t('Sync')}
+      <SettingRow {...rowCopy('data', 'sync')}
         status={(
           <span className="flex flex-wrap items-center gap-2" data-testid="sync-summary">
             <Badge hue={s.hue}>{s.label}</Badge>
@@ -82,7 +80,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
         )} />
       {sync.error && sync.state === 'error' && <div className="py-3"><Notice tone="danger">{sync.error}</Notice></div>}
       {isOwner && (
-        <SettingRow label={t('Backups')}
+        <SettingRow {...rowCopy('data', 'backups')}
           status={(
             <span data-testid="backups-link">
               {t.rich('Backups of the whole server are under <a>Settings → Server</a>.', { a: (chunks) => <a className="text-accent underline" href="/settings/server" onClick={(e) => followLink(e, { view: 'settings', section: 'server' })}>{chunks}</a> })}

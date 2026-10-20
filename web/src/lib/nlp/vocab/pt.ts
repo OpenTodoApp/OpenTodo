@@ -54,8 +54,13 @@ export const pt: Vocabulary = {
   every: ['toda', 'todo', 'todas as', 'todos os', 'cada'],
   everyOne: { diariamente: 'day', semanalmente: 'week', mensalmente: 'month', anualmente: 'year' },
   weekdayAll: ['dia útil', 'dias úteis'],
-  // "segunda" and "quarta" are weekdays in Portuguese, so only the unambiguous ordinals.
+  // "segunda" and "quarta" are weekdays in Portuguese, so only the unambiguous ordinals;
+  // ordinalsBeforeWeekday reads them as ordinals directly before a weekday.
   ordinals: { primeiro: 1, primeira: 1, segundo: 2, terceiro: 3, terceira: 3, quarto: 4, último: -1, última: -1 },
+  ordinalArticles: [],
+  ordinalOf: ['de'],
+  ofMonthWords: ['do mês', 'de cada mês', 'de todo mês', 'de todo o mês'],
+  ordinalsBeforeWeekday: { segunda: 2, quarta: 4 },
   andWords: ['e'],
   afterCompletion: ['após a conclusão', 'após conclusão', 'depois de concluir'],
   untilWords: ['até o', 'até ao', 'até'],

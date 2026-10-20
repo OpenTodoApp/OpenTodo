@@ -19,12 +19,12 @@ const HEIGHT = 100
 const AXIS = 16 // room for the labels under the axis
 const TOP = 14 // room for the value over the tallest bar
 
-export function Bars({ title, bars, unit = t('completed') }: { title: string; bars: readonly Bar[]; unit?: string }) {
+export function Bars({ title, bars, unit = t('completed'), format = String }: { title: string; bars: readonly Bar[]; unit?: string; format?: (value: number) => string }) {
   const id = useId()
   const max = Math.max(1, ...bars.map((b) => b.value))
   const slot = 100 / Math.max(1, bars.length)
   const total = bars.reduce((n, b) => n + b.value, 0)
-  const summary = t('{title}: {total} {unit} in total; {values}', { title, total, unit, values: bars.map((b) => `${b.name ?? b.label} ${b.value}`).join(', ') })
+  const summary = t('{title}: {total} {unit} in total; {values}', { title, total: format(total), unit, values: bars.map((b) => `${b.name ?? b.label} ${format(b.value)}`).join(', ') })
   const room = HEIGHT - AXIS - TOP
   const heightOf = (v: number) => (v / max) * room
   return (
@@ -41,7 +41,7 @@ export function Bars({ title, bars, unit = t('completed') }: { title: string; ba
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           {bars.map((b, i) => (
             <div key={i} className="absolute top-0 bottom-0" style={{ left: `${i * slot}%`, width: `${slot}%` }}>
-              <span className="absolute inset-x-0 text-center text-hint tabular-nums text-default" style={{ bottom: `${(AXIS + heightOf(b.value)) / HEIGHT * 100}%` }}>{b.value}</span>
+              <span className="absolute inset-x-0 text-center text-hint tabular-nums text-default" style={{ bottom: `${(AXIS + heightOf(b.value)) / HEIGHT * 100}%` }}>{format(b.value)}</span>
               <span className="absolute inset-x-0 bottom-0 truncate px-0.5 text-center text-hint text-muted" style={{ height: `${AXIS / HEIGHT * 100}%` }}>{b.label}</span>
             </div>
           ))}
@@ -50,7 +50,7 @@ export function Bars({ title, bars, unit = t('completed') }: { title: string; ba
       <table className="sr-only" aria-labelledby={`${id}-cap`}>
         <thead><tr><th scope="col">{title}</th><th scope="col">{unit}</th></tr></thead>
         <tbody>
-          {bars.map((b, i) => <tr key={i}><th scope="row">{b.name ?? b.label}</th><td>{b.value}</td></tr>)}
+          {bars.map((b, i) => <tr key={i}><th scope="row">{b.name ?? b.label}</th><td>{format(b.value)}</td></tr>)}
         </tbody>
       </table>
     </figure>

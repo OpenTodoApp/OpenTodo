@@ -72,11 +72,13 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
 | <kbd>g</kbd> then <kbd>c</kbd> | Go to Completed |
 | <kbd>g</kbd> then <kbd>l</kbd> | Go to Labels |
+| <kbd>g</kbd> then <kbd>Shift+P</kbd> | Go to All projects: the whole tree, find a project, archived projects |
 | <kbd>g</kbd> then <kbd>f</kbd> | Go to Filter |
 | <kbd>g</kbd> then <kbd>v</kbd> | Go to Filters: saved views, boards and dashboards |
 | <kbd>g</kbd> then <kbd>d</kbd> | Go to the Calendar as Day (the sidebar opens it as last used) |
 | <kbd>g</kbd> then <kbd>w</kbd> | Go to the Calendar as Week |
 | <kbd>g</kbd> then <kbd>m</kbd> | Go to the Calendar as Month |
+| <kbd>g</kbd> then <kbd>Shift+C</kbd> | Go to the Calendar as Plan: the next days as columns with their capacity |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>p</kbd> | Process the Inbox one task at a time |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects |
@@ -90,6 +92,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>Shift+N</kbd> | Go to Next: the next action of every project, by context |
 | <kbd>g</kbd> then <kbd>Shift+W</kbd> | Go to Waiting: what is assigned to someone else or blocked |
 | <kbd>g</kbd> then <kbd>Shift+R</kbd> | Go to the Daily check: the Inbox, what is overdue, today's focus |
+| <kbd>g</kbd> then <kbd>Shift+D</kbd> | Close the day: how it went, carry over what is left, a line for tomorrow |
+| <kbd>g</kbd> then <kbd>Shift+F</kbd> | Go to Focus: one task, a timer, a break when you need one |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
 ### Tasks in a list
@@ -119,6 +123,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd> | Set the priority of the selected task, or of the ticked tasks |
 | <kbd>Shift+L</kbd> | Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates) |
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |
+| <kbd>y</kbd> | Start or stop tracking time on the selected task |
 | <kbd>d</kbd> | Set the deadline of the selected task (type fri, 2026-11-06; Enter) |
 | <kbd>b</kbd> | Choose the tasks the selected task waits for (Blocked by) |
 | <kbd>Shift+D</kbd> | Duplicate the selected task and its subtasks |
@@ -151,7 +156,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>]</kbd> | Timeline: show the next week (or four) |
 | <kbd>t</kbd> | Timeline: back to today |
 
-### Day, Week and Month calendar
+### Day, Week, Month and Plan calendar
 
 | Keys | What it does |
 | --- | --- |
@@ -176,6 +181,15 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>[</kbd> | In Month: previous month |
 | <kbd>]</kbd> | In Month: next month |
 | <kbd>t</kbd> | In Month: back to today |
+| <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Plan: move the focused day; with a task selected, move it a day or a week (keeps its time) |
+| <kbd>j</kbd> | In Plan: select the next task, column by column (projected and event rows are skipped) |
+| <kbd>k</kbd> | In Plan: select the previous task |
+| <kbd>Enter</kbd> | In Plan: open the selected task |
+| <kbd>c</kbd> | In Plan: complete the selected task |
+| <kbd>q</kbd> | In Plan: add a task due on the focused day |
+| <kbd>[</kbd> | In Plan: the span one week earlier |
+| <kbd>]</kbd> | In Plan: the span one week later |
+| <kbd>t</kbd> | In Plan: back to today |
 
 ### Filter, saved filters and boards
 
@@ -185,6 +199,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>s</kbd> | In Filter results: save the Filter query as a view, pinned to the sidebar |
 | <kbd>/</kbd> | In a saved view: edit the query of a saved view; Enter saves it, Esc discards |
 | <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view |
+| <kbd>Shift+←</kbd> | On a board: move the selected card to the previous panel that has a rule, applying it (the card stays selected) |
+| <kbd>Shift+→</kbd> | On a board: move the selected card to the next panel that has a rule, applying it |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | In the filter query: recall recent queries on this device |
 
 ### Trash and projects
@@ -218,6 +234,15 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
 | <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
 
+### Focus
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>Space</kbd> | Start or pause the session |
+| <kbd>Enter</kbd> | Complete the task and end the session |
+| <kbd>b</kbd> | Take a break now, or end the break |
+| <kbd>n</kbd> | Next task of today's focus |
+
 ### Reviews
 
 | Keys | What it does |
@@ -231,6 +256,10 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>j</kbd> / <kbd>Space</kbd> | Project walk: skip to the next project |
 | <kbd>k</kbd> | Project walk: back to the previous project |
 | <kbd>f</kbd> | Daily check: put the selected task in today's focus (up to three), or take it out |
+| <kbd>t</kbd> | Close the day: carry the selected task over to tomorrow |
+| <kbd>p</kbd> | Close the day: pick a day for the selected task |
+| <kbd>y</kbd> | Close the day: move the selected task to Someday |
+| <kbd>h</kbd> | Close the day: keep the selected task in Today |
 
 ### Display mode
 

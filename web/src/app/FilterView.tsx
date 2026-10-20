@@ -1,12 +1,12 @@
 // Filter view (OpenSpec change `filter-query-language`): a query input over the
 // local store. Parsing and evaluation are pure (lib/filter); results are a live
 // query, so local edits and synced ops update them without a reload, offline too.
-import { Button, PageBody, PageHeader, Dialog } from '../ui'
+import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { useAllLabels, useProjects } from '../lib/localData'
 import { compareDueThenPriority } from '../lib/ordering'
-import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, parse, type Node } from '../lib/filter'
+import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, originSuggestions, parse, type Node } from '../lib/filter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
@@ -27,6 +27,7 @@ import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { useTrackedTotals } from '../lib/timeEntries'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg } from '../lib/i18n'
 import { act } from './actionError'
@@ -81,18 +82,18 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   if (parsed.ok && good.src !== debounced) setGood({ src: debounced, ast: parsed.ast })
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
-
-  const fieldDefs = useFieldDefs()
+  // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
+  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
   const compiled = useMemo(() => {
     if (!good.ast) return null
     try {
-      return { ok: true as const, ...compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs }) }
+      return { ok: true as const, ...compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs, tracked }) }
     } catch (e) {
       // A custom field term its type cannot answer (custom-fields): shown like a syntax error.
       return { ok: false as const, error: (e as Error).message }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [good, allTasks, labels, projects, today, zone, weekStart, fieldDefs])
+  }, [good, allTasks, labels, projects, today, zone, weekStart, fieldDefs, tracked])
   const result = useMemo(() => {
     if (!compiled || !compiled.ok) return null
     // Like the other cross-project views, tasks of archived projects stay out.
@@ -100,7 +101,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     const tasks = allTasks.filter((item) => !(item.project_id && archived.has(item.project_id)) && compiled.test(item))
     return { tasks, warnings: compiled.warnings }
   }, [compiled, allTasks, projects])
-  const suggestions = useMemo(() => fieldSuggestions(query, fieldDefs), [query, fieldDefs])
+  // After `origin:` the kinds and providers are offered (task-origin), else field names.
+  const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
+  const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
 
   const groups = useMemo<Group[]>(() => {
     if (!result) return []
@@ -239,8 +242,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
               ) : null}
             </div>
             {suggestions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label={t('Field names')}>
-                <span className="text-faint">{t('Fields:')}</span>
+              <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label={origins.length ? t('Origin values') : t('Field names')}>
+                <span className="text-faint">{origins.length ? t('Origins:') : t('Fields:')}</span>
                 {suggestions.map((s) => (
                   <Button key={s.name} variant="ghost" size="sm" onClick={() => {
                     setQuery(s.query)
@@ -252,7 +255,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           </div>
 
           {!good.ast && <UsageHint />}
-          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-body text-faint">{t('No task matches this filter.')}</p>}
+          {result && rows.length === 0 && (
+            <div data-empty-state="filter">
+              <EmptyState title={t('No task matches this filter.')} action={{ label: t('Clear the filter'), onClick: () => { setQuery(''); inputRef.current?.focus() } }} />
+            </div>
+          )}
 
           {bulk.render(selectedId)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>
@@ -313,6 +320,7 @@ const HINT: [string[], string][] = [
   [['no project', 'no labels', 'subtask'], msg('Inbox, unlabelled, has a parent task')],
   [['completed', 'open', 'completed = last week'], msg('open tasks only unless one of these, or a completion date, appears')],
   [['search: "oat milk"'], msg('title or notes contain the text')],
+  [['tracked', 'tracked > 1h'], msg('time tracked on the task: any, or compared with 30m, 1h30, 90')],
   [['&', '|', '!', '( )'], msg('and, or, not, grouping · quote names with spaces: @"follow up"')],
 ]
 

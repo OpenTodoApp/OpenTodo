@@ -21,26 +21,28 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 - **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
 - **Keyboard**: **Show shortcut hints** prints the keys in the app itself (next to quick add, beside the sidebar's destinations, in prompts) as well as in tooltips and menus, and **Vim keybindings** turns the Vim layer on; both for this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+- **Focus**: the timer of the [Focus](focus.md) screen, its lengths and breaks, the break reminder and the sound, on all your devices.
 
 ### Date and time
 
-Three choices that follow your account to every device, also when you change them offline:
+Four choices that follow your account to every device, also when you change them offline:
 
 - **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names are written in the [interface language](language.md).
 - **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).
-- **First day of the week**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start, and which days `this week` and `last week` cover in [filters](filters.md#periods).
+- **Week starts on**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start, and which days `this week` and `last week` cover in [filters](filters.md#periods).
+- **My day starts at**: **Midnight** (the default) or a time up to 06:00. If you work past midnight, set it to when your day really ends: until then the app still treats it as the previous day. See [When a day ends](dates-and-times.md#when-a-day-ends).
 
-The **Preview** shows a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload: task rows, the task detail, reminders, the Day and Week views, comments, history and the lists in Settings. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
+The **Preview** shows which day is today, a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
 
 ## Notifications
 
 Push notifications for reminders on this device, and a test that shows whether they arrive. See [Notifications](notifications.md) and [Push notifications](push-notifications.md).
 
-**Weekly digest**: an email on the day and hour you choose with last week's numbers, overdue and upcoming tasks, projects without a next action and a link to the review. It needs outgoing email set up by the server owner and is not offered with end-to-end encryption. See [Statistics and the weekly digest](statistics.md#weekly-digest-by-email).
+**Weekly digest**: an email on the day you choose with last week's numbers; it needs outgoing email from the server owner. See [the weekly digest](statistics.md#weekly-digest-by-email).
 
 ## Capture
 
 - **Quick add**: turn natural-language parsing on or off, pick the languages it understands, and the order of day and month in dates like `12/11`. See [Quick add syntax](quick-add.md#languages).
 - **Voice capture**: dictate tasks into quick add. Off until you turn it on, and the app explains first what your browser does with the audio. See [Quick add syntax](quick-add.md#voice).
 - **Bookmarklet and extension**: the **Add to OpenTodo** bookmarklet, to save the page you're reading as a task. See [Capturing pages](capture.md).
-- **Email to task**: your own secret address; emails sent there become tasks. See [Email to task](email.md).
+- **Email to task**: your own secret address; an email sent there becomes an Inbox task, with the subject as its title, the text as its description and the attachment names listed, up to an hourly limit. Anyone who knows the address can add tasks, so keep it private: **New address…** replaces it, and the old one stops working at once. See [Email to task](email.md).

@@ -54,6 +54,11 @@
           "description": "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"
         },
         {
+          "name": "origin-url",
+          "type": "string",
+          "description": "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"
+        },
+        {
           "name": "remind",
           "type": "string_list",
           "description": "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"
@@ -219,6 +224,11 @@
           "name": "repeat",
           "type": "string",
           "description": "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"
+        },
+        {
+          "name": "origin-url",
+          "type": "string",
+          "description": "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"
         }
       ],
       "writes": true,
@@ -295,6 +305,47 @@
       "output_schema": {
         "items": {
           "$ref": "#/schemas/task"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "issues list",
+      "aliases": [
+        "issues ls"
+      ],
+      "summary": "list the account's GitHub and GitLab issue connections and their state (never a token)",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/issue_connection"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "issues sync",
+      "summary": "poll one issue connection now, or every enabled one, and print what changed",
+      "args": [
+        {
+          "name": "id",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/issues_run"
         },
         "type": "array"
       }
@@ -635,6 +686,172 @@
       }
     },
     {
+      "name": "time export",
+      "summary": "download the server's time entries CSV in the local time zone",
+      "args": [],
+      "flags": [
+        {
+          "name": "from",
+          "type": "string",
+          "description": "first local day"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last local day"
+        },
+        {
+          "name": "out",
+          "short": "o",
+          "type": "string",
+          "description": "write to this file instead of stdout"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "anyOf": [
+          {
+            "description": "the CSV (with a UTF-8 BOM)",
+            "type": "string"
+          },
+          {
+            "$ref": "#/schemas/export_file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "time list",
+      "aliases": [
+        "time ls"
+      ],
+      "summary": "list time entries, newest first",
+      "args": [],
+      "flags": [
+        {
+          "name": "task",
+          "type": "string",
+          "description": "entries of one task (id or prefix)"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "description": "first local day: YYYY-MM-DD, today, yesterday or a weekday"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last local day"
+        },
+        {
+          "name": "running",
+          "type": "bool",
+          "description": "only the running entry"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "description": "print at most n entries"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/time_entry"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "time log",
+      "summary": "add a closed time entry: a duration (45m, 1h30, 90) or --from and --to",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "name": "duration",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "on",
+          "type": "string",
+          "description": "the day: YYYY-MM-DD, today, yesterday or a weekday; a duration on another day than today ends at 17:00"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "description": "start time HH:MM (with --to)"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "end time HH:MM (with --from)"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "description": "note on the entry"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_entry"
+      }
+    },
+    {
+      "name": "time start",
+      "summary": "start tracking time on a task (stops the running entry)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "note",
+          "type": "string",
+          "description": "note on the entry"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_entry"
+      }
+    },
+    {
+      "name": "time stop",
+      "summary": "stop the running time entry",
+      "args": [],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_entry"
+      }
+    },
+    {
       "name": "today",
       "summary": "alias for `ot list --today`",
       "args": [],
@@ -843,6 +1060,27 @@
       "code": "encryption_enabled",
       "exit": 5,
       "meaning": "the account is end-to-end encrypted; readable text cannot be written"
+    },
+    {
+      "code": "issues_disabled",
+      "exit": 5,
+      "meaning": "the server owner has not enabled issue connections"
+    },
+    {
+      "code": "connection_stopped",
+      "exit": 1,
+      "meaning": "the issue connection is stopped; replace its token, edit its host or enable it again"
+    },
+    {
+      "code": "provider_rate_limited",
+      "exit": 1,
+      "meaning": "the provider's rate limit was reached; polling resumes at the time named",
+      "retry": true
+    },
+    {
+      "code": "poll_failed",
+      "exit": 1,
+      "meaning": "an issue poll ran and failed; the reason is in the message"
     },
     {
       "code": "invalid_input",
@@ -1209,7 +1447,7 @@
     "export_file": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "export_file",
-      "description": "ot export --out <file> --json.",
+      "description": "ot export --out <file> --json, and ot time export -o <file> --json (with rows).",
       "type": "object",
       "required": [
         "file",
@@ -1222,8 +1460,205 @@
         "bytes": {
           "type": "integer"
         },
+        "rows": {
+          "type": "integer",
+          "description": "ot time export: the number of entries in the CSV"
+        },
         "exportedAt": {
           "type": "string"
+        }
+      }
+    },
+    "issue_connection": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "issue_connection",
+      "description": "An issue connection exactly as the REST API returns it (OpenSpec issue-connections). It never carries the token: token_set says whether one is stored.",
+      "type": "object",
+      "required": [
+        "id",
+        "provider",
+        "host",
+        "name",
+        "state",
+        "enabled",
+        "token_set"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "github",
+            "gitlab"
+          ]
+        },
+        "host": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "target project; null for the Inbox"
+        },
+        "filter": {
+          "type": "object",
+          "properties": {
+            "scope": {
+              "enum": [
+                "assigned",
+                "repositories"
+              ]
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "map_labels": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "interval_minutes": {
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "off",
+            "pending",
+            "ok",
+            "failed",
+            "stopped"
+          ]
+        },
+        "next_poll_at": {
+          "type": "integer",
+          "description": "Unix milliseconds"
+        },
+        "last_poll_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_success_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_error": {
+          "type": "string",
+          "description": "reason code of the last failure, empty when none"
+        },
+        "last_error_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "stopped_reason": {
+          "type": "string",
+          "description": "why polling stopped until the user acts, empty when it did not"
+        },
+        "account_login": {
+          "type": "string"
+        },
+        "can_read_issues": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "last_run": {
+          "anyOf": [
+            {
+              "$ref": "#/schemas/issues_run/properties/run"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task_count": {
+          "type": "integer",
+          "description": "issues linked to a task"
+        },
+        "token_set": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "integer"
+        },
+        "updated_at": {
+          "type": "integer"
+        }
+      }
+    },
+    "issues_run": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "issues_run",
+      "description": "The answer of POST /api/v1/issues/connections/{id}/sync: whether the poll succeeded, its counts and the connection after it (OpenSpec issue-connections).",
+      "type": "object",
+      "required": [
+        "ok",
+        "run"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "description": "reason code when ok is false"
+        },
+        "run": {
+          "type": "object",
+          "required": [
+            "created",
+            "completed",
+            "reopened",
+            "renamed"
+          ],
+          "properties": {
+            "created": {
+              "type": "integer"
+            },
+            "completed": {
+              "type": "integer"
+            },
+            "reopened": {
+              "type": "integer"
+            },
+            "renamed": {
+              "type": "integer"
+            },
+            "unlinked": {
+              "type": "integer"
+            },
+            "partial": {
+              "type": "boolean"
+            }
+          }
+        },
+        "connection": {
+          "$ref": "#/schemas/issue_connection"
         }
       }
     },
@@ -1460,6 +1895,43 @@
             "string",
             "null"
           ]
+        },
+        "origin": {
+          "type": [
+            "object",
+            "string",
+            "null"
+          ],
+          "description": "where the task came from; a string only for an end-to-end encrypted account (ciphertext). title and url are user-written",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "url",
+                "email",
+                "issue",
+                "import"
+              ]
+            },
+            "provider": {
+              "type": "string",
+              "description": "e.g. github, gitlab, jira, linear, todoist"
+            },
+            "id": {
+              "type": "string",
+              "description": "the issue id, Message-ID or source id"
+            },
+            "url": {
+              "type": "string",
+              "description": "http or https"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -1493,6 +1965,65 @@
           }
         }
       ]
+    },
+    "time_entry": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "time_entry",
+      "description": "A time entry exactly as the REST API returns it (OpenSpec time-tracking).",
+      "type": "object",
+      "required": [
+        "id",
+        "taskId",
+        "userId",
+        "startedAt",
+        "endedAt",
+        "minutes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "integer",
+          "description": "Unix milliseconds"
+        },
+        "endedAt": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Unix milliseconds; null while the entry runs"
+        },
+        "minutes": {
+          "type": "integer",
+          "description": "whole minutes, a running entry up to the server time"
+        },
+        "note": {
+          "type": "string",
+          "description": "user-written; ciphertext for an encrypted account"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "taskTitle": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "projectName": {
+          "type": "string"
+        }
+      }
     },
     "token": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",

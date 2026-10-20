@@ -29,6 +29,27 @@ export interface ListRow {
   hasChildren: boolean
   collapsed: boolean
   breadcrumb: string | null
+  /** What the row's view or group heading already says, so a Calm row leaves it out (calm-rows D3). */
+  implied?: RowImplied
+}
+
+/**
+ * What a heading implies about its rows (task-list-presentation "Metadata language",
+ * calm-rows D3). Presentation only: a Calm row drops the matching words, a Detailed
+ * row ignores it. New facts (another chip a heading can state) are added as fields.
+ */
+export interface RowImplied {
+  /** The local day the heading names (Today, an Upcoming date): a due on this day shows its time alone. */
+  date?: string
+  /** This Evening: the "evening" suffix is left out. */
+  evening?: true
+  /** The Someday view: the "Someday" chip is left out. */
+  someday?: true
+}
+
+/** Sets what a group's heading implies on each of its rows (a new row object only when there is something to imply). */
+function withImplied(rows: ListRow[], implied: RowImplied | undefined): ListRow[] {
+  return implied ? rows.map((r) => ({ ...r, implied })) : rows
 }
 
 export interface ListGroup {
@@ -179,9 +200,10 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // This Evening below the day's tasks (someday-and-evening).
     const { overdue, day, evening, blocked: waiting } = groupToday(p.tasks, p.today, p.blocked)
     const g: ListGroup[] = []
+    // Overdue and Blocked imply nothing: how late a task is stays visible (calm-rows D3).
     if (overdue.length) g.push({ key: 'overdue', heading: t('Overdue'), rows: overdue.map(row) })
-    g.push({ key: 'today', heading: overdue.length || evening.length ? t('Today') : null, rows: day.map(row) })
-    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: evening.map(row) })
+    g.push({ key: 'today', heading: overdue.length || evening.length ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }) })
+    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }) })
     if (waiting.length) {
       const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
       g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, rows: folded ? [] : waiting.map(row) })
@@ -195,14 +217,15 @@ function flatGroups(p: GroupInput): ListGroup[] {
     }))
   }
   if (p.view === 'upcoming') {
-    return groupUpcoming(p.tasks).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: list.map(row) }))
+    return groupUpcoming(p.tasks).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
     const byProject = groupBy(p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
+    const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined
     return order.filter((id) => byProject.has(id)).map((id) => ({
-      key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: byProject.get(id)!.map(row),
+      key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: withImplied(byProject.get(id)!.map(row), implied),
     }))
   }
   return [{ key: 'all', heading: null, rows: p.tasks.map(row) }]

@@ -6,6 +6,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 /**
  * Settings section for every user (OpenSpec `user-management`): change the own
@@ -69,10 +70,9 @@ export function PasswordView(p: {
     wasOpen.current = !!p.open
   }, [p.open])
   return (
-    <SettingsSection title={t('Password')} headingId="password-heading"
-      description={t('Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.')}>
-      {!p.online && <Notice>{t('You are offline. Changing your password needs a connection to your server.')}</Notice>}
-      {p.done && !p.open && <Notice tone="success">{t('Password changed. Your other sessions were signed out.')}</Notice>}
+    <SettingsSection {...cardCopy('password')}>
+      {!p.online && <Notice>{noticeCopy('password', 'offline')}</Notice>}
+      {p.done && !p.open && <Notice tone="success">{noticeCopy('password', 'changed')}</Notice>}
       {p.open ? (
         <form onSubmit={p.onSubmit} className="space-y-3 py-1" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); p.onCancel?.() } }}>
           {/* Lets password managers attach the new password to the right account. */}
@@ -92,7 +92,7 @@ export function PasswordView(p: {
           </div>
         </form>
       ) : (
-        <SettingRow label={t('Password')} description={t('Used to sign in on new devices.')} control={
+        <SettingRow {...rowCopy('password', 'password')} control={
           <Button ref={opener} variant="secondary" disabled={!p.online} onClick={p.onOpen} aria-expanded={false}>{t('Change password')}</Button>
         } />
       )}

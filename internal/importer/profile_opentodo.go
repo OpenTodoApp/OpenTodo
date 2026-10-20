@@ -43,6 +43,11 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		Comments  []json.RawMessage            `json:"comments"`
 		// Attachments are file and link metadata (OpenSpec attachments, design D12).
 		Attachments []map[string]json.RawMessage `json:"attachments"`
+		// TimeEntries are the entries the exporting account could read
+		// (time-tracking D11), its own and other members' on shared tasks.
+		TimeEntries []map[string]json.RawMessage `json:"time_entries"`
+		// UserID is the exporting account.
+		UserID string `json:"userId"`
 		// UserPrefs is the exporting account's date and time preferences row
 		// (date-time-preferences D1); it is restored like any other record.
 		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
@@ -96,6 +101,11 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			if kind == KindReview {
 				row.Title = "Last weekly review"
 			}
+			if kind == KindTimeEntry {
+				var task string
+				_ = json.Unmarshal(e["task_id"], &task)
+				row.Title = "Time entry: " + taskTitles[task]
+			}
 			if kind == KindProjectPrefs {
 				row.Title = "Project preferences"
 			}
@@ -114,6 +124,8 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindReview, "", doc.Review)
 	add(KindProjectPrefs, "", doc.ProjectPrefs)
 	add(KindAttachment, "name", doc.Attachments)
+	add(KindTimeEntry, "", doc.TimeEntries)
+	out.ExportedBy = doc.UserID
 	if files := countFileAttachments(doc.Attachments); files > 0 && opts.ownFiles == nil {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d file %s not imported: the files are in the ZIP export (Settings → Data → Export with files)", files, plural(files, "attachment is", "attachments are")))
 	}

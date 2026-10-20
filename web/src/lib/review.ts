@@ -4,14 +4,18 @@
 // project walk's queue; the Daily check's focus and the Monthly look's areas;
 // and the synced personal `review` row and per-project review stamps that record
 // them. Pure apart from the writers at the end, each one op set.
-import { addDaysISO, todayISO } from './dates'
-import { mutate } from './ops'
-import { canEditProject, roleOf } from './sharing'
-import { countedTasks, overdueOf, type StatsInput } from './stats'
+import { bulkLabel, mergeChanges, planDue, toProposed } from './bulk'
+import { todayList } from './dayLists'
+import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from './dates'
+import { mutate, type Change } from './ops'
+import { canEditProject, canEditTasks, roleOf } from './sharing'
+import { compute, countedTasks, overdueOf, sharedIds, type StatsInput } from './stats'
+import { applyBatch } from './undo'
+import type { AssistantUndo } from './db'
 import { MethodRules, waitingTasks, type MethodInput } from './method/rules'
 import { qualifies } from './triage'
 import type { Membership, Project, Review, Task } from './types'
-import { isSomeday } from './views'
+import { isSomeday, isStarted } from './views'
 import { t, msg, translatedMap } from './i18n'
 
 export const REVIEW_ID = 'me'
@@ -135,16 +139,17 @@ export function monthlyDue(monthlyAt: number | null | undefined, now = Date.now(
   return !monthlyAt || now - monthlyAt > MONTHLY_INTERVAL_MS
 }
 
-/** Whether the Daily check is due: not done on the user's local date. */
+/** Whether the Daily check is due: not done on the user's logical today (day-boundary D4). */
 export function dailyDue(dailyAt: number | null | undefined, today: string): boolean {
-  return !dailyAt || todayISO(new Date(dailyAt)) !== today
+  return !dailyAt || logicalDay(dailyAt, currentDayStart()) !== today
 }
 
 /** When the last review was, in words: "today", "yesterday", "9 days ago" or "never". */
 export function reviewAgo(completedAt: number | null | undefined, now = Date.now()): string {
   if (!completedAt) return t('never')
-  const day = (ms: number) => { const d = new Date(ms); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) }
-  const days = Math.max(0, Math.round((day(now) - day(completedAt)) / DAY_MS))
+  // Logical days (day-boundary D4): a review finished at 01:00 before a 04:00 day start was "yesterday's".
+  const dayStart = currentDayStart()
+  const days = Math.max(0, daysBetweenISO(logicalDay(completedAt, dayStart), logicalDay(now, dayStart)))
   return days === 0 ? t('today') : days === 1 ? t('yesterday') : t('{n} days ago', { n: days })
 }
 
@@ -212,4 +217,119 @@ export function finishMonthlyLook(now = Date.now()): Promise<void> {
 /** Marks a project reviewed by this user (project_prefs.reviewed_at, personal even for a shared project). */
 export function markProjectReviewed(projectId: string, now = Date.now()): Promise<void> {
   return mutate('project_prefs', projectId, { reviewed_at: now })
+}
+
+// ---- Close the day (OpenSpec change close-the-day, design D3–D5, D8) ----
+
+export type CloseStepId = 'summary' | 'carry' | 'note'
+export const CLOSE_STEP_IDS: readonly CloseStepId[] = ['summary', 'carry', 'note']
+export const CLOSE_STEP_TITLES = translatedMap<CloseStepId>({ summary: msg('How the day went'), carry: msg('Carry over'), note: msg('A line for tomorrow') })
+/** Close the day has one phase. */
+export const CLOSE_PHASE_TITLES = translatedMap<'close'>({ close: msg('Close the day') })
+/** The longest line for tomorrow, in characters. */
+export const TOMORROW_NOTE_MAX = 500
+
+/**
+ * Whether the day was closed on the user's logical `today` (weekly-review "Rhythm
+ * markers", "Close the day is reachable"): derived from the stamp, so every device
+ * gives the same answer for the same local date.
+ */
+export function dayClosed(closedAt: number | null | undefined, today: string): boolean {
+  return !!closedAt && logicalDay(closedAt, currentDayStart()) === today
+}
+
+/**
+ * Yesterday's line for tomorrow (weekly-review "Daily check"): the note of the latest
+ * close when that close was on an earlier local day; null when there is none, it is
+ * empty, or the day is already closed again. Needs no write to show or to hide.
+ */
+export function yesterdaysNote(review: Pick<Review, 'closed_at' | 'tomorrow_note'> | null | undefined, today: string): string | null {
+  if (!review?.closed_at || logicalDay(review.closed_at, currentDayStart()) >= today) return null
+  return review.tomorrow_note?.trim() || null
+}
+
+/** Records a close (weekly-review "Closing the day"): the time and the trimmed note, one op pair through the outbox. */
+export function closeDay(note: string, now = Date.now()): Promise<void> {
+  return mutate('review', REVIEW_ID, { closed_at: now, tomorrow_note: note.trim().slice(0, TOMORROW_NOTE_MAX) })
+}
+
+/** One unfinished task of Today and whether the user may change it (a viewer gets Keep only). */
+export interface CarryTask {
+  task: Task
+  editable: boolean
+}
+
+export interface DaySummary {
+  /** What Today still lists plus what was completed today. */
+  planned: number
+  /** Completed on the local date, counted as Statistics counts (per-day chart). */
+  done: number
+  focusDone: number
+  focusTotal: number
+  /** Every open task Today lists, in Today's order. */
+  unfinished: CarryTask[]
+}
+
+/**
+ * How the day went (weekly-review "How the day went", design D3): pure, from the
+ * local rows. `done` is Statistics' per-day count for today, so the two never
+ * disagree; deleted tasks and skipped habit occurrences count nowhere.
+ */
+export function daySummary(input: MethodInput, review: Pick<Review, 'focus' | 'focus_date'> | null | undefined, weekStart = 1): DaySummary {
+  const { today } = input
+  const memberships = input.memberships as Map<string, Membership>
+  const archived = new Set(input.projects.filter((p) => p.archived || p.deleted_at).map((p) => p.id))
+  const live = input.tasks.filter((x) => !x.deleted_at && !x.skipped && !(x.project_id && archived.has(x.project_id)))
+  const unfinished = todayList(live, today).map((task) => ({ task, editable: canEditTasks(roleOf(task.project_id, memberships)) }))
+  const stats = compute({ tasks: input.tasks, projects: input.projects, shared: sharedIds([...memberships.values()]), me: input.me, today }, { start: today, end: today }, weekStart)
+  const done = stats.perDay.find((d) => d.date === today)?.count ?? 0
+  const byId = new Map(input.tasks.filter((x) => !x.deleted_at).map((x) => [x.id, x]))
+  const focus = storedFocus(review, today).map((id) => byId.get(id)).filter((x): x is Task => !!x)
+  return { planned: unfinished.length + done, done, focusDone: focus.filter((x) => x.completed_at).length, focusTotal: focus.length, unfinished }
+}
+
+/** One carry-over decision; nothing is stored until Apply (design D4). */
+export type CarryDecision = { kind: 'tomorrow' } | { kind: 'day'; date: string } | { kind: 'someday' } | { kind: 'keep' }
+
+/**
+ * The carry-over as one list of changes (weekly-review "Carry-over is one batch"):
+ * Tomorrow and a day are the bulk reschedule (a time of day kept, a parked task
+ * un-parked), and a task in Today only because its start date came gets its start
+ * cleared so it leaves Today; Someday is the patch parking writes; Keep writes
+ * nothing. Read-only tasks write nothing whatever their decision.
+ */
+export function planCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string): Change[] {
+  const out: Change[] = []
+  for (const { task, editable } of tasks) {
+    const d = decisions.get(task.id) ?? { kind: 'tomorrow' }
+    if (!editable || d.kind === 'keep') continue
+    if (d.kind === 'someday') {
+      const patch: Record<string, unknown> = { start: 'someday' }
+      if (task.due) patch.due = null
+      if (task.evening) patch.evening = false
+      out.push({ entity: 'task', entityId: task.id, patch })
+      continue
+    }
+    const [change] = planDue([task], d.kind === 'tomorrow' ? 'tomorrow' : d.date, today)
+    if (isStarted(task, today)) change.patch = { ...change.patch, start: null }
+    out.push(change)
+  }
+  return mergeChanges(out)
+}
+
+/** The toast of a carry-over: the bulk "n tasks rescheduled" when every applied decision is a date, else "n tasks carried over". */
+export function carryOverLabel(decisions: readonly CarryDecision[]): string {
+  const n = decisions.length
+  return decisions.every((d) => d.kind === 'tomorrow' || d.kind === 'day')
+    ? bulkLabel({ kind: 'due', pick: 'tomorrow' }, n)
+    : t('{n, plural, one {# task carried over} other {# tasks carried over}}', { n })
+}
+
+/** Applies the carry-over as ONE undoable batch through the bulk path; null when nothing is written. */
+export async function applyCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string): Promise<{ entry: AssistantUndo | null; label: string; count: number }> {
+  const changes = planCarryOver(decisions, tasks, today)
+  const applied = tasks.filter((x) => changes.some((c) => c.entityId === x.task.id)).map((x) => decisions.get(x.task.id) ?? { kind: 'tomorrow' as const })
+  const label = carryOverLabel(applied)
+  const entry = await applyBatch(await toProposed(changes), { source: 'bulk', label })
+  return { entry, label, count: changes.length }
 }

@@ -13,7 +13,7 @@ import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 import { missingScreenshots } from '../../../scripts/site-bundle.mjs'
 
-/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, <SettingsSection helpId="id">, data-help-screen="id" or helpScreen('id'). */
+/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, <SettingsSection helpId="id">, data-help-screen="id", helpScreen('id') or a settings card's learnMore: 'id'. */
 export function appScreenIds(repoRoot) {
   const ids = new Map()
   const walk = (dir) => {
@@ -27,6 +27,8 @@ export function appScreenIds(repoRoot) {
       for (const m of src.matchAll(/<Help(?:Link|Heading)\b[^>]*?\bscreen=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
       // The page template's Help action (ux-overhaul): <PageHeader … help="id" />, or help={`settings/${id}`} resolved by HELP_SCREENS.
       for (const m of src.matchAll(/\shelp=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
+      // A settings card's Learn more (settings-copy D4): `learnMore: 'id'` in the settings copy table.
+      for (const m of src.matchAll(/\blearnMore:\s*["'`]([^"'`]+)["'`]/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
       for (const m of src.matchAll(/HELP_SCREENS[^]*?\{([^}]*)\}/g)) for (const id of m[1].matchAll(/['"]([a-z0-9/#-]+)['"]/g)) ids.set(id[1], p.slice(repoRoot.length + 1))
       // Stories render panels with fixture data; only the app's own components count.
       if (!/\.stories\./.test(name)) for (const m of src.matchAll(/\bhelpId=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
@@ -61,6 +63,46 @@ export function startsWithScreenshot(body) {
   const title = lines.findIndex((l) => /^#\s/.test(l))
   const first = lines.slice(title + 1).find((l) => l.trim() !== '')
   return !!first && /^(<picture\b|<img\b|!\[)/.test(first.trim())
+}
+
+/**
+ * The list screens whose guide section must link the quick-add guide (OpenSpec change
+ * lean-chrome D1, documentation "Contextual help"): the quick add has no help link of
+ * its own, so the page header's Help section is one activation away from the syntax.
+ */
+export const LIST_SCREENS = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'assigned', 'completed', 'project', 'label']
+const QUICK_ADD_LINK = /\]\((?:\.\/)?quick-add\.md(?:#[^)]*)?\)/
+
+/** The text of a page's section with heading id `anchor`, up to the next heading (its opening paragraphs). */
+export function sectionLead(body, anchor) {
+  const ids = headingsOf(body).map((h) => h.id)
+  let n = -1
+  let fence = false
+  let inside = false
+  const out = []
+  for (const line of body.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) fence = !fence
+    if (!fence && /^#{1,6}\s/.test(line)) {
+      n++
+      if (inside) break
+      inside = ids[n] === anchor
+      continue
+    }
+    if (inside) out.push(line)
+  }
+  return inside || out.length ? out.join('\n') : null
+}
+
+/** Problems: a page names a list screen whose section does not link `quick-add.md`. */
+export function quickAddLinkProblems(pages) {
+  const out = []
+  for (const p of pages) for (const s of p.fm.screens ?? []) {
+    const [id, anchor] = s.split('#')
+    if (!LIST_SCREENS.includes(id) || !anchor) continue
+    const lead = sectionLead(p.body, anchor)
+    if (lead !== null && !QUICK_ADD_LINK.test(lead)) out.push(`docs/${p.rel}: section "#${anchor}" (screen "${id}") does not link the quick-add guide (quick-add.md) before its first subheading`)
+  }
+  return out
 }
 
 /** Runs every check; returns a list of problems (empty when all is well). */
@@ -129,6 +171,7 @@ export async function runChecks(repoRoot) {
     if (p.fm.audience !== 'user') out.push(`docs/${p.rel}: only user pages can name screens (the app ships user pages only)`)
     if (anchor && !headings.get(p.rel).some((h) => h.id === anchor)) out.push(`docs/${p.rel}: screen "${s}" names a heading that does not exist`)
   }
+  out.push(...quickAddLinkProblems(pages))
   const used = appScreenIds(repoRoot)
   for (const [id, file] of used) if (!screens.has(id)) out.push(`${file}: help screen "${id}" is not named by any page's "screens"`)
   // The reverse direction applies once the app has help links (task 4.2).

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { LabelChip, NeutralChip, ToneText, type Tone } from './Chips'
+import { LabelChip, LabelDots, NeutralChip, ToneText, type Tone } from './Chips'
 
 // The metadata language (OpenSpec change ux-overhaul, task-list-presentation
 // "Metadata language"): three styles only, in the metadata size with tabular
@@ -29,6 +29,24 @@ export const Chips: StoryObj = {
       <NeutralChip dot="var(--ot-hue-blue-solid)">Website launch</NeutralChip>
       <LabelChip name="errand" color="var(--ot-hue-green-solid)" />
       <LabelChip name="call" color="var(--ot-hue-violet-solid)" onRemove={() => {}} />
+    </div>
+  ),
+}
+
+// Calm rows' labels (calm-rows D6): dots, the first name and "+n"; the group takes
+// focus and shows every name in a tooltip only when names are hidden.
+const ERRAND = { id: 'l1', name: 'errand', color: 'var(--ot-hue-green-solid)' }
+const CALL = { id: 'l2', name: 'call', color: 'var(--ot-hue-violet-solid)' }
+const HOME = { id: 'l3', name: 'home', color: 'var(--ot-hue-blue-solid)' }
+const DEEP = { id: 'l4', name: 'deep work', color: 'var(--ot-hue-orange-solid)' }
+
+export const LabelDotsVariants: StoryObj = {
+  render: () => (
+    <div className="flex flex-col items-start gap-2">
+      <LabelDots labels={[ERRAND]} />
+      <LabelDots labels={[ERRAND, CALL]} />
+      <LabelDots labels={[ERRAND, CALL, HOME, DEEP]} />
+      <LabelDots labels={[ERRAND, CALL, HOME]} omit="l1" />
     </div>
   ),
 }

@@ -15,7 +15,7 @@ Two-factor authentication is the second lock on your account, next to [passkeys 
 
 ## Turn on two-factor authentication
 
-With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Any app that supports time-based codes works.
+With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Any app that supports time-based codes works; your server makes and checks the codes itself, without contacting anyone.
 
 1. Open **Settings → Account → Two-factor authentication** and select **Set up two-factor authentication**.
 2. Scan the QR code with your authenticator app, or type in the key shown under it.

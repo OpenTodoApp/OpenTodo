@@ -13,6 +13,7 @@ import {
 } from '../lib/assistants'
 import { useOnline } from '../lib/online'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 export type CopyTarget = 'endpoint' | 'token' | 'snippet'
 
@@ -51,31 +52,24 @@ export function AssistantsView(p: AssistantsViewProps) {
   const canOfferAgent = writesAllowed(p.status, p.access)
   const guard = (fn: (v: boolean) => void) => (v: boolean) => { if (!p.busy) fn(v) }
   return (
-    <SettingsSection title={t('AI assistants')} headingId="assistants-heading" testId="assistants-panel"
-      description={t('Let an assistant that supports the Model Context Protocol (MCP) read your projects and tasks with a token you create. Read-only by default; the server itself contacts no one.')}>
+    <SettingsSection {...cardCopy('assistants')} testId="assistants-panel">
       {!p.connected && (
-        <Notice>{t('You are offline. These settings live on the server; what you see is the last state fetched, and changing them needs a connection.')}</Notice>
+        <Notice>{noticeCopy('assistants', 'offline')}</Notice>
       )}
 
       {p.status === null ? (
         p.connected ? <Skeleton shape="line" count={3} label={t('Loading assistant access')} /> : <p className="py-2 text-meta text-faint">{t('Nothing fetched yet.')}</p>
       ) : p.isOwner ? (
         <>
-          <SettingRow label={t('Allow AI assistants (MCP endpoint)')}
-            description={p.status.enabled
-              ? t('On: every account on this server can connect an assistant with its own token and sees only its own data.')
-              : t('Off: the endpoint answers “not found” until you turn it on.')}
+          <SettingRow {...rowCopy('assistants', 'endpoint', { variant: p.status.enabled ? 'on' : 'off' })}
             control={<Switch checked={p.status.enabled} disabled={disabled} onChange={guard(p.onToggle)} label={t('Allow AI assistants (MCP endpoint)')} hideLabel />} />
           {p.status.enabled && (
-            <SettingRow label={t('AI assistants may make changes')}
-              description={ownerWrites
-                ? t('On: each person can let an assistant with a dedicated token create, edit, complete, reschedule and move their tasks.')
-                : t('Off: assistants can only read, whatever people choose for their own account.')}
+            <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })}
               control={<Switch checked={ownerWrites} disabled={disabled} onChange={guard(p.onToggleWrites)} label={t('AI assistants may make changes')} hideLabel />} />
           )}
         </>
       ) : (
-        <SettingRow label={t('On this server')} status={
+        <SettingRow {...rowCopy('assistants', 'server')} status={
           <span className="flex flex-wrap items-center gap-2">
             <Badge hue={p.status.enabled ? 'green' : 'slate'}>{p.status.enabled ? (ownerWrites ? t('On, can make changes') : t('On, read-only')) : t('Off')}</Badge>
             <span>{p.status.enabled
@@ -86,16 +80,8 @@ export function AssistantsView(p: AssistantsViewProps) {
       )}
 
       {p.status?.enabled && (
-        <SettingRow label={t('Allow AI assistants to make changes to my tasks')}
-          description={(
-            <span id="assistant-writes-help" className="block space-y-1">
-              <span className="block">
-                {t('An assistant with a token for making changes can create, edit, complete, reschedule and move tasks, create projects and labels, and comment. It cannot delete anything permanently or change sharing, members, tokens or settings, and it can move to the Trash only tasks it created. Every change shows in the task’s history as made by an AI assistant and can be undone. The server limits what it can do (at most 50 items per request).')}
-              </span>
-              {!ownerWrites && <span className="block">{t('The server owner has not allowed assistants to make changes, so this has no effect yet.')}</span>}
-              <span className="block">{t('Turning this off stops all your assistants from making changes at once, without revoking their tokens.')}</span>
-            </span>
-          )}
+        <SettingRow label={rowCopy('assistants', 'mine', { variant: 'on' }).label}
+          description={<span id="assistant-writes-help">{rowCopy('assistants', 'mine', { variant: ownerWrites ? 'on' : 'ownerOff' }).description}</span>}
           control={(
             <Switch checked={!!p.access?.allow_writes} disabled={disabled || p.access === null} onChange={guard(p.onToggleAccess)}
               label={t('Allow AI assistants to make changes to my tasks')} hideLabel describedBy="assistant-writes-help" />
@@ -104,9 +90,9 @@ export function AssistantsView(p: AssistantsViewProps) {
 
       {p.status && (
         <>
-          <SettingRow label={t('Endpoint')} status={<code className="break-all rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-meta text-default">{endpoint}</code>}
+          <SettingRow {...rowCopy('assistants', 'url')} status={<code className="break-all rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-meta text-default">{endpoint}</code>}
             control={<Button size="sm" icon="copy" onClick={() => p.onCopy('endpoint', endpoint)}>{copyLabel('endpoint', t('Copy URL'))}</Button>} />
-          <SettingRow label={t('Token for an assistant')} description={t('Creates an API token that you paste into the assistant. Read-only is the safe default.')}
+          <SettingRow {...rowCopy('assistants', 'token')}
             control={(
               <span className="flex flex-wrap justify-end gap-2">
                 <Button variant="primary" disabled={disabled} busy={p.busy} onClick={() => p.onCreateToken('read')}>{t('Create read-only token')}</Button>

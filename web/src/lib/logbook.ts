@@ -1,7 +1,7 @@
 // The Completed view as a logbook (OpenSpec change `completed-date-filters`,
 // design D4): completions newest first, grouped by the local day they happened,
 // rendered a page at a time. Pure; the view passes the viewer's `today`.
-import { addDaysISO, currentDateTime, formatDate, todayISO, type ResolvedDateTime } from './dates'
+import { addDaysISO, currentDateTime, currentDayStart, formatDate, logicalDay, type ResolvedDateTime } from './dates'
 import type { Task } from './types'
 import { t } from './i18n'
 
@@ -30,7 +30,7 @@ export function logbookGroups(tasks: readonly Task[], limit: number): { groups: 
     .sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
   const groups: LogbookGroup[] = []
   for (const tk of done.slice(0, Math.max(0, limit))) {
-    const date = todayISO(new Date(tk.completed_at!))
+    const date = logicalDay(tk.completed_at!, currentDayStart())
     const last = groups[groups.length - 1]
     if (last && last.date === date) last.tasks.push(tk)
     else groups.push({ date, tasks: [tk] })

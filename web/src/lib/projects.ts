@@ -55,6 +55,13 @@ export function openCountsByProject(tasks: Iterable<Task>, tree: ProjectTree, co
   return out
 }
 
+/** A node's place among its siblings: whether Move up and Move down can apply (sidebar-favourites). */
+export function siblingEdges(tree: ProjectTree, n: ProjectNode): { first: boolean; last: boolean } {
+  const peers = n.parent ? tree.nodes.get(n.parent)?.children ?? [] : tree.roots
+  const i = peers.findIndex((x) => x.id === n.id)
+  return { first: i <= 0, last: i < 0 || i === peers.length - 1 }
+}
+
 /** Open-task total of each project's whole visible subtree (what a sub-project list shows). */
 export function subtreeOpenCounts(tasks: Iterable<Task>, tree: ProjectTree): Map<string, number> {
   return openCountsByProject(tasks, tree, new Set(tree.nodes.keys()))

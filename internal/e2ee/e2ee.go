@@ -36,7 +36,9 @@ const Placeholder = "Encrypted item"
 // task.labels holds label ids, so the label names are encrypted instead).
 // Keep in step with CONTENT_FIELDS in web/src/lib/e2ee.ts.
 var ContentFields = map[string][]string{
-	"task":    {"title", "description", "ical_extra", "notes_doc"},
+	// A task's origin (OpenSpec change task-origin, design D2) is an object;
+	// devices serialise it and encrypt it whole into one ciphertext string.
+	"task":    {"title", "description", "ical_extra", "notes_doc", "origin"},
 	"project": {"name", "description", "notes_doc"},
 	"label":   {"name"},
 	"section": {"name"},
@@ -46,6 +48,12 @@ var ContentFields = map[string][]string{
 	"attachment": {"name", "mime", "url"},
 	// Custom field definitions (OpenSpec custom-fields, design D4).
 	"field": {"name", "options"},
+	// A time entry's note (OpenSpec time-tracking, design D1); its times stay
+	// plaintext so totals and the CSV work on the server.
+	"time_entry": {"note"},
+	// The review record's line for tomorrow (OpenSpec close-the-day, design D5);
+	// the close time and the other rhythm stamps stay plaintext.
+	"review": {"tomorrow_note"},
 }
 
 // ContentPrefixes are families of content fields named by a prefix: a task's

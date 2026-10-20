@@ -11,7 +11,7 @@ import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
-  Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
+  Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
 } from './types'
 
 export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
@@ -20,9 +20,12 @@ export class ApiError extends Error {
   /** The server's own message (English, a machine contract). */
   readonly serverMessage: string
   /** `message` is translated by code when the client knows it (app-localization D6). */
-  constructor(public status: number, public code: string, message: string) {
+  /** The input field a 400 invalid_input names, when the server says (issue-connections). */
+  readonly field?: string
+  constructor(public status: number, public code: string, message: string, field?: string) {
     super(errorMessage(code, message))
     this.serverMessage = message
+    this.field = field
   }
 }
 
@@ -184,8 +187,8 @@ async function parse<T>(res: Response): Promise<T> {
     return {}
   })
   if (!res.ok) {
-    const err = (data as { error?: { code: string; message: string } }).error
-    throw new ApiError(res.status, err?.code ?? 'error', err?.message ?? res.statusText)
+    const err = (data as { error?: { code: string; message: string; field?: string } }).error
+    throw new ApiError(res.status, err?.code ?? 'error', err?.message ?? res.statusText, err?.field)
   }
   return data as T
 }
@@ -300,7 +303,7 @@ export const api = {
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
   // End-to-end encryption (OpenSpec `e2ee`): only wrapped key material ever goes here.
   encryptionKeys: () => request<{ keys: KeyRecord }>('GET', '/api/v1/encryption/keys'),
-  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord; digestDisabled?: boolean }>('PUT', '/api/v1/encryption/keys', {
+  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord; digestDisabled?: boolean; issueConnectionsStopped?: string[] }>('PUT', '/api/v1/encryption/keys', {
     version: record.version, kdf: record.kdf, salt: record.salt, iterations: record.iterations,
     wrappedByPassphrase: record.wrappedByPassphrase, wrappedByRecovery: record.wrappedByRecovery,
   }),
@@ -433,6 +436,16 @@ export const api = {
   calendarFeed: () => request<{ feed: CalendarFeed | null }>('GET', '/api/v1/calendar-feeds/feed'),
   rotateCalendarFeed: () => request<{ feed: CalendarFeed; url: string }>('POST', '/api/v1/calendar-feeds/feed'),
   revokeCalendarFeed: () => request<void>('DELETE', '/api/v1/calendar-feeds/feed'),
+  // Issue import (OpenSpec issue-connections): connections are server data, never ops.
+  getIssuesSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/issues'),
+  putIssuesSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/issues', { enabled }),
+  listIssueConnections: () => request<{ connections: IssueConnection[] }>('GET', '/api/v1/issues/connections'),
+  createIssueConnection: (body: IssueConnectionInput) => request<{ connection: IssueConnection }>('POST', '/api/v1/issues/connections', body),
+  patchIssueConnection: (id: string, body: IssueConnectionInput) =>
+    request<{ connection: IssueConnection }>('PATCH', `/api/v1/issues/connections/${encodeURIComponent(id)}`, body),
+  deleteIssueConnection: (id: string) => request<void>('DELETE', `/api/v1/issues/connections/${encodeURIComponent(id)}`),
+  testIssueConnection: (id: string) => request<IssueActionResult>('POST', `/api/v1/issues/connections/${encodeURIComponent(id)}/test`),
+  syncIssueConnection: (id: string) => request<IssueActionResult>('POST', `/api/v1/issues/connections/${encodeURIComponent(id)}/sync`),
   saveAttachmentSettings: (s: AttachmentSettings) => request<AttachmentSettings>('PUT', '/api/v1/settings/attachments', s),
   // Audit log (owner only, except personal activity). Always fetched live and kept in
   // component state only: audit data is never written to IndexedDB or any cache.

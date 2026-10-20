@@ -5,7 +5,7 @@
 // data and actions live in usePropertiesModel and the editing state in
 // usePropertyEditing (web-component-structure); this file renders the chip groups.
 import { keysOf } from '../../lib/shortcuts'
-import { describeDeadline, daysBetweenISO, todayISO } from '../../lib/dates'
+import { describeDeadline, daysBetweenISO, logicalToday } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { removeLabel } from '../../lib/labels'
 import { createProject, unparkTask, updateTask } from '../../lib/ops'
@@ -20,6 +20,8 @@ import { LabelChip, LabelPicker } from '../LabelPicker'
 import { Menu } from '../../ui'
 import { ProjectMark } from '../Sidebar'
 import { PropertyChip } from './PropertyChip'
+import { openOrigin, originIcon, originOf } from '../../lib/taskOrigin'
+import { originText } from '../OriginChip'
 import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
 import { WhenControl } from './WhenControl'
@@ -47,7 +49,7 @@ const itemMeta = (i: PickerItem) => i.meta
 
 /** The countdown in words for the chip ("in 3 days", "today", "2 days over"). */
 function countdownWords(deadline: string, dueDate: string | null): string {
-  const days = daysBetweenISO(todayISO(), deadline)
+  const days = daysBetweenISO(logicalToday(), deadline)
   const late = dueDate && dueDate > deadline ? ` · ${t('planned after it')}` : ''
   if (days === 0) return t('today') + late
   return (days < 0 ? t('{n, plural, one {# day over} other {# days over}}', { n: -days }) : t('{n, plural, one {in # day} other {in # days}}', { n: days })) + late
@@ -83,6 +85,7 @@ export function Properties(props: PropertiesProps) {
       <div className="flex flex-wrap items-center gap-1.5" data-property-chips>
         <ScheduleChips p={props} m={m} />
         <RelationChips p={props} m={m} />
+        <OriginProperty task={props.task} readOnly={props.readOnly} />
         <AddPropertyMenu p={props} m={m} />
       </div>
     </section>
@@ -287,6 +290,21 @@ function RelationChips({ p: { task, readOnly, userId, onOpen }, m }: GroupProps)
           )} />
       )}
     </>
+  )
+}
+
+/**
+ * Where the task came from (task-origin D8): shown only when set, never in the Add
+ * menu. It reads as the row's chip; click or Enter opens the source in a new tab
+ * when there is a URL, and the clear control removes the origin as one write.
+ */
+function OriginProperty({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const origin = originOf(task)
+  if (!origin) return null
+  return (
+    <PropertyChip id="origin" icon={originIcon(origin)} label={t('Origin')} value={originText(origin)} tip={origin.title || undefined} readOnly={readOnly}
+      onActivate={origin.url ? () => openOrigin(origin) : undefined}
+      onClear={() => act(updateTask(task.id, { origin: null }))} />
   )
 }
 

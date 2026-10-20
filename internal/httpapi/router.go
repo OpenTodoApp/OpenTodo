@@ -117,8 +117,11 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.seedCaldav(context.Background())
 	s.registerCaldavRoutes(mux)
 	s.registerCalendarFeedRoutes(mux)
+	// Issue import (OpenSpec `issue-connections`); before MCP, whose resource reads it.
+	s.registerIssueRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`).
 	s.registerCommentRoutes(mux)
+	s.registerTimeEntryRoutes(mux)
 	// End-to-end encryption (OpenSpec `e2ee`): wrapped key record and history purge.
 	s.registerEncryptionRoutes(mux)
 	// Read-only MCP endpoint and its owner toggle (OpenSpec `mcp-server`).

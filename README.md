@@ -90,8 +90,9 @@ The highlights: the app in six languages, quick add in plain language, projects 
 - **Quick add from anywhere** (`q`), with the view's context as defaults: today in Today, the current project in a project.
 - **Natural language in six languages, offline**: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips. English, German, French, Italian, Spanish and Portuguese. [Syntax](docs/quick-add.md)
 - **Voice capture** (opt-in per device): dictate into quick add with the microphone button or `Shift+V`; "hashtag home priority two" becomes `#home p2`. Uses the browser's own speech recognition; the server never receives audio. [Voice](docs/quick-add.md#voice)
-- **Share sheet, bookmarklet and browser extension**: send a page from the phone's share menu, any desktop browser or the Chromium/Firefox extension in [`extension/`](extension/) to a prefilled capture screen. Works offline, holds no token. [Capture](docs/capture.md)
+- **Share sheet, bookmarklet and browser extension**: send a page from the phone's share menu, any desktop browser or the Chromium/Firefox extension in [`extension/`](extension/) to a prefilled capture screen; the task keeps the page, or the GitHub, GitLab, Jira or Linear issue, as a chip that opens it. Works offline, holds no token. [Capture](docs/capture.md#where-a-task-came-from)
 - **Email to task**: forward a mail to your secret address (`todo+…@example.com`) and it lands in the Inbox. Optional; the operator points OpenTodo at one IMAP mailbox. [Email](docs/email.md)
+- **GitHub and GitLab issues as tasks**: connect an account with a personal access token and the open issues assigned to you become tasks that complete when the issue closes; nothing is written back. Off until the owner enables it. [Issue import](docs/issue-import.md)
 - **Command line**: `ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts. [CLI](docs/cli.md)
 
 ### Organisation and views
@@ -244,7 +245,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | `true`/`false` presets the owner's "allow private network targets" [webhook](docs/webhooks.md#private-network-protection) policy on first start; afterwards Settings decides |
 | `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI → AI assistants decides |
-| `OPENTODO_MCP_WRITES` | unset (off) | `true` presets "AI assistants may make changes" on first start; each user must still allow it and use an `agent` token. Afterwards Settings → AI → AI assistants decides |
+| `OPENTODO_MCP_WRITES` | unset (off) | `true` presets "Assistants may make changes" on first start; each user must still allow it and use an `agent` token. Afterwards Settings → AI → AI assistants decides |
 | `OPENTODO_CALDAV` | unset (off) | `true` presets the [CalDAV](docs/caldav.md) endpoint on first start; afterwards Settings → Integrations → Calendar apps decides |
 | `OPENTODO_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET`, `_DISPLAY_NAME`, `_SSO_ONLY` | unset | Optional [single sign-on](docs/self-hosting/sso.md) settings; each one set overrides and locks that field in Settings → Access policies → Single sign-on. The issuer must be https |
 | `OPENTODO_SMTP_HOST`, `_SECURITY`, `_USER`, `_PASSWORD` (or `_PASSWORD_FILE`), `_FROM` | unset (off) | Optional [outgoing email](docs/self-hosting/outgoing-email.md) for password resets, sign-up confirmations and invitations; `HOST` and `FROM` together; each one set overrides and locks that field in Settings → Server → Outgoing email |
@@ -336,6 +337,7 @@ The web app makes no network requests except to your own server: no analytics, c
 - the single sign-on issuer you configure;
 - the IMAP mailbox you configure for email to task;
 - the SMTP server you configure for [outgoing email](docs/self-hosting/outgoing-email.md);
+- the GitHub or GitLab host people connect for [issue import](docs/issue-import.md), with their token sent only to that host (private network addresses only if you allow them);
 - the calendar addresses people add to show [other calendars](docs/other-calendars.md) beside their tasks (private network addresses only if you allow them);
 - the model provider you enable for the [in-app assistant](docs/assistant.md) (off by default), only after a person has accepted what is sent and only while they wait for an answer.
 

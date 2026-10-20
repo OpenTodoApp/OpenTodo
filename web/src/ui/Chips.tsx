@@ -1,7 +1,8 @@
 // The metadata language of rows and cards (OpenSpec change ux-overhaul,
 // task-list-presentation "Metadata language", design D7): three styles only.
 // `ToneText` for a date or a deadline (a tone, an optional icon, the text),
-// `LabelChip` for a label (its colour dot and name) and `NeutralChip` for a count
+// `LabelChip` for a label (its colour dot and name; `LabelDots` for all of a
+// row's labels in Calm rows, calm-rows D6) and `NeutralChip` for a count
 // or a name (estimate, subtask progress, comments, attachments, project), in the
 // metadata size with tabular figures, never a monospace face. Icons in chips are
 // 12 px ("Secondary text is one size").
@@ -11,6 +12,7 @@
 // (OpenSpec assistive-tech-semantics; the lint rule a11y/no-generic-aria-label).
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
+import { Tooltip } from './Tooltip'
 import { t } from '../lib/i18n'
 
 export type Tone = 'danger' | 'success' | 'warning' | 'accent' | 'violet' | 'indigo' | 'muted' | 'faint'
@@ -105,4 +107,39 @@ export function LabelChip({ name, color, onRemove, className }: LabelChipProps) 
       )}
     </span>
   )
+}
+
+export interface LabelDotsProps {
+  /** The task's labels in its order (already resolved). */
+  labels: readonly { id: string; name: string; color: string }[]
+  /** A label left out because its own view is open (calm-rows D3). */
+  omit?: string
+}
+
+/**
+ * A row's labels in Calm rows (OpenSpec change calm-rows, design D6; labels "Assign
+ * and unassign labels"): one 6 px colour dot per label in the task's order, the first
+ * name and "+n" for the rest. Every name is read by assistive technology; when some
+ * are hidden, the group takes keyboard focus and a tooltip shows them all on hover
+ * and focus. Nothing is rendered when no label is left.
+ */
+export function LabelDots({ labels, omit }: LabelDotsProps) {
+  const shown = omit ? labels.filter((l) => l.id !== omit) : labels
+  if (shown.length === 0) return null
+  const names = shown.map((l) => l.name).join(', ')
+  const spoken = t('Labels: {names}', { names })
+  const more = shown.length - 1
+  const group = (
+    <span role="group" data-label-dots="" tabIndex={more > 0 ? 0 : undefined}
+      className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip text-meta text-muted outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      <span aria-hidden="true" className="inline-flex shrink-0 items-center gap-0.5">
+        {shown.map((l) => <span key={l.id} data-label-dot="" className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: l.color }} />)}
+      </span>
+      <ReadAs label={spoken}>
+        <span className="truncate">{shown[0].name}</span>
+        {more > 0 && <span className="tabular-nums" data-label-more="">{` +${more}`}</span>}
+      </ReadAs>
+    </span>
+  )
+  return more > 0 ? <Tooltip label={names} side="top">{group}</Tooltip> : group
 }

@@ -27,6 +27,7 @@ import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { ProjectWalk } from './ProjectWalk'
 import { ReviewProgress } from './ReviewProgress'
+import { StepCard } from './StepCard'
 import { useShortcutScope } from '../shortcuts'
 
 const LIST_STEPS: readonly StepId[] = ['clear', 'back', 'waiting', 'ahead', 'someday']
@@ -119,47 +120,29 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
           {(allDone || finished) && <AllClear finished={finished} />}
           {notice && <div className="mb-3"><Notice tone="info">{notice}</Notice></div>}
           <ReviewProgress steps={steps} step={step} onStep={go} />
-          <Card as="section" padding="none" aria-labelledby="review-step-title" data-review-step={step}>
-            <header className="flex items-start gap-3 border-b border-default bg-accent-soft/40 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
-              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
-                <Icon name={STEP_ICONS[step]} size="lg" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-hint font-semibold uppercase tracking-wide text-accent" data-review-position>
-                  {t('Step {n} of {total} · {phase}', { n: STEP_IDS.indexOf(step) + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}
-                </p>
-                <h2 id="review-step-title" ref={title} tabIndex={-1} className="mt-0.5 text-h2 font-semibold text-strong outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-                  {STEP_TITLES[step]}
-                </h2>
-              </div>
-              {steps.done[step]
-                ? <Badge hue="green">{t('Done')}</Badge>
-                : steps.left[step] > 0 && <Badge hue="orange">{t('{n} left', { n: steps.left[step] })}</Badge>}
-            </header>
-            <div className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6">
-              <StepIntro step={step} steps={steps} />
-              {step === 'projects' ? (
-                <ProjectWalk walk={steps.walk} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
-              ) : step === 'sweep' ? (
-                <MindSweep projects={projects} labels={labels} />
-              ) : taskRows.length > 0 && (
-                <ul className="-mx-2" data-testid={`review-${step}`}>
-                  {taskRows.map((item) => (
-                    <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
-                      showProject={step !== 'clear'} selected={item.id === selected}
-                      onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
-                      onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
-                  ))}
-                </ul>
-              )}
-            </div>
-          </Card>
-          <div className="mt-4 flex items-center justify-between gap-2" data-review-nav>
-            {prev ? <Button variant="ghost" icon="chevron-left" onClick={() => go(prev)} data-review-back>{t('Back')}</Button> : <span />}
-            {next
-              ? <Button variant="primary" className="max-sm:flex-1" iconEnd="chevron-right" onClick={() => go(next)} data-review-next>{t('Next: {step}', { step: STEP_TITLES[next] })}</Button>
-              : <Button variant="primary" className="max-sm:flex-1" icon="check" onClick={finish} data-review-finish>{t('Finish review')}</Button>}
-          </div>
+          <StepCard step={step} titleRef={title} icon={STEP_ICONS[step]} title={STEP_TITLES[step]}
+            position={t('Step {n} of {total} · {phase}', { n: STEP_IDS.indexOf(step) + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}
+            badge={steps.done[step]
+              ? <Badge hue="green">{t('Done')}</Badge>
+              : steps.left[step] > 0 && <Badge hue="orange">{t('{n} left', { n: steps.left[step] })}</Badge>}
+            onBack={prev ? () => go(prev) : null}
+            next={next ? { label: t('Next: {step}', { step: STEP_TITLES[next] }), onClick: () => go(next) } : { label: t('Finish review'), onClick: finish, finish: true }}>
+            <StepIntro step={step} steps={steps} />
+            {step === 'projects' ? (
+              <ProjectWalk walk={steps.walk} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
+            ) : step === 'sweep' ? (
+              <MindSweep projects={projects} labels={labels} />
+            ) : taskRows.length > 0 && (
+              <ul className="-mx-2" data-testid={`review-${step}`}>
+                {taskRows.map((item) => (
+                  <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
+                    showProject={step !== 'clear'} selected={item.id === selected}
+                    onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
+                    onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
+                ))}
+              </ul>
+            )}
+          </StepCard>
         </>
       )}
       {addTo && (

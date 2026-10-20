@@ -19,9 +19,11 @@ export interface MenuItemProps {
   disabled?: boolean
   /** Checkable item (pin, start view): announced as checked or not. */
   checked?: boolean
+  /** Test and script hooks (`data-help-button`). */
+  [hook: `data-${string}`]: string | boolean | undefined
 }
 
-export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked }: MenuItemProps) {
+export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, ...hooks }: MenuItemProps) {
   const close = useContext(MenuCloseContext)
   const id = useId()
   const describedBy = [shortcut && `${id}-k`, description && `${id}-d`].filter(Boolean).join(' ') || undefined
@@ -29,6 +31,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
   // the shortcut hint are hidden from the name and announced as the item's description.
   return (
     <button
+      {...hooks}
       type="button"
       role={checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
       aria-checked={checked}

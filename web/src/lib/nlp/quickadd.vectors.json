@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec change quick-add-recurrence. Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -26,6 +26,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -55,6 +56,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 3 days after completion",
     "reminders": []
    }
@@ -84,6 +86,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 2nd tuesday until 2026-12-31",
     "reminders": []
    }
@@ -114,6 +117,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every day",
     "reminders": []
    }
@@ -141,6 +145,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -170,6 +175,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every month",
     "reminders": []
    }
@@ -200,6 +206,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every month",
     "reminders": []
    }
@@ -229,6 +236,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every weekday for 10 times",
     "reminders": []
    }
@@ -258,6 +266,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday, wednesday, friday",
     "reminders": []
    }
@@ -287,6 +296,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every last friday",
     "reminders": []
    }
@@ -316,6 +326,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 15th",
     "reminders": []
    }
@@ -343,6 +354,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -373,6 +385,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -408,6 +421,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -444,6 +458,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -471,6 +486,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -501,6 +517,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -536,6 +553,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -571,6 +589,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -604,6 +623,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -637,6 +657,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -670,6 +691,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -704,6 +726,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -733,6 +756,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -762,6 +786,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -791,6 +816,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -820,6 +846,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": []
    }
@@ -849,6 +876,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every 3 days after completion",
     "reminders": []
    }
@@ -879,6 +907,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -914,6 +943,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -949,6 +979,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -984,6 +1015,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": [
      {
@@ -1018,6 +1050,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every monday",
     "reminders": [
      {
@@ -1051,6 +1084,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1080,6 +1114,7 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
     "recurrence": "every weekday",
     "reminders": []
    }
@@ -1111,6 +1146,7 @@
     ],
     "priority": 2,
     "estimateMinutes": 15,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }
@@ -1141,6 +1177,1650 @@
     "labels": [],
     "priority": null,
     "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday: Dentist second Monday",
+   "line": "Dentist second Monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday: Dentist 2nd monday",
+   "line": "Dentist 2nd monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday with a time",
+   "line": "Board second Tuesday at 10:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Board",
+    "due": {
+     "date": "2026-10-13",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday de",
+   "line": "Treffen am zweiten Montag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Treffen",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday fr",
+   "line": "Réunion le deuxième lundi",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Réunion",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday it",
+   "line": "Riunione secondo lunedì",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Riunione",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday es",
+   "line": "Reunión segundo lunes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunión",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday pt",
+   "line": "Reunião segunda segunda-feira",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunião",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday named month de",
+   "line": "Bericht dritten Freitag im November",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bericht",
+    "due": {
+     "date": "2026-11-20"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday named month fr",
+   "line": "Rapport le 3e vendredi de novembre",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rapport",
+    "due": {
+     "date": "2026-11-20"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday named month it",
+   "line": "Rapporto terzo venerdì di novembre",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rapporto",
+    "due": {
+     "date": "2026-11-20"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday named month es",
+   "line": "Informe tercer viernes de noviembre",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Informe",
+    "due": {
+     "date": "2026-11-20"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday named month pt",
+   "line": "Relatório terceira sexta-feira de novembro",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Relatório",
+    "due": {
+     "date": "2026-11-20"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last weekday de",
+   "line": "Abschluss letzten Freitag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Abschluss",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last weekday fr",
+   "line": "Clôture dernier vendredi",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Clôture",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last weekday it",
+   "line": "Chiusura ultimo venerdì",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Chiusura",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last weekday es",
+   "line": "Cierre último viernes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Cierre",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last weekday pt",
+   "line": "Fecho última sexta",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Fecho",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Portuguese weekday alone is not an ordinal",
+   "line": "Reunião quarta",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunião",
+    "due": {
+     "date": "2026-10-14"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: ordinal without a weekday stays literal",
+   "line": "Pay the second invoice",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay the second invoice",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "first Monday already past rolls to next month",
+   "line": "Pay rent first Monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last Friday of the month",
+   "line": "Close books last Friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Close books",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "last Friday reads as a date (dismissable)",
+   "line": "Review notes from last Friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Review notes from",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "named month with an article",
+   "line": "Report the 3rd Friday of November",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Report",
+    "due": {
+     "date": "2026-11-20"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "named month already past rolls to next year",
+   "line": "Audit first Friday of October",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Audit",
+    "due": {
+     "date": "2027-10-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "named month with a year",
+   "line": "Audit first Friday of October 2028",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Audit",
+    "due": {
+     "date": "2028-10-06"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "one-off of the month",
+   "line": "Bins last Wednesday of the month",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bins",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal weekday in December rolls into January",
+   "line": "Party first Friday",
+   "ctx": {
+    "today": "2026-12-10",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Party",
+    "due": {
+     "date": "2027-01-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: fifth Friday stays literal",
+   "line": "Audit 5th Friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Audit 5th Friday",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: seconds is not an ordinal",
+   "line": "wait 30 seconds Monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "wait 30 seconds",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "every second Monday",
+   "line": "Board every second Monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Board",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "every 2nd monday of the month",
+   "line": "Board every 2nd monday of the month",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Board",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "of the month de",
+   "line": "Treffen jeden zweiten Montag im Monat",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Treffen",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "of the month fr",
+   "line": "Réunion tous les 2e lundis du mois",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Réunion",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "of the month it",
+   "line": "Riunione ogni secondo lunedì del mese",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Riunione",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "of the month es",
+   "line": "Reunión cada segundo lunes del mes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunión",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "of the month pt",
+   "line": "Reunião toda segunda segunda-feira do mês",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunião",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "every last friday of the month",
+   "line": "Close books every last friday of the month",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Close books",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "negative: of the month after a weekly rule stays",
+   "line": "Review every monday of the month",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Review of the month",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Portuguese weekday list is not an ordinal",
+   "line": "Aula toda segunda, quarta",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Aula",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday, wednesday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday en",
+   "line": "Board every 2 Mondays",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Board every 2 Mondays",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday de",
+   "line": "Treffen alle 2 Montage",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Treffen alle 2 Montage",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday de with it",
+   "line": "Treffen alle 2 Montage",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de",
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Treffen alle 2 Montage",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday fr",
+   "line": "Réunion tous les 2 lundis",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Réunion tous les 2 lundis",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday it",
+   "line": "Riunione ogni 2 lunedì",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Riunione ogni 2 lunedì",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday es",
+   "line": "Reunión cada 2 lunes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunión cada 2 lunes",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday pt",
+   "line": "Reunião cada 2 segundas-feiras",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunião cada 2 segundas-feiras",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "count before weekday after a rule",
+   "line": "Pay rent every month cada 2 lunes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent cada 2 lunes",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every month",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (en)",
+   "line": "Draft the offer 30m/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Draft the offer",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 30,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (de)",
+   "line": "Angebot schreiben 30m/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Angebot schreiben",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 30,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (fr)",
+   "line": "Rédiger l'offre 1h/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Rédiger l'offre",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 60,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "French hour stays a clock time",
+   "line": "Réunion 15h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Réunion",
+    "due": {
+     "date": "2026-10-09",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (es)",
+   "line": "Redactar la oferta 45min/2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Redactar la oferta",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": 45,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (it)",
+   "line": "Scrivere l'offerta 1h/1h30",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Scrivere l'offerta",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 90,
+    "spentMinutes": 60,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Spent and estimate (pt)",
+   "line": "Escrever a proposta 30min/1h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Escrever a proposta",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 60,
+    "spentMinutes": 30,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dates are not durations",
+   "line": "Pay rent 30/12",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de",
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-12-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Plus stays an estimate only",
+   "line": "Draft the offer +30m",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Draft the offer",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 30,
+    "spentMinutes": null,
     "recurrence": null,
     "reminders": []
    }

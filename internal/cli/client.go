@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/pixari/opentodo/internal/origin"
 )
 
 // Exit codes form the contract scripts rely on.
@@ -29,7 +31,7 @@ const (
 var notPermittedCodes = map[string]bool{
 	"insufficient_scope": true, "forbidden": true, "not_permitted": true,
 	"writes_disabled_by_owner": true, "writes_disabled_by_user": true,
-	"read_only": true, "encryption_enabled": true,
+	"read_only": true, "encryption_enabled": true, "issues_disabled": true,
 }
 
 // exitError carries an exit code and, optionally, the exact JSON envelope to print
@@ -282,18 +284,28 @@ type due struct {
 }
 
 type task struct {
-	ID          string          `json:"id"`
-	Title       string          `json:"title"`
-	Description string          `json:"description"`
-	ProjectID   *string         `json:"project_id"`
-	Priority    int             `json:"priority"`
-	Due         *due            `json:"due"`
-	Labels      []string        `json:"labels"`
-	Position    float64         `json:"position"`
-	CreatedAt   float64         `json:"created_at"`
-	CompletedAt *float64        `json:"completed_at"`
-	DeletedAt   *float64        `json:"deleted_at"`
-	Raw         json.RawMessage `json:"-"`
+	ID          string   `json:"id"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	ProjectID   *string  `json:"project_id"`
+	Priority    int      `json:"priority"`
+	Due         *due     `json:"due"`
+	Labels      []string `json:"labels"`
+	Position    float64  `json:"position"`
+	CreatedAt   float64  `json:"created_at"`
+	CompletedAt *float64 `json:"completed_at"`
+	DeletedAt   *float64 `json:"deleted_at"`
+	// Origin is null, the object or an encrypted account's ciphertext (task-origin).
+	Origin json.RawMessage `json:"origin"`
+	Raw    json.RawMessage `json:"-"`
+}
+
+// originLabel is the origin's id or host, "" when there is none or it is encrypted.
+func (t task) originLabel() string {
+	if o, err := origin.Decode(t.Origin); err == nil {
+		return o.Label()
+	}
+	return ""
 }
 
 type project struct {

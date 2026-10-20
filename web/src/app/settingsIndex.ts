@@ -41,6 +41,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'appearance', label: msg('Mode'), description: msg('System, light or dark'), anchor: 'appearance-mode', keywords: 'dark light theme' },
   { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), anchor: 'appearance-theme', keywords: 'accent colour color' },
   { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), anchor: 'appearance-density', keywords: 'compact rows' },
+  { section: 'appearance', label: msg('Rows'), description: msg('Calm or detailed task rows'), anchor: 'appearance-rows', keywords: 'calm detailed chips' },
   { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar'), anchor: 'sidebar-heading', keywords: 'promote more group' },
   // General
   { section: 'general', label: msg('Language'), description: msg('The language of the app on all your devices'), anchor: 'language-heading', keywords: 'language locale translation sprache langue idioma lingua idioma' },
@@ -48,8 +49,10 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'general', label: msg('Date format'), description: msg('Day-month, month-day or ISO'), anchor: 'date-time-heading' },
   { section: 'general', label: msg('Time format'), description: msg('12-hour or 24-hour'), anchor: 'date-time-heading', keywords: 'clock' },
   { section: 'general', label: msg('First day of the week'), description: msg('Where the Week view and calendars start'), anchor: 'date-time-heading', keywords: 'week start monday sunday' },
+  { section: 'general', label: msg('My day starts at'), description: msg('Work done before this time counts for the previous day.'), anchor: 'date-time-heading', keywords: 'day start night owl midnight end of day' },
   { section: 'general', label: msg('Calendar grid'), description: msg('When the Day and Week grid starts and ends, and your day length'), anchor: 'calendar-heading', keywords: 'capacity hours' },
   { section: 'general', label: msg('Show shortcut hints'), description: msg('Print the keys in the app, next to quick add and in prompts'), anchor: 'shortcut-hints', keywords: 'keyboard shortcuts kbd badges' },
+  { section: 'general', label: msg('Focus timer'), description: msg('Pomodoro, Flowtime or Countdown, the lengths, breaks and the sound'), anchor: 'focus-heading', keywords: 'focus pomodoro flowtime countdown timer session break reminder sound tone' },
   { section: 'general', label: msg('Vim keybindings'), description: msg('Keyboard navigation with hjkl'), anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
   // Notifications
   { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), anchor: 'notifications-heading', keywords: 'reminders' },

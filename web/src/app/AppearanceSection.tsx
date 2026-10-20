@@ -1,12 +1,12 @@
 // Settings → Appearance (OpenSpec change theming, design D9; ux-overhaul,
-// appearance-preferences "Appearance in Settings"): mode, accent theme, density
-// and the promoted sidebar destinations, all in the synced user_prefs row and
+// appearance-preferences "Appearance in Settings"): mode, accent theme, density,
+// the row detail (calm-rows) and the promoted sidebar destinations, all in the synced user_prefs row and
 // applied at once. Theme tiles are a radio group with roving focus; each tile
 // previews its theme through the real tokens (a data-accent subtree). Below
 // 640 px the tiles are one scrollable row of named swatches.
 import { readMethodMode } from '../lib/method/mode'
 import { type KeyboardEvent, useRef } from 'react'
-import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
+import { DENSITIES, type Density, DETAILS, type RowDetail, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
 import { SettingRow, SettingsSection, Switch } from '../ui'
@@ -14,9 +14,11 @@ import { ACCENTS, type AccentId } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
+const DETAIL_LABEL = translatedMap<RowDetail>({ calm: msg('Calm'), detailed: msg('Detailed') })
 
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
@@ -29,6 +31,8 @@ export interface AppearanceViewProps {
   onMode: (m: ThemeModePref) => void
   onAccent: (a: AccentId) => void
   onDensity?: (d: Density) => void
+  /** Row detail (calm-rows D8): Calm or Detailed. */
+  onDetail?: (d: RowDetail) => void
 }
 
 /** Roving focus over a radio group: arrows move and select, Home and End jump. */
@@ -63,16 +67,15 @@ function Segmented<T extends string>({ label, items, labels, value, onChange, te
   )
 }
 
-export function AppearanceView({ value, onMode, onAccent, onDensity }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, onDensity, onDetail }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
-    <SettingsSection title={t('Appearance')} headingId="appearance-heading"
-      description={t('Light or dark, the colour of buttons, links and selection, and how tight the rows are. Saved to your account, so all your devices follow.')}>
-      <SettingRow id="appearance-mode" label={t('Mode')} description={t('System follows your device\'s light or dark setting.')}
+    <SettingsSection {...cardCopy('appearance')}>
+      <SettingRow id="appearance-mode" {...rowCopy('appearance', 'mode')}
         control={<span data-appearance-mode><Segmented label={t('Mode')} items={THEME_MODES} labels={MODE_LABEL} value={value.mode} onChange={onMode} testId="appearance-mode" /></span>} />
       <div className="py-3" id="appearance-theme" tabIndex={-1} data-setting-row="appearance-theme">
-        <p id="appearance-theme-label" className="mb-2 text-body font-medium text-default">{t('Theme')}</p>
+        <p id="appearance-theme-label" className="mb-2 text-body font-medium text-default">{rowCopy('appearance', 'theme').label}</p>
         <div role="radiogroup" aria-labelledby="appearance-theme-label" data-appearance-themes data-scroll-x
           className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
           {ACCENTS.map((a, i) => {
@@ -100,8 +103,12 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
         </div>
       </div>
       {onDensity && (
-        <SettingRow id="appearance-density" label={t('Density')} description={t('Compact makes task rows, group headers and the sidebar tighter. Touch targets stay full size on touch screens.')}
+        <SettingRow id="appearance-density" {...rowCopy('appearance', 'density')}
           control={<Segmented label={t('Density')} items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
+      )}
+      {onDetail && (
+        <SettingRow id="appearance-rows" {...rowCopy('appearance', 'rows')}
+          control={<Segmented label={t('Rows')} items={DETAILS} labels={DETAIL_LABEL} value={value.detail ?? 'calm'} onChange={onDetail} testId="appearance-rows" />} />
       )}
     </SettingsSection>
   )
@@ -110,10 +117,7 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
 /** The sidebar destinations (app-shell "Sidebar structure"): one switch per destination of the More group. */
 export function SidebarView({ promoted, onPromote, arranged = false }: { promoted: readonly Promotable[]; onPromote: (id: Promotable, on: boolean) => void; arranged?: boolean }) {
   return (
-    <SettingsSection title={t('Sidebar')} headingId="sidebar-heading"
-      description={arranged
-        ? t('Open Loops first arranges the sidebar by the Places, so these choices wait until you switch to Lists only or Companion in Settings → Account. They are kept.')
-        : t('Inbox, Today, Upcoming and Calendar are always at the top. Pick which of the More group\'s destinations sit next to them, on every device.')}>
+    <SettingsSection {...cardCopy('sidebar', { variant: arranged ? 'arranged' : 'standard' })}>
       {PROMOTABLE.map((id) => (
         <SettingRow key={id} id={`sidebar-${id}`} label={PROMOTABLE_LABEL[id]} htmlFor={`sidebar-switch-${id}`}
           control={<Switch id={`sidebar-switch-${id}`} checked={promoted.includes(id)} disabled={arranged} onChange={(on) => onPromote(id, on)} label={t('Show {name} among the primary items', { name: PROMOTABLE_LABEL[id] })} hideLabel />} />
@@ -131,7 +135,7 @@ export function AppearanceSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
-    onDensity={(d) => act(setAppearance('density', d))} />
+    onDensity={(d) => act(setAppearance('density', d))} onDetail={(d) => act(setAppearance('row_detail', d))} />
 }
 
 export function SidebarSection() {

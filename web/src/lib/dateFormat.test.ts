@@ -81,6 +81,9 @@ describe('formatDate and formatTime (2.2)', () => {
     const p = r({ date_format: 'day-month', time_format: '12h' })
     expect(describeDue({ date: TODAY, time: '15:00' }, TODAY, 'UTC', p)?.label).toBe('Today 3:00 PM')
     expect(describeDue({ date: '2026-10-15' }, TODAY, 'UTC', p)?.label).toBe('Tomorrow')
+    // The time on its own, in the user's format, for rows under a heading that names the day (calm-rows D4).
+    expect(describeDue({ date: TODAY, time: '15:00' }, TODAY, 'UTC', p)?.time).toBe('3:00 PM')
+    expect(describeDue({ date: '2026-10-15' }, TODAY, 'UTC', p)?.time).toBeNull()
     expect(describeDue({ date: '2026-11-03' }, TODAY, 'UTC', p)?.label).toBe('3 Nov')
     expect(describeDue({ date: '2027-02-03' }, TODAY, 'UTC', r({ date_format: 'month-day' }))?.label).toBe('Feb 3, 2027')
   })

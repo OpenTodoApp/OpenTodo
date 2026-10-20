@@ -9,6 +9,10 @@ import { canonicalPath, LEGACY_SETTINGS_IDS, parseRoute, routePath, SETTINGS_SEC
 import { followLink, SettingsView } from './SettingsView'
 import { firstSection, groupedSections, joinList, resolveSection, SETTINGS_GROUPS, SETTINGS_SECTIONS } from './settingsSections'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 // The owner-only panels render nothing until the server answers; stand-ins show where they mount.
 vi.mock('./SsoPanel', async (orig) => ({ ...(await orig<typeof import('./SsoPanel')>()), SsoPanel: () => <div data-testid="sso-panel" /> }))
 vi.mock('./BackupsPanel', async (orig) => ({ ...(await orig<typeof import('./BackupsPanel')>()), BackupsPanel: () => <div data-testid="backups-panel" /> }))
@@ -195,6 +199,7 @@ describe('opening a section', () => {
     const appearance = render(member, 'appearance')
     expect(appearance).toContain('data-appearance-themes')
     expect(appearance).toContain('data-testid="appearance-density"')
+    expect(appearance).toContain('data-testid="appearance-rows"')
     expect(appearance).toContain('id="sidebar-heading"')
     expect(appearance).toContain('id="sidebar-someday"')
     const data = render(member, 'data')
@@ -230,9 +235,11 @@ describe('opening a section', () => {
   })
 
   it('has no help link or action in any card header', () => {
-    const all = TEN.map((id) => render(owner, id)).join('\n')
+    const all = withoutLearnMore(TEN.map((id) => render(owner, id)).join('\n'))
     expect(all).not.toContain('data-help-screen="settings/password"')
     expect(all.match(/data-help-screen="settings\/[a-z]+"/g)?.length).toBe(TEN.length)
+    // Learn more sits in a card's line, never in its header.
+    expect(TEN.map((id) => render(owner, id)).join('\n')).not.toMatch(/<h2[^>]*>[^<]*<button/)
   })
 })
 
@@ -270,7 +277,7 @@ describe('demo instance', () => {
   it('keeps every card and disables the refused ones under one note', () => {
     const html = render(member, 'integrations')
     expect(html.match(/data-testid="demo-restricted"/g)).toHaveLength(1)
-    expect(html).toContain('calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP) are disabled on this demo instance')
+    expect(html).toContain('Demo instance: calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP) are disabled here.')
     expect(html).toContain('id="caldav-heading"')
     expect(html).toContain('id="tokens-heading"')
     expect(html).toMatch(/<fieldset disabled=""[^>]*data-demo-disabled/)
@@ -282,10 +289,22 @@ describe('demo instance', () => {
     expect(account.indexOf('data-demo-disabled')).toBeGreaterThan(account.indexOf('id="session-heading"'))
   })
 
+  it('says it in one line with Learn more to the demo guide, and the first card follows at once (settings-copy D6)', () => {
+    const account = render(member, 'account')
+    const note = /<div data-testid="demo-restricted">([\s\S]*?)<\/div><div id="profile"/.exec(account)
+    expect(note, 'the profile card directly follows the note').toBeTruthy()
+    const text = note![1].replace(/<[^>]+>/g, '')
+    expect(text).toBe('Demo instance: password and two-factor authentication, passkeys, linked accounts and end-to-end encryption are disabled here.Learn more')
+    expect(note![1]).toContain('data-help-screen="demo"')
+    expect(note![1]).toContain('aria-label="Learn more: Demo instance"')
+    // One sentence of at most 90 characters plus the list of features, no sandbox paragraph.
+    expect(account).not.toContain('2 hours of inactivity')
+  })
+
   it('keeps what works next to the note', () => {
     const capture = render(member, 'capture')
     expect(capture).toContain('Copy bookmarklet')
-    expect(capture).toContain('email to task is disabled on this demo instance')
+    expect(capture).toContain('Demo instance: email to task is disabled here.')
     expect(capture).toContain('id="email-inbox-heading"')
   })
 

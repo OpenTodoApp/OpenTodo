@@ -29,6 +29,25 @@ describe('Dialog', () => {
   })
 })
 
+describe('Dialog placement (lean-chrome D3)', () => {
+  it('center renders exactly as before: a full-screen card below 640 px', () => {
+    const html = renderToStaticMarkup(<Dialog title="Rename" onClose={() => {}}>x</Dialog>)
+    expect(html).toContain('class="h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:my-auto sm:min-h-0 sm:max-w-sm"')
+    expect(html).toContain('pt-[env(safe-area-inset-top)]')
+    expect(html).not.toContain('data-placement')
+    expect(html).toBe(renderToStaticMarkup(<Dialog title="Rename" onClose={() => {}} placement="center">x</Dialog>))
+  })
+
+  it('sheet is anchored to the bottom, at most two thirds high, rounded on top, and the centred card from 640 px', () => {
+    const html = renderToStaticMarkup(<Dialog title="Start" onClose={() => {}} placement="sheet">x</Dialog>)
+    const card = /<div[^>]*data-overlay="dialog"[^>]*>/.exec(html)![0]
+    expect(card).toContain('data-placement="sheet"')
+    for (const c of ['mt-auto', 'max-h-[66dvh]', 'rounded-t-card', 'overflow-y-auto', 'dialog-sheet', 'sm:my-auto', 'sm:max-h-none', 'sm:surface-overlay']) expect(card).toContain(c)
+    expect(card).not.toContain('min-h-full')
+    expect(html).toContain('safe-area-inset-bottom')
+  })
+})
+
 describe('ToastRegion', () => {
   it('keeps toasts clear of the home indicator and the on-screen keyboard', () => {
     const html = renderToStaticMarkup(<ToastRegion live="assertive"><p>hi</p></ToastRegion>)

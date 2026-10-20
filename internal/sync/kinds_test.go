@@ -8,7 +8,7 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kFieldValue; k++ {
+	for k := kString; k <= kRule; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -86,6 +86,46 @@ func TestCheckKindTable(t *testing.T) {
 		{"field value number", kFieldValue, `2`, ""},
 		{"field value text", kFieldValue, `"x"`, ""},
 		{"field value object", kFieldValue, `{}`, "must be null, a string, a number or a boolean"},
+		// Task origin (OpenSpec change task-origin): the "Origin validation" and
+		// "Origin lengths and required members" scenarios.
+		{"origin null", kOrigin, `null`, ""},
+		{"origin ciphertext", kOrigin, `"enc:v1:QUJDREVGR0hJSktM"`, ""},
+		{"origin plain string", kOrigin, `"https://a.example"`, "must be null, an object or a ciphertext string"},
+		{"origin page", kOrigin, `{"kind":"url","url":"https://example.org/post","title":"Interesting article"}`, ""},
+		{"origin issue", kOrigin, `{"kind":"issue","provider":"github","id":"o/r#7","url":"https://github.com/o/r/issues/7"}`, ""},
+		{"origin email", kOrigin, `{"kind":"email","id":"<a1@mail.example>"}`, ""},
+		{"origin provider shape", kOrigin, `{"kind":"issue","provider":"My Tracker","id":"1"}`, "provider must be"},
+		{"origin unsafe url", kOrigin, `{"kind":"url","url":"javascript:alert(1)"}`, "http or https"},
+		{"origin unknown kind", kOrigin, `{"kind":"ticket","id":"1"}`, "kind must be one of"},
+		{"origin unknown member", kOrigin, `{"kind":"url","url":"https://a.example","favicon":"x"}`, "only kind, provider, id, url and title"},
+		{"origin url kind without url", kOrigin, `{"kind":"url","title":"A page"}`, "needs a url"},
+		{"origin import without id", kOrigin, `{"kind":"import","provider":"todoist"}`, "needs an id"},
+		{"origin long title", kOrigin, `{"kind":"email","id":"1","title":"` + strings.Repeat("t", 600) + `"}`, "title must be at most 500"},
+		{"origin long id", kOrigin, `{"kind":"email","id":"` + strings.Repeat("i", 513) + `"}`, "id must be at most 512"},
+		{"origin long url", kOrigin, `{"kind":"url","url":"https://a.example/` + strings.Repeat("u", 2048) + `"}`, "at most 2048"},
+		// On-drop rule (OpenSpec change rule-boards, design D2).
+		{"rule null", kRule, `null`, ""},
+		{"rule empty", kRule, `{}`, ""},
+		{"rule priority due", kRule, `{"priority":1,"due":"today"}`, ""},
+		{"rule labels", kRule, `{"add_labels":["l1"],"remove_labels":["l2"]}`, ""},
+		{"rule start someday", kRule, `{"start":"someday"}`, ""},
+		{"rule start clear", kRule, `{"start":"clear","due":"clear"}`, ""},
+		{"rule next week", kRule, `{"due":"next-week"}`, ""},
+		{"rule section", kRule, `{"section":{"project_id":"p1","section_id":"s1"}}`, ""},
+		{"rule section none", kRule, `{"section":{"project_id":"p1","section_id":null}}`, ""},
+		{"rule state", kRule, `{"state":"complete"}`, ""},
+		{"rule reopen", kRule, `{"state":"reopen"}`, ""},
+		{"rule unknown key", kRule, `{"colour":"red"}`, "unknown rule key"},
+		{"rule priority 5", kRule, `{"priority":5}`, "priority must be from 1"},
+		{"rule due friday", kRule, `{"due":"friday"}`, "due must be one of"},
+		{"rule state other", kRule, `{"state":"archive"}`, "state must be one of"},
+		{"rule string", kRule, `"priority 1"`, "must be null or an object"},
+		{"rule array", kRule, `[]`, "must be null or an object"},
+		{"rule label type", kRule, `{"add_labels":"l1"}`, "wrong type"},
+		{"rule label empty", kRule, `{"add_labels":[""]}`, "ids must be 1 to"},
+		{"rule too many labels", kRule, `{"add_labels":[` + strings.TrimSuffix(strings.Repeat(`"l",`, MaxRuleLabels+1), ",") + `]}`, "at most 32"},
+		{"rule section without project", kRule, `{"section":{"section_id":"s1"}}`, "project_id must be"},
+		{"rule section extra", kRule, `{"section":{"project_id":"p1","x":1}}`, "only project_id and section_id"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

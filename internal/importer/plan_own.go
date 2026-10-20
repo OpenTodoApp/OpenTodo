@@ -58,6 +58,21 @@ func (pl *planner) planOwn(rows []Row) []change {
 				continue
 			}
 			fields = pl.ownReminder(fields, res)
+		case KindTimeEntry:
+			var task, who string
+			_ = json.Unmarshal(row.Entity["task_id"], &task)
+			_ = json.Unmarshal(row.Entity["user_id"], &who)
+			if task != "" && !fileTasks[task] && pl.byKind[KindTask][task] == nil {
+				res.Outcome, res.Reason = OutcomeError, fmt.Sprintf("task %s is neither in the file nor in your account", task)
+				continue
+			}
+			if who != pl.st.UserID && (who == "" || who != pl.exportedBy) {
+				// Nothing is ever written under another account (design D11).
+				res.Outcome, res.Reason = OutcomeSkip, ReasonForeignEntry
+				pl.foreignEntries++
+				continue
+			}
+			fields = setField(fields, "user_id", raw(pl.st.UserID))
 		case KindAttachment:
 			var task string
 			_ = json.Unmarshal(row.Entity["task_id"], &task)
@@ -179,6 +194,9 @@ func (pl *planner) ownReminder(fields []field, res *RowResult) []field {
 	res.Warnings = append(res.Warnings, warnPastReminder)
 	return setField(fields, "dismissed_at", raw(pl.now))
 }
+
+// ReasonForeignEntry skips a time entry another account tracked.
+const ReasonForeignEntry = "time entry of another account"
 
 const warnPastReminder = "reminder time already passed; imported as dismissed"
 

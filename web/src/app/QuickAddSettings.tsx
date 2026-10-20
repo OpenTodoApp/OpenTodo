@@ -7,6 +7,7 @@ import {
 } from '../lib/nlp'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap, preferredLanguages } from '../lib/i18n'
+import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
@@ -45,10 +46,9 @@ export function QuickAddSettingsSection() {
   }
 
   return (
-    <SettingsSection title={t('Quick add')} headingId="quick-add-heading"
-      description={t('How quick add reads what you type. Applies to this device only.')}>
-      <SettingRow label={t('Parse natural language')} description={
-        <>{t.rich('Dates and times (“tomorrow at 3pm”), {project}, {label}, {p1}–{p4} and estimates ({estimate}). Put text in "double quotes" to keep it literal.', { project: <code>#project</code>, label: <code>@label</code>, p1: <code>p1</code>, p4: <code>p4</code>, estimate: <code>+30m</code> })}</>
+    <SettingsSection {...cardCopy('quick-add')}>
+      <SettingRow label={rowCopy('quick-add', 'parse').label} description={
+        <>{t.rich(SETTINGS_COPY['quick-add'].rows.parse.description, { project: <code>#project</code>, label: <code>@label</code>, p1: <code>p1</code>, p4: <code>p4</code>, estimate: <code>+30m</code> })}</>
       } control={<Switch checked={s.enabled} onChange={(on) => update({ ...s, enabled: on })} label={t('Parse natural language in quick add')} hideLabel />} />
       <fieldset disabled={!s.enabled} className="space-y-2 py-3 disabled:opacity-50">
         <legend className="text-body font-medium text-default">{t('Languages for dates and times')}</legend>
@@ -62,8 +62,8 @@ export function QuickAddSettingsSection() {
           ))}
         </div>
       </fieldset>
-      <SettingRow label={t('Numeric dates like 12/11')} htmlFor="quickadd-order"
-        description={s.dayMonthOrder === 'auto' ? undefined : t('Set on this device; it wins over your date format.')} control={
+      <SettingRow label={rowCopy('quick-add', 'order').label} htmlFor="quickadd-order"
+        description={s.dayMonthOrder === 'auto' ? undefined : rowCopy('quick-add', 'order').description} control={
         <Select id="quickadd-order" className="sm:w-60" disabled={!s.enabled} value={s.dayMonthOrder}
           onChange={(e) => update({ ...s, dayMonthOrder: e.target.value as QuickAddSettings['dayMonthOrder'] })}>
           <option value="auto">{automaticOrderLabel(auto.order, auto.source)}</option>

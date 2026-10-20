@@ -66,3 +66,15 @@ export const ReadOnlyColumns: StoryObj = {
       renderCard={(t) => <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} readOnly onToggle={noop} onOpen={noop} />} />
   ),
 }
+
+/** Calm cards in one column (calm-rows D9): label dots, the deadline, no project or section, counts at the end of the line. */
+export const CalmColumn: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <ul className="w-72 space-y-1.5 rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken">
+      {columns[1].cards.concat(columns[0].cards).map((t) => (
+        <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} detail="calm" progress={t.id === 'b4' ? { done: 1, total: 3 } : undefined} onToggle={noop} onOpen={noop} />
+      ))}
+    </ul>
+  ),
+}

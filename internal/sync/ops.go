@@ -139,6 +139,16 @@ const (
 	// checks a value against its definition: clients, REST and the assistant
 	// tools do, so a value and its definition may arrive in any order.
 	kFieldValue
+	// kOrigin is a task's origin (OpenSpec change task-origin, design D1):
+	// null, an encrypted account's ciphertext string, or the object
+	// {kind, provider?, id?, url?, title?} validated by internal/origin
+	// (closed kind list, http(s) URL only, bounded lengths, no unknown members).
+	kOrigin
+	// kRule is a saved list view's on-drop rule (OpenSpec change rule-boards,
+	// design D2): null or an object of at most one choice per kind, checked in
+	// rule.go (closed key set, enumerations, bounded label lists). Sync checks
+	// the shape only; REST resolves the ids.
+	kRule
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -315,6 +325,9 @@ var Schema = map[string]map[string]kind{
 		// completed-date-filters, design D5); additive. Written beside
 		// completed_at; ApplyStrict fills it in for server-side completions.
 		"completed_by": kNullableString,
+		// Where the task came from (OpenSpec change task-origin): one whole-value
+		// register like due, so concurrent origins never mix; additive.
+		"origin": kOrigin,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -365,6 +378,7 @@ var Schema = map[string]map[string]kind{
 		"position":   kNumber,
 		"color":      kString,
 		"panels":     kStringList,
+		"on_drop":    kRule,
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},
@@ -416,6 +430,23 @@ var Schema = map[string]map[string]kind{
 		"uploaded_at": kNullableNumber,
 		"deleted_at":  kNullableNumber,
 	},
+	// time_entry: one stretch of work on a task (OpenSpec change time-tracking,
+	// design D1). It lives in its task's scope; Apply checks authorship per op
+	// (user_id equals the submitter at creation and never changes, only the
+	// author edits, the author, admins and the owner delete, viewers cannot
+	// create). ended_at is null while the entry runs; a user has at most one
+	// running entry, a rule every device applies (internal/timetrack). note is
+	// user-written text, so it is an encrypted content field. See docs/sync.md.
+	"time_entry": {
+		"task_id":    kID,
+		"user_id":    kID,
+		"started_at": kInstant,
+		"ended_at":   kInstant,
+		"device_id":  kString,
+		"note":       kString,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 	// project_prefs: one user's personal preferences for a project, keyed by the
 	// project id (OpenSpec change `activity-feed`, design D1). It always resolves
 	// to the author's personal scope, even for a shared project, so it syncs to
@@ -440,6 +471,11 @@ var Schema = map[string]map[string]kind{
 		"date_format": kString,
 		"time_format": kString,
 		"week_start":  kString,
+		// Day start (OpenSpec change day-boundary, design D1): "HH:MM" from
+		// "00:00" to "06:00", the local time a new day begins for this person.
+		// Not restricted here; clients read an empty, malformed or out-of-range
+		// value as "00:00" (midnight) and keep the stored value unchanged.
+		"day_start": kString,
 		// Appearance (OpenSpec change theming, design D1): theme_mode is
 		// system|light|dark and theme_accent one of emerald, blue, indigo,
 		// violet, rose, orange, teal, graphite. Like the date fields the values
@@ -453,6 +489,15 @@ var Schema = map[string]map[string]kind{
 		// Row density (ux-overhaul, design D8): "comfortable" or "compact"; an
 		// unknown or empty value reads as comfortable.
 		"density": kString,
+		// Row detail (OpenSpec change calm-rows, design D1): "calm" or
+		// "detailed"; an unknown or empty value reads as calm.
+		"row_detail": kString,
+		// Favourites (OpenSpec change sidebar-favourites, design D1): an ordered,
+		// comma-separated list of kind:id entries (project:<id>, label:<id>,
+		// view:<id>) shown in the sidebar's Favourites group. Ids only, never
+		// content; one string so the order is one last-writer-wins value.
+		// Clients ignore entries of an unknown kind or whose item is missing.
+		"favourites": kString,
 		// The first-run card (ux-overhaul, first-run): "done" once the account has
 		// finished or skipped it, so a second device does not show it again after sync.
 		"first_run": kString,
@@ -468,13 +513,31 @@ var Schema = map[string]map[string]kind{
 		// restricted here; clients read an unknown code as "system" and keep the
 		// stored value, so a catalog added later stays additive.
 		"language": kString,
+		// Focus timer preferences (OpenSpec change focus-mode, design D5): the
+		// timer mode (pomodoro|flowtime|countdown), which phases start on their
+		// own (none|breaks|work|both) and the sound (off|on), plus the work,
+		// short break and long break lengths in minutes (1-180), the number of
+		// work sessions before a long break (1-12) and the break reminder after
+		// that many minutes of continuous work (0 = off, else 15-240). Settings,
+		// never content: not encrypted, no activity event. Clients check the
+		// bounds before writing and read an unknown or out-of-range value as the
+		// default without rewriting it; the server keeps the kind check only.
+		"focus_mode":                kString,
+		"focus_auto_start":          kString,
+		"focus_sound":               kString,
+		"focus_work_minutes":        kNumber,
+		"focus_short_break_minutes": kNumber,
+		"focus_long_break_minutes":  kNumber,
+		"focus_long_break_every":    kNumber,
+		"focus_break_after_minutes": kNumber,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
 	// user_prefs it resolves to the author's personal scope (the default branch of
 	// the scope resolver), so it syncs to the user's own devices only and
-	// converges by last-writer-wins. completed_at is Unix ms. Not user-written
-	// content: never encrypted, and it derives no activity event.
+	// converges by last-writer-wins. completed_at is Unix ms. Its times and focus
+	// are not user-written content and are never encrypted; it derives no
+	// activity event.
 	"review": {
 		"completed_at": kNumber,
 		// The other rhythms (open-loops-method D5): the last Daily check and
@@ -484,6 +547,11 @@ var Schema = map[string]map[string]kind{
 		"monthly_at": kNumber,
 		"focus_date": kString,
 		"focus":      kString,
+		// Close the day (OpenSpec change close-the-day, design D5): the latest
+		// close (Unix ms; 0 = never) and the one-line note for tomorrow written
+		// with it. The note is user-written content (e2ee.ContentFields).
+		"closed_at":     kNumber,
+		"tomorrow_note": kString,
 	},
 }
 

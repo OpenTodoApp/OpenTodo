@@ -24,6 +24,7 @@ import {
 } from '../lib/webhooks'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 export interface WebhookDraft {
   /** null when creating a new webhook. */
@@ -74,14 +75,12 @@ export function WebhooksView(p: WebhooksViewProps) {
   const close = () => (p.secret ? p.onDismissSecret() : p.onDraftChange(null))
   const add = <Button variant="primary" size="sm" icon="plus" disabled={disabled} onClick={() => p.onDraftChange(emptyDraft())}>{t('Add webhook')}</Button>
   return (
-    <SettingsSection title={t('Webhooks')} headingId="webhooks-heading" testId="webhooks-panel"
-      description={t('Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook\'s secret.')}>
+    <SettingsSection {...cardCopy('webhooks')} testId="webhooks-panel">
       {!p.connected && (
-        <Notice>{t('You are offline. Webhooks are delivered by the server, so changing or testing them requires a connection. The list below is the last one fetched.')}</Notice>
+        <Notice>{noticeCopy('webhooks', 'offline')}</Notice>
       )}
       {p.isOwner && (
-        <SettingRow label={t('Allow private network targets')}
-          description={t('For everyone on this server. Needed when a receiver runs on your LAN or this machine, for example Home Assistant at 192.168.x.x. Leave off on a public server.')}
+        <SettingRow {...rowCopy('webhooks', 'private')}
           control={<Switch checked={p.allowPrivate === true} disabled={disabled || p.allowPrivate === null} onChange={p.onPolicyChange} label={t('Allow private network targets')} hideLabel />} />
       )}
       {p.error && !draft && !p.secret && <Notice tone="danger">{p.error}</Notice>}
@@ -167,7 +166,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                   onChange={(e) => p.onDraftChange({ ...draft, url: e.target.value })} disabled={disabled} />
               </Field>
               {insecureTarget(draft.url) && (
-                <Notice tone="warning">{t('This is a plain http:// address: task content will travel unencrypted. Prefer https:// unless the receiver is on a network you trust.')}</Notice>
+                <Notice tone="warning">{noticeCopy('webhooks', 'plainHttp')}</Notice>
               )}
               <fieldset>
                 <legend className="mb-2 text-body font-medium text-default">{t('Events')}</legend>
@@ -199,7 +198,7 @@ export function WebhooksView(p: WebhooksViewProps) {
           )}
         </Dialog>
       )}
-      <SettingRow label={t('Add a webhook')} description={t('Posts a signed request to your endpoint when tasks or projects change.')} control={add} />
+      <SettingRow {...rowCopy('webhooks', 'add')} control={add} />
     </SettingsSection>
   )
 }

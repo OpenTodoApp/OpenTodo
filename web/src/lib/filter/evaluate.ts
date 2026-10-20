@@ -3,9 +3,10 @@
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
 import { blockedMap } from '../dependencies'
-import { currentDateTime, localDueOf } from '../dates'
+import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
+import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 import { t } from '../i18n'
 
@@ -26,6 +27,11 @@ export interface FilterContext {
    * `no name`; names resolve against the live ones of every project, ignoring case.
    */
   fields?: readonly FieldDef[]
+  /**
+   * Every member's tracked minutes per task, a running entry to the current minute
+   * (time-tracking D4), for `tracked` and `tracked cmp duration`; none tracked without it.
+   */
+  tracked?: ReadonlyMap<string, number>
 }
 
 export interface CompiledFilter {
@@ -78,9 +84,11 @@ function compareISO(d: string, op: Cmp, r: DateRange): boolean {
 }
 
 /** Local midnight of a floating date as Unix milliseconds. */
+/** The first instant of a logical day (day-boundary D2): its date at the user's day start, local midnight by default. */
 function startOfDay(iso: string): number {
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).getTime()
+  const dayStart = currentDayStart()
+  return new Date(y, m - 1, d, Math.floor(dayStart / 60), dayStart % 60).getTime()
 }
 
 /**
@@ -284,6 +292,16 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (task) => task.title.toLocaleLowerCase().includes(needle) || task.description.toLocaleLowerCase().includes(needle)
       }
+      case 'origin':
+        return (task) => originMatches(originOf(task), n.value)
+      case 'tracked': {
+        const minutes = n.minutes
+        const op = n.op
+        return (task) => {
+          const m = ctx.tracked?.get(task.id) ?? 0
+          return op === '<' ? m < minutes : op === '<=' ? m <= minutes : op === '=' ? m === minutes : op === '>=' ? m >= minutes : m > minutes
+        }
+      }
       case 'keyword':
         switch (n.keyword) {
           case 'overdue': return (task) => task.due !== null && localDueOf(task.due).date < today
@@ -303,6 +321,10 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'open': return (task) => task.completed_at === null
           case 'subtask': return (task) => task.parent_id !== null
           case 'habit': return (task) => task.habit === true
+          case 'origin': return (task) => originOf(task) !== null
+          case 'no origin': return (task) => originOf(task) === null
+          // At least one minute of live tracked time (time-tracking D9).
+          case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
           case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
         }

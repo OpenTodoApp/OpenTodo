@@ -436,6 +436,8 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
         if (entity === 'comment' && row.author_id !== me) continue
         // The same for attachments (attachments D1).
         if (entity === 'attachment' && row.author_id !== me) continue
+        // And for time entries (time-tracking D11): only the author's are re-sent.
+        if (entity === 'time_entry' && row.user_id !== me) continue
         const clock = (row._clock ?? {}) as Clock
         // A value this device could not decrypt goes back as its envelope, never
         // as the placeholder (OpenSpec e2ee).

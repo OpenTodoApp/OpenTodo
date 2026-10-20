@@ -4,6 +4,7 @@
 // dashboards and the Settings sections the user can see.
 import { describeDue } from '../../lib/dates'
 import { UNDECRYPTABLE } from '../../lib/e2ee'
+import { originOf } from '../../lib/taskOrigin'
 import type { Label, Project, Task, User, View } from '../../lib/types'
 import { navigate } from '../router'
 import { SETTINGS_SECTIONS, visibleSections } from '../settingsSections'
@@ -31,18 +32,19 @@ function projectPath(p: Project, byId: Map<string, Project>): string[] {
   return out
 }
 
-/** A task's entry: title and notes text, project and due date as secondary text. */
+/** A task's entry: title and notes text, project, due date and origin id and title (task-origin D10) as secondary text. */
 export function makeTaskEntry(projects: readonly Project[], today?: string): (task: Task) => Entry {
   const byId = new Map(projects.map((p) => [p.id, p]))
   return (tk) => {
     const undecryptable = !!tk._e2ee?.raw?.title
     const project = tk.project_id ? byId.get(tk.project_id)?.name ?? t('Project') : t('Inbox')
     const due = describeDue(tk.due, today)?.label
+    const origin = originOf(tk)
     return {
       kind: 'task', key: `task:${tk.id}`,
       // Undecryptable rows are indexed by what the app shows, never by ciphertext.
       label: undecryptable ? t(UNDECRYPTABLE) : tk.title || t('Untitled'),
-      secondary: [project, due, undecryptable ? '' : tk.description.replace(/\s+/g, ' ').slice(0, 2000)].filter(Boolean).join(' · '),
+      secondary: [project, due, origin?.id, origin?.title, undecryptable ? '' : tk.description.replace(/\s+/g, ' ').slice(0, 2000)].filter(Boolean).join(' · '),
       marker: tk.completed_at ? 'completed' : undefined,
       run: () => openTaskInList(tk),
     }

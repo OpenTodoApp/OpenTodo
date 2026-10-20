@@ -2,15 +2,15 @@
 // only on the line, the reference date and time, the languages, the project list and
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
-import { matchDuration, matchLabel, matchPriority, matchProject, type ProjectRef } from './attributes'
+import { matchDuration, matchLabel, matchPriority, matchProject, matchSpent, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'project' | 'label' | 'priority' | 'estimate' | 'recurrence' | 'reminder'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -23,7 +23,7 @@ export interface Chip {
 }
 
 export interface ParseContext {
-  /** Reference local date, YYYY-MM-DD (the viewer's `todayISO()`). */
+  /** Reference local date, YYYY-MM-DD (the viewer's logical today, `logicalToday()`). */
   today: string
   /** Reference local wall-clock time, HH:MM; used by "in N hours". */
   now?: string
@@ -51,6 +51,8 @@ export interface ParseResult {
   labels: string[]
   priority: Priority | null
   estimateMinutes: number | null
+  /** Minutes already spent from a `30m/2h` token (time-tracking D10): one closed time entry ending at creation. */
+  spentMinutes: number | null
   /** The canonical recurrence rule ("every monday"), or null (quick-add-recurrence). */
   recurrence: string | null
   /** Reminders as typed; createTask resolves them against the final due (quick-add-recurrence D3). */
@@ -92,6 +94,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let project: { id: string; span: Span } | null = null
   let priority: { value: Priority; span: Span } | null = null
   let estimate: { value: number; span: Span } | null = null
+  let spent: number | null = null
   let deadline: { value: string; span: Span } | null = null
   let evening: Span | null = null
   let someday: Span | null = null
@@ -134,6 +137,13 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
         }
       }
       if (!estimate) {
+        const s = matchSpent(tok.text)
+        if (s) {
+          estimate = { value: s.estimate, span: one }
+          spent = s.spent
+          i++
+          continue
+        }
         const m = matchDuration(tok.text, { bareHourIsTime })
         if (m !== null) {
           estimate = { value: m, span: one }
@@ -173,7 +183,13 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     // range overlaps a live dismissal is ignored.
     let dm: DateMatch | null = date ? null : matchDateAt(tokens, i, dctx)
     let tm: TimeMatch | null = time ? null : matchTimeAt(tokens, i, dctx)
-    let rm: RecurrenceMatch | null = recurrence ? null : matchRecurrenceAt(tokens, i, dctx)
+    let rm: RecurrenceMatch | null = matchRecurrenceAt(tokens, i, dctx)
+    // After the first rule only a literal match still counts (it keeps "cada 2 lunes" whole).
+    if (recurrence && rm && !rm.literal) rm = null
+    if (!rm) {
+      const n = ordinalOutOfRangeAt(tokens, i, dctx)
+      if (n) rm = { rule: '', from: i, to: i + n, literal: true }
+    }
     let mm: ReminderMatch | null = matchReminderAt(tokens, i, dctx)
     const dSpan: Span | null = dm ? spanOf(line, tokens, dm.from, dm.to) : null
     const tSpan: Span | null = tm ? spanOf(line, tokens, tm.from, tm.to) : null
@@ -186,7 +202,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     const phraseEnd = Math.max(rm?.to ?? 0, mm?.to ?? 0)
     if (phraseEnd > Math.max(dm?.to ?? 0, tm?.to ?? 0)) {
       if (rm && rSpan && rm.to === phraseEnd) {
-        recurrence = { value: rm.rule, span: rSpan }
+        // A literal match (quick-add-nth-weekday D3) is skipped as a unit and stays in the title.
+        if (!rm.literal) recurrence = { value: rm.rule, span: rSpan }
         i = rm.to
       } else if (mm && mSpan) {
         reminders.push({ value: mm.reminder, span: mSpan })
@@ -233,6 +250,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   for (const l of labels) chip('label', [l.span], l.value)
   if (priority) chip('priority', [priority.span], priority.value)
   if (estimate) chip('estimate', [estimate.span], estimate.value)
+  // The spent chip shares the token's span: dismissing either keeps the whole token as text.
+  if (estimate && spent !== null) chip('spent', [estimate.span], spent)
   chips.sort((a, b) => a.spans[0].start - b.spans[0].start)
 
   return {
@@ -245,6 +264,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     labels: labels.map((l) => l.value),
     priority: priority?.value ?? null,
     estimateMinutes: estimate?.value ?? null,
+    spentMinutes: spent,
     recurrence: recurrence?.value ?? null,
     reminders: reminders.map((r) => r.value),
     chips,

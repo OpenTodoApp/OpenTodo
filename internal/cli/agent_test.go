@@ -575,6 +575,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	h.loginAdmin()
 	h.seedViews()
 	h.mustRun("token", "create", "victim")
+	issueConn := h.seedIssueConnection()
 	cfgBefore, _ := os.ReadFile(h.configPath)
 	schemas := loadSchemas(t)
 	cases := [][]string{
@@ -592,6 +593,10 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"auth", "logout"},
 		{"auth", "set-token", h.apiToken},
 		{"login", h.srv.URL, "--email", ownerEmail},
+		{"time", "start", "plum"},
+		{"time", "stop"},
+		{"time", "log", "plum", "1h30", "--on", "yesterday", "--note", "review"},
+		{"issues", "sync", issueConn[:6]},
 	}
 	covered := map[string]bool{}
 	for _, c := range cases {

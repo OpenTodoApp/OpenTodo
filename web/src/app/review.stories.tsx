@@ -4,6 +4,7 @@ import { db } from '../lib/db'
 import type { EmailDigest, Task } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
 import { Bars } from './review/Bars'
+import { CloseDay } from './review/CloseDay'
 import { ReviewView } from './review/ReviewView'
 import { StatsContent } from './review/StatsView'
 import { HEX, project, seeded, task, TODAY, withClock, withSeed } from './stories/fixtures'
@@ -89,6 +90,35 @@ export const WeeklyReviewProjects: StoryObj = {
 export const WeeklyReviewAllClear: StoryObj = {
   ...withSeed(async () => {}),
   render: () => <ReviewView userId="u-ada" />,
+}
+
+async function seedCloseDay() {
+  seeded.work = await createProject({ name: 'Work', color: HEX.blue })
+  seeded.garage = await createProject({ name: 'Garage', color: HEX.orange })
+  await createTask({ title: 'Send the invoice to Northwind', project_id: seeded.work, due: { date: '2026-10-12' }, priority: 1 })
+  await createTask({ title: 'Call the plumber about the leak', project_id: seeded.garage, due: { date: TODAY, time: '14:00' } })
+  await createTask({ title: 'Reply to Mara about the workshop', due: { date: TODAY } })
+  const done = [
+    await createTask({ title: 'Book the dentist', due: { date: TODAY } }),
+    await createTask({ title: 'Renew passport', due: { date: TODAY } }),
+    await createTask({ title: 'Sweep the floor', project_id: seeded.garage, due: { date: TODAY } }),
+  ]
+  for (const id of done) await setTaskCompleted(id, true)
+  await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: done.slice(0, 2).join(','), _clock: {} })
+}
+
+/** Close the day on Carry over: every unfinished task of Today with its decision, Tomorrow by default. */
+export const CloseTheDay: StoryObj = {
+  name: 'Close the day',
+  ...withSeed(seedCloseDay),
+  render: () => <CloseDay initialStep="carry" />,
+}
+
+/** Close the day's last step: the line for tomorrow and the primary "Close the day". */
+export const CloseTheDayNote: StoryObj = {
+  name: 'Close the day · note',
+  ...withSeed(seedCloseDay),
+  render: () => <CloseDay initialStep="note" />,
 }
 
 const digest: EmailDigest = {

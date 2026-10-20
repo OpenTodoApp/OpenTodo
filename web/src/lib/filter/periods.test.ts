@@ -1,7 +1,7 @@
 // Period date expressions and completion date terms (OpenSpec change
 // `completed-date-filters`, tasks 1.1 and 1.2).
 import { describe, expect, it } from 'vitest'
-import { resolveDateTime } from '../dates'
+import { resolveDateTime, setDayStart } from '../dates'
 import type { Project, Task } from '../types'
 import { compile, mentionsState, runFilter, type FilterContext } from './evaluate'
 import { FilterSyntaxError, parse, printQuery, resolveDate, resolveRange, type DateExpr, type Node } from './parse'
@@ -186,6 +186,18 @@ describe('completion date terms', () => {
     task('occurrence', { completed_at: at('2026-10-07'), series_id: 'series' }),
     task('trashed', { completed_at: at('2026-10-07'), deleted_at: at('2026-10-08') }),
   ]
+
+  it('with a 04:00 day start a completion before 04:00 belongs to the previous day (day-boundary D2)', () => {
+    setDayStart(240)
+    try {
+      // 23:59 on Sunday stays in last week; 00:00 on Monday now does too, and 04:00 starts this week.
+      const night = [task('sun-late', { completed_at: at('2026-10-11', 23, 59) }), task('mon-0', { completed_at: at('2026-10-12', 0) }), task('mon-4', { completed_at: at('2026-10-12', 4) })]
+      expect(ids('completed = last week', night, MON)).toEqual(sorted('sun-late', 'mon-0'))
+      expect(ids('completed = 2026-10-12', night, MON)).toEqual(['mon-4'])
+    } finally {
+      setDayStart(0)
+    }
+  })
 
   it('compares the local completion day and implies completed tasks', () => {
     expect(ids('completed = last week', tasks, MON)).toEqual(sorted('early-mon', 'late-sun', 'occurrence'))

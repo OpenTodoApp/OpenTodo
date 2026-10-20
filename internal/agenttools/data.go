@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/origin"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/timetrack"
 	"github.com/pixari/opentodo/internal/zoned"
 )
 
@@ -33,6 +35,9 @@ type snapshot struct {
 	// fieldDefs maps a project id onto its live custom field definitions in
 	// position order (custom-fields).
 	fieldDefs map[string][]opsync.Entity
+	// tracked is every member's live tracked minutes per task, a running entry
+	// to the server time (time-tracking D11).
+	tracked map[string]int
 }
 
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
@@ -71,6 +76,15 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 	if snap.tasks, err = r.sync.List(ctx, userID, "task", false); err != nil {
 		return nil, err
 	}
+	entries, err := r.sync.List(ctx, userID, "time_entry", false)
+	if err != nil {
+		return nil, err
+	}
+	list := make([]timetrack.Entry, 0, len(entries))
+	for _, e := range entries {
+		list = append(list, timetrack.FromRow(e))
+	}
+	snap.tracked = timetrack.TotalsByTask(list, r.now().UnixMilli())
 	if snap.shared, err = r.sync.SharedProjects(ctx, userID); err != nil {
 		return nil, err
 	}
@@ -259,6 +273,23 @@ type taskText struct {
 	// Fields holds the string custom field values (text, link, date, choice)
 	// keyed by definition id: people wrote them (custom-fields).
 	Fields map[string]string `json:"fields,omitempty"`
+	// Origin holds the free text of the task's origin, its page title and URL
+	// (OpenSpec change task-origin, design D11); kind, provider and id are in
+	// taskOut.Origin.
+	Origin *originText `json:"origin,omitempty"`
+}
+
+// originText is the user-written part of a task's origin.
+type originText struct {
+	Title string `json:"title,omitempty"`
+	URL   string `json:"url,omitempty"`
+}
+
+// originOut is the structural part of a task's origin.
+type originOut struct {
+	Kind     string `json:"kind"`
+	Provider string `json:"provider,omitempty"`
+	ID       string `json:"id,omitempty"`
 }
 
 type taskOut struct {
@@ -293,6 +324,12 @@ type taskOut struct {
 	// the task's project's definitions keyed by definition id; string values are
 	// in untrusted_text.fields (custom-fields).
 	Fields map[string]any `json:"fields"`
+	// Origin is where the task came from, null when unset or encrypted
+	// (OpenSpec change task-origin); its title and URL are in untrusted_text.
+	Origin *originOut `json:"origin"`
+	// TrackedMinutes is the task's live tracked time, every member's entries
+	// and a running one to the server time (OpenSpec change time-tracking).
+	TrackedMinutes int `json:"tracked_minutes"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -302,7 +339,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		ID: str(t, "id"), Untrusted: taskText{Title: str(t, "title"), Labels: []string{}},
 		ProjectID: strPtr(t, "project_id"), ParentID: strPtr(t, "parent_id"),
 		Priority: priority(t), LabelIDs: []string{},
-		Recurrence: strPtr(t, "recurrence"), Habit: string(t["habit"]) == "true", Completed: !isOpen(t),
+		Recurrence: strPtr(t, "recurrence"), Habit: string(t["habit"]) == "true", Completed: !isOpen(t), TrackedMinutes: snap.tracked[str(t, "id")],
 		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
 	}
 	if out.Completed {
@@ -335,6 +372,14 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.EstimateMinutes = &m
 	}
 	out.Fields, out.Untrusted.Fields = snap.fieldValues(t)
+	if e2ee.IsCiphertextJSON(t["origin"]) {
+		out.Encrypted = true
+	} else if o, err := origin.Decode(t["origin"]); err == nil {
+		out.Origin = &originOut{Kind: o.Kind, Provider: o.Provider, ID: o.ID}
+		if o.Title != "" || o.URL != "" {
+			out.Untrusted.Origin = &originText{Title: o.Title, URL: o.URL}
+		}
+	}
 	if d := taskDue(t); d != nil {
 		o := &dueOut{due: *d}
 		date, clock := localDue(d, loc)

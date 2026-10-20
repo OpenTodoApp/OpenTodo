@@ -1,7 +1,7 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow } from './db'
-import { dueToInstant, todayISO } from './dates'
+import { dueToInstant, logicalToday, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { CLOCK_OFFSET_META, hlcNow, hlcSeed, hlcSeedOffset, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
@@ -10,7 +10,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -57,7 +57,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {},
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -65,7 +65,7 @@ const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
 /** Defaults for a view row created from partial ops; also the read-time fallback for unknown option values. */
 export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
   name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
-  position: 0, color: '#64748b', panels: [], created_at: 0, deleted_at: null,
+  position: 0, color: '#64748b', panels: [], on_drop: null, created_at: 0, deleted_at: null,
 }
 const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
   task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,
@@ -89,14 +89,17 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '', language: 'system', welcome: '', method_mode: '' }
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '',
+  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0 }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
-export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '' }
+export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '' }
+/** A time entry row before its ops arrive (time-tracking D1); `ended_at` null reads as running. */
+export const TIME_ENTRY_DEFAULTS: Omit<TimeEntry, 'id' | '_clock'> = { task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null }
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS,
 }
 
 /**
@@ -578,6 +581,8 @@ export async function archiveProject(id: string): Promise<void> {
 export type NewTaskInput = {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
+  /** Minutes already spent (quick add `30m/2h`): one closed time entry ending at creation (time-tracking D10). */
+  spent_minutes?: number | null
   deadline?: string | null
   /** "someday" or a date (someday-and-evening); only sent when set. */
   start?: string | null
@@ -588,6 +593,8 @@ export type NewTaskInput = {
   assignee_id?: string | null
   /** Section of `project_id` (board-view); only sent when set. */
   section_id?: string | null
+  /** Where the task came from (task-origin); only sent when set. */
+  origin?: Origin | null
   /**
    * Reminders typed in quick add (quick-add-recurrence D3), resolved against the
    * task's final due and written in the same batch as the task.
@@ -606,7 +613,7 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
     const parsed = parseRule(input.recurrence)
     if (!parsed.ok) throw new Error(`invalid recurrence: ${parsed.error}`)
     extra.recurrence = parsed.canonical
-    if (!due) due = { date: firstOccurrence(parsed.rule, todayISO()) }
+    if (!due) due = { date: firstOccurrence(parsed.rule, logicalToday()) }
   }
   if (input.assignee_id) extra.assignee_id = input.assignee_id
   // Only tasks created in a section carry the field (board-view).
@@ -616,6 +623,8 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   // Only parked, deferred or evening tasks carry these (someday-and-evening).
   if (input.start) extra.start = input.start
   if (input.evening) extra.evening = true
+  // Only captured, mailed or imported tasks carry the field (task-origin).
+  if (input.origin) extra.origin = input.origin
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
@@ -640,7 +649,15 @@ export function planReminders(taskId: string, due: Task['due'], phrases: readonl
 export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
   const { id, change } = await planTask(input)
   const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
-  // One batch: the task never syncs without its reminders.
+  // Time already spent (quick add `30m/2h`, time-tracking D10): one closed entry ending now.
+  const me = input.spent_minutes ? await currentUserId() : null
+  if (me && input.spent_minutes) {
+    const end = now.getTime()
+    changes.push({ entity: 'time_entry', entityId: uuid(), patch: {
+      task_id: id, user_id: me, started_at: end - input.spent_minutes * 60000, ended_at: end, device_id: await getDeviceId(), note: '', created_at: end, deleted_at: null,
+    } })
+  }
+  // One batch: the task never syncs without its reminders and its time entry.
   await mutateMany(changes)
   return id
 }
@@ -697,7 +714,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -719,6 +736,8 @@ function copyTasks(
     // field existed hold undefined, which must never be sent).
     // A copy carries the note's document only when there is one (collaborative-rich-text).
     if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
+    // The copy keeps where the task came from (task-origin); none needs no op.
+    if (!patch.origin || typeof patch.origin !== 'object') delete patch.origin
     // Custom field values travel with the copy (custom-fields), one op each.
     if (tk.fields && Object.keys(tk.fields).length) patch.fields = { ...tk.fields }
     // The copy keeps who completed it (completed-date-filters D5); unknown stays null.
@@ -847,8 +866,21 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
   await completeTask(id)
 }
 
-async function completePlain(id: string, now: number): Promise<void> {
-  await mutateMany(planCompletePlain(id, await liveTasks(), now))
+async function completePlain(id: string, now: number, stops: Change[]): Promise<void> {
+  await mutateMany([...planCompletePlain(id, await liveTasks(), now), ...stops])
+}
+
+/**
+ * Completing a task ends the user's running entry on it in the same batch
+ * (time-tracking "Start and stop from the web app"). The server's completion
+ * paths do not: they cannot know whether the person is still working.
+ */
+async function trackingStops(taskId: string, now: number): Promise<Change[]> {
+  const me = await currentUserId()
+  if (!me) return []
+  const rows = await db.timeEntries.where('task_id').equals(taskId).toArray()
+  return rows.filter((e) => e.user_id === me && !e.deleted_at && e.ended_at === null)
+    .map((e) => ({ entity: 'time_entry', entityId: e.id, patch: { ended_at: Math.max(now, e.started_at) } }))
 }
 
 /** Completing a plain task completes its open descendants too (bulk-edit D4 shares it). */
@@ -865,13 +897,14 @@ export function planCompletePlain(id: string, all: Task[], now: number): Change[
  * Complete a task. For a recurring series this records the occurrence (an entity
  * whose id is derived from the series id and occurrence date) and moves the series
  * to its next occurrence in one batch; once the end condition is reached it
- * completes like a plain task. `today` is the device's local date (tests pass it).
+ * completes like a plain task. `today` is the device's logical today (day-boundary D5; tests pass it).
  * Returns the id of the occurrence record when the series rolled, otherwise null.
  */
 export async function completeTask(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
+  const stops = await trackingStops(id, now)
   let recordId: string | null = null
   let plain = false
   await db.transaction('rw', mutationTables(), async () => {
@@ -887,9 +920,9 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
       return
     }
     recordId = plan.recordId
-    await mutateMany(plan.changes)
+    await mutateMany([...plan.changes, ...stops])
   })
-  if (plain) await completePlain(id, now)
+  if (plain) await completePlain(id, now, stops)
   return recordId
 }
 
@@ -901,7 +934,7 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
  */
 export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
   let ok = false
   await db.transaction('rw', mutationTables(), async () => {
@@ -922,7 +955,7 @@ export async function skipOccurrence(id: string, opts: { now?: number; today?: s
  */
 export async function detachOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
   let copyId: string | null = null
   await db.transaction('rw', mutationTables(), async () => {
@@ -953,7 +986,7 @@ export async function setRecurrence(
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const patch: Record<string, unknown> = {}
   if (parsed.canonical !== task.recurrence) patch.recurrence = parsed.canonical
-  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? todayISO()) }
+  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? logicalToday()) }
   if (Object.keys(patch).length) await mutate('task', id, patch)
   return { ok: true, rule: parsed.canonical }
 }

@@ -13,6 +13,8 @@ export interface QuickAddInput {
   labels?: string[]
   priority?: Priority
   estimate_minutes?: number
+  /** Minutes already spent (`30m/2h`, time-tracking D10). */
+  spent_minutes?: number
   /** "YYYY-MM-DD" (deadlines). */
   deadline?: string
   /** "someday" (someday-and-evening). */
@@ -94,6 +96,7 @@ export async function toTaskInput(
   }
   if (r.priority) out.priority = r.priority
   if (r.estimateMinutes) out.estimate_minutes = r.estimateMinutes
+  if (r.spentMinutes) out.spent_minutes = r.spentMinutes
   return out
 }
 

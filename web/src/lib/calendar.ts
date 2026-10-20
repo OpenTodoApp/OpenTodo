@@ -211,9 +211,11 @@ export interface GridPrefs {
   endHour: number
   /** Capacity of a day in minutes. */
   dayLength: number
+  /** Days the Plan shows (planner-view D7): 7, 14 or 21. */
+  planDays: 7 | 14 | 21
 }
 
-export const DEFAULT_GRID_PREFS: GridPrefs = { startHour: 6, endHour: 22, dayLength: 480 }
+export const DEFAULT_GRID_PREFS: GridPrefs = { startHour: 6, endHour: 22, dayLength: 480, planDays: 14 }
 export const GRID_PREFS_META_KEY = 'calendar.grid'
 
 /** Coerce a stored value into valid preferences; anything missing or invalid takes its default. */
@@ -229,5 +231,6 @@ export function normalizeGridPrefs(raw: unknown): GridPrefs {
     else ({ startHour, endHour } = DEFAULT_GRID_PREFS)
   }
   const dayLength = int(r.dayLength, SLOT_MINUTES, DAY_MINUTES) ?? DEFAULT_GRID_PREFS.dayLength
-  return { startHour, endHour, dayLength }
+  const planDays = r.planDays === 7 || r.planDays === 21 ? r.planDays : DEFAULT_GRID_PREFS.planDays
+  return { startHour, endHour, dayLength, planDays }
 }

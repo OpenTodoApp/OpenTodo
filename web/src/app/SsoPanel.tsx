@@ -17,6 +17,7 @@ import type { LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcT
 import { relativeTime } from './SecurityPanel'
 import { oidcErrorMessage, takeQueryParam } from './sso'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → Single sign-on (owner) and Linked accounts (everyone), OpenSpec
 // `oidc-login`. Both read server state that is never cached for offline use:
@@ -95,7 +96,7 @@ export function SsoPanel() {
 
   if (!settings || !form) {
     return error ? (
-      <SettingsSection title={t('Single sign-on')} headingId="sso-heading">
+      <SettingsSection {...cardCopy('sso')}>
         <Notice tone="danger">{error}</Notice>
       </SettingsSection>
     ) : null
@@ -170,10 +171,9 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
       onChange={(e) => p.onChange({ [key]: e.target.checked } as Partial<SsoForm>)} />
   )
   return (
-    <SettingsSection title={t('Single sign-on')} headingId="sso-heading" testId="sso-panel"
-      description={t('Let people sign in with an OpenID Connect provider you already run (Authentik, Keycloak, Authelia, a hosted login service). The server only contacts the issuer you enter.')}>
-      {!p.online && <Notice>{t('Offline: these settings are on the server and read-only until you reconnect.')}</Notice>}
-      <SettingRow label={t('Status')} status={
+    <SettingsSection {...cardCopy('sso')} testId="sso-panel">
+      {!p.online && <Notice>{noticeCopy('sso', 'offline')}</Notice>}
+      <SettingRow {...rowCopy('sso', 'status')} status={
         <span className="flex flex-wrap items-center gap-2" data-testid="sso-status">
           <Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? t('On') : t('Off')}</Badge>
           <span>{s.enabled ? (s.issuer ? t('The sign-in screen shows "Sign in with {name}" ({host}).', { name, host: hostOf(s.issuer) }) : t('The sign-in screen shows "Sign in with {name}".', { name })) : t('Off until you save an issuer and client id.')}</span>
@@ -310,15 +310,12 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
     ? <Button variant="secondary" disabled>{t('Link {name}', { name })}</Button>
     : <a className="ui-btn ui-btn--secondary ui-btn--md" href={OIDC_START_URL}>{t('Link {name}', { name })}</a>)
   return (
-    <SettingsSection title={t('Linked accounts')} headingId="linked-heading" testId="linked-accounts"
-      description={p.provider.enabled
-        ? t('Sign in with {name} instead of a password. Linking also lets you confirm sensitive changes with {name}.', { name })
-        : t('Single sign-on is currently off on this server; these links are kept for when it returns.')}>
-      {!p.online && <Notice>{t('Offline: linked accounts are managed on the server.')}</Notice>}
+    <SettingsSection {...cardCopy('linked', { variant: p.provider.enabled ? 'on' : 'off', values: { name } })} testId="linked-accounts">
+      {!p.online && <Notice>{noticeCopy('linked', 'offline')}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.identities.length === 0 ? (
-        <EmptyState icon="link" title={t('Nothing linked yet')} body={t('Link your {name} account to sign in with it.', { name })} action={link || undefined} />
+        <EmptyState icon="link" title={t('Nothing linked yet')} body={t('Link your {name} account to sign in with it.', { name })} control={link || undefined} />
       ) : (
         <>
           <div className="-mx-3 py-1">

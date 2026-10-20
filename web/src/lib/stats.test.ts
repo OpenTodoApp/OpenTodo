@@ -2,11 +2,13 @@
 // every scenario of `statistics` "What is counted", "Excluded rows", "Whose tasks
 // count in shared projects" and "Periods and week start", plus the fixture the
 // server's digest evaluates too.
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import fixture from '../../../internal/digest/testdata/stats_fixture.json'
 import { runFilter } from './filter'
 import { compute, dayInZone, periodFor, type PeriodKind } from './stats'
 import type { Project, Task } from './types'
+import { logicalToday, setDayStart } from './dates'
+import { readDayStart } from './userPrefs'
 
 /** Local-time Unix ms for a calendar date at an hour. */
 const at = (iso: string, hour = 12) => {
@@ -165,9 +167,10 @@ describe('breakdowns', () => {
 })
 
 describe('shared fixture (same numbers as the server digest)', () => {
-  const dayOf = dayInZone(fixture.timeZone)
   for (const c of fixture.cases) {
     it(c.name, () => {
+      // A case with a day start (day-boundary D6) counts instants by the logical day in the fixture's zone.
+      const dayOf = dayInZone(fixture.timeZone, readDayStart({ day_start: (c as { dayStart?: string }).dayStart ?? '' }))
       const period = periodFor(c.period as PeriodKind, fixture.today, c.weekStart)
       expect([period.start, period.end]).toEqual([c.start, c.end])
       const s = compute({
@@ -176,4 +179,67 @@ describe('shared fixture (same numbers as the server digest)', () => {
       expect({ completed: s.completed, created: s.created, late: s.late, slipped: s.slipped, overdue: s.overdue, perDay: s.perDay.map((d) => d.count) }).toEqual(c.expected)
     })
   }
+})
+
+describe('day start (day-boundary D4)', () => {
+  afterEach(() => setDayStart(0))
+
+  it('Completed after midnight is not late: a 01:30 completion counts for the previous day', () => {
+    setDayStart(240)
+    const due = { date: '2026-10-14' }
+    const s = run([task('late-night', { due, completed_at: new Date(2026, 9, 15, 1, 30).getTime() })], { kind: 'this-week' })
+    expect(s.completed).toBe(1)
+    expect(s.late).toBe(0)
+    expect(s.perDay.find((d) => d.date === '2026-10-14')?.count).toBe(1)
+    setDayStart(0)
+    // With midnight it is a late completion on Thursday (outside "this week" up to Wednesday).
+    expect(run([task('late-night', { due, completed_at: new Date(2026, 9, 15, 1, 30).getTime() })], { kind: 'this-week' }).completed).toBe(0)
+  })
+
+  it('Week end at the day start: 02:00 on Monday still belongs to the previous week', () => {
+    setDayStart(240)
+    const monday2am = new Date(2026, 9, 19, 2, 0).getTime()
+    const today = logicalToday(240, monday2am)
+    expect(today).toBe('2026-10-18')
+    expect(periodFor('this-week', today, 1)).toMatchObject({ start: '2026-10-12', end: '2026-10-18' })
+    const s = compute({ tasks: [task('now', { completed_at: monday2am })], projects: [], shared: new Set(), me: 'me', today }, periodFor('this-week', today, 1), 1)
+    expect(s.completed).toBe(1)
+  })
+})
+
+describe('time tracked (OpenSpec time-tracking 6.1)', () => {
+  const entry = (id: string, taskId: string, user: string, start: number, minutes: number | null, deleted: number | null = null) =>
+    ({ id, task_id: taskId, user_id: user, started_at: start, ended_at: minutes === null ? null : start + minutes * 60000, deleted_at: deleted })
+  const tasks = [task('a', { project_id: 'client' }), task('b'), task('gone', { deleted_at: 1 }), task('shared', { project_id: 'team' })]
+  const projects = [project('client', 'Client A'), project('team', 'Team')]
+  const runWith = (entries: ReturnType<typeof entry>[], kind: PeriodKind = 'this-week', now = at(TODAY, 18)) =>
+    compute({ tasks, projects, shared: new Set(['team']), me: 'me', today: TODAY, entries, now }, periodFor(kind, TODAY, 1), 1)
+
+  it("Time tracked this week: 50 + 70 minutes are 2 h; another member's entry counts nothing", () => {
+    const s = runWith([
+      entry('m', 'a', 'me', at('2026-10-12', 9), 50), entry('w', 'b', 'me', at('2026-10-14', 9), 70),
+      entry('o', 'shared', 'ana', at('2026-10-13', 9), 30), entry('d', 'gone', 'me', at('2026-10-13', 9), 30),
+      entry('x', 'a', 'me', at('2026-10-13', 9), 30, 5),
+    ])
+    expect(s.trackedMinutes).toBe(120)
+    expect(s.trackedEntries).toBe(2)
+    expect(s.trackedPerDay.find((d) => d.date === '2026-10-12')!.minutes).toBe(50)
+    expect(s.trackedPerProject).toEqual([{ id: '', name: 'Inbox', minutes: 70 }, { id: 'client', name: 'Client A', minutes: 50 }])
+  })
+
+  it('a running entry counts to now', () => {
+    expect(runWith([entry('r', 'b', 'me', at(TODAY, 17), null)], 'this-week', at(TODAY, 17) + 25 * 60000).trackedMinutes).toBe(25)
+  })
+
+  it("Entry across midnight: Sunday 23:30 to Monday 00:30 counts for Sunday's week", () => {
+    const start = new Date(2026, 9, 11, 23, 30).getTime()
+    expect(runWith([entry('n', 'b', 'me', start, 60)], 'this-week').trackedMinutes).toBe(0)
+    expect(runWith([entry('n', 'b', 'me', start, 60)], 'last-week').trackedMinutes).toBe(60)
+  })
+
+  it('Nothing tracked: zero, no entries, and the completion numbers are unchanged', () => {
+    const s = runWith([])
+    expect([s.trackedMinutes, s.trackedEntries, s.trackedPerProject]).toEqual([0, 0, []])
+    expect(run(tasks).completed).toBe(s.completed)
+  })
 })

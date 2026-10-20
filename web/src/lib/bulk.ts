@@ -4,7 +4,7 @@
 // They reuse the single-task rules (recurring roll-forward, subtree completion and
 // trash, project moves across sharing scopes) so a batch behaves like the keys.
 import type { ProposedChange } from './assistantTypes'
-import { addDaysISO, todayISO, weekStartOf } from './dates'
+import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db } from './db'
 import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
 import { planCompletion, seriesRule } from './recurring'
@@ -53,7 +53,7 @@ export function planPriority(tasks: readonly Task[], p: Priority): Change[] {
 export type DuePick = 'today' | 'tomorrow' | 'next-week' | null | string
 
 /** The date of a pick; "Next week" is the first day of the following week per the user's week start. */
-export function dateOfPick(pick: Exclude<DuePick, null>, today = todayISO()): string {
+export function dateOfPick(pick: Exclude<DuePick, null>, today = logicalToday()): string {
   if (pick === 'today') return today
   if (pick === 'tomorrow') return addDaysISO(today, 1)
   if (pick === 'next-week') return weekStartOf(addDaysISO(today, 7))
@@ -61,7 +61,7 @@ export function dateOfPick(pick: Exclude<DuePick, null>, today = todayISO()): st
 }
 
 /** Reschedule; an existing time and zone are kept. No date ends a recurrence; a date un-parks. */
-export function planDue(tasks: readonly Task[], pick: DuePick, today = todayISO()): Change[] {
+export function planDue(tasks: readonly Task[], pick: DuePick, today = logicalToday()): Change[] {
   return tasks.map((task): Change => {
     if (pick === null) return { entity: 'task', entityId: task.id, patch: task.recurrence ? { due: null, recurrence: null } : { due: null } }
     const date = dateOfPick(pick, today)
@@ -177,7 +177,7 @@ export interface BulkResult { undoId: string | null; label: string; count: numbe
  */
 export async function applyBulk(ids: readonly string[], action: BulkAction, opts: { now?: number; today?: string } = {}): Promise<BulkResult> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
   const { tasks, all } = await readTicked(ids)
   let changes: Change[]

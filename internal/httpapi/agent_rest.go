@@ -297,7 +297,10 @@ func refusedField(entity, field string) string {
 
 // taskCreateFields are the task fields create_tasks accepts.
 var taskCreateFields = map[string]bool{"title": true, "description": true, "project_id": true, "section_id": true, "parent_id": true,
-	"priority": true, "due": true, "labels": true, "estimate_minutes": true, "recurrence": true}
+	"priority": true, "due": true, "labels": true, "estimate_minutes": true, "recurrence": true,
+	// The task's origin object (OpenSpec change task-origin), validated by the
+	// planner exactly as the sync path validates it.
+	"origin": true}
 
 func agentCreateTaskCalls(body map[string]json.RawMessage) ([]agenttools.ToolCall, string) {
 	item := map[string]json.RawMessage{}
@@ -327,7 +330,7 @@ func agentPatchTaskCalls(id string, body map[string]json.RawMessage, existing op
 	var move map[string]any
 	for k, v := range body {
 		switch k {
-		case "title", "description", "priority", "labels", "estimate_minutes", "recurrence":
+		case "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "origin":
 			update[k] = v
 		case "project_id", "section_id":
 			if move == nil {

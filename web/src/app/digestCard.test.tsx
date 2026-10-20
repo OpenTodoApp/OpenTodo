@@ -68,7 +68,7 @@ describe('DigestCard', () => {
   it('unavailable without outgoing email: explains and offers no switch', async () => {
     server({ available: false })
     const r = await render(<DigestCard />)
-    await waitFor(() => r.container.textContent!.includes('owner has to configure first'))
+    await waitFor(() => r.container.textContent!.includes('Needs outgoing email, set up by the server owner'))
     expect(r.container.querySelector('[role="switch"]')).toBeNull()
     await r.unmount()
   })
@@ -76,7 +76,7 @@ describe('DigestCard', () => {
   it('encrypted account: not available because it would contain task titles', async () => {
     server({ encryption: true })
     const r = await render(<DigestCard />)
-    await waitFor(() => r.container.textContent!.includes('not available for accounts with end-to-end encryption'))
+    await waitFor(() => r.container.textContent!.includes('Not available with end-to-end encryption'))
     expect(r.container.textContent).toContain('task titles')
     expect(r.container.querySelector('[role="switch"]')).toBeNull()
     await r.unmount()

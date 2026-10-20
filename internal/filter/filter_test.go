@@ -44,6 +44,9 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"completed", "p1 & completed", "COMPLETED AFTER 2026-10-01",
 		// Custom field terms (custom-fields).
 		"cost > 100", `client = "Acme"`, `"Order date" <= friday & cost > 100`, "no cost", `no "Order date"`, "done = true",
+		// Origin terms (task-origin).
+		"origin", "no origin", "origin: github", "origin:github", `origin: "my tracker"`, "origin: url | origin: email",
+		"no origin & #Work", "origin: github & open", "!origin",
 		"paid = false", "cost >= -2.5", "status = Ordered", "due_by <= 3 days", `"due" = 2026-10-16`, "no idea", "kitchen = this week",
 	} {
 		if err := Parse(q); err != nil {
@@ -74,13 +77,16 @@ func TestFilterParserRejects(t *testing.T) {
 		"# & p1":             `Expected a project name after "#" at position 1`,
 		`@"open`:             `Missing closing quote for the text starting at position 2`,
 		"search:":            `Expected text after "search:" at position 1`,
+		"origin:":            `Expected a provider or kind after "origin:" at position 1`,
+		"origin: & p1":       `Expected a provider or kind after "origin:" at position 1`,
+		"origin = x":         `Expected "&" or "|" before "=" at position 8`,
 		"p1 )":               `Unexpected ")" at position 4`,
 		"(p1 p2)":            `Expected "&", "|" or ")" before "p2" at position 5`,
 		"!":                  `Expected a term after "!" at position 1`,
 		"()":                 `Expected a term after "(" at position 1`,
 		`"loose text"`:       `Unexpected text "loose text" at position 1; quote names after "@" or "#", or use search:`,
-		"no":                 `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1`,
-		"no & p1":            `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1`,
+		"no":                 `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1`,
+		"no & p1":            `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1`,
 		"cost >":             `Expected a value after ">" at position 6`,
 		"cost = last year":   `Expected "week" or "month" after "last" at position 8`,
 		"cost 5":             `Unknown term "cost" at position 1`,
@@ -110,6 +116,27 @@ func TestFilterParserRejects(t *testing.T) {
 		}
 		if se.Position() != se.Offset+1 {
 			t.Errorf("%q: position %d offset %d", q, se.Position(), se.Offset)
+		}
+	}
+}
+
+// Tracked time terms (OpenSpec change time-tracking, design D9).
+func TestFilterTrackedTerms(t *testing.T) {
+	for _, q := range []string{"tracked", "!tracked & #Work", "tracked > 1h", "tracked <= 1h", "tracked >= 1h30", "tracked < 1.5h",
+		"tracked = 0", "tracked > 45min", "tracked > 90", "TRACKED > 30M", "tracked > 10", `"tracked" > 10`, "tracked & due <= today"} {
+		if err := Parse(q); err != nil {
+			t.Errorf("%q: %v", q, err)
+		}
+	}
+	for q, want := range map[string]string{
+		"tracked > soon": `Expected a duration such as 30m or 1h30 after ">" at position 11`,
+		"tracked >":      `Expected a duration such as 30m or 1h30 after ">" at position 9`,
+		"tracked = 1h75": `Expected a duration such as 30m or 1h30 after "=" at position 11`,
+		"tracked > +30m": `Expected a duration such as 30m or 1h30 after ">" at position 11`,
+		"tracked today":  `Expected "&" or "|" before "today" at position 9`,
+	} {
+		if err := Parse(q); err == nil || err.Error() != want {
+			t.Errorf("%q: got %v, want %q", q, err, want)
 		}
 	}
 }

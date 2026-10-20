@@ -5,7 +5,7 @@ import { TaskListView } from './TaskListView'
 
 // Core screen: the grouped list (OpenSpec change ux-overhaul, task 8.7;
 // task-list-presentation "Grouped lists", "Nothing between the header and the
-// list"; first-run "Empty states name the action first"). The real list view over
+// list", "Empty views"). The real list view over
 // a seeded database with a frozen clock: Today with its Overdue and Today groups,
 // Upcoming grouped by day, a project grouped by section, and an empty Today.
 const meta: Meta = { title: 'Screens/Task list' }
@@ -34,7 +34,7 @@ export const ProjectBySection: StoryObj = {
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.website }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
-/** Nothing due today: the empty state names the action first. */
+/** Nothing due today: one sentence, Add a task and the Open Upcoming link. */
 export const Empty: StoryObj = {
   ...withSeed(async () => {}),
   render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,

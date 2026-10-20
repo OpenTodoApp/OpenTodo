@@ -199,6 +199,8 @@ function screens(ids) {
     { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
     { name: 'week', path: '/week', ready: (p) => p.locator('main').first().waitFor() },
     { name: 'month', path: '/month', ready: (p) => p.locator('[data-month-grid]').waitFor() },
+    // The Plan (planner-view 4.2): seven columns per row from 640 px, the agenda below it.
+    { name: 'plan', path: '/plan', ready: (p) => p.locator('[data-plan-grid], [data-plan-agenda]').first().waitFor() },
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
@@ -221,6 +223,9 @@ function screens(ids) {
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
     { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'label-edit', 'label-merge-picker', 'confirm-dialog', 'new-label'] },
     { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
+    // All projects (sidebar-favourites D6): the tree, the find field, and the archived projects opened from Settings → Data.
+    { name: 'projects', path: '/projects', ready: heading('Projects') },
+    { name: 'projects-archived', path: '/projects#archived', ready: (p) => p.getByText('No archived projects').first().waitFor() },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
     // From 1024 px /settings opens the first section (settings-navigation), so the page title reads Account there.
@@ -330,9 +335,11 @@ const OVERLAYS = {
   },
   async help(p, ctx) {
     if (ctx.width < 768) await openSidebar(p)
-    const trigger = p.getByRole('button', { name: 'Keyboard shortcuts' })
-    await trigger.click()
-    return { overlay: p.getByRole('dialog', { name: 'Keyboard shortcuts' }), trigger, kind: 'dialog' }
+    // Keyboard shortcuts is in the account menu at the bottom of the sidebar (quiet-sidebar D5).
+    const trigger = p.locator('[data-account-menu]')
+    const reopen = async () => { await trigger.click(); await p.getByRole('menuitem', { name: 'Keyboard shortcuts' }).click() }
+    await reopen()
+    return { overlay: p.getByRole('dialog', { name: 'Keyboard shortcuts' }), trigger, kind: 'dialog', reopen }
   },
   async sidebar(p, ctx) {
     if (ctx.width >= 768) return null
@@ -919,7 +926,9 @@ async function settledBox(p, overlay) {
   return prev
 }
 
-async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1 }, fail, shot) {
+async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1, reopen }, fail, shot) {
+  // How to open it again: the trigger, or a step through a menu (`reopen`).
+  const open = reopen ?? (() => trigger.click())
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
   await p.waitForTimeout(250)
   const handle = await overlay.elementHandle()
@@ -965,7 +974,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   }
   if (!trigger) return
   // Close button (dialogs, sheets) or tap outside (anchored popovers).
-  await trigger.click()
+  await open()
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
   if (geo.hasClose) {
     await overlay.locator('[data-overlay-close], button[aria-label="Close"]').first().click()
@@ -976,7 +985,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   }
   if (kind === 'popover' || (kind === 'dialog' && !destructive)) {
     if (!(await overlay.isVisible().catch(() => false))) {
-      await trigger.click()
+      await open()
       await overlay.waitFor({ state: 'visible', timeout: 5000 })
     }
     const vs = p.viewportSize()

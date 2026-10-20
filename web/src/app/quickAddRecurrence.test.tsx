@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
 // Quick add reads repeats and reminders (OpenSpec change quick-add-recurrence,
 // task 2.5): the two chips for an English line, Backspace twice dismissing the
-// reminder chip, and the reminder written with the task.
+// reminder chip, and the reminder written with the task; the ordinal weekday
+// rule with its "of the month" tail (quick-add-nth-weekday 2.5).
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { formatDate } from '../lib/dates'
 import type { QuickAddInput } from '../lib/nlp'
 import { flush, key, render, type } from '../ui/test-utils'
 import { QuickAdd } from './QuickAdd'
@@ -42,6 +44,25 @@ describe('repeat and remind chips', () => {
     expect(added[0].recurrence).toMatch(/every/i)
     expect(added[0].title).toContain('remind me at 8')
     expect(added[0].reminders ?? []).toEqual([])
+    await r.unmount()
+  })
+})
+
+describe('ordinal weekday rules (quick-add-nth-weekday 2.5)', () => {
+  it('reads "of the month" after a monthly rule and shows the first date on the recurrence chip', async () => {
+    vi.setSystemTime(new Date(2026, 9, 9, 9, 0))
+    const added: QuickAddInput[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={(i) => { added.push(i) }} />)
+    const input = r.container.querySelector('input')!
+    await type(input, 'Board every 2nd monday of the month')
+    await flush(20)
+    const kinds = [...r.container.querySelectorAll('[data-chip]')].map((c) => c.getAttribute('data-chip'))
+    expect(kinds).toEqual(['recurrence'])
+    expect(r.container.querySelector('[data-chip="recurrence"]')!.textContent).toContain(`every 2nd monday · ${formatDate('2026-10-12', 'long')}`)
+    await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await flush(20)
+    expect(added).toHaveLength(1)
+    expect(added[0]).toMatchObject({ title: 'Board', recurrence: 'every 2nd monday', due: { date: '2026-10-12' } })
     await r.unmount()
   })
 })

@@ -4,7 +4,7 @@
 // template file is built from local data and downloaded.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { todayISO } from '../lib/dates'
+import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { mutateMany } from '../lib/ops'
@@ -101,7 +101,7 @@ export function SaveTemplateDialog({ project, onClose }: { project: Project; onC
   const enc = useEncryption()
   const save = () => {
     if (!tree) return
-    downloadJSON(fileFromTree(tree, { day: todayISO() }), templateFileName(project.name))
+    downloadJSON(fileFromTree(tree, { day: logicalToday() }), templateFileName(project.name))
     onClose()
   }
   return (
@@ -125,7 +125,7 @@ export function TemplateDialog({ onClose }: { onClose: () => void }) {
   const projects = useProjects()
   const [tree, setTree] = useState<TemplateTree | null>(null)
   const [fileName, setFileName] = useState('')
-  const [startDay, setStartDay] = useState<string | null>(todayISO())
+  const [startDay, setStartDay] = useState<string | null>(logicalToday())
   const [parentId, setParentId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

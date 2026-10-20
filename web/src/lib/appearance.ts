@@ -8,6 +8,7 @@ import { ACCENTS, DARK_BAR, DEFAULT_ACCENT, isAccent, type AccentId } from '../u
 import { mutate } from './ops'
 import type { ThemeModePref, UserPrefs } from './types'
 import { USER_PREFS_ID } from './userPrefs'
+import { useUserPrefsRow } from './localData'
 
 export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
 
@@ -19,16 +20,22 @@ export type Promotable = (typeof PROMOTABLE)[number]
 export const DENSITIES = ['comfortable', 'compact'] as const
 export type Density = (typeof DENSITIES)[number]
 
+/** Row detail (appearance-preferences "Row detail preference", calm-rows D1); unknown stored values read as calm. */
+export const DETAILS = ['calm', 'detailed'] as const
+export type RowDetail = (typeof DETAILS)[number]
+
 export interface Appearance {
   mode: ThemeModePref
   accent: AccentId
   /** Row density; comfortable when absent. */
   density?: Density
+  /** Row detail; calm when absent. */
+  detail?: RowDetail
   /** Promoted sidebar destinations, in the More group's order; unknown stored entries are dropped on read, kept in the row. */
   sidebar?: Promotable[]
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, density: 'comfortable', sidebar: [] }
+export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, density: 'comfortable', detail: 'calm', sidebar: [] }
 
 /** Reads a stored row: a missing row or an unknown value (from a newer client) is the default. The row is not changed. */
 export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appearance {
@@ -38,13 +45,22 @@ export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appe
     mode,
     accent: isAccent(row?.theme_accent) ? row!.theme_accent as AccentId : DEFAULT_ACCENT,
     density: row?.density === 'compact' ? 'compact' : 'comfortable',
+    detail: row?.row_detail === 'detailed' ? 'detailed' : 'calm',
     sidebar: PROMOTABLE.filter((id) => wanted.has(id)),
   }
 }
 
-/** Changes the mode, the accent or the density through the op log (offline-safe, synced). */
-export function setAppearance(field: 'theme_mode' | 'theme_accent' | 'density', value: string): Promise<void> {
+/** Changes the mode, the accent, the density or the row detail through the op log (offline-safe, synced). */
+export function setAppearance(field: 'theme_mode' | 'theme_accent' | 'density' | 'row_detail', value: string): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { [field]: value })
+}
+
+/**
+ * The row detail of this user (calm-rows D2): one shared live read of the prefs
+ * row, so every row subscribes to one store and re-renders only when it changes.
+ */
+export function useRowDetail(): RowDetail {
+  return useUserPrefsRow()?.row_detail === 'detailed' ? 'detailed' : 'calm'
 }
 
 /** Promotes or demotes one destination; the stored list keeps entries this client does not know. */

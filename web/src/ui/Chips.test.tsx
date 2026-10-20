@@ -2,8 +2,9 @@
 // Chips are read by screen readers (OpenSpec assistive-tech-semantics): the full
 // phrase is visually hidden text inside the chip, never an aria-label on a span,
 // which has no role and whose name assistive technology ignores.
+import { act } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { NeutralChip, ReadAs, ToneText } from './Chips'
+import { LabelDots, NeutralChip, ReadAs, ToneText } from './Chips'
 import { ListGroupHeader } from './patterns/ListGroupHeader'
 import { render, spokenText, visibleText } from './test-utils'
 
@@ -47,5 +48,44 @@ describe('chips for assistive technology', () => {
     expect(count.hasAttribute('aria-label')).toBe(false)
     expect(visibleText(count)).toBe('2')
     expect(spokenText(count)).toBe('2 open tasks')
+  })
+})
+
+// Calm rows' labels (OpenSpec change calm-rows, design D6).
+describe('LabelDots', () => {
+  const errand = { id: 'l1', name: 'errand', color: 'var(--ot-hue-green-solid)' }
+  const call = { id: 'l2', name: 'call', color: 'var(--ot-hue-violet-solid)' }
+  const home = { id: 'l3', name: 'home', color: 'var(--ot-hue-blue-solid)' }
+
+  it('three labels: three dots, the first name and "+2", every name spoken, a tab stop and a tooltip on focus', async () => {
+    const r = await render(<LabelDots labels={[errand, call, home]} />)
+    const g = r.container.querySelector('[data-label-dots]')!
+    expect(g.getAttribute('role')).toBe('group')
+    expect(g.hasAttribute('aria-label')).toBe(false)
+    expect(g.querySelectorAll('[data-label-dot]')).toHaveLength(3)
+    expect(visibleText(g)).toBe('errand +2')
+    expect(spokenText(g)).toBe('Labels: errand, call, home')
+    expect(g.getAttribute('tabindex')).toBe('0')
+    await act(async () => { g.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
+    expect(document.querySelector('[role="tooltip"]')?.textContent).toBe('errand, call, home')
+  })
+
+  it('one label: its name, no "+n", no tab stop and no tooltip', async () => {
+    const r = await render(<LabelDots labels={[errand]} />)
+    const g = r.container.querySelector('[data-label-dots]')!
+    expect(visibleText(g)).toBe('errand')
+    expect(g.hasAttribute('tabindex')).toBe(false)
+    await act(async () => { g.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+  })
+
+  it('leaves out the omitted label, and renders nothing when none is left', async () => {
+    const r = await render(<LabelDots labels={[errand, call, home]} omit="l1" />)
+    const g = r.container.querySelector('[data-label-dots]')!
+    expect(g.querySelectorAll('[data-label-dot]')).toHaveLength(2)
+    expect(visibleText(g)).toBe('call +1')
+    expect(spokenText(g)).toBe('Labels: call, home')
+    const none = await render(<LabelDots labels={[errand]} omit="l1" />)
+    expect(none.container.querySelector('[data-label-dots]')).toBeNull()
   })
 })

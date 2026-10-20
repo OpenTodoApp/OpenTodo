@@ -3,6 +3,9 @@ import { Badge, Icon, IconButton, Tabs } from '../../ui'
 import { LabelChip } from '../LabelPicker'
 import { PRIORITIES } from './Properties'
 import { PropertyChip } from './PropertyChip'
+import { useTask } from '../../lib/localData'
+import { seedTracking, seeded, withSeed } from '../stories/fixtures'
+import { TimeTab } from './TimeTab'
 
 // The task panel's anatomy (OpenSpec change ux-overhaul, web-app "Task panel
 // layout"): sticky header, quiet notes, breadcrumb, property chips with Add, the
@@ -58,7 +61,7 @@ function Panel({ children, readOnly = false }: { children: React.ReactNode; read
 
 function TabsArea({ count = 0 }: { count?: number }) {
   return (
-    <section className="mt-auto border-t border-default px-4 pb-4 pt-1" aria-label="Comments, activity and history">
+    <section className="mt-auto border-t border-default px-4 pb-4 pt-1" aria-label="Comments, activity, history and time">
       <Tabs label="Task conversation" value="comments" onChange={noop} tabs={[{ id: 'comments', label: 'Comments', count }, { id: 'activity', label: 'Activity' }, { id: 'history', label: 'History' }]}>
         <p className="text-meta text-faint">No comments yet. Ask a question or leave a note; comments work offline.</p>
       </Tabs>
@@ -185,4 +188,37 @@ export const NotesEditing: StoryObj = {
       </div>
     </Panel>
   ),
+}
+
+/** Origins in the panel (task-origin): an issue and a page open their source on click or Enter, a mail has no link; each can be removed. */
+export const WithOrigins: StoryObj = {
+  render: () => (
+    <Panel>
+      <Header title="Fix the login timeout" priority={2} />
+      <div className="min-w-0 space-y-4 p-4">
+        <section aria-label="Properties" className="space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <PropertyChip id="due" icon="calendar-days" label="Do on" empty placeholder="Do on" editor={() => null} />
+            <PropertyChip id="priority" icon="flag" label="Priority" tone={PRIORITIES[1].cls} value="P2" editor={() => null} />
+            <PropertyChip id="origin" icon="link" label="Origin" value="o/r#7" tip="Login times out after 30 seconds" onActivate={noop} onClear={noop} />
+            <PropertyChip id="origin-page" icon="link" label="Origin" value="example.org" tip="Interesting article" onActivate={noop} onClear={noop} />
+            <PropertyChip id="origin-mail" icon="at-sign" label="Origin" value="Email" onClear={noop} />
+            <AddControl />
+          </div>
+        </section>
+      </div>
+      <TabsArea />
+    </Panel>
+  ),
+}
+
+/** The Time tab (time-tracking D5) of a task with two past entries, from the local data a seed writes. */
+function SeededTimeTab() {
+  const task = useTask(seeded.inboxTask)
+  return task ? <Panel><div className="px-4 pb-4">{<TimeTab task={task} readOnly={false} />}</div></Panel> : null
+}
+
+export const Time: StoryObj = {
+  ...withSeed(seedTracking),
+  render: () => <SeededTimeTab />,
 }

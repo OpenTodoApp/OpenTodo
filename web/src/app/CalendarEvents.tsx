@@ -8,6 +8,7 @@ import { formatTime as toHHMM, type EventBlock } from '../lib/calendar'
 import { formatShort, formatTime as formatWallTime, localDueOf } from '../lib/dates'
 import type { CalendarEvent, CalendarSubscription, CalendarWhen } from '../lib/types'
 import { t } from '../lib/i18n'
+import { formatMinutes } from '../lib/duration'
 
 /** Wall time of a timed point in the viewer's zone ("10:00"), or the date for all-day points. */
 function whenText(p: CalendarWhen, zone?: string): string {
@@ -110,6 +111,42 @@ export function EventChip({ ev, sub, zone }: { ev: CalendarEvent; sub?: Calendar
         className={`block w-full truncate rounded-chip px-1.5 py-0.5 text-left text-hint text-hue ${ev.free ? 'border border-dashed border-hue-solid' : 'bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {ev.summary || t('Busy')}
+      </button>
+      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
+        <EventDetails ev={ev} sub={sub} zone={zone} />
+      </Popover>
+    </>
+  )
+}
+
+/**
+ * One timed event as a row of the Plan's columns (planner-view D3): time, summary and
+ * the minutes inside this day, in the calendar's colour; read-only, reachable with Tab,
+ * Enter opens the same details.
+ */
+export function EventRow({ ev, start, end, sub, zone }: { ev: CalendarEvent; start: number; end: number; sub?: CalendarSubscription; zone?: string }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const time = formatWallTime(toHHMM(start))
+  const length = formatMinutes(Math.max(0, end - start))
+  return (
+    <>
+      <button
+        ref={ref}
+        type="button"
+        data-plan-event={ev.id}
+        data-free={ev.free || undefined}
+        data-hue={hueFor(sub?.color)}
+        aria-haspopup="dialog"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
+        className={`flex w-full min-w-0 items-center gap-1 rounded-chip px-1 py-0.5 text-left text-meta text-hue ${ev.free ? 'border border-dashed border-hue-solid' : 'bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
+      >
+        {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
+        <span className="shrink-0 tabular-nums">{time}</span>
+        <span className="min-w-0 flex-1 truncate font-medium">{ev.summary || t('Busy')}</span>
+        <span className="shrink-0 text-hint tabular-nums opacity-80">{length}</span>
+        {(ev.location || sub?.name) && <span className="sr-only">{`, ${[ev.location, sub?.name].filter(Boolean).join(', ')}`}</span>}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
         <EventDetails ev={ev} sub={sub} zone={zone} />

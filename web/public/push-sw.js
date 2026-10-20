@@ -11,7 +11,8 @@
 // - notificationclick: "Snooze 10 min" / "Dismiss" write ordinary reminder ops
 //   into the local store and the outbox (exactly what the app's mutate() does),
 //   then ask an open window to sync, or post them to /api/v1/sync directly.
-//   Offline they simply wait in the outbox. A click on the body opens the task.
+//   Offline they simply wait in the outbox. A click on the body opens the task;
+//   a notification with `data.url` (the end of a focus session) opens that address.
 /* eslint-disable no-restricted-globals */
 ;(() => {
   const DB_NAME = 'opentodo'
@@ -339,6 +340,19 @@
           return
         }
         await self.clients.openWindow('/settings/notifications')
+        return
+      }
+      // A notification the page showed with an address (focus-mode D12, the end of a
+      // focus session): bring an open window there, else open one.
+      if (typeof d.url === 'string' && d.url.startsWith('/')) {
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        const w = windows[0]
+        if (w && 'navigate' in w) {
+          await w.navigate(d.url)
+          if ('focus' in w) await w.focus()
+          return
+        }
+        await self.clients.openWindow(d.url)
         return
       }
       if (!d.reminderId) return

@@ -4,6 +4,10 @@ import { defaultBackupSettings } from '../lib/backups'
 import type { BackupSettings, BackupStatus } from '../lib/types'
 import { BackupsPanelView, type BackupsPanelViewProps, type SecretInputs } from './BackupsPanel'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const noop = () => {}
 const noSecrets: SecretInputs = { s3SecretKey: '', webdavPassword: '', passphrase: '', removePassphrase: false, acknowledged: false }
 
@@ -111,7 +115,7 @@ describe('Settings → Backups', () => {
   it('offline: shows the cached status and disables every action', () => {
     const online = render()
     const offline = render({ offline: true })
-    expect(offline).toContain('You are offline')
+    expect(offline).toContain('Offline: backups run on the server')
     expect(offline).toContain('Every day at 03:00') // the cached status is still shown
     for (const label of ['Back up now', 'Test destination', 'Save backup settings']) expect(isDisabled(offline, label)).toBe(true)
     expect(isDisabled(online, 'Back up now')).toBe(false)
@@ -129,7 +133,7 @@ describe('Settings → Backups', () => {
     expect(html).toContain('Keep the last 7')
     expect(html).toContain('Encrypted with your passphrase')
     expect(html).not.toContain('name="local-dir"')
-    expect(html).not.toContain('data-help-screen')
+    expect(withoutLearnMore(html)).not.toContain('data-help-screen')
     expect(html).toContain('id="backups-heading"')
   })
 

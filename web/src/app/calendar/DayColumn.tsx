@@ -163,7 +163,7 @@ export function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap
         </div>
       )}
 
-      {isToday && (
+      {isToday && nowMinutes < DAY_MINUTES && (
         <div data-now-line className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-danger" style={{ top: nowMinutes * PX_PER_MIN }}>
           <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-danger" />
         </div>

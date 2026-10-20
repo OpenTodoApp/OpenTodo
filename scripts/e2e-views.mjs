@@ -30,6 +30,8 @@ const LATER = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 9)
 
 async function device(name) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  // The Filters group starts folded on a new device (sidebar-favourites, quiet-sidebar): open it, as a device that stored it.
+  await ctx.addInitScript(() => { try { if (localStorage.getItem('ot.sidebar.group.filters') === null) localStorage.setItem('ot.sidebar.group.filters', '1') } catch { /* no storage */ } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`${name} pageerror: ${e.message}`))
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED|net::/.test(m.text())) errors.push(`${name} console: ${m.text()}`) })
@@ -87,7 +89,8 @@ await sidebarViews.getByText('Work tomorrow').waitFor()
 await pageA.waitForFunction(() => document.querySelector('[data-page-meta]')?.textContent === '4', null, { timeout: 5000 }).catch(() => undefined)
 const viewCount = await pageA.locator('[data-page-meta]').first().textContent()
 assert(viewCount === '4', 'view result count ' + viewCount)
-await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Filters"] button')].some((b) => b.textContent === 'Work tomorrow4'))
+// A filter row shows no number (quiet-sidebar): its name and data-open-count, the count read by assistive technology.
+await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].some((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '') === 'Work tomorrow4'))
 await shot(pageA, 'views-saved.png')
 
 step('Edit a saved query: / then add "& !@waiting", Enter')
@@ -141,7 +144,7 @@ await pageA.getByRole('heading', { name: 'Waiting' }).waitFor()
 await sidebarViews.getByLabel('Menu for view Waiting').click()
 await pageA.locator('[data-overlay]').getByRole('menuitem', { name: 'Move up' }).click() // menus open in the overlay layer
 await pageA.waitForFunction(() => {
-  const t = [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => b.textContent)
+  const t = [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? ''))
   return t[0] === 'Waiting2' && t[1] === 'Work tomorrow3'
 })
 await shot(pageA, 'views-sidebar-order.png')
@@ -154,7 +157,7 @@ assert(r.ok(), 'login B')
 await pageB.goto(base)
 const sidebarB = pageB.getByRole('navigation', { name: 'Filters' })
 await pageB.waitForFunction(() => {
-  const t = [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => b.textContent)
+  const t = [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? ''))
   return t[0] === 'Waiting2' && t[1] === 'Work tomorrow3'
 }, null, { timeout: 15000 })
 // The edited query arrived on B too.
@@ -162,10 +165,11 @@ await sidebarB.getByText('Work tomorrow').click()
 assert((await pageB.getByLabel('View query').inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'B sees edited query')
 assert((await pageB.getByLabel('Group by').inputValue()) === 'due', 'B sees grouping')
 
-step('Unpin "Waiting": leaves the sidebar, still in the g v overview')
+step('Unpin "Waiting": leaves Favourites, still in Filters and the g v overview')
 await sidebarViews.getByLabel('Menu for view Waiting').click()
-await pageA.locator('[data-overlay]').getByRole('menuitemcheckbox', { name: 'Pinned to sidebar' }).click()
-await sidebarViews.getByText('Waiting').waitFor({ state: 'detached' })
+await pageA.locator('[data-overlay]').getByRole('menuitemcheckbox', { name: 'Pin to sidebar' }).click()
+await pageA.getByRole('navigation', { name: 'Favourites' }).getByText('Waiting').waitFor({ state: 'detached' })
+await sidebarViews.getByText('Waiting').waitFor()
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('g'); await pageA.keyboard.press('v')
 await pageA.getByRole('heading', { name: 'Filters', level: 1 }).waitFor()
@@ -173,7 +177,7 @@ await pageA.getByRole('heading', { name: 'Filters', level: 1 }).waitFor()
 const notPinned = pageA.locator('li', { has: pageA.getByRole('button', { name: 'Pin Waiting' }) })
 await notPinned.getByText('Waiting', { exact: true }).waitFor()
 await shot(pageA, 'views-overview.png')
-await pageB.waitForFunction(() => ![...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].some((b) => b.textContent?.includes('Waiting')), null, { timeout: 15000 })
+await pageB.waitForFunction(() => ![...document.querySelectorAll('nav[aria-label="Favourites"] [data-favourite^="view:"]')].some((b) => b.textContent?.includes('Waiting')), null, { timeout: 15000 })
 await notPinned.getByRole('button', { name: 'Pin Waiting' }).click()
 
 step('Morning review dashboard with three panels')
@@ -181,6 +185,9 @@ const mk = async (name, query) => { await post('views', { name, query, pinned: f
 await mk('Today p1', 'today & p1')
 await mk('Errands', '@errand')
 await pageA.getByRole('button', { name: 'New board' }).click()
+// The chooser (rule-boards): Empty board is preselected.
+await pageA.locator('[data-board-choice="empty"] input').check()
+await pageA.getByRole('button', { name: 'Next' }).click()
 await pageA.getByLabel('Board name').fill('Morning')
 await pageA.getByLabel('Board name').press('Enter')
 await pageA.getByRole('heading', { name: 'Morning' }).waitFor()
@@ -303,7 +310,7 @@ const converged = async (p) => p.waitForFunction(() => {
 }, null, { timeout: 30000 })
 await converged(pageA)
 await converged(pageB)
-const sideCounts = (p) => p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => b.textContent))
+const sideCounts = (p) => p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '')))
 const ca = await sideCounts(pageA), cb = await sideCounts(pageB)
 assert(JSON.stringify(ca) === JSON.stringify(cb), `identical sidebars ${ca} / ${cb}`)
 const ha = await pageA.locator('[aria-label="View results"] h2').allTextContents()

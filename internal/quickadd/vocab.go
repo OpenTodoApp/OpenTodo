@@ -45,10 +45,16 @@ type Vocab struct {
 	EveryOne      map[string]string `json:"everyOne"`
 	WeekdayAll    []string          `json:"weekdayAll"`
 	Ordinals      map[string]int    `json:"ordinals"`
-	AndWords      []string          `json:"andWords"`
-	AfterCompl    []string          `json:"afterCompletion"`
-	UntilWords    []string          `json:"untilWords"`
-	TimesWords    struct {
+	// OrdinalArticles, OrdinalOf, OfMonthWords and OrdinalsBeforeWeekday serve the
+	// ordinal weekdays (quick-add-nth-weekday D4).
+	OrdinalArticles       []string       `json:"ordinalArticles"`
+	OrdinalOf             []string       `json:"ordinalOf"`
+	OfMonthWords          []string       `json:"ofMonthWords"`
+	OrdinalsBeforeWeekday map[string]int `json:"ordinalsBeforeWeekday"`
+	AndWords              []string       `json:"andWords"`
+	AfterCompl            []string       `json:"afterCompletion"`
+	UntilWords            []string       `json:"untilWords"`
+	TimesWords            struct {
 		Before []string `json:"before"`
 		After  []string `json:"after"`
 	} `json:"timesWords"`

@@ -1,0 +1,26 @@
+{
+  "about": "Origin recognition vectors (OpenSpec change task-origin, design D3). internal/origin/vectors_test.go runs FromURL(url, title) and web/src/lib/origin.test.ts runs originFromUrl(url, title) on every case; want null means the input gives no origin.",
+  "cases": [
+    {"name": "github issue", "url": "https://github.com/o/r/issues/7", "want": {"kind": "issue", "provider": "github", "id": "o/r#7", "url": "https://github.com/o/r/issues/7"}},
+    {"name": "github pull request with a tab", "url": "https://github.com/pixari/opentodo/pull/123/files", "title": "Add origin", "want": {"kind": "issue", "provider": "github", "id": "pixari/opentodo#123", "url": "https://github.com/pixari/opentodo/pull/123/files", "title": "Add origin"}},
+    {"name": "github host in capitals, query and fragment", "url": "https://GitHub.com/o/r.js/issues/42?q=1#issuecomment-9", "want": {"kind": "issue", "provider": "github", "id": "o/r.js#42", "url": "https://GitHub.com/o/r.js/issues/42?q=1#issuecomment-9"}},
+    {"name": "github repository page", "url": "https://github.com/o/r", "want": {"kind": "url", "url": "https://github.com/o/r"}},
+    {"name": "github issue list", "url": "https://github.com/o/r/issues", "want": {"kind": "url", "url": "https://github.com/o/r/issues"}},
+    {"name": "gitlab issue", "url": "https://gitlab.com/g/p/-/issues/12", "want": {"kind": "issue", "provider": "gitlab", "id": "g/p#12", "url": "https://gitlab.com/g/p/-/issues/12"}},
+    {"name": "gitlab merge request in a subgroup", "url": "https://gitlab.com/group/sub/project/-/merge_requests/5", "want": {"kind": "issue", "provider": "gitlab", "id": "group/sub/project!5", "url": "https://gitlab.com/group/sub/project/-/merge_requests/5"}},
+    {"name": "gitlab without a group", "url": "https://gitlab.com/p/-/issues/3", "want": {"kind": "url", "url": "https://gitlab.com/p/-/issues/3"}},
+    {"name": "jira key", "url": "https://acme.atlassian.net/browse/ENG-123", "title": "Login times out", "want": {"kind": "issue", "provider": "jira", "id": "ENG-123", "url": "https://acme.atlassian.net/browse/ENG-123", "title": "Login times out"}},
+    {"name": "jira board page", "url": "https://acme.atlassian.net/jira/software/projects/ENG/boards/1", "want": {"kind": "url", "url": "https://acme.atlassian.net/jira/software/projects/ENG/boards/1"}},
+    {"name": "linear issue with slug", "url": "https://linear.app/acme/issue/ENG-123/fix-the-login-timeout", "want": {"kind": "issue", "provider": "linear", "id": "ENG-123", "url": "https://linear.app/acme/issue/ENG-123/fix-the-login-timeout"}},
+    {"name": "linear issue without slug", "url": "https://linear.app/acme/issue/ENG-9", "want": {"kind": "issue", "provider": "linear", "id": "ENG-9", "url": "https://linear.app/acme/issue/ENG-9"}},
+    {"name": "unrecognised page", "url": "https://example.org/post", "title": "Interesting article", "want": {"kind": "url", "url": "https://example.org/post", "title": "Interesting article"}},
+    {"name": "plain http page, title trimmed", "url": "  http://example.org/a?b=c  ", "title": "  Spaced  ", "want": {"kind": "url", "url": "http://example.org/a?b=c", "title": "Spaced"}},
+    {"name": "self-hosted tracker", "url": "https://git.example.com/o/r/issues/7", "want": {"kind": "url", "url": "https://git.example.com/o/r/issues/7"}},
+    {"name": "look-alike host", "url": "https://github.com.example.net/o/r/issues/7", "want": {"kind": "url", "url": "https://github.com.example.net/o/r/issues/7"}},
+    {"name": "javascript url", "url": "javascript:alert(1)", "want": null},
+    {"name": "ftp url", "url": "ftp://files.example/x", "want": null},
+    {"name": "file url", "url": "file:///etc/passwd", "want": null},
+    {"name": "no host", "url": "https:///path", "want": null},
+    {"name": "not a url", "url": "just some text", "want": null}
+  ]
+}

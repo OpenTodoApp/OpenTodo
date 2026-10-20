@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+import { durationMinutes } from '../time'
 // Filter query language (OpenSpec change `filter-query-language`): tokenizer,
 // recursive-descent parser and date expressions. Pure and dependency-free; the
 // grammar is documented in docs/filters.md and this file accepts exactly it.
@@ -9,6 +10,8 @@ import { t } from '../i18n'
 //   not     := "!" not | "(" or ")" | term
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
 //            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
+//            | "origin:" value                        (task origins, OpenSpec task-origin)
+//            | "tracked" cmp duration                 (tracked time, OpenSpec time-tracking)
 //            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
 //   date    := day | period   (a day is a period of one day; see resolveRange)
 //   field   := a word that is not a reserved word | '"' chars '"'
@@ -28,6 +31,7 @@ export type Token =
   | { type: 'project'; name: string; descendants: boolean; pos: number; raw: string }
   | { type: 'priority'; value: Priority; pos: number; raw: string }
   | { type: 'search'; text: string; pos: number; raw: string }
+  | { type: 'origin'; value: string; pos: number; raw: string }
   | { type: 'word'; value: string; pos: number; raw: string }
   | { type: 'string'; value: string; pos: number; raw: string }
 
@@ -121,16 +125,23 @@ export function tokenize(src: string): Token[] {
       continue
     }
     const word = readBare()
+    // `search:text`, `search: text` or `search: "several words"`; `origin:` alike (task-origin).
+    const readPrefixed = (prefix: string): string => {
+      const text = word.slice(prefix.length)
+      if (text) return text
+      while (i < n && isSpace(src[i])) i++
+      return i < n && src[i] === '"' ? readString() : readBare()
+    }
     if (/^search:/i.test(word)) {
-      // `search:text`, `search: text` or `search: "several words"`.
-      let text = word.slice('search:'.length)
-      if (!text) {
-        while (i < n && isSpace(src[i])) i++
-        if (i < n && src[i] === '"') text = readString()
-        else text = readBare()
-      }
+      const text = readPrefixed('search:')
       if (!text) throw new FilterSyntaxError(t('Expected text after "search:" at position {pos}', { pos: pos + 1 }), pos, ['text'])
       out.push({ type: 'search', text, pos, raw: src.slice(pos, i) })
+      continue
+    }
+    if (/^origin:/i.test(word)) {
+      const value = readPrefixed('origin:')
+      if (!value) throw new FilterSyntaxError(t('Expected a provider or kind after "origin:" at position {pos}', { pos: pos + 1 }), pos, ['origin'])
+      out.push({ type: 'origin', value, pos, raw: src.slice(pos, i) })
       continue
     }
     const pm = /^p([1-4])$/i.exec(word)
@@ -145,7 +156,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit' | 'origin' | 'no origin' | 'tracked'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -170,10 +181,14 @@ export type Node =
   | { kind: 'date'; field: DateField; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
+  /** `origin: value`: the origin's provider, else its kind, equals value ignoring case (task-origin). */
+  | { kind: 'origin'; value: string }
   /** `name cmp value` over a custom field (custom-fields); `opPos` places type errors. */
   | { kind: 'field'; name: string; op: Cmp; value: FieldValueExpr; pos: number; opPos: number }
   /** `no name`: a project defining the field, no value. */
   | { kind: 'nofield'; name: string; pos: number }
+  /** `tracked cmp duration`: the task's tracked minutes (time-tracking D9). */
+  | { kind: 'tracked'; op: Cmp; minutes: number }
 
 /** The right-hand side of a field term; the field's type decides how it compares. */
 export type FieldValueExpr =
@@ -183,8 +198,8 @@ export type FieldValueExpr =
   | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked', 'habit'])
-const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start'] as const
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked', 'habit', 'origin'])
+const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin'] as const
 /** Words that start a date expression in a field term's value; a number starts one only before a unit. */
 const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
 const DATE_UNITS = new Set(['days', 'week', 'weeks', 'month', 'months'])
@@ -264,6 +279,9 @@ export function parse(src: string): Node | null {
       case 'search':
         i++
         return { kind: 'search', text: tok.text }
+      case 'origin':
+        i++
+        return { kind: 'origin', value: tok.value }
       case 'word':
         return parseWordTerm(tok)
       case 'string':
@@ -293,6 +311,20 @@ export function parse(src: string): Node | null {
       i++
       return { kind: 'date', field: w, op, date: parseDate(c) }
     }
+    // Tracked time (time-tracking D9): the keyword, or `tracked cmp duration`. A
+    // reserved word: a field named "tracked" is reachable only quoted.
+    if (w === 'tracked') {
+      const c = peek()
+      if (c?.type !== 'cmp') return { kind: 'keyword', keyword: 'tracked' }
+      i++
+      const v = peek()
+      const message = (pos: number) => t('Expected a duration such as 30m or 1h30 after "{after}" at position {pos}', { after: c.raw, pos: pos + 1 })
+      if (!v || v.type !== 'word') return fail(message(c.pos), c.pos, ['duration'])
+      const minutes = durationMinutes(v.value)
+      if (minutes === null) return fail(message(v.pos), v.pos, ['duration'])
+      i++
+      return { kind: 'tracked', op: c.op, minutes }
+    }
     if (w === 'no') {
       const nt = peek()
       const next = lower(nt)
@@ -305,7 +337,7 @@ export function parse(src: string): Node | null {
         i++
         return { kind: 'nofield', name: nt.value, pos: nt.pos }
       }
-      return fail(t('Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position {pos}', { pos: entry.pos + 1 }), entry.pos, [...NO_KEYWORDS.map((k) => `"${k}"`), 'field name'])
+      return fail(t('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position {pos}', { pos: entry.pos + 1 }), entry.pos, [...NO_KEYWORDS.map((k) => `"${k}"`), 'field name'])
     }
     if (SIMPLE_KEYWORDS.has(w as Keyword)) return { kind: 'keyword', keyword: w as Keyword }
     if (/^p\d+$/.test(w)) return fail(t('Priority must be p1, p2, p3 or p4 at position {pos}', { pos: entry.pos + 1 }), entry.pos, ['"p1"', '"p2"', '"p3"', '"p4"'])
@@ -529,10 +561,14 @@ export function printQuery(n: Node): string {
       return n.keyword
     case 'search':
       return `search: ${quote(n.text)}`
+    case 'origin':
+      return `origin: ${quote(n.value)}`
     case 'field':
       // Field names are always quoted: a bare one could collide with a reserved word.
       return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`
     case 'nofield':
       return `no ${quoteAlways(n.name)}`
+    case 'tracked':
+      return `tracked ${n.op} ${n.minutes}`
   }
 }

@@ -1032,6 +1032,12 @@ func TestAddNatural(t *testing.T) {
 	if tk["title"] != "Zahnarzt" || tk["due"].(map[string]any)["time"] != "15:00" {
 		t.Fatalf("german = %v", tk)
 	}
+	// Ordinal weekday rule with "of the month" (quick-add-nth-weekday 3.3).
+	_ = json.Unmarshal([]byte(h.mustRun("add", "--natural", "Board every 2nd Tuesday of the month at 10:00", "--json")), &created)
+	tk = h.task(created.ID)
+	if due, _ := tk["due"].(map[string]any); tk["title"] != "Board" || tk["recurrence"] != "every 2nd tuesday" || due["date"] != "2026-10-13" || due["time"] != "10:00" {
+		t.Fatalf("ordinal weekday = %v", tk)
+	}
 	// Unknown project token stays in the title.
 	_ = json.Unmarshal([]byte(h.mustRun("add", "--natural", "Read #nosuch tomorrow", "--json")), &created)
 	tk = h.task(created.ID)

@@ -1,5 +1,5 @@
 // The task list's page furniture (OpenSpec change web-component-structure): page
-// actions, the layout switch, the duration filter, empty states, the "complete the
+// actions, the layout switch, the duration filter, empty views, the "complete the
 // parent too?" prompt and the label and assignee dialogs. Each is a small
 // component with props only; TaskListView decides when they show.
 import { DURATION_FILTERS, type DurationFilter } from '../../lib/filters'
@@ -7,12 +7,12 @@ import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import type { AccountRole, Label, Project, Task } from '../../lib/types'
-import { Button, EmptyState as EmptyStatePattern, Icon, IconButton, type IconName, MenuItem, MenuSeparator, Tooltip } from '../../ui'
+import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, IconButton, MenuItem, MenuSeparator, Tooltip } from '../../ui'
 import { TodayAskAction } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
 import { LabelPicker } from '../LabelPicker'
-import { Dialog, Menu, useFinePointer } from '../../ui'
+import { Dialog, Menu } from '../../ui'
 import { navigate } from '../router'
 import { Kbd } from '../shortcuts/Kbd'
 import type { ListRoute } from './useListModel'
@@ -126,41 +126,54 @@ export function placeholderFor(route: ListRoute, project?: Project, label?: Labe
   }
 }
 
-// Empty states name the action first (first-run spec): an icon, one sentence, one
-// button that does it, and the key hint on a second line only with a fine pointer.
-const EMPTY: Record<ListRoute['view'], { icon: IconName; title: string }> = {
-  inbox: { icon: 'inbox', get title() { return t('Your Inbox is empty') } },
-  today: { icon: 'sun', get title() { return t('Nothing due today') } },
-  upcoming: { icon: 'calendar-days', get title() { return t('Nothing scheduled yet') } },
-  someday: { icon: 'coffee', get title() { return t('Nothing parked for later') } },
-  anytime: { icon: 'layers', get title() { return t('Nothing to do whenever') } },
-  completed: { icon: 'circle-check-big', get title() { return t('Nothing completed yet') } },
-  project: { icon: 'folder', get title() { return t('This project has no open tasks') } },
-  label: { icon: 'tag', get title() { return t('No open task carries this label') } },
-  assigned: { icon: 'user-check', get title() { return t('Nothing is assigned to you') } },
+// Empty views (OpenSpec change lean-chrome D7, task-list-presentation "Empty views"):
+// one sentence, one primary action, at most one secondary link, rendered through the
+// EmptyState primitive; the action's key is in its tooltip on fine pointers only.
+type EmptyView = ListRoute['view']
+interface EmptyCopy { title: string; action: 'add' | 'inbox' | 'today' }
+const EMPTY_COPY: Record<EmptyView, EmptyCopy> = {
+  inbox: { get title() { return t('Your Inbox is empty.') }, action: 'add' },
+  today: { get title() { return t('Nothing due today.') }, action: 'add' },
+  upcoming: { get title() { return t('Nothing scheduled yet.') }, action: 'add' },
+  anytime: { get title() { return t('Nothing waiting for a free moment.') }, action: 'add' },
+  someday: { get title() { return t('Nothing parked for later.') }, action: 'add' },
+  assigned: { get title() { return t('Nothing is assigned to you.') }, action: 'inbox' },
+  project: { get title() { return t('This project has no open tasks.') }, action: 'add' },
+  label: { get title() { return t('No open task carries this label.') }, action: 'add' },
+  completed: { get title() { return t('Nothing completed yet.') }, action: 'today' },
 }
 
-export function EmptyState({ view, waiting = 0, readOnly = false, onAdd }: { view: ListRoute['view']; waiting?: number; readOnly?: boolean; onAdd: () => void }) {
-  const fine = useFinePointer()
-  const { icon, title } = EMPTY[view]
-  // Everything due today waits for other tasks (task-dependencies): say so.
-  const body = view === 'today' && waiting > 0
-    ? t('{n, plural, one {One task is waiting for other tasks below.} other {# tasks are waiting for other tasks below.}}', { n: waiting })
-    : undefined
-  const action = view === 'completed'
-    ? { label: t('Open Today'), run: () => navigate({ view: 'today' }), hint: <>{t.rich('Press {g} then {key} to open Today', { g: <kbd className="ui-kbd">g</kbd>, key: <kbd className="ui-kbd">t</kbd> })}</> }
-    : readOnly
-      ? { label: t('Open Inbox'), run: () => navigate({ view: 'inbox' }), hint: <>{t.rich('Press {g} then {key} to open the Inbox', { g: <kbd className="ui-kbd">g</kbd>, key: <kbd className="ui-kbd">i</kbd> })}</> }
-      : { label: t('Add a task'), run: onAdd, hint: <>{t.rich('Press {key} to add a task', { key: <kbd className="ui-kbd">q</kbd> })}</> }
+/** The primary action of an empty view: add a task (the view's quick add), or open Inbox or Today. */
+function emptyAction(kind: EmptyCopy['action'], onAdd: () => void): EmptyStateAction {
+  if (kind === 'today') return { label: t('Open Today'), onClick: () => navigate({ view: 'today' }), shortcut: keysOf('go.today') }
+  if (kind === 'inbox') return { label: t('Open Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }
+  return { label: t('Add a task'), onClick: onAdd, shortcut: keysOf('list.quick-add') }
+}
+
+export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted, onAdd }: {
+  view: EmptyView
+  /** Today: tasks due today that all wait for other tasks (task-dependencies). */
+  waiting?: number
+  /** A shared project the viewer may only read: no quick add, so the action opens the Inbox. */
+  readOnly?: boolean
+  /** A project's completed tasks while its Completed group is off. */
+  completed?: number
+  onShowCompleted?: () => void
+  onAdd: () => void
+}) {
+  const copy = EMPTY_COPY[view]
+  const blocked = view === 'today' && waiting > 0
+  const action = emptyAction(view === 'project' && readOnly ? 'inbox' : copy.action, onAdd)
+  const secondary: EmptyStateLink | undefined = blocked
+    ? { label: t('{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}', { n: waiting }), onClick: () => navigate({ view: 'waiting' }) }
+    : view === 'today'
+      ? { label: t('Open Upcoming'), onClick: () => navigate({ view: 'upcoming' }) }
+      : view === 'project' && completed > 0 && onShowCompleted
+        ? { label: t('{n, plural, one {Show # completed} other {Show # completed}}', { n: completed }), onClick: onShowCompleted }
+        : undefined
   return (
     <div data-empty-state={view}>
-      <EmptyStatePattern icon={icon} title={body ? t('Nothing is ready to start today') : title} body={body}
-        action={(
-          <>
-            <Button size="sm" variant="secondary" data-empty-action onClick={action.run}>{action.label}</Button>
-            {fine && <p className="mt-2 text-meta text-faint" data-empty-hint>{action.hint}</p>}
-          </>
-        )} />
+      <EmptyStatePattern title={blocked ? t('Nothing is ready to start today.') : copy.title} action={action} secondary={secondary} />
     </div>
   )
 }
@@ -168,8 +181,9 @@ export function EmptyState({ view, waiting = 0, readOnly = false, onAdd }: { vie
 /** No list matches when the duration filter hides every task. */
 export function FilteredEmpty({ onClear }: { onClear: () => void }) {
   return (
-    <EmptyStatePattern icon="filter" title={t('No task matches this duration filter')}
-      action={<Button size="sm" variant="secondary" onClick={onClear}>{t('Clear the filter')}</Button>} />
+    <div data-empty-state="duration">
+      <EmptyStatePattern title={t('No task matches this duration filter.')} action={{ label: t('Clear the filter'), onClick: onClear }} />
+    </div>
   )
 }
 

@@ -61,6 +61,10 @@ type Input struct {
 	Today string
 	// Loc converts instants to local days.
 	Loc *time.Location
+	// DayStart is the user's day start in minutes after midnight (OpenSpec
+	// change day-boundary, design D6): an instant whose local time is before it
+	// belongs to the previous day. 0 is midnight.
+	DayStart int
 }
 
 // Stats are the numbers of one period.
@@ -106,12 +110,52 @@ func WeekStart(pref string) int {
 	return 1
 }
 
-func (in Input) dayOf(ms int64) string {
-	loc := in.Loc
+// DayStart reads a user_prefs day_start value ("HH:MM", 00:00 to 06:00) as
+// minutes after midnight; empty, malformed or out-of-range values read as 0,
+// midnight (date-time-preferences "Day start out of range").
+func DayStart(pref string) int {
+	if len(pref) != 5 || pref[2] != ':' {
+		return 0
+	}
+	h, m := 0, 0
+	for i, c := range pref {
+		if i == 2 {
+			continue
+		}
+		if c < '0' || c > '9' {
+			return 0
+		}
+		if i < 2 {
+			h = h*10 + int(c-'0')
+		} else {
+			m = m*10 + int(c-'0')
+		}
+	}
+	if m > 59 || h*60+m > 6*60 {
+		return 0
+	}
+	return h*60 + m
+}
+
+// LogicalDay is the day an instant belongs to for a user whose day starts
+// dayStart minutes after midnight: its local calendar date, or the previous
+// date while the local wall time is before the day start (day-boundary D2, the
+// same rule as logicalDay in web/src/lib/dates.ts). It compares the wall clock,
+// so on a daylight-saving night the boundary stays at the stated local time.
+func LogicalDay(t time.Time, loc *time.Location, dayStart int) string {
 	if loc == nil {
 		loc = time.UTC
 	}
-	return time.UnixMilli(ms).In(loc).Format(day)
+	l := t.In(loc)
+	if l.Hour()*60+l.Minute() < dayStart {
+		y, m, d := l.Date()
+		return time.Date(y, m, d-1, 12, 0, 0, 0, loc).Format(day)
+	}
+	return l.Format(day)
+}
+
+func (in Input) dayOf(ms int64) string {
+	return LogicalDay(time.UnixMilli(ms), in.Loc, in.DayStart)
 }
 
 // mine: every row outside shared projects; in a shared project the account

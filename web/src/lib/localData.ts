@@ -24,7 +24,7 @@ import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
 import type {
-  AppNotification, Attachment, CalendarSubscription, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarSubscription, IssueConnection, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
@@ -349,6 +349,18 @@ export function useNotifications(limit = 50): AppNotification[] {
 /** The calendar subscriptions cached with the last event refresh (for offline). */
 export function cachedCalendarSubscriptions(): Promise<CalendarSubscription[]> {
   return db.calendarSubscriptions.toArray()
+}
+
+const ISSUE_CONNECTIONS_META_KEY = 'issueConnections'
+
+/** The issue connections of the last load (issue-import D13): shown offline. Never a token: the server sends none. */
+export function cachedIssueConnections(): Promise<IssueConnection[]> {
+  return getMeta<IssueConnection[]>(ISSUE_CONNECTIONS_META_KEY, [])
+}
+
+/** Keeps the issue connections of a load for the offline panel. */
+export function cacheIssueConnections(list: IssueConnection[]): Promise<void> {
+  return setMeta(ISSUE_CONNECTIONS_META_KEY, list)
 }
 
 /** A device-local setting from the meta table, live; `fallback` while loading or unset. */

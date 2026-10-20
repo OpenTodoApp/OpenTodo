@@ -86,7 +86,7 @@ describe('NotificationsView', () => {
     const html = view({ ...subscribed, enabled: false, permission: 'denied', subscription: null })
     expect(html).toContain('>Off<')
     expect(html).toContain('Permission: Blocked')
-    expect(html).toContain('blocked for this site')
+    expect(html).toContain('blocked in your browser settings')
     expect(html).not.toContain('Last delivered')
   })
 

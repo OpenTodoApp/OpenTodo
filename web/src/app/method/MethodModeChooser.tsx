@@ -4,7 +4,8 @@
 // starter contexts (when there is no context yet) and, for Open Loops first, the
 // Loop home as this device's start view. Nothing is written about the offers.
 import { useRef, useState, type KeyboardEvent } from 'react'
-import { t, msg, translatedMap } from '../../lib/i18n'
+import { t, translatedMap } from '../../lib/i18n'
+import { SETTINGS_COPY } from '../../lib/settingsCopy'
 import { useAllLabels } from '../../lib/localData'
 import { METHOD_NAME } from '../../lib/method'
 import { METHOD_MODES, setMethodMode, type MethodMode } from '../../lib/method/mode'
@@ -15,12 +16,10 @@ import { act } from '../actionError'
 import { openHelp } from '../../lib/helpRequest'
 import { METHOD_HELP_SCREENS } from '../help/MethodLink'
 
-export const MODE_LABEL = translatedMap<MethodMode>({ lists: msg('Lists only'), companion: msg('Companion'), first: msg('Open Loops first') })
-export const MODE_DESCRIPTION = translatedMap<MethodMode>({
-  lists: msg('OpenTodo as a plain task app, with no method words.'),
-  companion: msg('Your sidebar stays as it is; screens name the move they serve and link to the method.'),
-  first: msg('The Loop home opens first, the sidebar follows the Places, and a daily check is offered each day.'),
-})
+// The three options' text is the How you work card's in the settings copy table (settings-copy D7).
+const OPTIONS = SETTINGS_COPY['how-you-work'].options
+export const MODE_LABEL = translatedMap<MethodMode>({ lists: OPTIONS.lists.label, companion: OPTIONS.companion.label, first: OPTIONS.first.label })
+export const MODE_DESCRIPTION = translatedMap<MethodMode>({ lists: OPTIONS.lists.description, companion: OPTIONS.companion.description, first: OPTIONS.first.description })
 
 type Offer = 'contexts' | 'start'
 

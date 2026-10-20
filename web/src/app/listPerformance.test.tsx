@@ -66,6 +66,28 @@ describe('large lists', () => {
     await r.unmount()
   }, 120_000)
 
+  it(`a running entry's minute tick re-renders only its row (${ROWS} rows, time-tracking 3.4)`, async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    // 10 ms before a minute boundary, so the one shared timer fires at once.
+    vi.setSystemTime(new Date(2026, 9, 14, 12, 0, 59, 990))
+    await db.meta.put({ key: 'userId', value: 'u1' })
+    await seed(ROWS, null)
+    const e = (f: string, value: unknown): Op => ({ id: `e-${f}`, entity: 'time_entry', entityId: 'e1', field: f, value, ts: 100, device: 'seed' })
+    await applyOps([e('task_id', 't00005'), e('user_id', 'u1'), e('started_at', new Date(2026, 9, 14, 11, 50).getTime()), e('ended_at', null)])
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === ROWS, 'every row rendered', 60_000)
+    await waitFor(() => !!r.container.querySelector('[data-task-id="t00005"] [data-tracked]'), 'the tracked figure', 10_000)
+    await flush(50)
+    rowRenders.n = 0
+    vi.setSystemTime(new Date(2026, 9, 14, 12, 1, 30))
+    await waitFor(() => r.container.querySelector('[data-task-id="t00005"] [data-tracked]')!.textContent!.includes('11m'), 'the tick', 10_000)
+    await flush(50)
+    console.info(`[large-list-performance] row renders for one minute tick with ${ROWS} rows: ${rowRenders.n}`)
+    expect(rowRenders.n).toBeLessThanOrEqual(2)
+    vi.useRealTimers()
+    await r.unmount()
+  }, 120_000)
+
   it(`one write reads the tasks table once for the list, the sidebar and the project header (${ROWS} tasks)`, async () => {
     const project = await createProject({ name: 'Big' })
     await seed(ROWS, project)

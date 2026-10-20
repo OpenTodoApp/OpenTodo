@@ -20,13 +20,19 @@ Many tasks start as "deal with this page later". OpenTodo can receive a page fro
 The capture screen proposes:
 
 - **Title**: the page title, or the link's host name when there is no title. The title field is a regular [quick-add](quick-add.md) line, so typing `tomorrow #work p1` into it sets the date, project and priority.
-- **Description**: the selected or shared text, followed by the link.
+- **Description**: the selected or shared text, followed by the link. The link is also kept as the task's [origin](#where-a-task-came-from).
 - **Project**: the Inbox by default; pick any project.
 - **Files**: anything shared along with the page (photos, PDFs, documents) or a screenshot from the extension, each with its name, type and size and a thumbnail for images. Remove any you don't want; they're saved as [attachments](attachments.md) of the new task. A share that carries only a file proposes the file's name as the title.
 
 Press **Enter** to save or **Esc** to cancel. Nothing is saved until you confirm. Saving creates an ordinary task on the device first and syncs it like any other quick-add task, so it works with no network and reaches your other devices when the network returns.
 
 When the capture screen was opened as a popup (bookmarklet, extension) or in a window opened just for the share, it closes itself after Save or Esc. Otherwise it takes you to the Inbox or to the project you picked.
+
+## Where a task came from
+
+A task saved from a shared link also remembers that link as its **origin**. The task's row shows a small chip with the link's host (`example.org`), and the task panel an **Origin** chip; both open the page in a new tab, and the page title you shared is their tooltip. In Calm rows the chip is quiet, like the counts at the end of the row; in Detailed rows it is a neutral chip. A link to an issue on GitHub, GitLab, Jira (`*.atlassian.net`) or Linear is recognised on your device, without opening it: the chip reads the issue (`owner/repo#7`, `ENG-123`) and the task is listed by `origin: github`, `origin: gitlab`, `origin: jira` or `origin: linear` in a [filter](filters.md). Self-hosted trackers are kept as ordinary links. The link still ends the description, so your notes read as before.
+
+To forget the origin, remove the **Origin** chip in the task panel; the description keeps the link. The [command palette](search.md) also finds a task by its issue id (`eng-123`) or the shared page title. Tasks [from email](email.md) carry an **Email** origin without a link, and [imported](import.md) tasks carry their source (`origin: todoist`).
 
 ## Share sheet (installed app)
 

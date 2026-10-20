@@ -9,6 +9,7 @@ import { detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask
 import type { ListColumn, ListRow } from '../../lib/listGroups'
 import { moveTaskBy, type Step } from '../../lib/move'
 import { duplicateTask } from '../../lib/templates'
+import { toggleTracking } from '../../lib/timeEntries'
 import type { Priority, Task } from '../../lib/types'
 import type { Tree } from '../../lib/tree'
 import { act } from '../actionError'
@@ -211,6 +212,8 @@ export function useListShortcuts(c: ShortcutContext) {
     // Placement mode in the Day view (OpenSpec `time-blocking`).
     'list.schedule': () => { if (!row || !writable || row.task.completed_at) return false; placeInDay(row.task, c.today) },
     'list.estimate': () => { if (!row || !writable) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
+    // Start or stop tracking (time-tracking D5); a completed task offers no start.
+    'list.track': () => { if (!row || !writable) return false; act(toggleTracking(row.task.id, { canStart: !row.task.completed_at })) },
     'list.deadline': openFor(deadlineFocus),
     'list.defer': openFor(deferFocus),
     'list.blocked-by': openFor(blockedByFocus),

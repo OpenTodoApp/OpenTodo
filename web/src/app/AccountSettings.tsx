@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api } from '../lib/api'
 import { t } from '../lib/i18n'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 /**
  * Ends every session of the account on the server (route-authorization-policy),
@@ -16,6 +17,18 @@ async function signOutEverywhere(): Promise<void> {
 }
 
 /**
+ * "Sign out of this device?" (web-app "Settings"; quiet-sidebar D5): the same
+ * confirmation from Settings → Account and from the account menu in the sidebar.
+ */
+export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <ConfirmDialog title={t('Sign out of this device?')} confirmLabel={t('Sign out')}
+      consequence={t('Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.')}
+      onConfirm={onConfirm} onCancel={onCancel} />
+  )
+}
+
+/**
  * Sign out of this device, or of every device, after confirming what it clears
  * (web-app "Settings"). Signing out everywhere also revokes API tokens and app
  * passwords; this device then signs out like a regular sign-out.
@@ -23,16 +36,12 @@ async function signOutEverywhere(): Promise<void> {
 export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere }: { onLogout: () => void; onSignOutEverywhere?: () => Promise<void> }) {
   const [confirming, setConfirming] = useState<'device' | 'everywhere' | null>(null)
   return (
-    <SettingsSection title={t('Session')} headingId="session-heading" description={t('This device is signed in to your server.')}>
-      <SettingRow label={t('Sign out of this device')} description={t('Clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.')}
+    <SettingsSection {...cardCopy('session')}>
+      <SettingRow {...rowCopy('session', 'device')}
         control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
-      <SettingRow label={t('Sign out everywhere')} description={t('Signs out every device and browser, including this one, and revokes your API tokens and app passwords.')}
+      <SettingRow {...rowCopy('session', 'everywhere')}
         control={<Button variant="secondary" icon="log-out" onClick={() => setConfirming('everywhere')}>{t('Sign out everywhere')}</Button>} />
-      {confirming === 'device' && (
-        <ConfirmDialog title={t('Sign out of this device?')} confirmLabel={t('Sign out')}
-          consequence={t('Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.')}
-          onConfirm={onLogout} onCancel={() => setConfirming(null)} />
-      )}
+      {confirming === 'device' && <SignOutDialog onConfirm={onLogout} onCancel={() => setConfirming(null)} />}
       {confirming === 'everywhere' && (
         <ConfirmDialog title={t('Sign out everywhere?')} confirmLabel={t('Sign out everywhere')}
           consequence={t('Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.')}

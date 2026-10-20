@@ -82,7 +82,7 @@ ot list --all --limit 20       # open and completed
 ot list --completed-after 2026-10-05 --completed-before 2026-10-12   # completed that week
 ```
 
-Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
+Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from). Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
 
 ```
 ID        P   DUE                 PROJECT  TITLE
@@ -100,6 +100,8 @@ ot edit 8c2a --due none --project none --note ""     # clear values
 ot add "Backup check" --due monday --time 09:00 --repeat "every week" --remind "30 min before"
 ot edit 8c2a --repeat none                           # stop repeating, keep the date
 ot add --natural "Water plants every Monday remind me at 8 #home"
+ot add "Fix the login timeout" --origin-url https://github.com/o/r/issues/7
+ot edit 8c2a --origin-url none                       # forget where it came from
 ```
 
 | Flag | Meaning |
@@ -112,12 +114,13 @@ ot add --natural "Water plants every Monday remind me at 8 #home"
 | `--note <text>` | Description; `--note ""` clears it |
 | `--title <text>` | New title (`ot edit` only) |
 | `--repeat <rule>` | Recurrence rule in any spelling of the [rule grammar](recurrence.md) (`"Every Week"`, `"every mon, wed"`), checked locally and sent in canonical form; `none` (edit) clears the rule and keeps the date |
+| `--origin-url <url>` | Where the task comes from: an `http` or `https` URL, sent as the task's [origin](capture.md#where-a-task-came-from). A GitHub, GitLab, Jira or Linear issue link becomes `{kind: "issue", provider, id}` (`o/r#7`, `ENG-123`), derived on your machine with the same table as the web app; any other link is a `url` origin. `ot` never requests the URL. Another scheme (`ftp:`, `file:`) exits 2 before any request; `none` (edit) clears the origin |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
-| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
+| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
 | `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |
 | `--idempotency-key <key>` | `ot add` only: a retry with the same key returns the same task, see [Retry-safe creates](#retry-safe-creates). Reminders send `<key>.r1`, `<key>.r2`, …, so a retry also converges to one set of reminders |
 
-`ot add` prints the new task's id (the whole task with `--json`). Priority, time, date, rule and reminder phrases are validated locally before any request is sent. Reminders are created after the task with one `POST /api/v1/reminders` each (a dry run lists them, referring to the planned task as `(planned-1)`); if one fails, the command exits 1 and names the created task so you can add the reminder by hand.
+`ot add` prints the new task's id (the whole task with `--json`, `origin` included). Priority, time, date, rule, origin URL and reminder phrases are validated locally before any request is sent. Reminders are created after the task with one `POST /api/v1/reminders` each (a dry run lists them, referring to the planned task as `(planned-1)`); if one fails, the command exits 1 and names the created task so you can add the reminder by hand. A `30m/2h` token in a `--natural` line also logs the time already spent: one `POST /api/v1/time-entries` after the task, ending now (`<key>.t` with an idempotency key).
 
 `--natural` uses the same grammar as the web app, pinned by shared test cases, with two differences because `ot` cannot read your preferences: weeks start on Monday (`next week`), and numeric dates such as `3/11` follow the first language (day first in German, month first in English) rather than your date-format setting.
 
@@ -145,6 +148,39 @@ ot project rm Garden [--yes]
 ```
 
 Projects are referenced by name (case-insensitive), full id or unique id prefix.
+
+## Time
+
+[Time tracking](time-tracking.md) from the shell: start and stop a running entry, log past work, list and export entries.
+
+```bash
+ot time start 8c2a [--note "review"]     # stops the running entry first
+ot time stop                             # exit 1 when nothing runs
+ot time log 8c2a 1h30 --on yesterday --note "review"
+ot time log 8c2a --from 09:00 --to 09:25 [--on 2026-10-12]
+ot time list --from 2026-10-12 --to 2026-10-18 [--task 8c2a] [--running] [--limit 50]
+ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv
+```
+
+A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 before a request. Without `--on` a duration ends now; on another day (`--on yesterday`, a weekday meaning the last one, or `YYYY-MM-DD`) it ends at 17:00 local time. `--from` and `--to` are times on that day. `start`, `stop` and `log` write, so `--dry-run`, `--read-only` and token scope apply: a `read` token exits 5 (`insufficient_scope`) before anything is sent, while `list` and `export` work with it. `ot time list` prints the id prefix, day, `09:00–09:25`, duration, task and project, newest first; `--json` prints the [`time_entry`](#machine-readable-help-ot-schema) objects (`endedAt: null` while running). `ot time export` downloads the server's CSV for those local days in your time zone; with `-o` and `--json` it reports the file and the row count. A weekly export for cron:
+
+```bash
+0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
+```
+
+## Issue connections
+
+Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:
+
+```bash
+ot issues list               # id, name, provider, host, state, last poll, tasks; never a token
+ot issues list --json        # the connections as the API returns them, with token_set
+ot issues sync 7f3a          # poll one connection now: created 3, completed 1, reopened 0, renamed 2
+ot issues sync               # every enabled connection
+ot issues sync 7f3a --dry-run   # print the request, run nothing
+```
+
+`ot issues sync` writes, so `--read-only` and a `read` or `agent` token refuse it before any poll (exit 5). It exits 5 with `issues_disabled` while the owner has not enabled issue connections, and 1 when a connection is stopped (`connection_stopped`), the provider's rate limit applies (`provider_rate_limited`), the hourly limit of 12 checks and syncs is reached (`rate_limited`) or the poll fails (`poll_failed`). Connections are added and changed in Settings → Integrations → Issues.
 
 ## Tokens and export
 
@@ -256,7 +292,7 @@ Or add a reminder task every Monday morning:
 
 `ot` is a dependable tool for coding agents and automation harnesses. The short version, which the skill file below spells out for the agent itself:
 
-1. **Give the agent an `agent` token**, not a full one: create it in Settings → Integrations → API tokens (or `ot token create "my assistant" --scope agent` with an admin token in your profile), then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **AI assistants may make changes** (owner) and **Allow AI assistants to make changes** (you) in Settings → Integrations → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
+1. **Give the agent an `agent` token**, not a full one: create it in Settings → Integrations → API tokens (or `ot token create "my assistant" --scope agent` with an admin token in your profile), then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **Assistants may make changes** (owner) and **Changes to my tasks** (you) in Settings → Integrations → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
 2. **Use `--json`** everywhere, and `ot schema` to discover commands and output shapes.
 3. **Use `--dry-run`** before a write that touches more than one task, and **`--idempotency-key`** on creates.
 4. **Handle exit codes:** stop and ask on 3, do not retry 5, retry 4 later.

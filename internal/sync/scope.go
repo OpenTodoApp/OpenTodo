@@ -162,6 +162,10 @@ type resolver struct {
 	batchAttachment map[string]*batchAttachment
 	attachments     map[string]*attachmentState
 	attachmentLimit int64
+	// Time entries (timeentries.go): creation fields per new entry and what is
+	// known about each entry id.
+	batchTimeEntry map[string]*batchTimeEntry
+	timeEntries    map[string]*timeEntryState
 	// detail names the id behind the last refusal, when there is one (dependencies.go).
 	detail string
 	// graphs caches each scope's dependency graph for the batch (dependencies.go).
@@ -171,10 +175,12 @@ type resolver struct {
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
 	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{},
 		batchTasks: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{},
-		batchAttachment: map[string]*batchAttachment{}, attachments: map[string]*attachmentState{}}
+		batchAttachment: map[string]*batchAttachment{}, attachments: map[string]*attachmentState{},
+		batchTimeEntry: map[string]*batchTimeEntry{}, timeEntries: map[string]*timeEntryState{}}
 	for _, op := range ops {
 		r.noteComment(op)
 		r.noteAttachment(op)
+		r.noteTimeEntry(op)
 		if op.Entity == "task" {
 			r.batchTasks[op.EntityID] = true
 		}
@@ -304,6 +310,10 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 	case "attachment":
 		// Attachments follow the comment rules (attachments.go).
 		return r.resolveAttachment(op)
+	case "time_entry":
+		// Time entries follow their task's scope with their own authorship rules
+		// (time-tracking D1, timeentries.go).
+		return r.resolveTimeEntry(op)
 	default:
 		// Labels, saved views and reminders are personal: a reminder on a task in a
 		// shared project still belongs to its creator only (OpenSpec `reminders`).
@@ -408,6 +418,12 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 			scope = st.scope
 		case "attachment":
 			st := r.attachments[op.EntityID]
+			if st == nil || !st.found || st.scope == "" {
+				continue
+			}
+			scope = st.scope
+		case "time_entry":
+			st := r.timeEntries[op.EntityID]
 			if st == nil || !st.found || st.scope == "" {
 				continue
 			}

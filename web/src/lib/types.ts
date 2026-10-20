@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry']
 
 export interface Op {
   id: string
@@ -154,9 +154,32 @@ export interface Task {
    * definitions of the task's project are shown.
    */
   fields?: Record<string, FieldValue>
+  /**
+   * Where the task came from (OpenSpec change `task-origin`): a page, a mail, an
+   * issue or an import, or null. One last-writer-wins value like `due`. Rows
+   * stored before the field read as undefined, and a value this device could not
+   * decrypt is the placeholder string: read it with `originOf(task)` from
+   * `lib/taskOrigin.ts`.
+   */
+  origin?: Origin | string | null
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
+}
+
+/** A task's origin kind; the list is closed (the server refuses any other). */
+export type OriginKind = 'url' | 'email' | 'issue' | 'import'
+
+/**
+ * A task's origin (task-origin D1): `url` needs `url`, the other kinds need
+ * `id`; `provider` is 1–32 of a-z, 0-9 and "-"; `title` at most 500 characters.
+ */
+export interface Origin {
+  kind: OriginKind
+  provider?: string
+  id?: string
+  url?: string
+  title?: string
 }
 
 /** A custom field value: text, link, date (YYYY-MM-DD) and choice are strings; null clears. */
@@ -236,9 +259,30 @@ export interface View {
   position: number
   color: string
   panels: string[]
+  /** List views only: what a drop into a board column showing this view changes (OpenSpec change `rule-boards`). */
+  on_drop: OnDropRule | null
   created_at: number
   deleted_at: number | null
   _clock: Clock
+}
+
+export const RULE_DUE = ['today', 'tomorrow', 'next-week', 'clear'] as const
+export const RULE_START = ['someday', 'clear'] as const
+export const RULE_STATE = ['complete', 'reopen'] as const
+
+/**
+ * A saved list view's on-drop rule (rule-boards D2): at most one choice per kind.
+ * Synced as one whole value; a key this build does not know is kept in the row
+ * and ignored when planning.
+ */
+export interface OnDropRule {
+  add_labels?: string[]
+  remove_labels?: string[]
+  priority?: Priority
+  due?: (typeof RULE_DUE)[number]
+  start?: (typeof RULE_START)[number]
+  section?: { project_id: string; section_id: string | null }
+  state?: (typeof RULE_STATE)[number]
 }
 
 /** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
@@ -281,6 +325,31 @@ export interface Comment {
   mentions: string[]
   created_at: number
   edited_at: number | null
+  deleted_at: number | null
+  _clock: Clock
+}
+
+/**
+ * One stretch of work on a task (OpenSpec `time-tracking`, D1). It syncs in its
+ * task's scope; the server sets the rules: `user_id` is the submitting account and
+ * never changes, only the author edits (`started_at`, `ended_at`, `note`), the
+ * author, project admins and the owner may set `deleted_at`, and viewers cannot
+ * create entries. `ended_at` is null while the entry runs; a user has at most one
+ * running entry, a rule every device applies (lib/time.ts `repairs`). `note` is
+ * user-written text and encrypted for an encrypted account.
+ */
+export interface TimeEntry {
+  id: string
+  task_id: string
+  user_id: string
+  /** Unix ms. */
+  started_at: number
+  /** Unix ms, or null while the entry runs. */
+  ended_at: number | null
+  /** The device that started or logged it ("server" for the REST API). */
+  device_id: string
+  note: string
+  created_at: number
   deleted_at: number | null
   _clock: Clock
 }
@@ -339,6 +408,8 @@ export interface UserPrefs {
   date_format: DateFormatPref
   time_format: TimeFormatPref
   week_start: WeekStartPref
+  /** Day start (day-boundary): `HH:MM` from 00:00 to 06:00; empty, malformed or out-of-range values read as midnight. */
+  day_start: string
   /** Appearance (theming): unknown values read as the defaults. */
   theme_mode: ThemeModePref
   theme_accent: string
@@ -346,6 +417,10 @@ export interface UserPrefs {
   sidebar_destinations: string
   /** Row density (ux-overhaul): comfortable (default) or compact; unknown values read as comfortable. */
   density: string
+  /** Row detail (calm-rows): calm (default) or detailed; unknown values read as calm. */
+  row_detail: string
+  /** Favourites (sidebar-favourites D1): ordered, comma-separated `kind:id` entries; unknown kinds and missing items are ignored. */
+  favourites: string
   /** The first-run card (ux-overhaul, first-run): "done" once finished or skipped on any device. */
   first_run: string
   /** Interface language (app-localization D1): 'system' or a shipped code; unknown values read as 'system'. */
@@ -354,6 +429,20 @@ export interface UserPrefs {
   welcome: string
   /** How you work (open-loops-method D2): lists | companion | first; unknown or empty values read as lists. */
   method_mode: string
+  /**
+   * Focus timer preferences (focus-mode D5): mode pomodoro | flowtime | countdown,
+   * auto-start none | breaks | work | both, sound off | on; lengths in minutes
+   * (1-180), the long-break cycle (1-12) and the break reminder (0 = off, else
+   * 15-240). Empty, zero, unknown or out-of-range values read as the defaults.
+   */
+  focus_mode: string
+  focus_auto_start: string
+  focus_sound: string
+  focus_work_minutes: number
+  focus_short_break_minutes: number
+  focus_long_break_minutes: number
+  focus_long_break_every: number
+  focus_break_after_minutes: number
   _clock: Clock
 }
 
@@ -374,6 +463,10 @@ export interface Review {
   /** Today's focus (open-loops-method D5): the local date it was chosen on and up to three comma-separated task ids. */
   focus_date: string
   focus: string
+  /** The latest Close the day (close-the-day D5), Unix ms; 0 = never. */
+  closed_at: number
+  /** The one-line note for tomorrow written at that close; content (encrypted for encrypted accounts). */
+  tomorrow_note: string
   _clock: Clock
 }
 
@@ -607,6 +700,73 @@ export interface CalendarSubscription {
   stoppedReason?: string
   warnings?: string[]
   eventCount?: number
+}
+
+/** The filter of an issue connection (OpenSpec issue-connections "Filter"). */
+export interface IssueFilter {
+  scope: 'assigned' | 'repositories'
+  repositories: string[]
+  labels: string[]
+}
+
+/** The counts of one issue poll. */
+export interface IssueRun {
+  created: number
+  completed: number
+  reopened: number
+  renamed: number
+  unlinked: number
+  partial: boolean
+}
+
+/** One issue connection as the server reports it: never the token, only token_set. */
+export interface IssueConnection {
+  id: string
+  provider: 'github' | 'gitlab'
+  host: string
+  name: string
+  project_id: string | null
+  filter: IssueFilter
+  map_labels: boolean
+  enabled: boolean
+  interval_minutes: number
+  state: 'off' | 'pending' | 'ok' | 'failed' | 'stopped'
+  next_poll_at: number
+  last_poll_at: number | null
+  last_success_at: number | null
+  last_error: string
+  last_error_at: number | null
+  stopped_reason: string
+  account_login: string
+  can_read_issues: boolean | null
+  last_run: IssueRun | null
+  task_count: number
+  token_set: boolean
+  created_at: number
+  updated_at: number
+}
+
+/** The body of creating or changing an issue connection; `token` only when typed. */
+export interface IssueConnectionInput {
+  provider?: 'github' | 'gitlab'
+  host?: string
+  token?: string
+  name?: string
+  project_id?: string | null
+  filter?: IssueFilter
+  map_labels?: boolean
+  interval_minutes?: number
+  enabled?: boolean
+}
+
+/** The answer of a hand-triggered sync or token check. */
+export interface IssueActionResult {
+  ok: boolean
+  reason?: string
+  run?: IssueRun
+  login?: string
+  can_read_issues?: boolean
+  connection?: IssueConnection
 }
 
 /** The user's task feed URL, without the secret. */
@@ -1032,6 +1192,7 @@ export const AUDIT_EVENT_NAMES = [
   'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
   'calendar_feed.created', 'calendar_feed.rotated', 'calendar_feed.revoked',
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
+  'issue_connection.created', 'issue_connection.updated', 'issue_connection.deleted',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',
   'public_link.created', 'public_link.revoked',
@@ -1117,6 +1278,8 @@ export interface ImportTotals {
   reminders?: number
   /** Tasks with a deadline (deadlines); absent on older jobs. */
   deadlines?: number
+  /** Created time entries (time-tracking); absent on older jobs. */
+  timeEntries?: number
   entities: number
   written: number
   ops: number
@@ -1173,7 +1336,7 @@ export const REMINDER_FIELDS = [
 ] as const
 
 export const VIEW_FIELDS = [
-  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels',
+  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels', 'on_drop',
   'created_at', 'deleted_at',
 ] as const
 
@@ -1264,6 +1427,8 @@ export interface PurgeCounts {
   sections?: number
   /** Comments of purged tasks (comments-and-activity; absent on older servers). */
   comments?: number
+  /** Time entries of purged tasks (time-tracking; absent on older servers). */
+  timeEntries?: number
 }
 
 export const COMMENT_FIELDS = ['task_id', 'parent_id', 'body', 'author_id', 'mentions', 'created_at', 'edited_at', 'deleted_at'] as const

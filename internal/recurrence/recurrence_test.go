@@ -239,3 +239,29 @@ func TestShiftDateVectors(t *testing.T) {
 		t.Errorf("invalid input changed: %s", got)
 	}
 }
+
+// TestNthWeekdayDate pins the helper quick add uses for one-off ordinal weekdays
+// (quick-add-nth-weekday D1), and its agreement with the rule engine.
+func TestNthWeekdayDate(t *testing.T) {
+	for _, c := range []struct {
+		y, m, ord, wd int
+		want          string
+	}{
+		{2026, 10, 2, 1, "2026-10-12"},
+		{2026, 10, -1, 5, "2026-10-30"},
+		{2026, 10, 1, 4, "2026-10-01"},
+		{2026, 11, 3, 5, "2026-11-20"},
+		{2026, 10, -1, 3, "2026-10-28"},
+	} {
+		if got := NthWeekdayDate(c.y, c.m, c.ord, c.wd); got != c.want {
+			t.Errorf("NthWeekdayDate(%d, %d, %d, %d) = %s, want %s", c.y, c.m, c.ord, c.wd, got, c.want)
+		}
+	}
+	r, err := Parse("every 2nd monday")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := r.First("2026-10-09"); err != nil || got != NthWeekdayDate(2026, 10, 2, 1) {
+		t.Fatalf("first occurrence %s (%v) disagrees", got, err)
+	}
+}

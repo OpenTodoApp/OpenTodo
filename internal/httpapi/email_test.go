@@ -232,7 +232,8 @@ func TestEmailToTaskEndToEnd(t *testing.T) {
 			}
 		}
 	}
-	if found != 5 {
+	// title, description, priority, created_at, position and origin (task-origin).
+	if found != 6 {
 		t.Fatalf("synced ops for the task = %d", found)
 	}
 }

@@ -68,11 +68,13 @@
       "task_id"
     ],
     "review": [
+      "closed_at",
       "completed_at",
       "daily_at",
       "focus",
       "focus_date",
-      "monthly_at"
+      "monthly_at",
+      "tomorrow_note"
     ],
     "section": [
       "created_at",
@@ -97,6 +99,7 @@
       "ical_extra",
       "labels",
       "notes_doc",
+      "origin",
       "parent_id",
       "position",
       "priority",
@@ -108,12 +111,33 @@
       "start",
       "title"
     ],
+    "time_entry": [
+      "created_at",
+      "deleted_at",
+      "device_id",
+      "ended_at",
+      "note",
+      "started_at",
+      "task_id",
+      "user_id"
+    ],
     "user_prefs": [
       "date_format",
+      "day_start",
       "density",
+      "favourites",
       "first_run",
+      "focus_auto_start",
+      "focus_break_after_minutes",
+      "focus_long_break_every",
+      "focus_long_break_minutes",
+      "focus_mode",
+      "focus_short_break_minutes",
+      "focus_sound",
+      "focus_work_minutes",
       "language",
       "method_mode",
+      "row_detail",
       "sidebar_destinations",
       "theme_accent",
       "theme_mode",
@@ -128,6 +152,7 @@
       "group_by",
       "kind",
       "name",
+      "on_drop",
       "panels",
       "pinned",
       "position",
@@ -162,6 +187,9 @@
       "name",
       "notes_doc"
     ],
+    "review": [
+      "tomorrow_note"
+    ],
     "section": [
       "name"
     ],
@@ -169,7 +197,11 @@
       "description",
       "ical_extra",
       "notes_doc",
+      "origin",
       "title"
+    ],
+    "time_entry": [
+      "note"
     ],
     "view": [
       "name",

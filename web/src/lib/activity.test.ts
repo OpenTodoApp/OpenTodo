@@ -44,6 +44,7 @@ describe('activity rule', () => {
     expect(describeEvent(ev('moved', [{ field: 'project_id', from: null, to: 'p' }]), name, project)).toBe('moved to Home')
     expect(describeEvent(ev('commented'), name, project)).toBe('commented')
     expect(describeEvent(ev('edited', [{ field: 'title', from: 'a', to: 'b' }, { field: 'position', from: 1, to: 1 }]), name, project)).toBe('changed the title')
+    expect(describeEvent(ev('edited', [{ field: 'origin', from: null, to: { kind: 'url', url: 'https://a.example' } }]), name, project)).toBe('changed the origin')
   })
 })
 

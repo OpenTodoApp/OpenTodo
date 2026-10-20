@@ -153,3 +153,51 @@ func matchDuration(token string, bareHourIsTime bool) int {
 	}
 	return int(minutes)
 }
+
+// spentRE is `<spent>/<estimate>` (OpenSpec change time-tracking, design D10):
+// both parts carry a unit (h with optional minutes, or m/min/mins/minutes), so
+// a day-month date such as 30/12 never matches, and there is no "+".
+var (
+	spentPart = `(\d+(?:[.,]\d+)?h(?:\d{1,2}(?:m|min)?)?|\d+(?:m|min|mins|minutes))`
+	spentRE   = regexp.MustCompile(`^` + spentPart + `/` + spentPart + `$`)
+	spentHRE  = regexp.MustCompile(`^(\d+(?:[.,]\d+)?)h(?:(\d{1,2})(?:m|min)?)?$`)
+	spentMRE  = regexp.MustCompile(`^(\d+)(?:m|min|mins|minutes)$`)
+)
+
+// spentPartMinutes reads one part of a spent token in minutes (0 when invalid).
+func spentPartMinutes(s string) int {
+	if m := spentHRE.FindStringSubmatch(s); m != nil {
+		hours, _ := strconv.ParseFloat(strings.Replace(m[1], ",", ".", 1), 64)
+		mins := 0
+		if m[2] != "" {
+			mins, _ = strconv.Atoi(m[2])
+		}
+		if mins > 59 {
+			return 0
+		}
+		v := math.Round(hours*60 + float64(mins))
+		if v < 1 || v > MaxEstimateMinutes {
+			return 0
+		}
+		return int(v)
+	}
+	if m := spentMRE.FindStringSubmatch(s); m != nil {
+		v, _ := strconv.Atoi(m[1])
+		if v < 1 || v > MaxEstimateMinutes {
+			return 0
+		}
+		return v
+	}
+	return 0
+}
+
+// matchSpent mirrors attributes.ts: 30m/2h is 30 minutes already spent and a
+// two-hour estimate. ok is false unless both parts are valid durations.
+func matchSpent(token string) (spent, estimate int, ok bool) {
+	m := spentRE.FindStringSubmatch(strings.ToLower(trimPunct(token)))
+	if m == nil {
+		return 0, 0, false
+	}
+	spent, estimate = spentPartMinutes(m[1]), spentPartMinutes(m[2])
+	return spent, estimate, spent > 0 && estimate > 0
+}

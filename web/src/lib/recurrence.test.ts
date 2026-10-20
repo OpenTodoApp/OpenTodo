@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  canonicalRule, firstOccurrence, followingOccurrence, MAX_RULE_LENGTH, nextAfterCompletion, nextCalendar, parseRule, previewOccurrences, RULE_SUGGESTIONS,
+  canonicalRule, firstOccurrence, followingOccurrence, MAX_RULE_LENGTH, nextAfterCompletion, nextCalendar, nthWeekdayDate, parseRule, previewOccurrences,
+  RULE_SUGGESTIONS,
 } from './recurrence'
 // Shared with internal/recurrence (Go): both implementations must satisfy every vector.
 import vectors from './recurrence.vectors.json'
@@ -85,5 +86,20 @@ describe('recurrence', () => {
     expect(seen.size).toBe(365 * 3)
     expect(seen.has('2026-03-29') && seen.has('2026-03-08') && seen.has('2026-11-01') && seen.has('2028-02-29')).toBe(true)
     expect(d).toBe('2028-12-30')
+  })
+})
+
+describe('nthWeekdayDate (quick-add-nth-weekday D1)', () => {
+  it('computes the nth and last weekday of a month', () => {
+    expect(nthWeekdayDate(2026, 10, 2, 1)).toBe('2026-10-12')
+    expect(nthWeekdayDate(2026, 10, -1, 5)).toBe('2026-10-30')
+    expect(nthWeekdayDate(2026, 10, 1, 4)).toBe('2026-10-01')
+    expect(nthWeekdayDate(2026, 11, 3, 5)).toBe('2026-11-20')
+    expect(nthWeekdayDate(2026, 10, -1, 3)).toBe('2026-10-28')
+  })
+
+  it('agrees with the first occurrence of the matching rule', () => {
+    expect(firstOccurrence('every 2nd monday', '2026-10-09')).toBe(nthWeekdayDate(2026, 10, 2, 1))
+    expect(firstOccurrence('every last friday', '2026-10-09')).toBe(nthWeekdayDate(2026, 10, -1, 5))
   })
 })

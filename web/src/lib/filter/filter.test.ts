@@ -3,6 +3,7 @@ import filtersDoc from '../../../../docs/filters.md?raw'
 import type { Label, Project, Task } from '../types'
 import { compile, mentionsState, runFilter, type FilterContext } from './evaluate'
 import { FilterSyntaxError, parse, printQuery, resolveDate, tokenize, type Node } from './parse'
+import { originSuggestions } from './suggest'
 
 /** Canonical, fully parenthesised form of a query. */
 const show = (q: string): string => {
@@ -191,8 +192,8 @@ describe('parse: errors', () => {
     expect(errorOf('p5').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
-    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1')
-    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', 'field name'])
+    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1')
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {
@@ -530,6 +531,86 @@ describe('evaluate: habits (OpenSpec habits 4.3)', () => {
     expect(show('habit&!overdue')).toBe('(habit & !overdue)')
     const ast = parse('habit | @call')!
     expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
+  })
+})
+
+describe('evaluate: origin terms (OpenSpec task-origin 3.3)', () => {
+  const L: Task[] = [
+    task('gh', { origin: { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' } }),
+    task('gh-done', { origin: { kind: 'issue', provider: 'github', id: 'o/r#8' }, completed_at: at('2026-10-09') }),
+    task('page', { origin: { kind: 'url', url: 'https://example.org/post' } }),
+    task('mail', { origin: { kind: 'email', id: '<a1@mail.example>' } }),
+    task('tt', { origin: { kind: 'import', provider: 'ticktick', id: '6f1a' } }),
+    task('work-plain', { project_id: 'p-work' }),
+    task('work-page', { project_id: 'p-work', origin: { kind: 'url', url: 'https://a.example' } }),
+    task('locked', { origin: '[Cannot decrypt]' }),
+    task('legacy'),
+  ]
+  it('origin: provider matches the open tasks of that provider, ignoring case', () => {
+    expect(ids('origin: github & open', L)).toEqual(['gh'])
+    expect(ids('origin: GitHub', L)).toEqual(['gh'])
+  })
+  it('origin: kind matches origins without a provider', () => {
+    expect(ids('origin: url | origin: email', L)).toEqual(sorted('page', 'mail', 'work-page'))
+    expect(ids('origin: issue', L)).toEqual([])
+  })
+  it('no origin & #Work lists the open Work tasks without one', () => {
+    expect(ids('no origin & #Work', L)).toEqual(['work-plain'])
+    expect(ids('origin', L)).toEqual(sorted('gh', 'page', 'mail', 'tt', 'work-page'))
+    expect(ids('no origin', L)).toEqual(sorted('work-plain', 'locked', 'legacy'))
+  })
+  it('origin is a reserved word: a field named origin needs its quoted name', () => {
+    expect(parse('origin')).toEqual({ kind: 'keyword', keyword: 'origin' })
+    expect(parse('no origin')).toEqual({ kind: 'keyword', keyword: 'no origin' })
+    expect(() => parse('origin = x')).toThrow(FilterSyntaxError)
+    expect(parse('"origin" = x')).toMatchObject({ kind: 'field', name: 'origin' })
+  })
+  it('a quoted value round-trips through printing', () => {
+    expect(parse('origin: "my tracker"')).toEqual({ kind: 'origin', value: 'my tracker' })
+    expect(printQuery(parse('origin: "my tracker"')!)).toBe('origin: "my tracker"')
+    expect(printQuery(parse('origin:github')!)).toBe('origin: github')
+    expect(stripPos(parse(printQuery(parse('origin: "a b" & no origin')!))!)).toEqual(stripPos(parse('origin: "a b" & no origin')!))
+    expect(() => parse('origin:')).toThrow('Expected a provider or kind after "origin:" at position 1')
+  })
+  it('suggests the kinds and the local providers after origin:', () => {
+    expect(originSuggestions('origin: ', L).map((x) => x.name)).toEqual(['url', 'email', 'issue', 'import', 'github', 'ticktick'])
+    expect(originSuggestions('#Work & origin: gi', L)).toEqual([{ name: 'github', query: '#Work & origin: github ' }])
+    expect(originSuggestions('origin: github', L)).toEqual([])
+    expect(originSuggestions('search: origin', L)).toEqual([])
+  })
+})
+
+describe('evaluate: tracked time (OpenSpec time-tracking 7.1)', () => {
+  const L: Task[] = [task('long', { project_id: 'p-work' }), task('short', { project_id: 'p-work' }), task('none', { project_id: 'p-work' }), task('home')]
+  const tracked = new Map([['long', 70], ['short', 20], ['home', 61]])
+  const run = (q: string) => {
+    const r = runFilter(q, L, { ...CTX, tracked })
+    return r.ok ? r.tasks.map((x) => x.id).sort() : r.error
+  }
+  it('Any tracked time: tracked & #Work and its negation', () => {
+    expect(run('tracked & #Work')).toEqual(['long', 'short'])
+    expect(run('!tracked & #Work')).toEqual(['none'])
+  })
+  it('Over an hour: 40 + 30 minutes is over 1h, and not <= 1h', () => {
+    expect(run('tracked > 1h')).toEqual(['home', 'long'])
+    expect(run('tracked <= 1h')).toEqual(['none', 'short'])
+    expect(run('tracked >= 1h30')).toEqual([])
+    expect(run('tracked = 20') ).toEqual(['short'])
+    expect(run('tracked < 1.5h & #Work')).toEqual(['long', 'none', 'short'])
+  })
+  it('Invalid duration: the same message as the server', () => {
+    expect(errorOf('tracked > soon').message).toBe('Expected a duration such as 30m or 1h30 after ">" at position 11')
+    expect(errorOf('tracked >').message).toBe('Expected a duration such as 30m or 1h30 after ">" at position 9')
+    expect(errorOf('tracked = 1h75').message).toBe('Expected a duration such as 30m or 1h30 after "=" at position 11')
+  })
+  it('Reserved word: tracked compares tracked time; a field named tracked needs its quoted name', () => {
+    expect(parse('tracked > 10')).toEqual({ kind: 'tracked', op: '>', minutes: 10 })
+    expect(parse('"tracked" > 10')).toMatchObject({ kind: 'field', name: 'tracked' })
+    expect(printQuery(parse('tracked >= 1h')!)).toBe('tracked >= 60')
+  })
+  it('matches nothing without the tracked map', () => {
+    const r = runFilter('tracked', L, CTX)
+    expect(r.ok && r.tasks).toEqual([])
   })
 })
 

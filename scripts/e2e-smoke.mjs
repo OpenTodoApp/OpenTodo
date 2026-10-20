@@ -45,9 +45,19 @@ await welcome.getByRole('link', { name: /Buy me a coffee/ }).waitFor()
 await page.locator('[data-welcome-close]').click()
 await welcome.waitFor({ state: 'detached' })
 await page.reload()
+
+step('start guide after the welcome note')
+// The first-run guide opens as a dialog once the welcome note is closed (lean-chrome);
+// closing it in any way finishes it, so it does not come back after a reload.
+const guide = page.locator('[data-testid="start-guide"]')
+await guide.waitFor()
+await guide.locator('[data-first-run-skip-all]').click()
+await guide.waitFor({ state: 'detached' })
+await page.reload()
 await page.getByRole('textbox', { name: 'Add a task' }).waitFor()
 await page.waitForTimeout(500)
 if (await welcome.count()) throw new Error('the welcome note came back after a reload')
+if (await guide.count()) throw new Error('the start guide came back after a reload')
 
 step('inbox after setup')
 const quick = page.getByRole('textbox', { name: 'Add a task' })

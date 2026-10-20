@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ArchivedProject } from '../lib/archive'
 import type { PushState } from '../lib/push'
-import type { EmailInbox, Project } from '../lib/types'
-import { ArchivedProjectsList } from './ArchivedProjects'
+import type { EmailInbox } from '../lib/types'
 import { CalendarSettingsView } from './CalendarSettings'
 import { CaptureView } from './CaptureSettings'
 import { DateTimeView } from './DateTimeSettings'
@@ -32,20 +30,13 @@ const email = (over: Partial<EmailInboxViewProps>) => (
   <EmailInboxView inbox={inbox} draft="" copied={false} error={null} busy={false} onCopy={noop} onRotate={noop} onToggle={noop} onDraftChange={noop} onSaveAllowlist={noop} {...over} />
 )
 
-const project = (id: string, name: string, color: string) => ({ id, name, color, archived: true } as Project)
-const rows: ArchivedProject[] = [
-  { project: project('a', 'Garden', '#22c55e'), parentName: 'Home', open: 2, canRestore: true },
-  { project: project('b', 'Trip 2026 with a rather long name that wraps on phones', '#3b82f6'), parentName: null, open: 1, canRestore: true },
-  { project: project('c', 'Shared launch', '#8b5cf6'), parentName: null, open: 0, canRestore: false },
-] as never
-
 const meta: Meta = { title: 'Settings/App' }
 export default meta
 export const Preferences: StoryObj = {
   render: () => (
     <div className="space-y-6">
       <StartViewView views={[{ id: 'v1', name: 'Morning review' } as never]} startView="today" onChange={noop} />
-      <CalendarSettingsView prefs={{ startHour: 6, endHour: 22, dayLength: 480 }} onSave={noop} />
+      <CalendarSettingsView prefs={{ startHour: 6, endHour: 22, dayLength: 480, planDays: 14 }} onSave={noop} />
       <KeyboardView vim={false} onVim={noop} />
     </div>
   ),
@@ -69,5 +60,5 @@ export const EmailOff: StoryObj = { render: () => email({ inbox: { ...inbox, ena
 export const EmailOffline: StoryObj = { render: () => email({ inbox: null }) }
 export const EmailOperatorOff: StoryObj = { render: () => email({ inbox: { ...inbox, enabledByOperator: false, address: null } }) }
 export const EmailError: StoryObj = { render: () => email({ error: 'allowlist: "nope" is not an email address' }) }
-export const Projects: StoryObj = { render: () => <AutoArchiveView on onChange={noop}><ArchivedProjectsList rows={rows} onRestore={noop} /></AutoArchiveView> }
-export const ProjectsEmpty: StoryObj = { render: () => <AutoArchiveView on={false} onChange={noop}><ArchivedProjectsList rows={[]} onRestore={noop} /></AutoArchiveView> }
+export const Projects: StoryObj = { render: () => <AutoArchiveView on onChange={noop} /> }
+export const ProjectsEmpty: StoryObj = { render: () => <AutoArchiveView on={false} onChange={noop} /> }

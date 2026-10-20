@@ -4,7 +4,7 @@
 // Everything is computed on the device from the local rows, nothing is stored or
 // sent, and the page follows changes from other devices as they sync.
 import { useMemo, type MouseEvent, type ReactNode } from 'react'
-import { formatDate } from '../../lib/dates'
+import { formatDate, formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { useAllLabels, useReviewRow, useReviewedAt } from '../../lib/localData'
@@ -13,7 +13,7 @@ import { nextGroups } from '../../lib/method/groups'
 import { decided, INBOX_AGE_CAUTION_DAYS, inboxAge, lastDays, nextMove, PULSE_DAYS } from '../../lib/method/pulse'
 import { MethodRules, waitingTasks } from '../../lib/method/rules'
 import { createTask, setTaskCompleted } from '../../lib/ops'
-import { dailyDue, monthlyDue, reviewAgo, reviewDue, storedFocus } from '../../lib/review'
+import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue, storedFocus } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { qualifies } from '../../lib/triage'
 import type { Label, Project, Task } from '../../lib/types'
@@ -37,11 +37,14 @@ interface Move {
   count: number | null
   unit?: string
   lines: ReactNode[]
+  /** A line outside the move's link (the Review move's Close the day line, close-the-day D6). */
+  extra?: ReactNode
   action: string
 }
 
 const ICONS: Record<MoveId, IconName> = { catch: 'inbox', clarify: 'list', place: 'layers', do: 'arrow-right', review: 'clipboard-check' }
 const inboxPlace = PLACES.find((p) => p.id === 'inbox')!
+const CLOSE_ROUTE: Route = { view: 'review', step: 'close' }
 
 function linkTo(route: Route) {
   return (e: MouseEvent<HTMLAnchorElement>) => {
@@ -81,7 +84,8 @@ export function LoopHome() {
       days: compute(stats, lastDays(input.today), weekStart).perDay,
     }
     const stamps = { weekly: review?.completed_at ?? null, monthly: review?.monthly_at ?? null }
-    return { inbox, withoutNext, stalled, contexts, nextCount, waiting, rhythms, rhythmDue, stamps, focus, pulse, up: nextMove({ inbox, withoutNext, rhythmDue, nextCount }) }
+    const closedAt = review && dayClosed(review.closed_at, input.today) ? review.closed_at : null
+    return { inbox, withoutNext, stalled, contexts, nextCount, waiting, rhythms, rhythmDue, stamps, closedAt, focus, pulse, up: nextMove({ inbox, withoutNext, rhythmDue, nextCount }) }
   }, [input, labels, review, reviewedAt, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps -- reviewedAt: the walk's stamps change what Place counts
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
@@ -120,6 +124,8 @@ interface Data {
   waiting: number
   rhythms: Record<RhythmId, boolean>
   stamps: { weekly: number | null; monthly: number | null }
+  /** When the day was closed on the logical today, else null. */
+  closedAt: number | null
   up: MoveId
 }
 
@@ -152,6 +158,10 @@ function movesOf(d: Data): Move[] {
     {
       id: 'review', icon: ICONS.review, route: reviewRoute, count: null, lines: rhythmLines.map((r) => <Rhythm key={r.id} {...r} lit={d.up === 'review'} />),
       sentence: rhythmLines.map((r) => `${r.name}: ${r.when}`).join(', '),
+      // Close the day (close-the-day D6): a plain link, never the primary action, and it does not change the next move.
+      extra: d.closedAt
+        ? <span data-loop-day="closed">{t('Day: closed {time}', { time: formatInstant(d.closedAt, 'time') })}</span>
+        : <a href={routePath(CLOSE_ROUTE)} onClick={linkTo(CLOSE_ROUTE)} className="inline-flex min-h-6 items-center text-accent underline" data-loop-day="open">{t('Close the day')}</a>,
       action: d.rhythms.daily ? t('Start the daily check') : d.rhythms.monthly && !d.rhythms.weekly ? t('Open the monthly look') : t('Open the weekly review'),
     },
   ]
@@ -202,6 +212,7 @@ function Rail({ moves, up }: { moves: Move[]; up: MoveId }) {
                 {m.lines.map((line, i) => <span key={i} className="user-text">{line}{' '}</span>)}
               </span>
             </a>
+            {m.extra && <div className={`px-3 pb-3 text-meta ${lit ? 'text-on-accent-soft' : 'text-muted'}`} data-loop-extra>{m.extra}</div>}
             {lit && <div className="px-3 pb-3"><Button size="sm" variant="primary" iconEnd="arrow-right" onClick={() => navigate(m.route)} data-loop-action>{m.action}</Button></div>}
           </li>
         )

@@ -13,12 +13,16 @@ export type Route =
   | { view: 'day'; date?: string }
   | { view: 'week'; date?: string }
   | { view: 'month'; date?: string }
+  // The Calendar's Plan mode (planner-view D1): the span starts on `date`, today when absent.
+  | { view: 'plan'; date?: string }
   | { view: 'completed' }
   | { view: 'assigned' }
   | { view: 'project'; id: string }
   | { view: 'task'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
+  // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
+  | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
   | { view: 'views' }
   | { view: 'view'; id: string }
@@ -45,6 +49,8 @@ export type Route =
   | { view: 'next' }
   | { view: 'waiting' }
   | { view: 'loop' }
+  // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
+  | { view: 'focus'; id?: string }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -77,7 +83,8 @@ function isSettingsSection(s: string | undefined): s is SettingsSectionId {
 }
 
 export function parseRoute(pathname: string): Route {
-  const [path, query = ''] = pathname.split('?')
+  const [address, hash = ''] = pathname.split('#')
+  const [path, query = ''] = address.split('?')
   const parts = path.split('/').filter(Boolean)
   switch (parts[0]) {
     case undefined:
@@ -98,10 +105,11 @@ export function parseRoute(pathname: string): Route {
     case 'day':
     case 'week':
     case 'month':
+    case 'plan':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'calendar':
-      // One Calendar destination (ux-overhaul): Day, Week or Month as last used on this device.
+      // One Calendar destination (ux-overhaul): Day, Week, Month or Plan as last used on this device.
       return { view: readCalendarMode() }
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
@@ -110,6 +118,8 @@ export function parseRoute(pathname: string): Route {
       return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
+    case 'projects':
+      return hash === 'archived' ? { view: 'projects', archived: true } : { view: 'projects' }
     case 'filter': {
       // An initial query from the command palette (search-and-command-palette D4).
       const q = new URLSearchParams(query).get('q') ?? undefined
@@ -175,6 +185,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
+    case 'focus':
+      return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
     default:
       return { view: 'inbox' }
   }
@@ -221,6 +233,7 @@ export function routePath(r: Route): string {
     case 'day':
     case 'week':
     case 'month':
+    case 'plan':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
     case 'inbox':
       return '/'
@@ -228,6 +241,8 @@ export function routePath(r: Route): string {
       return r.section ? `/settings/${r.section}` : '/settings'
     case 'import':
       return '/settings/import'
+    case 'projects':
+      return r.archived ? '/projects#archived' : '/projects'
     case 'feed':
       return '/updates'
     case 'ask':
@@ -240,6 +255,8 @@ export function routePath(r: Route): string {
     }
     case 'review':
       return r.step ? `/review/${r.step}` : '/review'
+    case 'focus':
+      return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:
@@ -257,10 +274,22 @@ export function addressOf(loc: Pick<Location, 'pathname' | 'search'>): string {
 
 const listeners = new Set<() => void>()
 let current = typeof location !== 'undefined' ? addressOf(location) : '/'
+// The last address outside the Focus screen, where its Esc returns (focus-mode D7).
+let beforeFocus = current.startsWith('/focus') ? '/' : current
+const isFocusPath = (p: string) => p === '/focus' || p.startsWith('/focus/')
+function track(next: string): void {
+  if (!isFocusPath(current) && isFocusPath(next)) beforeFocus = current
+  current = next
+}
+
+/** The view to go back to from the Focus screen: the last one shown before it, else the Inbox. */
+export function routeBeforeFocus(): Route {
+  return parseRoute(beforeFocus)
+}
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    current = addressOf(location)
+    track(addressOf(location))
     listeners.forEach((fn) => fn())
   })
 }
@@ -271,7 +300,7 @@ export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   if (path === current) return
   if (opts.replace) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
-  current = path
+  track(path)
   listeners.forEach((fn) => fn())
 }
 

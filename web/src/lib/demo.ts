@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import type { AuthStatus, DemoInfo, User } from './types'
 import { t, msg } from './i18n'
+import { formatClock } from './dates'
 
 /**
  * Demo instance state (OpenSpec `demo-mode`, `demo-sandboxes`): set from
@@ -10,8 +11,73 @@ import { t, msg } from './i18n'
  * deleted after inactivity, at most a day after creation and every night.
  */
 
-/** The banner text the design fixes (demo-sandboxes D6). */
-export const DEMO_BANNER = msg("Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don't store anything personal.")
+/** Lifetimes the server reported before (demo-sandboxes D6), used until the status has been read once. */
+const DEFAULT_HOURS = { idle: 2, max: 24 }
+
+/** The idle lifetime in hours from the device's demo record, never a number fixed in the app. */
+function hoursOf(info: Pick<DemoInfo, 'sandboxHours'> | null | undefined) {
+  return { idle: info?.sandboxHours?.idle ?? DEFAULT_HOURS.idle, max: info?.sandboxHours?.max ?? DEFAULT_HOURS.max }
+}
+
+/** The banner's first sentence, shown at every width (demo-mode "Demo sign-in and banner", lean-chrome D2). */
+export function demoBannerLead(info: Pick<DemoInfo, 'sandboxHours'> | null | undefined): string {
+  return t('Demo: private sandbox, deleted after {idle} h of inactivity.', { idle: hoursOf(info).idle })
+}
+
+/** The banner's one line: the lead and "Don't store anything personal." */
+export function demoBannerText(info: Pick<DemoInfo, 'sandboxHours'> | null | undefined): string {
+  return `${demoBannerLead(info)} ${t(DEMO_NOTHING_PERSONAL)}`
+}
+
+/** The banner's second sentence, left to the Details control below 640 px. */
+export const DEMO_NOTHING_PERSONAL = msg("Don't store anything personal.")
+
+/** The full text behind the banner's Details control: the sandbox, both lifetimes, the nightly reset. */
+export function demoDetailsText(info: Pick<DemoInfo, 'sandboxHours' | 'resetsAt'> | null | undefined): string {
+  const { idle, max } = hoursOf(info)
+  const reset = info?.resetsAt ? formatClock(info.resetsAt, false) : null
+  return reset
+    ? t('This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset at {time}. Don\'t store anything personal.', { idle, max, time: reset })
+    : t('This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset. Don\'t store anything personal.', { idle, max })
+}
+
+// The banner's dismissal (lean-chrome D2): this browser session only, on this device.
+// Nothing is synced or sent; a new session shows the banner again.
+const DISMISS_KEY = 'opentodo.demoBannerDismissed'
+const dismissListeners = new Set<() => void>()
+let dismissed = readDismissed()
+
+function readDismissed(): boolean {
+  try {
+    return sessionStorage.getItem(DISMISS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Hides the banner until the browser session ends. */
+export function dismissBanner(): void {
+  dismissed = true
+  try {
+    sessionStorage.setItem(DISMISS_KEY, '1')
+  } catch {
+    // Storage unavailable: hidden for this page load only.
+  }
+  for (const l of dismissListeners) l()
+}
+
+/** Re-reads the session's dismissal (a cleared session storage shows the banner again); for tests and a new session. */
+export function reloadBannerDismissed(): void {
+  const next = readDismissed()
+  if (next === dismissed) return
+  dismissed = next
+  for (const l of dismissListeners) l()
+}
+
+/** Whether the banner was dismissed in this browser session. */
+export function useBannerDismissed(): boolean {
+  return useSyncExternalStore((l) => { dismissListeners.add(l); return () => { dismissListeners.delete(l) } }, () => dismissed, () => false)
+}
 
 /** The note shown in place of a control the demo instance refuses. */
 export const DEMO_RESTRICTED_NOTE = msg('Disabled on this demo instance.')

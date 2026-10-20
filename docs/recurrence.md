@@ -111,6 +111,16 @@ in Someday clears its due date and so ends the repetition.
   is not moved back. Reopening a series that ended keeps its rule, so its next
   completion continues the schedule.
 
+### Projected occurrences in the Plan
+
+The calendar's [Plan](calendar-views.md#plan-the-next-two-weeks) draws the occurrences
+that would follow the current one inside the days it shows, dimmed, and counts their
+estimates in each day's total. They are computed on each device from the rule, the
+due date and the completed count with the same calculation as the preview, so every
+device draws the same ones. They are never written: no operation, no row, nothing to
+sync. They can't be moved, selected or completed; move the task itself and they
+follow. An end condition stops them. Every other view shows the current occurrence only.
+
 ## Sync and convergence
 
 The rule is stored in `task.recurrence` and occurrence records point back with
@@ -183,6 +193,12 @@ happened: `every day` due Monday and completed on Wednesday records Monday and
 moves to Thursday, so Tuesday and Wednesday read as missed and the streak starts
 again. A rule change rewrites only which past days without a record read as
 missed; done and skipped days stay.
+
+With a [day start](dates-and-times.md#when-a-day-ends) after midnight, "today"
+for a habit is the day you are living in. A habit due on the 14th and done at
+01:30 on the 15th with a day start of 04:00 records the 14th, its usual record
+(the record's day is always the occurrence's due date), counts in the streak,
+and the 15th is pending and not at risk until 04:00 on the 16th.
 
 The month grid marks each day as done (check mark), skipped (dash), missed
 (dashed outline), pending (circle) or upcoming, with the date and state as each

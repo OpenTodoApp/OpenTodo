@@ -10,6 +10,46 @@ export function todayISO(now = new Date()): string {
   return `${y}-${m}-${d}`
 }
 
+// ---- the logical day (OpenSpec change day-boundary, design D2) ----
+//
+// `todayISO` is the calendar date of an instant and keeps that meaning (reminders,
+// file names and calendar formatting need it). "Which day is it" for a person is
+// the logical day: the local calendar date, or the previous one while the local
+// wall time is before their day start (`user_prefs.day_start`, 0 to 360 minutes
+// after midnight). Every screen asks through `logicalToday()` (or `useToday()` in
+// a component) and every "day of an instant" through `logicalDay()`; the guard in
+// todayGuard.test.ts refuses a new bare `todayISO()` elsewhere. Same rule as
+// internal/digest LogicalDay.
+
+let dayStartMinutes = 0
+
+/** Sets the day start the pure helpers read by default; DateTimePrefsProvider keeps it current. */
+export function setDayStart(minutes: number): void {
+  dayStartMinutes = Number.isFinite(minutes) && minutes > 0 && minutes <= 360 ? Math.floor(minutes) : 0
+}
+
+/** The day start in minutes after midnight (0 is midnight, the default). */
+export function currentDayStart(): number {
+  return dayStartMinutes
+}
+
+/**
+ * The logical day an instant (Unix ms) belongs to: its local calendar date, or the
+ * previous date while its local time is before `dayStart` minutes after midnight.
+ * Compares the wall clock, so on a daylight-saving night the boundary stays at the
+ * stated local time; at 0 it is `todayISO(new Date(ms))`.
+ */
+export function logicalDay(ms: number, dayStart: number = dayStartMinutes): string {
+  const d = new Date(ms)
+  const iso = todayISO(d)
+  return dayStart > 0 && d.getHours() * 60 + d.getMinutes() < dayStart ? addDaysISO(iso, -1) : iso
+}
+
+/** The logical today: the day the person is living in now (see `logicalDay`). */
+export function logicalToday(dayStart: number = dayStartMinutes, now: number = Date.now()): string {
+  return logicalDay(now, dayStart)
+}
+
 export function addDaysISO(iso: string, days: number): string {
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(y, m - 1, d + days)
@@ -270,15 +310,17 @@ export function compareDue(a: Due | null, b: Due | null, zone?: string): number 
   return ta < tb ? -1 : ta > tb ? 1 : 0
 }
 
-export function describeDue(due: Due | null, today = todayISO(), zone?: string, p: ResolvedDateTime = current): { label: string; tone: 'overdue' | 'today' | 'soon' | 'later' } | null {
+export function describeDue(due: Due | null, today = logicalToday(), zone?: string, p: ResolvedDateTime = current): { label: string; tone: 'overdue' | 'today' | 'soon' | 'later'; time: string | null } | null {
   if (!due) return null
   const local = localDueOf(due, zone)
-  const time = local.time ? ` ${formatTime(local.time, p)}` : ''
-  if (local.date < today) return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'overdue' }
-  if (local.date === today) return { label: `${t('Today')}${time}`, tone: 'today' }
-  if (local.date === addDaysISO(today, 1)) return { label: `${t('Tomorrow')}${time}`, tone: 'soon' }
-  if (local.date < addDaysISO(today, 7)) return { label: `${weekday(local.date)}${time}`, tone: 'soon' }
-  return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later' }
+  // The time on its own (calm-rows D4): a row under a heading that already names the day shows only this.
+  const at = local.time ? formatTime(local.time, p) : null
+  const time = at ? ` ${at}` : ''
+  if (local.date < today) return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'overdue', time: at }
+  if (local.date === today) return { label: `${t('Today')}${time}`, tone: 'today', time: at }
+  if (local.date === addDaysISO(today, 1)) return { label: `${t('Tomorrow')}${time}`, tone: 'soon', time: at }
+  if (local.date < addDaysISO(today, 7)) return { label: `${weekday(local.date)}${time}`, tone: 'soon', time: at }
+  return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later', time: at }
 }
 
 /** Whole days from calendar date `from` to `to` (both `YYYY-MM-DD`; negative when `to` is earlier). */
@@ -293,7 +335,7 @@ export function daysBetweenISO(from: string, to: string): number {
  * `soon` within seven, `overdue` on the day and after, and also when the task is
  * planned (`dueDate`, a local date) after its deadline. Null without a deadline.
  */
-export function describeDeadline(deadline: string | null | undefined, today = todayISO(), dueDate?: string | null): { label: string; tone: 'overdue' | 'soon' | 'later' } | null {
+export function describeDeadline(deadline: string | null | undefined, today = logicalToday(), dueDate?: string | null): { label: string; tone: 'overdue' | 'soon' | 'later' } | null {
   if (!deadline) return null
   const days = daysBetweenISO(today, deadline)
   const label = days > 0 ? t('{days}d', { days }) : days === 0 ? t('Today') : t('{days}d over', { days: -days })
@@ -310,7 +352,7 @@ export function formatShort(iso: string, p: ResolvedDateTime = current): string 
 }
 
 /** Heading of a date group; `iso` is already a local date (see `localDueOf`). */
-export function formatDateHeading(iso: string, today = todayISO(), p: ResolvedDateTime = current): string {
+export function formatDateHeading(iso: string, today = logicalToday(), p: ResolvedDateTime = current): string {
   if (iso === today) return t('Today')
   if (iso === addDaysISO(today, 1)) return t('Tomorrow')
   return formatDate(iso, 'heading', p, today)
@@ -446,7 +488,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
  * - full: `Wednesday 14 October` / `Wednesday, October 14` (the display's date, display-mode)
  * With `iso` every style shows `2026-10-14`, after the weekday for long and heading.
  */
-export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = current, today = todayISO()): string {
+export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = current, today = logicalToday()): string {
   const dt = dateOf(iso)
   if (Number.isNaN(dt.getTime())) return iso
   const otherYear = iso.slice(0, 4) !== today.slice(0, 4)

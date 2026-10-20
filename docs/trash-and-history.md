@@ -60,4 +60,4 @@ Archiving is different from deleting: an archived project disappears from the si
 
 ### Bring back an archived project
 
-Open **Settings → Data** and select **Restore** next to the project under **Archived projects**. See [Bring back an archived project](archived-projects.md#bring-back-an-archived-project).
+Open the **Projects** page (**All** next to **Projects** in the sidebar, or **Show archived projects** in **Settings → Data**) and select **Restore** next to the project under **Archived projects**. See [Bring back an archived project](archived-projects.md#bring-back-an-archived-project).

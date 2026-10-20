@@ -9,9 +9,9 @@ order: 79
 ---
 # Assistant settings
 
-<picture><source srcset="images/assistant-settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-settings-light.webp" alt="Settings, Integrations, the Assistant card: the provider and model in use, this month's usage, and the switch Apply small changes without review."></picture>
+<picture><source srcset="images/assistant-settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-settings-light.webp" alt="Settings, Integrations, the Assistant card: the provider and model in use, this month's usage, and the switch Small changes without review."></picture>
 
-**Settings → Integrations → Assistant** holds your consent, which assistant you use, this month's usage, **Apply small changes without review (this device)** and **Clear conversations on this device**. The owner's part of the card is described in [Set up the assistant](assistant-setup.md).
+**Settings → Integrations → Assistant** holds your consent, which assistant you use, this month's usage, **Small changes without review** (this device) and **Clear conversations on this device**, which are stored only on this device. The owner's part of the card is described in [Set up the assistant](assistant-setup.md).
 
 ## Use your own provider and key
 
@@ -32,4 +32,4 @@ Answers on your own key are paid by you; how they count is explained under [Cost
 
 ## Apply small changes without review
 
-The switch **Settings → Integrations → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for [review](assistant-ask.md#ask-and-review).
+The switch **Settings → Integrations → Assistant → Small changes without review** (this device) is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for [review](assistant-ask.md#ask-and-review).

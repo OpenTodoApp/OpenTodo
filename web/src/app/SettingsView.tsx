@@ -28,9 +28,10 @@ import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
 import { CalendarFeedsPanel } from './CalendarFeedsPanel'
+import { IssuesPanel } from './IssuesPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
-import { KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
+import { FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
@@ -41,6 +42,8 @@ import { useDemo } from '../lib/demo'
 import { useHosted } from '../lib/hosted'
 import { ServerArchivePanel } from './ServerArchivePanel'
 import { t } from '../lib/i18n'
+import { openHelp } from '../lib/helpRequest'
+import { noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
@@ -293,6 +296,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <DateTimeSection />
           <CalendarSettingsSection />
           <KeyboardSection />
+          <FocusSection />
         </>
       )
     case 'notifications':
@@ -318,6 +322,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <DemoDisabled on={demo}>
             <CaldavPanel isOwner={isOwner} email={user.email} />
             <CalendarFeedsPanel isOwner={isOwner} />
+            <IssuesPanel isOwner={isOwner} />
             <WebhooksPanel isOwner={ownsServer} />
             <TokensSection />
           </DemoDisabled>
@@ -392,12 +397,20 @@ export const DEMO_RESTRICTED_FEATURES = [
   'outgoing email', 'the weekly digest', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 
-/** The demo note once at the top of a page, naming the rows whose controls are disabled. */
+/**
+ * The demo note once at the top of a page, naming the rows whose controls are disabled:
+ * one line, with Learn more opening the demo section of the getting-started guide
+ * (settings-copy D6), which says what the sandbox is and how to run your own server.
+ */
 function DemoRestrictedNote({ features }: { features: string[] }) {
+  const learn = (
+    <button type="button" className="text-meta text-accent underline" data-help-screen="demo" data-learn-more aria-haspopup="dialog"
+      aria-label={t('Learn more: {topic}', { topic: t('Demo instance') })} onClick={(e) => openHelp(SETTINGS_COPY.demo.learnMore, e.currentTarget)}>{t('Learn more')}</button>
+  )
   return (
     <div data-testid="demo-restricted">
-      <Notice tone="info">
-        {t.rich('{n, plural, one {<b>Demo instance.</b> Here, {features} is disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use it; it takes one container.} other {<b>Demo instance.</b> Here, {features} are disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use them; it takes one container.}}', { n: features.length, features: joinList(features.map((x) => t(x))), b: (chunks) => <span className="font-medium">{chunks}</span> })}
+      <Notice tone="info" action={learn}>
+        {noticeCopy('demo', 'restricted', { variant: features.length === 1 ? 'one' : 'other', values: { features: joinList(features.map((x) => t(x))) } })}
       </Notice>
     </div>
   )

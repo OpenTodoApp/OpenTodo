@@ -123,7 +123,7 @@ describe('Help landing (ux-overhaul)', () => {
     expect(html).toContain('data-help-screen="inbox"')
     expect(html).toContain('aria-label="Help"')
     const { bundle } = await loadHelp()
-    for (const id of ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'completed', 'calendar', 'project', 'label', 'labels', 'filters', 'filter', 'saved-filter', 'dashboard', 'trash', 'updates', 'ask', 'task-panel', 'quick-add', 'settings']) {
+    for (const id of ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'completed', 'calendar', 'project', 'label', 'labels', 'filters', 'filter', 'saved-filter', 'dashboard', 'trash', 'updates', 'ask', 'task-panel', 'settings']) {
       expect(bundle.screens[id], id).toBeDefined()
     }
     // Each old settings panel resolves to the Settings page that now holds its section (ux-overhaul 4.8 split the guide).

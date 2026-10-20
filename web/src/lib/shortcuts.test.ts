@@ -148,3 +148,15 @@ describe('listed rows', () => {
     expect(listedShortcuts(true).some((s) => s.id === 'vim.first')).toBe(true)
   })
 })
+
+describe('Focus (focus-mode D7)', () => {
+  it('g Shift+F goes to Focus, listed under "Go to a view"; the view keys are its own', () => {
+    expect(keysOf('go.focus')).toBe('g Shift+F')
+    expect(listedShortcuts().find((s) => s.id === 'go.focus')?.section).toBe('go')
+    expect(['focus.toggle', 'focus.complete', 'focus.break', 'focus.next', 'focus.escape'].map(keysOf)).toEqual(['Space', 'Enter', 'b', 'n', 'Esc'])
+    expect(SHORTCUT_SECTIONS.find((s) => s.id === 'focus')?.title).toBe('Focus')
+    // No task list, board or calendar on the Focus screen: Space, Enter, b and n never meet a list key.
+    expect(VIEW_SCOPES.focus).toEqual([])
+    expect(conflicts().filter((c) => c.includes('focus.'))).toEqual([])
+  })
+})

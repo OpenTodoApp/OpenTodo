@@ -91,9 +91,11 @@
   "settings",
   "shield-check",
   "shopping-cart",
+  "square",
   "star",
   "sun",
   "tag",
+  "timer",
   "trash-2",
   "undo-2",
   "upload",
@@ -101,5 +103,6 @@
   "users",
   "wallet",
   "wrench",
-  "x"
+  "x",
+  "zap"
 ]

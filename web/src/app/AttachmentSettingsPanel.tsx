@@ -11,6 +11,7 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 export const MAX_FILE_MB = 2048
 /** 1 TB, the server's bound. */
@@ -38,17 +39,16 @@ export function AttachmentSettingsView({ value, online, busy, error, saved, onSa
   const dirty = !!draft && !!value && (draft.enabled !== value.enabled || draft.max_file_mb !== value.max_file_mb || draft.quota_mb !== value.quota_mb)
   const num = (v: string) => (v.trim() === '' ? Number.NaN : Number(v))
   return (
-    <SettingsSection title={t('Attachments')} headingId="attachments-settings-heading" testId="attachment-settings"
-      description={t('Files people add to tasks and comments are stored on this server, under the data directory, and included in backups.')}>
-      {!online && <div className="pb-3"><Notice>{t('You are offline. These settings need a connection to the server.')}</Notice></div>}
-      <SettingRow label={t('Allow attachments')} description={t('When off, nobody can add files or links; existing ones stay and can still be opened.')}
+    <SettingsSection {...cardCopy('attachments-settings')} testId="attachment-settings">
+      {!online && <div className="pb-3"><Notice>{noticeCopy('attachments-settings', 'offline')}</Notice></div>}
+      <SettingRow {...rowCopy('attachments-settings', 'allow')}
         control={<Switch label={t('Allow attachments')} hideLabel checked={draft?.enabled ?? true} disabled={disabled}
           onChange={(enabled) => draft && setDraft({ ...draft, enabled })} />} />
-      <SettingRow label={t('Size per file')} htmlFor="attachments-max-file" description={t('In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.', { MAX_FILE_MB })}
+      <SettingRow {...rowCopy('attachments-settings', 'size', { values: { MAX_FILE_MB } })} htmlFor="attachments-max-file"
         control={<input id="attachments-max-file" type="number" min={1} max={MAX_FILE_MB} step={1} className="ui-input w-28" disabled={disabled}
           value={draft ? (Number.isNaN(draft.max_file_mb) ? '' : draft.max_file_mb) : ''}
           onChange={(e) => draft && setDraft({ ...draft, max_file_mb: num(e.target.value) })} />} />
-      <SettingRow label={t('Total per account')} htmlFor="attachments-quota" description={t('In MB; 0 means no total. Removing a file frees its space at once.')}
+      <SettingRow {...rowCopy('attachments-settings', 'quota')} htmlFor="attachments-quota"
         control={<input id="attachments-quota" type="number" min={0} max={MAX_QUOTA_MB} step={1} className="ui-input w-28" disabled={disabled}
           value={draft ? (Number.isNaN(draft.quota_mb) ? '' : draft.quota_mb) : ''}
           onChange={(e) => draft && setDraft({ ...draft, quota_mb: num(e.target.value) })} />} />

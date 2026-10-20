@@ -16,6 +16,7 @@ import { startMigration } from '../lib/e2eeSync'
 import { FileMigrationPaused, runFileMigration, waitForUploads } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
 import { t, msg } from '../lib/i18n'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
 // EncryptionView renders every state from props (tested with static markup);
@@ -111,8 +112,7 @@ export function EncryptionView(p: EncryptionViewProps) {
   const idle = () => p.onMode({ kind: 'idle' })
   const status = state.enabled ? (state.unlocked ? 'on' : 'locked') : 'off'
   return (
-    <SettingsSection title={t('End-to-end encryption')} headingId="e2ee-heading"
-      description={t('Encrypts {ENCRYPTED_FIELDS} on your devices before they are synced, so your server, its backups and integrations only see ciphertext.', { ENCRYPTED_FIELDS: t(ENCRYPTED_FIELDS) })}>
+    <SettingsSection {...cardCopy('e2ee')}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {progress && (
@@ -122,7 +122,7 @@ export function EncryptionView(p: EncryptionViewProps) {
         </Notice>
       )}
 
-      <SettingRow label={t('Status')} status={
+      <SettingRow {...rowCopy('e2ee', 'status')} status={
         <span className="flex flex-wrap items-center gap-2" data-testid="e2ee-status">
           <Badge hue={status === 'on' ? 'green' : status === 'locked' ? 'orange' : 'slate'}>
             {status === 'on' ? t('On') : status === 'locked' ? t('Locked on this device') : t('Off')}
@@ -168,22 +168,22 @@ export function EncryptionView(p: EncryptionViewProps) {
             {t('Encrypted: {ENCRYPTED_FIELDS}. Visible to the server: {PLAINTEXT_FIELDS}. Keep your recovery key safe: without it and your passphrase, encrypted content is lost.', { ENCRYPTED_FIELDS: t(ENCRYPTED_FIELDS), PLAINTEXT_FIELDS: t(PLAINTEXT_FIELDS) })}
           </p>
           {state.unlocked && (
-            <SettingRow label={t('Passphrase')} description={t('Your content is not re-encrypted; other devices keep working.')}
+            <SettingRow {...rowCopy('e2ee', 'passphrase')}
               control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'change' })}>{t('Change passphrase…')}</Button>} />
           )}
-          <SettingRow label={t('Forgot your passphrase?')} description={t('Your recovery key sets a new one and is then replaced.')}
+          <SettingRow {...rowCopy('e2ee', 'forgot')}
             control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'reset' })}>{t('Reset passphrase with recovery key…')}</Button>} />
-          <SettingRow label={t('Plaintext history')} description={t('Removes earlier versions of encrypted fields from the server\'s history.')}
+          <SettingRow {...rowCopy('e2ee', 'history')}
             control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'confirmPurge' })}>{t('Purge plaintext history…')}</Button>} />
           {state.unlocked && (
-            <SettingRow label={t('This device')} description={t('Asks for your passphrase again before showing your tasks.')}
+            <SettingRow {...rowCopy('e2ee', 'device')}
               control={<Button variant="secondary" icon="lock" onClick={p.onLock}>{t('Lock this device')}</Button>} />
           )}
           {state.unlocked ? (
-            <SettingRow label={t('Turn off encryption')} description={t('Your content is synced in plaintext again.')}
+            <SettingRow {...rowCopy('e2ee', 'off')}
               control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmDisable' })}>{t('Turn off encryption…')}</Button>} />
           ) : (
-            <SettingRow label={t('Lost both keys?')} description={t('Without your passphrase or recovery key, encrypted content cannot be recovered.')}
+            <SettingRow {...rowCopy('e2ee', 'lost')}
               control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>{t('I lost my passphrase and recovery key…')}</Button>} />
           )}
         </>
@@ -308,9 +308,11 @@ export function EncryptionPanel() {
       onAcknowledge={(v) => mode.kind === 'recovery' && setMode({ ...mode, acknowledged: v })}
       onEnable={() => void run(async () => {
         if (!prepared) throw new Error(t('Start again: choose a passphrase.'))
-        const { digestDisabled } = await commitEnable(prepared)
+        const { digestDisabled, issueConnectionsStopped } = await commitEnable(prepared)
         // The weekly email digest would carry task titles: the server turned it off (stats-and-review).
-        const digestNote = digestDisabled ? ` ${t('Your weekly email digest was turned off, because it would contain your task titles.')}` : ''
+        // Issue polls would write issue text in plaintext: the server stopped the connections (issue-import D11).
+        const digestNote = (digestDisabled ? ` ${t('Your weekly email digest was turned off, because it would contain your task titles.')}` : '')
+          + (issueConnectionsStopped.length ? ` ${t('Your issue connections were stopped, because their polls would write issue text unencrypted: {names}.', { names: issueConnectionsStopped.join(', ') })}` : '')
         setPrepared(null)
         setMode({ kind: 'idle' })
         await startMigration('encrypt')

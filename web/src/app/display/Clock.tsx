@@ -3,7 +3,7 @@
 // tick is once a second with seconds, else once a minute on the minute (so an
 // e-ink panel redraws as little as possible); the date rolls over by itself.
 import { useEffect, useState } from 'react'
-import { formatClock, formatDate, todayISO } from '../../lib/dates'
+import { formatClock, formatDate, logicalDay } from '../../lib/dates'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 
 /** The current time in ms, updated every second or on every minute. */
@@ -31,7 +31,8 @@ export function useNow(seconds: boolean): number {
 
 export function Clock({ now, seconds }: { now: number; seconds: boolean }) {
   const dt = useDateTimeFormat()
-  const today = todayISO(new Date(now))
+  // The logical day (day-boundary D4): at 01:30 before a 04:00 day start the date still names yesterday.
+  const today = logicalDay(now, dt.dayStart)
   return (
     <div data-display-clock>
       <p className="display-clock" aria-live="off" data-clock-time>{formatClock(now, seconds, dt.resolved)}</p>

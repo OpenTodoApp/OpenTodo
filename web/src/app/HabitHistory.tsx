@@ -9,7 +9,7 @@
 // moving past the month's edge turns the month. One cell holds the tab stop.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Icon, IconButton, type IconName } from '../ui'
-import { addDaysISO, todayISO, weekday, dateLocaleOf } from '../lib/dates'
+import { addDaysISO, logicalToday, weekday, dateLocaleOf } from '../lib/dates'
 import { monthGrid, type DayState } from '../lib/habits'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -53,7 +53,7 @@ export function dayLabel(iso: string, state: DayState): string {
   return `${Number(iso.slice(8, 10))} ${monthName(year, month, false)}, ${STATE_TEXT[state]}`
 }
 
-export function HabitHistory({ series, records, today = todayISO() }: { series: Task; records: readonly Task[]; today?: string }) {
+export function HabitHistory({ series, records, today = logicalToday() }: { series: Task; records: readonly Task[]; today?: string }) {
   const dt = useDateTimeFormat()
   const [focus, setFocus] = useState(today)
   const moved = useRef(false)

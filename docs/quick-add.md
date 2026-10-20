@@ -39,8 +39,13 @@ A dismissed chip stays dismissed while you keep typing; it comes back only if yo
 | `@name` | Label, matched to an existing label ignoring case. A name with no label yet creates one when you press Enter, with the next free colour, exactly like creating it from the label picker; its chip says *new* until then. Use as many as you like. | `@call`, `@waiting-for` |
 | `p1`–`p4` | Priority, 1 highest, 4 default. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
+| `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
 
 Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when French, Spanish or Portuguese is active, because those languages write times as `15h`.
+
+### Time spent
+
+`Draft the offer 30m/2h` creates the task with a two-hour estimate and one closed [time entry](time-tracking.md) of 30 minutes ending now, in the same step; the preview shows a **Spent 30 min** chip beside the estimate, and the row reads `30m / 2h`. Both parts need a unit (`h`, `m`, `min`), so `Pay rent 30/12` stays a date, and `Réunion 15h` with French active is still a meeting at 15:00. `+30m` remains an estimate only. Units are not translated: the token works the same in all six languages. Backspace on the chip keeps the text in the title, like every token.
 
 ## Dates and times
 
@@ -50,6 +55,8 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 | `Monday` … `Sunday`, `mon`, `wed.` | the next one **after** today (on a Friday, `fri` means next Friday) |
 | `this sat` | same as the bare weekday |
 | `next Monday` | same as the bare weekday, unless that day is still in the current week; then the one a week later. Weeks start on your first day of the week (Monday unless you change it). On Friday 9 Oct, `next Wed` is 14 Oct and `next Sat` is 17 Oct (not tomorrow). |
+| `second Monday`, `2nd monday`, `last Friday`, `Bins last Wednesday of the month` | that weekday of this month, or of next month once it has passed (`first` … `fourth` and `last`; on Friday 9 Oct, `second Monday` is 12 Oct and `first Monday` is 2 Nov). There is no fifth: `5th Friday` stays as typed. |
+| `the 3rd Friday of November`, `first Friday of October 2028` | that weekday of that month, this year or next (today counts); with a year, that year |
 | `in 3 days`, `in 2 weeks`, `in a month` | today plus that much (months keep the day, clamped to the month's end) |
 | `next week`, `next month` | the first day of next week (Monday unless you start your week on Sunday or Saturday); the 1st of next month |
 | `3 Feb`, `Feb 3`, `3rd of February`, `December 25th 2027` | that date; without a year, the next time it comes round (today counts) |
@@ -58,7 +65,7 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 | `at 3pm`, `3:30 pm`, `16:30`, `at 9`, `noon`, `midnight` | that time today, unless a date is also given. A time on its own always means today, even if it has passed. Without `am`/`pm`, hours are 24-hour (`at 3` is 03:00). |
 | `in 3 hours` | that clock time, rolling to tomorrow past midnight |
 
-Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bill by Friday` → *Pay bill*). Bare numbers are never times (`Buy 3 apples` stays as typed): write `at 3`, `3pm` or `15:00`.
+Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bill by Friday` → *Pay bill*). `last Friday` always means the last Friday of the month, never the one that has passed: in `Review notes from last Friday`, dismiss the chip (or quote the words) to keep them in the title. Bare numbers are never times (`Buy 3 apples` stays as typed): write `at 3`, `3pm` or `15:00`.
 
 **Deadlines.** Put `deadline` right before a date to set the task's [deadline](tasks-and-projects.md#deadlines) instead of its due date: `Send report deadline friday` → *Send report*, no due date, deadline Friday, shown as its own chip with an hourglass. Combine both: `Send report tomorrow deadline friday` is planned for tomorrow and due by Friday. A deadline has no time, so a time right after it stays in the title. Without a date after it the word is just text (`Review deadline policy`). `on`, `by` and `due` still set the due date. Each language has its own word:
 
@@ -86,7 +93,7 @@ When a line has two dates, the first one counts and the second stays in the titl
 
 **Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → General → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
 
-**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → General → Date and time**, so they give the same result on all your devices.
+**Week start.** `next week` and `next <weekday>` use **Week starts on** in **Settings → General → Date and time**, so they give the same result on all your devices.
 
 ## Languages
 
@@ -99,6 +106,8 @@ Vocabulary is bundled for **English, German, French, Italian, Spanish and Portug
 | Italian | `oggi`, `domani alle 15`, `dopodomani`, `lunedì prossimo`, `prossimo sabato`, `tra 3 giorni`, `fra una settimana`, `il 3 febbraio`, `mezzogiorno` |
 | Spanish | `hoy`, `mañana a las 15:00`, `pasado mañana`, `el próximo lunes`, `martes que viene`, `en 3 días`, `dentro de 2 semanas`, `3 de febrero` |
 | Portuguese | `hoje`, `amanhã às 15h`, `depois de amanhã`, `próxima segunda`, `sábado que vem`, `daqui a 3 dias`, `em 2 semanas`, `3 de fevereiro` |
+
+Ordinal weekdays work in every language, with the ordinal words or a number with its suffix (`2nd`, `2.`, `2º`, `2e`): `am zweiten Montag`, `dritten Freitag im November`, `le 2e lundi de novembre`, `secondo lunedì`, `tercer viernes de noviembre`, `segunda segunda-feira`, `última sexta`. In Portuguese, `segunda` and `quarta` count as *second* and *fourth* only right before a weekday; alone they are Monday and Wednesday.
 
 Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter German abbreviations need their dot (`Mi.`, `Do.`) so ordinary words like *do* and *so* are not mistaken for weekdays.
 
@@ -156,7 +165,7 @@ A rule and reminders can be typed in the same line. Each gets its own chip and i
 | `remind me 30 min before` | `erinnere mich 30 Minuten vorher` | `rappelle-moi 30 min avant` | `ricordamelo 30 minuti prima` | `recuérdame 30 minutos antes` | `lembre-me 30 minutos antes` |
 | `remind me at 9` | `erinnere mich um 9 Uhr` | `rappelle-moi à 9h` | `ricordamelo alle 9` | `recuérdame a las 9` | `lembre-me às 9` |
 
-Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, wed and fri`), `every weekday`, `every 15th`, `every 2nd Tuesday`, `every last Friday`, `every last day`, with `after completion`, `until 31 Dec` or `for 10 times` at the end. The stored rule is always the English canonical form, whatever language you typed. A phrase the grammar cannot express, such as `every 3 hours`, stays in the title; only the first rule of a line counts.
+Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, wed and fri`), `every weekday`, `every 15th`, `every 2nd Tuesday`, `every last Friday`, `every last day`, with `after completion`, `until 31 Dec` or `for 10 times` at the end. The stored rule is always the English canonical form, whatever language you typed. A phrase the grammar cannot express, such as `every 3 hours`, stays in the title; only the first rule of a line counts. After a monthly rule, `of the month` is accepted and changes nothing (`every 2nd monday of the month`, `jeden zweiten Montag im Monat`, `tous les 2e lundis du mois`, `ogni secondo lunedì del mese`, `cada segundo lunes del mes`, `toda segunda segunda-feira do mês` are all `every 2nd monday`). A bare number before a weekday is a count, not an ordinal: `every 2 Mondays` (`alle 2 Montage`, `cada 2 lunes`) is not a rule and stays as typed, with no date.
 
 **First date.** Without a date in the line, the task is due on the rule's first occurrence from today, and the rule chip shows it (`every monday · Mon 12 Oct`). With a date (`Invoice every month 3 Nov at 10:00`) that date starts the series; a time becomes the series' time. The view's own default date never replaces the rule's date.
 

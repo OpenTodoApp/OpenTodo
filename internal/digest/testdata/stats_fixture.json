@@ -1,5 +1,5 @@
 {
- "about": "Shared definitions of the statistics (OpenSpec change stats-and-review, design D1 and D6). Evaluated by web/src/lib/stats.test.ts and internal/digest/stats_test.go; both must produce the expected numbers. Instants are Unix ms, days are local days in timeZone.",
+ "about": "Shared definitions of the statistics (OpenSpec change stats-and-review, design D1 and D6). Evaluated by web/src/lib/stats.test.ts and internal/digest/stats_test.go; both must produce the expected numbers. Instants are Unix ms, days are local days in timeZone. A case with dayStart (\"HH:MM\", OpenSpec change day-boundary) counts instants before that local time for the previous day; cases without it start days at midnight.",
  "timeZone": "Europe/Zurich",
  "me": "u-me",
  "today": "2026-10-14",
@@ -332,6 +332,32 @@
    "series_id": null,
    "assignee_id": null,
    "completed_by": null
+  },
+  {
+   "id": "n1",
+   "title": "completed at 01:30 on the Monday that starts a week (day start)",
+   "project_id": null,
+   "parent_id": null,
+   "created_at": 1789887600000,
+   "completed_at": 1791761400000,
+   "deleted_at": null,
+   "due": null,
+   "series_id": null,
+   "assignee_id": null,
+   "completed_by": null
+  },
+  {
+   "id": "n2",
+   "title": "completed at 04:00 on the same Monday (day start)",
+   "project_id": null,
+   "parent_id": null,
+   "created_at": 1789887600000,
+   "completed_at": 1791770400000,
+   "deleted_at": null,
+   "due": null,
+   "series_id": null,
+   "assignee_id": null,
+   "completed_by": null
   }
  ],
  "cases": [
@@ -365,14 +391,14 @@
    "start": "2026-10-11",
    "end": "2026-10-14",
    "expected": {
-    "completed": 2,
+    "completed": 4,
     "created": 0,
     "late": 1,
     "slipped": 1,
     "overdue": 2,
     "perDay": [
      1,
-     1,
+     3,
      0,
      0
     ]
@@ -408,13 +434,57 @@
    "start": "2026-10-12",
    "end": "2026-10-14",
    "expected": {
-    "completed": 1,
+    "completed": 3,
     "created": 0,
     "late": 1,
     "slipped": 1,
     "overdue": 2,
     "perDay": [
+     3,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "last week, Monday start, day start 04:00",
+   "weekStart": 1,
+   "dayStart": "04:00",
+   "period": "last-week",
+   "start": "2026-10-05",
+   "end": "2026-10-11",
+   "expected": {
+    "completed": 9,
+    "created": 1,
+    "late": 1,
+    "slipped": 2,
+    "overdue": 2,
+    "perDay": [
+     2,
      1,
+     1,
+     1,
+     2,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "name": "this week, Monday start, day start 04:00",
+   "weekStart": 1,
+   "dayStart": "04:00",
+   "period": "this-week",
+   "start": "2026-10-12",
+   "end": "2026-10-14",
+   "expected": {
+    "completed": 2,
+    "created": 0,
+    "late": 1,
+    "slipped": 1,
+    "overdue": 2,
+    "perDay": [
+     2,
      0,
      0
     ]

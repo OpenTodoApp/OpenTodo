@@ -5,13 +5,15 @@
 import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
 import { db, getMeta, setMeta } from './db'
 import { compile, parse, type FilterContext, type Node } from './filter'
+import type { BoardTemplate } from './boardTemplates'
 import { activeLabels } from './labels'
-import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables } from './ops'
+import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
+import { knownRule } from './rules'
 import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
   GROUP_BY_OPTIONS, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS,
-  type GroupBy, type Project, type SortBy, type SortDir, type Task, type View, type ViewKind,
+  type GroupBy, type OnDropRule, type Project, type SortBy, type SortDir, type Task, type View, type ViewKind,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
@@ -202,14 +204,15 @@ export async function setPinned(id: string, pinned: boolean): Promise<void> {
 }
 
 /**
- * Move a view one step up (-1) or down (+1) among its peers: the pinned views as shown
- * in the sidebar, or the unpinned ones in the overview. Swaps two positions in one batch.
+ * Move a view one step up (-1) or down (+1) among the saved views, as the sidebar's
+ * Filters group and the overview list them (sidebar-favourites: every saved filter is
+ * listed, pinned or not). Swaps two positions in one batch.
  */
 export async function reorderView(id: string, delta: -1 | 1): Promise<void> {
   const all = await liveViews()
   const self = all.find((v) => v.id === id)
   if (!self) return
-  const list = all.filter((v) => v.pinned === self.pinned)
+  const list = all
   const i = list.findIndex((v) => v.id === id)
   const j = i + delta
   if (j < 0 || j >= list.length) return
@@ -275,6 +278,49 @@ export async function movePanel(dashboardId: string, viewId: string, delta: -1 |
   await setPanels(dashboardId, list)
 }
 
+// ---- on-drop rules and board templates (OpenSpec change rule-boards) ----
+
+/**
+ * Set or clear a list view's on-drop rule: one op, the whole value (D2). A rule
+ * with nothing in it is stored as null; dashboards carry no rule.
+ */
+export async function setOnDrop(viewId: string, rule: OnDropRule | null): Promise<void> {
+  const view = await db.views.get(viewId)
+  if (!view || view.deleted_at) throw new Error('View not found')
+  if (isDashboard(view)) throw new Error('Only saved filters have a rule')
+  const next = rule && Object.keys(rule).length ? rule : null
+  if (JSON.stringify(view.on_drop ?? null) === JSON.stringify(next)) return
+  await mutate('view', viewId, { on_drop: next })
+}
+
+/**
+ * Create a board from a template (D8): its saved filters, unpinned and each with
+ * its rule, and one pinned board of them in order, after the last view, in one
+ * batch. Like a new saved filter (sidebar-favourites), the board is a favourite by
+ * its pinned flag and lists after the ordered entries until the user moves it.
+ * Returns the board's id.
+ */
+export async function createBoardFromTemplate(template: BoardTemplate, name: string): Promise<string> {
+  const boardName = name.trim()
+  if (!boardName) throw new Error(t('A view needs a name'))
+  for (const c of template.columns) checkQuery(c.query, 'list')
+  const now = Date.now()
+  let position = now
+  for (const v of await liveViews()) if (v.position >= position) position = v.position + 1
+  const base = { group_by: VIEW_DEFAULTS.group_by, sort_by: VIEW_DEFAULTS.sort_by, sort_dir: VIEW_DEFAULTS.sort_dir, created_at: now, deleted_at: null }
+  const changes: Change[] = []
+  const panels: string[] = []
+  for (const c of template.columns) {
+    const id = uuid()
+    panels.push(id)
+    changes.push({ entity: 'view', entityId: id, patch: { ...base, name: t(c.name), query: c.query, kind: 'list', pinned: false, position: position++, color: c.color, panels: [], on_drop: knownRule(c.on_drop) } })
+  }
+  const board = uuid()
+  changes.push({ entity: 'view', entityId: board, patch: { ...base, name: boardName, query: '', kind: 'dashboard', pinned: true, position, color: VIEW_DEFAULTS.color, panels } })
+  await mutateMany(changes)
+  return board
+}
+
 // ---- evaluation ----
 
 export interface ViewContext extends FilterContext {
@@ -299,7 +345,7 @@ interface Compiled {
 }
 
 /** Parse and compile a stored query; a query that no longer parses yields its error. */
-function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Compiled | { ok: false; error: string } {
+export function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Compiled | { ok: false; error: string } {
   let ast: Node | null
   try {
     ast = parse(view.query)

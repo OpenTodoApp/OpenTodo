@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
+import { closeDay } from '../../lib/review'
 import { compute, periodFor, PERIOD_LABELS } from '../../lib/stats'
 import type { Task, User } from '../../lib/types'
 import { flush, key, render, type } from '../../ui/test-utils'
@@ -269,12 +270,14 @@ describe('sidebar Review entry', () => {
     onTestFinished(() => { window.matchMedia = original })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => !!r.container.querySelector('[data-review-due]')?.textContent?.includes('9 days ago'))
+    // One dot, never a badge; its words are part of the entry's name (quiet-sidebar D4).
     const entry = r.container.querySelector('[data-destination="review"]')!
-    expect(entry.textContent).toContain('Due')
-    expect(entry.textContent).toContain('the last weekly review was 9 days ago')
+    expect(entry.querySelector('[data-review-due] [data-dot]')).not.toBeNull()
+    expect(entry.textContent).toBe('Review, Review due · last weekly review 9 days ago')
     await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 2 * 86_400_000, _clock: {} })
     await waitFor(() => !r.container.querySelector('[data-review-due]'))
-    expect(r.container.querySelector('[data-review-ago]')!.textContent).toBe('2 days ago')
+    // Nothing due: no marker, when the last review was is the entry's description.
+    expect(r.container.querySelector('[data-destination="review"]')!.getAttribute('aria-description')).toBe('Last review 2 days ago')
     await r.unmount()
   })
 
@@ -297,8 +300,9 @@ describe('rhythm markers (open-loops-method 5.6)', () => {
     await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 86_400_000, _clock: {} })
     inline()
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await waitFor(() => !!r.container.querySelector('[data-review-ago]'))
+    await waitFor(() => r.container.querySelector('[data-destination="review"]')?.getAttribute('aria-description') === 'Last review yesterday')
     expect(r.container.querySelector('[data-review-due]')).toBeNull()
+    expect(r.container.querySelector('[data-review-due-more]')).toBeNull()
     await r.unmount()
   })
 
@@ -324,5 +328,30 @@ describe('rhythm markers (open-loops-method 5.6)', () => {
     await flush(100)
     expect(document.querySelector('[data-daily-toast]')).toBeNull()
     await again.unmount()
+  })
+
+  // Close the day (close-the-day 5.3): "Day closed" for the rest of the local day; a due marker wins.
+  it('Day closed in the evening: the Review entry says "Day closed" with the time until the local date changes', async () => {
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 86_400_000, _clock: {} })
+    inline()
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    const entry = () => r.container.querySelector('[data-destination="review"]')?.getAttribute('aria-description') ?? ''
+    await waitFor(() => entry() === 'Last review yesterday')
+    await act(async () => { await closeDay('') })
+    await waitFor(() => /^Day closed, (12:00|12:00\sPM)$/.test(entry()))
+    await r.unmount()
+    vi.setSystemTime(new Date(2026, 9, 15, 9, 0))
+    const next = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => next.container.querySelector('[data-destination="review"]')?.getAttribute('aria-description') === 'Last review 2 days ago')
+    await next.unmount()
+  })
+
+  it('Day closed while the weekly review is due: the due marker stays and its text also says the day is closed', async () => {
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 9 * 86_400_000, closed_at: NOW.getTime(), _clock: {} })
+    inline()
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => !!r.container.querySelector('[data-review-due]')?.textContent?.includes('the day is closed'))
+    expect(r.container.querySelector('[data-review-due]')!.textContent).toContain('Review due · last weekly review 9 days ago; the day is closed')
+    await r.unmount()
   })
 })

@@ -5,7 +5,7 @@
 // move by day and week, Page Up/Down by month, Home/End to the week's edges, Enter
 // picks and Escape closes.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { addDaysISO, formatDate, todayISO, weekStartOf, type ResolvedDateTime, dateLocaleOf } from '../../lib/dates'
+import { addDaysISO, formatDate, logicalToday, weekStartOf, type ResolvedDateTime, dateLocaleOf } from '../../lib/dates'
 import { addMonths } from '../../lib/nlp/dates'
 import { loadQuickAddSettings, resolveLanguages } from '../../lib/nlp/settings'
 import { IconButton, Popover } from '../../ui'
@@ -54,9 +54,9 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
       if (value !== null) onChange(null)
       return
     }
-    const iso = parseDateInput(text, { today: todayISO(), prefs: resolved, languages: inputLanguages() })
+    const iso = parseDateInput(text, { today: logicalToday(), prefs: resolved, languages: inputLanguages() })
     if (!iso) {
-      setError(t('Not a valid date. Try {example}, {iso} or “tomorrow”.', { example: formatDate(todayISO(), 'numeric', resolved), iso: todayISO() }))
+      setError(t('Not a valid date. Try {example}, {iso} or “tomorrow”.', { example: formatDate(logicalToday(), 'numeric', resolved), iso: logicalToday() }))
       return
     }
     const refused = validate?.(iso)
@@ -86,7 +86,7 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
       <Field label={label} hideLabel={hideLabel} error={error}>
         <div className="flex items-center gap-1">
           <Input className={inputClassName} value={draft} disabled={disabled} autoComplete="off" spellCheck={false} autoFocus={autoFocus}
-            placeholder={formatDate(todayISO(), 'numeric', resolved)} aria-keyshortcuts="Alt+ArrowDown"
+            placeholder={formatDate(logicalToday(), 'numeric', resolved)} aria-keyshortcuts="Alt+ArrowDown"
             onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={onKey} />
           <IconButton ref={button} icon="calendar-days" label={t('Open calendar')} disabled={disabled}
             aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
@@ -106,7 +106,7 @@ const fullDate = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long'
 const shortDay = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' })
 
 /** The month grid: six weeks starting on the preferred first day, one focusable day at a time. */
-export function CalendarGrid({ value, prefs, onPick, today = todayISO() }: {
+export function CalendarGrid({ value, prefs, onPick, today = logicalToday() }: {
   value: string | null
   prefs: ResolvedDateTime
   onPick: (iso: string) => void

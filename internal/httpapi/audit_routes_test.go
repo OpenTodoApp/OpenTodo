@@ -336,7 +336,9 @@ func TestUserExportExcludesAudit(t *testing.T) {
 		// fields: custom field definitions (custom-fields); review: when the last
 		// weekly review was finished (stats-and-review); project_prefs: personal
 		// per-project preferences (activity-feed, open-loops-method).
-		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption", "user_prefs", "attachments", "fields", "review", "project_prefs":
+		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption", "user_prefs", "attachments", "fields", "review", "project_prefs",
+			// time_entries and the exporting account's userId (time-tracking).
+			"time_entries", "userId":
 		default:
 			t.Fatalf("user export has unexpected key %q", k)
 		}

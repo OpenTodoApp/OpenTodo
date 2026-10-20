@@ -31,10 +31,10 @@ Every project menu (the sidebar row, the project header, the All projects page) 
 - **THEN** Bob's sidebar is unchanged and no project operation is written
 
 ### Requirement: All projects page
-The app SHALL offer an All projects page at `/projects`, reachable with `g r`, from the palette and from an "All" action on the Projects header, using the page template: the whole project tree with icons, colours and open-task counts, a find field that narrows the tree keeping ancestors, New project and From a template as actions, each row opening the project with its menu, and the archived projects disclosure. It SHALL render from local data and update live after sync.
+The app SHALL offer an All projects page at `/projects`, reachable with `g Shift+P`, from the palette and from an "All" action on the Projects header, using the page template: the whole project tree with icons, colours and open-task counts, a find field that narrows the tree keeping ancestors, New project and From a template as actions, each row opening the project with its menu, and the archived projects disclosure. It SHALL render from local data and update live after sync.
 
 #### Scenario: Find a project
-- **WHEN** the user presses `g r` and types "des"
+- **WHEN** the user presses `g Shift+P` and types "des"
 - **THEN** the page shows "Work › Hiring › Designer" and "Website launch › Design" with their ancestors and no other project, and Enter on the first opens it
 
 #### Scenario: Every project is one click away

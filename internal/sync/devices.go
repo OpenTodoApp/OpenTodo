@@ -16,6 +16,10 @@ const (
 	CaldavDevicePrefix = "caldav:"
 )
 
+// IssuesDevicePrefix marks the ops an issue connection's polls write
+// (issue-import): issues:<connection-id>. Reserved like agent: and caldav:.
+const IssuesDevicePrefix = "issues:"
+
 // AssistantDevicePrefix marks ops a device applied from an in-app assistant
 // proposal (in-app-assistant D1): assistant:<device-id>. Unlike agent: and
 // caldav: it is written by devices, so /api/v1/sync accepts it; history labels
@@ -44,7 +48,7 @@ func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentD
 // trusted only from it) is reserved too (OpenSpec change attachments, design D3).
 func ReservedDevice(device string) bool {
 	return IsServerDevice(device) || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
-		strings.HasPrefix(device, PublicDevicePrefix)
+		strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, IssuesDevicePrefix)
 }
 
 // CreatedBy returns the device of the first stored created_at op of an entity

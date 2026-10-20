@@ -5,12 +5,15 @@
 // field got; undo writes ordinary ops, locally first, so it works offline and
 // every device converges by last-writer-wins.
 import { planComplete, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
-import type { AssistantUndo } from './db'
-import { todayISO } from './dates'
+import { db, type AssistantUndo } from './db'
+import { logicalToday } from './dates'
 import { getDeviceId, type Change } from './ops'
 import { currentUserId, membershipMap } from './sharing'
-import type { Task } from './types'
+import type { FilterContext } from './filter'
+import { planRule, ruleParts, type RuleNames } from './rules'
+import type { Task, View } from './types'
 import { applyBatch } from './undo'
+import { compileView } from './views'
 import { t } from './i18n'
 
 export interface UndoableResult {
@@ -31,7 +34,7 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? todayISO()) : planReopen([task])
+  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday()) : planReopen([task])
   return apply(changes, completed ? t('Task completed') : t('Task reopened'))
 }
 
@@ -71,4 +74,47 @@ export async function parkUndoable(id: string): Promise<UndoableResult> {
   if (task.due) patch.due = null
   if (task.evening) patch.evening = false
   return apply([{ entity: 'task', entityId: id, patch }], t('Moved to Someday'))
+}
+
+export interface DropResult extends UndoableResult {
+  /** The task's id afterwards (a copy's id after a move across sharing scopes). */
+  taskId: string
+  /** Whether the task matches the column's filter once the rule has run. */
+  matches: boolean
+  /** False when the task already matched the rule and nothing was written. */
+  changed: boolean
+  /** The task's row after the drop (its clocks tell a later change apart). */
+  row?: Task
+}
+
+/**
+ * Drop one task on a board column (rule-boards D5): the column view's on-drop
+ * rule planned by planRule and applied as one undoable batch, locally first.
+ * The label names the column and the changes, and says when the task still does
+ * not match the column's filter afterwards (the board then holds the card, D6).
+ */
+export async function dropOnPanel(taskId: string, view: Pick<View, 'name' | 'query' | 'on_drop'>,
+  ctx: { filter: FilterContext; names: RuleNames; now?: number; today?: string }): Promise<DropResult> {
+  const now = ctx.now ?? Date.now()
+  const today = ctx.today ?? ctx.filter.today ?? logicalToday()
+  const { tasks, all } = await readTicked([taskId])
+  const task = tasks[0]
+  if (!task) return { entry: null, label: '', taskId, matches: false, changed: false }
+  const memberships = await membershipMap()
+  const changes = planRule(task, all, view.on_drop, { now, today, labels: ctx.names.labels, memberships, me: await currentUserId() })
+  const column = view.name
+  if (changes.length === 0) {
+    return { entry: null, label: t('{task} already matches {column}', { task: task.title || t('Untitled'), column }), taskId, matches: true, changed: false }
+  }
+  // The task after the batch: a copy created by a move across scopes, else the row patched.
+  const known = new Set(all.map((x) => x.id))
+  const copy = changes.find((c) => c.entity === 'task' && !known.has(c.entityId) && c.patch.title !== undefined && c.patch.parent_id === (task.parent_id ?? null))
+  const own = changes.filter((c) => c.entity === 'task' && c.entityId === task.id).reduce((acc, c) => ({ ...acc, ...c.patch }), {})
+  const after = (copy ? { ...task, ...copy.patch, id: copy.entityId } : { ...task, ...own }) as Task
+  const compiled = compileView(view, { ...ctx.filter, today })
+  const matches = compiled.ok && compiled.test(after)
+  let label = t('Moved to {column}: {changes}', { column, changes: ruleParts(view.on_drop, ctx.names).join(', ') })
+  if (!matches) label = `${label} ${t('It does not match the column’s filter.')}`
+  const r = await apply(changes, label)
+  return { ...r, taskId: after.id, matches, changed: true, row: await db.tasks.get(after.id) }
 }

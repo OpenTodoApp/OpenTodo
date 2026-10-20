@@ -4,6 +4,7 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → People, owner only (OpenSpec `project-invite-links`):
 // "Members can invite new people with project links". Off by default: then
@@ -18,13 +19,11 @@ export function ProjectInvitePolicyView({ value, busy, error, onChange }: {
   onChange: (on: boolean) => void
 }) {
   return (
-    <SettingsSection title={t('Project invite links')} headingId="project-invite-policy-heading" testId="project-invite-policy"
-      description={t('Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also create an account for someone new.')}>
+    <SettingsSection {...cardCopy('project-invite-policy')} testId="project-invite-policy">
       {value === null ? (
-        <Notice>{t('This setting is available when you are online.')}</Notice>
+        <Notice>{noticeCopy('project-invite-policy', 'offline')}</Notice>
       ) : (
-        <SettingRow label={t('Members can invite new people with project links')}
-          description={t('Off: links created by members only work for people who already have an account. Applies to links already handed out too, since they are checked when used.')}
+        <SettingRow {...rowCopy('project-invite-policy', 'members')}
           control={<Switch checked={value} disabled={busy} onChange={onChange} label={t('Members can invite new people with project links')} hideLabel />} />
       )}
       {error && <Notice tone="danger">{error}</Notice>}

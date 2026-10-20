@@ -4,9 +4,10 @@
 // server for the weekly digest (internal/digest/stats.go), pinned by the shared
 // fixture internal/digest/testdata/stats_fixture.json.
 import { resolveRange, shiftISO, weekdayOf } from './filter/parse'
-import { todayISO } from './dates'
+import { addDaysISO, currentDayStart, logicalDay } from './dates'
 import type { Membership, Project, Task } from './types'
 import { t, msg, translatedMap } from './i18n'
+import { minutesOf, type EntryLike } from './time'
 
 export type PeriodKind = 'this-week' | 'last-week' | '4-weeks' | '12-weeks'
 export const PERIOD_KINDS: readonly PeriodKind[] = ['this-week', 'last-week', '4-weeks', '12-weeks']
@@ -66,6 +67,21 @@ export interface StatsInput<T extends StatTask = Task> {
   today: string
   /** The local day of an instant; the device's zone by default (the server passes the digest's zone). */
   dayOf?: (ms: number) => string
+  /**
+   * Time entries this device holds (OpenSpec time-tracking, design D3); only the
+   * user's own live entries on live tasks count. Optional, so callers without
+   * entries (the Loop pulse) are unchanged.
+   */
+  entries?: readonly EntryLike[]
+  /** Now (Unix ms), for a running entry; Date.now() by default. */
+  now?: number
+}
+
+/** Tracked minutes per project: the five with most time, then "other"; '' is the Inbox. */
+export interface ProjectMinutes {
+  id: string
+  name: string
+  minutes: number
 }
 
 export interface ProjectCount {
@@ -92,6 +108,14 @@ export interface Stats<T extends StatTask = Task> {
   lateTasks: T[]
   slippedTasks: T[]
   overdueTasks: T[]
+  /** The user's own tracked minutes in the period, a running entry to now (time-tracking). */
+  trackedMinutes: number
+  /** How many of the user's entries started in the period. */
+  trackedEntries: number
+  /** Tracked minutes per day of the period, oldest first. */
+  trackedPerDay: { date: string; minutes: number }[]
+  /** Tracked minutes per project (five, then "other"), descending. */
+  trackedPerProject: ProjectMinutes[]
 }
 
 /** Ids of the shared projects from the membership cache. */
@@ -99,7 +123,8 @@ export function sharedIds(memberships: readonly Pick<Membership, 'projectId'>[])
   return new Set(memberships.map((m) => m.projectId))
 }
 
-const deviceDay = (ms: number) => todayISO(new Date(ms))
+/** The device's logical day of an instant (day-boundary D4); the shared fixture overrides it with `dayOf`. */
+const deviceDay = (ms: number) => logicalDay(ms, currentDayStart())
 
 /**
  * Whether a row counts for the user (design D1): every row outside shared
@@ -164,6 +189,7 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
   const perProject = ranked.slice(0, 5)
   const rest = ranked.slice(5).reduce((n, p) => n + p.count, 0)
   if (rest > 0) perProject.push({ id: 'other', name: 'Other', count: rest })
+  const tracked = trackedOf(input, period, days, dayOf)
   const byDue = (a: T, b: T) => (a.due!.date < b.due!.date ? -1 : a.due!.date > b.due!.date ? 1 : 0)
   const overdueTasks = overdueOf(counted, input.projects, today)
   return {
@@ -173,14 +199,56 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
     perWeekday: [...perWeekday.entries()].map(([weekday, count]) => ({ weekday, count })),
     perProject,
     lateTasks: lateTasks.sort(byDue), slippedTasks: slippedTasks.sort(byDue), overdueTasks,
+    ...tracked,
   }
 }
 
-/** The local day of an instant in an IANA zone (tests and the shared fixture). */
-export function dayInZone(zone: string): (ms: number) => string {
-  const f = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' })
+/**
+ * Tracked time of a period (time-tracking D3): the user's own live entries on live
+ * tasks (not in the Trash, nor in a trashed project), each counted whole on the
+ * logical day it started, a running one to now.
+ */
+function trackedOf<T extends StatTask>(input: StatsInput<T>, period: Pick<Period, 'start' | 'end'>, days: string[], dayOf: (ms: number) => string) {
+  const now = input.now ?? Date.now()
+  const trashed = new Set(input.projects.filter((p) => p.deleted_at).map((p) => p.id))
+  const tasks = new Map(input.tasks.filter((x) => !x.deleted_at && !(x.project_id && trashed.has(x.project_id))).map((x) => [x.id, x]))
+  const perDay = new Map(days.map((d) => [d, 0]))
+  const perProject = new Map<string, number>()
+  let minutes = 0
+  let count = 0
+  for (const e of input.entries ?? []) {
+    const task = tasks.get(e.task_id)
+    if (e.deleted_at || e.user_id !== input.me || !task) continue
+    const day = dayOf(e.started_at)
+    if (day < period.start || day > period.end) continue
+    const m = minutesOf(e, now)
+    count++
+    minutes += m
+    perDay.set(day, (perDay.get(day) ?? 0) + m)
+    const pk = task.project_id ?? ''
+    perProject.set(pk, (perProject.get(pk) ?? 0) + m)
+  }
+  const names = new Map(input.projects.map((p) => [p.id, p.name]))
+  const ranked = [...perProject.entries()]
+    .map(([id, m]) => ({ id, name: id ? names.get(id) ?? t('Project') : t('Inbox'), minutes: m }))
+    .sort((a, b) => b.minutes - a.minutes || a.name.localeCompare(b.name))
+  const trackedPerProject = ranked.slice(0, 5)
+  const rest = ranked.slice(5).reduce((n, p) => n + p.minutes, 0)
+  if (rest > 0) trackedPerProject.push({ id: 'other', name: 'Other', minutes: rest })
+  return { trackedMinutes: minutes, trackedEntries: count, trackedPerDay: days.map((date) => ({ date, minutes: perDay.get(date) ?? 0 })), trackedPerProject }
+}
+
+/**
+ * The local day of an instant in an IANA zone (tests and the shared fixture). With
+ * `dayStart` (minutes after midnight, day-boundary D2) it is the logical day in that
+ * zone: the previous date while the zone's wall time is before the day start, the
+ * rule `logicalDay` applies in the device's zone.
+ */
+export function dayInZone(zone: string, dayStart = 0): (ms: number) => string {
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
   return (ms) => {
     const parts = Object.fromEntries(f.formatToParts(new Date(ms)).map((p) => [p.type, p.value]))
-    return `${parts.year}-${parts.month}-${parts.day}`
+    const iso = `${parts.year}-${parts.month}-${parts.day}`
+    return dayStart > 0 && Number(parts.hour) * 60 + Number(parts.minute) < dayStart ? addDaysISO(iso, -1) : iso
   }
 }

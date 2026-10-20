@@ -150,3 +150,15 @@ func TestPage(t *testing.T) {
 		t.Fatal("bad cursor accepted")
 	}
 }
+
+// TestFocusPrefsDeriveNoEvent (focus-mode D5): the focus preferences are settings
+// on user_prefs; changing them is never an activity event.
+func TestFocusPrefsDeriveNoEvent(t *testing.T) {
+	var ops []Op
+	for i, f := range []string{"focus_mode", "focus_auto_start", "focus_sound", "focus_work_minutes", "focus_short_break_minutes", "focus_long_break_minutes", "focus_long_break_every", "focus_break_after_minutes"} {
+		ops = append(ops, Op{ID: f, Actor: "a", Entity: "user_prefs", EntityID: "me", Field: f, Value: json.RawMessage(`1`), TS: int64(i + 1), Device: "d"})
+	}
+	if evs := Derive(ops, nil); len(evs) != 0 {
+		t.Fatalf("focus preferences derived events: %+v", evs)
+	}
+}

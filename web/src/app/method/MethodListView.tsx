@@ -9,12 +9,13 @@ import { resolveLabels } from '../../lib/labels'
 import { useAllLabels } from '../../lib/localData'
 import { nextGroups, waitingGroups, type MethodGroup } from '../../lib/method/groups'
 import { setTaskCompleted } from '../../lib/ops'
-import { Button, Dialog, EmptyState, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
+import { Dialog, EmptyState, type EmptyStateAction, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { act } from '../actionError'
 import { useBulkList } from '../bulk/useBulkList'
 import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
+import { keysOf } from '../../lib/shortcuts'
 import { navigate } from '../router'
 import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
@@ -26,7 +27,8 @@ interface Props {
   move: 'do' | 'place'
   help: string
   groups: MethodGroup[] | null
-  empty: { title: string; body: string; action?: { label: string; run: () => void } }
+  /** The empty view (task-list-presentation "Empty views"): one sentence, one action. */
+  empty: EmptyStateAction & { title: string }
 }
 
 /** Next (`/next`): the next action of every project, by context. */
@@ -36,11 +38,7 @@ export function NextView() {
   const groups = useMemo(() => (input ? nextGroups(input, labels) : null), [input, labels])
   return (
     <MethodList title={t('Next', { context: 'method' })} icon="arrow-right" move="do" help="next" groups={groups}
-      empty={{
-        title: t('Add a next step to a project'),
-        body: t('Every project shows its next action here once it has a task you can do now.'),
-        action: { label: t('Walk your projects'), run: () => navigate({ view: 'review', step: 'projects' }) },
-      }} />
+      empty={{ title: t('Add a next step to a project.'), label: t('Walk your projects'), onClick: () => navigate({ view: 'review', step: 'projects' }) }} />
   )
 }
 
@@ -50,7 +48,7 @@ export function WaitingView() {
   const groups = useMemo(() => (input ? waitingGroups(input) : null), [input])
   return (
     <MethodList title={t('Waiting', { context: 'method' })} icon="hourglass" move="place" help="waiting" groups={groups}
-      empty={{ title: t('Nothing is waiting'), body: t('Tasks you assign to someone else, or that wait for another task, appear here.') }} />
+      empty={{ title: t('Nothing is waiting on anyone.'), label: t('Open Next'), onClick: () => navigate({ view: 'next' }), shortcut: keysOf('go.next') }} />
   )
 }
 
@@ -76,8 +74,9 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
     <PageBody width="list">
       <PageHeader title={title} icon={icon} help={help} meta={meta} subtitle={subtitle} />
       {!groups ? <Skeleton shape="row" count={4} /> : rows.length === 0 ? (
-        <EmptyState icon={icon} title={empty.title} body={empty.body}
-          action={empty.action && <Button variant="primary" onClick={empty.action.run}>{empty.action.label}</Button>} />
+        <div data-empty-state={move === 'do' ? 'next' : 'waiting'}>
+          <EmptyState title={empty.title} action={{ label: empty.label, onClick: empty.onClick, shortcut: empty.shortcut }} />
+        </div>
       ) : (
         <>
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}

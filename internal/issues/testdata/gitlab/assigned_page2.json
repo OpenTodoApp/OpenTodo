@@ -1,0 +1,5 @@
+[
+  {"iid": 9, "title": "Old cleanup", "description": "", "web_url": "https://gitlab.com/group/tools/-/issues/9",
+   "state": "closed", "closed_at": "2026-10-02T08:30:00.000Z", "updated_at": "2026-10-02T08:30:00.000Z", "labels": [],
+   "references": {"short": "#9", "relative": "#9", "full": "group/tools#9"}}
+]

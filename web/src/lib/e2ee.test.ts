@@ -23,6 +23,7 @@ const { server, MockApiError } = vi.hoisted(() => {
     calls: [] as { device: string; ops: Op[] }[],
     /** The account has the weekly email digest on (stats-and-review): enabling encryption turns it off. */
     digestOn: false,
+    issueConnections: [] as string[],
     /** Refuses an op with this reason (client-data-safety); null accepts it. */
     reject: null as ((op: Op) => string | null) | null,
     /** The log generation sent with every answer; a new value means "restored from a backup". */
@@ -64,7 +65,8 @@ vi.mock('./api', () => ({
       server.record = { ...r, createdAt: server.record?.createdAt ?? Date.now() + server.seq, updatedAt: Date.now() }
       const digestDisabled = created && server.digestOn
       if (digestDisabled) server.digestOn = false
-      return { keys: structuredClone(server.record), ...(digestDisabled ? { digestDisabled: true } : {}) }
+      const stopped = created ? server.issueConnections : []
+      return { keys: structuredClone(server.record), ...(digestDisabled ? { digestDisabled: true } : {}), ...(stopped.length ? { issueConnectionsStopped: stopped } : {}) }
     },
     deleteEncryptionKeys: async () => {
       if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
@@ -119,6 +121,7 @@ beforeEach(() => {
   server.failNext = 0
   server.calls = []
   server.digestOn = false
+  server.issueConnections = []
   server.reject = null
   server.generation = undefined
 })
@@ -240,6 +243,16 @@ describe('field split and transport (task 2.1)', () => {
     const before = await db.outbox.count()
     await expect(mutate('project', 'p1', { notes_doc: 'ydoc:v1:' + 'A'.repeat(MAX_DOC_CHARS_ENCRYPTED) })).rejects.toBeInstanceOf(DocTooLargeError)
     expect(await db.outbox.count()).toBe(before)
+  })
+
+  it('the line for tomorrow is ciphertext, the close time is not (close-the-day 1.3)', async () => {
+    await enableOnA()
+    await mutate('review', 'me', { closed_at: 1_760_000_000_000, tomorrow_note: 'Call the bank' })
+    await syncNow()
+    expect(isEnvelope(current('review', 'me', 'tomorrow_note'))).toBe(true)
+    expect(current('review', 'me', 'closed_at')).toBe(1_760_000_000_000)
+    expect(JSON.stringify(server.log)).not.toMatch(/Call the bank/)
+    expect((await db.review.get('me'))!.tomorrow_note).toBe('Call the bank')
   })
 
   it('does not encrypt content of shared projects', async () => {
@@ -710,11 +723,65 @@ describe('weekly digest (stats-and-review)', () => {
   it('enabling encryption reports that the server turned the digest off', async () => {
     await on('A')
     server.digestOn = true
-    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: true })
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: true, issueConnectionsStopped: [] })
   })
 
   it('reports nothing when no digest was on', async () => {
     await on('A')
-    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false })
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false, issueConnectionsStopped: [] })
+  })
+
+  it('reports the issue connections the server stopped (issue-import D11)', async () => {
+    await on('A')
+    server.issueConnections = ['Work', 'Home']
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false, issueConnectionsStopped: ['Work', 'Home'] })
+  })
+})
+
+describe('task origins (task-origin 1.3)', () => {
+  const ORIGIN = { kind: 'url', url: 'https://example.org/post', title: 'Interesting article' }
+
+  it('an origin leaves as one ciphertext string and comes back as the object on another device', async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    await mutate('task', 't1', { origin: ORIGIN })
+    await syncNow()
+    const sent = sentAfter(mark).filter((o) => o.field === 'origin')
+    expect(sent).toHaveLength(1)
+    expect(isEnvelope(sent[0].value)).toBe(true)
+    expect(JSON.stringify(server.log)).not.toMatch(/example\.org|Interesting article/)
+    expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
+  })
+
+  it('a plaintext origin written by the server is re-encrypted on sight', async () => {
+    await enableOnA()
+    const mail = { kind: 'email', id: '<a1@mail.example>' }
+    server.log.push({ id: 'mail1', entity: 'task', entityId: 't1', field: 'origin', value: mail, ts: Date.now(), device: 'server', seq: ++server.seq })
+    await syncNow()
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.origin).toEqual(mail)
+    expect(isEnvelope(current('task', 't1', 'origin'))).toBe(true)
+    expect(notYetEncrypted((await db.tasks.get('t1')) as never, 'task')).toBe(false)
+  })
+
+  it('enabling encrypts an existing origin and disabling decrypts it again', async () => {
+    await on('A')
+    await seedTasks()
+    await mutate('task', 't1', { origin: ORIGIN })
+    await syncNow()
+    expect(current('task', 't1', 'origin')).toEqual(ORIGIN)
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    expect(isEnvelope(current('task', 't1', 'origin'))).toBe(true)
+    await disableEncryption()
+    await startMigration('decrypt')
+    await syncNow()
+    expect(current('task', 't1', 'origin')).toEqual(ORIGIN)
+    expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
   })
 })

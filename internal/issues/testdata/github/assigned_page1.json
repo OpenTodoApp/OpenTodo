@@ -1,0 +1,8 @@
+[
+  {"number": 42, "title": "Fix login redirect", "body": "The redirect after sign-in loses the **return** address.", "html_url": "https://github.com/acme/web/issues/42",
+   "state": "open", "closed_at": null, "updated_at": "2026-10-01T09:00:00Z", "repository_url": "https://api.github.com/repos/acme/web",
+   "labels": [{"name": "bug"}, {"name": "Backend"}]},
+  {"number": 7, "title": "Add dark mode toggle", "body": null, "html_url": "https://github.com/acme/web/pull/7",
+   "state": "open", "closed_at": null, "updated_at": "2026-10-01T10:00:00Z", "repository_url": "https://api.github.com/repos/acme/web",
+   "labels": [], "pull_request": {"url": "https://api.github.com/repos/acme/web/pulls/7"}}
+]

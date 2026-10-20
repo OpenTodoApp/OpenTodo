@@ -4,7 +4,6 @@ summary: Add, complete and delete tasks, change them with one key, undo, and put
 audience: user
 section: Guides
 specs: [task-management, manual-ordering, task-list-presentation]
-screens: [quick-add#add-a-task]
 order: 15
 ---
 # Work from the list
@@ -34,6 +33,10 @@ Click the circle next to a task, or press <kbd>c</kbd>. Completed tasks move to 
 Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. You can restore it from there. See [Trash and history](trash-and-history.md).
 
 Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes). Undo works offline too.
+
+## What a row shows
+
+With **Calm** rows (the default) a row leaves out what the view already says: no "Today" in Today (the time stays), no date under an Upcoming day, no project inside that project, no chip for the open label. Dates are grey unless overdue (red) or timed for today; only P1 and P2 colour the circle. Labels are dots with the first name and "+2"; hover or focus them to see all. Subtask progress, comments and attachments sit at the end of the row, faint until you hover it. **Detailed** rows in Settings → Appearance show every chip.
 
 ## Quick changes from the list
 

@@ -9,7 +9,7 @@ import { commitFiles, formatBytes, isImage, planFiles, useAttachmentLimits } fro
 import { useAllLabels, useProjects } from '../lib/localData'
 import { useDemo } from '../lib/demo'
 import { createTask, planReminders, planTask } from '../lib/ops'
-import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
+import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedOrigin, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
 import type { Task } from '../lib/types'
 import { IconButton } from '../ui'
@@ -141,7 +141,8 @@ export function ShareCapture() {
     try {
       // A `#project` typed in the title wins over the picker, as in the task views.
       const project = input.project_id ?? (projectId || null)
-      const task = { ...input, description: description.trim(), project_id: project }
+      // Where it came from (task-origin): the shared URL and title, in the same batch as the task.
+      const task = { ...input, description: description.trim(), project_id: project, origin: proposedOrigin(payload) }
       if (attach.length) {
         // The task and its files in one batch, locally first; the bytes upload after sync.
         const { id, change } = await planTask(task)

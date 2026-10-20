@@ -15,6 +15,7 @@ import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 /**
  * A secret shown once, with a copy action (API tokens, app passwords). The parent
@@ -67,13 +68,12 @@ export function TokensView(p: TokensViewProps) {
   useDateTimeFormat()
   const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>{t('New token')}</Button>
   return (
-    <SettingsSection title={t('API tokens')} headingId="tokens-heading" testId="tokens-panel"
-      description={t('For scripts, the ot command and AI assistants. Send it as {header}.', { header: 'Authorization: Bearer <token>' })}>
+    <SettingsSection {...cardCopy('tokens', { values: { header: 'Authorization: Bearer <token>' } })} testId="tokens-panel">
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.tokens && p.tokens.length === 0 && (
         <EmptyState icon="key-round" title={t('No API tokens yet')}
           body={t('A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time.')}
-          action={newButton} />
+          control={newButton} />
       )}
       {p.tokens && p.tokens.length > 0 && (
         <div className="-mx-3">
@@ -91,7 +91,7 @@ export function TokensView(p: TokensViewProps) {
         </div>
       )}
       {p.tokens && p.tokens.length > 0 && (
-        <SettingRow label={t('New token')} description={t('A token is shown once, when you create it.')} control={newButton} />
+        <SettingRow {...rowCopy('tokens', 'new')} control={newButton} />
       )}
       {p.creating && (
         <Dialog title={p.secret ? t('Token created') : t('New API token')} onClose={() => p.onCloseNew?.()} size="md">

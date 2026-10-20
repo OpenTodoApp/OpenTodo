@@ -341,7 +341,7 @@ func TestMcpSession(t *testing.T) {
 		t.Fatalf("initialized: %d", resp.StatusCode)
 	}
 	tools := c.rpc(secret, "tools/list", map[string]any{})["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 5 {
+	if len(tools) != 6 {
 		t.Fatalf("tools = %v", tools)
 	}
 	projects := c.mcpTool(secret, "list_projects", nil)["projects"].([]any)
@@ -364,7 +364,7 @@ func TestMcpSession(t *testing.T) {
 		t.Fatalf("summary = %v", sum)
 	}
 	res := c.rpc(secret, "resources/list", nil)["result"].(map[string]any)["resources"].([]any)
-	if len(res) != 4 {
+	if len(res) != 5 {
 		t.Fatalf("resources = %v", res)
 	}
 	read := c.rpc(secret, "resources/read", map[string]any{"uri": "opentodo://tasks/" + tid})

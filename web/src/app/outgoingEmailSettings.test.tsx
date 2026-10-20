@@ -55,7 +55,7 @@ describe('Outgoing email panel', () => {
   it('says what it enables when not configured and offers Configure', () => {
     const html = view({ settings: off })
     expect(html).toContain('Not configured')
-    for (const t of ['reset a forgotten password', 'confirm their address', 'invitations by email']) expect(html).toContain(t)
+    for (const t of ['reset a password', 'invitation by email']) expect(html).toContain(t)
     expect(html).toContain('>Configure<')
     expect(html).not.toContain('Send test email')
   })

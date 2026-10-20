@@ -3,14 +3,18 @@
 // the start view, which is a per-device preference in local meta.
 import { useMemo, useState } from 'react'
 import type { View } from '../lib/types'
-import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPinned, setStartView, updateView } from '../lib/views'
+import { deleteView, evaluateViews, isDashboard, reorderView, setStartView, updateView } from '../lib/views'
+import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
+import { useFavourites } from './useFavourites'
 import { NamePrompt } from './NamePrompt'
+import { NewBoardDialog } from './NewBoardDialog'
 import { navigate } from './router'
 import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { useStartView, useViewData, useViews } from './useViews'
 import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { pinItem } from './menus/pinItem'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 
@@ -29,16 +33,17 @@ export interface ViewMenuActions {
 /**
  * The view menu as data (labels-and-menus D1): every call site (sidebar, views
  * overview, view header, dashboard) renders these groups, so they cannot drift.
- * `peers` are the views it is ordered among (pinned or not, in order).
+ * `peers` are the views it is ordered among (every saved view, in order); `edges`
+ * replaces them when the menu is opened from the Favourites group (sidebar-favourites D3).
  */
-export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: ViewMenuActions): ActionGroup[] {
+export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: ViewMenuActions, edges?: { first: boolean; last: boolean }): ActionGroup[] {
   const i = peers.findIndex((v) => v.id === view.id)
-  const first = i <= 0
-  const last = i < 0 || i === peers.length - 1
+  const first = edges ? edges.first : i <= 0
+  const last = edges ? edges.last : i < 0 || i === peers.length - 1
   return [
     { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename }] },
     { items: [
-      { kind: 'check', id: 'pin', label: t('Pinned to sidebar'), icon: 'pin', checked: view.pinned, onSelect: () => a.pin(!view.pinned) },
+      pinItem(view.pinned, () => a.pin(!view.pinned)),
       { kind: 'check', id: 'start', label: t('Start view on this device'), icon: 'house', checked: isStart, disabled: isStart,
         reason: t('This view opens when the app starts'), onSelect: a.startView },
     ] },
@@ -56,21 +61,25 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
   ]
 }
 
-/** The view menu shared by every call site; "Rename" opens a NamePrompt owned by the menu. */
-export function ViewMenu({ view, align = 'end', className = '' }: { view: View; align?: 'start' | 'end'; className?: string }) {
+/**
+ * The view menu shared by every call site; "Rename" opens a NamePrompt owned by the menu.
+ * Opened from the Favourites group (`within`), Move up and Move down reorder the favourites.
+ */
+export function ViewMenu({ view, align = 'end', className = '', within }: { view: View; align?: 'start' | 'end'; className?: string; within?: 'favourites' }) {
   const start = useStartView()
   const views = useViews()
+  const favourites = useFavourites()
   const isStart = start === `view:${view.id}`
   const [renaming, setRenaming] = useState(false)
-  const peers = views.filter((v) => v.pinned === view.pinned)
-  const groups = viewMenuGroups(view, peers, isStart, {
+  const inFavourites = within === 'favourites'
+  const groups = viewMenuGroups(view, views, isStart, {
     rename: () => setRenaming(true),
-    move: (d) => reorderView(view.id, d),
-    pin: (p) => setPinned(view.id, p),
+    move: (d) => (inFavourites ? moveFavourite('view', view.id, d) : reorderView(view.id, d)),
+    pin: (p) => setFavourite('view', view.id, p),
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
     display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
-  })
+  }, inFavourites ? favouriteEdges(favourites, 'view', view.id) : undefined)
   return (
     <>
       <ActionMenu label={t('Menu for view {name}', { name: view.name })} title={view.name} groups={groups} align={align}
@@ -87,9 +96,9 @@ export function ViewsView() {
   const { views, ctx } = useViewData()
   const summaries = useMemo(() => evaluateViews(views, ctx, 0), [views, ctx])
   const [creating, setCreating] = useState(false)
-  const byPin = (a: View, b: View) => Number(b.pinned) - Number(a.pinned)
-  const filters = views.filter((v) => !isDashboard(v)).sort(byPin)
-  const boards = views.filter(isDashboard).sort(byPin)
+  // Every saved view in its order (custom-views "Pinned views in the sidebar"); a pin only adds it to Favourites.
+  const filters = views.filter((v) => !isDashboard(v))
+  const boards = views.filter(isDashboard)
 
   const row = (v: View) => {
     const s = summaries.get(v.id)
@@ -102,7 +111,7 @@ export function ViewsView() {
           <span className="flex-1" />
           {s && (s.ok ? <span className="text-meta text-faint">{s.count}</span> : <Tooltip label={s.error}><span className="text-meta text-danger">{t('error')}</span></Tooltip>)}
         </button>
-        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => act(setPinned(v.id, !v.pinned))} aria-label={v.pinned ? t('Unpin {name}', { name: v.name }) : t('Pin {name}', { name: v.name })}>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => act(setFavourite('view', v.id, !v.pinned))} aria-label={v.pinned ? t('Unpin {name}', { name: v.name }) : t('Pin {name}', { name: v.name })}>
           {v.pinned ? t('Unpin') : t('Pin')}
         </button>
         <ViewMenu view={v} />
@@ -117,22 +126,14 @@ export function ViewsView() {
           <Button variant="secondary" size="sm" icon="filter" onClick={() => navigate({ view: 'filter' })}>{t('New filter')}</Button>
           <Button variant="primary" size="sm" icon="plus" onClick={() => setCreating(true)}>{t('New board')}</Button>
         </>} />
-      {/* Saved filters and boards of filters (custom-views "Pinned views in the sidebar"); pinned ones first in each. */}
+      {/* Saved filters and boards of filters (custom-views "Pinned views in the sidebar"), in their order. */}
       <ListGroupHeader title={t('Saved filters')} count={filters.length} />
       <ul className="mb-5 space-y-0.5">{filters.map(row)}</ul>
       {filters.length === 0 && <p className="mb-5 px-2 text-body text-faint">{t('None yet. Save a query from the Filter view.')}</p>}
       <ListGroupHeader title={t('Boards')} count={boards.length} />
       <ul className="space-y-0.5">{boards.map(row)}</ul>
       {boards.length === 0 && <p className="px-2 text-body text-faint">{t('None yet.')}</p>}
-      {creating && (
-        <NamePrompt title={t('New board')} label={t('Board name')} confirm={t('Create')} hint={t('Add up to six saved filters as panels.')}
-          onCancel={() => setCreating(false)}
-          onSubmit={async (name) => {
-            const id = await createView({ name, kind: 'dashboard' })
-            setCreating(false)
-            navigate({ view: 'view', id })
-          }} />
-      )}
+      {creating && <NewBoardDialog onCancel={() => setCreating(false)} onCreated={(id) => { setCreating(false); navigate({ view: 'view', id }) }} />}
     </PageBody>
   )
 }

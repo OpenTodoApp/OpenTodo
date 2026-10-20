@@ -1,7 +1,7 @@
 // The Today, Upcoming and project lists as pure functions (OpenSpec change
 // `display-mode`, design D3): the list screen (TaskListView) and the display
 // (app/display) both call these, so a display can never disagree with the list.
-import { addDaysISO, todayISO } from './dates'
+import { addDaysISO, currentDayStart, logicalDay } from './dates'
 import { compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
@@ -79,9 +79,9 @@ export function nextDays(tasks: readonly Task[], today: string, days: number): {
   })
 }
 
-/** Tasks completed on the local calendar day `today`, most recent first; a habit's skipped record is not a completion (habits D6). */
+/** Tasks completed on the logical day `today` (day-boundary D4), most recent first; a habit's skipped record is not a completion (habits D6). */
 export function completedOn(tasks: readonly Task[], today: string): Task[] {
   return tasks
-    .filter((t) => t.completed_at !== null && !t.deleted_at && !t.skipped && todayISO(new Date(t.completed_at)) === today)
+    .filter((t) => t.completed_at !== null && !t.deleted_at && !t.skipped && logicalDay(t.completed_at, currentDayStart()) === today)
     .sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
 }

@@ -41,7 +41,7 @@ describe('CaldavView', () => {
   it('warns when the address is not https', () => {
     const html = render({ setting: { enabled: true, url: 'http://192.168.1.10:8080/dav/', secure: false } })
     expect(html).toContain('role="alert"')
-    expect(html).toContain('plain http')
+    expect(html).toContain('Plain http')
   })
 
   it('shows a new app password once in the dialog, lists active and revoked ones', () => {

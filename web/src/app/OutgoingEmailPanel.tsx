@@ -7,6 +7,7 @@ import { setOutgoingEmail } from '../lib/outgoingEmail'
 import type { SmtpSecurity, SmtpSettings, SmtpSettingsInput, SmtpStage, SmtpTestResult } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
 // Settings → Server → Outgoing email (OpenSpec change outgoing-email, design D9):
 // the owner's SMTP settings. The card leads with its state; the form opens
@@ -99,14 +100,13 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
     p.onSave()
   }
   return (
-    <SettingsSection title={t('Outgoing email')} headingId="outgoing-email-heading" testId="outgoing-email-panel"
-      description={t('Lets this server mail password resets, sign-up confirmations and invitations. Nothing is sent until it is configured.')}>
+    <SettingsSection {...cardCopy('outgoing-email')} testId="outgoing-email-panel">
       {p.offline ? (
-        <Notice>{t('Outgoing email settings need a connection to the server.')}</Notice>
+        <Notice>{noticeCopy('outgoing-email', 'offline')}</Notice>
       ) : !s ? null : (
         <>
-          <SettingRow label={t('Mail server')}
-            description={s.configured ? undefined : t('Not configured. With an SMTP server, people can reset a forgotten password themselves, confirm their address when signing up, and receive invitations by email.')}
+          <SettingRow label={rowCopy('outgoing-email', 'server').label}
+            description={s.configured ? undefined : rowCopy('outgoing-email', 'server').description}
             status={(
               <span className="block space-y-1">
                 <Badge hue={s.configured ? 'green' : 'slate'}>{s.configured ? t('Configured') : t('Not configured')}</Badge>
@@ -125,7 +125,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
               {!d && <Button size="sm" variant={s.configured ? 'ghost' : 'primary'} disabled={disabled} onClick={p.onConfigure}>{t('Configure')}</Button>}
             </>} />
           {s.security === 'none' && s.configured && (
-            <Notice tone="warning">{t('Messages travel unencrypted to the mail server. Use this only for a relay on your own network.')}</Notice>
+            <Notice tone="warning">{noticeCopy('outgoing-email', 'plainRelay')}</Notice>
           )}
           {p.error && !d && <Notice tone="danger">{p.error}</Notice>}
           {d && (
@@ -148,7 +148,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
                   <option value="none">{t('None (plain)')}</option>
                 </Select>
               </Field>
-              {d.security === 'none' && <Notice tone="warning">{t('Without encryption, a user name and password cannot be used, and messages travel in the clear.')}</Notice>}
+              {d.security === 'none' && <Notice tone="warning">{noticeCopy('outgoing-email', 'noTls')}</Notice>}
               <Field label={t('User name')} description={lockNote('username') ?? t('Often your full email address. Leave empty for a relay without sign-in.')}>
                 <Input aria-label={t('User name')} autoComplete="off" value={d.username} readOnly={locked('username')} onChange={(e) => p.onDraft({ ...d, username: e.target.value })} />
               </Field>

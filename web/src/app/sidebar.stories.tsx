@@ -1,13 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { Sidebar } from './Sidebar'
-import { seedInbox, seeded, storyUser, withSeed } from './stories/fixtures'
+import { seedInbox, seedToday, seeded, storyUser, withSeed } from './stories/fixtures'
 
 // Core screen: the sidebar (OpenSpec change ux-overhaul, task 8.7; app-shell
 // "Sidebar structure", "Resizable sidebar", "No desktop top bar"). The real
 // component over a seeded database: Inbox, Today, Upcoming and Calendar on top, the
-// More group, then the scrolling filters, projects (one nested) and labels, and the
-// pinned footer. The clock is frozen, so the counts never move.
+// More group, then the scrolling projects (one nested), labels and filters, and the
+// one-row footer (quiet-sidebar): counts only on Inbox and Today at rest, project
+// counts on hover or focus, markers as one accent dot. The clock is frozen, so the
+// counts never move.
 const meta: Meta = { title: 'Screens/Sidebar', ...withSeed(seedInbox) }
 export default meta
 
@@ -71,3 +73,72 @@ export const PhoneDrawer: StoryObj = {
     </div>
   ),
 }
+
+/** Favourites (sidebar-favourites): a pinned saved filter, project and label, mixed in the user's order above Projects; Labels and Filters folded on this new device. */
+async function seedFavourites() {
+  await seedInbox()
+  const { createView } = await import('../lib/views')
+  const { pin } = await import('../lib/favourites')
+  seeded.deepWorkView = await createView({ name: 'Deep work', query: '@deep-work', pinned: false })
+  await pin('view', seeded.deepWorkView)
+  await pin('project', seeded.website)
+  await pin('label', seeded.errand)
+}
+export const Favourites: StoryObj = {
+  ...withSeed(seedFavourites),
+  render: () => (
+    <Column><Sidebar route={{ view: 'view', id: seeded.deepWorkView }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+  ),
+}
+
+/** Quiet markers (quiet-sidebar D4, D7): the weekly review nine days old (one dot on More, its words in the tooltip and the name) and one unread notification (a dot on the bell). */
+async function seedMarkers() {
+  await seedInbox()
+  const { db } = await import('../lib/db')
+  const { REVIEW_DEFAULTS } = await import('../lib/ops')
+  await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: Date.now() - 9 * 86_400_000, _clock: {} })
+  await db.notifications.put({
+    id: 'story-n1', kind: 'assigned', createdAt: Date.now() - 3_600_000, readAt: null,
+    payload: { assigneeId: storyUser.id, actorId: 'u-mara', actorName: 'Mara', taskId: seeded.inboxTask, taskTitle: 'Renew passport', projectId: null, projectName: '', at: Date.now() - 3_600_000 },
+  } as never)
+}
+export const Markers: StoryObj = {
+  ...withSeed(seedMarkers),
+  render: () => (
+    <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+  ),
+}
+
+/** A project row focused by keyboard (quiet-sidebar D7): its count shows while focused, and is always in its name. */
+function FocusedProject() {
+  const column = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    let tries = 0
+    const timer = setInterval(() => {
+      const row = column.current?.querySelector<HTMLElement>(`[data-project-id="${seeded.work}"]`)
+      if (row?.querySelector('[data-open-count]') || ++tries > 100) { clearInterval(timer); row?.focus() }
+    }, 20)
+    return () => clearInterval(timer)
+  }, [])
+  return (
+    <div ref={column}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></div>
+  )
+}
+export const CountOnFocus: StoryObj = { ...withSeed(seedToday), render: () => <FocusedProject /> }
+
+/** The account menu open (quiet-sidebar D5): Settings, Help and Keyboard shortcuts with their keys, then Sign out. */
+function AccountMenuOpen() {
+  const column = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    let tries = 0
+    const timer = setInterval(() => {
+      const trigger = column.current?.querySelector<HTMLElement>('[data-account-menu]')
+      if (trigger || ++tries > 50) { clearInterval(timer); trigger?.click() }
+    }, 20)
+    return () => clearInterval(timer)
+  }, [])
+  return (
+    <div ref={column}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} onSignOut={noop} /></Column></div>
+  )
+}
+export const AccountMenu: StoryObj = { render: () => <AccountMenuOpen /> }

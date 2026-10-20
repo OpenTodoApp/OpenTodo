@@ -136,6 +136,60 @@ describe('listGroups', () => {
   })
 })
 
+// What a heading implies (task-list-presentation "Metadata language", calm-rows D3):
+// one assertion per row of the spec's table that listGroups decides; the project
+// chip rules are showProject in rowRenderer and the label rule is omitLabel.
+describe('implied metadata', () => {
+  const implied = (g: { rows: { implied?: unknown }[] }) => g.rows.map((r) => r.implied ?? null)
+  const tomorrow = '2026-10-15'
+
+  it('Today: the day and This Evening imply the date (and evening); Overdue and Blocked imply nothing', () => {
+    const late = task({ due: { date: '2026-10-12' } })
+    const day = task({ due: { date: TODAY, time: '10:00' } })
+    const eve = task({ due: { date: TODAY }, evening: true })
+    const wait = task({ due: { date: TODAY } })
+    const g = listGroups(input({ view: 'today', tasks: [late, day, eve, wait], blocked: new Set([wait.id]), collapsed: new Set([BLOCKED_OPEN_KEY]) }))
+    expect(g.map((x) => [x.key, implied(x)])).toEqual([
+      ['overdue', [null]],
+      ['today', [{ date: TODAY }]],
+      ['evening', [{ date: TODAY, evening: true }]],
+      ['blocked', [null]],
+    ])
+  })
+
+  it('Upcoming: each date group implies its own day', () => {
+    const a = task({ due: { date: tomorrow, time: '09:30' } })
+    const b = task({ due: { date: '2026-10-20' } })
+    const g = listGroups(input({ view: 'upcoming', tasks: [a, b] }))
+    expect(g.map((x) => [x.key, implied(x)])).toEqual([[tomorrow, [{ date: tomorrow }]], ['2026-10-20', [{ date: '2026-10-20' }]]])
+  })
+
+  it('Someday implies Someday in every project group; label, Anytime and Assigned groups imply nothing', () => {
+    const p1 = project('p1', 1)
+    const rows = [task({ start: 'someday' }), task({ start: 'someday', project_id: 'p1' })]
+    const someday = listGroups(input({ view: 'someday', tasks: rows, projects: [p1], projectMap: new Map([[p1.id, p1]]) }))
+    expect(someday.map(implied)).toEqual([[{ someday: true }], [{ someday: true }]])
+    for (const view of ['label', 'anytime', 'assigned'] as const) {
+      expect(listGroups(input({ view, tasks: rows, projects: [p1], projectMap: new Map([[p1.id, p1]]) })).map(implied)).toEqual([[null], [null]])
+    }
+  })
+
+  it('projects, sections, Later, trees, boards, the logbook and flat views imply nothing', () => {
+    const s1 = section('s1', 'p', 1)
+    const one = task({ project_id: 'p', section_id: 's1', due: { date: TODAY } })
+    const later = task({ start: 'someday' })
+    const tree = buildTaskTree([one])
+    const buckets = sectionBuckets('p', tree, [s1])
+    const sectioned = listGroups(input({ view: 'project', tree, buckets, sectionCount: 1, laterTasks: [later] }))
+    expect(sectioned.map(implied)).toEqual([[null], [null]])
+    expect(listGroups(input({ view: 'inbox', tree: buildTaskTree([later]) })).map(implied)).toEqual([[null]])
+    const board = listGroups(input({ view: 'project', board: true, columns: boardColumns(buckets) }))
+    expect(board.map(implied)).toEqual([[null]])
+    const done = task({ completed_at: 1 })
+    expect(listGroups(input({ view: 'completed', tasks: [done], logbook: { groups: [{ date: TODAY, tasks: [done] }] } })).map(implied)).toEqual([[null]])
+  })
+})
+
 describe('row positions and section counts', () => {
   it('siblingPositions numbers each row among its visible siblings', () => {
     const parent = task({ title: 'Parent' })

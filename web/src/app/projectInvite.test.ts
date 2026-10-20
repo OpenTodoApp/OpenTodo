@@ -11,6 +11,10 @@ import { PENDING_PROJECT_INVITE, ProjectInviteView, type JoinState, type Project
 import { ProjectInvitePolicyView } from './ProjectInvitePolicyPanel'
 import { parseRoute, routePath } from './router'
 
+/** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
+const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
+
+
 const noop = () => {}
 
 // ---- share dialog section ----
@@ -168,9 +172,10 @@ describe('project registration form', () => {
 describe('owner switch', () => {
   it('shows the switch with its value, or an offline note', () => {
     const on = renderToStaticMarkup(createElement(ProjectInvitePolicyView, { value: true, busy: false, error: null, onChange: noop }))
+    expect(on).toContain('Invite new people')
     expect(on).toContain('Members can invite new people with project links')
     expect(on).toMatch(/role="switch" aria-checked="true"/)
-    expect(on).not.toContain('data-help-screen')
+    expect(withoutLearnMore(on)).not.toContain('data-help-screen')
     const off = renderToStaticMarkup(createElement(ProjectInvitePolicyView, { value: null, busy: false, error: null, onChange: noop }))
     expect(off).toContain('available when you are online')
   })

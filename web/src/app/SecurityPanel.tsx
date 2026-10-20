@@ -16,6 +16,7 @@ import type { Passkey } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
+import { cardCopy, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 
 // Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -181,27 +182,26 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
   )
 
   return (
-    <SettingsSection title={t('Passkeys')} headingId="security-heading" testId="security-panel"
-      description={t('Sign in with your device\'s fingerprint, face or PIN instead of your password. Your password keeps working; add a passkey on a second device so losing one is never a problem.')}>
+    <SettingsSection {...cardCopy('security')} testId="security-panel">
       {p.domain && p.pageHost && !rpIdMatches(p.domain, p.pageHost) && (
         <Notice tone="danger">
-          {t.rich('This page is open at {host}, so passkeys will not work here. Open the app at {link}, or set {variable} to {url} and redeploy.', { host: <span className="font-mono">{p.pageHost}</span>, link: <a className="underline" href={`https://${p.domain}`}>https://{p.domain}</a>, variable: <span className="font-mono">OPENTODO_BASE_URL</span>, url: <span className="font-mono">https://{p.pageHost}</span> })}
+          {t.rich(SETTINGS_COPY.security.notices.domain, { host: <span className="font-mono">{p.pageHost}</span>, link: <a className="underline" href={`https://${p.domain}`}>https://{p.domain}</a>, variable: <span className="font-mono">OPENTODO_BASE_URL</span>, url: <span className="font-mono">https://{p.pageHost}</span> })}
         </Notice>
       )}
-      {!p.online && <Notice>{t('You are offline. Managing passkeys needs a connection to your server.')}</Notice>}
-      {p.online && !p.supported && <Notice>{t('This browser does not support passkeys.')}</Notice>}
+      {!p.online && <Notice>{noticeCopy('security', 'offline')}</Notice>}
+      {p.online && !p.supported && <Notice>{noticeCopy('security', 'unsupported')}</Notice>}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {p.passkeys && count === 0 ? (
         adding ? addForm : (
           <EmptyState icon="key-round" title={t('No passkeys yet')}
             body={t('A passkey is the fastest way to sign in: no password to type, and it cannot be phished.')}
-            action={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
+            control={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
         )
       ) : (
         <>
           <SettingRow label={count === 1 ? t('1 passkey') : t('{count} passkeys', { count })}
-            description={p.domain ? <span data-passkey-domain>{t.rich('Tied to <span>{domain}</span>.', { domain: p.domain, span: (chunks) => <span className="font-mono">{chunks}</span> })}</span> : undefined}
+            description={p.domain ? <span data-passkey-domain>{t.rich(SETTINGS_COPY.security.rows.count.description, { domain: p.domain, span: (chunks) => <span className="font-mono">{chunks}</span> })}</span> : undefined}
             control={!adding && <Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>{t('Add passkey')}</Button>} />
           {adding && addForm}
           <div className="-mx-3 py-1">

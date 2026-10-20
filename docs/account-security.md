@@ -14,7 +14,7 @@ card: settings-security
 
 A passkey makes signing in quicker and safer, and two-factor authentication adds a second lock to your password. All of it lives in **Settings** and involves nobody outside your server.
 
-These settings need a connection to your server. While you're offline they're shown read-only.
+These settings need a connection to your server; offline they're read-only.
 
 ## Sign in with a passkey
 
@@ -30,7 +30,7 @@ Next time, choose **Sign in with a passkey** on the sign-in screen, or pick it f
 
 Add a passkey on a second device too, so losing one isn't a problem. You can rename or delete passkeys in the same list. One marked as suspicious looks like a copied passkey; delete it if you don't recognise the device.
 
-If you don't see the Passkeys card, passkeys aren't available on your server: they need a secure `https://` address. Ask whoever runs it.
+No Passkeys card? Passkeys need a secure `https://` address on your server; ask whoever runs it.
 
 ## Turn on two-factor authentication
 
@@ -46,7 +46,7 @@ Each recovery code works once, in place of a code from the app, if you lose your
 
 ## Change your password
 
-Open **Settings → Account**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in.
+Open **Settings → Account**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in and API tokens keep working.
 
 Forgot it? If your server sends email, choose **Forgot password?** on the sign-in screen and enter your address: a reset link valid for 24 hours arrives by email, and the screen answers the same whether or not the address has an account. Otherwise ask the owner or an admin of your server for a reset link; an owner who can't receive mail: see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
 
