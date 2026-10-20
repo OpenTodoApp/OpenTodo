@@ -6,10 +6,10 @@ The calendar's Plan mode: the next days as columns of dated tasks without a time
 ## ADDED Requirements
 
 ### Requirement: Plan mode
-The client SHALL provide a Plan mode of the Calendar destination, reachable by `g` then `Shift+P`, from the sidebar's Calendar item when it was the last mode used on the device, and from the Day | Week | Month | Plan switch, showing a span of consecutive days as columns starting on the anchor day (today by default, or the day carried in the address). The view SHALL render from local data and work offline. The span SHALL be 7, 14 or 21 days, 14 by default, chosen per device and never synced.
+The client SHALL provide a Plan mode of the Calendar destination, reachable by `g` then `Shift+C`, from the sidebar's Calendar item when it was the last mode used on the device, and from the Day | Week | Month | Plan switch, showing a span of consecutive days as columns starting on the anchor day (today by default, or the day carried in the address). The view SHALL render from local data and work offline. The span SHALL be 7, 14 or 21 days, 14 by default, chosen per device and never synced.
 
 #### Scenario: Open the plan offline
-- **WHEN** the device is offline and the user presses `g` then `Shift+P`
+- **WHEN** the device is offline and the user presses `g` then `Shift+C`
 - **THEN** fourteen columns from today render, each with its open dated tasks, and the sidebar's Calendar item opens the Plan from then on
 
 #### Scenario: Span kept on this device
@@ -80,7 +80,7 @@ The event minutes of a day SHALL be the minutes inside that day, in the viewer's
 For every open task with a recurrence rule, the occurrences that would follow its current one within the shown span SHALL be computed on the device from the rule, the current due date and the series' completed count, and drawn in their columns as dimmed rows with the task's title, time and estimate and a "projected" marker. The series itself SHALL remain one ordinary row on its current date. A rule's end condition SHALL stop the projection.
 
 #### Scenario: Weekly report
-- **WHEN** today is Monday the 12th, a task "Weekly report" with `every monday` and a 45-minute estimate is due today, and the span is 14 days
+- **WHEN** today is Monday the 12th, a task "Weekly report" with `every monday` and a 45-minute estimate is due today, and the span is 21 days
 - **THEN** the 12th shows the task as an ordinary row and the 19th and 26th show it dimmed as projected, each counting 45 minutes in its column's total
 
 #### Scenario: Projection follows the series

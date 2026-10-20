@@ -111,6 +111,16 @@ in Someday clears its due date and so ends the repetition.
   is not moved back. Reopening a series that ended keeps its rule, so its next
   completion continues the schedule.
 
+### Projected occurrences in the Plan
+
+The calendar's [Plan](calendar-views.md#plan-the-next-two-weeks) draws the occurrences
+that would follow the current one inside the days it shows, dimmed, and counts their
+estimates in each day's total. They are computed on each device from the rule, the
+due date and the completed count with the same calculation as the preview, so every
+device draws the same ones. They are never written: no operation, no row, nothing to
+sync. They can't be moved, selected or completed; move the task itself and they
+follow. An end condition stops them. Every other view shows the current occurrence only.
+
 ## Sync and convergence
 
 The rule is stored in `task.recurrence` and occurrence records point back with

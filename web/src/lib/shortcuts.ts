@@ -58,7 +58,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'go', title: 'Go to a view' },
   { id: 'tasks', title: 'Tasks in a list' },
   { id: 'board', title: 'Board and timeline' },
-  { id: 'calendar', title: 'Day, Week and Month calendar' },
+  { id: 'calendar', title: 'Day, Week, Month and Plan calendar' },
   { id: 'filter', title: 'Filter, saved filters and boards' },
   { id: 'trash', title: 'Trash and projects' },
   { id: 'triage', title: 'Process the Inbox' },
@@ -79,7 +79,7 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   inbox: ['list'], today: ['list'], upcoming: ['list'], anytime: ['list'], someday: ['list'], completed: ['list'], assigned: ['list'],
   project: ['list', 'board', 'timeline'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
   // The Month view keys are its own `view` entries (month-and-timeline-views): it hosts no lane-and-blocks calendar.
-  dashboard: [], day: ['calendar'], week: ['calendar'], month: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
+  dashboard: [], day: ['calendar'], week: ['calendar'], month: [], plan: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
   // Process the Inbox (inbox-triage): one card, no task list; its keys are `view` entries.
   triage: [],
   // Display mode (display-mode D5): no shell, no list; its keys are `view` entries.
@@ -112,7 +112,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'global.palette', keys: ['Ctrl+K', '⌘+K'], description: 'Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)', section: 'everywhere', scope: 'global', typing: true, dialog: true },
   { id: 'list.quick-add', keys: ['q'], description: 'Quick add a task', section: 'everywhere', scope: 'list' },
   { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
-  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
+  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
   { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
   { id: 'list.dictate-stop', keys: ['Esc'], description: 'Stop dictating', section: 'everywhere', scope: 'list', hidden: true, typing: true, overrides: ['list.escape', 'panel.escape'] },
   { id: 'global.row-menu', keys: ['.', 'Shift+F10', 'Menu'], description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere', scope: 'global', local: true },
@@ -137,6 +137,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.day', keys: ['g d'], description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
   { id: 'go.week', keys: ['g w'], description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
   { id: 'go.month', keys: ['g m'], description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
+  // The Plan (planner-view D1): `g p` is the Inbox's triage and `g Shift+P` All projects, so the Calendar's plan takes the shifted C.
+  { id: 'go.plan', keys: ['g Shift+C'], description: 'Go to the Calendar as Plan: the next days as columns with their capacity', section: 'go', scope: 'global' },
   { id: 'go.trash', keys: ['g x'], description: 'Go to the Trash', section: 'go', scope: 'global' },
   { id: 'go.triage', keys: ['g p'], description: 'Process the Inbox one task at a time', section: 'go', scope: 'global' },
   { id: 'go.feed', keys: ['g h'], description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
@@ -251,6 +253,18 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'month.range-next', keys: [']'], description: 'In Month: next month', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.today', keys: ['t'], description: 'In Month: back to today', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.escape', keys: ['Esc'], description: 'In Month: close the "+N more" list or the panel, else clear the selection', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
+  // The Plan (planner-view D6): the Month's model over the span's columns; projected and event rows are never selected.
+  { id: 'plan.move', keys: ['←', '→', '↑', '↓'], description: 'In Plan: move the focused day; with a task selected, move it a day or a week (keeps its time)', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.focus', keys: ['Shift+←', 'Shift+→', 'Shift+↑', 'Shift+↓'], description: 'In Plan: move the focused day while a task is selected', section: 'calendar', scope: 'view', views: ['plan'], hidden: true },
+  { id: 'plan.next', keys: ['j'], description: 'In Plan: select the next task, column by column (projected and event rows are skipped)', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.prev', keys: ['k'], description: 'In Plan: select the previous task', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.open', keys: ['Enter'], description: 'In Plan: open the selected task', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.complete', keys: ['c'], description: 'In Plan: complete the selected task', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.quick-add', keys: ['q'], description: 'In Plan: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.range-prev', keys: ['['], description: 'In Plan: the span one week earlier', section: 'calendar', scope: 'view', views: ['plan'], overrides: ['global.sidebar'] },
+  { id: 'plan.range-next', keys: [']'], description: 'In Plan: the span one week later', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.today', keys: ['t'], description: 'In Plan: back to today', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.escape', keys: ['Esc'], description: 'In Plan: close the panel, else clear the selection', section: 'calendar', scope: 'view', views: ['plan'], hidden: true },
 
   // ---- filter, saved views and dashboards
   { id: 'filter.jump', keys: ['Enter', 'Esc'], description: 'In Filter: jump from the query to the first result / back to the query', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
@@ -351,7 +365,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'display.exit'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'display.exit'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 

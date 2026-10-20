@@ -483,6 +483,7 @@
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "Add": [
+    "web/src/app/PlanView.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
@@ -531,6 +532,7 @@
     "web/src/app/QuickAdd.tsx",
     "web/src/app/QuickAddSheet.tsx",
     "web/src/app/TabBar.tsx",
+    "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -979,7 +981,8 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/MonthView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Ascending": [
     "web/src/app/SavedViewView.tsx"
@@ -1429,13 +1432,14 @@
     "web/src/app/CalendarRange.tsx"
   ],
   "Calendars": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Calendars as of {wallTime}": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/CalendarStatus.tsx"
   ],
   "Calendars unavailable offline for these days": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/CalendarStatus.tsx"
   ],
   "Call the dentist tomorrow at 3pm": [
     "web/src/app/FirstRun.tsx"
@@ -2386,7 +2390,7 @@
   "Day length": [
     "web/src/app/CalendarSettings.tsx"
   ],
-  "Day, Week and Month calendar": [
+  "Day, Week, Month and Plan calendar": [
     "web/src/lib/shortcuts.ts"
   ],
   "Day-month": [
@@ -2793,6 +2797,9 @@
   ],
   "Drag a task onto a time, or focus one and press {key}.": [
     "web/src/app/calendar/PlanPanel.tsx"
+  ],
+  "Drag tasks onto a day, or press s on one": [
+    "web/src/app/PlanView.tsx"
   ],
   "Drag tasks onto a time, or press s on one": [
     "web/src/app/CalendarView.tsx"
@@ -3728,6 +3735,9 @@
   "Go to Calendar (Day)": [
     "web/src/app/palette/registry.ts"
   ],
+  "Go to Calendar (Plan)": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Go to Calendar (Week)": [
     "web/src/app/palette/registry.ts"
   ],
@@ -3834,6 +3844,9 @@
   "Go to the Calendar as Month": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to the Calendar as Plan: the next days as columns with their capacity": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Go to the Calendar as Week": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -3925,13 +3938,15 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Hide other calendars on this device": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Hide text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "Hide the planning list": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Hide what is not now|method": [
     "web/src/lib/method/vocabulary.json"
@@ -4112,6 +4127,39 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In Month: select the previous task": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: add a task due on the focused day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: back to today": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: close the panel, else clear the selection": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: complete the selected task": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: move the focused day while a task is selected": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: move the focused day; with a task selected, move it a day or a week (keeps its time)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: open the selected task": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: select the next task, column by column (projected and event rows are skipped)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: select the previous task": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: the span one week earlier": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Plan: the span one week later": [
     "web/src/lib/shortcuts.ts"
   ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
@@ -5315,7 +5363,11 @@
   ],
   "Next week": [
     "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/bulk/BulkActions.tsx"
+  ],
+  "Next {n} days": [
+    "web/src/app/PlanView.tsx"
   ],
   "Next: {instant}": [
     "web/src/app/DigestCard.tsx"
@@ -5748,6 +5800,9 @@
   "Nothing due today.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Nothing estimated against a {minutes} day": [
+    "web/src/lib/plan.ts"
+  ],
   "Nothing fetched yet.": [
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/MembersPanel.tsx",
@@ -5820,6 +5875,7 @@
   ],
   "Nothing planned.": [
     "web/src/app/MonthView.tsx",
+    "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx"
   ],
   "Nothing scheduled yet.": [
@@ -6388,7 +6444,8 @@
     "web/src/lib/filters.ts"
   ],
   "Over capacity.": [
-    "web/src/app/calendar/DayColumn.tsx"
+    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/lib/plan.ts"
   ],
   "Overdue": [
     "web/src/app/calendar/PlanPanel.tsx",
@@ -6602,12 +6659,13 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/CalendarStatus.tsx"
   ],
   "Plaintext history": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Plan": [
+    "web/src/app/CalendarRange.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Plan and change your tasks by talking, with a model provider your server owner chooses (including a model on your own network), or with your own provider and key when the owner allows it. Every change is proposed for you to review and can be undone. Conversations stay on this device.": [
@@ -6617,7 +6675,8 @@
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Plan from a list": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Planned estimates against a {minutes} day": [
     "web/src/app/calendar/DayColumn.tsx"
@@ -6700,7 +6759,8 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Previous week": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Primary": [
     "web/src/app/Sidebar.tsx"
@@ -6987,7 +7047,8 @@
   ],
   "Range": [
     "web/src/app/CalendarView.tsx",
-    "web/src/app/MonthView.tsx"
+    "web/src/app/MonthView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Re-enable": [
     "web/src/app/NotificationsSettings.tsx"
@@ -8151,7 +8212,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Show other calendars on this device": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Show shortcut hints": [
     "web/src/app/PreferencesPanels.tsx",
@@ -10131,6 +10193,7 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/MonthView.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/QuickAdd.tsx",
     "web/src/app/Sidebar.tsx",
@@ -10575,6 +10638,7 @@
   "Untitled": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/TaskRow.tsx",
@@ -10583,6 +10647,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -11970,7 +12035,9 @@
   ],
   "over capacity": [
     "web/src/app/MonthView.tsx",
-    "web/src/app/calendar/DayColumn.tsx"
+    "web/src/app/PlanView.tsx",
+    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/PlanRow.tsx"
   ],
   "overlaps another item": [
     "web/src/app/calendar/DayColumn.tsx"
@@ -12028,7 +12095,8 @@
     "web/src/lib/activityRuns.ts"
   ],
   "priority {n}": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/MonthView.tsx",
+    "web/src/app/calendar/PlanRow.tsx"
   ],
   "project": [
     "web/src/lib/activityRuns.ts",
@@ -12040,6 +12108,9 @@
   "project label filter": [
     "web/src/app/palette/registry.ts"
   ],
+  "projected": [
+    "web/src/app/calendar/PlanRow.tsx"
+  ],
   "proposed changes": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -12048,6 +12119,7 @@
   ],
   "read-only": [
     "web/src/app/MonthView.tsx",
+    "web/src/app/calendar/PlanRow.tsx",
     "web/src/lib/assistants.ts"
   ],
   "read-only token": [
@@ -12156,7 +12228,7 @@
     "web/src/lib/activity.ts"
   ],
   "task": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/calendar/CalendarStatus.tsx"
   ],
   "task panel open": [
     "web/src/lib/shortcuts.ts"
@@ -12515,6 +12587,15 @@
   "{label} backup, {instant}, {kind}": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "{minutes} in calendar events": [
+    "web/src/lib/plan.ts"
+  ],
+  "{minutes} of tasks": [
+    "web/src/lib/plan.ts"
+  ],
+  "{minutes} repeating": [
+    "web/src/lib/plan.ts"
+  ],
   "{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -12732,10 +12813,14 @@
   ],
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/MonthView.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts"
+  ],
+  "{n, plural, one {# task} other {# tasks}} without estimate": [
+    "web/src/lib/plan.ts"
   ],
   "{n, plural, one {# token · this month {pct}% of your limit} other {# tokens · this month {pct}% of your limit}}": [
     "web/src/lib/assistant.ts"
@@ -12872,6 +12957,9 @@
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
+  ],
+  "{n} days": [
+    "web/src/app/PlanView.tsx"
   ],
   "{n} days ago": [
     "web/src/lib/review.ts"

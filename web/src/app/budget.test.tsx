@@ -114,6 +114,25 @@ describe('the Focus screen (focus-mode)', () => {
   })
 })
 
+describe('the Plan (planner-view)', () => {
+  it('one row of chrome above the columns, and no scroll region of its own', async () => {
+    await createTask({ title: 'Planned', due: { date: '2026-10-15' }, estimate_minutes: 30 })
+    navigate({ view: 'plan' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!r.container.querySelector('[data-plan-grid] [data-plan-task]'))
+    const page = r.container.querySelector('[data-calendar-page="plan"]')!
+    const before: Element[] = []
+    for (const child of page.children) {
+      if (child.matches('[data-plan-grid], [data-plan-agenda]')) break
+      if (!child.classList.contains('sr-only')) before.push(child)
+    }
+    expect(before.map((e) => e.tagName)).toEqual(['HEADER'])
+    expect(scrollers(page)).toEqual([])
+    expect(scrollers(r.container).length).toBeLessThanOrEqual(MAX_SCROLLERS)
+    await r.unmount()
+  })
+})
+
 describe('chrome above the first task', () => {
   it('flat lists have the header and the quick add only; the project page stays within its allowance', async () => {
     const { project } = await seed()

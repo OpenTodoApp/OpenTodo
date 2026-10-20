@@ -1,16 +1,17 @@
-// The Day | Week | Month switch of the Calendar destination (OpenSpec changes
-// ux-overhaul and month-and-timeline-views): one control in each calendar view's
+// The Day | Week | Month | Plan switch of the Calendar destination (OpenSpec changes
+// ux-overhaul, month-and-timeline-views and planner-view): one control in each calendar view's
 // page header. Switching keeps the anchor date, so Week of 18 November → Month
 // opens November and Day from there opens the 18th.
 import { navigate } from './router'
 import { t, msg, translatedList } from '../lib/i18n'
 
-export type CalendarRangeMode = 'day' | 'week' | 'month'
+export type CalendarRangeMode = 'day' | 'week' | 'month' | 'plan'
 
 const MODES: { mode: CalendarRangeMode; label: string }[] = translatedList([
   { mode: 'day', label: msg('Day') },
   { mode: 'week', label: msg('Week') },
   { mode: 'month', label: msg('Month') },
+  { mode: 'plan', label: msg('Plan') },
 ], 'label')
 
 export function CalendarRangeSwitch({ mode, date }: { mode: CalendarRangeMode; date?: string }) {

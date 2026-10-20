@@ -49,12 +49,15 @@ export function resetSkills(list: AssistantSkill[] | null = null): void {
 }
 
 /** The device's working day (Settings → Calendar), for plan-week. */
-export async function workday(): Promise<GridPrefs> {
+export async function workday(): Promise<Pick<GridPrefs, 'startHour' | 'endHour' | 'dayLength'>> {
+  let prefs = DEFAULT_GRID_PREFS
   try {
-    return normalizeGridPrefs(await getMeta<unknown>(GRID_PREFS_META_KEY, null))
+    prefs = normalizeGridPrefs(await getMeta<unknown>(GRID_PREFS_META_KEY, null))
   } catch {
-    return DEFAULT_GRID_PREFS
+    // The defaults.
   }
+  // Only the working day: the server refuses fields it does not know (the Plan's span stays on the device).
+  return { startHour: prefs.startHour, endHour: prefs.endHour, dayLength: prefs.dayLength }
 }
 
 /** A paste becomes untrusted material when it is long or has line breaks (design D3). */

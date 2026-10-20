@@ -11,7 +11,7 @@ order: 64
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, where events from subscribed calendars are shown beside them."></picture>
 
-With [calendar feeds](calendar-feeds.md) turned on by the server owner, you can subscribe to up to ten of your other calendars. Their events are read-only in OpenTodo and never count toward a day's planned total; they're there so you can see your real free time while you plan.
+With [calendar feeds](calendar-feeds.md) turned on by the server owner, you can subscribe to up to ten of your other calendars. Their events are read-only in OpenTodo and count toward a day's planned total only in the Plan; they're there so you can see your real free time while you plan.
 
 ## Subscribe to another calendar
 
@@ -32,7 +32,7 @@ Each calendar's row shows when it was last refreshed. When fetches fail, the row
 - Timed events are drawn as blocks in the calendar's colour, next to your task blocks. When a task and an event overlap, both get the overlap marker.
 - All-day and multi-day events appear as chips above each day's unscheduled lane.
 - Events marked as *free* in their calendar are drawn as an outline only, so the slot still reads as free.
-- Events never count toward the day's planned total.
+- Events never count toward the day's planned total here; only the [Plan](calendar-views.md#plan-the-next-two-weeks) counts busy ones, overlaps once.
 - Events can't be dragged, resized or completed. Tab onto an event and press Enter, or click it, to see its time, location and calendar.
 
 The **Calendars** button in the calendar's toolbar hides or shows events on this device only. Your choice is kept when you reload.

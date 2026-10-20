@@ -51,7 +51,7 @@ describe('Preferences rows', () => {
 
   it('calendar: start, end and day length write grid preferences, end follows start', async () => {
     const onSave = vi.fn()
-    const { container, unmount } = await render(<CalendarSettingsView prefs={{ startHour: 6, endHour: 8, dayLength: 480 }} onSave={onSave} />)
+    const { container, unmount } = await render(<CalendarSettingsView prefs={{ startHour: 6, endHour: 8, dayLength: 480, planDays: 14 }} onSave={onSave} />)
     await choose(container.querySelector('select[aria-label="Grid start hour"]') as HTMLSelectElement, '9')
     expect(onSave).toHaveBeenLastCalledWith({ startHour: 9, endHour: 10 })
     await choose(container.querySelector('select[aria-label="Day length"]') as HTMLSelectElement, '360')

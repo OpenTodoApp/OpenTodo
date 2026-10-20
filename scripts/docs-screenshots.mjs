@@ -319,6 +319,8 @@ const shots = [
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
+  // The Plan (planner-view 5.2): two rows of columns with their capacity bars and a dimmed projected row.
+  { name: 'plan', server: D, async run(p) { await go(p, demoBase, '/plan', () => p.locator('[data-plan-grid]').waitFor()); await settle(p, 300) } },
   { name: 'comments', server: D, card: true, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
     await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity, history and time' }), 8)

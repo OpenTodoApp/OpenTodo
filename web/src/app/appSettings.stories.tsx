@@ -36,7 +36,7 @@ export const Preferences: StoryObj = {
   render: () => (
     <div className="space-y-6">
       <StartViewView views={[{ id: 'v1', name: 'Morning review' } as never]} startView="today" onChange={noop} />
-      <CalendarSettingsView prefs={{ startHour: 6, endHour: 22, dayLength: 480 }} onSave={noop} />
+      <CalendarSettingsView prefs={{ startHour: 6, endHour: 22, dayLength: 480, planDays: 14 }} onSave={noop} />
       <KeyboardView vim={false} onVim={noop} />
     </div>
   ),
