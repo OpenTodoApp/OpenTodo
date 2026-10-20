@@ -187,7 +187,17 @@ func TestFlowStateRoundTripAndExpiry(t *testing.T) {
 	if _, err := c.Consume(cookie, "other"); !errors.Is(err, oidc.ErrStateInvalid) {
 		t.Fatalf("wrong state err = %v", err)
 	}
-	if _, err := c.Decode(cookie[:len(cookie)-2] + "xx"); err == nil {
+	// Change one signature character whose six bits are all used: the last
+	// character of a 43-character signature carries two unused bits, so
+	// rewriting the tail could leave the decoded bytes unchanged.
+	forged := []byte(cookie)
+	i := len(forged) - 5
+	if forged[i] == 'A' {
+		forged[i] = 'B'
+	} else {
+		forged[i] = 'A'
+	}
+	if _, err := c.Decode(string(forged)); err == nil {
 		t.Fatal("forged signature accepted")
 	}
 	if _, err := oidc.NewStateCodec(clock).Decode(cookie); err == nil {

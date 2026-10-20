@@ -473,19 +473,22 @@ func TestAgentWriteConvergesWithOfflineEdit(t *testing.T) {
 // phone completing the same occurrence offline give one record.
 func TestAgentCompleteRecurringConvergesWithDevice(t *testing.T) {
 	e, _, secret, c := agentReady(t)
-	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Water plants", "recurrence": "every week", "due": map[string]any{"date": "2026-10-12"}})
+	// Due today, so the next occurrence is a week later whatever day the test runs.
+	now := time.Now()
+	due, next := now.Format("2006-01-02"), now.AddDate(0, 0, 7).Format("2006-01-02")
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Water plants", "recurrence": "every week", "due": map[string]any{"date": due}})
 	e.mustStatus(resp, 201, out)
 	series := out["id"].(string)
 	sc := c.mustTool(secret, "complete_tasks", map[string]any{"ids": []string{series}})
 	item := sc["results"].([]any)[0].(map[string]any)
-	occ := opsync.OccurrenceID(series, "2026-10-12")
-	if item["status"] != "occurrence_completed" || item["occurrence_id"] != occ || item["next_due"] != "2026-10-19" {
+	occ := opsync.OccurrenceID(series, due)
+	if item["status"] != "occurrence_completed" || item["occurrence_id"] != occ || item["next_due"] != next {
 		t.Fatalf("result = %v", item)
 	}
 	// The phone completed the same occurrence offline (same derived id).
 	ts := time.Now().UnixMilli() - 500
 	var ops []map[string]any
-	for f, v := range map[string]any{"title": "Water plants", "completed_at": ts, "created_at": ts, "series_id": series, "due": map[string]any{"date": "2026-10-12"}, "recurrence": nil, "deleted_at": nil} {
+	for f, v := range map[string]any{"title": "Water plants", "completed_at": ts, "created_at": ts, "series_id": series, "due": map[string]any{"date": due}, "recurrence": nil, "deleted_at": nil} {
 		ops = append(ops, map[string]any{"id": ids.New(), "entity": "task", "entityId": occ, "field": f, "value": v, "ts": ts, "device": "phone"})
 	}
 	syncOnce(e, "phone", 0, ops)
