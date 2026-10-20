@@ -54,7 +54,7 @@ The text of a notification (**Due** and the date, **Snooze 10 min**, **Dismiss**
 
 ## A weekly digest by email
 
-Besides reminders, you can get one email a week with last week's numbers and what needs attention. Turn it on in **Settings → Notifications → Weekly digest**; see [Statistics and the weekly digest](statistics.md#weekly-digest-by-email).
+Besides reminders, you can get one email a week with last week's numbers and what needs attention. Turn it on in **Settings → Notifications → Weekly digest**; see [Statistics and the weekly digest](statistics.md#weekly-digest-by-email). It counts days from your [day start](dates-and-times.md#when-a-day-ends), like the Statistics screen.
 
 ## When notifications don't arrive
 

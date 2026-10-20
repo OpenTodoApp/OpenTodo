@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **My day starts at.** If you work past midnight, set when your day really ends in Settings → General → Date and time (midnight by default, or a whole hour up to 06:00). Until then the app still treats it as the previous day: Today keeps its tasks out of Overdue, a task completed at 01:30 counts for the day before in Completed, Statistics, the Loop pulse and the weekly digest, habits keep their streak, and the Daily check and today's focus last until your day start. Due dates and reminders do not change, and the preference syncs to your devices as an additive `user_prefs.day_start` field. ([Dates and times](docs/dates-and-times.md#when-a-day-ends))
+
 ### Changed
 
 - **Calm task rows.** Rows now leave out what the view already says (no "Today" in Today, where the time stands alone; no date under an Upcoming day; no "evening" under This Evening; no Someday chip in Someday; no chip for the label whose view is open), colour only what needs attention (the circle for P1 and P2, the date when it is overdue or timed for today), show labels as coloured dots with the first name and "+2", and move subtask progress, comments and attachments to a faint group at the end of the row that brightens on hover. **Settings → Appearance → Rows** has **Detailed**, which restores the previous row with every chip and colour; the choice syncs to your devices like Density. ([Work from the list](docs/work-from-the-list.md#what-a-row-shows), [Settings](docs/settings-you.md#appearance))

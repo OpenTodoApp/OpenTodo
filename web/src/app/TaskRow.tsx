@@ -16,7 +16,7 @@ import { Icon, LabelChip, LabelDots, NeutralChip, ReadAs, ToneText, type IconNam
 import { memo, useEffect, useRef, useState } from 'react'
 import { useRowDetail, type RowDetail } from '../lib/appearance'
 import type { RowImplied } from '../lib/listGroups'
-import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
+import { describeDeadline, describeDue, formatDate, localDueOf, logicalToday, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
@@ -201,7 +201,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const start = task.start ?? null
   const startText = done || !start ? null
     : start === 'someday' ? t('Someday')
-    : start > todayISO() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
+    : start > logicalToday() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
   const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)

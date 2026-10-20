@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { db, useDatabase } from './db'
+import { logicalToday, setDayStart } from './dates'
+import { completeTask, createTask, resetDeviceId } from './ops'
 import { habitRule, habitStats, monthGrid, previousScheduled, recordsByDate, scheduled, type DayState, type HabitStats } from './habits'
 import rawVectors from './habits.vectors.json'
 import { detachedId, occurrenceId } from './ids'
@@ -113,5 +116,39 @@ describe('records', () => {
     expect(habitRule({ recurrence: 'every 3 days after completion' })).toBeNull()
     expect(habitRule({ recurrence: null })).toBeNull()
     expect(habitRule({ recurrence: 'every mon, wed, fri' })).not.toBeNull()
+  })
+})
+
+describe('day start (day-boundary D5, habits "Done after midnight with a day start")', () => {
+  it('a habit done at 01:30 is recorded for its due day, counts in the streak and the next day is not at risk until the day start', async () => {
+    useDatabase(`habits-daystart-${Date.now()}`)
+    resetDeviceId()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    setDayStart(240)
+    try {
+      vi.setSystemTime(new Date(2026, 9, 14, 9))
+      const id = await createTask({ title: 'Stretch', due: { date: '2026-10-14' }, recurrence: 'every day' })
+      vi.setSystemTime(new Date(2026, 9, 15, 1, 30))
+      const recordId = await completeTask(id)
+      expect(recordId).toBe(occurrenceId(id, '2026-10-14'))
+      const series = (await db.tasks.get(id))!
+      expect(series.due).toEqual({ date: '2026-10-15' })
+      const all = await db.tasks.toArray()
+      expect(recordsByDate(id, all).get('2026-10-14')).toBe('done')
+      expect(habitStats(series, all, logicalToday())).toMatchObject({ current: 1, pending: true, atRisk: false })
+      // 03:59 on the 16th: still the 15th, the occurrence is pending and not at risk.
+      vi.setSystemTime(new Date(2026, 9, 16, 3, 59))
+      expect(habitStats(series, all, logicalToday())).toMatchObject({ current: 1, atRisk: false })
+      // From 04:00 on the 16th the 15th is over.
+      vi.setSystemTime(new Date(2026, 9, 16, 4, 0))
+      expect(habitStats(series, all, logicalToday())).toMatchObject({ atRisk: true })
+      // The month grid marks the logical today.
+      vi.setSystemTime(new Date(2026, 9, 16, 1, 0))
+      const grid = monthGrid(series, all, 2026, 10, logicalToday())
+      expect(grid.find((c) => c.date === '2026-10-15')).toMatchObject({ state: 'pending', today: true })
+    } finally {
+      setDayStart(0)
+      vi.useRealTimers()
+    }
   })
 })

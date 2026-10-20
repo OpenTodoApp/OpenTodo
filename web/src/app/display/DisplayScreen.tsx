@@ -9,7 +9,7 @@ import { useCallback, useMemo } from 'react'
 import { Icon, MenuItem, Menu } from '../../ui'
 import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useViewRowsLoaded } from '../../lib/localData'
 import { completedOn, groupToday, nextDays, projectOpenList, todayList, withoutArchived } from '../../lib/dayLists'
-import { describeDue, formatTime, localDueOf, todayISO } from '../../lib/dates'
+import { describeDue, formatTime, localDueOf, logicalDay } from '../../lib/dates'
 import { blockedMap } from '../../lib/dependencies'
 import { setTaskCompleted } from '../../lib/ops'
 import { groupBySection } from '../../lib/sections'
@@ -73,9 +73,10 @@ export function lastSyncedLabel(lastSyncedAt: number | null, now: number): strin
 export function DisplayScreen({ route }: { route: DisplayRoute }) {
   const { target, options } = route
   const now = useNow(options.seconds)
-  const today = todayISO(new Date(now))
   const zone = useViewerZone()
   const dt = useDateTimeFormat()
+  // The logical day (day-boundary D4), so the lists and "done today" follow the day start.
+  const today = logicalDay(now, dt.dayStart)
   useRootPresentation(options)
   useWakeLock()
 

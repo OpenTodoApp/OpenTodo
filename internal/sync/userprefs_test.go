@@ -93,6 +93,41 @@ func TestUserPrefsArePersonalAndConverge(t *testing.T) {
 	}
 }
 
+// TestDayStartIsPersonalAndConverges (day-boundary D1): the day start is an
+// additive string field of user_prefs; it lands in the author's personal scope
+// only and two devices' concurrent writes converge by (ts, device).
+func TestDayStartIsPersonalAndConverges(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	early := f.op("user_prefs", "me", "day_start", `"02:00"`)
+	late := f.op("user_prefs", "me", "day_start", `"04:00"`)
+	if res := f.apply("alice", "A", late); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("day_start write = %+v", res)
+	}
+	f.apply("alice", "A2", early)
+	if got := f.field("alice", "user_prefs", "me", "day_start"); got != `"04:00"` {
+		t.Fatalf("alice reads %s, want the later \"04:00\"", got)
+	}
+	if got := f.field("bob", "user_prefs", "me", "day_start"); got != "<none>" {
+		t.Fatalf("bob sees alice's day start: %s", got)
+	}
+	ops, _ := f.pullAll("bob", "B2", 0)
+	for _, o := range ops {
+		if o.Entity == "user_prefs" {
+			t.Fatalf("bob's device pulled %+v", o)
+		}
+	}
+	// Equal timestamps: the greater device id wins on every server.
+	a := f.op("user_prefs", "me", "day_start", `"01:00"`)
+	b := a
+	b.ID, b.Value = a.ID+"-b", []byte(`"03:00"`)
+	f.apply("alice", "Z", b)
+	f.apply("alice", "A", a)
+	if got := f.field("alice", "user_prefs", "me", "day_start"); got != `"03:00"` {
+		t.Fatalf("tie on ts: alice reads %s, want \"03:00\"", got)
+	}
+}
+
 // TestRowDetailValidates (calm-rows D1): the row detail preference is an additive
 // string field of user_prefs; a sync batch carrying it is accepted, another kind refused.
 func TestRowDetailValidates(t *testing.T) {

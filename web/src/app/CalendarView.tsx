@@ -10,7 +10,7 @@ import { calendarTasks, formatTime as toHHMM, placementStart, weekDates, type Gr
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
 import { useOnline } from '../lib/online'
 import { ensureEventsFor, eventsStatus, setShowEvents } from '../lib/calendarFeeds'
-import { addDaysISO, dueFromView, formatDate, formatShort, formatTime as formatWallTime, viewedTask } from '../lib/dates'
+import { addDaysISO, dueFromView, formatDate, formatShort, formatTime as formatWallTime, logicalToday, todayISO, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useCachedEventsWindow, useCalendarEvents, useCalendarSubscriptions, useGridPrefs, useLiveProjects, useShowEvents } from '../lib/liveData'
 import { updateTask } from '../lib/ops'
@@ -39,9 +39,12 @@ import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 export { useGridPrefs }
 
 function useNowMinutes(): number {
+  // Minutes since the logical today's midnight (day-boundary D3): before the day start
+  // the clock is past that day's 24:00, so the now line is not drawn on its column.
   const read = () => {
     const d = new Date()
-    return d.getHours() * 60 + d.getMinutes()
+    const minutes = d.getHours() * 60 + d.getMinutes()
+    return todayISO(d) === logicalToday(undefined, d.getTime()) ? minutes : minutes + 24 * 60
   }
   const [now, setNow] = useState(read)
   useEffect(() => {

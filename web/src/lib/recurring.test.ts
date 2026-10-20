@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDayStart } from './dates'
 import { db, useDatabase } from './db'
 import { detachedId, occurrenceId } from './ids'
 import {
@@ -94,6 +95,21 @@ describe('completeTask on a recurring task', () => {
     const id = await createTask({ title: 'Mow', due: { date: '2026-10-12' }, recurrence: 'every 3 days after completion' })
     await completeTask(id, { today: '2026-10-14' })
     expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-17' })
+  })
+
+  it('with a 04:00 day start, completing at 01:30 counts "after completion" from the logical day (day-boundary D5)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 15, 1, 30))
+    setDayStart(240)
+    try {
+      const id = await createTask({ title: 'Mow', due: { date: '2026-10-12' }, recurrence: 'every 3 days after completion' })
+      await completeTask(id)
+      // The 14th is the day being lived, so three days later is the 17th (the calendar date would give the 18th).
+      expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-17' })
+    } finally {
+      setDayStart(0)
+      vi.useRealTimers()
+    }
   })
 
   it('carries series edits into later occurrences without a prompt', async () => {

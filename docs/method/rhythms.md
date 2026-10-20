@@ -21,6 +21,8 @@ Five minutes, usually in the morning: open it from the Review screen's menu, the
 
 **Done for today** records the check. In Open Loops first, the app offers it once a day.
 
+A day here ends at your [day start](../dates-and-times.md#when-a-day-ends): with 04:00, a check done or a focus picked at 00:30 still belongs to the evening before, and the focus stays until 04:00.
+
 ## Weekly review
 
 Thirty minutes, on a day that suits you (<kbd>g</kbd> <kbd>r</kbd>). Seven steps in three phases: Get clear (Inbox, Mind sweep), Get current (Look back, Waiting, Projects, Look ahead) and Get creative (Someday). See [Weekly review](../review-and-statistics.md).

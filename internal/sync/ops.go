@@ -440,6 +440,11 @@ var Schema = map[string]map[string]kind{
 		"date_format": kString,
 		"time_format": kString,
 		"week_start":  kString,
+		// Day start (OpenSpec change day-boundary, design D1): "HH:MM" from
+		// "00:00" to "06:00", the local time a new day begins for this person.
+		// Not restricted here; clients read an empty, malformed or out-of-range
+		// value as "00:00" (midnight) and keep the stored value unchanged.
+		"day_start": kString,
 		// Appearance (OpenSpec change theming, design D1): theme_mode is
 		// system|light|dark and theme_accent one of emerald, blue, indigo,
 		// violet, rose, orange, teal, graphite. Like the date fields the values

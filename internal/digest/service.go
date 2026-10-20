@@ -315,11 +315,13 @@ func (s *Service) Build(ctx context.Context, st Settings, to string, now time.Ti
 	if err != nil {
 		return mail.Message{}, err
 	}
-	in, err := s.input(ctx, st.UserID, loc, now)
+	prefs, err := s.sync.Get(ctx, st.UserID, "user_prefs", "me")
 	if err != nil {
 		return mail.Message{}, err
 	}
-	prefs, err := s.sync.Get(ctx, st.UserID, "user_prefs", "me")
+	// The day start (day-boundary D6) moves both "today" and the day each
+	// completion counts for, so the digest matches the Statistics screen.
+	in, err := s.input(ctx, st.UserID, loc, DayStart(str(prefs, "day_start")), now)
 	if err != nil {
 		return mail.Message{}, err
 	}
@@ -354,7 +356,7 @@ func (s *Service) Build(ctx context.Context, st Settings, to string, now time.Ti
 		return mail.Message{}, err
 	}
 	if ms := int64(num(review, "completed_at")); ms > 0 {
-		d.LastReview = time.UnixMilli(ms).In(loc).Format(day)
+		d.LastReview = LogicalDay(time.UnixMilli(ms), loc, in.DayStart)
 	}
 	origin := s.origin
 	if origin == "" {
@@ -365,8 +367,8 @@ func (s *Service) Build(ctx context.Context, st Settings, to string, now time.Ti
 }
 
 // input reads the user's rows as the statistics need them.
-func (s *Service) input(ctx context.Context, userID string, loc *time.Location, now time.Time) (Input, error) {
-	in := Input{Me: userID, Today: now.In(loc).Format(day), Loc: loc}
+func (s *Service) input(ctx context.Context, userID string, loc *time.Location, dayStart int, now time.Time) (Input, error) {
+	in := Input{Me: userID, Today: LogicalDay(now, loc, dayStart), Loc: loc, DayStart: dayStart}
 	tasks, err := s.sync.List(ctx, userID, "task", false)
 	if err != nil {
 		return in, err

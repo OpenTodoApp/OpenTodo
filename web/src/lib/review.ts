@@ -4,7 +4,7 @@
 // project walk's queue; the Daily check's focus and the Monthly look's areas;
 // and the synced personal `review` row and per-project review stamps that record
 // them. Pure apart from the writers at the end, each one op set.
-import { addDaysISO, todayISO } from './dates'
+import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from './dates'
 import { mutate } from './ops'
 import { canEditProject, roleOf } from './sharing'
 import { countedTasks, overdueOf, type StatsInput } from './stats'
@@ -135,16 +135,17 @@ export function monthlyDue(monthlyAt: number | null | undefined, now = Date.now(
   return !monthlyAt || now - monthlyAt > MONTHLY_INTERVAL_MS
 }
 
-/** Whether the Daily check is due: not done on the user's local date. */
+/** Whether the Daily check is due: not done on the user's logical today (day-boundary D4). */
 export function dailyDue(dailyAt: number | null | undefined, today: string): boolean {
-  return !dailyAt || todayISO(new Date(dailyAt)) !== today
+  return !dailyAt || logicalDay(dailyAt, currentDayStart()) !== today
 }
 
 /** When the last review was, in words: "today", "yesterday", "9 days ago" or "never". */
 export function reviewAgo(completedAt: number | null | undefined, now = Date.now()): string {
   if (!completedAt) return t('never')
-  const day = (ms: number) => { const d = new Date(ms); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) }
-  const days = Math.max(0, Math.round((day(now) - day(completedAt)) / DAY_MS))
+  // Logical days (day-boundary D4): a review finished at 01:00 before a 04:00 day start was "yesterday's".
+  const dayStart = currentDayStart()
+  const days = Math.max(0, daysBetweenISO(logicalDay(completedAt, dayStart), logicalDay(now, dayStart)))
   return days === 0 ? t('today') : days === 1 ? t('yesterday') : t('{n} days ago', { n: days })
 }
 

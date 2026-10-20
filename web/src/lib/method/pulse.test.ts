@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { logicalToday, setDayStart } from '../dates'
 import { compute, periodFor } from '../stats'
 import type { Task } from '../types'
 import { decided, inboxAge, lastDays, nextMove } from './pulse'
@@ -13,6 +14,23 @@ function task(p: Partial<Task> & { created_at: number }): Task {
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 19, 12)) })
 afterEach(() => vi.useRealTimers())
+
+describe('day start (day-boundary D4)', () => {
+  afterEach(() => setDayStart(0))
+
+  it('a completion at 01:30 before a 04:00 day start counts for the previous day in the strip', () => {
+    vi.setSystemTime(new Date(2026, 9, 19, 2, 0))
+    setDayStart(240)
+    const today = logicalToday()
+    expect(today).toBe('2026-10-18')
+    const tasks = [task({ created_at: at(20), completed_at: new Date(2026, 9, 19, 1, 30).getTime() })]
+    const strip = compute({ tasks, projects: [], shared: new Set<string>(), me: null, today }, lastDays(today))
+    expect(strip.perDay[13]).toEqual({ date: '2026-10-18', count: 1 })
+    // Captured at 01:00 on the 19th: created "today" (the 18th), so it is in the window and decided once filed.
+    expect(decided([task({ created_at: new Date(2026, 9, 19, 1).getTime(), project_id: 'p' })], today)).toEqual({ decided: 1, caught: 1 })
+    expect(inboxAge([task({ created_at: new Date(2026, 9, 19, 1).getTime() })], today)).toBe(0)
+  })
+})
 
 describe('lastDays', () => {
   it('covers 14 local days ending today', () => {

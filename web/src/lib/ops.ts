@@ -1,7 +1,7 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow } from './db'
-import { dueToInstant, todayISO } from './dates'
+import { dueToInstant, logicalToday, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { CLOCK_OFFSET_META, hlcNow, hlcSeed, hlcSeedOffset, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
@@ -89,7 +89,7 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '' }
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '' }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '' }
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
@@ -606,7 +606,7 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
     const parsed = parseRule(input.recurrence)
     if (!parsed.ok) throw new Error(`invalid recurrence: ${parsed.error}`)
     extra.recurrence = parsed.canonical
-    if (!due) due = { date: firstOccurrence(parsed.rule, todayISO()) }
+    if (!due) due = { date: firstOccurrence(parsed.rule, logicalToday()) }
   }
   if (input.assignee_id) extra.assignee_id = input.assignee_id
   // Only tasks created in a section carry the field (board-view).
@@ -865,12 +865,12 @@ export function planCompletePlain(id: string, all: Task[], now: number): Change[
  * Complete a task. For a recurring series this records the occurrence (an entity
  * whose id is derived from the series id and occurrence date) and moves the series
  * to its next occurrence in one batch; once the end condition is reached it
- * completes like a plain task. `today` is the device's local date (tests pass it).
+ * completes like a plain task. `today` is the device's logical today (day-boundary D5; tests pass it).
  * Returns the id of the occurrence record when the series rolled, otherwise null.
  */
 export async function completeTask(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
   let recordId: string | null = null
   let plain = false
@@ -901,7 +901,7 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
  */
 export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
   let ok = false
   await db.transaction('rw', mutationTables(), async () => {
@@ -922,7 +922,7 @@ export async function skipOccurrence(id: string, opts: { now?: number; today?: s
  */
 export async function detachOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
   const now = opts.now ?? Date.now()
-  const today = opts.today ?? todayISO()
+  const today = opts.today ?? logicalToday()
   await getDeviceId()
   let copyId: string | null = null
   await db.transaction('rw', mutationTables(), async () => {
@@ -953,7 +953,7 @@ export async function setRecurrence(
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const patch: Record<string, unknown> = {}
   if (parsed.canonical !== task.recurrence) patch.recurrence = parsed.canonical
-  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? todayISO()) }
+  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? logicalToday()) }
   if (Object.keys(patch).length) await mutate('task', id, patch)
   return { ok: true, rule: parsed.canonical }
 }

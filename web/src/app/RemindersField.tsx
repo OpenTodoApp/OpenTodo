@@ -30,6 +30,7 @@ export function fromLocalParts(date: string, time: string): number | null {
 function defaultMoment(task: Task): { date: string; time: string } {
   const due = localDueOf(task.due)
   if (due) return { date: due.date, time: due.time ?? DEFAULT_REMINDER_TIME }
+  // Reminders are instants and keep the calendar date (day-boundary D2): tomorrow is the next calendar day.
   return { date: addDaysISO(todayISO(), 1), time: '09:00' }
 }
 

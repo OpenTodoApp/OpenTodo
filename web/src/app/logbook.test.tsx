@@ -4,7 +4,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { resolveDateTime } from '../lib/dates'
+import { resolveDateTime, setDayStart } from '../lib/dates'
 import { LOGBOOK_PAGE, logbookGroups, logbookHeading } from '../lib/logbook'
 import { mutateMany, resetDeviceId, setTaskCompleted, type Change } from '../lib/ops'
 import type { Task } from '../lib/types'
@@ -44,6 +44,21 @@ describe('logbookGroups and logbookHeading', () => {
       ['2026-10-15', ['late-yesterday']],
       ['2026-10-12', ['mon']],
     ])
+  })
+
+  it('with a 04:00 day start a 01:30 completion is grouped under the previous day (day-boundary D4)', () => {
+    setDayStart(240)
+    try {
+      const { groups } = logbookGroups([task('night', at('2026-10-15', 1, 30)), task('morning', at('2026-10-15', 4, 0)), task('wed', at('2026-10-14', 20))], LOGBOOK_PAGE)
+      expect(groups.map((g) => [g.date, g.tasks.map((t) => t.id)])).toEqual([
+        ['2026-10-15', ['morning']],
+        ['2026-10-14', ['night', 'wed']],
+      ])
+      // While Wednesday is still the logical today its heading is "Today".
+      expect(logbookHeading('2026-10-14', '2026-10-14', DM)).toBe('Today')
+    } finally {
+      setDayStart(0)
+    }
   })
 
   it('renders only the first `limit` completions but counts them all', () => {

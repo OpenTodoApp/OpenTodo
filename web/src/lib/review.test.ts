@@ -2,9 +2,10 @@
 // 5.2): the synced `review` row, every scenario of `weekly-review` "Review steps",
 // the project walk, the rhythms and today's focus.
 import { beforeEach, describe, expect, it } from 'vitest'
+import { setDayStart } from './dates'
 import { db, useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
-import { areasOf, dailyDue, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewDue, reviewSteps, toggleFocus, walkProjects, type ReviewInput } from './review'
+import { areasOf, dailyDue, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkProjects, type ReviewInput } from './review'
 import type { Membership, Project, Task } from './types'
 
 let n = 0
@@ -129,6 +130,23 @@ describe('rhythms (open-loops-method D5)', () => {
     expect(dailyDue(new Date(2026, 9, 13, 23).getTime(), TODAY)).toBe(true)
     expect(monthlyDue(NOW - 31 * DAY, NOW)).toBe(true)
     expect(monthlyDue(NOW - 20 * DAY, NOW)).toBe(false)
+  })
+
+  it('with a 04:00 day start an evening check still counts at 00:30, and a review at 01:00 was yesterday (day-boundary D4)', () => {
+    setDayStart(240)
+    try {
+      const evening = new Date(2026, 9, 14, 21).getTime()
+      // At 00:30 on the 15th the logical today is still the 14th: not due.
+      expect(dailyDue(evening, '2026-10-14')).toBe(false)
+      // After 04:00 the logical today is the 15th: due again.
+      expect(dailyDue(evening, '2026-10-15')).toBe(true)
+      // A check done at 01:00 on the 15th belongs to the 14th.
+      expect(dailyDue(new Date(2026, 9, 15, 1).getTime(), '2026-10-14')).toBe(false)
+      expect(reviewAgo(new Date(2026, 9, 15, 1).getTime(), new Date(2026, 9, 15, 10).getTime())).toBe('yesterday')
+      expect(reviewAgo(new Date(2026, 9, 14, 21).getTime(), new Date(2026, 9, 15, 2).getTime())).toBe('today')
+    } finally {
+      setDayStart(0)
+    }
   })
 
   it('Daily and weekly on different devices keep both times', async () => {

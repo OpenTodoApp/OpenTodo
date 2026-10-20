@@ -14,7 +14,7 @@
 import { Button, Dialog } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { readAppearance, setAppearance, THEME_MODES } from '../lib/appearance'
-import { todayISO } from '../lib/dates'
+import { logicalToday } from '../lib/dates'
 import { useDemo } from '../lib/demo'
 import { useHasTask, useLabels, useProjects, useTopLevelTaskCount, useUserPrefsRow } from '../lib/localData'
 import { createLabel, findLabelByName } from '../lib/labels'
@@ -64,7 +64,7 @@ export function useFirstRun(user: Pick<User, 'role' | 'createdAt'>): boolean {
  * subtask, a repeat and a note, created through the same ops as any other data,
  * so they sync and delete like any project. Returns the project id.
  */
-export async function createSampleProject(today = todayISO()): Promise<string> {
+export async function createSampleProject(today = logicalToday()): Promise<string> {
   const tomorrow = new Date(`${today}T12:00:00`)
   tomorrow.setDate(tomorrow.getDate() + 1)
   const nextWeek = new Date(`${today}T12:00:00`)
@@ -155,7 +155,7 @@ function TaskStep({ userId, onAdded }: { userId?: string; onAdded: () => void })
   const labels = useLabels()
   // The Inbox's defaults; attributes typed in the line override them.
   const onAdd = async ({ labels: typed, ...rest }: QuickAddInput) => {
-    const { labels: viewLabels, ...defaults } = taskDefaults({ view: 'inbox' }, todayISO(), userId)
+    const { labels: viewLabels, ...defaults } = taskDefaults({ view: 'inbox' }, logicalToday(), userId)
     await createTask({ ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
     onAdded()
   }

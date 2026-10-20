@@ -23,7 +23,7 @@ export interface Chip {
 }
 
 export interface ParseContext {
-  /** Reference local date, YYYY-MM-DD (the viewer's `todayISO()`). */
+  /** Reference local date, YYYY-MM-DD (the viewer's logical today, `logicalToday()`). */
   today: string
   /** Reference local wall-clock time, HH:MM; used by "in N hours". */
   now?: string

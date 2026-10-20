@@ -545,7 +545,7 @@ curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 - the task stays open and its `due` moves to the next occurrence (time and `tz` kept); the response is the task with the new `due`,
 - when the end condition (`until` or `for N times`) is reached, the task is completed normally instead.
 
-"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default). Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
+"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default); the user's day start (`user_prefs.day_start`) is not applied here. The occurrence record is keyed by the occurrence's due date, never by the clock, so a completion between midnight and the day start records the same day as one made in the app; only where a completion-relative rule counts from can differ by a day in that window. Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
 
 ```bash
 # Make a task repeat, then complete the current occurrence

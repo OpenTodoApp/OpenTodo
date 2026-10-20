@@ -3,7 +3,7 @@
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
 import { blockedMap } from '../dependencies'
-import { currentDateTime, localDueOf } from '../dates'
+import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
@@ -78,9 +78,11 @@ function compareISO(d: string, op: Cmp, r: DateRange): boolean {
 }
 
 /** Local midnight of a floating date as Unix milliseconds. */
+/** The first instant of a logical day (day-boundary D2): its date at the user's day start, local midnight by default. */
 function startOfDay(iso: string): number {
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).getTime()
+  const dayStart = currentDayStart()
+  return new Date(y, m - 1, d, Math.floor(dayStart / 60), dayStart % 60).getTime()
 }
 
 /**

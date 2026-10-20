@@ -3869,5 +3869,8 @@
   "Go to All projects: the whole tree, find a project, archived projects": "Zu Alle Projekte: der ganze Baum, ein Projekt suchen, archivierte Projekte",
   "Find a project": "Projekt suchen",
   "Show archived projects": "Archivierte Projekte anzeigen",
-  "Listed on the All projects page, where each can be restored.": "Auf der Seite Alle Projekte aufgeführt, wo sich jedes wiederherstellen lässt."
+  "Listed on the All projects page, where each can be restored.": "Auf der Seite Alle Projekte aufgeführt, wo sich jedes wiederherstellen lässt.",
+  "Midnight (default)": "Mitternacht (Standard)",
+  "My day starts at": "Mein Tag beginnt um",
+  "Work done before this time counts for the previous day.": "Was vor dieser Uhrzeit erledigt wird, zählt für den Vortag."
 }

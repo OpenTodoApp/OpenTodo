@@ -3,7 +3,7 @@
 // template file; one planner that turns a tree into a single batch of ordinary
 // ops with fresh ids and dates shifted to a start day. Copies carry structure and
 // open work, never completion, assignees, comments or reminders.
-import { addDaysISO, daysBetweenISO, todayISO } from './dates'
+import { addDaysISO, daysBetweenISO, logicalToday } from './dates'
 import { db } from './db'
 import { nameId, uuid } from './ids'
 import { mutateMany, type Change } from './ops'
@@ -449,9 +449,9 @@ export function downloadJSON(data: unknown, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
-/** The local date used as `template.day` when saving. */
+/** The logical today (day-boundary D5) used as `template.day` when saving. */
 export function today(): string {
-  return todayISO()
+  return logicalToday()
 }
 
 // ---- duplicate (design D2, D6) ----

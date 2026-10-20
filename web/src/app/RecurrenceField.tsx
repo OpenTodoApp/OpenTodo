@@ -3,7 +3,7 @@ import { keysOf } from '../lib/shortcuts'
 import { Switch, Tooltip } from '../ui'
 import { useEffect, useMemo, useState } from 'react'
 import { useSeriesRecords } from '../lib/localData'
-import { formatShort, todayISO, weekday } from '../lib/dates'
+import { formatShort, logicalToday, weekday } from '../lib/dates'
 import { habitRule, habitStats } from '../lib/habits'
 import { detachOccurrence, mutate, setRecurrence, skipOccurrence } from '../lib/ops'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
@@ -35,7 +35,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
   const related = useSeriesRecords(task.id)
   const done = useMemo(() => completedOccurrences(task.id, related, task.due?.date), [task.id, related, task.due?.date])
 
-  const today = todayISO()
+  const today = logicalToday()
   const parsed = useMemo(() => (draft.trim() ? parseRule(draft) : null), [draft])
   const preview = useMemo(() => {
     if (!parsed?.ok) return []

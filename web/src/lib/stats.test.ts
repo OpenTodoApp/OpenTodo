@@ -2,11 +2,13 @@
 // every scenario of `statistics` "What is counted", "Excluded rows", "Whose tasks
 // count in shared projects" and "Periods and week start", plus the fixture the
 // server's digest evaluates too.
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import fixture from '../../../internal/digest/testdata/stats_fixture.json'
 import { runFilter } from './filter'
 import { compute, dayInZone, periodFor, type PeriodKind } from './stats'
 import type { Project, Task } from './types'
+import { logicalToday, setDayStart } from './dates'
+import { readDayStart } from './userPrefs'
 
 /** Local-time Unix ms for a calendar date at an hour. */
 const at = (iso: string, hour = 12) => {
@@ -165,9 +167,10 @@ describe('breakdowns', () => {
 })
 
 describe('shared fixture (same numbers as the server digest)', () => {
-  const dayOf = dayInZone(fixture.timeZone)
   for (const c of fixture.cases) {
     it(c.name, () => {
+      // A case with a day start (day-boundary D6) counts instants by the logical day in the fixture's zone.
+      const dayOf = dayInZone(fixture.timeZone, readDayStart({ day_start: (c as { dayStart?: string }).dayStart ?? '' }))
       const period = periodFor(c.period as PeriodKind, fixture.today, c.weekStart)
       expect([period.start, period.end]).toEqual([c.start, c.end])
       const s = compute({
@@ -176,4 +179,30 @@ describe('shared fixture (same numbers as the server digest)', () => {
       expect({ completed: s.completed, created: s.created, late: s.late, slipped: s.slipped, overdue: s.overdue, perDay: s.perDay.map((d) => d.count) }).toEqual(c.expected)
     })
   }
+})
+
+describe('day start (day-boundary D4)', () => {
+  afterEach(() => setDayStart(0))
+
+  it('Completed after midnight is not late: a 01:30 completion counts for the previous day', () => {
+    setDayStart(240)
+    const due = { date: '2026-10-14' }
+    const s = run([task('late-night', { due, completed_at: new Date(2026, 9, 15, 1, 30).getTime() })], { kind: 'this-week' })
+    expect(s.completed).toBe(1)
+    expect(s.late).toBe(0)
+    expect(s.perDay.find((d) => d.date === '2026-10-14')?.count).toBe(1)
+    setDayStart(0)
+    // With midnight it is a late completion on Thursday (outside "this week" up to Wednesday).
+    expect(run([task('late-night', { due, completed_at: new Date(2026, 9, 15, 1, 30).getTime() })], { kind: 'this-week' }).completed).toBe(0)
+  })
+
+  it('Week end at the day start: 02:00 on Monday still belongs to the previous week', () => {
+    setDayStart(240)
+    const monday2am = new Date(2026, 9, 19, 2, 0).getTime()
+    const today = logicalToday(240, monday2am)
+    expect(today).toBe('2026-10-18')
+    expect(periodFor('this-week', today, 1)).toMatchObject({ start: '2026-10-12', end: '2026-10-18' })
+    const s = compute({ tasks: [task('now', { completed_at: monday2am })], projects: [], shared: new Set(), me: 'me', today }, periodFor('this-week', today, 1), 1)
+    expect(s.completed).toBe(1)
+  })
 })

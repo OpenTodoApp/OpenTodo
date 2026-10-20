@@ -4730,6 +4730,9 @@
   "Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.": [
     "web/src/lib/voice/dictation.ts"
   ],
+  "Midnight (default)": [
+    "web/src/app/DateTimeSettings.tsx"
+  ],
   "Mind sweep": [
     "web/src/lib/review.ts"
   ],
@@ -4946,6 +4949,10 @@
   ],
   "Must include openid; email is needed to match existing accounts.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "My day starts at": [
+    "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "My own provider and key": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -9686,6 +9693,7 @@
   ],
   "Today": [
     "web/src/app/CalendarView.tsx",
+    "web/src/app/DateTimeSettings.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PreferencesPanels.tsx",
@@ -10473,6 +10481,10 @@
   ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Work done before this time counts for the previous day.": [
+    "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Work from your next actions, by context, one step at a time.": [
     "web/src/lib/method/vocabulary.json"

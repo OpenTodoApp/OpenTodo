@@ -184,6 +184,12 @@ moves to Thursday, so Tuesday and Wednesday read as missed and the streak starts
 again. A rule change rewrites only which past days without a record read as
 missed; done and skipped days stay.
 
+With a [day start](dates-and-times.md#when-a-day-ends) after midnight, "today"
+for a habit is the day you are living in. A habit due on the 14th and done at
+01:30 on the 15th with a day start of 04:00 records the 14th, its usual record
+(the record's day is always the occurrence's due date), counts in the streak,
+and the 15th is pending and not at risk until 04:00 on the 16th.
+
 The month grid marks each day as done (check mark), skipped (dash), missed
 (dashed outline), pending (circle) or upcoming, with the date and state as each
 day's accessible name ("6 October, skipped"). Arrow keys move by a day or a

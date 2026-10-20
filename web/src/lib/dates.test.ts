@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  compareDue, describeDue, dueFromView, dueToInstant, fixDueToZone, instantToLocalDue, localDueOf, onViewerZoneChange,
+  compareDue, currentDayStart, describeDue, logicalDay, logicalToday, setDayStart, todayISO, dueFromView, dueToInstant, fixDueToZone, instantToLocalDue, localDueOf, onViewerZoneChange,
   refreshViewerZone, releaseDue, viewerZone, watchViewerZone, zonedInstant, zoneHint,
 } from './dates'
 import vectors from './zoned.vectors.json'
+import { dayInZone } from './stats'
 import type { Due } from './types'
 
 const LA = 'America/Los_Angeles'
@@ -150,5 +151,54 @@ describe('viewer zone resolution', () => {
     expect(seen).toHaveLength(2)
     stop()
     off()
+  })
+})
+
+describe('logical day (day-boundary D2)', () => {
+  const local = (y: number, mo: number, d: number, h: number, mi = 0) => new Date(y, mo - 1, d, h, mi).getTime()
+  afterEach(() => setDayStart(0))
+
+  it('before the day start an instant belongs to the previous day, from it on to its own', () => {
+    expect(logicalDay(local(2026, 10, 15, 1, 30), 240)).toBe('2026-10-14')
+    expect(logicalDay(local(2026, 10, 15, 3, 59), 240)).toBe('2026-10-14')
+    expect(logicalDay(local(2026, 10, 15, 4, 0), 240)).toBe('2026-10-15')
+    expect(logicalDay(local(2026, 10, 15, 3, 29), 210)).toBe('2026-10-14')
+    expect(logicalDay(local(2026, 10, 15, 3, 30), 210)).toBe('2026-10-15')
+  })
+
+  it('at 0 it is the calendar date', () => {
+    for (const at of [local(2026, 10, 15, 0, 0), local(2026, 10, 15, 1, 30), local(2026, 10, 15, 23, 59)]) {
+      expect(logicalDay(at, 0)).toBe(todayISO(new Date(at)))
+    }
+  })
+
+  it('crosses month and year ends', () => {
+    expect(logicalDay(local(2026, 11, 1, 2), 240)).toBe('2026-10-31')
+    expect(logicalDay(local(2027, 1, 1, 2), 240)).toBe('2026-12-31')
+    expect(logicalDay(local(2028, 3, 1, 5), 360)).toBe('2028-02-29')
+  })
+
+  it('logicalToday reads the snapshot the provider sets, and ignores invalid values', () => {
+    const now = local(2026, 10, 15, 1, 30)
+    expect(logicalToday(undefined, now)).toBe('2026-10-15')
+    setDayStart(240)
+    expect(currentDayStart()).toBe(240)
+    expect(logicalToday(undefined, now)).toBe('2026-10-14')
+    expect(logicalDay(now)).toBe('2026-10-14')
+    setDayStart(600)
+    expect(currentDayStart()).toBe(0)
+  })
+
+  it('keeps the stated local time on daylight-saving nights (Europe/Zurich)', () => {
+    const zurich = (ds: number) => dayInZone('Europe/Zurich', ds)
+    // 2026-03-29: 02:00 CET jumps to 03:00 CEST.
+    expect(zurich(240)(Date.parse('2026-03-29T03:30:00+02:00'))).toBe('2026-03-28')
+    expect(zurich(240)(Date.parse('2026-03-29T04:00:00+02:00'))).toBe('2026-03-29')
+    expect(zurich(180)(Date.parse('2026-03-29T03:00:00+02:00'))).toBe('2026-03-29')
+    // 2026-10-25: 03:00 CEST falls back to 02:00 CET; both 02:30s are before 03:00.
+    expect(zurich(180)(Date.parse('2026-10-25T02:30:00+02:00'))).toBe('2026-10-24')
+    expect(zurich(180)(Date.parse('2026-10-25T02:30:00+01:00'))).toBe('2026-10-24')
+    expect(zurich(180)(Date.parse('2026-10-25T03:00:00+01:00'))).toBe('2026-10-25')
+    expect(zurich(0)(Date.parse('2026-10-25T00:30:00+02:00'))).toBe('2026-10-25')
   })
 })

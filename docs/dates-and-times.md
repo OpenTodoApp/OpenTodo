@@ -23,6 +23,16 @@ Type the date and time in the **Due** fields, or pick them. Dates and times are 
 
 Clear the date to remove the due date, or clear the time to keep only the day.
 
+## When a day ends
+
+For the app, a new day begins at midnight. If you often work past midnight, set **Settings → General → Date and time → My day starts at** to a time up to 06:00. With 04:00, at 01:30 on Thursday it is still Wednesday:
+
+- **Today** still lists Wednesday's tasks, nothing moves to **Overdue**, and Thursday's tasks are **Tomorrow** in **Upcoming**.
+- A task you complete now counts for Wednesday in **Completed**, [Statistics](statistics.md) and the Loop pulse, and a habit keeps its streak.
+- `today`, `tomorrow` and `overdue` in quick add and [filters](filters.md) mean the day you are living in.
+
+At 04:00 the views move on by themselves. Nothing stored changes: due dates stay calendar days, and reminders and times fixed to a zone still happen at their real moment.
+
 ## Fix a time to a time zone
 
 Under the due date, the **time zone** button shows how the time is meant: **Floating** (the same clock time wherever you are) or a city and its offset, such as **New York · UTC−5** (one moment worldwide). Choose it to:

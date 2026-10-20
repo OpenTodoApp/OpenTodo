@@ -5,7 +5,7 @@
 import { Popover } from '../ui'
 import type { RefObject } from 'react'
 import { useLabels, useProjects } from '../lib/localData'
-import { todayISO } from '../lib/dates'
+import { logicalToday } from '../lib/dates'
 import { createTask } from '../lib/ops'
 import { taskDefaults } from './listActions'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
@@ -43,7 +43,7 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   const labels = useLabels()
   // The same defaults as the view's own quick add line; attributes typed in the line override them.
   const onAdd = async ({ labels: typed, ...rest }: QuickAddInput) => {
-    const { labels: viewLabels, ...defaults } = taskDefaults(route, todayISO(), userId)
+    const { labels: viewLabels, ...defaults } = taskDefaults(route, logicalToday(), userId)
     if (rest.due || rest.deadline) delete defaults.start
     await createTask({ ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
     onClose()

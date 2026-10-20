@@ -4,7 +4,7 @@
 // server for the weekly digest (internal/digest/stats.go), pinned by the shared
 // fixture internal/digest/testdata/stats_fixture.json.
 import { resolveRange, shiftISO, weekdayOf } from './filter/parse'
-import { todayISO } from './dates'
+import { addDaysISO, currentDayStart, logicalDay } from './dates'
 import type { Membership, Project, Task } from './types'
 import { t, msg, translatedMap } from './i18n'
 
@@ -99,7 +99,8 @@ export function sharedIds(memberships: readonly Pick<Membership, 'projectId'>[])
   return new Set(memberships.map((m) => m.projectId))
 }
 
-const deviceDay = (ms: number) => todayISO(new Date(ms))
+/** The device's logical day of an instant (day-boundary D4); the shared fixture overrides it with `dayOf`. */
+const deviceDay = (ms: number) => logicalDay(ms, currentDayStart())
 
 /**
  * Whether a row counts for the user (design D1): every row outside shared
@@ -176,11 +177,17 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
   }
 }
 
-/** The local day of an instant in an IANA zone (tests and the shared fixture). */
-export function dayInZone(zone: string): (ms: number) => string {
-  const f = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' })
+/**
+ * The local day of an instant in an IANA zone (tests and the shared fixture). With
+ * `dayStart` (minutes after midnight, day-boundary D2) it is the logical day in that
+ * zone: the previous date while the zone's wall time is before the day start, the
+ * rule `logicalDay` applies in the device's zone.
+ */
+export function dayInZone(zone: string, dayStart = 0): (ms: number) => string {
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
   return (ms) => {
     const parts = Object.fromEntries(f.formatToParts(new Date(ms)).map((p) => [p.type, p.value]))
-    return `${parts.year}-${parts.month}-${parts.day}`
+    const iso = `${parts.year}-${parts.month}-${parts.day}`
+    return dayStart > 0 && Number(parts.hour) * 60 + Number(parts.minute) < dayStart ? addDaysISO(iso, -1) : iso
   }
 }

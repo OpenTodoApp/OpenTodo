@@ -5,7 +5,7 @@
 // data and actions live in usePropertiesModel and the editing state in
 // usePropertyEditing (web-component-structure); this file renders the chip groups.
 import { keysOf } from '../../lib/shortcuts'
-import { describeDeadline, daysBetweenISO, todayISO } from '../../lib/dates'
+import { describeDeadline, daysBetweenISO, logicalToday } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { removeLabel } from '../../lib/labels'
 import { createProject, unparkTask, updateTask } from '../../lib/ops'
@@ -47,7 +47,7 @@ const itemMeta = (i: PickerItem) => i.meta
 
 /** The countdown in words for the chip ("in 3 days", "today", "2 days over"). */
 function countdownWords(deadline: string, dueDate: string | null): string {
-  const days = daysBetweenISO(todayISO(), deadline)
+  const days = daysBetweenISO(logicalToday(), deadline)
   const late = dueDate && dueDate > deadline ? ` · ${t('planned after it')}` : ''
   if (days === 0) return t('today') + late
   return (days < 0 ? t('{n, plural, one {# day over} other {# days over}}', { n: -days }) : t('{n, plural, one {in # day} other {in # days}}', { n: days })) + late

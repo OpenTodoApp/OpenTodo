@@ -6,7 +6,7 @@
 // every device converges by last-writer-wins.
 import { planComplete, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import type { AssistantUndo } from './db'
-import { todayISO } from './dates'
+import { logicalToday } from './dates'
 import { getDeviceId, type Change } from './ops'
 import { currentUserId, membershipMap } from './sharing'
 import type { Task } from './types'
@@ -31,7 +31,7 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? todayISO()) : planReopen([task])
+  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday()) : planReopen([task])
   return apply(changes, completed ? t('Task completed') : t('Task reopened'))
 }
 

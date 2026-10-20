@@ -7,7 +7,7 @@ import { useWithMethod } from './help/MethodLink'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader, Dialog } from '../ui'
-import { formatDate, todayISO } from '../lib/dates'
+import { formatDate, logicalToday } from '../lib/dates'
 import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
 import { moveTaskAcrossScopes } from '../lib/ops'
 import { currentUserId } from '../lib/sharing'
@@ -133,7 +133,7 @@ export function TriageView() {
     const item = task
     if (!item) return
     switch (kind) {
-      case 'today': await setDueWithUndo(item.id, { ...(item.due ?? {}), date: todayISO() }); next(t('Due today: {title}.', { title: item.title || t('Untitled') })); break
+      case 'today': await setDueWithUndo(item.id, { ...(item.due ?? {}), date: logicalToday() }); next(t('Due today: {title}.', { title: item.title || t('Untitled') })); break
       case 'complete': await completeWithUndo(item.id, true); next(t('Completed: {title}.', { title: item.title || t('Untitled') })); break
       case 'trash': await deleteWithUndo(item.id); next(t('Moved to the Trash: {title}.', { title: item.title || t('Untitled') })); break
       case 'someday': if (HAS_SOMEDAY) { await parkWithUndo(item.id); next(t('Parked in Someday: {title}.', { title: item.title || t('Untitled') })) } break

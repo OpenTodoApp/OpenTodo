@@ -1,14 +1,15 @@
 // Settings → General → Date and time (OpenSpec date-time-preferences, design D8):
-// the three synced preferences with a live preview. A change is an op on the
+// the synced preferences with a live preview (the day start: day-boundary D7). A change is an op on the
 // user's personal `user_prefs` row, so it applies at once, offline too, and
 // reaches the user's other devices with the next sync.
 import { useMemo } from 'react'
-import { addDaysISO, formatDate, formatInstant, formatTime, resolveDateTime, systemDateTime, todayISO, weekDays, type ResolvedDateTime, dateLocaleOf } from '../lib/dates'
-import { DATE_FORMATS, setUserPref, TIME_FORMATS, WEEK_STARTS, type DateTimePrefs } from '../lib/userPrefs'
+import { addDaysISO, formatDate, formatInstant, formatTime, resolveDateTime, systemDateTime, logicalToday, weekDays, type ResolvedDateTime, dateLocaleOf } from '../lib/dates'
+import { DATE_FORMATS, DAY_STARTS, setUserPref, TIME_FORMATS, WEEK_STARTS, type DateTimePrefs, type DayStartPref } from '../lib/userPrefs'
 import type { DateFormatPref, TimeFormatPref, WeekStartPref } from '../lib/types'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useToday } from './useViews'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { act } from './actionError'
 
@@ -17,9 +18,16 @@ const TIME_NAMES = translatedMap<TimeFormatPref>({ system: msg('System'), '12h':
 const WEEK_NAMES = translatedMap<WeekStartPref>({ system: msg('System'), mon: msg('Monday'), sun: msg('Sunday'), sat: msg('Saturday') })
 const DEFAULTS: DateTimePrefs = { date_format: 'system', time_format: 'system', week_start: 'system' }
 
+/** Minutes after midnight as the stored `HH:MM`. */
+const hhmm = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+
 export function DateTimeSection() {
-  const { prefs, resolved } = useDateTimeFormat()
-  return <DateTimeView prefs={prefs ?? DEFAULTS} resolved={resolved} onChange={(field, value) => act(setUserPref(field, value as never))} />
+  const { prefs, resolved, dayStart } = useDateTimeFormat()
+  // The logical today, re-read at the day start and when the preference changes (useToday).
+  const today = useToday()
+  return <DateTimeView prefs={prefs ?? DEFAULTS} resolved={resolved} today={today} dayStart={dayStart}
+    onChange={(field, value) => act(setUserPref(field, value as never))}
+    onDayStartChange={(value) => act(setUserPref('day_start', value))} />
 }
 
 export interface DateTimeViewProps {
@@ -27,12 +35,15 @@ export interface DateTimeViewProps {
   /** The preferences as they apply now (system values filled in). */
   resolved: ResolvedDateTime
   onChange: <K extends keyof DateTimePrefs>(field: K, value: DateTimePrefs[K]) => void
-  /** Reference date for the labels and the preview (tests and stories). */
+  /** Reference date for the labels and the preview: the logical today (tests and stories pass one). */
   today?: string
+  /** The day start in minutes after midnight (day-boundary D7); 0 is midnight. */
+  dayStart?: number
+  onDayStartChange?: (value: DayStartPref) => void
 }
 
 /** Presentational part of the panel, rendered without effects for tests and stories. */
-export function DateTimeView({ prefs, resolved, onChange, today = todayISO() }: DateTimeViewProps) {
+export function DateTimeView({ prefs, resolved, onChange, today = logicalToday(), dayStart = 0, onDayStartChange }: DateTimeViewProps) {
   const sys = systemDateTime()
   // Each option shows what it looks like with today's date (or a sample time).
   const sample = (p: Partial<DateTimePrefs>) => resolveDateTime({ ...DEFAULTS, ...p }, sys)
@@ -45,6 +56,7 @@ export function DateTimeView({ prefs, resolved, onChange, today = todayISO() }: 
       due: formatTime('15:00', resolved),
       stamp: formatInstant(at3pm, 'time', resolved, today),
       week: weekDays(today, resolved),
+      today: formatDate(today, 'full', resolved, today),
     }
   }, [resolved, today])
 
@@ -66,9 +78,17 @@ export function DateTimeView({ prefs, resolved, onChange, today = todayISO() }: 
           {WEEK_STARTS.map((f) => <option key={f} value={f}>{f === 'system' ? t('System ({weekdayName})', { weekdayName: weekdayName(sys.weekStart) }) : WEEK_NAMES[f]}</option>)}
         </Select>
       } />
+      <SettingRow label={t('My day starts at')} htmlFor="day-start-select" description={t('Work done before this time counts for the previous day.')} control={
+        <Select id="day-start-select" className="sm:w-56" value={hhmm(dayStart)} onChange={(e) => onDayStartChange?.(e.target.value as DayStartPref)}>
+          {/* A value with minutes from a newer client is shown as it is, so the select never misstates it. */}
+          {(DAY_STARTS as readonly string[]).includes(hhmm(dayStart)) ? null : <option value={hhmm(dayStart)}>{formatTime(hhmm(dayStart), resolved)}</option>}
+          {DAY_STARTS.map((v) => <option key={v} value={v}>{v === '00:00' ? t('Midnight (default)') : formatTime(v, resolved)}</option>)}
+        </Select>
+      } />
       <SettingRow label={t('Preview')} control={
         <div data-testid="date-time-preview" aria-live="polite" className="flex min-w-0 flex-col gap-2 sm:items-end">
           <dl className="grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 text-meta">
+            <dt className="text-muted">{t('Today')}</dt><dd className="text-default" data-testid="preview-today">{preview.today}</dd>
             <dt className="text-muted">{t('Due date')}</dt><dd className="text-default" data-testid="preview-compact">{preview.compact}</dd>
             <dt className="text-muted">{t('Date')}</dt><dd className="text-default" data-testid="preview-numeric">{preview.numeric}</dd>
             <dt className="text-muted">{t('Due time')}</dt><dd className="text-default" data-testid="preview-time">{preview.due}</dd>

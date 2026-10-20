@@ -339,6 +339,8 @@ export interface UserPrefs {
   date_format: DateFormatPref
   time_format: TimeFormatPref
   week_start: WeekStartPref
+  /** Day start (day-boundary): `HH:MM` from 00:00 to 06:00; empty, malformed or out-of-range values read as midnight. */
+  day_start: string
   /** Appearance (theming): unknown values read as the defaults. */
   theme_mode: ThemeModePref
   theme_accent: string

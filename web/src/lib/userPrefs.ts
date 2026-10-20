@@ -28,6 +28,23 @@ export const DEFAULT_PREFS: DateTimePrefs = {
   date_format: USER_PREFS_DEFAULTS.date_format, time_format: USER_PREFS_DEFAULTS.time_format, week_start: USER_PREFS_DEFAULTS.week_start,
 }
 
+/** The day starts the Settings panel offers (day-boundary D7): whole hours from midnight to 06:00. */
+export const DAY_STARTS = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00'] as const
+export type DayStartPref = (typeof DAY_STARTS)[number]
+
+/**
+ * The stored day start as minutes after midnight (day-boundary D1): `HH:MM` from
+ * 00:00 to 06:00, minutes allowed (a newer client may write `03:30`); an empty,
+ * malformed or out-of-range value (`09:00`, `4am`) reads as 0, midnight. The row
+ * itself is not changed.
+ */
+export function readDayStart(row: Partial<UserPrefs> | null | undefined): number {
+  const m = /^(\d{2}):([0-5]\d)$/.exec(typeof row?.day_start === 'string' ? row.day_start : '')
+  if (!m) return 0
+  const minutes = Number(m[1]) * 60 + Number(m[2])
+  return minutes <= 360 ? minutes : 0
+}
+
 /** Interface language values (app-localization D1): 'system' and the shipped language codes. */
 export const LANGUAGES: readonly LanguagePref[] = ['system', 'en', 'de', 'fr', 'es', 'it', 'pt']
 
@@ -36,7 +53,7 @@ export function readLanguage(row: Partial<UserPrefs> | null | undefined): Langua
   return pick(LANGUAGES, row?.language)
 }
 
-type SettablePrefs = DateTimePrefs & { language: LanguagePref }
+type SettablePrefs = DateTimePrefs & { language: LanguagePref; day_start: DayStartPref }
 
 /** Changes one preference through the op log (offline-safe). */
 export function setUserPref<K extends keyof SettablePrefs>(field: K, value: SettablePrefs[K]): Promise<void> {

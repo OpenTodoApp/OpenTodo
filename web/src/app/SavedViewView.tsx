@@ -19,7 +19,7 @@ import { ViewMenu } from './ViewsView'
 import { useListKeys } from './useListKeys'
 import { useBulkList } from './bulk/useBulkList'
 import { placeInDay } from './signals'
-import { todayISO } from '../lib/dates'
+import { logicalToday } from '../lib/dates'
 import { habitStatsMap } from '../lib/habits'
 import { useViewData, type ViewData } from './useViews'
 import { t, msg, translatedMap } from '../lib/i18n'
@@ -109,7 +109,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
       'list.schedule': () => {
         const row = rows.find((r) => r.key === selected)?.task
         if (!row || row.completed_at) return false
-        placeInDay(row, todayISO())
+        placeInDay(row, logicalToday())
       },
       'view.edit-query': () => inputRef.current?.focus(),
     },

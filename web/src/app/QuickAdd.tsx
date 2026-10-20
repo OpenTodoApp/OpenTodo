@@ -4,7 +4,7 @@ import { useShortcutHints } from './shortcuts/hints'
 import type { HueName } from '../ui'
 import { Tooltip } from '../ui'
 import { Icon } from '../ui'
-import { describeDue, formatDate, todayISO } from '../lib/dates'
+import { describeDue, formatDate, logicalToday, todayISO } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
@@ -71,7 +71,9 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
       return line?.due && !line.datedByPhrase ? `${String(chip.value)} · ${formatDate(line.due.date, 'long')}` : String(chip.value)
     case 'reminder': {
       const r = chip.value as ReminderPhrase
-      const res = resolveReminder(r, line?.due ?? null, todayISO(), nowHHMM())
+      // Reminders are instants: the calendar date and clock of now, not the logical day (day-boundary D2).
+      const now = new Date()
+      const res = resolveReminder(r, line?.due ?? null, todayISO(now), nowHHMM(now))
       if (res.kind === 'absolute') return t('Remind {date}, {time}', { date: formatDate(res.date, 'long'), time: res.time })
       return line?.due ? describeOffset(res.offsetMinutes) : `${describeOffset(res.offsetMinutes)} · ${t('needs a due date')}`
     }
@@ -138,7 +140,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     if (!settings.enabled || !value.trim()) return null
     const langs = preferredLanguages()
     return parse(value, {
-      today: todayISO(),
+      today: logicalToday(),
       now: nowHHMM(),
       languages: resolveLanguages(settings, langs),
       dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),

@@ -60,7 +60,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Recurring rules incl. "every last weekday", "every 3 days after completion" | `recurring-tasks` |
 | Duration estimates and time-blocking calendar grid | `time-blocking` |
 | Absolute (time-zone aware) times next to floating dates | `absolute-datetimes` |
-| Date, time and week-start preferences | `date-time-preferences` |
+| Date, time and week-start preferences, and when your day starts | `date-time-preferences`, `day-boundary` |
 
 ### 5. Collaboration
 
