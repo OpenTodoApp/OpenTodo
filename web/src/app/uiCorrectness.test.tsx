@@ -59,7 +59,7 @@ describe('a viewer of a shared project (UI-10)', () => {
     const r = await render(<><TaskListView route={{ view: 'project', id: p }} /><PanelHost /></>)
     await waitFor(() => r.container.textContent!.includes('Standup'), 'the row')
     await key(document.body, 'j')
-    await waitFor(() => !!r.container.querySelector('[data-task-id][class*="ring-accent"]'), 'a selected row')
+    await waitFor(() => !!r.container.querySelector('[data-task-id][aria-current]'), 'a selected row')
     const path = location.pathname
     await key(document.body, 'K', { shiftKey: true })
     await key(document.body, 'O', { shiftKey: true })

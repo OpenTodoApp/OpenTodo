@@ -62,7 +62,7 @@ describe('large lists', () => {
     // The first press selects one row; every later press deselects one and selects the next.
     expect(presses[0]).toBeLessThanOrEqual(2)
     for (const n of presses.slice(1)) expect(n).toBeLessThanOrEqual(4)
-    expect(r.container.querySelector('[data-task-id="t00001"]')!.className).toContain('ring-1')
+    expect(r.container.querySelector('[data-task-id="t00001"]')!.className).toContain('row-selected')
     await r.unmount()
   }, 120_000)
 
