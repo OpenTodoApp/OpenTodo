@@ -507,6 +507,23 @@ var Schema = map[string]map[string]kind{
 		// restricted here; clients read an unknown code as "system" and keep the
 		// stored value, so a catalog added later stays additive.
 		"language": kString,
+		// Focus timer preferences (OpenSpec change focus-mode, design D5): the
+		// timer mode (pomodoro|flowtime|countdown), which phases start on their
+		// own (none|breaks|work|both) and the sound (off|on), plus the work,
+		// short break and long break lengths in minutes (1-180), the number of
+		// work sessions before a long break (1-12) and the break reminder after
+		// that many minutes of continuous work (0 = off, else 15-240). Settings,
+		// never content: not encrypted, no activity event. Clients check the
+		// bounds before writing and read an unknown or out-of-range value as the
+		// default without rewriting it; the server keeps the kind check only.
+		"focus_mode":                kString,
+		"focus_auto_start":          kString,
+		"focus_sound":               kString,
+		"focus_work_minutes":        kNumber,
+		"focus_short_break_minutes": kNumber,
+		"focus_long_break_minutes":  kNumber,
+		"focus_long_break_every":    kNumber,
+		"focus_break_after_minutes": kNumber,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

@@ -101,3 +101,32 @@ func TestOwnExportRestoresOpenLoopsFields(t *testing.T) {
 		}
 	}
 }
+
+const focusPrefsOwnExport = `{"format":"opentodo-export","version":1,
+  "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
+  "user_prefs":[{"id":"me","focus_mode":"countdown","focus_auto_start":"breaks","focus_sound":"on","focus_work_minutes":50,
+    "focus_short_break_minutes":10,"focus_long_break_minutes":20,"focus_long_break_every":3,"focus_break_after_minutes":120}],
+  "encryption":null}`
+
+// TestOwnExportRestoresFocusPrefs (focus-mode D5): the focus preferences are
+// ordinary user_prefs fields, so an own export carries them and an import restores
+// every one with its kind.
+func TestOwnExportRestoresFocusPrefs(t *testing.T) {
+	h := newHarness(t)
+	job := h.run(focusPrefsOwnExport, Options{})
+	if job.Status != StatusDone || job.Totals.Written != 1 {
+		t.Fatalf("job = %+v", job)
+	}
+	row, err := h.sync.Get(context.Background(), h.uid, "user_prefs", "me")
+	if err != nil || row == nil {
+		t.Fatalf("user_prefs: %v %v", row, err)
+	}
+	if str(row, "focus_mode") != "countdown" || str(row, "focus_auto_start") != "breaks" || str(row, "focus_sound") != "on" {
+		t.Fatalf("restored focus strings = %v", row)
+	}
+	for field, want := range map[string]string{"focus_work_minutes": "50", "focus_short_break_minutes": "10", "focus_long_break_minutes": "20", "focus_long_break_every": "3", "focus_break_after_minutes": "120"} {
+		if got := string(row[field]); got != want {
+			t.Fatalf("%s = %s, want %s", field, got, want)
+		}
+	}
+}

@@ -408,6 +408,20 @@ export interface UserPrefs {
   welcome: string
   /** How you work (open-loops-method D2): lists | companion | first; unknown or empty values read as lists. */
   method_mode: string
+  /**
+   * Focus timer preferences (focus-mode D5): mode pomodoro | flowtime | countdown,
+   * auto-start none | breaks | work | both, sound off | on; lengths in minutes
+   * (1-180), the long-break cycle (1-12) and the break reminder (0 = off, else
+   * 15-240). Empty, zero, unknown or out-of-range values read as the defaults.
+   */
+  focus_mode: string
+  focus_auto_start: string
+  focus_sound: string
+  focus_work_minutes: number
+  focus_short_break_minutes: number
+  focus_long_break_minutes: number
+  focus_long_break_every: number
+  focus_break_after_minutes: number
   _clock: Clock
 }
 

@@ -174,3 +174,51 @@ func TestFavouritesValidates(t *testing.T) {
 		t.Fatalf("bob sees alice's favourites: %s", got)
 	}
 }
+
+// TestFocusPrefsValidate (focus-mode D5): the eight focus preferences are additive
+// user_prefs fields, strings and numbers each checked by kind; they resolve to the
+// author's personal scope and converge per field by last-writer-wins.
+func TestFocusPrefsValidate(t *testing.T) {
+	good := map[string]string{
+		"focus_mode": `"flowtime"`, "focus_auto_start": `"both"`, "focus_sound": `"on"`,
+		"focus_work_minutes": `50`, "focus_short_break_minutes": `5`, "focus_long_break_minutes": `15`,
+		"focus_long_break_every": `4`, "focus_break_after_minutes": `90`,
+	}
+	for field, value := range good {
+		op := Op{ID: "o", Entity: "user_prefs", EntityID: "me", Field: field, TS: 1, Device: "D", Value: []byte(value)}
+		if err := Validate(op); err != nil {
+			t.Fatalf("%s = %s refused: %v", field, value, err)
+		}
+	}
+	for _, field := range []string{"focus_work_minutes", "focus_long_break_every", "focus_break_after_minutes"} {
+		op := Op{ID: "o", Entity: "user_prefs", EntityID: "me", Field: field, TS: 1, Device: "D", Value: []byte(`"25"`)}
+		if err := Validate(op); !errors.Is(err, ErrInvalidOp) {
+			t.Fatalf("%s = \"25\" (a string) accepted (err %v)", field, err)
+		}
+	}
+	op := Op{ID: "o", Entity: "user_prefs", EntityID: "me", Field: "focus_mode", TS: 1, Device: "D", Value: []byte(`3`)}
+	if err := Validate(op); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("focus_mode = 3 accepted (err %v)", err)
+	}
+
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor) // sharing a project does not share preferences
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "focus_work_minutes", `50`)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("alice write = %+v", res)
+	}
+	if got := f.field("alice", "user_prefs", "me", "focus_work_minutes"); got != `50` {
+		t.Fatalf("alice reads %s", got)
+	}
+	if got := f.field("bob", "user_prefs", "me", "focus_work_minutes"); got != "<none>" && got != "" {
+		t.Fatalf("bob reads alice's focus preference: %s", got)
+	}
+	// Two devices offline: the laptop sets the mode, the phone the work length; both survive.
+	f.apply("alice", "laptop", f.op("user_prefs", "me", "focus_mode", `"flowtime"`))
+	f.apply("alice", "phone", f.op("user_prefs", "me", "focus_work_minutes", `30`))
+	if got := f.field("alice", "user_prefs", "me", "focus_mode"); got != `"flowtime"` {
+		t.Fatalf("focus_mode = %s", got)
+	}
+	if got := f.field("alice", "user_prefs", "me", "focus_work_minutes"); got != `30` {
+		t.Fatalf("focus_work_minutes = %s", got)
+	}
+}

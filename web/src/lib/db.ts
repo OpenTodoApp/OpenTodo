@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import type { FocusState } from './focus/timer'
 import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 
 export interface OutboxOp extends Op {
@@ -125,6 +126,8 @@ class OpenTodoDB extends Dexie {
   calendarSubscriptions!: Table<CalendarSubscription, string>
   /** Time entries (OpenSpec time-tracking): a synced entity, indexed by task, author and start. */
   timeEntries!: Table<TimeEntry, string>
+  /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
+  focus!: Table<FocusState, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -406,6 +409,8 @@ class OpenTodoDB extends Dexie {
     // store of v19, so only the new one is declared. No index on ended_at:
     // IndexedDB does not index null, the running entry is found by user_id.
     this.version(20).stores({ timeEntries: 'id, task_id, user_id, started_at' })
+    // v21 (focus-mode D2): the focus timer's one device-local row; never an op, never exported.
+    this.version(21).stores({ focus: 'id' })
   }
 }
 
@@ -530,11 +535,11 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
   bumpLocalEpoch()
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions, db.focus], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),
       db.calendarEvents.clear(), db.calendarSubscriptions.clear(),
-      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(),
+      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(), db.focus.clear(),
     ])
   })
 }
