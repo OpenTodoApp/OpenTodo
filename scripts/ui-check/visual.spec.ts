@@ -26,6 +26,9 @@ for (const id of ids) {
           await page.locator('#storybook-root > *').first().waitFor()
         }
         await page.evaluate(() => document.fonts.ready)
+        // A story that scripts its state after mounting (opens a menu, focuses a row) marks
+        // itself data-story-pending until that state is in place; wait for it before capturing.
+        await page.locator('[data-story-pending]').waitFor({ state: 'detached', timeout: 5000 })
         // An open menu or dialog renders in a portal outside the story root: capture the viewport.
         const overlay = await page.locator('[data-overlay]').count()
         await expect(overlay ? page : story).toHaveScreenshot(`${id}--${theme}-${width}.png`)

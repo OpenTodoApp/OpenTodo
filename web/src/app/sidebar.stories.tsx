@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { seedInbox, seedToday, seeded, storyUser, withSeed } from './stories/fixtures'
 
@@ -112,16 +112,22 @@ export const Markers: StoryObj = {
 /** A project row focused by keyboard (quiet-sidebar D7): its count shows while focused, and is always in its name. */
 function FocusedProject() {
   const column = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState(true)
   useEffect(() => {
     let tries = 0
     const timer = setInterval(() => {
       const row = column.current?.querySelector<HTMLElement>(`[data-project-id="${seeded.work}"]`)
-      if (row?.querySelector('[data-open-count]') || ++tries > 100) { clearInterval(timer); row?.focus() }
+      if (row?.querySelector('[data-open-count]') || ++tries > 100) {
+        clearInterval(timer)
+        row?.focus()
+        requestAnimationFrame(() => setPending(false))
+      }
     }, 20)
     return () => clearInterval(timer)
   }, [])
   return (
-    <div ref={column}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></div>
+    // data-story-pending: the visual check waits until the row is focused.
+    <div ref={column} data-story-pending={pending || undefined}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></div>
   )
 }
 export const CountOnFocus: StoryObj = { ...withSeed(seedToday), render: () => <FocusedProject /> }
@@ -129,16 +135,22 @@ export const CountOnFocus: StoryObj = { ...withSeed(seedToday), render: () => <F
 /** The account menu open (quiet-sidebar D5): Settings, Help and Keyboard shortcuts with their keys, then Sign out. */
 function AccountMenuOpen() {
   const column = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState(true)
   useEffect(() => {
     let tries = 0
     const timer = setInterval(() => {
       const trigger = column.current?.querySelector<HTMLElement>('[data-account-menu]')
-      if (trigger || ++tries > 50) { clearInterval(timer); trigger?.click() }
+      if (trigger || ++tries > 50) {
+        clearInterval(timer)
+        trigger?.click()
+        requestAnimationFrame(() => setPending(false))
+      }
     }, 20)
     return () => clearInterval(timer)
   }, [])
   return (
-    <div ref={column}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} onSignOut={noop} /></Column></div>
+    // data-story-pending: the visual check waits until the menu is open.
+    <div ref={column} data-story-pending={pending || undefined}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} onSignOut={noop} /></Column></div>
   )
 }
 export const AccountMenu: StoryObj = { render: () => <AccountMenuOpen /> }
