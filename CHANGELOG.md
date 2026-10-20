@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Quick add understands ordinal weekdays.** `second Monday`, `the 3rd Friday of November`, `last Friday` and `every 2nd monday of the month` now work, in all six quick-add languages (`am zweiten Montag`, `le 2e lundi de novembre`, `secondo lunedì`, `tercer viernes de noviembre`, `segunda segunda-feira`) and in `ot add --natural`. Before, `Dentist second Monday` became *Dentist second* due next Monday. A bare count before a weekday (`every 2 Mondays`) is not a rule and now stays whole in the title in every language, without a date. ([Quick add syntax](docs/quick-add.md#dates-and-times))
 - **My day starts at.** If you work past midnight, set when your day really ends in Settings → General → Date and time (midnight by default, or a whole hour up to 06:00). Until then the app still treats it as the previous day: Today keeps its tasks out of Overdue, a task completed at 01:30 counts for the day before in Completed, Statistics, the Loop pulse and the weekly digest, habits keep their streak, and the Daily check and today's focus last until your day start. Due dates and reminders do not change, and the preference syncs to your devices as an additive `user_prefs.day_start` field. ([Dates and times](docs/dates-and-times.md#when-a-day-ends))
 
 ### Changed

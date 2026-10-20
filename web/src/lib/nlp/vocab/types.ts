@@ -67,6 +67,14 @@ export interface Vocabulary {
   weekdayAll: string[]
   /** Ordinal words → 1–4, or -1 for last. */
   ordinals: Record<string, number>
+  /** Articles before an ordinal weekday ("the", "den"); the Romance ones are `before` words. */
+  ordinalArticles: string[]
+  /** "of" between an ordinal weekday and a month ("of", "im", "de", "di"). */
+  ordinalOf: string[]
+  /** "of the month" after an ordinal weekday or a monthly rule; changes nothing (quick-add-nth-weekday D2). */
+  ofMonthWords: string[]
+  /** Weekday names that are also ordinals, only directly before a weekday (Portuguese "segunda"). */
+  ordinalsBeforeWeekday: Record<string, number>
   /** "and" between weekdays. */
   andWords: string[]
   /** "after completion". */

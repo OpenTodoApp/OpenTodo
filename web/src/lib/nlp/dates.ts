@@ -1,5 +1,6 @@
 // Date and time phrase grammar and resolver for quick add. Pure: the result depends
 // only on the tokens, the reference date/time and the vocabularies passed in.
+import { nthWeekdayDate } from '../recurrence'
 import type { Token } from './tokenize'
 import { normalize, type DayMonthOrder, type Vocabulary } from './vocab'
 
@@ -270,6 +271,7 @@ export function matchDateAt(tokens: readonly Token[], i: number, ctx: DateContex
     for (const j of pre ? [i + pre, i] : [i]) {
       const wrap = (m: { date: string; n: number } | null): DateMatch | null => (m ? { date: m.date, from: i, to: j + m.n } : null)
       consider(wrap(weekdayPhraseAt(tokens, j, v, ctx)))
+      consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
       consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
       consider(wrap(inPeriodAt(tokens, j, v, ctx)))
       consider(wrap(monthDayAt(tokens, j, v, ctx)))
@@ -308,6 +310,82 @@ function weekdayPhraseAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx
   }
   const date = qualifier === 'next' ? nextNextWeekday(ctx.today, wd, ctx.weekStart) : nextWeekday(ctx.today, wd)
   return { date, n: k - j }
+}
+
+// ---------- ordinal weekdays (quick-add-nth-weekday D1, D3) ----------
+
+/**
+ * A number from 1 to 4 with an ordinal suffix: `DAY_RE`'s suffixes plus the French
+ * `e`, `ème` and `re`. Used only before a weekday, so "2e" is a day number nowhere else.
+ * A bare number is a count, never an ordinal.
+ */
+const ORDINAL_RE = /^([1-4])(?:st|nd|rd|th|er|re|eme|e|o|a|º|°|ª|\.)$/
+
+/**
+ * An ordinal directly before a weekday at token i: an ordinal word, a word of
+ * `ordinalsBeforeWeekday` (Portuguese "segunda", not when a list separator
+ * follows it), or a suffixed number from 1 to 4. The value is 1–4, or -1 for last.
+ * The weekday itself is not consumed.
+ */
+export function weekdayOrdinalAt(
+  tokens: readonly Token[], i: number, v: Vocabulary, isWeekday: (k: number) => boolean,
+): { n: number; value: number } | null {
+  const t = tokens[i]
+  if (!t || t.quoted) return null
+  // "segunda, quarta" and "3rd, Friday" are lists, not ordinal weekdays.
+  const direct = (n: number) => !/[,;]$/.test(tokens[i + n - 1].text) && isWeekday(i + n)
+  const num = ORDINAL_RE.exec(t.norm)
+  if (num) return direct(1) ? { n: 1, value: Number(num[1]) } : null
+  const word = lookupAt(tokens, i, v.ordinals, `${v.code}:ord`)
+  if (word && direct(word.n)) return word
+  const pre = lookupAt(tokens, i, v.ordinalsBeforeWeekday, `${v.code}:ordwd`)
+  return pre && direct(pre.n) ? pre : null
+}
+
+/**
+ * A suffixed number above four directly before a weekday ("5th Friday"): no fifth
+ * weekday is offered, so parse() keeps the two tokens literal as a unit instead of
+ * reading the weekday alone (quick-add-nth-weekday D1). Returns the token count, or 0.
+ */
+export function ordinalOutOfRangeAt(tokens: readonly Token[], i: number, ctx: DateContext): number {
+  const t = tokens[i]
+  if (!t || t.quoted || /^\d+$/.test(t.norm) || dayNumber(t) <= 4 || /[,;]$/.test(t.text)) return 0
+  return ctx.vocabs.some((v) => weekdayAt(tokens, i + 1, v) >= 0) ? 2 : 0
+}
+
+/** Tokens at k of an "of the month" phrase in any active language, or 0. */
+export function ofMonthAt(tokens: readonly Token[], k: number, ctx: DateContext): number {
+  let n = 0
+  for (const w of ctx.vocabs) n = Math.max(n, phraseAt(tokens, k, w.ofMonthWords, `${w.code}:ofmonth`))
+  return n
+}
+
+/**
+ * [article] ordinal weekday [of MONTH [YEAR] | of the month]: that weekday of this
+ * month, or of the next once it has passed; with a month, this year or the next;
+ * with a year, that year only.
+ */
+function ordinalWeekdayAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx: DateContext): { date: string; n: number } | null {
+  let k = j + phraseAt(tokens, j, v.ordinalArticles, `${v.code}:ordart`)
+  const ord = weekdayOrdinalAt(tokens, k, v, (w) => weekdayAt(tokens, w, v) >= 0)
+  if (!ord) return null
+  k += ord.n
+  const wd = weekdayAt(tokens, k, v) + 1
+  k += 1
+  const [ty, tm] = fromISO(ctx.today)
+  const of = phraseAt(tokens, k, v.ordinalOf, `${v.code}:ordof`)
+  const month = of ? monthAt(tokens, k + of, v, true) : 0
+  if (month) {
+    k += of + 1
+    const year = yearAt(tokens[k])
+    if (year) return { date: nthWeekdayDate(year, month, ord.value, wd), n: k + 1 - j }
+    const date = nthWeekdayDate(ty, month, ord.value, wd)
+    return { date: date >= ctx.today ? date : nthWeekdayDate(ty + 1, month, ord.value, wd), n: k - j }
+  }
+  k += ofMonthAt(tokens, k, ctx)
+  const date = nthWeekdayDate(ty, tm, ord.value, wd)
+  if (date >= ctx.today) return { date, n: k - j }
+  return { date: tm === 12 ? nthWeekdayDate(ty + 1, 1, ord.value, wd) : nthWeekdayDate(ty, tm + 1, ord.value, wd), n: k - j }
 }
 
 function nextPeriodAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx: DateContext): { date: string; n: number } | null {

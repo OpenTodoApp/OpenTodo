@@ -4,7 +4,7 @@
 import type { Due, Priority } from '../types'
 import { matchDuration, matchLabel, matchPriority, matchProject, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
@@ -173,7 +173,13 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     // range overlaps a live dismissal is ignored.
     let dm: DateMatch | null = date ? null : matchDateAt(tokens, i, dctx)
     let tm: TimeMatch | null = time ? null : matchTimeAt(tokens, i, dctx)
-    let rm: RecurrenceMatch | null = recurrence ? null : matchRecurrenceAt(tokens, i, dctx)
+    let rm: RecurrenceMatch | null = matchRecurrenceAt(tokens, i, dctx)
+    // After the first rule only a literal match still counts (it keeps "cada 2 lunes" whole).
+    if (recurrence && rm && !rm.literal) rm = null
+    if (!rm) {
+      const n = ordinalOutOfRangeAt(tokens, i, dctx)
+      if (n) rm = { rule: '', from: i, to: i + n, literal: true }
+    }
     let mm: ReminderMatch | null = matchReminderAt(tokens, i, dctx)
     const dSpan: Span | null = dm ? spanOf(line, tokens, dm.from, dm.to) : null
     const tSpan: Span | null = tm ? spanOf(line, tokens, tm.from, tm.to) : null
@@ -186,7 +192,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     const phraseEnd = Math.max(rm?.to ?? 0, mm?.to ?? 0)
     if (phraseEnd > Math.max(dm?.to ?? 0, tm?.to ?? 0)) {
       if (rm && rSpan && rm.to === phraseEnd) {
-        recurrence = { value: rm.rule, span: rSpan }
+        // A literal match (quick-add-nth-weekday D3) is skipped as a unit and stays in the title.
+        if (!rm.literal) recurrence = { value: rm.rule, span: rSpan }
         i = rm.to
       } else if (mm && mSpan) {
         reminders.push({ value: mm.reminder, span: mSpan })

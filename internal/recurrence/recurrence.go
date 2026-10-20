@@ -479,6 +479,14 @@ func nthWeekdayOf(y, m, ordinal, wd int) int {
 	return first + (wd-isoWeekday(first)+7)%7 + 7*(ordinal-1)
 }
 
+// NthWeekdayDate is the date (YYYY-MM-DD) of the ordinal-th weekday (1 = Monday
+// … 7 = Sunday) of month m of year y; ordinal is 1–4, or -1 for the last. Quick
+// add resolves one-off ordinal weekdays with it (quick-add-nth-weekday D1), so they
+// agree with the first occurrence of the matching rule.
+func NthWeekdayDate(y, m, ordinal, weekday int) string {
+	return formatDate(nthWeekdayOf(y, m, ordinal, weekday))
+}
+
 // inMonth returns the rule's date within month (y, m) for month-based patterns.
 func (r Rule) inMonth(y, m int) int {
 	switch r.kind {

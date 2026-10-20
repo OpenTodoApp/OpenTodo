@@ -23,7 +23,7 @@ export function exportVocab() {
   return Object.fromEntries(Object.entries(VOCABULARIES).map(([code, v]) => {
     const out: Record<string, unknown> = {}
     for (const [k, x] of Object.entries(v)) {
-      if (k === 'dayWords' || k === 'timeWords' || k === 'everyOne' || k === 'ordinals') {
+      if (k === 'dayWords' || k === 'timeWords' || k === 'everyOne' || k === 'ordinals' || k === 'ordinalsBeforeWeekday') {
         out[k] = Object.fromEntries(Object.entries(x as Record<string, unknown>).map(([p, val]) => [normalize(p), val]))
       } else out[k] = fold(x)
     }

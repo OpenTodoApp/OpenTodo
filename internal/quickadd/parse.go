@@ -179,8 +179,15 @@ func (p *parser) phrase(i int) int {
 	if !p.timeV.set {
 		tm = matchTimeAt(tokens, i, dctx)
 	}
-	if !p.rec.set {
-		rm = matchRecurrenceAt(tokens, i, dctx)
+	// After the first rule only a literal match still counts; a suffixed number
+	// above four before a weekday is one too (quick-add-nth-weekday D1, D3).
+	if rm = matchRecurrenceAt(tokens, i, dctx); rm != nil && p.rec.set && !rm.literal {
+		rm = nil
+	}
+	if rm == nil {
+		if n := ordinalOutOfRangeAt(tokens, i, dctx); n > 0 {
+			rm = &recMatch{"", i, i + n, true}
+		}
 	}
 	mm := matchReminderAt(tokens, i, dctx)
 	end := func(to int, ok bool) int {
@@ -193,7 +200,9 @@ func (p *parser) phrase(i int) int {
 	switch {
 	case phraseEnd > max(end(dmTo(dm)), end(tmTo(tm))):
 		if rm != nil && rm.to == phraseEnd {
-			p.rec = found{rm.rule, p.span(rm.from, rm.to), true}
+			if !rm.literal {
+				p.rec = found{rm.rule, p.span(rm.from, rm.to), true}
+			}
 			return rm.to
 		} else if mm != nil {
 			p.reminders = append(p.reminders, struct {
