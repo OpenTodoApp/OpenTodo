@@ -124,9 +124,12 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   useEffect(() => rememberCalendarMode(mode), [mode])
 
   // Start at the grid start hour; the hours before and after stay reachable by scrolling.
+  // Only the time grid: the phone agenda is a list of days and starts at its first day.
   useLayoutEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = Math.max(0, prefs.startHour * 60 * PX_PER_MIN - 8)
-  }, [prefs.startHour, mode])
+    if (!scroller.current) return
+    const agenda = mode === 'week' && !wide
+    scroller.current.scrollTop = agenda ? 0 : Math.max(0, prefs.startHour * 60 * PX_PER_MIN - 8)
+  }, [prefs.startHour, mode, wide])
 
   const commit = useCallback((taskId: string, target: DropTarget) => {
     const task = taskMap.get(taskId)
