@@ -1,11 +1,14 @@
 // The cheat sheet (OpenSpec change ux-overhaul, keyboard-shortcuts "Cheat sheet"):
 // rendered from the shortcut registry; the shortcuts of the scopes active right now
 // come first, then "Everywhere" and "Go to", then the other sections, in two
-// columns from 768 px, with a search field, inside a dialog capped at 80 % of the
-// viewport with its own scroller.
-import { Dialog } from '../ui'
+// columns from 768 px (three from 1280 px), with a search field, inside a dialog capped
+// at 80 % of the viewport with its own scroller. Rows are compact (shortcut-spotlight
+// D6): the label on one line, the keys as keycaps that never wrap.
+import { Dialog, Tooltip } from '../ui'
 import { useMemo, useState } from 'react'
-import { displayKeys, listedShortcuts, QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
+import { listedShortcuts, QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
+import { Keys } from './shortcuts/Kbd'
+import { shortcutLabel } from './shortcuts/Spotlight'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
 
@@ -58,30 +61,75 @@ export function orderedSections(ctx: HelpContext | undefined): { id: ShortcutSec
   return out
 }
 
-function matches(q: string, keys: string, description: string): boolean {
+function matches(q: string, ...texts: string[]): boolean {
   if (!q) return true
-  const hay = `${keys} ${description}`.toLowerCase()
+  const hay = texts.join(' ').toLowerCase()
   return q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w))
 }
 
-function Rows({ rows, mono = false }: { rows: [string, string][]; mono?: boolean }) {
-  return (
-    <table className="w-full table-fixed text-body">
-      <tbody>
-        {rows.map(([k, d], i) => (
-          <tr key={`${i}-${k}`} className="border-t border-default">
-            <td className="w-2/5 py-1.5 pr-3 align-top">{mono ? <code className="break-words text-meta">{k}</code> : <span className="ui-kbd inline-block break-words">{k}</span>}</td>
-            <td className="py-1.5 text-muted">{d}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
+/** One row of the sheet: what it does, and its keys (or a command for the code blocks). */
+export interface SheetRow {
+  keys: string[]
+  /** The short label, or the description when the entry has none. */
+  label: string
+  /** The full description (the row's accessible text and tooltip). */
+  description: string
+  /** The state the shortcut needs, shown under the label. */
+  when?: string
 }
 
-/** The sheet's rows for a registry entry: the keys as shown and the description, in the interface language. */
-export function sheetRow(s: Shortcut): [string, string] {
-  return [s.when ? displayKeys({ keys: s.keys, when: t(s.when) }) : displayKeys(s), t(s.description)]
+/**
+ * The head of a description for a one-line row: the text before its first colon,
+ * semicolon or parenthesis ("Search and commands: find any task…" → "Search and
+ * commands"), when that head is long enough to stand alone.
+ */
+export function shortDescription(text: string): string {
+  const cut = text.search(/: |; | \(| — /)
+  return cut >= 8 ? text.slice(0, cut) : text
+}
+
+/**
+ * Heads shared by several rows of one group ("In the Trash: select…", "In the Trash:
+ * restore…") say nothing on their own: those rows read the text after the head instead.
+ */
+export function distinctLabels(rows: SheetRow[]): SheetRow[] {
+  const count = new Map<string, number>()
+  for (const r of rows) count.set(r.label, (count.get(r.label) ?? 0) + 1)
+  return rows.map((r) => {
+    if ((count.get(r.label) ?? 0) < 2 || !r.description.startsWith(`${r.label}: `)) return r
+    const tail = r.description.slice(r.label.length + 2)
+    return { ...r, label: shortDescription(tail.charAt(0).toUpperCase() + tail.slice(1)) }
+  })
+}
+
+/** The sheet's row for a registry entry, in the interface language. */
+export function sheetRow(s: Shortcut): SheetRow {
+  const description = t(s.description)
+  return { keys: s.keys, label: s.label ? shortcutLabel(s) : shortDescription(description), description, when: s.when ? t(s.when) : undefined }
+}
+
+// Compact rows (shortcut-spotlight D6): the label on one line on the left, the keys as
+// keycaps on the right. The key group never shrinks below its keycaps and the label
+// truncates, so nothing can run into anything else.
+function Rows({ rows, mono = false }: { rows: SheetRow[]; mono?: boolean }) {
+  return (
+    <ul className="divide-y divide-default">
+      {rows.map((r, i) => (
+        <li key={`${i}-${r.keys.join()}`} className="flex min-h-8 items-center justify-between gap-3 py-1" data-sheet-row>
+          <span className="min-w-0 flex-1">
+            {/* The full description is what assistive technology reads and the tooltip shows; the short label is what the eye scans. */}
+            {r.label === r.description
+              ? <span className="block truncate text-body text-default">{r.label}</span>
+              : <><Tooltip label={r.description}><span aria-hidden className="block truncate text-body text-default">{r.label}</span></Tooltip><span className="sr-only">{r.description}</span></>}
+            {r.when && <span className="block truncate text-hint text-faint" data-sheet-when>{r.when}</span>}
+          </span>
+          {mono
+            ? <code className="max-w-[55%] shrink-0 break-words text-right text-meta text-muted">{r.keys.join(' ')}</code>
+            : <Keys keys={r.keys} className="max-w-[60%] shrink-0" />}
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 export function ShortcutHelp({ onClose, extraSections = [], context, vim = extraSections.length > 0 }: {
@@ -97,18 +145,19 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
     const bySection = new Map<ShortcutSection, Shortcut[]>()
     for (const s of listedShortcuts(vim)) bySection.set(s.section, [...(bySection.get(s.section) ?? []), s])
     return orderedSections(context)
-      .map((sec) => ({ ...sec, rows: (bySection.get(sec.id) ?? []).map(sheetRow).filter(([k, d]) => matches(q, k, d)) }))
+      .map((sec) => ({ ...sec, rows: distinctLabels((bySection.get(sec.id) ?? []).map(sheetRow)).filter((r) => matches(q, r.keys.join(' '), r.label, r.description, r.when ?? '')) }))
       .filter((g) => g.rows.length > 0)
   }, [context, q, vim])
-  const extras = extraSections.map((sec) => ({ ...sec, rows: sec.rows.filter(([k, d]) => matches(q, k, d)) })).filter((s) => s.rows.length > 0)
-  const quickAdd = QUICK_ADD_SYNTAX.map(([k, d]): [string, string] => [k, t(d)]).filter(([k, d]) => matches(q, k, d))
+  const asRow = ([k, d]: [string, string]): SheetRow => ({ keys: [k], label: d, description: d })
+  const extras = extraSections.map((sec) => ({ ...sec, rows: sec.rows.filter(([k, d]) => matches(q, k, d)).map(asRow) })).filter((s) => s.rows.length > 0)
+  const quickAdd = QUICK_ADD_SYNTAX.map(([k, d]): [string, string] => [k, t(d)]).filter(([k, d]) => matches(q, k, d)).map(asRow)
   const contextCount = contextSections(context).length
   const empty = groups.length === 0 && extras.length === 0 && quickAdd.length === 0
 
   return (
     // The shared Dialog: full screen on phones, a card from 640 px up with the
     // header pinned; from 640 px the sheet itself is capped and scrolls inside.
-    <Dialog title={t('Keyboard shortcuts')} onClose={onClose} size="lg" className="!pt-2" testId="shortcut-help">
+    <Dialog title={t('Keyboard shortcuts')} onClose={onClose} size="xl" className="!pt-2" testId="shortcut-help">
       <div role="search" className="mb-2">
         <label className="sr-only" htmlFor="shortcut-search">{t('Search shortcuts')}</label>
         <input id="shortcut-search" type="search" className="ui-input w-full" placeholder={t('Search by key or action')} value={query} autoFocus
@@ -117,23 +166,23 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
       <p className="sr-only" aria-live="polite">{q ? t('{n, plural, one {# shortcut} other {# shortcuts}}', { n: groups.reduce((n, g) => n + g.rows.length, 0) + extras.reduce((n, s) => n + s.rows.length, 0) + quickAdd.length }) : ''}</p>
       <div className="sm:max-h-[calc(80dvh-9rem)] sm:overflow-y-auto sm:overscroll-contain" data-shortcut-sheet tabIndex={0} role="region" aria-label={t('Shortcuts')}>
         {empty && <p className="py-6 text-center text-body text-muted">{t('No shortcut matches “{q}”.', { q })}</p>}
-        <div className="grid gap-x-6 md:grid-cols-2">
+        <div className="gap-x-8 md:columns-2 xl:columns-3">
           {groups.map((g, i) => (
-            <section key={g.id} data-help-section={g.title} data-context-section={i < contextCount && !q ? '' : undefined} className="mb-2 break-inside-avoid">
-              <h3 className="mb-1 mt-3 text-body font-semibold">{g.title}{i < contextCount && !q ? <span className="ml-2 text-meta font-normal text-faint">{t('here')}</span> : null}</h3>
+            <section key={g.id} data-help-section={g.title} data-context-section={i < contextCount && !q ? '' : undefined} className="mb-3 break-inside-avoid">
+              <h3 className="mb-1 mt-3 text-hint font-semibold uppercase tracking-wide text-faint">{g.title}{i < contextCount && !q ? <span className="ml-2 font-normal normal-case tracking-normal text-accent">{t('here')}</span> : null}</h3>
               <Rows rows={g.rows} />
             </section>
           ))}
           {extras.map((sec) => (
-            <section key={sec.title} data-help-section={sec.title} className="mb-2">
-              <h3 className="mb-1 mt-3 text-body font-semibold">{sec.title}</h3>
+            <section key={sec.title} data-help-section={sec.title} className="mb-3 break-inside-avoid">
+              <h3 className="mb-1 mt-3 text-hint font-semibold uppercase tracking-wide text-faint">{sec.title}</h3>
               {sec.note && <p className="mb-2 text-meta text-muted">{sec.note}</p>}
               <Rows rows={sec.rows} mono={sec.mono} />
             </section>
           ))}
           {quickAdd.length > 0 && (
-            <section data-help-section="Quick add syntax" className="mb-2">
-              <h3 className="mb-1 mt-3 text-body font-semibold">{t('Quick add syntax')}</h3>
+            <section data-help-section="Quick add syntax" className="mb-3 break-inside-avoid">
+              <h3 className="mb-1 mt-3 text-hint font-semibold uppercase tracking-wide text-faint">{t('Quick add syntax')}</h3>
               <Rows rows={quickAdd} mono />
             </section>
           )}

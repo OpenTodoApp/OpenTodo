@@ -601,7 +601,7 @@ body {
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
 select.ui-input { @apply truncate; contain: layout paint; }
-.ui-kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
+.ui-kbd { @apply whitespace-nowrap rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
 /* At rest the notes are a quiet block of text (one placeholder line when empty);
@@ -747,7 +747,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .help-prose code { @apply rounded-chip bg-sunken px-1 py-0.5 text-meta; }
 .help-prose pre { @apply mb-3 overflow-x-auto rounded-control border border-default bg-canvas p-3 text-meta; }
 .help-prose pre code { @apply bg-transparent p-0; }
-.help-prose kbd { @apply rounded-chip border border-input bg-canvas px-1.5 py-0.5 font-mono text-hint text-muted; }
+.help-prose kbd { @apply inline-block whitespace-nowrap rounded-chip border border-input bg-canvas px-1.5 py-0.5 font-mono text-hint leading-tight text-muted; }
 .help-prose blockquote { @apply mb-3 border-l-4 border-accent pl-3 text-muted; }
 .help-prose .table-wrap { @apply mb-4 overflow-x-auto rounded-card border border-default; }
 .help-prose table { @apply w-full border-collapse text-meta; }
@@ -802,4 +802,6 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .dialog-sheet { animation: dialog-sheet-up var(--duration-ui) var(--ease-calm, ease-out) both; }
 @media (prefers-reduced-motion: reduce) { .dialog-sheet { animation-name: dialog-sheet-fade; } }
 @media (min-width: 640px) { .dialog-sheet { animation: none; } }
+/* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
+.spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }

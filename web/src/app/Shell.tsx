@@ -39,6 +39,7 @@ import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
+import { Spotlight } from './shortcuts/Spotlight'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
@@ -312,6 +313,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <WelcomeDialog user={user} />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
       <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
+      {/* The g … spotlight (shortcut-spotlight): shown after a hesitation, never focused. */}
+      <Spotlight />
       <ReminderToasts />
       <BreakReminder />
       <UndoToast />

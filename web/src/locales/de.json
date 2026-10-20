@@ -4187,5 +4187,14 @@
   "You are offline. The {what} needs a connection and is not shown until you are back.": "Du bist offline. Dies ({what}) braucht eine Verbindung und erscheint erst, wenn du zurück bist.",
   "Your own provider ({provider_label}) is kept but unused: own keys are not allowed now.": "Dein eigener Anbieter ({provider_label}) bleibt gespeichert, aber ungenutzt: Eigene Schlüssel sind nicht erlaubt.",
   "Your sidebar as it is; screens name the move they serve.": "Deine Seitenleiste, wie sie ist; Bildschirme nennen ihren Schritt.",
-  "Your task text is encrypted on your devices before it syncs.": "Der Text deiner Aufgaben wird auf deinen Geräten verschlüsselt, bevor er synchronisiert wird."
+  "Your task text is encrypted on your devices before it syncs.": "Der Text deiner Aufgaben wird auf deinen Geräten verschlüsselt, bevor er synchronisiert wird.",
+  "Delete task": "Aufgabe löschen",
+  "Find in sidebar": "In der Seitenleiste suchen",
+  "First task": "Erste Aufgabe",
+  "Press a key": "Taste drücken",
+  "Process Inbox": "Eingang abarbeiten",
+  "Review and planning": "Rückblick und Planung",
+  "Tools": "Werkzeuge",
+  "Views": "Ansichten",
+  "then|keys": "dann"
 }

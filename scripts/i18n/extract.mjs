@@ -41,12 +41,12 @@ export function messagesIn(file, text) {
   return out
 }
 
-/** The shortcut registry's English texts: descriptions, section titles, states and the quick-add rows. */
+/** The shortcut registry's English texts: descriptions, short labels, section titles, states and the quick-add rows. */
 export function shortcutMessages(file, text) {
   const sf = parse(file, text)
   const out = []
   const visit = (n) => {
-    if (ts.isPropertyAssignment(n) && ['description', 'title', 'when'].includes(n.name.getText(sf)) && ts.isStringLiteral(n.initializer)) {
+    if (ts.isPropertyAssignment(n) && ['description', 'title', 'when', 'label'].includes(n.name.getText(sf)) && ts.isStringLiteral(n.initializer)) {
       out.push({ id: n.initializer.text, file, line: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1 })
     }
     if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'QUICK_ADD_SYNTAX' && n.initializer && ts.isArrayLiteralExpression(n.initializer)) {

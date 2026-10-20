@@ -3,7 +3,7 @@
 // in a scope and an ancestor scope, without an explicit override; every row the
 // sheet and the guide show comes from the registry; the resolved bindings hold.
 import { describe, expect, it } from 'vitest'
-import { chordKey, chordsOf, keysOf, listedShortcuts, matchesChord, parseChord, parseKeys, SCOPE_ANCESTORS, sequencesClash, type Shortcut, SHORTCUT_SECTIONS, SHORTCUTS, VIEW_SCOPES } from './shortcuts'
+import { chordKey, chordsOf, chordText, keysOf, labelMessage, listedShortcuts, matchesChord, parseChord, parseKeys, SCOPE_ANCESTORS, sequencesClash, type Shortcut, SHORTCUT_SECTIONS, SHORTCUTS, spotlightGroup, VIEW_SCOPES } from './shortcuts'
 
 /** Whether entries `a` and `b` can be active at the same time, given their scopes and views. */
 function canMeet(a: Shortcut, b: Shortcut): boolean {
@@ -158,5 +158,39 @@ describe('Focus (focus-mode D7)', () => {
     // No task list, board or calendar on the Focus screen: Space, Enter, b and n never meet a list key.
     expect(VIEW_SCOPES.focus).toEqual([])
     expect(conflicts().filter((c) => c.includes('focus.'))).toEqual([])
+  })
+})
+
+/** Entries bound to a sequence that have no short label, or one over 24 characters (shortcut-spotlight). */
+export function unlabelledSequences(table: Shortcut[] = SHORTCUTS): string[] {
+  return table.filter((s) => s.keys.some((k) => (parseKeys(k)?.length ?? 0) > 1))
+    .filter((s) => !s.label || labelMessage(s).message.length > 24).map((s) => s.id)
+}
+
+describe('short labels (shortcut-spotlight)', () => {
+  it('every sequence has a label of at most 24 characters', () => {
+    expect(unlabelledSequences()).toEqual([])
+  })
+
+  it('fails on a sequence without a label, or with a long one', () => {
+    const bare: Shortcut = { id: 'go.test', keys: ['g Shift+T'], description: 'Go to a test', section: 'go', scope: 'global' }
+    const long: Shortcut = { ...bare, id: 'go.long', label: 'A label that is far too long to fit' }
+    expect(unlabelledSequences([bare, long, { ...bare, id: 'go.ok', label: 'Test' }])).toEqual(['go.test', 'go.long'])
+  })
+
+  it('splits a catalog context and falls back to the description', () => {
+    expect(labelMessage({ label: 'Next|method', description: 'x' })).toEqual({ message: 'Next', context: 'method' })
+    expect(labelMessage({ label: 'Today', description: 'x' })).toEqual({ message: 'Today' })
+    expect(labelMessage({ description: 'Quick add a task' })).toEqual({ message: 'Quick add a task' })
+  })
+
+  it('shows the second chord as typed and groups the go-to entries', () => {
+    expect(chordText(parseKeys('g Shift+P')![1])).toBe('Shift+P')
+    expect(chordText(parseKeys('g ?')![1])).toBe('?')
+    expect(chordText(parseKeys('g t')![1])).toBe('t')
+    expect(spotlightGroup('go.today')).toBe('views')
+    expect(spotlightGroup('go.week')).toBe('calendar')
+    expect(spotlightGroup('go.review')).toBe('method')
+    expect(spotlightGroup('go.settings')).toBe('tools')
   })
 })

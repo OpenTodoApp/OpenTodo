@@ -6,7 +6,7 @@
 // layer, text fields keep single keys, a handler can fall through.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chordsOf, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
-import { armGPrefix, clearPrefix, dispatch, installShortcutDispatcher, isActivationTarget, isPrefixPending, registerShortcutScope, resetShortcutScopes, type ScopeFrame } from './dispatch'
+import { armGPrefix, clearPrefix, dispatch, holdPrefix, installShortcutDispatcher, isActivationTarget, isPrefixPending, pendingContinuations, pendingPrefix, registerShortcutScope, resetShortcutScopes, type ScopeFrame, subscribePrefix } from './dispatch'
 
 type Mods = Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }>
 
@@ -227,5 +227,78 @@ describe('frames', () => {
     registerShortcutScope({ scope: 'list', handlers: { 'list.complete': () => {} } })
     expect(dispatch(new KeyboardEvent('keydown', { key: 'c', cancelable: true }))).toBe(true)
     expect(dispatch(new KeyboardEvent('keydown', { key: 'y', cancelable: true }))).toBe(false)
+  })
+})
+
+describe('the pending prefix (shortcut-spotlight D1)', () => {
+  it('tells subscribers when a sequence starts and ends', () => {
+    const seen: number[] = []
+    const off = subscribePrefix(() => seen.push(pendingPrefix().length))
+    registerShortcutScope({ scope: 'global', handlers: { 'go.today': () => {} } })
+    press('g')
+    press('t')
+    off()
+    expect(seen).toEqual([1, 0])
+  })
+
+  it('expires after 800 ms unless held', () => {
+    vi.useFakeTimers()
+    try {
+      registerShortcutScope({ scope: 'global', handlers: { 'go.today': () => {} } })
+      press('g')
+      vi.advanceTimersByTime(900)
+      expect(isPrefixPending()).toBe(false)
+      press('g')
+      holdPrefix(true)
+      vi.advanceTimersByTime(5000)
+      expect(isPrefixPending()).toBe(true)
+      clearPrefix()
+    } finally { vi.useRealTimers() }
+  })
+
+  it('a held prefix still runs its second key late', () => {
+    vi.useFakeTimers()
+    try {
+      const ran: string[] = []
+      registerShortcutScope({ scope: 'global', handlers: { 'go.upcoming': () => { ran.push('upcoming') } } })
+      press('g')
+      holdPrefix(true)
+      vi.advanceTimersByTime(3000)
+      press('u')
+      expect(ran).toEqual(['upcoming'])
+      expect(isPrefixPending()).toBe(false)
+    } finally { vi.useRealTimers() }
+  })
+
+  it('Esc while pending ends the sequence and never reaches the panel', () => {
+    const ran: string[] = []
+    registerShortcutScope({ scope: 'global', handlers: { 'go.today': () => {} } })
+    registerShortcutScope({ scope: 'panel', handlers: { 'panel.escape': () => { ran.push('panel') } } })
+    press('g')
+    holdPrefix(true)
+    press('Escape')
+    expect(ran).toEqual([])
+    expect(isPrefixPending()).toBe(false)
+  })
+
+  it('lists what can complete it: only entries with a handler, one per key', () => {
+    registerShortcutScope({ scope: 'global', handlers: { 'go.today': () => {}, 'go.inbox': () => {}, 'go.projects': () => {} } })
+    expect(pendingContinuations()).toEqual([])
+    press('g')
+    const ids = pendingContinuations().map((c) => c.entry.id)
+    expect(ids.sort()).toEqual(['go.inbox', 'go.projects', 'go.today'])
+    expect(pendingContinuations().find((c) => c.entry.id === 'go.projects')!.next).toMatchObject({ key: 'p', shift: true })
+    clearPrefix()
+  })
+
+  it('a dialog of its own does not mute the list behind the spotlight', () => {
+    const ran: string[] = []
+    const card = document.createElement('div')
+    card.setAttribute('role', 'dialog')
+    card.setAttribute('data-spotlight', '')
+    document.body.append(card)
+    registerShortcutScope({ scope: 'list', handlers: { 'list.down': () => { ran.push('down') } } })
+    press('j')
+    expect(ran).toEqual(['down'])
   })
 })

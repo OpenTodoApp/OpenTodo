@@ -719,7 +719,8 @@
   ],
   "All projects": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/WebhooksPanel.tsx"
+    "web/src/app/WebhooksPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "All shared projects": [
     "web/src/app/FeedView.tsx"
@@ -878,7 +879,8 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/task-detail/Properties.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Anywhere": [
     "web/src/lib/method/groups.ts"
@@ -1011,6 +1013,7 @@
   "Ask": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/assistant/AskEntry.tsx",
+    "web/src/lib/shortcuts.ts",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Ask OpenTodo": [
@@ -1070,7 +1073,8 @@
   "Assigned to me": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/TaskListView.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Assigned to someone else or blocked by another task. Open one to follow up in its comments.": [
     "web/src/app/review/ReviewView.tsx"
@@ -1406,6 +1410,7 @@
   ],
   "Calendar": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Calendar address": [
@@ -1519,6 +1524,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -1801,7 +1807,8 @@
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/lib/review.ts"
+    "web/src/lib/review.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Close the day progress": [
     "web/src/app/review/CloseDay.tsx"
@@ -2009,7 +2016,8 @@
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
     "web/src/lib/assistant.ts",
-    "web/src/lib/feed.ts"
+    "web/src/lib/feed.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Completed / reopened": [
     "web/src/lib/activity.ts"
@@ -2395,7 +2403,8 @@
     "web/src/app/method/DailyCheckToast.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx",
-    "web/src/lib/method/vocabulary.json"
+    "web/src/lib/method/vocabulary.json",
+    "web/src/lib/shortcuts.ts"
   ],
   "Danger zone": [
     "web/src/app/LabelsView.tsx"
@@ -2450,7 +2459,8 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarRange.tsx",
     "web/src/app/DigestCard.tsx",
-    "web/src/app/task-detail/TimeTab.tsx"
+    "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Day calendar": [
     "web/src/app/CalendarView.tsx"
@@ -2592,6 +2602,9 @@
   ],
   "Delete section “{name}”?": [
     "web/src/app/Sections.tsx"
+  ],
+  "Delete task": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Delete the field “{name}”?": [
     "web/src/app/FieldsDialog.tsx"
@@ -3572,7 +3585,8 @@
     "web/src/app/FilterView.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Filter activity by kind": [
     "web/src/app/ProjectActivity.tsx"
@@ -3607,7 +3621,8 @@
   "Filters": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/ViewsView.tsx",
-    "web/src/app/palette/entries.ts"
+    "web/src/app/palette/entries.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
@@ -3648,6 +3663,9 @@
   "Find an option…": [
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
+  "Find in sidebar": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Find in the sidebar": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/palette/registry.ts"
@@ -3666,6 +3684,9 @@
   ],
   "First day of the week": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "First task": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Five minutes: the Inbox to zero, what is overdue, and today's focus.": [
     "web/src/lib/method/vocabulary.json"
@@ -4046,6 +4067,7 @@
     "web/src/app/help/HelpView.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/lib/settingsCopy.ts",
+    "web/src/lib/shortcuts.ts",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
   "Help could not be loaded. Reload the app and try again.": [
@@ -4188,7 +4210,8 @@
   ],
   "Import data": [
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/palette/registry.ts"
+    "web/src/app/palette/registry.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Import data…": [
     "web/src/app/DataSettings.tsx"
@@ -4369,6 +4392,7 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/review.ts",
+    "web/src/lib/shortcuts.ts",
     "web/src/lib/stats.ts",
     "web/src/lib/trash.ts",
     "web/src/lib/views.ts"
@@ -4670,7 +4694,8 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-detail/Properties.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Labels (does not move on, so you can add a label and then decide)": [
     "web/src/lib/shortcuts.ts"
@@ -5040,7 +5065,8 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/LoopHome.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Loop pulse · last {n} days": [
     "web/src/app/method/LoopHome.tsx"
@@ -5208,7 +5234,8 @@
     "web/src/lib/review.ts"
   ],
   "Month": [
-    "web/src/app/CalendarRange.tsx"
+    "web/src/app/CalendarRange.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Month-day": [
     "web/src/app/DateTimeSettings.tsx"
@@ -5582,7 +5609,8 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/method/MethodListView.tsx",
-    "web/src/lib/method/vocabulary.json"
+    "web/src/lib/method/vocabulary.json",
+    "web/src/lib/shortcuts.ts"
   ],
   "No": [
     "web/src/app/task-detail/HistoryTab.tsx",
@@ -6943,7 +6971,8 @@
   ],
   "Plan": [
     "web/src/app/CalendarRange.tsx",
-    "web/src/app/calendar/PlanPanel.tsx"
+    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Plan and change your tasks by talking. Every change is proposed for review.": [
     "web/src/lib/settingsCopy.ts"
@@ -7012,6 +7041,9 @@
   ],
   "Preparing…": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Press a key": [
+    "web/src/app/shortcuts/Spotlight.tsx"
   ],
   "Press {key}": [
     "web/src/ui/patterns/EmptyState.tsx"
@@ -7086,6 +7118,9 @@
   ],
   "Problem": [
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "Process Inbox": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Process the Inbox": [
     "web/src/app/TriageView.tsx",
@@ -7829,7 +7864,11 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "Review": [
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Review and planning": [
+    "web/src/app/shortcuts/Spotlight.tsx"
   ],
   "Review done. See you next week.": [
     "web/src/app/review/ReviewView.tsx"
@@ -8844,7 +8883,8 @@
     "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/history.ts",
-    "web/src/lib/review.ts"
+    "web/src/lib/review.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Someday|method": [
     "web/src/lib/method/vocabulary.json"
@@ -9021,7 +9061,8 @@
   "Statistics": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/method/LoopHome.tsx",
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/review/StatsView.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Status": [
     "web/src/app/RuleEditor.tsx",
@@ -10578,6 +10619,7 @@
     "web/src/lib/dates.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
+    "web/src/lib/shortcuts.ts",
     "web/src/lib/views.ts"
   ],
   "Today is done: nothing to carry over.": [
@@ -10689,6 +10731,9 @@
   "Too many wrong codes, or it took too long. Enter your password again.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Tools": [
+    "web/src/app/shortcuts/Spotlight.tsx"
+  ],
   "Top level": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/TemplateDialogs.tsx"
@@ -10730,7 +10775,8 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TrashView.tsx",
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageView.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Trash and projects": [
     "web/src/lib/shortcuts.ts"
@@ -11064,7 +11110,8 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Updated {time}": [
     "web/src/app/PublicListScreen.tsx"
@@ -11072,7 +11119,8 @@
   "Updates": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FeedView.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Upload a file": [
     "web/src/app/RestoreSection.tsx"
@@ -11214,6 +11262,9 @@
   "Viewer: reads only": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Views": [
+    "web/src/app/shortcuts/Spotlight.tsx"
+  ],
   "Vim command line": [
     "web/src/app/vim/help.ts"
   ],
@@ -11267,7 +11318,8 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/method/MethodListView.tsx",
-    "web/src/lib/method/vocabulary.json"
+    "web/src/lib/method/vocabulary.json",
+    "web/src/lib/shortcuts.ts"
   ],
   "Waits for nothing": [
     "web/src/lib/assistant.ts"
@@ -11305,7 +11357,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Week": [
-    "web/src/app/CalendarRange.tsx"
+    "web/src/app/CalendarRange.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Week calendar": [
     "web/src/app/CalendarView.tsx"
@@ -12445,7 +12498,8 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "or": [
-    "web/src/app/AuthScreen.tsx"
+    "web/src/app/AuthScreen.tsx",
+    "web/src/app/shortcuts/Kbd.tsx"
   ],
   "orange": [
     "web/src/lib/colourNames.ts"
@@ -12524,8 +12578,7 @@
     "web/src/lib/activityRuns.ts"
   ],
   "priority {n}": [
-    "web/src/app/MonthView.tsx",
-    "web/src/app/calendar/PlanRow.tsx"
+    "web/src/app/MonthView.tsx"
   ],
   "priority {p}": [
     "web/src/lib/rules.ts"
@@ -12765,6 +12818,9 @@
   ],
   "the weekly digest": [
     "web/src/app/settingsSections.ts"
+  ],
+  "then|keys": [
+    "web/src/app/shortcuts/Kbd.tsx"
   ],
   "this device": [
     "web/src/lib/history.ts"

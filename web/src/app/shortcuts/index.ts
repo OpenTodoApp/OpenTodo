@@ -6,8 +6,8 @@ import { useEffect, useRef } from 'react'
 import type { ShortcutScope } from '../../lib/shortcuts'
 import { installShortcutDispatcher, registerShortcutScope, type ScopeFrame, type ShortcutHandler } from './dispatch'
 
-export { activeScopes, armGPrefix, clearPrefix, dispatch, hasScope, installShortcutDispatcher, isActivationTarget, isPrefixPending, isTypingTarget, registerShortcutScope, resetShortcutScopes } from './dispatch'
-export type { ScopeFrame, ShortcutHandler } from './dispatch'
+export { activeScopes, armGPrefix, clearPrefix, dispatch, hasScope, holdPrefix, installShortcutDispatcher, isActivationTarget, isPrefixPending, isTypingTarget, pendingContinuations, pendingPrefix, registerShortcutScope, resetShortcutScopes, subscribePrefix } from './dispatch'
+export type { Continuation, ScopeFrame, ShortcutHandler } from './dispatch'
 export { setShortcutHints, useShortcutHints, shortcutHintsOn } from './hints'
 
 export interface ScopeOptions {
