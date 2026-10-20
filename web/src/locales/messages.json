@@ -958,6 +958,9 @@
   "Ask about your tasks…": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
+  "Ask questions and see what other people build.": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "Ask the assistant (Shift+I)": [
     "web/src/app/assistant/AskEntry.tsx"
   ],
@@ -1750,6 +1753,10 @@
   ],
   "Common tasks": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "Community": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Compact": [
     "web/src/app/AppearanceSection.tsx"
@@ -4084,8 +4091,14 @@
   "Join <span>{projectName}</span>": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
+  "Join on Discord": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "Join project": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "Join the community on Discord": [
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "Joined a project with a link": [
     "web/src/app/auditFormat.ts"
@@ -6579,6 +6592,10 @@
   ],
   "QR code to scan with your authenticator app": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Questions, ideas and other people who use OpenTodo, on Discord.": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts"
   ],
   "Quick add": [
     "web/src/app/QuickAdd.tsx",

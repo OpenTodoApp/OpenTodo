@@ -18,7 +18,7 @@ import { setWelcomeSeen, USER_PREFS_ID } from '../lib/userPrefs'
 import type { User } from '../lib/types'
 import { click, flush, mockFetch, render } from '../ui/test-utils'
 import { AboutSection, DOCS_URL, WEBSITE_URL } from './AboutSection'
-import { COFFEE_URL, ISSUES_URL, REPO_URL, WelcomeDialog } from './WelcomeDialog'
+import { COFFEE_URL, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeDialog } from './WelcomeDialog'
 
 const owner: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: Date.now() - 60_000 }
 const member: User = { ...owner, id: 'u2', role: 'member' }
@@ -38,12 +38,12 @@ async function waitFor(ok: () => boolean, ms = 2000) {
 const dialog = () => document.querySelector('[data-testid="welcome"]')
 
 describe('welcome note', () => {
-  it('thanks the owner of a fresh account with the issue, star and coffee links, all opening a new tab', async () => {
+  it('thanks the owner of a fresh account with the issue, Discord, star and coffee links, all opening a new tab', async () => {
     const r = await render(<WelcomeDialog user={owner} />)
     await waitFor(() => dialog() !== null)
     expect(dialog()!.textContent).toContain('Thanks for installing OpenTodo')
     const hrefs = [...dialog()!.querySelectorAll('a')].map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual([ISSUES_URL, REPO_URL, COFFEE_URL])
+    expect(hrefs).toEqual([ISSUES_URL, DISCORD_URL, REPO_URL, COFFEE_URL])
     for (const a of dialog()!.querySelectorAll('a')) {
       expect(a.getAttribute('target')).toBe('_blank')
       expect(a.getAttribute('rel')).toContain('noopener')
@@ -118,10 +118,10 @@ describe('Settings → About', () => {
   afterEach(() => vi.unstubAllGlobals())
   const links = () => Object.fromEntries([...document.querySelectorAll<HTMLAnchorElement>('[data-about-link]')].map((a) => [a.dataset.aboutLink, a.getAttribute('href')]))
 
-  it('lists Help, the docs, the website, issues, the source and the coffee button for everyone; no welcome row for a member', async () => {
+  it('lists Help, the docs, the website, issues, Discord, the source and the coffee button for everyone; no welcome row for a member', async () => {
     const r = await render(<AboutSection user={member} />)
     await flush(30)
-    expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, issues: ISSUES_URL, source: REPO_URL })
+    expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, issues: ISSUES_URL, discord: DISCORD_URL, source: REPO_URL })
     for (const a of document.querySelectorAll('[data-about-link]')) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('[data-welcome-coffee]')!.getAttribute('href')).toBe(COFFEE_URL)
     expect(document.querySelector('[data-about-help]')).not.toBeNull()

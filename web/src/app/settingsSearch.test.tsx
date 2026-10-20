@@ -33,6 +33,13 @@ describe('index', () => {
     expect(searchSettings('', member)).toEqual([])
   })
 
+  it('"discord" and "community" list the About › Community row (discord-community)', () => {
+    for (const q of ['discord', 'community']) {
+      const entries = searchSettings(q, member).flatMap((h) => h.entries)
+      expect(entries).toContainEqual(expect.objectContaining({ section: 'about', label: 'Community', anchor: 'about-community' }))
+    }
+  })
+
   it('shows a row only to the roles that see its section and the row itself', () => {
     const labels = (u: User) => visibleEntries(u).map((e) => e.label)
     expect(labels(member)).not.toContain('Users')

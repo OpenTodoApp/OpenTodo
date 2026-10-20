@@ -44,7 +44,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Unraid, Compose and plain binaries are in [Quick start](#quick-start).
 
-Questions, ideas and bug reports are welcome in [issues](https://github.com/pixari/opentodo/issues).
+Questions, ideas and bug reports are welcome in [issues](https://github.com/pixari/opentodo/issues). To talk to other people who use OpenTodo, [join the Discord server](https://discord.gg/Jmj7WuRQ).
 
 
 <p align="center">
@@ -343,7 +343,7 @@ The CalDAV and MCP endpoints only answer requests; they never call out. The audi
 
 ## Contributing
 
-Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter behaviour go through an OpenSpec change first. Security issues go to the address in [SECURITY.md](SECURITY.md).
+Issues and pull requests are welcome, and so are questions on [Discord](https://discord.gg/Jmj7WuRQ). Please read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter behaviour go through an OpenSpec change first. Security issues go to the address in [SECURITY.md](SECURITY.md).
 
 ## License
 

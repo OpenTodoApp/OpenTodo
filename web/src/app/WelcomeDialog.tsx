@@ -18,6 +18,8 @@ import { act } from './actionError'
 export const ISSUES_URL = 'https://github.com/pixari/opentodo/issues'
 export const REPO_URL = 'https://github.com/pixari/opentodo'
 export const COFFEE_URL = 'https://buymeacoffee.com/pixari'
+/** The OpenTodo Discord server (OpenSpec change discord-community): a plain link, nothing is loaded from Discord. */
+export const DISCORD_URL = 'https://discord.gg/Jmj7WuRQ'
 
 /** How long after the owner account was created the note may still appear. */
 const WELCOME_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
@@ -67,6 +69,7 @@ export function WelcomeNote({ onClose }: { onClose: () => void }) {
         </p>
         <div className="-mx-1 space-y-0.5">
           <LinkRow href={ISSUES_URL} icon="message-circle" title={t('Share feedback or report a problem')} detail={t('Open an issue on GitHub. Every report is read.')} />
+          <LinkRow href={DISCORD_URL} icon="messages-square" title={t('Join the community on Discord')} detail={t('Ask questions and see what other people build.')} />
           <LinkRow href={REPO_URL} icon="star" title={t('Star OpenTodo on GitHub')} detail={t('A star helps other people find it.')} />
         </div>
         <CoffeeButton />
