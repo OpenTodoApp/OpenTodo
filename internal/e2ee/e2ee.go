@@ -48,6 +48,9 @@ var ContentFields = map[string][]string{
 	"attachment": {"name", "mime", "url"},
 	// Custom field definitions (OpenSpec custom-fields, design D4).
 	"field": {"name", "options"},
+	// A time entry's note (OpenSpec time-tracking, design D1); its times stay
+	// plaintext so totals and the CSV work on the server.
+	"time_entry": {"note"},
 }
 
 // ContentPrefixes are families of content fields named by a prefix: a task's

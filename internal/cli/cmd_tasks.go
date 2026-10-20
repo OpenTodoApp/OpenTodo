@@ -633,52 +633,11 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err != nil {
 		return err
 	}
-	labelRefs := []string(f.labels)
+	labelRefs, spent := []string(f.labels), 0
 	if f.natural {
-		// Parse the line like quick add; explicit flags win over what it says.
-		var projects []project
-		if strings.Contains(title, "#") {
-			if projects, err = c.projects(ctx); err != nil {
-				return err
-			}
+		if labelRefs, phrases, spent, err = a.applyNatural(ctx, c, title, langs, body, set, &f, phrases); err != nil {
+			return err
 		}
-		r := quickadd.Parse(title, a.quickContext(langs, projects))
-		if r.Title == "" {
-			return usageErr("--natural: the line has no title left after its attributes")
-		}
-		body["title"] = r.Title
-		if r.Due != nil && body["due"] == nil {
-			d := due{Date: r.Due.Date}
-			if r.Due.Time != "" {
-				d.Time = &r.Due.Time
-			}
-			body["due"] = d
-		}
-		if r.ProjectID != "" && f.project == "" {
-			body["project_id"] = r.ProjectID
-		}
-		if len(labelRefs) == 0 {
-			labelRefs = r.Labels
-		}
-		if r.Priority > 0 && !set["priority"] {
-			body["priority"] = r.Priority
-		}
-		if r.EstimateMinutes > 0 {
-			body["estimate_minutes"] = r.EstimateMinutes
-		}
-		if r.Recurrence != "" && !set["repeat"] {
-			body["recurrence"] = r.Recurrence
-		}
-		if r.Deadline != "" {
-			body["deadline"] = r.Deadline
-		}
-		if r.Someday {
-			body["start"] = "someday"
-		}
-		if r.Evening {
-			body["evening"] = true
-		}
-		phrases = append(r.Reminders, phrases...)
 	}
 	if f.project != "" && !strings.EqualFold(f.project, "none") {
 		projects, err := c.projects(ctx)
@@ -706,6 +665,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	_ = json.Unmarshal(raw, &created)
 	waiting, err := a.createReminders(ctx, c, created.ID, body, phrases, set["idempotency-key"], *key)
 	if err != nil {
+		return err
+	}
+	if err := a.logSpent(ctx, c, created.ID, spent, set["idempotency-key"], *key); err != nil {
 		return err
 	}
 	if g.json {

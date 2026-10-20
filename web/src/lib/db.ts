@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -123,6 +123,8 @@ class OpenTodoDB extends Dexie {
   /** Events of subscribed calendars and the subscriptions (calendar-feeds): server data, never ops. */
   calendarEvents!: Table<CalendarEvent, string>
   calendarSubscriptions!: Table<CalendarSubscription, string>
+  /** Time entries (OpenSpec time-tracking): a synced entity, indexed by task, author and start. */
+  timeEntries!: Table<TimeEntry, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -400,6 +402,10 @@ class OpenTodoDB extends Dexie {
       calendarSubscriptions: 'id',
       review: 'id',
     })
+    // v20 (time-tracking): the synced `time_entry` entity. Dexie keeps every
+    // store of v19, so only the new one is declared. No index on ended_at:
+    // IndexedDB does not index null, the running entry is found by user_id.
+    this.version(20).stores({ timeEntries: 'id, task_id, user_id, started_at' })
   }
 }
 
@@ -485,6 +491,7 @@ function tableMap(d: OpenTodoDB) {
   return {
     project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
     field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
+    time_entry: d.timeEntries,
   } satisfies Record<Entity, Table<unknown, string>>
 }
 

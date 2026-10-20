@@ -63,7 +63,14 @@ ot done 8c2a41f0 91f04c2e --json
 ot reopen 8c2a41f0 --json
 ot project add Garden --json --idempotency-key garden-1
 ot project rename Garden "Garden 2026" --json
+ot time start 8c2a41f0 --json
+ot time stop --json
+ot time log 8c2a41f0 1h30 --on yesterday --note "review" --json
+ot time list --from 2026-10-12 --to 2026-10-18 --json
+ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv --json
 ```
+
+`ot time start` stops the running entry first (one runs at a time); `ot time stop` exits 1 when nothing runs. A duration logged on another day than today ends at 17:00 local time.
 
 `ot done` and `ot reopen` report each task with `status`; a task already in that state is `unchanged` and nothing is sent. `ot edit` with values equal to the current ones sends nothing.
 

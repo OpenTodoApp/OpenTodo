@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/pixari/opentodo/internal/timetrack"
 )
 
 // SyntaxError is a rejected query: a message naming a 1-based position and the
@@ -370,6 +372,24 @@ func (p *parser) parseWordTerm(t *token) error {
 		}
 		p.i++
 		return p.parseDate(c)
+	case w == "tracked":
+		// Tracked time (OpenSpec change time-tracking, design D9): the keyword, or
+		// `tracked cmp duration`. A reserved word: a field named "tracked" is
+		// reachable only quoted.
+		c := p.peek()
+		if c == nil || c.typ != tCmp {
+			return nil
+		}
+		p.i++
+		v := p.peek()
+		if v == nil || v.typ != tWord {
+			return fail(c.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, c.pos+1)
+		}
+		if _, ok := timetrack.ParseDuration(v.value); !ok {
+			return fail(v.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, v.pos+1)
+		}
+		p.i++
+		return nil
 	case w == "no":
 		// A keyword, or any other name: a custom field without a value (custom-fields).
 		if nt := p.peek(); noKeywords[lower(nt)] || (nt != nil && (nt.typ == tWord || nt.typ == tString)) {

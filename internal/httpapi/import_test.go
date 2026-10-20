@@ -260,6 +260,7 @@ func exportEntities(e *env) map[string]any {
 	resp, out := e.do("GET", "/api/v1/export", nil)
 	e.mustStatus(resp, 200, out)
 	delete(out, "exportedAt")
+	delete(out, "userId") // the exporting account differs between instances
 	return out
 }
 

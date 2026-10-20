@@ -645,6 +645,172 @@
       }
     },
     {
+      "name": "time export",
+      "summary": "download the server's time entries CSV in the local time zone",
+      "args": [],
+      "flags": [
+        {
+          "name": "from",
+          "type": "string",
+          "description": "first local day"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last local day"
+        },
+        {
+          "name": "out",
+          "short": "o",
+          "type": "string",
+          "description": "write to this file instead of stdout"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "anyOf": [
+          {
+            "description": "the CSV (with a UTF-8 BOM)",
+            "type": "string"
+          },
+          {
+            "$ref": "#/schemas/export_file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "time list",
+      "aliases": [
+        "time ls"
+      ],
+      "summary": "list time entries, newest first",
+      "args": [],
+      "flags": [
+        {
+          "name": "task",
+          "type": "string",
+          "description": "entries of one task (id or prefix)"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "description": "first local day: YYYY-MM-DD, today, yesterday or a weekday"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last local day"
+        },
+        {
+          "name": "running",
+          "type": "bool",
+          "description": "only the running entry"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "description": "print at most n entries"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/time_entry"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "time log",
+      "summary": "add a closed time entry: a duration (45m, 1h30, 90) or --from and --to",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "name": "duration",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "on",
+          "type": "string",
+          "description": "the day: YYYY-MM-DD, today, yesterday or a weekday; a duration on another day than today ends at 17:00"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "description": "start time HH:MM (with --to)"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "end time HH:MM (with --from)"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "description": "note on the entry"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_entry"
+      }
+    },
+    {
+      "name": "time start",
+      "summary": "start tracking time on a task (stops the running entry)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "note",
+          "type": "string",
+          "description": "note on the entry"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_entry"
+      }
+    },
+    {
+      "name": "time stop",
+      "summary": "stop the running time entry",
+      "args": [],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_entry"
+      }
+    },
+    {
       "name": "today",
       "summary": "alias for `ot list --today`",
       "args": [],
@@ -1219,7 +1385,7 @@
     "export_file": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "export_file",
-      "description": "ot export --out <file> --json.",
+      "description": "ot export --out <file> --json, and ot time export -o <file> --json (with rows).",
       "type": "object",
       "required": [
         "file",
@@ -1231,6 +1397,10 @@
         },
         "bytes": {
           "type": "integer"
+        },
+        "rows": {
+          "type": "integer",
+          "description": "ot time export: the number of entries in the CSV"
         },
         "exportedAt": {
           "type": "string"
@@ -1540,6 +1710,65 @@
           }
         }
       ]
+    },
+    "time_entry": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "time_entry",
+      "description": "A time entry exactly as the REST API returns it (OpenSpec time-tracking).",
+      "type": "object",
+      "required": [
+        "id",
+        "taskId",
+        "userId",
+        "startedAt",
+        "endedAt",
+        "minutes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "integer",
+          "description": "Unix milliseconds"
+        },
+        "endedAt": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Unix milliseconds; null while the entry runs"
+        },
+        "minutes": {
+          "type": "integer",
+          "description": "whole minutes, a running entry up to the server time"
+        },
+        "note": {
+          "type": "string",
+          "description": "user-written; ciphertext for an encrypted account"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "taskTitle": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "projectName": {
+          "type": "string"
+        }
+      }
     },
     "token": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",

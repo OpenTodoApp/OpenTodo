@@ -24,17 +24,20 @@ type Due struct {
 
 // Result is what a line sets (ParseResult in parse.ts, without the chips).
 type Result struct {
-	Title           string     `json:"title"`
-	Due             *Due       `json:"due"`
-	Deadline        string     `json:"deadline,omitempty"`
-	Someday         bool       `json:"someday,omitempty"`
-	Evening         bool       `json:"evening,omitempty"`
-	ProjectID       string     `json:"projectId,omitempty"`
-	Labels          []string   `json:"labels"`
-	Priority        int        `json:"priority,omitempty"`
-	EstimateMinutes int        `json:"estimateMinutes,omitempty"`
-	Recurrence      string     `json:"recurrence,omitempty"`
-	Reminders       []Reminder `json:"reminders"`
+	Title           string   `json:"title"`
+	Due             *Due     `json:"due"`
+	Deadline        string   `json:"deadline,omitempty"`
+	Someday         bool     `json:"someday,omitempty"`
+	Evening         bool     `json:"evening,omitempty"`
+	ProjectID       string   `json:"projectId,omitempty"`
+	Labels          []string `json:"labels"`
+	Priority        int      `json:"priority,omitempty"`
+	EstimateMinutes int      `json:"estimateMinutes,omitempty"`
+	// SpentMinutes is time already spent from a `30m/2h` token (time-tracking
+	// D10): one closed time entry ending at creation.
+	SpentMinutes int        `json:"spentMinutes,omitempty"`
+	Recurrence   string     `json:"recurrence,omitempty"`
+	Reminders    []Reminder `json:"reminders"`
 }
 
 func spanOf(line string, tokens []token, from, to int) Span {
@@ -94,6 +97,7 @@ type parser struct {
 		value int
 		span  Span
 	}
+	spent            int
 	evening, someday *Span
 	labels           []found
 	reminders        []struct {
@@ -138,6 +142,10 @@ func (p *parser) attribute(i int) (int, bool) {
 		}
 	}
 	if p.estimate.value == 0 {
+		if spent, est, ok := matchSpent(t.text); ok {
+			p.estimate.value, p.estimate.span, p.spent = est, one, spent
+			return i + 1, true
+		}
 		if m := matchDuration(t.text, p.bareHourIsTime); m > 0 {
 			p.estimate.value, p.estimate.span = m, one
 			return i + 1, true
@@ -280,7 +288,7 @@ func (p *parser) result(quotes []Span) Result {
 	add(p.priority.span, p.priority.value > 0)
 	add(p.estimate.span, p.estimate.value > 0)
 	out := Result{Due: p.due(), Deadline: p.deadline.value, Someday: parked, Evening: p.evening != nil, ProjectID: p.project.value,
-		Priority: p.priority.value, EstimateMinutes: p.estimate.value, Recurrence: p.rec.value, Labels: []string{}, Reminders: []Reminder{}}
+		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: p.rec.value, Labels: []string{}, Reminders: []Reminder{}}
 	for _, l := range p.labels {
 		remove = append(remove, l.span)
 		out.Labels = append(out.Labels, l.value)

@@ -119,3 +119,24 @@ func TestFilterParserRejects(t *testing.T) {
 		}
 	}
 }
+
+// Tracked time terms (OpenSpec change time-tracking, design D9).
+func TestFilterTrackedTerms(t *testing.T) {
+	for _, q := range []string{"tracked", "!tracked & #Work", "tracked > 1h", "tracked <= 1h", "tracked >= 1h30", "tracked < 1.5h",
+		"tracked = 0", "tracked > 45min", "tracked > 90", "TRACKED > 30M", "tracked > 10", `"tracked" > 10`, "tracked & due <= today"} {
+		if err := Parse(q); err != nil {
+			t.Errorf("%q: %v", q, err)
+		}
+	}
+	for q, want := range map[string]string{
+		"tracked > soon": `Expected a duration such as 30m or 1h30 after ">" at position 11`,
+		"tracked >":      `Expected a duration such as 30m or 1h30 after ">" at position 9`,
+		"tracked = 1h75": `Expected a duration such as 30m or 1h30 after "=" at position 11`,
+		"tracked > +30m": `Expected a duration such as 30m or 1h30 after ">" at position 11`,
+		"tracked today":  `Expected "&" or "|" before "today" at position 9`,
+	} {
+		if err := Parse(q); err == nil || err.Error() != want {
+			t.Errorf("%q: got %v, want %q", q, err, want)
+		}
+	}
+}

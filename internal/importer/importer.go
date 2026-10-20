@@ -54,6 +54,8 @@ const (
 	// feed's seen marker and the review stamp (open-loops-method D4); restored
 	// from an own export like user_prefs, never undone.
 	KindProjectPrefs = "project_prefs"
+	// KindTimeEntry is a time entry on a task (OpenSpec change time-tracking).
+	KindTimeEntry = "time_entry"
 	// KindAttachment is a file or link attachment (OpenSpec change attachments).
 	KindAttachment = "attachment"
 	// KindField is a custom field definition (OpenSpec change custom-fields),
@@ -189,6 +191,9 @@ type Parsed struct {
 	ViewHints []ViewHint
 	// Files are the attachment files of an own ZIP export, by attachment id.
 	Files map[string][]byte
+	// ExportedBy is the account id an own export names as its author
+	// (time-tracking D11); "" for older files.
+	ExportedBy string
 	// Template is set for an own export that declares itself a template
 	// (OpenSpec change project-templates, design D7).
 	Template *TemplateInfo

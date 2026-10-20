@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry']
 
 export interface Op {
   id: string
@@ -304,6 +304,31 @@ export interface Comment {
   mentions: string[]
   created_at: number
   edited_at: number | null
+  deleted_at: number | null
+  _clock: Clock
+}
+
+/**
+ * One stretch of work on a task (OpenSpec `time-tracking`, D1). It syncs in its
+ * task's scope; the server sets the rules: `user_id` is the submitting account and
+ * never changes, only the author edits (`started_at`, `ended_at`, `note`), the
+ * author, project admins and the owner may set `deleted_at`, and viewers cannot
+ * create entries. `ended_at` is null while the entry runs; a user has at most one
+ * running entry, a rule every device applies (lib/time.ts `repairs`). `note` is
+ * user-written text and encrypted for an encrypted account.
+ */
+export interface TimeEntry {
+  id: string
+  task_id: string
+  user_id: string
+  /** Unix ms. */
+  started_at: number
+  /** Unix ms, or null while the entry runs. */
+  ended_at: number | null
+  /** The device that started or logged it ("server" for the REST API). */
+  device_id: string
+  note: string
+  created_at: number
   deleted_at: number | null
   _clock: Clock
 }
@@ -1146,6 +1171,8 @@ export interface ImportTotals {
   reminders?: number
   /** Tasks with a deadline (deadlines); absent on older jobs. */
   deadlines?: number
+  /** Created time entries (time-tracking); absent on older jobs. */
+  timeEntries?: number
   entities: number
   written: number
   ops: number
@@ -1293,6 +1320,8 @@ export interface PurgeCounts {
   sections?: number
   /** Comments of purged tasks (comments-and-activity; absent on older servers). */
   comments?: number
+  /** Time entries of purged tasks (time-tracking; absent on older servers). */
+  timeEntries?: number
 }
 
 export const COMMENT_FIELDS = ['task_id', 'parent_id', 'body', 'author_id', 'mentions', 'created_at', 'edited_at', 'deleted_at'] as const

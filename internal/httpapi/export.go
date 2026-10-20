@@ -15,7 +15,10 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", `format: must be "json" or "zip"`)
 		return
 	}
-	out := map[string]any{"format": "opentodo-export", "version": 1, "exportedAt": time.Now().UTC().Format(time.RFC3339)}
+	out := map[string]any{"format": "opentodo-export", "version": 1, "exportedAt": time.Now().UTC().Format(time.RFC3339),
+		// The exporting account (time-tracking D11): an import tells its own time
+		// entries from other members' by it.
+		"userId": uid}
 	for plural, entity := range opsync.Plural {
 		list, err := s.sync.List(r.Context(), uid, entity, true)
 		if err != nil {
@@ -44,6 +47,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["attachments"] = attachments
+	// Time entries the caller can read, every member's on shared tasks and the
+	// deleted ones included (time-tracking D11).
+	entries, err := s.sync.List(r.Context(), uid, "time_entry", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["time_entries"] = entries
 	// The caller's date and time preferences (date-time-preferences D1): personal,
 	// no REST collection, but part of what the user owns, so the export carries them.
 	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)

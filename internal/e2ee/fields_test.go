@@ -33,3 +33,19 @@ func TestCustomFieldContent(t *testing.T) {
 		t.Fatalf("AllContentFields task = %v", all["task"])
 	}
 }
+
+// Time entries (OpenSpec time-tracking, design D1): the note is content, the
+// times and references stay plaintext ("Time entry note in the personal scope").
+func TestTimeEntryContent(t *testing.T) {
+	for _, c := range []struct {
+		field string
+		want  bool
+	}{
+		{"note", true}, {"started_at", false}, {"ended_at", false}, {"task_id", false},
+		{"user_id", false}, {"device_id", false}, {"created_at", false}, {"deleted_at", false},
+	} {
+		if got := IsContentField("time_entry", c.field); got != c.want {
+			t.Errorf("IsContentField(time_entry, %s) = %v, want %v", c.field, got, c.want)
+		}
+	}
+}

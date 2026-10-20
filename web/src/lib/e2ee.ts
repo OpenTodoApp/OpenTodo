@@ -38,6 +38,8 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   attachment: ['name', 'mime', 'url'],
   // Custom field definitions (OpenSpec custom-fields, design D4).
   field: ['name', 'options'],
+  // A time entry's note (OpenSpec time-tracking, design D1); its times stay plaintext.
+  time_entry: ['note'],
 }
 
 /**

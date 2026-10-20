@@ -37,7 +37,7 @@ type Skill struct {
 }
 
 // readTools are every read tool; skills that look around use all of them.
-var readTools = []string{"today_summary", "list_projects", "list_tasks", "search_tasks", "get_task"}
+var readTools = []string{"today_summary", "list_projects", "list_tasks", "search_tasks", "get_task", "list_time_entries"}
 
 func withRead(tools ...string) []string { return append(append([]string{}, readTools...), tools...) }
 

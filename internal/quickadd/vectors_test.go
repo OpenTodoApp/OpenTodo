@@ -26,6 +26,7 @@ func TestSharedVectors(t *testing.T) {
 				Labels          []string   `json:"labels"`
 				Priority        *int       `json:"priority"`
 				EstimateMinutes *int       `json:"estimateMinutes"`
+				SpentMinutes    *int       `json:"spentMinutes"`
 				Recurrence      *string    `json:"recurrence"`
 				Reminders       []Reminder `json:"reminders"`
 			} `json:"expect"`
@@ -50,7 +51,7 @@ func TestSharedVectors(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			got := Parse(c.Line, c.Ctx)
 			want := Result{Title: c.Expect.Title, Due: c.Expect.Due, ProjectID: deref(c.Expect.ProjectID), Labels: c.Expect.Labels,
-				Priority: num(c.Expect.Priority), EstimateMinutes: num(c.Expect.EstimateMinutes), Recurrence: deref(c.Expect.Recurrence),
+				Priority: num(c.Expect.Priority), EstimateMinutes: num(c.Expect.EstimateMinutes), SpentMinutes: num(c.Expect.SpentMinutes), Recurrence: deref(c.Expect.Recurrence),
 				Reminders: c.Expect.Reminders}
 			got.Deadline, got.Someday, got.Evening = "", false, false
 			if want.Reminders == nil {

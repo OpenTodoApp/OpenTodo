@@ -475,6 +475,16 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 				return err
 			}
 		}
+		// And time entries (time-tracking D1).
+		eids, err := childIDsWhere(ctx, tx, personal, "time_entry", "task_id", c.id, false)
+		if err != nil {
+			return err
+		}
+		for _, eid := range eids {
+			if err := relabel("time_entry", eid); err != nil {
+				return err
+			}
+		}
 	}
 	now := s.now().UnixMilli()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO project_scopes(project_id, owner_id, created_at) VALUES(?,?,?)`, projectID, ownerID, now); err != nil {

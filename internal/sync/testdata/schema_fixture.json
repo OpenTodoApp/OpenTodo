@@ -109,6 +109,16 @@
       "start",
       "title"
     ],
+    "time_entry": [
+      "created_at",
+      "deleted_at",
+      "device_id",
+      "ended_at",
+      "note",
+      "started_at",
+      "task_id",
+      "user_id"
+    ],
     "user_prefs": [
       "date_format",
       "day_start",
@@ -175,6 +185,9 @@
       "notes_doc",
       "origin",
       "title"
+    ],
+    "time_entry": [
+      "note"
     ],
     "view": [
       "name",

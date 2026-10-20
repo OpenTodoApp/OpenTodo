@@ -1,0 +1,200 @@
+{
+ "about": "The CSV export shared by internal/timetrack (csv_test.go) and web/src/lib/time.ts toCSV (time.test.ts), OpenSpec change time-tracking design D8. expected was written by `go test ./internal/timetrack -update-csv` and reviewed by hand; both implementations must produce it byte for byte.",
+ "day_start": 0,
+ "entries": [
+  {
+   "deleted_at": null,
+   "ended_at": 1791898200000,
+   "id": "e2",
+   "note": "review, part 2",
+   "started_at": 1791892800000,
+   "task_id": "t1",
+   "user_id": "u1"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": 1791789900000,
+   "id": "e1",
+   "note": "kick-off",
+   "started_at": 1791788400000,
+   "task_id": "t1",
+   "user_id": "u1"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": 1792019400000,
+   "id": "e3",
+   "note": "enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+   "started_at": 1792017000000,
+   "task_id": "t2",
+   "user_id": "u2"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": null,
+   "id": "e4",
+   "note": "line one\nline two",
+   "started_at": 1792333200000,
+   "task_id": "t3",
+   "user_id": "u1"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": 1791759600000,
+   "id": "e5",
+   "note": "",
+   "started_at": 1791754200000,
+   "task_id": "t1",
+   "user_id": "u1"
+  },
+  {
+   "deleted_at": 9,
+   "ended_at": 1792054800000,
+   "id": "e6",
+   "note": "",
+   "started_at": 1792051200000,
+   "task_id": "t1",
+   "user_id": "u1"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": 1792054800000,
+   "id": "e7",
+   "note": "",
+   "started_at": 1792051200000,
+   "task_id": "t4",
+   "user_id": "u1"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": 1792054800000,
+   "id": "e8",
+   "note": "",
+   "started_at": 1792051200000,
+   "task_id": "t5",
+   "user_id": "u1"
+  }
+ ],
+ "expected": "\ufeffdate,start,end,minutes,task,project,labels,note,Rate,Phase,Billable\r\n2026-10-12,09:00,09:25,25,Write the report,Client A,billable;calls,kick-off,95.5,Draft,\r\n2026-10-13,14:00,15:30,90,Write the report,Client A,billable;calls,\"review, part 2\",95.5,Draft,\r\n2026-10-15,00:30,01:10,40,'=SUM(A1),Internal,,[encrypted],,Build,true\r\n2026-10-18,16:20,,40,\"Inbox, \"\"quoted\"\"\",,,\"line one\nline two\",,,\r\n",
+ "fields": [
+  {
+   "deleted_at": null,
+   "id": "f2",
+   "name": "Phase",
+   "position": 2,
+   "project_id": "pa"
+  },
+  {
+   "deleted_at": null,
+   "id": "f1",
+   "name": "Rate",
+   "position": 1,
+   "project_id": "pa"
+  },
+  {
+   "deleted_at": 3,
+   "id": "f9",
+   "name": "Old",
+   "position": 0,
+   "project_id": "pa"
+  },
+  {
+   "deleted_at": null,
+   "id": "g1",
+   "name": "Phase",
+   "position": 1,
+   "project_id": "pi"
+  },
+  {
+   "deleted_at": null,
+   "id": "g2",
+   "name": "Billable",
+   "position": 2,
+   "project_id": "pi"
+  }
+ ],
+ "from": "2026-10-12",
+ "labels": [
+  {
+   "id": "l1",
+   "name": "billable"
+  },
+  {
+   "id": "l2",
+   "name": "calls"
+  }
+ ],
+ "now": 1792335600000,
+ "projects": [
+  {
+   "deleted_at": null,
+   "id": "pa",
+   "name": "Client A"
+  },
+  {
+   "deleted_at": null,
+   "id": "pi",
+   "name": "Internal"
+  },
+  {
+   "deleted_at": 5,
+   "id": "pt",
+   "name": "Trashed"
+  }
+ ],
+ "tasks": [
+  {
+   "deleted_at": null,
+   "fields": {
+    "f1": 95.5,
+    "f2": "Draft",
+    "f9": "x"
+   },
+   "id": "t1",
+   "labels": [
+    "l1",
+    "l2",
+    "gone"
+   ],
+   "project_id": "pa",
+   "title": "Write the report"
+  },
+  {
+   "deleted_at": null,
+   "fields": {
+    "g1": "Build",
+    "g2": true
+   },
+   "id": "t2",
+   "labels": [],
+   "project_id": "pi",
+   "title": "=SUM(A1)"
+  },
+  {
+   "deleted_at": null,
+   "fields": {},
+   "id": "t3",
+   "labels": [],
+   "project_id": "",
+   "title": "Inbox, \"quoted\""
+  },
+  {
+   "deleted_at": 7,
+   "fields": {},
+   "id": "t4",
+   "labels": [],
+   "project_id": "pa",
+   "title": "Deleted task"
+  },
+  {
+   "deleted_at": null,
+   "fields": {},
+   "id": "t5",
+   "labels": [],
+   "project_id": "pt",
+   "title": "In trashed project"
+  }
+ ],
+ "to": "2026-10-18",
+ "zone": "Europe/Berlin"
+}

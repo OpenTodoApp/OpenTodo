@@ -592,6 +592,9 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"auth", "logout"},
 		{"auth", "set-token", h.apiToken},
 		{"login", h.srv.URL, "--email", ownerEmail},
+		{"time", "start", "plum"},
+		{"time", "stop"},
+		{"time", "log", "plum", "1h30", "--on", "yesterday", "--note", "review"},
 	}
 	covered := map[string]bool{}
 	for _, c := range cases {

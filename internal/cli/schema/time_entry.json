@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "time_entry",
+  "description": "A time entry exactly as the REST API returns it (OpenSpec time-tracking).",
+  "type": "object",
+  "required": ["id", "taskId", "userId", "startedAt", "endedAt", "minutes"],
+  "properties": {
+    "id": {"type": "string"},
+    "taskId": {"type": "string"},
+    "userId": {"type": "string"},
+    "startedAt": {"type": "integer", "description": "Unix milliseconds"},
+    "endedAt": {"type": ["integer", "null"], "description": "Unix milliseconds; null while the entry runs"},
+    "minutes": {"type": "integer", "description": "whole minutes, a running entry up to the server time"},
+    "note": {"type": "string", "description": "user-written; ciphertext for an encrypted account"},
+    "deviceId": {"type": "string"},
+    "taskTitle": {"type": "string"},
+    "projectId": {"type": ["string", "null"]},
+    "projectName": {"type": "string"}
+  }
+}

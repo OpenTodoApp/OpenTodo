@@ -192,6 +192,8 @@ type PurgeResult struct {
 	// Attachments of purged tasks and removed attachments past retention
 	// (attachments D13); additive. Their files are removed after commit.
 	Attachments int `json:"attachments"`
+	// Time entries of purged tasks (time-tracking); additive.
+	TimeEntries int `json:"timeEntries"`
 	// Orphans counts files without a row removed by the retention sweep.
 	Orphans int `json:"orphans,omitempty"`
 	// Audience is every user who could see a purged entity: their devices must sync.
@@ -501,6 +503,8 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 		case "attachment":
 			res.Attachments++
 			purgedFiles = append(purgedFiles, t.id)
+		case "time_entry":
+			res.TimeEntries++
 		}
 	}
 	// CalDAV resource names of purged tasks go in the same transaction
@@ -655,6 +659,14 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		}
 		for _, id := range aids {
 			add(purgeTarget{t.scope, "attachment", id})
+		}
+		// And time entries, every member's, deleted or not (time-tracking).
+		eids, err := childIDsWhere(ctx, tx, t.scope, "time_entry", "task_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range eids {
+			add(purgeTarget{t.scope, "time_entry", id})
 		}
 	}
 	return out, nil

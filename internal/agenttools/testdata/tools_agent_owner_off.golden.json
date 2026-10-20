@@ -197,6 +197,57 @@
         "readOnlyHint": true,
         "title": "Today summary"
       }
+    },
+    {
+      "name": "list_time_entries",
+      "title": "List time entries",
+      "description": "List the time entries the user can read (their own and other members' on shared tasks), newest first, with minutes and the task. from and to are local days in timezone; running: true returns only the entry that is running now. Paged: pass next_cursor back as cursor.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "description": "next_cursor from a previous result, to get the following page.",
+            "type": "string"
+          },
+          "from": {
+            "description": "Only entries that started on or after this local day (YYYY-MM-DD).",
+            "format": "date",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of entries to return (default and maximum 200).",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "running": {
+            "default": false,
+            "description": "Only running entries.",
+            "type": "boolean"
+          },
+          "task_id": {
+            "description": "Only entries of this task.",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Only entries that started on or before this local day (YYYY-MM-DD).",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List time entries"
+      }
     }
   ]
 }

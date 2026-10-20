@@ -10,7 +10,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -92,11 +92,13 @@ const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '' }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '' }
+/** A time entry row before its ops arrive (time-tracking D1); `ended_at` null reads as running. */
+export const TIME_ENTRY_DEFAULTS: Omit<TimeEntry, 'id' | '_clock'> = { task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null }
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS,
 }
 
 /**
@@ -578,6 +580,8 @@ export async function archiveProject(id: string): Promise<void> {
 export type NewTaskInput = {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
+  /** Minutes already spent (quick add `30m/2h`): one closed time entry ending at creation (time-tracking D10). */
+  spent_minutes?: number | null
   deadline?: string | null
   /** "someday" or a date (someday-and-evening); only sent when set. */
   start?: string | null
@@ -644,7 +648,15 @@ export function planReminders(taskId: string, due: Task['due'], phrases: readonl
 export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
   const { id, change } = await planTask(input)
   const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
-  // One batch: the task never syncs without its reminders.
+  // Time already spent (quick add `30m/2h`, time-tracking D10): one closed entry ending now.
+  const me = input.spent_minutes ? await currentUserId() : null
+  if (me && input.spent_minutes) {
+    const end = now.getTime()
+    changes.push({ entity: 'time_entry', entityId: uuid(), patch: {
+      task_id: id, user_id: me, started_at: end - input.spent_minutes * 60000, ended_at: end, device_id: await getDeviceId(), note: '', created_at: end, deleted_at: null,
+    } })
+  }
+  // One batch: the task never syncs without its reminders and its time entry.
   await mutateMany(changes)
   return id
 }
@@ -853,8 +865,21 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
   await completeTask(id)
 }
 
-async function completePlain(id: string, now: number): Promise<void> {
-  await mutateMany(planCompletePlain(id, await liveTasks(), now))
+async function completePlain(id: string, now: number, stops: Change[]): Promise<void> {
+  await mutateMany([...planCompletePlain(id, await liveTasks(), now), ...stops])
+}
+
+/**
+ * Completing a task ends the user's running entry on it in the same batch
+ * (time-tracking "Start and stop from the web app"). The server's completion
+ * paths do not: they cannot know whether the person is still working.
+ */
+async function trackingStops(taskId: string, now: number): Promise<Change[]> {
+  const me = await currentUserId()
+  if (!me) return []
+  const rows = await db.timeEntries.where('task_id').equals(taskId).toArray()
+  return rows.filter((e) => e.user_id === me && !e.deleted_at && e.ended_at === null)
+    .map((e) => ({ entity: 'time_entry', entityId: e.id, patch: { ended_at: Math.max(now, e.started_at) } }))
 }
 
 /** Completing a plain task completes its open descendants too (bulk-edit D4 shares it). */
@@ -878,6 +903,7 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
   const now = opts.now ?? Date.now()
   const today = opts.today ?? logicalToday()
   await getDeviceId()
+  const stops = await trackingStops(id, now)
   let recordId: string | null = null
   let plain = false
   await db.transaction('rw', mutationTables(), async () => {
@@ -893,9 +919,9 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
       return
     }
     recordId = plan.recordId
-    await mutateMany(plan.changes)
+    await mutateMany([...plan.changes, ...stops])
   })
-  if (plain) await completePlain(id, now)
+  if (plain) await completePlain(id, now, stops)
   return recordId
 }
 

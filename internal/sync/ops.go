@@ -424,6 +424,23 @@ var Schema = map[string]map[string]kind{
 		"uploaded_at": kNullableNumber,
 		"deleted_at":  kNullableNumber,
 	},
+	// time_entry: one stretch of work on a task (OpenSpec change time-tracking,
+	// design D1). It lives in its task's scope; Apply checks authorship per op
+	// (user_id equals the submitter at creation and never changes, only the
+	// author edits, the author, admins and the owner delete, viewers cannot
+	// create). ended_at is null while the entry runs; a user has at most one
+	// running entry, a rule every device applies (internal/timetrack). note is
+	// user-written text, so it is an encrypted content field. See docs/sync.md.
+	"time_entry": {
+		"task_id":    kID,
+		"user_id":    kID,
+		"started_at": kInstant,
+		"ended_at":   kInstant,
+		"device_id":  kString,
+		"note":       kString,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 	// project_prefs: one user's personal preferences for a project, keyed by the
 	// project id (OpenSpec change `activity-feed`, design D1). It always resolves
 	// to the author's personal scope, even for a shared project, so it syncs to
