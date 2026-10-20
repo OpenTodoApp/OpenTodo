@@ -51,6 +51,9 @@ var ContentFields = map[string][]string{
 	// A time entry's note (OpenSpec time-tracking, design D1); its times stay
 	// plaintext so totals and the CSV work on the server.
 	"time_entry": {"note"},
+	// The review record's line for tomorrow (OpenSpec close-the-day, design D5);
+	// the close time and the other rhythm stamps stay plaintext.
+	"review": {"tomorrow_note"},
 }
 
 // ContentPrefixes are families of content fields named by a prefix: a task's

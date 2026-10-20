@@ -65,6 +65,7 @@ const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ def
 const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
 const DailyCheck = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.DailyCheck })))
 const MonthlyLook = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.MonthlyLook })))
+const CloseDay = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.CloseDay })))
 const NextView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.NextView })))
 const WaitingView = lazy(() => import('./method/MethodListView').then((m) => ({ default: m.WaitingView })))
 // Focus (focus-mode D6): its own chunk; the engine that ends a session on time is the break reminder, always mounted.
@@ -174,7 +175,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
-    'go.focus': go({ view: 'focus' }),
+    'go.focus': go({ view: 'focus' }), 'go.close': go({ view: 'review', step: 'close' }),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -259,7 +260,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TaskPage id={route.id} user={user} />
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
-              {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
+              {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
             </Suspense>
           ) : route.view === 'next' ? (
             <Suspense fallback={null}><NextView /></Suspense>

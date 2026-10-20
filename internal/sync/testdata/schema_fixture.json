@@ -68,11 +68,13 @@
       "task_id"
     ],
     "review": [
+      "closed_at",
       "completed_at",
       "daily_at",
       "focus",
       "focus_date",
-      "monthly_at"
+      "monthly_at",
+      "tomorrow_note"
     ],
     "section": [
       "created_at",
@@ -183,6 +185,9 @@
       "description",
       "name",
       "notes_doc"
+    ],
+    "review": [
+      "tomorrow_note"
     ],
     "section": [
       "name"

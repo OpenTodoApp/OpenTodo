@@ -13,7 +13,8 @@ import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
 import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
-import { dailyDue, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
+import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
+import { formatInstant } from '../lib/dates'
 import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
@@ -559,7 +560,11 @@ function reviewMarker(review: Review | null | undefined, method: MethodMode, tod
     ...(method === 'first' && dailyDue(review?.daily_at, today) ? [t('the Daily check is due')] : []),
   ]
   const due = parts.length > 0
-  const text = due ? t('Review due · {details}', { details: parts.join('; ') }) : t('Last review {ago}', { ago: reviewAgo(review?.completed_at) })
+  // Close the day (close-the-day D7): "Day closed" for the rest of the local day; a due marker wins and its text names both.
+  const closed = review && dayClosed(review.closed_at, today) ? formatInstant(review.closed_at, 'time') : null
+  const text = due
+    ? t('Review due · {details}', { details: parts.join('; ') }) + (closed ? `; ${t('the day is closed')}` : '')
+    : closed ? t('Day closed, {time}', { time: closed }) : t('Last review {ago}', { ago: reviewAgo(review?.completed_at) })
   return { due, text, marker: due ? <StatusDot label={text} data-review-due /> : null }
 }
 

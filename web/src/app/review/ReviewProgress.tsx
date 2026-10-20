@@ -3,19 +3,39 @@
 // A done step shows a check, the current one is filled with a soft halo, an open
 // one shows what is left in a small bubble. Every circle opens its step. Phase
 // groups share the width in proportion to their steps but never shrink below their
-// name, so the stepper fits a 375 px screen without scrolling.
+// name, so the stepper fits a 375 px screen without scrolling. Close the day
+// (close-the-day D2) passes its own steps and its one phase.
 import { t } from '../../lib/i18n'
-import { PHASE_OF, PHASE_TITLES, STEP_IDS, STEP_TITLES, type PhaseId, type ReviewSteps, type StepId } from '../../lib/review'
+import { PHASE_OF as WEEKLY_PHASE_OF, PHASE_TITLES as WEEKLY_PHASE_TITLES, STEP_IDS as WEEKLY_IDS, STEP_TITLES as WEEKLY_STEP_TITLES, type PhaseId, type StepId } from '../../lib/review'
 import { Icon } from '../../ui'
 
-const PHASES: readonly PhaseId[] = ['clear', 'current', 'creative']
+const WEEKLY_PHASES: readonly PhaseId[] = ['clear', 'current', 'creative']
 
-export function ReviewProgress({ steps, step, onStep }: { steps: Pick<ReviewSteps, 'done' | 'left'>; step: StepId; onStep: (s: StepId) => void }) {
+interface ProgressProps<S extends string, P extends string> {
+  steps: { done: Record<S, boolean>; left: Record<S, number> }
+  step: S
+  onStep: (s: S) => void
+  /** Another stepper's steps and phases; the weekly review's by default. */
+  ids?: readonly S[]
+  phases?: readonly P[]
+  phaseOf?: Readonly<Record<S, P>>
+  phaseTitles?: Readonly<Record<P, string>>
+  stepTitles?: Readonly<Record<S, string>>
+  label?: string
+}
+
+export function ReviewProgress<S extends string = StepId, P extends string = PhaseId>(props: ProgressProps<S, P>) {
+  const { steps, step, onStep } = props
+  const STEP_IDS = props.ids ?? (WEEKLY_IDS as unknown as readonly S[])
+  const PHASES = props.phases ?? (WEEKLY_PHASES as unknown as readonly P[])
+  const PHASE_OF = props.phaseOf ?? (WEEKLY_PHASE_OF as unknown as Record<S, P>)
+  const PHASE_TITLES = props.phaseTitles ?? (WEEKLY_PHASE_TITLES as unknown as Record<P, string>)
+  const STEP_TITLES = props.stepTitles ?? (WEEKLY_STEP_TITLES as unknown as Record<S, string>)
   const at = STEP_IDS.indexOf(step)
   const columns = PHASES.map((p) => `minmax(min-content, ${STEP_IDS.filter((s) => PHASE_OF[s] === p).length}fr)`).join(' ')
-  const status = (s: StepId) => (steps.done[s] ? t('done') : t('{n} left', { n: steps.left[s] }))
+  const status = (s: S) => (steps.done[s] ? t('done') : t('{n} left', { n: steps.left[s] }))
   return (
-    <nav aria-label={t('Review progress')} className="mb-5" data-review-progress>
+    <nav aria-label={props.label ?? t('Review progress')} className="mb-5" data-review-progress>
       <p className="sr-only">{t('Step {n} of {total} · {phase}', { n: at + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}</p>
       <ol className="grid" style={{ gridTemplateColumns: columns }}>
         {PHASES.map((phase) => (

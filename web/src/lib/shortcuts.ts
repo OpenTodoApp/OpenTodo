@@ -151,6 +151,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.next', keys: ['g Shift+N'], description: 'Go to Next: the next action of every project, by context', section: 'go', scope: 'global' },
   { id: 'go.waiting', keys: ['g Shift+W'], description: 'Go to Waiting: what is assigned to someone else or blocked', section: 'go', scope: 'global' },
   { id: 'go.daily', keys: ['g Shift+R'], description: 'Go to the Daily check: the Inbox, what is overdue, today\'s focus', section: 'go', scope: 'global' },
+  // Close the day (close-the-day D6): `g d` is the Day calendar and `Shift+D` alone duplicates in a list; a `g` sequence meets neither.
+  { id: 'go.close', keys: ['g Shift+D'], description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
   { id: 'go.focus', keys: ['g Shift+F'], description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
   { id: 'go.find', keys: ['g /'], description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
 
@@ -305,6 +307,12 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'review.walk-skip', keys: ['j', 'Space'], description: 'Project walk: skip to the next project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-back', keys: ['k'], description: 'Project walk: back to the previous project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.focus', keys: ['f'], description: 'Daily check: put the selected task in today\'s focus (up to three), or take it out', section: 'review', scope: 'view', views: ['review'] },
+  // Close the day's carry-over (close-the-day D4): on the selected row. The screen's
+  // rows pass the list's `y` (time tracking) through, so `y` reaches this entry there.
+  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day: carry the selected task over to tomorrow', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.pick', keys: ['p'], description: 'Close the day: pick a day for the selected task', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.someday', keys: ['y'], description: 'Close the day: move the selected task to Someday', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.keep', keys: ['h'], description: 'Close the day: keep the selected task in Today', section: 'review', scope: 'view', views: ['review'] },
 
   // ---- display mode (display-mode D5): the shell's shortcuts (`g` sequences, `q`, `?`) are not active there
   { id: 'display.down', keys: ['j', '↓', '→'], description: 'Move the focus to the next row, across the day columns', section: 'display', scope: 'view', views: ['display'] },

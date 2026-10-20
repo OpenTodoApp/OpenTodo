@@ -4,6 +4,7 @@
 // lib/liveData), the keyboard (useListShortcuts), drag (useListDrag), the bindings to
 // the panel and the Vim layer (useListBindings), and the bodies for the list, the
 // board and the timeline.
+import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { t } from '../lib/i18n'
@@ -262,6 +263,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
+          {route.view === 'today' && <CloseDayRow />}
           {m.logbook && <LogbookMore total={m.logbook.total} limit={m.logbookLimit} onMore={() => m.setLogbookLimit((n) => n + LOGBOOK_PAGE)} />}
           {route.view === 'project' && !board && !timeline && m.projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
         </div>

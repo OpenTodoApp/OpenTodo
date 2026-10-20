@@ -40,6 +40,8 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   field: ['name', 'options'],
   // A time entry's note (OpenSpec time-tracking, design D1); its times stay plaintext.
   time_entry: ['note'],
+  // The review record's line for tomorrow (OpenSpec close-the-day, design D5); its times and focus stay plaintext.
+  review: ['tomorrow_note'],
 }
 
 /**

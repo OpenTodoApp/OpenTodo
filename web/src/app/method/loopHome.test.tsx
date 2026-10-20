@@ -146,4 +146,31 @@ describe('Loop home', () => {
     expect(rail.className).toContain('sm:grid-cols-3')
     await r.unmount()
   })
+
+  it('Close the day from the Review move: the link opens the first step; afterwards the line reads "Day: closed" and the next move is unchanged', async () => {
+    const r = await open()
+    await waitFor(() => !!tile('review')?.querySelector('[data-loop-day="open"]'))
+    const up = document.querySelector('[data-loop-up]')!.getAttribute('data-loop-tile')
+    expect(tile('catch').querySelector('[data-loop-done]')).not.toBeNull()
+    const link = tile('review').querySelector<HTMLAnchorElement>('[data-loop-day="open"]')!
+    expect(link.getAttribute('href')).toBe('/review/close')
+    expect(link.closest('a[href="/review"], a[href="/review/daily"]')).toBeNull()
+    await click(link)
+    await waitFor(() => location.pathname === '/review/close' && document.querySelector('[data-review-step]')?.getAttribute('data-review-step') === 'summary')
+    const { closeDay } = await import('../../lib/review')
+    await act(async () => { await closeDay('') })
+    navigate({ view: 'loop' })
+    await waitFor(() => (tile('review')?.querySelector('[data-loop-day="closed"]')?.textContent ?? '').startsWith('Day: closed'))
+    expect(document.querySelector('[data-loop-up]')!.getAttribute('data-loop-tile')).toBe(up)
+    expect(tile('catch').querySelector('[data-loop-done]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('Day closed on another device: the Review move line changes without a reload', async () => {
+    const r = await open()
+    await waitFor(() => !!tile('review')?.querySelector('[data-loop-day="open"]'))
+    await applyOps([{ id: 'dc', entity: 'review', entityId: 'me', field: 'closed_at', value: NOW.getTime(), ts: NOW.getTime(), device: 'phone' }] as Op[])
+    await waitFor(() => !!tile('review')?.querySelector('[data-loop-day="closed"]'))
+    await r.unmount()
+  })
 })

@@ -49,3 +49,19 @@ func TestTimeEntryContent(t *testing.T) {
 		}
 	}
 }
+
+// The review record (OpenSpec close-the-day, design D5): the line for tomorrow
+// is content, the close time and the rhythm stamps stay plaintext.
+func TestReviewContent(t *testing.T) {
+	for _, c := range []struct {
+		field string
+		want  bool
+	}{
+		{"tomorrow_note", true}, {"closed_at", false}, {"completed_at", false},
+		{"daily_at", false}, {"focus", false}, {"focus_date", false},
+	} {
+		if got := IsContentField("review", c.field); got != c.want {
+			t.Errorf("IsContentField(review, %s) = %v, want %v", c.field, got, c.want)
+		}
+	}
+}

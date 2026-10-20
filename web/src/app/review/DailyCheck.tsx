@@ -1,7 +1,8 @@
 // The Daily check (OpenSpec change open-loops-method, design D5; weekly-review
 // "Daily check"): on one page the Inbox count, what is overdue and today's tasks,
 // where `f` puts up to three of them in today's focus. "Done for today" records
-// the check on the synced personal `review` row.
+// the check on the synced personal `review` row. Yesterday's line for tomorrow
+// (close-the-day D7) is shown first, read-only, until the day is closed again.
 import { useEffect, useMemo, useState } from 'react'
 import { todayList } from '../../lib/dayLists'
 import { formatInstant } from '../../lib/dates'
@@ -9,7 +10,7 @@ import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { useAllLabels, useReviewRow } from '../../lib/localData'
 import { setTaskCompleted } from '../../lib/ops'
-import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, toggleFocus } from '../../lib/review'
+import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, toggleFocus, yesterdaysNote } from '../../lib/review'
 import { qualifies } from '../../lib/triage'
 import type { Task } from '../../lib/types'
 import { overdueInToday } from '../../lib/views'
@@ -70,6 +71,7 @@ export function DailyCheck() {
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
   const done = !!input && !dailyDue(review?.daily_at, input.today)
+  const note = input ? yesterdaysNote(review, input.today) : null
   const meta = useWithMethod('review', done ? t('Done today, {instant}', { instant: formatInstant(review!.daily_at, 'time') }) : undefined)
   const subtitle = useWithMethod('review')
 
@@ -80,6 +82,14 @@ export function DailyCheck() {
         actions={<Button size="sm" variant={done ? 'secondary' : 'primary'} onClick={() => act(finishDailyCheck().then(() => setMessage(t('Daily check done. See you tomorrow.'))))}>{t('Done for today')}</Button>} />
       {!groups ? <Skeleton shape="row" count={4} /> : (
         <>
+          {note && (
+            <div className="mb-4" data-daily-note>
+              <Notice tone="info">
+                <span className="block text-hint font-semibold uppercase tracking-wide">{t('Yesterday’s line')}</span>
+                <span className="user-text">{note}</span>
+              </Notice>
+            </div>
+          )}
           {message && <p role="status" className="mb-3 text-meta text-muted" data-daily-message>{message}</p>}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2" data-daily-inbox>
             <p className="text-body text-muted">{groups.inbox ? t('{count} to process in the Inbox.', { count: groups.inbox }) : t('The Inbox is empty.')}</p>

@@ -529,8 +529,9 @@ var Schema = map[string]map[string]kind{
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
 	// user_prefs it resolves to the author's personal scope (the default branch of
 	// the scope resolver), so it syncs to the user's own devices only and
-	// converges by last-writer-wins. completed_at is Unix ms. Not user-written
-	// content: never encrypted, and it derives no activity event.
+	// converges by last-writer-wins. completed_at is Unix ms. Its times and focus
+	// are not user-written content and are never encrypted; it derives no
+	// activity event.
 	"review": {
 		"completed_at": kNumber,
 		// The other rhythms (open-loops-method D5): the last Daily check and
@@ -540,6 +541,11 @@ var Schema = map[string]map[string]kind{
 		"monthly_at": kNumber,
 		"focus_date": kString,
 		"focus":      kString,
+		// Close the day (OpenSpec change close-the-day, design D5): the latest
+		// close (Unix ms; 0 = never) and the one-line note for tomorrow written
+		// with it. The note is user-written content (e2ee.ContentFields).
+		"closed_at":     kNumber,
+		"tomorrow_note": kString,
 	},
 }
 

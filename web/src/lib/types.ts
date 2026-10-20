@@ -442,6 +442,10 @@ export interface Review {
   /** Today's focus (open-loops-method D5): the local date it was chosen on and up to three comma-separated task ids. */
   focus_date: string
   focus: string
+  /** The latest Close the day (close-the-day D5), Unix ms; 0 = never. */
+  closed_at: number
+  /** The one-line note for tomorrow written at that close; content (encrypted for encrypted accounts). */
+  tomorrow_note: string
   _clock: Clock
 }
 

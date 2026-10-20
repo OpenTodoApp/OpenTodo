@@ -242,6 +242,16 @@ describe('field split and transport (task 2.1)', () => {
     expect(await db.outbox.count()).toBe(before)
   })
 
+  it('the line for tomorrow is ciphertext, the close time is not (close-the-day 1.3)', async () => {
+    await enableOnA()
+    await mutate('review', 'me', { closed_at: 1_760_000_000_000, tomorrow_note: 'Call the bank' })
+    await syncNow()
+    expect(isEnvelope(current('review', 'me', 'tomorrow_note'))).toBe(true)
+    expect(current('review', 'me', 'closed_at')).toBe(1_760_000_000_000)
+    expect(JSON.stringify(server.log)).not.toMatch(/Call the bank/)
+    expect((await db.review.get('me'))!.tomorrow_note).toBe('Call the bank')
+  })
+
   it('does not encrypt content of shared projects', async () => {
     await enableOnA()
     await db.memberships.put({ projectId: 'shared1', role: 'owner', ownerId: 'u1', members: [] })
