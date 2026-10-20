@@ -72,7 +72,7 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
               aria-controls={`${base}-panel`}
               tabIndex={selected ? 0 : -1}
               onClick={() => onChange(t.id)}
-              className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-body font-medium transition duration-(--duration-ui)
+              className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-2 text-body sm:px-3 font-medium transition duration-(--duration-ui)
                 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
                 ${selected ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-default'}`}
             >
