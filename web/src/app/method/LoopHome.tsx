@@ -161,7 +161,7 @@ function movesOf(d: Data): Move[] {
       // Close the day (close-the-day D6): a plain link, never the primary action, and it does not change the next move.
       extra: d.closedAt
         ? <span data-loop-day="closed">{t('Day: closed {time}', { time: formatInstant(d.closedAt, 'time') })}</span>
-        : <a href={routePath(CLOSE_ROUTE)} onClick={linkTo(CLOSE_ROUTE)} className="text-accent underline" data-loop-day="open">{t('Close the day')}</a>,
+        : <a href={routePath(CLOSE_ROUTE)} onClick={linkTo(CLOSE_ROUTE)} className="inline-flex min-h-6 items-center text-accent underline" data-loop-day="open">{t('Close the day')}</a>,
       action: d.rhythms.daily ? t('Start the daily check') : d.rhythms.monthly && !d.rhythms.weekly ? t('Open the monthly look') : t('Open the weekly review'),
     },
   ]

@@ -137,15 +137,16 @@ export function EventRow({ ev, start, end, sub, zone }: { ev: CalendarEvent; sta
         data-plan-event={ev.id}
         data-free={ev.free || undefined}
         data-hue={hueFor(sub?.color)}
-        aria-label={[ev.summary || t('Busy'), time, length, ev.location, sub?.name].filter(Boolean).join(', ')}
         aria-haspopup="dialog"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
         className={`flex w-full min-w-0 items-center gap-1 rounded-chip px-1 py-0.5 text-left text-meta text-hue ${ev.free ? 'border border-dashed border-hue-solid' : 'bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
-        <span aria-hidden className="shrink-0 tabular-nums">{time}</span>
-        <span aria-hidden className="min-w-0 flex-1 truncate font-medium">{ev.summary || t('Busy')}</span>
-        <span aria-hidden className="shrink-0 text-hint tabular-nums opacity-80">{length}</span>
+        {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
+        <span className="shrink-0 tabular-nums">{time}</span>
+        <span className="min-w-0 flex-1 truncate font-medium">{ev.summary || t('Busy')}</span>
+        <span className="shrink-0 text-hint tabular-nums opacity-80">{length}</span>
+        {(ev.location || sub?.name) && <span className="sr-only">{`, ${[ev.location, sub?.name].filter(Boolean).join(', ')}`}</span>}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
         <EventDetails ev={ev} sub={sub} zone={zone} />

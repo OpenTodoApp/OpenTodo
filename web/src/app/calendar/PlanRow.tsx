@@ -57,17 +57,17 @@ export function PlanTaskRow({ task, date, time, today, detail, selected, canEdit
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
       className={`flex w-full min-w-0 touch-manipulation items-center gap-x-1 rounded-chip border-l-3 border-l-hue-solid px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${selected ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised'} ${canEdit ? 'cursor-grab' : ''}`}>
-      {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-      <span className="sr-only">{[task.title || t('Untitled'), time ? formatTime(time) : '', task.estimate_minutes ? formatMinutes(task.estimate_minutes) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
-      {time && <span aria-hidden data-plan-time className={`shrink-0 tabular-nums ${timeTone(date, today, detail)}`}>{formatTime(time)}</span>}
+      {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
+      {time && <span data-plan-time className={`shrink-0 tabular-nums ${timeTone(date, today, detail)}`}>{formatTime(time)}</span>}
       {/* In a column the title takes the first line and the time, estimate and priority the second (seven columns are narrow). */}
-      <span aria-hidden className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
-      {task.estimate_minutes ? <span aria-hidden data-estimate className="shrink-0 rounded-chip bg-surface px-1 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
+      {task.estimate_minutes ? <span data-estimate className="shrink-0 rounded-chip bg-surface px-1 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
       {priority && (
-        <span aria-hidden data-priority={task.priority} className="inline-flex shrink-0 items-center gap-0.5 text-hint font-semibold text-muted">
-          <span data-priority-dot className={`h-1.5 w-1.5 rounded-full ${priority}`} />P{task.priority}
+        <span data-priority={task.priority} className="inline-flex shrink-0 items-center gap-0.5 text-hint font-semibold text-muted">
+          <span aria-hidden data-priority-dot className={`h-1.5 w-1.5 rounded-full ${priority}`} />P{task.priority}
         </span>
       )}
+      {!canEdit && <span className="sr-only">{`, ${t('read-only')}`}</span>}
     </button>
   )
 }

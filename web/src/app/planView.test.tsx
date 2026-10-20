@@ -173,7 +173,9 @@ describe('events in the plan', () => {
     await waitFor(() => day(r.container, '2026-10-13').querySelector('[data-plan-event="ev1"]') !== null && day(r.container, '2026-10-13').querySelectorAll('[data-plan-task]').length === 2)
     const cell = day(r.container, '2026-10-13')
     const ev = cell.querySelector<HTMLButtonElement>('[data-plan-event="ev1"]')!
-    expect(ev.getAttribute('aria-label')!.startsWith('Team sync, 10:00, 1h')).toBe(true)
+    // Named by its visible content, in reading order (WCAG 2.5.3 Label in Name).
+    expect(ev.hasAttribute('aria-label')).toBe(false)
+    expect(ev.textContent!.startsWith('10:00Team sync1h')).toBe(true)
     // Above the task rows.
     expect(ev.compareDocumentPosition(cell.querySelector('[data-plan-task]')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(cell.querySelector('[data-capacity]')!.textContent).toBe('1h 30m / 8h')
