@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **A Discord server for questions and conversation.** The welcome note, **Settings → About** (a new Community row, found by searching "discord" or "community") and the Feedback and support guide link to the OpenTodo Discord server. It is a plain link that opens in a new tab; the app loads nothing from Discord. ([Feedback and support](docs/feedback-and-support.md))
+
 ### Changed
 
 - **The Loop home reads in one second.** The Open Loops home screen now opens with a capture field, shows the five moves on one rail with a large count each and exactly one move lit as your next move with the page's only button, puts today's focus below with how many of the chosen tasks are done, and says when the loop is closed. A new **Loop pulse** under the focus shows tasks done this week against last week, how many of the items you caught in the last fourteen days have left the Inbox, the age of the oldest Inbox item and completions per day, all computed on the device with the same definitions as Statistics; nothing is stored or sent. ([Open Loops](docs/method/overview.md))

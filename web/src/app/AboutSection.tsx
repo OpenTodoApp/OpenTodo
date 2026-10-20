@@ -1,5 +1,6 @@
 // Settings → About (OpenSpec change welcome-note): the version, the documentation,
-// the website, the source code, where to report a problem, Buy Me a Coffee, and the
+// the website, the source code, where to report a problem, the Discord server
+// (discord-community), Buy Me a Coffee, and the
 // owner's welcome note on demand. Every link is a plain link opening a new tab;
 // the version comes from this server's status while online.
 import { useEffect, useState } from 'react'
@@ -9,7 +10,7 @@ import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import type { User } from '../lib/types'
 import { navigate } from './router'
-import { CoffeeButton, ISSUES_URL, REPO_URL, WelcomeNote } from './WelcomeDialog'
+import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote } from './WelcomeDialog'
 
 export const WEBSITE_URL = 'https://open-todo.app'
 export const DOCS_URL = 'https://open-todo.app/docs/'
@@ -53,6 +54,8 @@ export function AboutSection({ user }: { user: User }) {
           control={<ExternalLink href={WEBSITE_URL} label="open-todo.app" testId="website" />} />
         <SettingRow id="about-feedback" label={t('Share feedback or report a problem')} description={t('Open an issue on GitHub. Every report is read.')}
           control={<ExternalLink href={ISSUES_URL} label={t('Open an issue')} testId="issues" />} />
+        <SettingRow id="about-community" label={t('Community')} description={t('Questions, ideas and other people who use OpenTodo, on Discord.')}
+          control={<ExternalLink href={DISCORD_URL} label={t('Join on Discord')} testId="discord" />} />
         <SettingRow id="about-source" label={t('Source code')} description={t('A star on GitHub helps other people find it.')}
           control={<ExternalLink href={REPO_URL} label="GitHub" testId="source" />} />
         {user.role === 'owner' && (
