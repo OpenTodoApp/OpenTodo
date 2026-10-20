@@ -99,7 +99,7 @@ describe('Today count (2.3)', () => {
     await createTask({ title: 'Ahead', deadline: '2026-10-20' })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={{ id: 'u1', email: 'u@example.com', name: 'U', role: 'owner' } as never} />)
     const today = () => [...r.container.querySelectorAll('a, button')].find((a) => a.textContent?.startsWith('Today')) as HTMLElement | undefined
-    await waitFor(() => !!today() && today()!.textContent === 'Today2')
+    await waitFor(() => !!today() && today()!.querySelector('[data-count]')?.textContent === '2')
   })
 })
 

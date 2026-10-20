@@ -16,6 +16,18 @@ async function signOutEverywhere(): Promise<void> {
 }
 
 /**
+ * "Sign out of this device?" (web-app "Settings"; quiet-sidebar D5): the same
+ * confirmation from Settings → Account and from the account menu in the sidebar.
+ */
+export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <ConfirmDialog title={t('Sign out of this device?')} confirmLabel={t('Sign out')}
+      consequence={t('Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.')}
+      onConfirm={onConfirm} onCancel={onCancel} />
+  )
+}
+
+/**
  * Sign out of this device, or of every device, after confirming what it clears
  * (web-app "Settings"). Signing out everywhere also revokes API tokens and app
  * passwords; this device then signs out like a regular sign-out.
@@ -28,11 +40,7 @@ export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere
         control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
       <SettingRow label={t('Sign out everywhere')} description={t('Signs out every device and browser, including this one, and revokes your API tokens and app passwords.')}
         control={<Button variant="secondary" icon="log-out" onClick={() => setConfirming('everywhere')}>{t('Sign out everywhere')}</Button>} />
-      {confirming === 'device' && (
-        <ConfirmDialog title={t('Sign out of this device?')} confirmLabel={t('Sign out')}
-          consequence={t('Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.')}
-          onConfirm={onLogout} onCancel={() => setConfirming(null)} />
-      )}
+      {confirming === 'device' && <SignOutDialog onConfirm={onLogout} onCancel={() => setConfirming(null)} />}
       {confirming === 'everywhere' && (
         <ConfirmDialog title={t('Sign out everywhere?')} confirmLabel={t('Sign out everywhere')}
           consequence={t('Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.')}

@@ -45,7 +45,7 @@ The header is sticky inside the content column. A string title is truncated; pas
 
 ## The three columns
 
-- **Sidebar**: name and primary destinations pinned at the top, Help and the account pinned at the bottom, and only the groups between them scroll (`data-sidebar-scroll`). Items come from `SidebarItem`, groups from `SidebarGroup`.
+- **Sidebar**: name and primary destinations pinned at the top, one footer row pinned at the bottom, and only the groups between them scroll (`data-sidebar-scroll`). Items come from `SidebarItem`, groups from `SidebarGroup`. The footer row is the account control (avatar and name, opening a menu with Settings, Help, Keyboard shortcuts and Sign out), then the assistant, the bell, the sync dot and the collapse control. Counts: only Inbox and Today show theirs at rest; a project row uses `countMode="hover"` (shown on hover or focus, always on a coarse pointer), filter and label rows `countMode="hidden"`, and every count is in the row's name through `countLabel`. State is one accent dot (`StatusDot`) with its meaning in the tooltip and the name, never a filled badge; the danger colour is for errors.
 - **Content**: the page template. The shell gives it the scroller; a view never adds one of its own.
 - **Panel**: owned by the shell (`PanelHost`). Views open a task with `openTaskPanel(id)` (or `setPanelTaskId`) from `app/panel.ts`; the address carries `?task=<id>`. Other occupants (project activity, the planning list) use `openPanel(key, render)`.
 

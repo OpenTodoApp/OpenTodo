@@ -90,7 +90,7 @@ describe('midnight while the app is open (UI-17)', () => {
     vi.setSystemTime(new Date(2026, 9, 15, 0, 0, 30))
     await act(async () => { vi.advanceTimersByTime(60_000) })
     await waitFor(() => r.container.querySelector('[data-list-page]')!.textContent!.includes('Tomorrow thing'), 'the task in Today after midnight', 3000)
-    await waitFor(() => today()!.textContent === 'Today1', 'the sidebar count after midnight', 3000)
+    await waitFor(() => today()!.querySelector('[data-count]')?.textContent === '1', 'the sidebar count after midnight', 3000)
     await r.unmount()
   })
 })

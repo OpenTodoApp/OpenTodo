@@ -7,7 +7,7 @@ import { db } from '../lib/db'
 import { addLabel, createLabel } from '../lib/labels'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Label } from '../lib/types'
-import { click, flush, key, render, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { LabelEditPanel, LabelsView, duplicatePair, labelDropAt, labelMenuGroups } from './LabelsView'
 
 beforeEach(async () => { await db.delete(); await db.open(); resetDeviceId() })
@@ -43,6 +43,18 @@ describe('label menu groups (5.1)', () => {
 })
 
 describe('labels page (5.1, 5.3)', () => {
+  it('Numbers on the overview: "errand" shows 3 and "home" none (quiet-sidebar 1.2)', async () => {
+    const [errand] = await seed(['errand', 'home'])
+    for (const title of ['A', 'B', 'C']) await addLabel(await createTask({ title }), errand)
+    const r = await renderPage()
+    const row = (id: string) => document.querySelector(`[data-label-row="${id}"] [data-label-open]`)!
+    await waitFor(() => visibleText(row(errand)).trim() === 'errand3')
+    expect(spokenText(row(errand))).toBe('errand3 open tasks')
+    const home = [...document.querySelectorAll('[data-label-row] [data-label-open]')].find((b) => b.textContent === 'home')
+    expect(home).toBeTruthy()
+    await r.unmount()
+  })
+
   it('the delete dialog shows how many tasks carry the label, and Cancel queues no op', async () => {
     const [errand] = await seed(['errand', 'call'])
     const t1 = await createTask({ title: 'Buy milk' })

@@ -393,6 +393,9 @@
   "Account deleted": [
     "web/src/app/auditFormat.ts"
   ],
+  "Account menu for {name}": [
+    "web/src/app/SidebarFooter.tsx"
+  ],
   "Account reactivated": [
     "web/src/app/auditFormat.ts"
   ],
@@ -1023,7 +1026,7 @@
     "web/src/app/task-detail/Properties.tsx"
   ],
   "Assistant": [
-    "web/src/app/Sidebar.tsx",
+    "web/src/app/SidebarFooter.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
@@ -1696,7 +1699,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Collapse sidebar": [
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/SidebarFooter.tsx"
   ],
   "Collapse subtasks": [
     "web/src/app/TaskRow.tsx"
@@ -2678,8 +2681,7 @@
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Due": [
-    "web/src/app/QuickAdd.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/QuickAdd.tsx"
   ],
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
@@ -3115,7 +3117,7 @@
     "web/src/app/Sidebar.tsx"
   ],
   "Expand sidebar": [
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/SidebarFooter.tsx"
   ],
   "Expand subtasks": [
     "web/src/app/TaskRow.tsx"
@@ -3708,7 +3710,7 @@
   ],
   "Help": [
     "web/src/app/AboutSection.tsx",
-    "web/src/app/Sidebar.tsx",
+    "web/src/app/SidebarFooter.tsx",
     "web/src/app/help/HelpLink.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/help/HelpView.tsx",
@@ -4201,7 +4203,7 @@
   ],
   "Keyboard shortcuts": [
     "web/src/app/ShortcutHelp.tsx",
-    "web/src/app/Sidebar.tsx",
+    "web/src/app/SidebarFooter.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Keyboard, with a row focused: copy a link created in this session with {kbd}, revoke a pending invitation with {kbd2}.": [
@@ -4324,6 +4326,9 @@
   ],
   "Last look {instant}": [
     "web/src/app/review/MonthlyLook.tsx"
+  ],
+  "Last review {ago}": [
+    "web/src/app/Sidebar.tsx"
   ],
   "Last review {instant}": [
     "web/src/app/review/ReviewView.tsx"
@@ -7154,7 +7159,7 @@
   "Review done. See you next week.": [
     "web/src/app/review/ReviewView.tsx"
   ],
-  "Review due": [
+  "Review due · {details}": [
     "web/src/app/Sidebar.tsx"
   ],
   "Review finished {instant}.": [
@@ -7447,6 +7452,7 @@
   ],
   "Search and commands": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/SidebarFooter.tsx",
     "web/src/app/palette/CommandPalette.tsx"
   ],
   "Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)": [
@@ -7703,6 +7709,7 @@
   ],
   "Settings": [
     "web/src/app/SettingsView.tsx",
+    "web/src/app/SidebarFooter.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -7921,6 +7928,7 @@
   "Sign out": [
     "web/src/app/AccountSettings.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
+    "web/src/app/SidebarFooter.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -11243,6 +11251,9 @@
   "last success {ago}": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "last weekly review {ago}": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "lime": [
     "web/src/lib/colourNames.ts"
   ],
@@ -11333,6 +11344,9 @@
   ],
   "no sign-in since the upgrade": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "no weekly review yet": [
+    "web/src/app/Sidebar.tsx"
   ],
   "none": [
     "web/src/app/ImportScreen.tsx"
@@ -11659,9 +11673,6 @@
   ],
   "the labels": [
     "web/src/lib/activity.ts"
-  ],
-  "the last weekly review was {ago}": [
-    "web/src/app/Sidebar.tsx"
   ],
   "the model name your server serves": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -12101,6 +12112,7 @@
     "web/src/app/ArchivedProjects.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectsView.tsx",
+    "web/src/app/Sidebar.tsx",
     "web/src/ui/patterns/ListGroupHeader.tsx"
   ],
   "{n, plural, one {# panel} other {# panels}}": [

@@ -269,12 +269,14 @@ describe('sidebar Review entry', () => {
     onTestFinished(() => { window.matchMedia = original })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => !!r.container.querySelector('[data-review-due]')?.textContent?.includes('9 days ago'))
+    // One dot, never a badge; its words are part of the entry's name (quiet-sidebar D4).
     const entry = r.container.querySelector('[data-destination="review"]')!
-    expect(entry.textContent).toContain('Due')
-    expect(entry.textContent).toContain('the last weekly review was 9 days ago')
+    expect(entry.querySelector('[data-review-due] [data-dot]')).not.toBeNull()
+    expect(entry.textContent).toBe('Review, Review due · last weekly review 9 days ago')
     await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 2 * 86_400_000, _clock: {} })
     await waitFor(() => !r.container.querySelector('[data-review-due]'))
-    expect(r.container.querySelector('[data-review-ago]')!.textContent).toBe('2 days ago')
+    // Nothing due: no marker, when the last review was is the entry's description.
+    expect(r.container.querySelector('[data-destination="review"]')!.getAttribute('aria-description')).toBe('Last review 2 days ago')
     await r.unmount()
   })
 
@@ -297,8 +299,9 @@ describe('rhythm markers (open-loops-method 5.6)', () => {
     await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: NOW.getTime() - 86_400_000, _clock: {} })
     inline()
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await waitFor(() => !!r.container.querySelector('[data-review-ago]'))
+    await waitFor(() => r.container.querySelector('[data-destination="review"]')?.getAttribute('aria-description') === 'Last review yesterday')
     expect(r.container.querySelector('[data-review-due]')).toBeNull()
+    expect(r.container.querySelector('[data-review-due-more]')).toBeNull()
     await r.unmount()
   })
 

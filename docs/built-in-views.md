@@ -9,9 +9,9 @@ order: 21
 ---
 # The built-in views
 
-<picture><source srcset="images/sidebar-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/sidebar-light.webp" alt="The sidebar with the built-in views at the top, counts next to Inbox, Today, Assigned to me and Trash, then the Views, Projects and Labels groups."></picture>
+<picture><source srcset="images/sidebar-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/sidebar-light.webp" alt="The sidebar with Inbox, Today, Upcoming and Calendar at the top, counts only next to Inbox and Today, then the Projects, Labels and Filters groups and one footer row with your name."></picture>
 
-Each view is built from the tasks on your device, so it works offline. Today and Upcoming have [a page of their own](today-and-upcoming.md); for views you make yourself, see [Saved views](saved-views.md).
+Each view is built from your device's tasks, so it works offline. Today and Upcoming have [a page of their own](today-and-upcoming.md); for views you make yourself, see [Saved views](saved-views.md).
 
 ## What each view shows
 
@@ -35,7 +35,7 @@ Each view is built from the tasks on your device, so it works offline. Today and
 | **Review** | Your [weekly review](review-and-statistics.md) | <kbd>g</kbd> <kbd>r</kbd> |
 | **Statistics** | What you [completed and let slip](statistics.md#statistics) | <kbd>g</kbd> <kbd>Shift+S</kbd> |
 
-The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More**, a menu on a computer. The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
+The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More**, a menu on a computer. Inbox and Today show open-task counts; a project shows its count on hover or focus. Deferred and parked tasks ([When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 
 Each project can also be shown three ways: as a **List**, as a **Board** with a column per section, or as a **Timeline** of its dates with arrows between tasks that wait for each other. Press <kbd>v</kbd> to cycle through them; see [Sections and boards](sections-and-boards.md).
 

@@ -16,7 +16,7 @@ OpenTodo tells you about four things: a task someone assigned to you, a comment 
 
 ## The bell
 
-The bell at the top right shows a red count when something new arrived from other people:
+The bell at the bottom of the sidebar shows a small dot when one new thing arrived from other people, and a small count when more did:
 
 - **assigned you**: someone assigned you a task in a shared project,
 - **mentioned you**: someone wrote `@your name` in a comment,

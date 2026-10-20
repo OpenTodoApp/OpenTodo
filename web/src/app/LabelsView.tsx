@@ -263,7 +263,7 @@ export function useLabelDrag() {
   return { drop, start }
 }
 
-export function LabelRow({ label, labels, count, duplicate, route, drop, onDragStart, findActive = false }: {
+export function LabelRow({ label, labels, count, duplicate, route, drop, onDragStart, findActive = false, quiet = false }: {
   label: Label
   labels: Label[]
   count?: number
@@ -273,6 +273,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   onDragStart?: (e: ReactPointerEvent, label: Label) => void
   /** The active match of the sidebar's find field (sidebar-groups). */
   findActive?: boolean
+  /** The sidebar's row: the count is in the accessible name only (quiet-sidebar D2); the overview shows it. */
+  quiet?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(label.name)
@@ -330,7 +332,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}
-            {count ? <span className="text-meta text-faint"><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
+            {count && quiet ? <span className="sr-only" data-open-count={count}>{`, ${t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}`}</span> : null}
+            {count && !quiet ? <span className="text-meta text-faint" data-open-count={count}><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
           </button>
         )}
         <ActionMenu label={t('Menu for label {name}', { name: label.name })} title={label.name} groups={groups} open={menuOpen} onOpenChange={setMenuOpen}

@@ -9,7 +9,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 
 /**
- * Notification badge and list (OpenSpec `task-assignment`; mentions from
+ * Notification bell and list (OpenSpec `task-assignment`; mentions from
  * `comments-and-activity`), read from the local
  * cache so it shows offline. Choosing a notification opens its task, which marks
  * every notification about that task read.
@@ -38,8 +38,10 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
       <button ref={ref} className={`ui-btn ui-btn--ghost ui-btn--md touch-target relative text-body ${compact ? 'w-full justify-center px-0' : ''}`} aria-label={unread ? t('Notifications, {unread} unread', { unread }) : t('Notifications')} aria-expanded={open}
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <Icon name="bell" />
-        {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-danger px-1 text-center text-hint font-semibold leading-4 text-on-accent" data-unread>{unread}</span>
+        {/* Quiet markers (quiet-sidebar D4, app-shell "Notification bell marker"): a dot for one, a small accent count above one, never red. */}
+        {unread === 1 && <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-accent" data-unread={1} data-dot />}
+        {unread > 1 && (
+          <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-accent px-1 text-center text-hint font-semibold leading-4 text-on-accent" data-unread={unread}>{unread}</span>
         )}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={t('Notifications')} width="sm:w-80" className="py-1">

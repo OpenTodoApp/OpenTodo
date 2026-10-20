@@ -17,7 +17,7 @@ When the built-in views aren't enough, describe the tasks you want with a filter
 
 Describe what you want in the **Filter** view, then save it. For example, `blocked` lists every task waiting for another one (save it as **Waiting for**), `@waiting & open` lists everything you labelled as waiting, and `due <= 7 days & p1` shows urgent tasks for the coming week. The filter language is explained in [Labels and filters](labels-and-filters.md), and [Filter queries](filters.md) has ten ready-made examples to copy.
 
-To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. It is listed in the **Filters** group of the sidebar with a live count, pinned to **Favourites** at the top of the sidebar, and synced to all your devices. The **Filters** group lists every saved filter, pinned or not; it starts folded on a new device.
+To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. It is listed in the **Filters** group of the sidebar, pinned to **Favourites** at the top of the sidebar, and synced to all your devices. The **Filters** group lists every saved filter, pinned or not; it starts folded on a new device. A filter's live count is on the Filters overview (<kbd>g</kbd> <kbd>v</kbd>) and in its page header, not in the sidebar.
 
 Each saved view can group its tasks (by project, date, priority or label) and sort them (by date, priority, your own order, creation time or title). Change these from the top of the view. To change the query itself, press <kbd>/</kbd>, edit it and press <kbd>Enter</kbd>.
 

@@ -89,7 +89,7 @@ describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
     await up.unmount()
     const side = await render(<Sidebar route={{ view: 'inbox' }} user={{ id: 'u1', email: 'u@example.com', name: 'U', role: 'owner' } as never} />)
     const inbox = () => [...side.container.querySelectorAll('a, button')].find((a) => text(a as HTMLElement).startsWith('Inbox')) as HTMLElement | undefined
-    await waitFor(() => !!inbox() && text(inbox()!) === 'Inbox1')
+    await waitFor(() => !!inbox() && inbox()!.querySelector('[data-count]')?.textContent === '1')
   })
 })
 

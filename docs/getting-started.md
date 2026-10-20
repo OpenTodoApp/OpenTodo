@@ -63,7 +63,7 @@ Click the circle next to the task, or select it and press <kbd>c</kbd>. It moves
 
 ## Help inside the app
 
-Every guide on this site is also in the app: select **Help** at the bottom of the sidebar, or press <kbd>g</kbd> then <kbd>?</kbd>. It works offline and matches your server's version. Page headers have a **Help** action that opens the right section beside what you're doing.
+Every guide on this site is also in the app: choose **Help** in your name's menu (sidebar, bottom), or press <kbd>g</kbd> then <kbd>?</kbd>. It works offline and matches your server's version. Page headers have a **Help** action that opens the right section beside what you're doing.
 
 ## Where to go next
 

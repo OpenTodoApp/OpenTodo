@@ -1,4 +1,4 @@
-import { Badge, Button, DESKTOP_HEADER_QUERY, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, Menu, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -15,8 +15,7 @@ import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useUserPre
 import { createProject } from '../lib/ops'
 import { dailyDue, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
 import { readMethodMode, type MethodMode } from '../lib/method/mode'
-import { NotificationBell } from './NotificationBell'
-import { SyncStatus } from './SyncStatus'
+import { SidebarFooter } from './SidebarFooter'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Project, Review, User } from '../lib/types'
@@ -70,7 +69,15 @@ function writeOpen(key: string, open: boolean): void {
   try { localStorage.setItem(key, open ? '1' : '0') } catch { /* device state only */ }
 }
 
-export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, collapsed = false, onToggleCollapse }: {
+/**
+ * A count as words, the part of a sidebar row's accessible name that carries it
+ * (quiet-sidebar D2). Project counts show on hover, and at all times where there is no
+ * hover; filter and label rows show none. A `tip` on a destination (the Review entry's
+ * rhythm text, weekly-review "Rhythm markers") is its tooltip.
+ */
+export const openTasksLabel = (n: number | undefined): string | undefined => (n ? t('{n, plural, one {# open task} other {# open tasks}}', { n }) : undefined)
+
+export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {
   route: Route
   user: User
   /** Opens the search and command palette (the footer's Search item). */
@@ -79,18 +86,18 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   onShortcuts?: () => void
   /** Opens the assistant panel (Shift+I); absent when the assistant is not available. */
   onAssistant?: () => void
+  /** Signs out of this device (the account menu, after its confirmation). */
+  onSignOut?: () => void
   /** The icon rail (app-shell "Resizable sidebar"). */
   collapsed?: boolean
   onToggleCollapse?: () => void
 }) {
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
-  // From 768 px the footer's controls share one row (sidebar-compact-desktop).
-  const wide = useMediaQuery(DESKTOP_HEADER_QUERY)
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
+  const projectCountMode = useMediaQuery('(pointer: coarse)') ? 'always' : 'hover'
   const scroller = useRef<HTMLDivElement>(null)
   useScrollEdges(scroller)
-  const footerRow = wide && !collapsed
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
   const prefsRow = useUserPrefsRow()
   const review = useReviewRow()
@@ -313,13 +320,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     else if (has) focusRow(n.children[0].id)
   }
 
-  const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode) => {
+  const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode, tip?: string) => {
     // Day, Week and Month are one Calendar destination (ux-overhaul).
     const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month'
     const active = calendar(r.view) ? calendar(route.view) : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
-    const go = hints && !collapsed && badge === undefined ? GO_KEYS[r.view] : undefined
-    return <SidebarItem key={label} icon={icon} label={label} count={count} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />
+    const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
+    const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} />
+    return tip && !collapsed ? <Tooltip key={label} label={tip} side="right">{node}</Tooltip> : node
   }
 
   // The More group (app-shell "Sidebar structure"): the less frequent destinations,
@@ -329,7 +337,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label={t('unread updates')} /> : undefined
   // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
   const method = readMethodMode(prefsRow)
-  const { due, reviewBadge } = reviewMarker(review, method, today)
+  const { due, text: reviewText, marker: reviewDot } = reviewMarker(review, method, today)
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
   const moreEntries: MoreEntry[] = [
@@ -342,7 +350,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     // Assigned to me only where tasks can be assigned: when the account shares a project.
     ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, route: { view: 'assigned' } as Route, label: t('Assigned to me'), icon: 'user-check' as IconName }] : []),
     { id: 'completed', route: { view: 'completed' }, label: t('Completed'), icon: 'circle-check-big' },
-    { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewBadge, note: due ? t('Review due') : reviewAgo(review?.completed_at) },
+    { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewDot, note: reviewText, tip: reviewText },
     { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
     ...(sharedIds.size > 0 ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: unreadBadge, note: unread.total > 0 ? `${formatUnread(unread.total)} ${t('unread updates')}` : undefined }] : []),
     { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
@@ -352,11 +360,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const first = method === 'first'
   const calendarMode = readCalendarMode()
   const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
-  const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge) }))
+  const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge, m.tip) }))
   const primaryExtra = first ? [] : more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
   // A due review shows on the closed More heading too, so the marker is never hidden.
   // In Open Loops first the Review entry is a primary item, so More does not repeat its marker.
-  const moreBadge = unreadBadge ?? (due && !first ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
+  const moreBadge = unreadBadge ?? (due && !first ? <Tooltip label={reviewText} side="right"><StatusDot label={reviewText} data-review-due-more /></Tooltip> : undefined)
   const rest = more.filter((m) => !primaryExtra.includes(m))
 
   return (
@@ -377,7 +385,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           )}
         </div>
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
-          {primaryDestinations(first, calendarMode, counts, reviewBadge).map((d) => item(d.route, d.label, d.icon, d.count, d.badge))}
+          {primaryDestinations(first, calendarMode, counts, reviewDot, reviewText).map((d) => item(d.route, d.label, d.icon, d.count, d.badge, d.tip))}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
             <MoreMenu entries={rest} badge={moreBadge} collapsed={collapsed} hints={hints}
@@ -399,7 +407,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
       {/* Favourites first (sidebar-favourites D5); while finding, the matches show in their own groups. */}
       {!found && favourites.length > 0 && (
         <FavouritesGroup favourites={favourites} route={route} collapsed={collapsed} projects={projects}
-          tree={tree} openTasks={openTasks} today={today} labelCounts={labelCounts} viewCounts={viewCounts} />
+          tree={tree} openTasks={openTasks} today={today} labelCounts={labelCounts} viewCounts={viewCounts} projectCountMode={projectCountMode} />
       )}
       {/* Projects stays while finding: its header holds the field's opener. */}
       {(finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
@@ -456,7 +464,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                     {sharedIds.has(n.id) && <span className="text-faint"><Icon name="users" size={14} /><span className="sr-only">{t('Shared project')}</span></span>}
                     {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label={t('unread changes')} /> : null}
                   </>}
-                  count={count}
+                  count={count} countMode={projectCountMode} countLabel={openTasksLabel(count)}
                   aria-description={count && isCollapsed && has ? t('Open tasks including sub-projects') : undefined}
                 />
                 {!collapsed && <ProjectRowMenu project={p} movable={movable(n.id)} edges={siblingEdges(tree, n)} className="hover-reveal" />}
@@ -483,7 +491,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label={t('All labels')}>{t('All')}</SidebarGroupAction>
           <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
         </>}>
-        {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
+        {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} quiet label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
       </SidebarGroup>}
       {filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
@@ -496,7 +504,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
               <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
                 data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
                 leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
-                count={!isDashboard(v) && c && c.ok ? c.count : undefined}
+                count={!isDashboard(v) && c && c.ok ? c.count : undefined} countMode="hidden" countLabel={openTasksLabel(c && c.ok ? c.count : undefined)}
                 badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
               {!collapsed && <ViewMenu view={v} className="hover-reveal" />}
             </div>
@@ -504,7 +512,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         })}
       </SidebarGroup>}
       </div>
-      <SidebarFooter route={route} user={user} collapsed={collapsed} row={footerRow} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} />
+      <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
   )
 }
@@ -526,25 +534,25 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
 // Each More destination once, as data: an item in the inline group, or a menu item.
-type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string }
+type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
 
 /**
- * The Review entry's marker (weekly-review "Rhythm markers"): the weekly review in
- * every mode, the Monthly look in Companion and Open Loops first, the Daily check in
- * Open Loops first, each named in the text alternative.
+ * The Review entry's marker (weekly-review "Rhythm markers", quiet-sidebar D4): the
+ * weekly review in every mode, the Monthly look in Companion and Open Loops first, the
+ * Daily check in Open Loops first. One accent dot while something is due, never a
+ * badge; `text` names each due rhythm (or when the last review was) for the tooltip,
+ * the accessible name and the More menu's description.
  */
-function reviewMarker(review: Review | null | undefined, method: MethodMode, today: string): { due: boolean; reviewBadge: ReactNode } {
+function reviewMarker(review: Review | null | undefined, method: MethodMode, today: string): { due: boolean; text: string; marker: ReactNode } {
   const weeklyDue = reviewDue(review?.completed_at)
-  const rhythmsDue = [
+  const parts = [
+    ...(weeklyDue ? [review?.completed_at ? t('last weekly review {ago}', { ago: reviewAgo(review.completed_at) }) : t('no weekly review yet')] : []),
     ...(method !== 'lists' && monthlyDue(review?.monthly_at) ? [t('the Monthly look is due')] : []),
     ...(method === 'first' && dailyDue(review?.daily_at, today) ? [t('the Daily check is due')] : []),
   ]
-  const due = weeklyDue || rhythmsDue.length > 0
-  const dueText = [...(weeklyDue ? [t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })] : []), ...rhythmsDue].join('; ')
-  const reviewBadge = due
-    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${dueText}`}</span></span>
-    : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
-  return { due, reviewBadge }
+  const due = parts.length > 0
+  const text = due ? t('Review due · {details}', { details: parts.join('; ') }) : t('Last review {ago}', { ago: reviewAgo(review?.completed_at) })
+  return { due, text, marker: due ? <StatusDot label={text} data-review-due /> : null }
 }
 
 /**
@@ -562,7 +570,7 @@ function firstModeMore(entries: MoreEntry[], calendarMode: Route['view']): MoreE
 }
 
 /** The primary destinations (app-shell "Sidebar structure"): by the Places in Open Loops first, else Inbox, Today, Upcoming and Calendar. */
-function primaryDestinations(first: boolean, calendarMode: Route['view'], counts: { inbox?: number; today?: number }, reviewBadge: ReactNode): { route: Route; label: string; icon: IconName; count?: number; badge?: ReactNode }[] {
+function primaryDestinations(first: boolean, calendarMode: Route['view'], counts: { inbox?: number; today?: number }, reviewDot: ReactNode, reviewText: string): { route: Route; label: string; icon: IconName; count?: number; badge?: ReactNode; tip?: string }[] {
   const inbox = { route: { view: 'inbox' } as Route, label: t('Inbox'), icon: 'inbox' as IconName, count: counts.inbox }
   const today = { route: { view: 'today' } as Route, label: t('Today'), icon: 'calendar-check' as IconName, count: counts.today }
   return first
@@ -570,7 +578,7 @@ function primaryDestinations(first: boolean, calendarMode: Route['view'], counts
         { route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' }, inbox, today,
         { route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
         { route: { view: 'waiting' }, label: t('Waiting', { context: 'method' }), icon: 'hourglass' },
-        { route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewBadge },
+        { route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewDot, tip: reviewText },
       ]
     : [inbox, today, { route: { view: 'upcoming' }, label: t('Upcoming'), icon: 'calendar-days' }, { route: { view: calendarMode } as Route, label: t('Calendar'), icon: 'calendar-range' }]
 }
@@ -597,47 +605,6 @@ function MoreMenu({ entries, badge, active, collapsed, hints }: {
             shortcut={hints ? GO_KEYS[m.route.view] : undefined} onSelect={() => navigate(m.route)} />
         ))}
       </Menu>
-    </div>
-  )
-}
-
-/**
- * The pinned footer (app-shell "No desktop top bar"): Help, notifications, the assistant,
- * shortcuts, the sync dot and collapse, then the account. `row` (from 768 px, not the
- * rail) puts Help in the icon row (sidebar-compact-desktop).
- */
-function SidebarFooter({ route, user, collapsed, row, onSearch, onShortcuts, onAssistant, onToggleCollapse }: {
-  route: Route
-  user: User
-  collapsed: boolean
-  row: boolean
-  onSearch?: () => void
-  onShortcuts?: () => void
-  onAssistant?: () => void
-  onToggleCollapse?: () => void
-}) {
-  return (
-    <div className={`flex shrink-0 flex-col gap-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer data-footer-row={row || undefined}>
-      {!row && <SidebarItem icon="circle-help" label={t('Help')} active={route.view === 'help'} collapsed={collapsed} onClick={() => navigate({ view: 'help' })} data-help-button />}
-      {collapsed && onSearch && <SidebarItem icon="search" label={t('Search and commands')} collapsed onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
-      <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`} data-footer-icons>
-        {row && (
-          <IconButton icon="circle-help" label={t('Help')} size="sm" onClick={() => navigate({ view: 'help' })} data-help-button
-            aria-current={route.view === 'help' ? 'page' : undefined} className={route.view === 'help' ? 'bg-accent-soft text-on-accent-soft' : undefined} />
-        )}
-        <NotificationBell compact={collapsed} />
-        {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
-        {onShortcuts && <IconButton icon="keyboard" label={t('Keyboard shortcuts')} shortcut={keysOf('global.help')} size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
-        <SyncStatus compact={collapsed} />
-        {!collapsed && <span className="flex-1" />}
-        {onToggleCollapse && (
-          <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')} shortcut={keysOf('global.sidebar')} size="sm"
-            className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
-        )}
-      </div>
-      <SidebarItem active={route.view === 'settings' || route.view === 'import'} collapsed={collapsed} onClick={() => navigate({ view: 'settings' })}
-        leading={<span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-hint font-semibold text-on-accent">{(user.name || user.email).slice(0, 1).toUpperCase()}</span>}
-        label={user.name || user.email} badge={<span className="text-faint" aria-hidden="true"><Icon name="settings" /></span>} />
     </div>
   )
 }
