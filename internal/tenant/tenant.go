@@ -23,6 +23,7 @@ import (
 	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/httpapi"
+	"github.com/pixari/opentodo/internal/issues"
 	"github.com/pixari/opentodo/internal/mail"
 	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
@@ -52,7 +53,7 @@ type Options struct {
 	// PushOptions adjusts web push before it is built (tests point it at a
 	// fake push service).
 	PushOptions func(*push.Options)
-	// Now is the weekly digest's clock (a host passes its own, tests a fake
+	// Now is the clock of the weekly digest and issue polls (a host passes its own, tests a fake
 	// one); nil is time.Now.
 	Now func() time.Time
 }
@@ -88,6 +89,7 @@ type Tenant struct {
 	Push     *push.Service // nil when web push is off
 	Email    *email.Service
 	Calendar *calfeed.Worker
+	Issues   *issues.Worker  // issue connections (issue-import)
 	Mail     *mail.Service   // nil on a demo instance
 	Digest   *digest.Service // weekly digests (stats-and-review); nil with Mail
 	Demo     *demo.Service   // nil unless OPENTODO_DEMO
@@ -190,6 +192,13 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	// private-network policy; the server sets the switch and the notifier.
 	calWorker := &calfeed.Worker{Store: calfeed.NewStore(db), Fetcher: calfeed.NewFetcher(hooks.AllowPrivate, o.Version), Log: log}
 	opts = append(opts, httpapi.WithCalendarFeeds(calWorker))
+	// Issue connections (issue-import): polled under the same policy; the
+	// server sets the owner switch.
+	issueWorker := issues.NewWorker(db, cfg.DataDir, syncSvc, hooks.AllowPrivate, o.Version, log)
+	if o.Now != nil {
+		issueWorker.SetClock(o.Now)
+	}
+	opts = append(opts, httpapi.WithIssues(issueWorker))
 	mailSvc, digestSvc := openMail(cfg, o, db, authSvc, syncSvc, log)
 	if mailSvc != nil {
 		opts = append(opts, httpapi.WithMail(mailSvc))
@@ -208,7 +217,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	}
 	t.Handler = httpapi.New(cfg, authSvc, syncSvc, webHandler, log, o.Version, opts...)
 	t.Cfg, t.Auth, t.Sync, t.Hooks, t.Inbox, t.Backups, t.MCP = cfg, authSvc, syncSvc, hooks, inbox, backups, mcpSettings
-	t.Push, t.Email, t.Calendar, t.Demo = pushSvc, emailSvc, calWorker, demoSvc
+	t.Push, t.Email, t.Calendar, t.Issues, t.Demo = pushSvc, emailSvc, calWorker, issueWorker, demoSvc
 	t.Mail, t.Digest = mailSvc, digestSvc
 	return nil
 }
@@ -411,6 +420,8 @@ func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context,
 	if !cfg.Demo {
 		// No outbound calendar fetches on a demo instance.
 		spawn(t.Calendar.Run)
+		// No outbound issue polls on a demo instance.
+		spawn(t.Issues.Run)
 		// No outbound webhook deliveries on a demo instance.
 		spawn(t.Hooks.Run)
 	}

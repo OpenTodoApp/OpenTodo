@@ -92,6 +92,7 @@ The highlights: the app in six languages, quick add in plain language, projects 
 - **Voice capture** (opt-in per device): dictate into quick add with the microphone button or `Shift+V`; "hashtag home priority two" becomes `#home p2`. Uses the browser's own speech recognition; the server never receives audio. [Voice](docs/quick-add.md#voice)
 - **Share sheet, bookmarklet and browser extension**: send a page from the phone's share menu, any desktop browser or the Chromium/Firefox extension in [`extension/`](extension/) to a prefilled capture screen; the task keeps the page, or the GitHub, GitLab, Jira or Linear issue, as a chip that opens it. Works offline, holds no token. [Capture](docs/capture.md#where-a-task-came-from)
 - **Email to task**: forward a mail to your secret address (`todo+…@example.com`) and it lands in the Inbox. Optional; the operator points OpenTodo at one IMAP mailbox. [Email](docs/email.md)
+- **GitHub and GitLab issues as tasks**: connect an account with a personal access token and the open issues assigned to you become tasks that complete when the issue closes; nothing is written back. Off until the owner enables it. [Issue import](docs/issue-import.md)
 - **Command line**: `ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts. [CLI](docs/cli.md)
 
 ### Organisation and views
@@ -336,6 +337,7 @@ The web app makes no network requests except to your own server: no analytics, c
 - the single sign-on issuer you configure;
 - the IMAP mailbox you configure for email to task;
 - the SMTP server you configure for [outgoing email](docs/self-hosting/outgoing-email.md);
+- the GitHub or GitLab host people connect for [issue import](docs/issue-import.md), with their token sent only to that host (private network addresses only if you allow them);
 - the calendar addresses people add to show [other calendars](docs/other-calendars.md) beside their tasks (private network addresses only if you allow them);
 - the model provider you enable for the [in-app assistant](docs/assistant.md) (off by default), only after a person has accepted what is sent and only while they wait for an answer.
 

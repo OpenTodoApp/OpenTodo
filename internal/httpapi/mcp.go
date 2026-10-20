@@ -47,7 +47,7 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 			return s.reminderOpsForTaskAs(ctx, uid, c.EntityID, c.Patch, ts, device)
 		},
 	})
-	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools})
+	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools, IssuesResource: s.issuesResource})
 	// Every method reaches the handler so a disabled endpoint is 404 for all of
 	// them and an enabled one can answer 405 for anything but POST.
 	mux.handle("/mcp", public("assistants authenticate with a bearer token in the handler").demoDenied(), s.handleMCP)

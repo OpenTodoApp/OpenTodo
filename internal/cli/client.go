@@ -31,7 +31,7 @@ const (
 var notPermittedCodes = map[string]bool{
 	"insufficient_scope": true, "forbidden": true, "not_permitted": true,
 	"writes_disabled_by_owner": true, "writes_disabled_by_user": true,
-	"read_only": true, "encryption_enabled": true,
+	"read_only": true, "encryption_enabled": true, "issues_disabled": true,
 }
 
 // exitError carries an exit code and, optionally, the exact JSON envelope to print

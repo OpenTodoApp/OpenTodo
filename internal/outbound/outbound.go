@@ -1,8 +1,8 @@
 // Package outbound is the policy for every request the server makes to an address
 // a user or the owner typed: http(s) only, no private network targets unless the
 // owner allows them, and the connection pinned to the address that was checked
-// (shared by webhooks, push, the assistant and calendar subscriptions; OpenSpec
-// change calendar-feeds, design D2).
+// (shared by webhooks, push, the assistant, calendar subscriptions and issue
+// connections; OpenSpec change calendar-feeds, design D2).
 package outbound
 
 import (

@@ -349,12 +349,31 @@ export const SETTINGS_COPY = {
       titlesEncrypted: msg('Titles appear as “Encrypted item” in calendar apps: the server cannot read them.'),
     },
   },
+  issues: {
+    title: msg('Issues'),
+    description: msg('Open GitHub and GitLab issues assigned to you become tasks that follow them.'),
+    learnMore: 'settings/issues',
+    rows: {
+      server: {
+        label: msg('On this server'),
+        description: {
+          owner: msg('People can connect GitHub or GitLab; the server polls their issues.'),
+          member: msg('The owner has not enabled issue connections on this server.'),
+        },
+      },
+      connections: { label: msg('Connections'), description: msg('Up to 5. Nothing is ever written back to GitHub or GitLab.') },
+    },
+    notices: {
+      offline: msg('Changing issue connections needs a connection. You are seeing the last loaded state.'),
+      encrypted: msg('Not available with end-to-end encryption: polls would store issue text unencrypted.'),
+    },
+  },
   webhooks: {
     title: msg('Webhooks'),
     description: msg('Notify any HTTP endpoint when tasks and projects change. Requests are signed.'),
     learnMore: 'settings/webhooks',
     rows: {
-      private: { label: msg('Allow private network targets'), description: msg('For receivers on your LAN or this machine. Leave off on a public server.') },
+      private: { label: msg('Allow private network targets'), description: msg('Webhooks, calendar subscriptions and issue connections on your LAN. Off on public servers.') },
       add: { label: msg('Add a webhook'), description: msg('Posts a signed request to your endpoint when tasks or projects change.') },
     },
     notices: {

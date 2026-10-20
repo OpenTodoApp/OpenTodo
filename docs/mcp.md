@@ -251,6 +251,7 @@ call '{"name":"trash_tasks","arguments":{"ids":["<id>"]}}'
 | `opentodo://views/upcoming` | as `list_tasks` with `view: upcoming` |
 | `opentodo://projects/{id}` | the project, its sections and its open tasks |
 | `opentodo://tasks/{id}` | same as `get_task` |
+| `opentodo://integrations/issues` | your [issue connections](issue-import.md) with their state, last poll and counts and `token_set`, never a token; `{"enabled": false, "connections": []}` while the owner has not enabled them. Read from the stored state: the server contacts no provider |
 
 Contents are `application/json`. Views use UTC; append `?tz=Europe/Rome` to the URI for another zone. A resource holds at most 200 tasks and says `"truncated": true` when there were more (use `list_tasks` to page). Reading a deleted or foreign project or task is a `-32002` "resource not found" error, the same for both.
 

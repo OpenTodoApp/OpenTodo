@@ -52,6 +52,7 @@ The writers are:
 | REST API, CLI | handler turns body fields into ops → `sync.ApplyStrict` (all or nothing) | `server:<boot id>` (`server` in ops from older releases) |
 | CalDAV clients | `/dav/` PUT, PROPPATCH, MKCALENDAR, DELETE → one op per changed property | `caldav:<app password id>` |
 | Email to task | IMAP poller → `ApplyStrict`, ids derived from account and Message-ID | `server:<boot id>` |
+| Issue import | poller → `ApplyStrict` per page, ids derived from connection and issue | `issues:<connection id>` |
 | Import | background job, batches of 1,000 ops | `import` |
 | Server itself | reminder delivery (`delivered_at`), unassigning people who leave a project or whose account is deleted, recurring completion via REST | `server:<boot id>` |
 
@@ -97,7 +98,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `webauthn` | Passkey verification: clientDataJSON, authenticator data, COSE keys (ES256, Ed25519, RS256), signature checks; uses `fxamacker/cbor` for CBOR (the other third-party Go modules are SQLite and `golang.org/x/crypto` for argon2). `testauth` is a synthetic authenticator for tests |
 | `oidc` | Single sign-on with one OpenID Connect provider, standard library only: discovery, PKCE, code exchange, JWKS cache, identity-token verification, the signed flow-state cookie, owner configuration and `OPENTODO_OIDC_*` overrides. `oidctest` is an in-process provider for tests. See [self-hosting/sso.md](self-hosting/sso.md) |
 | `audit` | The closed catalogue of security events with typed constructors and an allow-list for details, recording (in the same transaction as credential changes), queries, NDJSON export and retention pruning |
-| `outbound` | The policy for every request to an address a user or the owner typed: http(s) only, no private network targets unless the owner allows them, the connection pinned to the address that was checked. Used by webhooks (and through their client by push and the assistant) and by calendar subscriptions |
+| `outbound` | The policy for every request to an address a user or the owner typed: http(s) only, no private network targets unless the owner allows them, the connection pinned to the address that was checked. Used by webhooks (and through their client by push and the assistant), by calendar subscriptions and by issue connections |
 | `demo` | The public demo instance (`OPENTODO_DEMO=true`): a hidden owner, a private short-lived sandbox per visitor seeded through the op log, the nightly reset; the HTTP side and its deny list are in `httpapi/demo.go` |
 | `httpapi` | Router (stdlib `net/http` with method patterns), middleware (auth, origin check, security headers, rate limits, logging), JSON error envelope, handlers for every `/api/v1` route, the CalDAV transport (`caldav_*.go`), the MCP transport (`mcp.go`) and the event stream |
 | `web` | Embeds the Vite build (`internal/web/dist`) and serves it with SPA fallback and cache headers |
@@ -114,6 +115,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `importer` | Reads the own export, CSV and other apps' JSON exports into rows, plans projects, labels, parents and duplicates, and writes ops in background jobs with undo. `sanitize` is a command that turns a real export into a test fixture; it is never linked into the server. See [import.md](import.md) |
 | `blobs` | Attachment bytes as immutable files under `<data>/attachments/`, written once through a temporary file with the size and SHA-256 checked, streamed and never read whole. See [attachments.md](attachments.md) |
 | `calfeed` | Calendar feeds: other people's calendars read into read-only events (fetched through `outbound`), and the user's tasks written as an iCalendar feed. See [calendar-feeds.md](calendar-feeds.md) |
+| `issues` | Issue import: per-user GitHub and GitLab connections, tokens in `<data>/secrets/issues.json`, two REST clients on `outbound` without redirects, the mapping of issues to task ops (deterministic ids, a field changes only when the issue changed it) and the poller on the jobs leader. Never writes to the provider. See [issue-import.md](issue-import.md) |
 | `backup` | Snapshots (`VACUUM INTO`), tar/gzip archives, `OTBK1` encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, `Restore`. See [backups.md](backups.md) |
 | `caldav` | Protocol pieces of the CalDAV endpoint: iCalendar tokenizer and serialiser for VTODO, the VTODO ↔ task mapping (unmapped lines kept in `ical_extra`), WebDAV XML parsing and multistatus rendering; HTTP handling lives in `httpapi`. See [caldav.md](caldav.md) |
 | `mcp` | Model Context Protocol server: a JSON-RPC 2.0 subset that serves the tools of `agenttools` (read tools always; write tools behind the owner's switch, the user's switch and an `agent` token) and read-only `opentodo://` resources, plus the owner switches. See [mcp.md](mcp.md) |

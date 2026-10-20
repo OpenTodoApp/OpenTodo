@@ -308,9 +308,11 @@ export function EncryptionPanel() {
       onAcknowledge={(v) => mode.kind === 'recovery' && setMode({ ...mode, acknowledged: v })}
       onEnable={() => void run(async () => {
         if (!prepared) throw new Error(t('Start again: choose a passphrase.'))
-        const { digestDisabled } = await commitEnable(prepared)
+        const { digestDisabled, issueConnectionsStopped } = await commitEnable(prepared)
         // The weekly email digest would carry task titles: the server turned it off (stats-and-review).
-        const digestNote = digestDisabled ? ` ${t('Your weekly email digest was turned off, because it would contain your task titles.')}` : ''
+        // Issue polls would write issue text in plaintext: the server stopped the connections (issue-import D11).
+        const digestNote = (digestDisabled ? ` ${t('Your weekly email digest was turned off, because it would contain your task titles.')}` : '')
+          + (issueConnectionsStopped.length ? ` ${t('Your issue connections were stopped, because their polls would write issue text unencrypted: {names}.', { names: issueConnectionsStopped.join(', ') })}` : '')
         setPrepared(null)
         setMode({ kind: 'idle' })
         await startMigration('encrypt')

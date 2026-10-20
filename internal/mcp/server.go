@@ -59,6 +59,7 @@ type Server struct {
 	tools   *agenttools.Registry
 	version string
 	log     *slog.Logger
+	issues  func(ctx context.Context, userID string) (any, error)
 }
 
 // Options configure a Server.
@@ -68,11 +69,14 @@ type Options struct {
 	Now     func() time.Time // clock for server_time and date views (nil: time.Now)
 	// Tools is the agent tool registry (nil: a registry over syncSvc with Now).
 	Tools *agenttools.Registry
+	// IssuesResource reads the user's issue connections from the stored state
+	// (OpenSpec `issue-connections`); nil serves the feature as off.
+	IssuesResource func(ctx context.Context, userID string) (any, error)
 }
 
 // New wires a Server over the agent tool registry.
 func New(syncSvc *opsync.Service, opts Options) *Server {
-	s := &Server{tools: opts.Tools, version: opts.Version, log: opts.Log}
+	s := &Server{tools: opts.Tools, version: opts.Version, log: opts.Log, issues: opts.IssuesResource}
 	if s.log == nil {
 		s.log = slog.New(slog.DiscardHandler)
 	}

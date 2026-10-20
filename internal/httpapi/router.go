@@ -117,6 +117,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.seedCaldav(context.Background())
 	s.registerCaldavRoutes(mux)
 	s.registerCalendarFeedRoutes(mux)
+	// Issue import (OpenSpec `issue-connections`); before MCP, whose resource reads it.
+	s.registerIssueRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`).
 	s.registerCommentRoutes(mux)
 	s.registerTimeEntryRoutes(mux)

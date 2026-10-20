@@ -310,6 +310,47 @@
       }
     },
     {
+      "name": "issues list",
+      "aliases": [
+        "issues ls"
+      ],
+      "summary": "list the account's GitHub and GitLab issue connections and their state (never a token)",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/issue_connection"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "issues sync",
+      "summary": "poll one issue connection now, or every enabled one, and print what changed",
+      "args": [
+        {
+          "name": "id",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/issues_run"
+        },
+        "type": "array"
+      }
+    },
+    {
       "name": "list",
       "summary": "list tasks (default: all open tasks)",
       "args": [],
@@ -1021,6 +1062,27 @@
       "meaning": "the account is end-to-end encrypted; readable text cannot be written"
     },
     {
+      "code": "issues_disabled",
+      "exit": 5,
+      "meaning": "the server owner has not enabled issue connections"
+    },
+    {
+      "code": "connection_stopped",
+      "exit": 1,
+      "meaning": "the issue connection is stopped; replace its token, edit its host or enable it again"
+    },
+    {
+      "code": "provider_rate_limited",
+      "exit": 1,
+      "meaning": "the provider's rate limit was reached; polling resumes at the time named",
+      "retry": true
+    },
+    {
+      "code": "poll_failed",
+      "exit": 1,
+      "meaning": "an issue poll ran and failed; the reason is in the message"
+    },
+    {
       "code": "invalid_input",
       "exit": 1,
       "meaning": "the server refused a value"
@@ -1404,6 +1466,199 @@
         },
         "exportedAt": {
           "type": "string"
+        }
+      }
+    },
+    "issue_connection": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "issue_connection",
+      "description": "An issue connection exactly as the REST API returns it (OpenSpec issue-connections). It never carries the token: token_set says whether one is stored.",
+      "type": "object",
+      "required": [
+        "id",
+        "provider",
+        "host",
+        "name",
+        "state",
+        "enabled",
+        "token_set"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "github",
+            "gitlab"
+          ]
+        },
+        "host": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "target project; null for the Inbox"
+        },
+        "filter": {
+          "type": "object",
+          "properties": {
+            "scope": {
+              "enum": [
+                "assigned",
+                "repositories"
+              ]
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "map_labels": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "interval_minutes": {
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "off",
+            "pending",
+            "ok",
+            "failed",
+            "stopped"
+          ]
+        },
+        "next_poll_at": {
+          "type": "integer",
+          "description": "Unix milliseconds"
+        },
+        "last_poll_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_success_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_error": {
+          "type": "string",
+          "description": "reason code of the last failure, empty when none"
+        },
+        "last_error_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "stopped_reason": {
+          "type": "string",
+          "description": "why polling stopped until the user acts, empty when it did not"
+        },
+        "account_login": {
+          "type": "string"
+        },
+        "can_read_issues": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "last_run": {
+          "anyOf": [
+            {
+              "$ref": "#/schemas/issues_run/properties/run"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task_count": {
+          "type": "integer",
+          "description": "issues linked to a task"
+        },
+        "token_set": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "integer"
+        },
+        "updated_at": {
+          "type": "integer"
+        }
+      }
+    },
+    "issues_run": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "issues_run",
+      "description": "The answer of POST /api/v1/issues/connections/{id}/sync: whether the poll succeeded, its counts and the connection after it (OpenSpec issue-connections).",
+      "type": "object",
+      "required": [
+        "ok",
+        "run"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "description": "reason code when ok is false"
+        },
+        "run": {
+          "type": "object",
+          "required": [
+            "created",
+            "completed",
+            "reopened",
+            "renamed"
+          ],
+          "properties": {
+            "created": {
+              "type": "integer"
+            },
+            "completed": {
+              "type": "integer"
+            },
+            "reopened": {
+              "type": "integer"
+            },
+            "renamed": {
+              "type": "integer"
+            },
+            "unlinked": {
+              "type": "integer"
+            },
+            "partial": {
+              "type": "boolean"
+            }
+          }
+        },
+        "connection": {
+          "$ref": "#/schemas/issue_connection"
         }
       }
     },

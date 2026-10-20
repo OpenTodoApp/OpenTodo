@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,7 +15,6 @@ import (
 	"net/mail"
 	"net/textproto"
 	"regexp"
-	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -40,10 +38,8 @@ const (
 )
 
 // maxEncryptableBytes is the longest description an end-to-end encrypted account's
-// devices can still re-encrypt (encrypt-on-sight): its ciphertext, "enc:v1:" +
-// base64url(nonce(12) || ciphertext || tag(16)) between JSON quotes, must fit
-// sync.MaxValueBytes. About 48 KB of text.
-const maxEncryptableBytes = (opsync.MaxValueBytes-2-len(e2ee.PrefixV1))*3/4 - 12 - 16
+// devices can still re-encrypt (encrypt-on-sight); see e2ee.MaxEncryptableBytes.
+var maxEncryptableBytes = e2ee.MaxEncryptableBytes(opsync.MaxValueBytes)
 
 // TruncatedNote ends a description whose body did not fit in one synced value.
 const TruncatedNote = "[Message truncated: the rest did not fit in the task's notes]"
@@ -184,36 +180,7 @@ func truncateRunes(s string, n int) string {
 // re-encrypted (maxEncryptableBytes), the body is cut at the longest rune
 // boundary that fits and ends with TruncatedNote.
 func description(body string, atts []Attachment) string {
-	if d := compose(body, false, atts); fitsValue(d) {
-		return d
-	}
-	// Every byte encodes to at least one, so no longer prefix can fit.
-	if len(body) > maxEncryptableBytes {
-		body = body[:maxEncryptableBytes]
-	}
-	cuts := make([]int, 0, len(body))
-	for i := range body {
-		cuts = append(cuts, i)
-	}
-	// The first cut that no longer fits; longer prefixes encode longer.
-	n := sort.Search(len(cuts), func(i int) bool { return !fitsValue(compose(body[:cuts[i]], true, atts)) })
-	for n > 0 && !fitsValue(compose(body[:cuts[n-1]], true, atts)) {
-		n--
-	}
-	if n == 0 {
-		return compose("", true, atts)
-	}
-	return compose(body[:cuts[n-1]], true, atts)
-}
-
-// fitsValue reports whether d, encoded as the operation encodes it, is within the
-// sync value limit, also once encrypted.
-func fitsValue(d string) bool {
-	if len(d) > maxEncryptableBytes {
-		return false
-	}
-	b, err := json.Marshal(d)
-	return err == nil && len(b) <= opsync.MaxValueBytes
+	return e2ee.FitText(body, opsync.MaxValueBytes, func(b string, cut bool) string { return compose(b, cut, atts) })
 }
 
 func compose(body string, cut bool, atts []Attachment) string {

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "issues_run",
+  "description": "The answer of POST /api/v1/issues/connections/{id}/sync: whether the poll succeeded, its counts and the connection after it (OpenSpec issue-connections).",
+  "type": "object",
+  "required": ["ok", "run"],
+  "properties": {
+    "ok": {"type": "boolean"},
+    "reason": {"type": "string", "description": "reason code when ok is false"},
+    "run": {
+      "type": "object",
+      "required": ["created", "completed", "reopened", "renamed"],
+      "properties": {
+        "created": {"type": "integer"},
+        "completed": {"type": "integer"},
+        "reopened": {"type": "integer"},
+        "renamed": {"type": "integer"},
+        "unlinked": {"type": "integer"},
+        "partial": {"type": "boolean"}
+      }
+    },
+    "connection": {"$ref": "#/schemas/issue_connection"}
+  }
+}

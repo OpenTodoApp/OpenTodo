@@ -702,6 +702,73 @@ export interface CalendarSubscription {
   eventCount?: number
 }
 
+/** The filter of an issue connection (OpenSpec issue-connections "Filter"). */
+export interface IssueFilter {
+  scope: 'assigned' | 'repositories'
+  repositories: string[]
+  labels: string[]
+}
+
+/** The counts of one issue poll. */
+export interface IssueRun {
+  created: number
+  completed: number
+  reopened: number
+  renamed: number
+  unlinked: number
+  partial: boolean
+}
+
+/** One issue connection as the server reports it: never the token, only token_set. */
+export interface IssueConnection {
+  id: string
+  provider: 'github' | 'gitlab'
+  host: string
+  name: string
+  project_id: string | null
+  filter: IssueFilter
+  map_labels: boolean
+  enabled: boolean
+  interval_minutes: number
+  state: 'off' | 'pending' | 'ok' | 'failed' | 'stopped'
+  next_poll_at: number
+  last_poll_at: number | null
+  last_success_at: number | null
+  last_error: string
+  last_error_at: number | null
+  stopped_reason: string
+  account_login: string
+  can_read_issues: boolean | null
+  last_run: IssueRun | null
+  task_count: number
+  token_set: boolean
+  created_at: number
+  updated_at: number
+}
+
+/** The body of creating or changing an issue connection; `token` only when typed. */
+export interface IssueConnectionInput {
+  provider?: 'github' | 'gitlab'
+  host?: string
+  token?: string
+  name?: string
+  project_id?: string | null
+  filter?: IssueFilter
+  map_labels?: boolean
+  interval_minutes?: number
+  enabled?: boolean
+}
+
+/** The answer of a hand-triggered sync or token check. */
+export interface IssueActionResult {
+  ok: boolean
+  reason?: string
+  run?: IssueRun
+  login?: string
+  can_read_issues?: boolean
+  connection?: IssueConnection
+}
+
 /** The user's task feed URL, without the secret. */
 export interface CalendarFeed {
   createdAt: number
@@ -1125,6 +1192,7 @@ export const AUDIT_EVENT_NAMES = [
   'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
   'calendar_feed.created', 'calendar_feed.rotated', 'calendar_feed.revoked',
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
+  'issue_connection.created', 'issue_connection.updated', 'issue_connection.deleted',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',
   'public_link.created', 'public_link.revoked',

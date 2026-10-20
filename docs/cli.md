@@ -168,6 +168,20 @@ A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 bef
 0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
 ```
 
+## Issue connections
+
+Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:
+
+```bash
+ot issues list               # id, name, provider, host, state, last poll, tasks; never a token
+ot issues list --json        # the connections as the API returns them, with token_set
+ot issues sync 7f3a          # poll one connection now: created 3, completed 1, reopened 0, renamed 2
+ot issues sync               # every enabled connection
+ot issues sync 7f3a --dry-run   # print the request, run nothing
+```
+
+`ot issues sync` writes, so `--read-only` and a `read` or `agent` token refuse it before any poll (exit 5). It exits 5 with `issues_disabled` while the owner has not enabled issue connections, and 1 when a connection is stopped (`connection_stopped`), the provider's rate limit applies (`provider_rate_limited`), the hourly limit of 12 checks and syncs is reached (`rate_limited`) or the poll fails (`poll_failed`). Connections are added and changed in Settings → Integrations → Issues.
+
 ## Tokens and export
 
 `--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. Creating a token is a [credential route](api.md#token-scopes): `ot token create` needs an `admin` token in the profile (the token `ot login` stores is `full`, so run `ot login` again to mint a new one, or create it in Settings → Integrations → API tokens). An `admin` token can only be created in the web app, from a recently confirmed session; with it, scripts can also manage second factors, other tokens, app passwords, accounts and server secrets. A `full` token gets exit 5 (`insufficient_scope`) on those routes. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).

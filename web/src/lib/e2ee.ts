@@ -370,14 +370,17 @@ export function prepareEnable(passphrase: string, opts: { iterations?: number } 
 /**
  * Step 2, after the user saved the recovery key and acknowledged the risk: store the record and keep the key.
  * `digestDisabled`: the server turned the weekly email digest off (stats-and-review), since it would carry titles.
+ * `issueConnectionsStopped`: the names of the issue connections the server stopped (issue-import D11).
  */
-export async function commitEnable({ record, key }: PreparedEnable): Promise<{ digestDisabled: boolean }> {
+export async function commitEnable({ record, key }: PreparedEnable): Promise<{ digestDisabled: boolean; issueConnectionsStopped: string[] }> {
   let stored: KeyRecord
   let digestDisabled = false
+  let issueConnectionsStopped: string[] = []
   try {
     const res = await api.putEncryptionKeys(record)
     stored = res.keys
     digestDisabled = !!res.digestDisabled
+    issueConnectionsStopped = res.issueConnectionsStopped ?? []
   } catch (err) {
     if (err instanceof ApiError && err.code === 'encryption_conflict') {
       await refreshFromServer().catch(() => undefined)
@@ -388,7 +391,7 @@ export async function commitEnable({ record, key }: PreparedEnable): Promise<{ d
   await storeKey(key, stored)
   await setEnabled(true, stored)
   await db.meta.delete(K_DISCARD)
-  return { digestDisabled }
+  return { digestDisabled, issueConnectionsStopped }
 }
 
 /** Change the passphrase: re-wrap only, no content op (design D1). Needs the current passphrase. */

@@ -24,6 +24,7 @@ import (
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/importer"
+	"github.com/pixari/opentodo/internal/issues"
 	"github.com/pixari/opentodo/internal/mail"
 	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
@@ -116,6 +117,11 @@ type Server struct {
 	calFetchLimiter *rateLimiter
 	feedLimiter     *rateLimiter
 	davLimiter      *rateLimiter
+	// Issue import (issue-import): the switch cache, the poller and the
+	// shared limit of hand-triggered checks and syncs.
+	issuesOn     caldavState
+	issueWorker  *issues.Worker
+	issueLimiter *rateLimiter
 	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings

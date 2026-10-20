@@ -138,7 +138,7 @@ Every request to a provider SHALL carry a 20-second timeout and a 2 MB body limi
 - **THEN** the first 1,000 become tasks, the status says the run was partial, and the next poll continues with the remaining 500
 
 ### Requirement: Token check
-`POST /api/v1/issues/connections/{id}/test` SHALL ask the provider for the token's account with one request and return the account login and whether the token can read issues, updating the connection's status. A user SHALL make at most 12 checks per hour.
+`POST /api/v1/issues/connections/{id}/test` SHALL ask the provider for the token's account (one request for the account and, to learn whether the token may read issues, one request listing at most one issue) and return the account login and whether the token can read issues, updating the connection's status. A user SHALL make at most 12 checks per hour.
 
 #### Scenario: Working token
 - **WHEN** a user tests a connection whose token is valid

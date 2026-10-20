@@ -251,7 +251,7 @@ func TestResourcesListShape(t *testing.T) {
 		}
 		uris = append(uris, m["uri"].(string))
 	}
-	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming" {
+	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://integrations/issues" {
 		t.Fatalf("resources = %v", uris)
 	}
 	tpl := f.call("u1", "resources/templates/list", nil)["result"].(map[string]any)
@@ -751,5 +751,16 @@ func TestListTasksCompletionRange(t *testing.T) {
 	open := f.tool("u1", "list_tasks", map[string]any{})
 	if got := strings.Join(titles(open["tasks"]), ","); got != "Still open" {
 		t.Fatalf("default = %s", got)
+	}
+}
+
+// Without the issue connections reader (feature off) the resource is listed
+// and reads as an empty list (issue-import, mcp-server delta).
+func TestIssuesResourceOff(t *testing.T) {
+	f := newFixture(t)
+	r := f.call("u1", "resources/read", map[string]any{"uri": IssuesURI})
+	contents := r["result"].(map[string]any)["contents"].([]any)
+	if text := contents[0].(map[string]any)["text"]; text != `{"connections":[],"enabled":false}` {
+		t.Fatalf("text = %v", text)
 	}
 }

@@ -946,13 +946,15 @@ The server records security-relevant events in its own database (never synced to
 | `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
 | `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
+| `issue_connection.created`, `issue_connection.deleted` | success | actor = user | `connection_id`, `provider` (`github` or `gitlab`); never the host, token, filter or issue content |
+| `issue_connection.updated` | success | actor = user | `connection_id`, `provider`, `setting`: the changed settings by name, comma-separated (`host`, `filter`, `project`, `labels`, `interval`, `name`, `enabled`, `token`), never a value. Polls and the tasks they write are not recorded |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
 | `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
-| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
@@ -1347,6 +1349,24 @@ Other calendars shown in Day and Week, and your tasks as a calendar that calenda
 
 Hand-triggered fetches (create, a new URL, refresh) are limited to 12 per account per hour (`429 rate_limited`). The feed answers `404` for an unknown secret, and an address that tries 10 unknown secrets in a minute gets `429`; one feed URL may be fetched 60 times an hour (`429` with `Retry-After`). The secret is no bearer token or app password, and other routes refuse it. Background refreshes follow the calendar's own refresh hint (between 30 minutes and a day, an hour by default), back off from 30 minutes to 6 hours while a calendar fails, and stop for a private target until the subscription is enabled again. A changed calendar sends `event: calendar` on the live updates stream.
 
+### Issue connections
+
+GitHub and GitLab issues assigned to the account become tasks that follow the issue (OpenSpec `issue-connections`; guide: [issue-import.md](issue-import.md)). Every `/api/v1/issues` route answers `404 issues_disabled` while the owner's switch is off, and these routes and the setting answer `403 demo_restricted` on the public demo before authentication. Read and agent tokens may use the `GET` routes only (`403 insufficient_scope` otherwise). Connections are server data: never operations, never synced or exported.
+
+| Method | Route | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` / `PUT` | `/api/v1/settings/issues` | signed in / owner | `{enabled}`, the setting `integrations.issues`; off by default; a change is recorded as `settings.changed` |
+| `GET` | `/api/v1/issues/connections` | session or token | `{connections: [...]}`: `id`, `provider` (`github`, `gitlab`), `host`, `name`, `project_id` (null for the Inbox), `filter` (`{scope: "assigned"\|"repositories", repositories, labels}`), `map_labels`, `enabled`, `interval_minutes`, `state` (`off`, `pending`, `ok`, `failed`, `stopped`), `next_poll_at`, `last_poll_at`, `last_success_at`, `last_error`, `last_error_at`, `stopped_reason`, `account_login`, `can_read_issues`, `last_run` (`{created, completed, reopened, renamed, unlinked, partial}`), `task_count`, `token_set`. Never the token. |
+| `POST` | `/api/v1/issues/connections` | session or full token, fresh sign-in | `{provider, host, token, name?, project_id?, filter?, map_labels?, interval_minutes?, enabled?}`; the token is checked at once; `201 {connection}` |
+| `PATCH` | `/api/v1/issues/connections/{id}` | session or full token | any of the fields above except `provider`; a `token` needs a fresh sign-in (`403 reauth_required`) and clears a stop for a token reason; `enabled: true` clears any stop |
+| `DELETE` | `/api/v1/issues/connections/{id}` | session or full token | `204`; the token is removed, the tasks stay |
+| `POST` | `/api/v1/issues/connections/{id}/test` | session or full token | ask the provider for the token's account: `{ok, login, can_read_issues, reason?, connection}` |
+| `POST` | `/api/v1/issues/connections/{id}/sync` | session or full token | poll now: `{ok, run, reason?, connection}`; `409 connection_stopped`, `409 connection_disabled`, or `409 provider_rate_limited` before the provider's reset, all without a request to the provider |
+
+Validation answers `400 invalid_input` with the field in `error.field` (`provider`, `host`, `token`, `name`, `project_id`, `scope`, `repositories`, `labels`, `interval_minutes`): the host is an `https` URL of at most 2,048 characters (`http` only while the owner allows private network targets), the name at most 100 characters (the host by default), the project an active one you can add tasks to, at most 20 repositories and 10 labels, the interval 15 to 1,440 minutes (30 by default). A host on a private network is refused with `400 private_target` unless the owner allows private targets for webhooks. A sixth connection answers `409 limit_reached`; an encrypted account `409 encryption_enabled` on create and on `enabled: true`. Tests and syncs share a limit of 12 per account per hour (`429 rate_limited`).
+
+Polls run on the jobs leader, at most two at a time: conditional requests (`If-None-Match`) with an updated-since cursor, at most 10 pages of 100 issues per poll, a 20-second timeout and a 2 MB limit per answer, no redirects followed. Tasks and labels are written through the op log with device `issues:<connection-id>`. Reasons on a connection: `unauthorized_provider`, `token_missing`, `private_target` and `encrypted_account` stop it; `redirect_refused`, `too_large`, `timeout`, `connection_failed`, `invalid_response`, `provider_not_found` and a hosted tenant's `limit_*` double the wait up to 6 hours; `provider_rate_limited` waits for the provider's reset. Enabling end-to-end encryption stops the account's connections and `PUT /api/v1/encryption/keys` lists their names in `issueConnectionsStopped`.
+
 ### CalDAV and app passwords
 
 The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV, not this JSON API; see [caldav.md](caldav.md). It authenticates only with HTTP Basic (account email plus an app password). These JSON routes manage it; all require a session or token.
@@ -1712,7 +1732,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:` or `issues:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
@@ -1788,7 +1808,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
-| `limit_reached` | 409 | more than 20 webhooks on one account |
+| `limit_reached` | 409 | more than 20 webhooks or 5 issue connections on one account |
 | `destination_error` | 502 | `POST /backups/test`, the archive list or preparing a restore when the destination refuses or cannot be reached |
 | `passphrase_required` | 422 | preparing an encrypted archive without a passphrase when the stored one is missing |
 | `passphrase_invalid` | 422 | preparing an encrypted archive with a passphrase that does not open it |
@@ -1798,10 +1818,14 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `email_disabled` | 409 | changing or rotating the email-to-task address when the operator has not configured email capture |
 | `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
 | `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |
-| `encryption_enabled` | 409 | sharing a project for the first time, or creating a CalDAV app password, while the account uses end-to-end encryption |
+| `encryption_enabled` | 409 | sharing a project for the first time, creating a CalDAV app password, or creating or enabling an issue connection, while the account uses end-to-end encryption |
 | `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
 | `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |
 | `unsupported_protocol_version` | 400 | `/mcp` with an `MCP-Protocol-Version` header naming an unsupported version |
+| `issues_disabled` | 404 | any `/api/v1/issues` route while the owner has not enabled [issue connections](#issue-connections) |
+| `connection_stopped` | 409 | syncing an issue connection stopped for its token, its host or encryption |
+| `connection_disabled` | 409 | syncing a disabled issue connection |
+| `provider_rate_limited` | 409 | syncing an issue connection before the provider's rate-limit reset |
 
 **In-app assistant**
 

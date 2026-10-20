@@ -168,6 +168,10 @@ var demoRules = []demoRule{
 	{"Calendar feeds", false, prefix("/api/v1/calendar-feeds")},
 	{"Calendar feeds", false, prefix("/feeds")},
 	{"Calendar feeds", false, exact("/api/v1/settings/calendar-feeds")},
+	// Issue connections would send a visitor's token to a visitor's host
+	// (issue-import D10): every method.
+	{"Issue connections", false, prefix("/api/v1/issues")},
+	{"Issue connections", false, exact("/api/v1/settings/issues")},
 	{"CalDAV", false, prefix("/dav")},
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},

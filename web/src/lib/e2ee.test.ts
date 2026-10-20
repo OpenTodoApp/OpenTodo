@@ -23,6 +23,7 @@ const { server, MockApiError } = vi.hoisted(() => {
     calls: [] as { device: string; ops: Op[] }[],
     /** The account has the weekly email digest on (stats-and-review): enabling encryption turns it off. */
     digestOn: false,
+    issueConnections: [] as string[],
     /** Refuses an op with this reason (client-data-safety); null accepts it. */
     reject: null as ((op: Op) => string | null) | null,
     /** The log generation sent with every answer; a new value means "restored from a backup". */
@@ -64,7 +65,8 @@ vi.mock('./api', () => ({
       server.record = { ...r, createdAt: server.record?.createdAt ?? Date.now() + server.seq, updatedAt: Date.now() }
       const digestDisabled = created && server.digestOn
       if (digestDisabled) server.digestOn = false
-      return { keys: structuredClone(server.record), ...(digestDisabled ? { digestDisabled: true } : {}) }
+      const stopped = created ? server.issueConnections : []
+      return { keys: structuredClone(server.record), ...(digestDisabled ? { digestDisabled: true } : {}), ...(stopped.length ? { issueConnectionsStopped: stopped } : {}) }
     },
     deleteEncryptionKeys: async () => {
       if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
@@ -119,6 +121,7 @@ beforeEach(() => {
   server.failNext = 0
   server.calls = []
   server.digestOn = false
+  server.issueConnections = []
   server.reject = null
   server.generation = undefined
 })
@@ -720,12 +723,18 @@ describe('weekly digest (stats-and-review)', () => {
   it('enabling encryption reports that the server turned the digest off', async () => {
     await on('A')
     server.digestOn = true
-    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: true })
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: true, issueConnectionsStopped: [] })
   })
 
   it('reports nothing when no digest was on', async () => {
     await on('A')
-    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false })
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false, issueConnectionsStopped: [] })
+  })
+
+  it('reports the issue connections the server stopped (issue-import D11)', async () => {
+    await on('A')
+    server.issueConnections = ['Work', 'Home']
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false, issueConnectionsStopped: ['Work', 'Home'] })
   })
 })
 

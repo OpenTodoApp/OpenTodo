@@ -37,6 +37,7 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
     : set.device === 'server' || set.device.startsWith('server:') ? 'API'
     : set.device.startsWith('agent:') ? t('AI assistant')
     : set.device.startsWith('caldav:') ? t('a calendar app (CalDAV)')
+    : set.device.startsWith('issues:') ? t('issue import')
     : set.device.startsWith('public:') ? t('a public link')
     : t('another device ({id})', { id: set.device.slice(0, 4) })
   // A guest's tick is written as the link's creator; the label names the link, not them (public-links D6).

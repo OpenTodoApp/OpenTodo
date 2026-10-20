@@ -251,17 +251,26 @@
   "A passkey is the fastest way to sign in: no password to type, and it cannot be phished.": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "A personal access token that can read issues. It is never shown again.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "A personal copy of this project: nobody else sees it, and assignees are left out.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
   "A private, read-only address that calendar apps can subscribe to. Anyone with the address can read your open dated tasks.": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "A project": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "A project can have at most {n} fields.": [
     "web/src/lib/fields.ts"
   ],
   "A repeating task: complete it and the next one appears": [
     "web/src/app/FirstRun.tsx"
+  ],
+  "A repository or project was not found.": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "A reset email was sent to {email}.": [
     "web/src/app/UsersPanel.tsx"
@@ -455,6 +464,7 @@
   "Actions for {name}": [
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TokensSection.tsx"
@@ -628,6 +638,9 @@
   "Add subtask…": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Add tasks to": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Add time": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -738,6 +751,9 @@
   ],
   "Allow calendar feeds on this server": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Allow issue connections on this server": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Allow new accounts via SSO": [
     "web/src/app/SsoPanel.tsx"
@@ -1058,6 +1074,13 @@
   ],
   "Assigned to someone else or blocked by another task. Open one to follow up in its comments.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Assigned to you": [
+    "web/src/app/IssueEditor.tsx",
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "Assigned to you in these repositories": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Assigned to {name}": [
     "web/src/app/AssigneePicker.tsx"
@@ -1472,6 +1495,7 @@
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/FieldsDialog.tsx",
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NamePrompt.tsx",
@@ -1581,6 +1605,9 @@
   "Changing calendar feeds needs a connection. You are seeing the last loaded state.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Changing issue connections needs a connection. You are seeing the last loaded state.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Changing it asks every person to accept the disclosure again.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -1589,6 +1616,9 @@
   ],
   "Check / uncheck item": [
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Check for changes": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Check list": [
     "web/src/lib/richtextEditor.ts"
@@ -1605,6 +1635,9 @@
   ],
   "Checkbox fields support \"= true\" or \"= false\" only, at position {pos}": [
     "web/src/lib/filter/evaluate.ts"
+  ],
+  "Checked {ago}": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Checking your invitation…": [
     "web/src/app/InviteScreen.tsx"
@@ -1857,6 +1890,12 @@
   "Comfortable or compact rows": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Comma-separated, up to {n}.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "Comma-separated, up to {n}; an issue needs all of them.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Command": [
     "web/src/app/vim/VimLayer.tsx"
   ],
@@ -2055,14 +2094,27 @@
   "Confirm your password, then download again.": [
     "web/src/app/ServerArchivePanel.tsx"
   ],
+  "Connect": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "Connect issues": [
+    "web/src/app/IssueEditor.tsx",
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "Connect to the internet to open this file.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Connection instructions": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Connection name": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Connection works. Save to use these settings.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Connections": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Contains": [
     "web/src/app/RestoreSection.tsx"
@@ -2492,6 +2544,7 @@
   ],
   "Delete": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/RestoreSection.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
@@ -2571,7 +2624,8 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "Delete {name}?": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+    "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Delete “{name}”?": [
     "web/src/app/ProjectHeader.tsx"
@@ -2701,6 +2755,7 @@
   ],
   "Disable": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Disabled": [
@@ -2714,6 +2769,9 @@
   ],
   "Disabled: {reason}": [
     "web/src/lib/webhooks.ts"
+  ],
+  "Disabled; nothing is polled.": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Discard": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -2928,6 +2986,7 @@
   ],
   "Edit": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
@@ -2938,6 +2997,9 @@
   ],
   "Edit comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Edit issue connection": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Edit label {name}": [
     "web/src/app/LabelsView.tsx"
@@ -3048,6 +3110,7 @@
   ],
   "Enable": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -3153,6 +3216,9 @@
   "Enter saves the query for every device · Esc discards the change": [
     "web/src/app/SavedViewView.tsx"
   ],
+  "Enter the address of GitHub, GitLab or your own instance.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Enter the email address of your account. We will send you a link to choose a new password.": [
     "web/src/app/EmailScreens.tsx"
   ],
@@ -3174,6 +3240,9 @@
   ],
   "Error": [
     "web/src/app/DataSettings.tsx"
+  ],
+  "Error: {reason}": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Estimate": [
     "web/src/app/EstimateField.tsx",
@@ -3237,6 +3306,9 @@
   "Every device, plus your API tokens and app passwords.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Every hour": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
   ],
@@ -3257,6 +3329,12 @@
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
+  ],
+  "Every {h} hours": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "Every {m} minutes": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Every {weekday} at {time}": [
     "web/src/lib/backups.ts"
@@ -3412,7 +3490,8 @@
   ],
   "Failed": [
     "web/src/app/ActivityPanel.tsx",
-    "web/src/app/BackupsPanel.tsx"
+    "web/src/app/BackupsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Failed {when}: {error}": [
     "web/src/lib/backups.ts"
@@ -3664,9 +3743,6 @@
   ],
   "For example: “{example}”": [
     "web/src/app/assistant/AskEntry.tsx"
-  ],
-  "For receivers on your LAN or this machine. Leave off on a public server.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "For scripts, the ot command and AI assistants. Sent as {header}.": [
     "web/src/lib/settingsCopy.ts"
@@ -4025,6 +4101,9 @@
   "Home SSO": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Host": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Hourly": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -4271,6 +4350,7 @@
   "Inbox": [
     "web/src/app/FeedView.tsx",
     "web/src/app/FilterView.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/Sidebar.tsx",
@@ -4378,8 +4458,24 @@
   "Invite with a link": [
     "web/src/app/InviteLinksSection.tsx"
   ],
+  "Issue connection added": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Issue connection changed": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Issue connection deleted": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Issue connections are not enabled on this server.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Issuer URL": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Issues": [
+    "web/src/app/IssueEditor.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "It disappears from your devices.": [
     "web/src/app/ShareDialog.tsx"
@@ -4657,6 +4753,9 @@
   "Last run:": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Last run: {created} created, {completed} completed, {reopened} reopened, {renamed} renamed": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "Last sent {day}": [
     "web/src/app/DigestCard.tsx"
   ],
@@ -4711,6 +4810,9 @@
   ],
   "Leave empty to keep the saved password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Leave empty to keep the stored token. It is never shown again.": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Leave it empty to remove the link.": [
     "web/src/app/LinkDialog.tsx"
@@ -4786,6 +4888,15 @@
   ],
   "List": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "List at least one repository or project.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "List at most {n} labels.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "List at most {n} repositories or projects.": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Listed in the evening group of Today": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -5301,6 +5412,7 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/FieldsDialog.tsx",
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/TokensSection.tsx"
@@ -5745,6 +5857,9 @@
   "No time tracked yet.": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "No token is stored, for example after a restore. Enter it again.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -5807,6 +5922,9 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Not available with end-to-end encryption: calendar apps cannot read encrypted titles.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Not available with end-to-end encryption: polls would store issue text unencrypted.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Not available with end-to-end encryption: the email would show your task titles.": [
@@ -6061,6 +6179,7 @@
     "web/src/app/DigestCard.tsx",
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -6163,6 +6282,7 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -6216,6 +6336,9 @@
   "On, {weekday}s at {hour} ({zone})": [
     "web/src/app/DigestCard.tsx"
   ],
+  "Once a day": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -6264,6 +6387,9 @@
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
   ],
+  "Only with these labels": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Only you can change this, signed in to the app.": [
     "web/src/lib/assistants.ts"
   ],
@@ -6277,6 +6403,9 @@
   ],
   "Open Account settings": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "Open GitHub and GitLab issues assigned to you become tasks that follow them.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Open Help": [
     "web/src/app/AboutSection.tsx",
@@ -6486,6 +6615,9 @@
   "Optional; the calendar's own name is used otherwise.": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Optional; the host is used otherwise.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Optionally bind a link to someone's email so only they can use it.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -6685,6 +6817,9 @@
   "Past imports": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Paste a personal access token.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Paste the key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -6716,6 +6851,9 @@
   ],
   "People": [
     "web/src/app/settingsSections.ts"
+  ],
+  "People can connect GitHub or GitLab; the server polls their issues.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "People can let an assistant with a dedicated token change their tasks.": [
     "web/src/lib/settingsCopy.ts"
@@ -6832,6 +6970,9 @@
   ],
   "Policy for this server": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Polling": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Pomodoro": [
     "web/src/lib/focus/prefs.ts"
@@ -7096,6 +7237,7 @@
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Provider": [
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Provider everyone uses": [
@@ -7508,6 +7650,9 @@
   "Repeats {rule}": [
     "web/src/lib/assistant.ts"
   ],
+  "Replace token": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Replies": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -7516,6 +7661,9 @@
   ],
   "Replying to <strong>{name}</strong>": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Repositories or projects": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Requesting a reset link needs a connection to the server.": [
     "web/src/app/EmailScreens.tsx"
@@ -7850,6 +7998,7 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/FieldsDialog.tsx",
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -8728,7 +8877,8 @@
   ],
   "Something went wrong.": [
     "web/src/app/CalendarFeedsPanel.tsx",
-    "web/src/app/EmailScreens.tsx"
+    "web/src/app/EmailScreens.tsx",
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Something went wrong. Is the server reachable?": [
     "web/src/app/AuthScreen.tsx"
@@ -8908,6 +9058,12 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Stopped": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "Stopped because this account uses end-to-end encryption.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "Stopped.": [
     "web/src/app/assistant/useAssistantConversation.ts"
   ],
@@ -8992,6 +9148,7 @@
     "web/src/app/SyncStatus.tsx"
   ],
   "Sync now": [
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/vim/commands.ts"
   ],
@@ -9098,6 +9255,9 @@
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"
   ],
+  "Tasks go to {project} · {filter} · {interval}": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "Tasks in a list": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -9149,6 +9309,9 @@
   ],
   "Test sent": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Test token": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Testing…": [
     "web/src/app/BackupsPanel.tsx",
@@ -9370,6 +9533,21 @@
   "The history is read from the server; reconnect to see it.": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "The host answered with a redirect, which is never followed.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The host could not be reached.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The host did not answer in time.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The host did not answer like GitHub or GitLab.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The host is on a private network the server owner has not allowed.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "The in-app assistant: consent, provider, model and usage": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -9440,6 +9618,9 @@
   "The owner has not enabled calendar feeds on this server.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "The owner has not enabled issue connections on this server.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -9456,6 +9637,18 @@
     "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "The provider changed. Read the updated disclosure and accept again.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "The provider refused the token. Enter a new one.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The provider sent more than 2 MB at once.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The provider's rate limit was reached.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
+  "The provider's rate limit was reached. Polling resumes later on its own.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "The push service accepted the test, but this device has not reported it.": [
@@ -9522,6 +9715,7 @@
   ],
   "The server could not be reached.": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "The server could not be reached. Import needs a connection.": [
@@ -9687,6 +9881,9 @@
   "The thank-you shown the first time you opened this server.": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "The token is removed from the server and nothing is polled any more. The {n, plural, one {# task} other {# tasks}} it created stay as ordinary tasks.": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "The total per account is 0 (no total) to {max} MB.": [
     "web/src/app/AttachmentSettingsPanel.tsx"
@@ -9864,6 +10061,12 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This conflicts with another change: {detail}": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This connection is disabled. Enable it first.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This connection is stopped. Replace its token, edit its host or enable it again.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "This conversation is too long. Start a new conversation.": [
@@ -10164,6 +10367,9 @@
   "This server reached a limit. Your latest changes stay on this device and upload later.": [
     "web/src/lib/limits.ts"
   ],
+  "This server reached a limit; the rest follows later.": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "This server reached its limit of changes per hour. Your latest changes stay on this device and upload later.": [
     "web/src/lib/i18n/errors.ts",
     "web/src/lib/limits.ts"
@@ -10204,6 +10410,9 @@
   ],
   "This title could not be decrypted with this device's key": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "This token cannot read issues; give it read access to issues.": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "This token or session is not allowed to do this: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -10396,6 +10605,9 @@
   ],
   "Toggle this cheat sheet": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Token": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Token created": [
     "web/src/app/TokensSection.tsx"
@@ -10837,8 +11049,12 @@
     "web/src/app/Sections.tsx",
     "web/src/app/task-detail/Properties.tsx"
   ],
+  "Up to 5. Nothing is ever written back to GitHub or GitLab.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Up to date": [
-    "web/src/app/DataSettings.tsx"
+    "web/src/app/DataSettings.tsx",
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Up to {bytes} with the free space on the server.": [
     "web/src/app/RestoreSection.tsx"
@@ -10902,6 +11118,9 @@
   ],
   "Use an app code instead": [
     "web/src/app/ReauthDialog.tsx"
+  ],
+  "Use issue labels as labels": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Use it with your email ({email}) in the calendar app.": [
     "web/src/app/CaldavPanel.tsx"
@@ -11030,12 +11249,16 @@
   ],
   "Waiting": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/IssuesPanel.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/review.ts"
   ],
   "Waiting for": [
     "web/src/lib/activity.ts"
+  ],
+  "Waiting for the first poll": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "Waiting for the first refresh": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -11073,6 +11296,9 @@
   ],
   "Webhooks": [
     "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Webhooks, calendar subscriptions and issue connections on your LAN. Off on public servers.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Website": [
@@ -11173,6 +11399,9 @@
   ],
   "Which assistant you use": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Which issues": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar": [
     "web/src/app/settingsIndex.ts"
@@ -11447,6 +11676,9 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "Your files need a connection to be decrypted. Encryption stays on; try again when you are online.": [
+    "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Your issue connections were stopped, because their polls would write issue text unencrypted: {names}.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Your key is saved for {provider}; the server’s assistant uses it instead of the server owner’s key.": [
@@ -11928,6 +12160,9 @@
   "full access": [
     "web/src/lib/assistants.ts"
   ],
+  "github.com, gitlab.com or the address of your own instance.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "green": [
     "web/src/lib/colourNames.ts"
   ],
@@ -11982,6 +12217,9 @@
   "interval must be from 1 to {n}": [
     "web/src/lib/recurrence.ts"
   ],
+  "issue import": [
+    "web/src/lib/history.ts"
+  ],
   "joined {date}": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -12000,7 +12238,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "last success {ago}": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+    "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/IssuesPanel.tsx"
   ],
   "last weekly review {ago}": [
     "web/src/app/Sidebar.tsx"
@@ -12062,6 +12301,9 @@
   ],
   "never refreshed": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "never succeeded": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "new": [
     "web/src/app/QuickAdd.tsx"
@@ -12244,6 +12486,9 @@
   "parent task": [
     "web/src/lib/activityRuns.ts"
   ],
+  "partial, the rest follows": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "passkey rejected": [
     "web/src/app/auditFormat.ts"
   ],
@@ -12376,6 +12621,9 @@
   ],
   "restored|version": [
     "web/src/lib/historyVersions.ts"
+  ],
+  "resumes {when}": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "section": [
     "web/src/lib/activityRuns.ts",
@@ -12968,6 +13216,9 @@
   "{n, plural, one {# reminder} other {# reminders}}": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "{n, plural, one {# repository} other {# repositories}}": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "{n, plural, one {# result available} other {# results available}}": [
     "web/src/ui/Combobox/useCombobox.ts"
   ],
@@ -13109,6 +13360,9 @@
   "{n, plural, one {in # day} other {in # days}}": [
     "web/src/app/task-detail/Properties.tsx"
   ],
+  "{n, plural, one {label} other {labels}} {labels}": [
+    "web/src/app/IssuesPanel.tsx"
+  ],
   "{n, plural, one {next action} other {next actions}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
@@ -13181,6 +13435,9 @@
   ],
   "{n} min before": [
     "web/src/lib/nlp/reminders.ts"
+  ],
+  "{n} of {max}": [
+    "web/src/app/IssuesPanel.tsx"
   ],
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",

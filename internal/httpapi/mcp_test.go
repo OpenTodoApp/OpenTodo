@@ -364,7 +364,7 @@ func TestMcpSession(t *testing.T) {
 		t.Fatalf("summary = %v", sum)
 	}
 	res := c.rpc(secret, "resources/list", nil)["result"].(map[string]any)["resources"].([]any)
-	if len(res) != 4 {
+	if len(res) != 5 {
 		t.Fatalf("resources = %v", res)
 	}
 	read := c.rpc(secret, "resources/read", map[string]any{"uri": "opentodo://tasks/" + tid})

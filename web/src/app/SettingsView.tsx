@@ -28,6 +28,7 @@ import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
 import { CalendarFeedsPanel } from './CalendarFeedsPanel'
+import { IssuesPanel } from './IssuesPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
@@ -321,6 +322,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <DemoDisabled on={demo}>
             <CaldavPanel isOwner={isOwner} email={user.email} />
             <CalendarFeedsPanel isOwner={isOwner} />
+            <IssuesPanel isOwner={isOwner} />
             <WebhooksPanel isOwner={ownsServer} />
             <TokensSection />
           </DemoDisabled>

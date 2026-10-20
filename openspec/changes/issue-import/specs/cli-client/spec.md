@@ -30,4 +30,4 @@
 
 #### Scenario: Read-only mode
 - **WHEN** the user runs `ot issues sync` with `--read-only`
-- **THEN** the command exits with code 2 before any request is sent
+- **THEN** the command exits with code 5 (`read_only`, as for every write command) before any request is sent
