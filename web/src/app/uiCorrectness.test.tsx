@@ -158,6 +158,7 @@ describe('confirmations use the app dialog (UI-19)', () => {
       if (path.endsWith('/members') && method === 'GET') return membership
       if (path.endsWith('/transfer')) { calls.push('transfer'); return { ...membership, role: 'admin' } }
       if (path.endsWith('/invites') || path.endsWith('/public-links')) return path.endsWith('/invites') ? { invites: [] } : { links: [] }
+      if (path.endsWith('/agent-access')) return { kept_away: false, inherited_from: null }
       return undefined
     })
     const r = await render(<ShareDialog project={project} userId="u1" cached={membership} onClose={() => {}} />)
@@ -174,7 +175,7 @@ describe('confirmations use the app dialog (UI-19)', () => {
       { userId: 'u2', name: 'Sam', email: 'sam@example.com', role: 'owner' },
       { userId: 'u1', name: 'Ada', email: 'ada@example.com', role: 'editor' },
     ] }
-    mockFetch((method, path) => (path.endsWith('/members') && method === 'GET' ? editor : path.endsWith('/public-links') ? { links: [] } : undefined))
+    mockFetch((method, path) => (path.endsWith('/members') && method === 'GET' ? editor : path.endsWith('/public-links') ? { links: [] } : path.endsWith('/agent-access') ? { kept_away: false, inherited_from: null } : undefined))
     const s = await render(<ShareDialog project={project} userId="u1" cached={editor} onClose={() => {}} />)
     await waitFor(() => !!button(document.body, 'Leave'), 'the leave control')
     await click(button(document.body, 'Leave')!)

@@ -11,6 +11,7 @@ import { syncNow } from '../../lib/sync'
 import type { Label, Project, ProjectRole, Section, Task, User, View } from '../../lib/types'
 import { createView, deleteView, reorderView, setStartView, updateView } from '../../lib/views'
 import { setFavourite } from '../../lib/favourites'
+import { setProjectAgentAccess } from '../../lib/agentAccess'
 import { HUES } from '../../ui'
 import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
@@ -40,7 +41,7 @@ export interface PaletteContext {
   /** The selected (or open) task, when the list has one. */
   task?: Task
   /** The project, saved view or label of the current route, and the selected task's section. */
-  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean }
+  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean }
   view?: { row: View; peers: View[]; isStart: boolean }
   label?: { row: Label; labels: Label[]; pinned?: boolean }
   section?: { row: Section; first: boolean; last: boolean; layout: 'list' | 'board'; count: number }
@@ -179,6 +180,22 @@ export function commands(ctx: PaletteContext): Command[] {
     }), 'project'))
     if (p.role !== 'viewer') {
       out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
+    }
+    // Keep away from AI assistants (agent-planning-fields D9): owner and admins.
+    if (p.role === 'owner' || p.role === 'admin') {
+      const keep = !p.keptAway
+      out.push({
+        id: keep ? 'project:agents-keep-away' : 'project:agents-allow', icon: keep ? 'eye-off' : 'eye',
+        label: keep ? t('Project “{name}”: Keep away from AI assistants', { name }) : t('Project “{name}”: Allow AI assistants', { name }),
+        keywords: 'assistant mcp agent ai privacy',
+        run: () => ({ kind: 'confirm', confirm: {
+          title: keep ? t('Keep “{project}” away from AI assistants?', { project: name }) : t('Allow AI assistants in “{project}”?', { project: name }),
+          body: keep ? t('No member’s assistant will see this project, its sub-projects or their tasks, and assistants cannot change them. The app, sync and calendar apps are not affected.')
+            : t('Every member’s assistants can see and, where allowed, change this project again.'),
+          confirmLabel: keep ? t('Keep away') : t('Allow'), tone: 'default',
+          onConfirm: () => setProjectAgentAccess(p.row.id, keep),
+        } }) as Step,
+      })
     }
   }
   if (ctx.view) {

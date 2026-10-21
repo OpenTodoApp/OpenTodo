@@ -310,7 +310,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
-      {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense></PanelBoundary>}
+      {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
       {paletteLoaded && paletteOpen && <PanelBoundary resetKey={paletteOpen}><Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} />

@@ -1,0 +1,11 @@
+[
+  {"name": "open, nothing set", "task": {"due": null, "deadline": null, "start": null, "completed_at": null}, "someday": false, "anytime": true},
+  {"name": "parked in Someday", "task": {"due": null, "deadline": null, "start": "someday", "completed_at": null}, "someday": true, "anytime": false},
+  {"name": "parked with a do-on date kept", "task": {"due": {"date": "2026-10-23"}, "deadline": null, "start": "someday", "completed_at": null}, "someday": true, "anytime": false},
+  {"name": "completed in Someday", "task": {"due": null, "deadline": null, "start": "someday", "completed_at": 1760000000000}, "someday": false, "anytime": false},
+  {"name": "do-on date", "task": {"due": {"date": "2026-10-23"}, "deadline": null, "start": null, "completed_at": null}, "someday": false, "anytime": false},
+  {"name": "deadline only", "task": {"due": null, "deadline": "2026-11-06", "start": null, "completed_at": null}, "someday": false, "anytime": false},
+  {"name": "start date in the past", "task": {"due": null, "deadline": null, "start": "2026-01-02", "completed_at": null}, "someday": false, "anytime": false},
+  {"name": "start date in the future", "task": {"due": null, "deadline": null, "start": "2030-01-02", "completed_at": null}, "someday": false, "anytime": false},
+  {"name": "completed, nothing set", "task": {"due": null, "deadline": null, "start": null, "completed_at": 1760000000000}, "someday": false, "anytime": false}
+]

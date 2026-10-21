@@ -68,6 +68,7 @@ Do it in exactly these steps:
 - Read what is due, overdue and in the Inbox with list_tasks (views today, upcoming and inbox), and what the user mentions with search_tasks.
 - Call schedule_tasks with a date (YYYY-MM-DD) in the next 7 days for every task you plan: overdue and high-priority tasks first, then the rest. Keep dates that are already set unless the day is over-full or the date has passed.
 - Never set a due date to null and never remove a date.
+- A task that can only begin later in the week gets a start date (update_tasks start) instead of a due date; never give a do-on date only to keep a task visible. Leave tasks parked in Someday alone unless the user names them, and plan nothing that is blocked by an open task.
 - Respect the working day below: count every task's estimate on the day it is due, including tasks already scheduled there, and never plan more minutes on a day than the day allows. Tasks without an estimate count as 30 minutes; say so in the answer.
 - Give times only within the day's start and end, and only when the task needs a slot.
 - Do not create, complete or trash tasks.
@@ -81,7 +82,8 @@ Do it in exactly these steps:
 		Instructions: `Run a weekly review of the user's tasks, in the three phases of the app's own weekly review (Open Loops).
 - Get clear: look at the Inbox with list_tasks (view inbox). Propose move_tasks to put each Inbox task that fits a project there.
 - Get current: look at overdue tasks, tasks due in the next 7 days, tasks assigned to someone else or blocked by another task, and each project with list_projects. For an overdue task call schedule_tasks with a new date in the next 7 days, or complete_tasks only when the user said it is done; update_tasks may lower a priority. Name every project that has no task the user can do now, and suggest its next step in words.
-- Get creative: mention up to three Someday tasks that might be worth starting now.
+- Waiting and Later: a task that waits for another one gets blocked_by (update_tasks); one that should not show before a date gets start, and one the user will not do soon may be parked with start "someday". Keep its due date unless the user says otherwise.
+- Get creative: mention up to three Someday tasks (list_tasks view someday) that might be worth starting now.
 - Propose at least one change when anything is overdue. Never propose trashing an existing task; mention it as a candidate instead.
 - Keep the proposal within 50 changed items; offer to continue afterwards.
 - End with a short summary: what is overdue, what was rescheduled or moved, the projects without a next step, and up to three tasks that deserve attention this week.`,
@@ -93,7 +95,7 @@ Do it in exactly these steps:
 		Tools:       withRead("update_tasks", "move_tasks", "schedule_tasks", "create_label"),
 		Instructions: `Triage the user's Inbox.
 - Read the Inbox with list_tasks (view inbox) and the projects with list_projects.
-- For each Inbox task that fits a project, call move_tasks with that project's id from list_projects. Add a priority, labels or a due date (update_tasks, schedule_tasks) only when the task's text gives a reason. Leave a task in the Inbox when no project fits, and say so.
+- For each Inbox task that fits a project, call move_tasks with that project's id from list_projects. Add a priority, labels or a due date (update_tasks, schedule_tasks) only when the task's text gives a reason. A task that clearly belongs to later may be deferred with start (a date) or parked with start "someday" instead of getting a due date; a hard date it must be done by is a deadline. Leave a task in the Inbox when no project fits, and say so.
 - Create a label only when several tasks clearly share a theme that no existing label covers.
 - Keep the proposal within 50 changed items.
 - End with a table-free list: task, where it goes, and why in a few words.`,

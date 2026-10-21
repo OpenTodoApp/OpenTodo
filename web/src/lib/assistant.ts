@@ -197,6 +197,42 @@ export function dueWords(due: unknown): string {
 
 const clip = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
+/** A bare date (deadline, start) in words, as dueWords. */
+const dayWords = (date: unknown) => dueWords(typeof date === 'string' ? { date } : null)
+
+/** A location in words: its name, else its address, else its coordinates. */
+function placeWords(v: unknown): string {
+  const l = v as { name?: string; address?: string; lat?: number; lon?: number } | null
+  if (!l) return ''
+  if (l.name) return clip(l.name, 50)
+  if (l.address) return clip(l.address, 50)
+  return typeof l.lat === 'number' && typeof l.lon === 'number' ? `${l.lat.toFixed(4)}, ${l.lon.toFixed(4)}` : t('a place')
+}
+
+/** The planning fields of a task change in words (agent-planning-fields D7). */
+function planningLines(p: Record<string, unknown>, base: Record<string, unknown>, names: Names, create: boolean): string[] {
+  const lines: string[] = []
+  const title = (id: string) => `“${clip(names.tasks.get(id) ?? t('a task'), 40)}”`
+  if ('deadline' in p && (p.deadline || !create)) {
+    const old = base.deadline
+    lines.push(p.deadline ? (old && !create ? t('Deadline {from} → {to}', { from: dayWords(old), to: dayWords(p.deadline) }) : t('Deadline {date}', { date: dayWords(p.deadline) })) : t('Deadline removed'))
+  }
+  if ('start' in p && (p.start || !create)) {
+    const old = base.start
+    if (p.start === 'someday') lines.push(t('Someday'))
+    else if (p.start) lines.push(old && old !== 'someday' && !create ? t('Starts {from} → {to}', { from: dayWords(old), to: dayWords(p.start) }) : t('Starts {date}', { date: dayWords(p.start) }))
+    else lines.push(old === 'someday' ? t('Out of Someday') : t('No start date'))
+  }
+  if ('evening' in p && (p.evening || !create)) lines.push(p.evening ? t('This evening') : t('Not this evening'))
+  if ('blocked_by' in p) {
+    const ids = (p.blocked_by as string[] | null) ?? []
+    if (ids.length) lines.push(t('Waits for {tasks}', { tasks: ids.map(title).join(', ') }))
+    else if (!create) lines.push(t('No longer waits'))
+  }
+  if ('location' in p && (p.location || !create)) lines.push(p.location ? t('At {place}', { place: placeWords(p.location) }) : t('Location removed'))
+  return lines
+}
+
 /** "a task", "a project", … for an entity without a known name. */
 const someEntity = (entity: string) => t('{entity, select, task {a task} project {a project} label {a label} section {a section} comment {a comment} view {a view} field {a field} reminder {a reminder} other {an item}}', { entity })
 /** "New task", "New view", … for a proposed entity of another kind. */
@@ -231,6 +267,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
         if (Array.isArray(p.labels) && p.labels.length) lines.push(t('Labels: {labels}', { labels: p.labels.map((id) => names.labels.get(String(id)) ?? t('a label')).join(', ') }))
         if (p.parent_id) lines.push(t('Subtask of “{task}”', { task: clip(names.tasks.get(String(p.parent_id)) ?? t('a task'), 50) }))
         if (p.deleted_at) lines.push(t('Moved to the Trash'))
+        lines.push(...planningLines(p, {}, names, true))
         for (const [f, v] of Object.entries(p)) {
           const fid = fieldValueId(f)
           if (fid && v !== null) lines.push(fieldWords(names, fid, v))
@@ -241,7 +278,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
     return { title: newEntity(c.entity), lines: [] }
   }
   const title = String((local as { title?: string; name?: string } | undefined)?.title ?? (local as { name?: string } | undefined)?.name ?? someEntity(c.entity))
-  const lines: string[] = []
+  const lines: string[] = c.entity === 'task' ? planningLines(p, base, names, false) : []
   for (const [f, v] of Object.entries(p)) {
     const fid = fieldValueId(f)
     if (fid) {
@@ -270,11 +307,8 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
       case 'recurrence': lines.push(v ? t('Repeats {rule}', { rule: String(v) }) : t('Stops repeating')); break
       case 'deleted_at': lines.push(v ? t('Moved to the Trash') : t('Restored')); break
       case 'parent_id': lines.push(v ? t('Subtask of “{task}”', { task: clip(names.tasks.get(String(v)) ?? t('a task'), 50) }) : t('No longer a subtask')); break
-      case 'blocked_by': {
-        const ids = (v as string[] | null) ?? []
-        lines.push(ids.length ? t('Waits for {tasks}', { tasks: ids.map((id) => `“${clip(names.tasks.get(id) ?? t('a task'), 40)}”`).join(', ') }) : t('Waits for nothing'))
-        break
-      }
+      case 'deadline': case 'start': case 'evening': case 'location':
+      case 'blocked_by': if (c.entity !== 'task') lines.push(t('{field} changed', { field: f.replace(/_/g, ' ') })); break
       case 'color': lines.push(t('Colour {name}', { name: String(v) })); break
       case 'position': case 'created_at': case 'notes_doc': break
       default: lines.push(t('{field} changed', { field: f.replace(/_/g, ' ') }))
@@ -298,6 +332,12 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
     }
     if (c.entity === 'comment' && c.patch.task_id && !names.tasks.has(String(c.patch.task_id))) {
       const tk = await db.tasks.get(String(c.patch.task_id))
+      if (tk) names.tasks.set(tk.id, tk.title)
+    }
+    // Blockers are named by title (agent-planning-fields D7).
+    for (const id of Array.isArray(c.patch.blocked_by) ? (c.patch.blocked_by as string[]) : []) {
+      if (names.tasks.has(id)) continue
+      const tk = await db.tasks.get(id)
       if (tk) names.tasks.set(tk.id, tk.title)
     }
   }

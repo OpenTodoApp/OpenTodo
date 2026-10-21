@@ -35,8 +35,9 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 		s.mcpSettings = mcp.NewSettings(s.sync.DB())
 	}
 	s.agentAccess = agenttools.NewAccess(s.sync.DB())
+	s.agentExclusions = agenttools.NewExclusions(s.sync.DB())
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{
-		Audit: s.audit, Log: s.log,
+		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions,
 		LocalToday: func() string { return localToday(time.Now()) },
 		// Relative reminders follow a new due date (deadline reminders a new
 		// deadline), as for a REST write.
@@ -59,6 +60,7 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	// full tokens only, so an assistant can never flip it (mcp-write-tools D3).
 	mux.handle("GET /api/v1/me/agent-access", signedIn.fullTokens(), s.handleGetAgentAccess)
 	mux.handle("PUT /api/v1/me/agent-access", signedIn.fullTokens().demoDenied(), s.handlePutAgentAccess)
+	s.registerAgentExclusionRoutes(mux)
 }
 
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {

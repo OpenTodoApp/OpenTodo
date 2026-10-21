@@ -183,6 +183,9 @@ type Registry struct {
 	// mark, set on the per-call copy of a relayed read, replaces loaded
 	// ciphertext by markers (relay.go).
 	mark *marker
+	// exclusions hides projects kept away from AI assistants from every tool
+	// (agent-planning-fields D9); nil hides nothing.
+	exclusions *Exclusions
 }
 
 // Options configure a Registry.
@@ -195,11 +198,13 @@ type Options struct {
 	// LocalToday is "today" for completing recurring tasks when the caller
 	// passes no time zone (nil: the server's local date, as REST does).
 	LocalToday func() string
+	// Exclusions are the projects kept away from AI assistants (nil: none).
+	Exclusions *Exclusions
 }
 
 // New wires a Registry.
 func New(syncSvc *opsync.Service, opts Options) *Registry {
-	r := &Registry{sync: syncSvc, now: opts.Now, audit: opts.Audit, limits: opts.Limits, extraOps: opts.ExtraOps, log: opts.Log, today0: opts.LocalToday}
+	r := &Registry{sync: syncSvc, now: opts.Now, audit: opts.Audit, limits: opts.Limits, extraOps: opts.ExtraOps, log: opts.Log, today0: opts.LocalToday, exclusions: opts.Exclusions}
 	if r.now == nil {
 		r.now = time.Now
 	}

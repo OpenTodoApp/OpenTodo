@@ -85,6 +85,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
+| Assistants plan like the app (deadline, start, Someday, This Evening, waiting for, location) on every surface; projects can be kept away from assistants | `agent-planning-fields` |
 | stdio bridge for assistants that only speak stdio (`ot mcp`), read-only by default | `mcp-stdio-bridge` |
 | `ot` for agent harnesses: versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` off a terminal, exit code 5, read-only mode, `agent` tokens on REST content routes, the agent skill file | `agent-ready-cli` |
 
@@ -166,7 +167,6 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 - **Published browser extension** in the Chromium and Firefox stores. (File and image sharing through the share target is part of `attachments` above.)
 - **Shell completion** for `ot` (`ot schema` already describes every command and flag).
 - **In-app assistant for end-to-end encrypted accounts.** The first in-app assistant runs its loop on the server, which cannot read encrypted content. A direct-from-device mode (the browser holds the key and calls the model provider itself) could serve encrypted accounts, at the cost of exposing the model key to the browser and depending on provider CORS rules.
-- **Keep a shared project away from AI assistants.** A per-project switch so that one member's assistant cannot read or change a shared project the others want kept out of assistants.
 
 ## Principles that do not change
 

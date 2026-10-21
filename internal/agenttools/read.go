@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/inbox"
 	"sort"
 	"strings"
 	"time"
@@ -54,10 +55,11 @@ func init() {
 	})
 	register(tool{
 		def: readDef("list_tasks", "List tasks",
-			"List tasks with filters. view: all (default), inbox (open tasks without a project that are not scheduled: no do-on date, start date or Someday), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). "+
+			"List tasks with filters. view: all (default), inbox (open tasks without a project that are not scheduled: no do-on date, start date or Someday), today (open tasks due today or overdue, overdue first), upcoming (open tasks due after today), someday (open tasks parked in Someday) or anytime (open tasks with no do-on date, deadline or start). blocked: true lists only tasks waiting for an open task, false only the others. "+
 				"Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
 			object(nil, map[string]any{
-				"view":              map[string]any{"type": "string", "enum": []string{"all", "inbox", "today", "upcoming"}, "default": "all"},
+				"view":              map[string]any{"type": "string", "enum": []string{"all", "inbox", "today", "upcoming", "someday", "anytime"}, "default": "all"},
+				"blocked":           map[string]any{"type": "boolean", "description": "true: only tasks waiting for an open task; false: only tasks that are not."},
 				"project_id":        map[string]any{"type": "string", "description": "Only tasks of this project (see list_projects)."},
 				"label":             map[string]any{"type": "string", "description": "Only tasks carrying this label (name, case-insensitive, or id)."},
 				"priority":          map[string]any{"type": "integer", "minimum": 1, "maximum": 4, "description": "Only tasks of this priority: 1 is the highest, 4 the default."},
@@ -206,7 +208,9 @@ func (r *Registry) listProjects(ctx context.Context, userID string, a args) (map
 // ---- list_tasks ----
 
 type taskQuery struct {
-	view             string
+	view string
+	// blocked filters by the derived blocked state when set (agent-planning-fields).
+	blocked          *bool
 	projectID        string
 	label            string
 	priority         int
@@ -229,9 +233,16 @@ func parseTaskQuery(a args) (taskQuery, error) {
 	switch q.view {
 	case "":
 		q.view = "all"
-	case "all", "inbox", "today", "upcoming":
+	case "all", "inbox", "today", "upcoming", "someday", "anytime":
 	default:
-		return q, argErr("view: must be one of all, inbox, today, upcoming")
+		return q, argErr("view: must be one of all, inbox, today, upcoming, someday, anytime")
+	}
+	if a.present("blocked") {
+		b, err := a.boolean("blocked")
+		if err != nil {
+			return q, err
+		}
+		q.blocked = &b
 	}
 	if q.projectID, err = a.str("project_id"); err != nil {
 		return q, err
@@ -330,6 +341,17 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 			if d == nil || date <= today || !open {
 				continue
 			}
+		case "someday":
+			if !inbox.Someday(plannedOf(t)) {
+				continue
+			}
+		case "anytime":
+			if !inbox.Anytime(plannedOf(t)) {
+				continue
+			}
+		}
+		if q.blocked != nil && snap.blockedNow(t) != *q.blocked {
+			continue
 		}
 		if !open && !q.includeCompleted && q.completedAfter == 0 && q.completedBefore == 0 {
 			continue
@@ -640,4 +662,10 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 		out["truncated"] = true
 	}
 	return out, nil
+}
+
+// plannedOf is the part of a task the Someday and Anytime rules read.
+func plannedOf(t opsync.Entity) inbox.Planned {
+	return inbox.Planned{Start: rawStr(t, "start"), HasDue: taskDue(t) != nil, HasDeadline: rawStr(t, "deadline") != "",
+		Completed: !isOpen(t), Deleted: deleted(t)}
 }

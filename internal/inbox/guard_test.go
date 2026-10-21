@@ -12,7 +12,7 @@ import (
 // web/src/lib/inboxGuard.test.ts checks the web side.
 func TestReadersUseTheRule(t *testing.T) {
 	branch := regexp.MustCompile(`(?s)case "inbox":(.*?)(\n\t*case |\n\t*default:|\n\t*}\n)`)
-	for _, file := range []string{"../agenttools/read.go", "../cli/cmd_tasks.go"} {
+	for _, file := range []string{"../agenttools/read.go", "../cli/list_filters.go"} {
 		src, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)

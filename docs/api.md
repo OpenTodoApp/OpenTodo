@@ -83,7 +83,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth, agent_excluded_projects}`; `auth` describes the credential, see [Credential introspection](#credential-introspection); `agent_excluded_projects` lists the projects [kept away from assistants](#keeping-a-project-away-from-assistants). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
 | POST | `/api/v1/me/password` | credential, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -472,7 +472,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence`, `origin` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `location`, `recurrence`, `origin` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon` (`archived: false` is accepted) |
@@ -489,11 +489,26 @@ Refusals:
 | 403 | `writes_disabled_by_owner`, `writes_disabled_by_user` | a switch is off (recorded as a failed `agent.write`) |
 | 403 | `insufficient_scope` | any other write route, or a field outside the list above (`assignee_id`, `position`, `archived`, restoring with `deleted_at: null`, …) |
 | 403 | `forbidden`, `not_permitted` | the user's role in a shared project does not allow it; trashing a task the token did not create |
-| 404 | `not_found` | unknown, deleted or invisible ids (indistinguishable) |
-| 409 | `encryption_enabled` | readable text (title, description, name, comment) for an end-to-end encrypted account |
+| 404 | `not_found` | unknown, deleted or invisible ids, and anything in a project [kept away from assistants](#keeping-a-project-away-from-assistants) (indistinguishable) |
+| 409 | `encryption_enabled` | readable text (title, description, name, comment, location) for an end-to-end encrypted account |
 | 400 | `invalid_input` | a value the tool refuses (with the tool's message) |
 
+A `location` is `{name?, address?, lat?, lon?, place_id?}` with at least one key, or `null`; `{"place_id": "<id>"}` alone copies a saved location (unknown id: 404 `not_found`). A deadline sent this way moves the task's deadline reminders, as a session's edit does.
+
 Every other write route (tokens, settings, sync, sharing and members, invitations, project invite links, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
+
+`GET /api/v1/places` lists your saved locations (`{places:[{id, name, address, geo:{lat, lon}, position, created_at}]}`), any token scope, so a client can set a task's location by name; saved locations are written through sync.
+
+### Keeping a project away from assistants
+
+The owner of a project, or an admin of a shared one, can keep it and its sub-projects away from every AI assistant surface: MCP (whatever the token's scope), the agent content routes above and the in-app assistant then act as if it did not exist. Ordinary REST with a session, a `full` or an `admin` token, sync, CalDAV, feeds and the export are unaffected. It is server access state like membership: never an operation, never exported.
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/api/v1/projects/{id}/agent-access` | session or `full` token, any member | `{kept_away, inherited_from}`; `inherited_from` is the nearest ancestor that is kept away, or `null` |
+| PUT | `/api/v1/projects/{id}/agent-access` | session or `full` token, owner or admin of the project | `{kept_away: boolean}` → the same shape; recorded as `project.agent_access`; demo instances → 403 `demo_restricted` |
+
+`read` and `agent` tokens get 403 `insufficient_scope`; a non-member or unknown id 404 `not_found`; an editor or viewer 403 `forbidden` on `PUT`; any other body 400 `invalid_input` naming `kept_away`. `GET /api/v1/me` carries `agent_excluded_projects`: the ids of every project you can see that is kept away, inherited ones included. A sub-project's own switch is kept when its parent's is turned off; purging the project removes it.
 
 ### Task fields
 
@@ -986,6 +1001,7 @@ The server records security-relevant events in its own database (never synced to
 | `email.failed` | failure | as `email.sent` | `email_kind`, `email`, `reason` (`connect`, `tls`, `auth`, `send`, `rate_limited`, `encrypted_account`) |
 | `public_link.created` | success | actor = creator | `public_link_id`, `shared_project_id`, `link_rights` (`view` or `tick`); never the secret or the name |
 | `public_link.revoked` | success | actor = owner or admin of the project | `public_link_id`, `shared_project_id` |
+| `project.agent_access` | success | actor = owner or admin of the project | `access_project_id`, `from`, `to` (`allowed` or `kept_away`); never the project's name |
 | `task_page.published` | success | actor = publisher | `task_page_id`, `link_rights` (`view`, `reply` or `tick`); never the secret, the label or a share key |
 | `task_page.revoked` | success | actor = publisher, or owner or admin of the project (also when a page is replaced by a new one) | `task_page_id` |
 | `password.changed` | success | actor = user | |

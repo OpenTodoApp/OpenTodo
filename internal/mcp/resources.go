@@ -42,6 +42,8 @@ func resourceList() []resource {
 		{URI: "opentodo://views/inbox", Name: "inbox", Title: "Inbox", Description: "Open tasks without a project that are not scheduled (no do-on date, start date or Someday).", MimeType: jsonMime},
 		{URI: "opentodo://views/today", Name: "today", Title: "Today", Description: "Open tasks due today or overdue, overdue first." + tz, MimeType: jsonMime},
 		{URI: "opentodo://views/upcoming", Name: "upcoming", Title: "Upcoming", Description: "Open tasks due after today, soonest first." + tz, MimeType: jsonMime},
+		{URI: "opentodo://views/someday", Name: "someday", Title: "Someday", Description: "Open tasks parked in Someday.", MimeType: jsonMime},
+		{URI: "opentodo://views/anytime", Name: "anytime", Title: "Anytime", Description: "Open tasks with no do-on date, deadline or start date.", MimeType: jsonMime},
 		{URI: IssuesURI, Name: "issue-connections", Title: "Issue connections",
 			Description: "The user's GitHub and GitLab issue connections with their state and last run, never a token. Read from the stored state; no request is made to the provider.", MimeType: jsonMime},
 	}
@@ -98,7 +100,7 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		payload, found, err = s.tools.ProjectResource(ctx, userID, id, loc)
 	case u.Host == "tasks" && id != "" && !strings.Contains(id, "/"):
 		payload, found, err = s.tools.TaskResource(ctx, userID, id, loc)
-	case u.Host == "views" && (id == "inbox" || id == "today" || id == "upcoming"):
+	case u.Host == "views" && (id == "inbox" || id == "today" || id == "upcoming" || id == "someday" || id == "anytime"):
 		payload, err = s.tools.ViewResource(ctx, userID, id, loc)
 	default:
 		return nil, notFound(p.URI)

@@ -60,6 +60,9 @@ const (
 	// Public links (OpenSpec `public-links`).
 	PublicLinkCreatedName Name = "public_link.created"
 	PublicLinkRevokedName Name = "public_link.revoked"
+	// A project kept away from AI assistants or allowed again (OpenSpec change
+	// agent-planning-fields).
+	ProjectAgentAccessName Name = "project.agent_access"
 	// Task pages (OpenSpec `task-pages`).
 	TaskPagePublishedName Name = "task_page.published"
 	TaskPageRevokedName   Name = "task_page.revoked"
@@ -112,6 +115,7 @@ var Names = []Name{
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
 	PublicLinkCreatedName, PublicLinkRevokedName,
+	ProjectAgentAccessName,
 	TaskPagePublishedName, TaskPageRevokedName,
 	RoleChangedName, SettingsChangedName,
 	IdentityLinkedName, IdentityUnlinkedName,
@@ -211,6 +215,8 @@ var allowedDetailKeys = map[string]bool{
 	"public_link_id":    true, // id of a public link (never its secret)
 	"link_rights":       true, // view | tick; view | reply | tick for a task page
 	"task_page_id":      true, // id of a task page (never its secret, label or share key)
+	// The project whose "Keep away from AI assistants" switch changed (never its name).
+	"access_project_id": true,
 	// Sign out everywhere (route-authorization-policy): how much it ended.
 	"session_count":      true,
 	"device_count":       true,
@@ -451,6 +457,12 @@ func ProjectInviteAccepted(userID, creatorID, inviteID, projectID, role string) 
 // InvitationRevoked records a revoked invitation.
 func InvitationRevoked(ownerID, invitationID string) Event {
 	return ev(InvitationRevokedName, Success, ownerID, "", "invitation_id", invitationID)
+}
+
+// ProjectAgentAccess records a project's "Keep away from AI assistants" switch
+// changing (agent-planning-fields): from and to are allowed or kept_away.
+func ProjectAgentAccess(actorID, projectID, from, to string) Event {
+	return ev(ProjectAgentAccessName, Success, actorID, "", "access_project_id", projectID, "from", from, "to", to)
 }
 
 // ---- roles and settings ----

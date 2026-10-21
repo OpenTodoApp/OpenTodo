@@ -69,7 +69,7 @@ func (r *Registry) TaskResource(ctx context.Context, userID, id string, loc *tim
 	return noticed(detail), true, nil
 }
 
-// ViewResource is opentodo://views/{inbox,today,upcoming}.
+// ViewResource is opentodo://views/{inbox,today,upcoming,someday,anytime}.
 func (r *Registry) ViewResource(ctx context.Context, userID, view string, loc *time.Location) (map[string]any, error) {
 	snap, err := r.load(ctx, userID)
 	if err != nil {

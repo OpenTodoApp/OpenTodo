@@ -3,6 +3,7 @@
 // sheet, the body and the composer in their own files; this component wires them.
 import { useEffect } from 'react'
 import { useOnline } from '../../lib/online'
+import { useAgentExclusions } from '../../lib/agentAccess'
 import { t } from '../../lib/i18n'
 import { Composer } from './AssistantComposer'
 import { AssistantPanelBody, OFFLINE_MESSAGE } from './AssistantPanelBody'
@@ -21,6 +22,10 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   const connected = useOnline()
   const c = useAssistantConversation({ context, onApplied })
   const { status, composer, review: rv, streaming } = c
+  // A project kept away from assistants replaces the view hint (agent-planning-fields D9).
+  const excluded = useAgentExclusions()
+  const projectId = context().projectId
+  const keptAway = !!projectId && excluded.has(projectId)
 
   const onEscape = () => {
     if (rv.review && rv.reviewRef.current?.contains(document.activeElement)) void rv.discard()
@@ -57,7 +62,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
           <Composer draft={composer.draft} onDraft={composer.setDraft} onSend={() => void c.send()} onStop={c.stop} streaming={!!streaming} connected={connected} disabled={!ready}
             skills={composer.skills} skill={skill} onSkill={composer.chooseSkill} pasted={composer.pasted} onPasted={composer.setPasted} />
           <div className="flex flex-wrap items-center justify-between gap-x-2 text-meta text-faint">
-            <span>{!connected ? t(OFFLINE_MESSAGE) : status ? `${status.provider === 'compatible' ? t('Model server') : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
+            <span data-testid="assistant-hint">{keptAway ? t('This project is kept away from assistants') : !connected ? t(OFFLINE_MESSAGE) : status ? `${status.provider === 'compatible' ? t('Model server') : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
             {c.threads && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void c.clearAll()}>{t('Clear conversations')}</button>}
           </div>
         </div>

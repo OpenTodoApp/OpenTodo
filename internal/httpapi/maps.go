@@ -46,6 +46,18 @@ func (s *Server) registerMapRoutes(mux *routes) {
 	mux.handle("GET /api/v1/maps/reverse", read, s.handleMapReverse)
 	mux.handle("GET /api/v1/settings/maps", ownerOnly("see the maps setting"), s.handleGetMapsSetting)
 	mux.handle("PUT /api/v1/settings/maps", ownerOnly("manage the maps setting").demoDenied(), s.handlePutMapsSetting)
+	// Saved locations, read only, so `ot` can set a task's location by name
+	// (agent-planning-fields D6); they are written through sync like the app does.
+	mux.handle("GET /api/v1/places", signedIn, s.handleListPlaces)
+}
+
+func (s *Server) handleListPlaces(w http.ResponseWriter, r *http.Request) {
+	list, err := s.sync.List(r.Context(), userFrom(r.Context()).ID, "place", false)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"places": list})
 }
 
 // mapsAvailable is what /api/v1/me tells clients: whether maps are on for the server.

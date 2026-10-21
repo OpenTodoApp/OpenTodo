@@ -377,6 +377,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "AI assistants": [
+    "web/src/app/AgentAccessRow.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "AI assistants (MCP)": [
@@ -811,11 +812,19 @@
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
+  "Allow": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "Allow AI assistants": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Allow AI assistants (MCP endpoint)": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "Allow AI assistants in “{project}”?": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "Allow AI assistants to make changes": [
     "web/src/app/auditFormat.ts"
@@ -859,6 +868,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Allowed": [
+    "web/src/app/AgentAccessRow.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -1236,6 +1246,9 @@
   "Assistants may make changes": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Assistants of every member stop seeing this project, its sub-projects and their tasks.": [
+    "web/src/app/AgentAccessRow.tsx"
+  ],
   "At (minutes count)": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -1262,6 +1275,9 @@
   ],
   "At most {n} options.": [
     "web/src/lib/fields.ts"
+  ],
+  "At {place}": [
+    "web/src/lib/assistant.ts"
   ],
   "Attach": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -1760,6 +1776,9 @@
   ],
   "Changing it signs out your other sessions; this one stays signed in.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Changing this needs a connection.": [
+    "web/src/app/AgentAccessRow.tsx"
   ],
   "Check / uncheck item": [
     "web/src/lib/richtextEditor.ts"
@@ -2691,13 +2710,20 @@
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
   ],
+  "Deadline removed": [
+    "web/src/lib/assistant.ts"
+  ],
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/ScheduleSheet.tsx",
+    "web/src/lib/assistant.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "Deadline {from} → {to}": [
+    "web/src/lib/assistant.ts"
   ],
   "Decide once what each item is and what it needs.": [
     "web/src/lib/method/vocabulary.json"
@@ -3565,6 +3591,10 @@
   ],
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
+  ],
+  "Every member’s assistants can see and, where allowed, change this project again.": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "Every month on day {day}": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -4933,6 +4963,13 @@
   "Keep as sections": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Keep away": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
+  "Keep away from AI assistants": [
+    "web/src/app/AgentAccessRow.tsx"
+  ],
   "Keep events for": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -4972,8 +5009,18 @@
   "Keep the locations you use often (home, the office, the gym) and give tasks a location in one step. A task’s location editor saves any address for reuse.": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "Keep “{project}” away from AI assistants?": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "Keep “{source}” as text": [
     "web/src/app/ParseChips.tsx"
+  ],
+  "Kept away": [
+    "web/src/app/AgentAccessRow.tsx"
+  ],
+  "Kept away, through {parent}": [
+    "web/src/app/AgentAccessRow.tsx"
   ],
   "Kept because they were changed again since: {items}.": [
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -5412,6 +5459,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/facets.ts",
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Location removed": [
+    "web/src/lib/assistant.ts"
   ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
@@ -6237,6 +6287,9 @@
   "No longer a subtask": [
     "web/src/lib/assistant.ts"
   ],
+  "No longer waits": [
+    "web/src/lib/assistant.ts"
+  ],
   "No matches": [
     "web/src/app/menus/stylePickers.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
@@ -6248,6 +6301,10 @@
   ],
   "No member matches.": [
     "web/src/app/AssigneePicker.tsx"
+  ],
+  "No member’s assistant will see this project, its sub-projects or their tasks, and assistants cannot change them. The app, sync and calendar apps are not affected.": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "No microphone was found. Connect one, or keep typing.": [
     "web/src/lib/voice/dictation.ts"
@@ -6366,7 +6423,8 @@
     "web/src/app/ShortcutHelp.tsx"
   ],
   "No start date": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "No status fetched yet.": [
     "web/src/app/BackupsPanel.tsx"
@@ -6539,6 +6597,9 @@
   ],
   "Not synced since this screen opened": [
     "web/src/app/display/DisplayScreen.tsx"
+  ],
+  "Not this evening": [
+    "web/src/lib/assistant.ts"
   ],
   "Not today": [
     "web/src/app/method/DailyCheckToast.tsx"
@@ -7231,6 +7292,9 @@
   "Other edits": [
     "web/src/lib/activity.ts"
   ],
+  "Out of Someday": [
+    "web/src/lib/assistant.ts"
+  ],
   "Outcome": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/ImportScreen.tsx"
@@ -7795,7 +7859,13 @@
   "Project “{name}”": [
     "web/src/app/palette/registry.ts"
   ],
+  "Project “{name}”: Allow AI assistants": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Project “{name}”: Colour {colour}": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Project “{name}”: Keep away from AI assistants": [
     "web/src/app/palette/registry.ts"
   ],
   "Project, label, priority, estimate": [
@@ -9566,6 +9636,7 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/CloseDay.tsx",
+    "web/src/lib/assistant.ts",
     "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/history.ts",
@@ -9739,7 +9810,11 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Starts {date}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/lib/assistant.ts"
+  ],
+  "Starts {from} → {to}": [
+    "web/src/lib/assistant.ts"
   ],
   "Start|timer": [
     "web/src/app/focus/FocusParts.tsx",
@@ -10927,7 +11002,8 @@
     "web/src/app/settingsIndex.ts"
   ],
   "This evening": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "This file could not be opened.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -11110,6 +11186,9 @@
   ],
   "This project is end-to-end encrypted, so it cannot be published: the server cannot read its tasks.": [
     "web/src/app/PublicLinksSection.tsx"
+  ],
+  "This project is kept away from assistants": [
+    "web/src/app/assistant/AssistantPanel.tsx"
   ],
   "This project no longer exists.": [
     "web/src/app/display/DisplayScreen.tsx",
@@ -12161,9 +12240,6 @@
     "web/src/lib/method/vocabulary.json",
     "web/src/lib/shortcuts.ts"
   ],
-  "Waits for nothing": [
-    "web/src/lib/assistant.ts"
-  ],
   "Waits for someone or something else first.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -12719,6 +12795,12 @@
   ],
   "a model id from your OpenAI account": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "a parent project": [
+    "web/src/app/AgentAccessRow.tsx"
+  ],
+  "a place": [
+    "web/src/lib/assistant.ts"
   ],
   "a project": [
     "web/src/lib/assistant.ts"

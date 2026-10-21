@@ -35,9 +35,12 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	var out []map[string]any
 	var refused []map[string]any
 	chosen := map[string]bool{}
+	var blockers []blockerEntry
+	created := map[string]string{}
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id"); err != nil {
+		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id",
+			"deadline", "start", "evening", "blocked_by", "location"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.contentText(c, "title", true, 500)
@@ -138,14 +141,22 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 				patch[k] = v
 			}
 		}
+		if err := snap.planningPatch(p, it, c, patch); err != nil {
+			return Plan{}, err
+		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
 			return Plan{}, err
 		}
+		created[id] = pid
+		blockers = withBlockers(blockers, patch, p, id, pid)
 		cs = append(cs, Change{Entity: "task", EntityID: id, Create: true, Patch: patch, opSeed: seed})
 		out = append(out, map[string]any{"id": id, "status": "created"})
 	}
 	if len(refused) > 0 {
 		return Plan{}, forbidden(refused)
+	}
+	if err := r.checkBlockers(ctx, c, snap, blockers, created); err != nil {
+		return Plan{}, err
 	}
 	if err := r.claimIDs(ctx, c, cs, chosen); err != nil {
 		return Plan{}, err
@@ -172,9 +183,11 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	var missing []string
 	var refused []map[string]any
 	seen := map[string]bool{}
+	var blockers []blockerEntry
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
-		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin"); err != nil {
+		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin",
+			"deadline", "start", "evening", "blocked_by", "location"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -222,6 +235,9 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 		} else if has {
 			patch["origin"] = v
 		}
+		if err := snap.planningPatch(p, it, c, patch); err != nil {
+			return Plan{}, err
+		}
 		if len(patch) == 0 && !it.present("fields") {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
 		}
@@ -249,6 +265,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
+		blockers = withBlockers(blockers, patch, p, id, rawStr(t, "project_id"))
 		role := snap.role(rawStr(t, "project_id"))
 		for f := range patch {
 			if !opsync.CanWrite(role, "task", f) {
@@ -264,6 +281,9 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	}
 	if len(refused) > 0 {
 		return Plan{}, forbidden(refused)
+	}
+	if err := r.checkBlockers(ctx, c, snap, blockers, nil); err != nil {
+		return Plan{}, err
 	}
 	return Plan{Result: result("update_tasks", out, len(cs)), Changes: cs, Count: len(cs)}, nil
 }

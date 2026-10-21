@@ -138,6 +138,9 @@ type Server struct {
 	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).
 	agentTools  *agenttools.Registry
 	agentAccess *agenttools.Access
+	// agentExclusions is the per-project "Keep away from AI assistants" switch
+	// (agent-planning-fields D9).
+	agentExclusions *agenttools.Exclusions
 	// relayStore and relayHub let an encrypted account's opted-in device answer
 	// MCP tool calls (mcp-device-relay); see relay.go.
 	relayStore *relay.Store

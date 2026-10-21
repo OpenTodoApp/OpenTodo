@@ -27,6 +27,7 @@ func (l *stringList) Set(v string) error { *l = append(*l, v); return nil }
 
 type listOptions struct {
 	inbox, today, upcoming, completed, all bool
+	someday, anytime, blocked              bool
 	project                                string
 	limit                                  int
 	// Completion range (OpenSpec change completed-date-filters, design D6).
@@ -40,6 +41,9 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.completed, "completed", false, "completed tasks, most recent first")
 	fs.BoolVar(&o.all, "all", false, "open and completed tasks")
 	fs.StringVar(&o.project, "project", "", "tasks of one project (name or id)")
+	fs.BoolVar(&o.someday, "someday", false, "open tasks parked in Someday")
+	fs.BoolVar(&o.anytime, "anytime", false, "open tasks with no due date, deadline or start")
+	fs.BoolVar(&o.blocked, "blocked", false, "open tasks waiting for an open task")
 	fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
 	fs.StringVar(&o.completedAfter, "completed-after", "", "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 	fs.StringVar(&o.completedBefore, "completed-before", "", "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
@@ -153,6 +157,10 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	if err != nil {
 		return err
 	}
+	planning, err := o.planningView()
+	if err != nil {
+		return err
+	}
 	c, _, err := a.connect(g)
 	if err != nil {
 		return err
@@ -185,6 +193,9 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	} else {
 		tasks = filterTasks(all, projects, view, selected, today)
 	}
+	if planning != "" {
+		tasks = filterPlanning(tasks, all, planning)
+	}
 	if o.limit > 0 && len(tasks) > o.limit {
 		tasks = tasks[:o.limit]
 	}
@@ -204,17 +215,28 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		byID[p.ID] = p
 	}
 	// The origin's id or host as a column, only when a listed task has one (task-origin).
-	showOrigin := false
+	// The deadline as a BY column, likewise only when one is set (agent-planning-fields).
+	showOrigin, showBy := false, false
 	for _, t := range tasks {
 		showOrigin = showOrigin || t.originLabel() != ""
+		showBy = showBy || (t.Deadline != nil && *t.Deadline != "")
 	}
-	headers := []string{"ID", "P", "DUE", "PROJECT", "TITLE"}
+	headers := []string{"ID", "P", "DUE"}
+	if showBy {
+		headers = append(headers, "BY")
+	}
+	headers = append(headers, "PROJECT")
 	if showOrigin {
-		headers = []string{"ID", "P", "DUE", "PROJECT", "ORIGIN", "TITLE"}
+		headers = append(headers, "ORIGIN")
 	}
+	headers = append(headers, "TITLE")
+	blocked := blockedRule(all)
 	tbl := newTable(headers...)
 	for _, t := range tasks {
 		dueText, overdue := describeDue(t.Due, today)
+		if sfx := planningSuffix(t, today, t.CompletedAt == nil && blocked(t)); sfx != "" {
+			dueText = strings.TrimSpace(dueText + " " + sfx)
+		}
 		dueCell := plain(dueText)
 		if overdue {
 			dueCell.style = styleRed
@@ -235,7 +257,11 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		if t.CompletedAt != nil {
 			title = "[done] " + title
 		}
-		cells := []cell{{text: shortID(t.ID), style: styleCyan}, pr, dueCell, plain(projName)}
+		cells := []cell{{text: shortID(t.ID), style: styleCyan}, pr, dueCell}
+		if showBy {
+			cells = append(cells, deadlineCell(t, today))
+		}
+		cells = append(cells, plain(projName))
 		if showOrigin {
 			cells = append(cells, plain(t.originLabel()))
 		}
@@ -243,95 +269,6 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil
-}
-
-// filterTasks applies one view the way the web app does. Tasks of archived or
-// missing projects stay out of cross-project views.
-func filterTasks(all []task, projects []project, view string, selected *project, today string) []task {
-	visible := map[string]bool{}
-	for _, p := range projects {
-		visible[p.ID] = !p.Archived && p.DeletedAt == nil
-	}
-	out := make([]task, 0, len(all))
-	inInbox := inboxRule(all)
-	for _, t := range all {
-		if t.DeletedAt != nil {
-			continue
-		}
-		if view == "project" {
-			if t.ProjectID == nil || *t.ProjectID != selected.ID || t.CompletedAt != nil {
-				continue
-			}
-			out = append(out, t)
-			continue
-		}
-		if t.ProjectID != nil && !visible[*t.ProjectID] {
-			continue
-		}
-		open := t.CompletedAt == nil
-		switch view {
-		case "inbox":
-			if !inInbox(t) {
-				continue
-			}
-		case "today":
-			if !open || t.Due == nil || t.Due.Date > today {
-				continue
-			}
-		case "upcoming":
-			if !open || t.Due == nil || t.Due.Date <= today {
-				continue
-			}
-		case "completed":
-			if open {
-				continue
-			}
-		case "all":
-		default: // open
-			if !open {
-				continue
-			}
-		}
-		out = append(out, t)
-	}
-	switch view {
-	case "inbox", "project":
-		sort.SliceStable(out, func(i, j int) bool { return byPosition(out[i], out[j]) })
-	case "completed":
-		sort.SliceStable(out, func(i, j int) bool { return *out[i].CompletedAt > *out[j].CompletedAt })
-	default:
-		sort.SliceStable(out, func(i, j int) bool { return byDueThenPriority(out[i], out[j]) })
-	}
-	return out
-}
-
-// completedBetween lists the tasks completed in [after, before) (0 = open end),
-// most recent first: of the selected project, or of every visible one.
-func completedBetween(all []task, projects []project, selected *project, after, before int64) []task {
-	visible := map[string]bool{}
-	for _, p := range projects {
-		visible[p.ID] = !p.Archived && p.DeletedAt == nil
-	}
-	out := make([]task, 0)
-	for _, t := range all {
-		if t.DeletedAt != nil || t.CompletedAt == nil {
-			continue
-		}
-		at := int64(*t.CompletedAt)
-		if (after != 0 && at < after) || (before != 0 && at >= before) {
-			continue
-		}
-		if selected != nil {
-			if t.ProjectID == nil || *t.ProjectID != selected.ID {
-				continue
-			}
-		} else if t.ProjectID != nil && !visible[*t.ProjectID] {
-			continue
-		}
-		out = append(out, t)
-	}
-	sort.SliceStable(out, func(i, j int) bool { return *out[i].CompletedAt > *out[j].CompletedAt })
-	return out
 }
 
 func byPosition(a, b task) bool {
@@ -470,6 +407,7 @@ type taskFlags struct {
 	repeat                               string
 	// originURL is --origin-url (task-origin): the page or issue the task comes from.
 	originURL string
+	plan      planningFlags
 	// add only (quick-add-recurrence D6)
 	remind  stringList
 	natural bool
@@ -488,6 +426,7 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 	fs.StringVar(&f.note, "note", "", "description")
 	fs.StringVar(&f.repeat, "repeat", "", "recurrence rule, e.g. \"every monday\" (edit: `none` clears)")
 	fs.StringVar(&f.originURL, "origin-url", "", "http(s) URL the task comes from; GitHub, GitLab, Jira and Linear issues are recognised (edit: `none` clears)")
+	f.plan.bind(fs)
 	if !edit {
 		fs.Var(&f.remind, "remind", "reminder: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)")
 		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
@@ -588,6 +527,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err := f.validateLocal(set); err != nil {
 		return err
 	}
+	if err := f.plan.validateLocal(set, a.Now(), false); err != nil {
+		return err
+	}
 	headers, err := idempotencyHeaders(set["idempotency-key"], *key)
 	if err != nil {
 		return err
@@ -658,6 +600,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 		body["labels"] = ids
+	}
+	if err := f.plan.fill(ctx, a, c, set, body, func() ([]task, error) { return c.tasks(ctx) }); err != nil {
+		return err
 	}
 	raw, _, err := c.do(ctx, "POST", "/tasks", body, headers)
 	if err != nil {
@@ -745,6 +690,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err := f.validateLocal(set); err != nil {
 		return err
 	}
+	if err := f.plan.validateLocal(set, a.Now(), true); err != nil {
+		return err
+	}
 	patch := map[string]any{}
 	if set["title"] {
 		if strings.TrimSpace(f.title) == "" {
@@ -775,8 +723,8 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 	}
-	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url")
+	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !f.plan.any(set) {
+		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --blocked-by, --location")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -811,6 +759,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 		patch["labels"] = ids
+	}
+	if err := f.plan.fill(ctx, a, c, set, patch, func() ([]task, error) { return all, nil }); err != nil {
+		return err
 	}
 	switch {
 	case clearDue:
@@ -855,7 +806,11 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	var updated task
 	_ = json.Unmarshal(raw, &updated)
-	fmt.Fprintf(a.Stdout, "updated  %s  %s\n", shortID(updated.ID), updated.Title)
+	verb := "updated"
+	if patch["start"] == "someday" {
+		verb = "parked"
+	}
+	fmt.Fprintf(a.Stdout, "%s  %s  %s\n", verb, shortID(updated.ID), updated.Title)
 	return nil
 }
 
