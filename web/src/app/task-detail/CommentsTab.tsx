@@ -19,7 +19,7 @@ import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
-import { Composer } from './Composer'
+import { Composer, readDraft } from './Composer'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
 
@@ -59,10 +59,12 @@ export interface CommentsViewProps {
   now?: number
   /** Where the composer renders when pinned to the panel's bottom (ux-overhaul); inline when absent. */
   composerHost?: HTMLElement | null
+  /** Changes when Shift+C asks for the composer: it expands and takes focus. */
+  expand?: number
 }
 
 export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewProps>(function CommentsView(
-  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false, composerHost }, composerRef,
+  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0 }, composerRef,
 ) {
   const coarse = useCoarsePointer()
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -94,8 +96,17 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
     posted.current = false
     document.getElementById(`comment-${newest.id}`)?.scrollIntoView?.({ block: 'nearest' })
   }, [threads, me])
+  // The pinned composer rests as one line (web-app "Task panel comment composer"): it
+  // expands on click or focus, with a draft, with a reply target or on Shift+C, and
+  // collapses again when left empty.
+  const [open, setOpen] = useState(() => !!readDraft(taskId))
+  useEffect(() => { setOpen(!!readDraft(taskId)) }, [taskId])
+  const focusComposer = () => requestAnimationFrame(() => (typeof composerRef === 'object' ? composerRef?.current : null)?.focus())
+  useEffect(() => { if (expand) { setOpen(true); focusComposer() } }, [expand]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the request only
+  const resting = !!composerHost && !open && !replyTarget
 
   const startReply = (id: string) => {
+    setOpen(true)
     setReplyTo(id)
     requestAnimationFrame(() => {
       const el = typeof composerRef === 'object' ? composerRef?.current : null
@@ -162,8 +173,19 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
 
   // The composer: pinned to the panel's bottom when a host is given, so it is in
   // view without scrolling past the thread.
-  const composer = me ? (
-    <div className={composerHost ? 'space-y-1.5' : 'space-y-1.5 border-t border-default pt-3'} data-composer-block>
+  const composer = me && resting ? (
+    <button type="button" className="ui-input flex w-full items-center text-left text-muted" data-composer-resting
+      onClick={() => { setOpen(true); focusComposer() }} onFocus={() => { setOpen(true); focusComposer() }}>
+      {t('Write a comment…')}
+    </button>
+  ) : me ? (
+    <div className={composerHost ? 'space-y-1.5' : 'space-y-1.5 border-t border-default pt-3'} data-composer-block
+      onBlur={(e) => {
+        // Leaving an empty composer (no draft, no reply) puts it back to rest.
+        const next = e.relatedTarget as Node | null
+        if (!composerHost || (next && e.currentTarget.contains(next)) || replyTarget) return
+        if (!readDraft(taskId).trim()) setOpen(false)
+      }}>
       {replyTarget && (
         <div className="flex items-center gap-1 text-meta text-muted" data-reply-target>
           <span className="min-w-0 truncate">{t.rich('Replying to <strong>{name}</strong>', { name: name(replyTarget.author_id), strong: (chunks) => <strong className="font-medium text-default">{chunks}</strong> })}</span>
@@ -215,10 +237,11 @@ export interface CommentsTabProps {
   userId?: string
   focusComment?: string | null
   composerHost?: HTMLElement | null
+  expand?: number
 }
 
 /** Container: reads comments, members and the signed-in user from local storage. */
-export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost }, composerRef) {
+export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
@@ -245,7 +268,7 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   return (
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}
       role={roleOf(task.project_id, memberships)} members={mentionableMembers(task.project_id, memberships)} name={name} error={error}
-      focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost}
+      focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost} expand={expand}
       onCreate={(body, mentions, parentId, files) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}
       onDelete={(id) => deleteComment(id)} />

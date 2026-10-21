@@ -23,7 +23,7 @@ import { t } from '../../lib/i18n'
  * Found by a data attribute, not the translated label, so it works in every language.
  */
 export function focusTitle(id: string, tries = 20): void {
-  const el = document.querySelector<HTMLInputElement>(`[data-detail-for="${CSS.escape(id)}"] input[data-task-title]`)
+  const el = document.querySelector<HTMLTextAreaElement>(`[data-detail-for="${CSS.escape(id)}"] [data-task-title]`)
   if (el && !el.disabled) {
     el.focus()
     const end = el.value.length

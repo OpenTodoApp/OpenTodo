@@ -208,7 +208,7 @@ function screens(ids) {
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).
     { name: 'activity-redirect', path: '/activity', ready: heading('Updates') },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'when-popover', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
     // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
@@ -294,26 +294,30 @@ async function tickTwo(p) {
   await p.locator('[data-selection-bar]').waitFor()
 }
 
-/** Opens a task panel property's editor: its chip when shown, else Add › `label`. Returns the property's element. */
+/**
+ * Opens a task panel property's editor (task-panel-facets): its part on a facet line
+ * when shown, else Add › `label`. Returns the editor's popover and, when the part was
+ * there, the part as its trigger.
+ */
 async function openProperty(p, field, label) {
   const panel = p.locator('aside[data-detail-for]')
   await panel.waitFor()
-  const row = panel.locator(`[data-property="${field}"]`)
-  const chip = row.locator('button[aria-labelledby]').first()
-  // The chips settle after the panel's live queries (sections, parent) resolve.
-  await panel.locator('[data-property-chips]').waitFor()
-  const shown = await chip.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
+  // The lines settle after the panel's live queries (sections, parent) resolve.
+  await panel.locator('[data-facets]').waitFor()
+  const part = panel.locator(`[data-part="${field}"]`).first()
+  const shown = await part.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
   if (shown) {
-    await chip.scrollIntoViewIfNeeded()
-    await chip.click()
+    await part.scrollIntoViewIfNeeded()
+    await part.click()
   } else {
     const add = panel.getByRole('button', { name: 'Add a property' })
     await add.scrollIntoViewIfNeeded()
     await add.click()
     await p.getByRole('menuitem', { name: label }).click()
   }
-  await row.locator('[data-property-editor]').waitFor()
-  return row
+  const editor = p.locator('[data-overlay]').filter({ has: p.locator('[data-facet-editor]') }).last()
+  await editor.waitFor()
+  return { editor, trigger: shown ? part : undefined }
 }
 
 const OVERLAYS = {
@@ -445,15 +449,19 @@ const OVERLAYS = {
   // Blocked by (task-dependencies, ux-overhaul chips): the chip when set, else Add › Blocked by.
   async 'blocked-by-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().getByRole('button').nth(1).click()
-    const row = await openProperty(p, 'blocked-by', 'Blocked by')
-    await row.getByRole('combobox').first().waitFor()
-    return { overlay: row, kind: 'inline', after: async () => p.keyboard.press('Escape') }
+    const { editor, trigger } = await openProperty(p, 'blocked-by', 'Blocked by')
+    await editor.getByRole('combobox').first().waitFor()
+    return { overlay: editor, trigger, kind: 'popover' }
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
     const comments = p.locator('aside[data-detail-for]').getByRole('tab', { name: /^Comments/ })
     await comments.evaluate((el) => el.scrollIntoView({ block: 'start' }))
     await comments.click()
+    // The composer rests as one line until clicked (task-panel-facets D4).
+    const resting = p.locator('aside[data-detail-for] [data-composer-resting]')
+    // Focus, not click: the reminder toast can cover the bottom of the panel on a phone.
+    if (await resting.count()) await resting.focus()
     const box = p.locator('aside[data-detail-for]').getByLabel('Write a comment')
     // The composer sits at the end of the Comments tab, where the reminder toast can
     // cover it on a phone; focus it as a keyboard user would.
@@ -461,17 +469,25 @@ const OVERLAYS = {
     await box.pressSequentially('@B')
     return { overlay: p.getByRole('listbox', { name: 'Mention a member' }), kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
   },
-  // Task panel (ux-overhaul "Task panel layout"): a property's picker opens inline under its
-  // chip; a property without a value has no chip yet and is reached through Add.
+  // Task panel (task-panel-facets): a property's picker opens in a popover anchored to its
+  // part; a property without a value has no part yet and is reached through Add.
   ...Object.fromEntries([['project', 'Project'], ['parent', 'Parent task'], ['section', 'Section']].map(([field, label]) => [`${field}-picker`, async (p) => {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
-    const row = await openProperty(p, field, label)
-    await row.getByRole('combobox').first().waitFor()
-    return { overlay: row, kind: 'inline', after: async () => p.keyboard.press('Escape') }
+    const { editor, trigger } = await openProperty(p, field, label)
+    await editor.getByRole('combobox').first().waitFor()
+    return { overlay: editor, trigger, kind: 'popover' }
   }])),
+  // The When popover, one segment at a time (task-panel-facets D3).
+  async 'when-popover'(p) {
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    const { editor, trigger } = await openProperty(p, 'due', 'Do on')
+    return { overlay: editor, trigger, kind: 'popover' }
+  },
   async 'zone-control'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
-    const trigger = p.locator('aside[data-detail-for]').getByRole('button', { name: /^Time zone:/ }).first()
+    // The zone lives inside the Do on segment of the When popover (task-panel-facets D3).
+    await openProperty(p, 'due', 'Do on')
+    const trigger = p.locator('[data-facet-editor]').getByRole('button', { name: /^Time zone:/ }).first()
     await trigger.scrollIntoViewIfNeeded()
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: 'Time zone' }), trigger, kind: 'popover' }

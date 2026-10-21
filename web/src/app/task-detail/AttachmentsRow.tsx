@@ -13,6 +13,7 @@ import type { Attachment, ProjectRole } from '../../lib/types'
 import { Button, ConfirmDialog, Icon, IconButton, MenuItem, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
 import { showBulkToast } from '../bulk/toastStore'
+import { onAttachRequest } from './attachRequest'
 import { t, msg, translatedMap } from '../../lib/i18n'
 
 /** "Pasted image 2026-10-15 14.03.27.png": the name a pasted image gets. */
@@ -169,6 +170,13 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     }
   }
 
+  // Attach from the Add menu or the header menu (task-panel-facets D4): the file chooser of this task.
+  useEffect(() => onAttachRequest((id, kind) => {
+    if (id !== taskId || !canAdd) return
+    if (kind === 'link') setLinking(true)
+    else picker.current?.click()
+  }), [taskId, canAdd])
+
   if (demo && rows.length === 0) return null
 
   // At rest the row is one Attach action; the heading and list appear with the
@@ -201,7 +209,9 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
         <div className="flex flex-wrap items-center gap-2">
           <input ref={picker} type="file" multiple hidden aria-label={t('Choose files to attach')} data-testid="attachment-picker"
             onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ''; void add(files) }} />
-          {!linking && (
+          {/* With no file yet there is no Attach button at rest (attachments "At rest"): Attach is in the
+              Add menu and the header menu, which ask through attachRequest; paste and drop work too. */}
+          {!linking && rows.length > 0 && (
             <Menu kind="menu" label={t('Attach')} align="start" width="sm:w-64" trigger={<span className="inline-flex items-center gap-1.5"><Icon name="paperclip" size="sm" />{t('Attach')}</span>}
               triggerClassName="ui-btn ui-btn--ghost ui-btn--sm -mx-2 text-muted">
               <MenuItem label={t('Choose files…')} icon="upload" description={t('Or paste or drop files on the task')} onSelect={() => picker.current?.click()} />

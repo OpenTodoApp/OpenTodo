@@ -39,7 +39,7 @@ describe('panel header', () => {
     r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()
     await waitFor(() => !!panel())
     const header = panel()!.querySelector('[data-panel-header]')!
-    const title = header.querySelector<HTMLInputElement>('input[aria-label="Title"]')!
+    const title = header.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!
     expect(title.value).toBe('Paint the fence')
     expect(header.querySelector('[data-panel-complete]')).toBeTruthy()
     // The header is not inside the panel's scroller.
@@ -80,7 +80,7 @@ describe('panel header', () => {
     navigate({ view: 'task', id })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector('aside[data-detail-variant="page"]'))
-    expect(document.querySelector<HTMLInputElement>('input[aria-label="Title"]')!.value).toBe('Call the bank')
+    expect(document.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!.value).toBe('Call the bank')
     await r.unmount()
   })
 })

@@ -52,7 +52,7 @@ The comment composer SHALL be pinned to the bottom of the panel while Comments i
 ## ADDED Requirements
 
 ### Requirement: Task panel facets
-The panel SHALL group the task's properties into four facet lines, each with a leading icon and parts separated by a middle dot: Where (project › section, the parent task), When (do on, repeat, deadline, start, evening, reminders, zone), How (priority, estimate, labels) and Who (assignee, blocked by, blocks). Where, When and How SHALL always be shown; Who SHALL be shown when any of its parts has a value. A part SHALL read with the words the list row uses for the same fact.
+The panel SHALL group the task's properties into four facet lines, each with a leading icon and parts separated by a middle dot: Where (project › section, the parent task, the origin), When (do on, repeat, deadline, start, evening, reminders, zone), How (priority, estimate, labels) and Who (assignee, blocked by, blocks). Where, When and How SHALL always be shown; Who SHALL be shown when any of its parts has a value. A part SHALL read with the words the list row uses for the same fact.
 
 #### Scenario: Full task reads as four lines
 - **WHEN** the user opens a task due tomorrow at 09:00 that repeats every 3 months, has a deadline in 9 days, a start two days ago, two reminders, priority 2, a 2 h estimate, three labels, is assigned to the user and waits for "Collect the numbers", in "Website launch › Doing"
@@ -65,6 +65,10 @@ The panel SHALL group the task's properties into four facet lines, each with a l
 #### Scenario: Same words as the row
 - **WHEN** a task is due today, repeats every day and is marked for the evening
 - **THEN** its When line starts "Today · evening · every day", in the date tone the row uses
+
+#### Scenario: Origin opens its source
+- **WHEN** the user presses Enter on the origin part of a task captured from `https://example.org/post`
+- **THEN** the page opens in a new tab, no editor opens, the panel stays as it was, and Remove origin in the panel's header menu clears the origin as one offline-capable write
 
 #### Scenario: Viewer reads the lines
 - **WHEN** a viewer of a shared project opens one of its tasks

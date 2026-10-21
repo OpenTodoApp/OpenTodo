@@ -1,6 +1,6 @@
 // The data and actions behind the task panel's property chips (OpenSpec change
 // web-component-structure): live reads come from lib/liveData, every write is the
-// same op the chips wrote before. Properties renders; this hook decides.
+// same op the chips wrote before. Facets renders; this hook decides.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { localDueOf, zoneHint } from '../../lib/dates'
 import { blockerCandidates, dependents, setBlockedBy } from '../../lib/dependencies'
@@ -15,7 +15,7 @@ import { isSoloScope, memberName } from '../../lib/sharing'
 import type { Task } from '../../lib/types'
 import { moveWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
-import type { PropertiesProps } from './Properties'
+import type { PropertiesProps } from './Facets'
 import { type Optional, usePropertyEditing } from './usePropertyEditing'
 
 /** An error message from a failed write, shown beside its chip. */

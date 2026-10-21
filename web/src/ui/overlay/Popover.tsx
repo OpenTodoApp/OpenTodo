@@ -29,6 +29,13 @@ export interface PopoverProps {
   children: ReactNode
 }
 
+/** Whether `node` sits in an overlay root mounted after `own` (a nested picker), so above it. */
+export function isAbove(node: Node, own: HTMLElement): boolean {
+  const root = (node instanceof Element ? node : node.parentElement)?.closest('[data-overlay-root]')
+  if (!root || root === own || root.contains(own) || own.contains(root)) return false
+  return !!(own.compareDocumentPosition(root) & Node.DOCUMENT_POSITION_FOLLOWING)
+}
+
 /**
  * Menus, pickers and small panels (OpenSpec change `mobile-layout`): below 640 px a
  * bottom sheet across the screen with a title and a close button; from 640 px up a
@@ -67,10 +74,12 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     window.addEventListener('scroll', onMove, true)
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onMove)
     if (ro && panel.current) ro.observe(panel.current)
-    // Tap outside closes; the trigger toggles on its own.
+    // Tap outside closes; the trigger toggles on its own. A tap inside an overlay opened
+    // after this one (a calendar or zone picker nested in it) is not outside either.
     const onDown = (e: PointerEvent) => {
       const item = e.target as Node
       if (panel.current?.contains(item) || anchor.current?.contains(item)) return
+      if (panel.current && isAbove(item, panel.current)) return
       onCloseRef.current()
     }
     document.addEventListener('pointerdown', onDown, true)

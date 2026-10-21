@@ -6,17 +6,15 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "(archived)": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/lib/facets.ts"
   ],
   "(changed since proposed)": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "(completed)": [
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "(deleted)": [
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "(does not match the field type)": [
@@ -492,7 +490,7 @@
   "Add": [
     "web/src/app/PlanView.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Add a field": [
     "web/src/app/FieldsDialog.tsx"
@@ -501,7 +499,8 @@
     "web/src/app/LinkDialog.tsx"
   ],
   "Add a link…": [
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/app/task-detail/AttachmentsRow.tsx",
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Add a next action": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -516,7 +515,7 @@
     "web/src/app/ProjectNote.tsx"
   ],
   "Add a property": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Add a someday task…": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -878,7 +877,6 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -1094,7 +1092,7 @@
   ],
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Assistant": [
     "web/src/app/SidebarFooter.tsx",
@@ -1143,7 +1141,8 @@
     "web/src/lib/fields.ts"
   ],
   "Attach": [
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/app/task-detail/AttachmentsRow.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Attach files": [
     "web/src/app/task-detail/Composer.tsx"
@@ -1300,7 +1299,8 @@
     "web/src/lib/listGroups.ts"
   ],
   "Blocked by": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Blocked by another task": [
     "web/src/lib/method/groups.ts"
@@ -1312,7 +1312,7 @@
     "web/src/lib/filter/evaluate.ts"
   ],
   "Blocks": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Blue": [
     "web/src/lib/colourNames.ts"
@@ -1702,7 +1702,8 @@
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Choose files…": [
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/app/task-detail/AttachmentsRow.tsx",
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Choose light or dark": [
     "web/src/app/FirstRun.tsx"
@@ -1727,6 +1728,7 @@
   ],
   "Clear": [
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
   "Clear conversations": [
@@ -1763,9 +1765,6 @@
   ],
   "Clear the start": [
     "web/src/app/RuleEditor.tsx"
-  ],
-  "Clear {lowerCase}": [
-    "web/src/app/task-detail/PropertyChip.tsx"
   ],
   "Cleared.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -2043,9 +2042,6 @@
   ],
   "Completed per weekday": [
     "web/src/app/review/StatsView.tsx"
-  ],
-  "Completed subtasks": [
-    "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Completed {instant}": [
     "web/src/app/task-detail/ActivityTab.tsx"
@@ -2506,8 +2502,9 @@
   ],
   "Deadline": [
     "web/src/app/QuickAdd.tsx",
-    "web/src/app/task-detail/Properties.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
@@ -2822,7 +2819,6 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Do on": [
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Documentation": [
@@ -2849,6 +2845,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/ReviewView.tsx",
+    "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -3260,7 +3257,8 @@
   "Estimate": [
     "web/src/app/EstimateField.tsx",
     "web/src/app/QuickAdd.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Estimate presets": [
     "web/src/app/EstimateField.tsx"
@@ -3288,7 +3286,6 @@
   ],
   "Evening": [
     "web/src/app/QuickAdd.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Event": [
@@ -3651,14 +3648,14 @@
   ],
   "Find a section…": [
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Find a task this one waits for…": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Find a task…": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Find an option…": [
     "web/src/app/task-detail/FieldsGroup.tsx"
@@ -3671,7 +3668,7 @@
     "web/src/app/palette/registry.ts"
   ],
   "Find or create a project…": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Finish monthly look": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -4129,6 +4126,9 @@
   "Hourly": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "How": [
+    "web/src/app/task-detail/Facets.tsx"
+  ],
   "How dates and times look and where weeks start, on all your devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -4385,8 +4385,8 @@
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/listGroups.ts",
@@ -4693,8 +4693,9 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
-    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/facets.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Labels (does not move on, so you can add a label and then decide)": [
@@ -5686,6 +5687,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/lib/facets.ts",
     "web/src/lib/views.ts"
   ],
   "No deliveries yet.": [
@@ -5784,14 +5786,14 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "No open task can block this one.": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "No open task carries this label.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "No open task matches.": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "No open tasks in this project.": [
     "web/src/app/TimelineView.tsx"
@@ -5810,7 +5812,7 @@
   ],
   "No parent": [
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/Properties.tsx",
+    "web/src/lib/facets.ts",
     "web/src/lib/pickerSources.ts"
   ],
   "No passkeys yet": [
@@ -5849,9 +5851,9 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-list/ListGroups.tsx",
     "web/src/lib/assistant.ts",
+    "web/src/lib/facets.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts"
   ],
@@ -6003,7 +6005,8 @@
     "web/src/lib/push.ts"
   ],
   "Not scheduled": [
-    "web/src/app/RemindersField.tsx"
+    "web/src/app/RemindersField.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Not sent: the account uses end-to-end encryption": [
     "web/src/app/DigestCard.tsx"
@@ -6656,16 +6659,15 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "Or paste or drop files on the task": [
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/app/task-detail/AttachmentsRow.tsx",
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Orange": [
     "web/src/lib/colourNames.ts"
   ],
   "Organize": [
     "web/src/app/LabelsView.tsx"
-  ],
-  "Origin": [
-    "web/src/app/task-detail/Properties.tsx"
   ],
   "Origin values": [
     "web/src/app/FilterView.tsx"
@@ -6759,7 +6761,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "Parent task": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Park in Someday, then the next task": [
     "web/src/lib/shortcuts.ts"
@@ -7094,7 +7096,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Priority P{from} → P{to}": [
     "web/src/lib/assistant.ts"
@@ -7161,7 +7163,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
-    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/stats.ts"
@@ -7260,7 +7262,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "Properties": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Proposal discarded.": [
     "web/src/app/assistant/useAssistantConversation.ts"
@@ -7512,7 +7514,8 @@
     "web/public/push-sw.js",
     "web/src/app/QuickAdd.tsx",
     "web/src/app/ReminderToasts.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Reminder date": [
     "web/src/app/RemindersField.tsx"
@@ -7531,7 +7534,6 @@
   ],
   "Reminders": [
     "web/src/app/RemindersField.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Reminders delivered to this device, and a test": [
@@ -7557,6 +7559,9 @@
   ],
   "Remove my key": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Remove origin": [
+    "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Remove panel": [
     "web/src/app/DashboardView.tsx"
@@ -7667,8 +7672,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Repeat": [
-    "web/src/app/task-detail/Properties.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Repeat a task": [
     "web/src/app/help/HelpView.tsx"
@@ -8228,7 +8234,7 @@
   ],
   "Section": [
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Section menu for {title}": [
     "web/src/app/Sections.tsx"
@@ -8540,6 +8546,9 @@
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Show all": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
   "Show archived projects": [
     "web/src/app/ProjectsSettings.tsx"
   ],
@@ -8547,7 +8556,7 @@
     "web/src/app/ProjectHeader.tsx"
   ],
   "Show in Assigned to me": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Show it again": [
     "web/src/app/AboutSection.tsx"
@@ -8883,8 +8892,8 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/facets.ts",
     "web/src/lib/history.ts",
     "web/src/lib/review.ts",
     "web/src/lib/shortcuts.ts"
@@ -8973,9 +8982,10 @@
   "Start": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/method/DailyCheckToast.tsx",
-    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/facets.ts"
   ],
   "Start a new sandbox": [
     "web/src/app/App.tsx"
@@ -9054,8 +9064,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Starts {date}": [
-    "web/src/app/TaskRow.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/TaskRow.tsx"
   ],
   "Start|timer": [
     "web/src/app/focus/FocusParts.tsx",
@@ -9149,7 +9158,7 @@
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Subtasks follow their parent task’s section.": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Succeeded": [
     "web/src/app/BackupsPanel.tsx"
@@ -9315,7 +9324,7 @@
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Tasks waiting for this one": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Tasks without a project go to": [
     "web/src/app/ImportScreen.tsx"
@@ -10017,7 +10026,7 @@
   "This Evening": [
     "web/src/app/QuickAdd.tsx",
     "web/src/app/display/DisplayScreen.tsx",
-    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/activity.ts",
     "web/src/lib/listGroups.ts"
@@ -10922,7 +10931,7 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/lib/facets.ts"
   ],
   "Under 30 min": [
     "web/src/lib/filters.ts"
@@ -11078,11 +11087,12 @@
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/ProjectWalk.tsx",
-    "web/src/app/task-detail/Properties.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
+    "web/src/lib/facets.ts",
     "web/src/lib/localData.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/subtasks.ts",
@@ -11096,7 +11106,7 @@
     "web/src/app/BoardView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Up to 5. Nothing is ever written back to GitHub or GitLab.": [
     "web/src/lib/settingsCopy.ts"
@@ -11436,13 +11446,17 @@
   ],
   "When": [
     "web/src/app/AuditPanel.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "When off, nobody can add files or links; existing ones stay and can still be opened.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "When the Day and Week grid starts and ends, and your day length": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Where": [
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Where the Week view and calendars start": [
     "web/src/app/settingsIndex.ts"
@@ -11461,6 +11475,9 @@
   ],
   "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Who": [
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "Who must use two-factor authentication. API tokens are never affected.": [
     "web/src/lib/settingsCopy.ts"
@@ -11514,6 +11531,9 @@
   "Write a comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "Write a comment…": [
+    "web/src/app/task-detail/CommentsTab.tsx"
+  ],
   "Write a comment… (markdown)": [
     "web/src/app/task-detail/Composer.tsx"
   ],
@@ -11544,7 +11564,6 @@
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/ListGroups.tsx"
@@ -11952,6 +11971,9 @@
   "before": [
     "web/src/app/RemindersField.tsx"
   ],
+  "blocks {n}": [
+    "web/src/lib/facets.ts"
+  ],
   "blue": [
     "web/src/lib/colourNames.ts"
   ],
@@ -12021,6 +12043,12 @@
   ],
   "deactivated": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "deadline today": [
+    "web/src/lib/facets.ts"
+  ],
+  "deadline {date}, {count}": [
+    "web/src/lib/facets.ts"
   ],
   "deleted": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -12150,7 +12178,7 @@
   ],
   "evening": [
     "web/src/app/TaskRow.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/lib/facets.ts"
   ],
   "expected \"completion\" after \"after\"": [
     "web/src/lib/recurrence.ts"
@@ -12212,6 +12240,9 @@
   ],
   "from your language": [
     "web/src/app/QuickAddSettings.tsx"
+  ],
+  "from {date}": [
+    "web/src/lib/facets.ts"
   ],
   "full access": [
     "web/src/lib/assistants.ts"
@@ -12570,9 +12601,6 @@
   "planned": [
     "web/src/app/review/CloseDay.tsx"
   ],
-  "planned after it": [
-    "web/src/app/task-detail/Properties.tsx"
-  ],
   "possible cloned passkey": [
     "web/src/app/auditFormat.ts"
   ],
@@ -12659,8 +12687,7 @@
     "web/src/lib/activityRuns.ts"
   ],
   "repeats": [
-    "web/src/app/TaskRow.tsx",
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/TaskRow.tsx"
   ],
   "reprioritised|version": [
     "web/src/lib/historyVersions.ts"
@@ -12714,6 +12741,9 @@
   ],
   "signing secret": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "since {date}": [
+    "web/src/lib/facets.ts"
   ],
   "single sign-on": [
     "web/src/app/settingsSections.ts"
@@ -12845,7 +12875,6 @@
   ],
   "today": [
     "web/src/app/method/LoopHome.tsx",
-    "web/src/app/task-detail/Properties.tsx",
     "web/src/lib/review.ts"
   ],
   "token": [
@@ -12868,6 +12897,9 @@
   ],
   "unchanged": [
     "web/src/lib/assistant.ts"
+  ],
+  "under {title}": [
+    "web/src/lib/facets.ts"
   ],
   "unexpected \"{word}\"": [
     "web/src/lib/recurrence.ts"
@@ -12941,6 +12973,12 @@
   ],
   "waiting for": [
     "web/src/lib/history.ts"
+  ],
+  "waits for {n, plural, one {# task} other {# tasks}}": [
+    "web/src/lib/facets.ts"
+  ],
+  "waits for {title}": [
+    "web/src/lib/facets.ts"
   ],
   "webhooks": [
     "web/src/app/settingsSections.ts"
@@ -13182,10 +13220,11 @@
     "web/src/app/TrashView.tsx"
   ],
   "{n, plural, one {# day over} other {# days over}}": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# day} other {# days}}": [
-    "web/src/app/PublicLinksSection.tsx"
+    "web/src/app/PublicLinksSection.tsx",
+    "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# done} other {# done}}": [
     "web/src/lib/listGroups.ts"
@@ -13378,7 +13417,7 @@
     "web/src/lib/bulk.ts"
   ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/app/task-detail/Facets.tsx"
   ],
   "{n, plural, one {Pasted text, # line: used as material, not as instructions.} other {Pasted text, # lines: used as material, not as instructions.}}": [
     "web/src/app/assistant/AssistantComposer.tsx"
@@ -13415,9 +13454,6 @@
   ],
   "{n, plural, one {day} other {days}}": [
     "web/src/app/method/LoopHome.tsx"
-  ],
-  "{n, plural, one {in # day} other {in # days}}": [
-    "web/src/app/task-detail/Properties.tsx"
   ],
   "{n, plural, one {label} other {labels}} {labels}": [
     "web/src/app/IssuesPanel.tsx"
@@ -13597,7 +13633,7 @@
     "web/src/app/Shell.tsx"
   ],
   "{reminders, plural, one {# reminder} other {# reminders}}": [
-    "web/src/app/task-detail/Properties.tsx"
+    "web/src/lib/facets.ts"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"

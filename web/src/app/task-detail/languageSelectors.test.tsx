@@ -27,7 +27,7 @@ describe('language-independent lookups (UI-5)', () => {
     applyCatalog('de', 'de', { 'Add a property': 'Eine "Eigenschaft" hinzufügen', Estimate: 'Schätzung' })
     const id = await createTask({ title: 'Leer' })
     const { row, unmount, container } = await open(id)
-    const addButton = () => container.querySelector('[data-property-chips] button[aria-haspopup="menu"][aria-label^="Eine"]') as HTMLButtonElement
+    const addButton = () => container.querySelector('[data-add-property] button[aria-haspopup="menu"][aria-label^="Eine"]') as HTMLButtonElement
     await click(addButton())
     await flush(40)
     await click([...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find((i) => i.textContent?.includes('Schätzung'))!)
