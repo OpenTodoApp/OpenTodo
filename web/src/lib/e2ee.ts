@@ -11,11 +11,12 @@ import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import {
   checkRecordParams, createKeyRecord, decryptValue, KeyRecordParamsError, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
-  type KeyRecord,
+  b64url, fromB64url, type KeyRecord,
 } from './crypto'
 import { db, getMeta, setMeta } from './db'
 import type { Entity, EncryptionStatus } from './types'
 import { t, msg } from './i18n'
+import { biometricForget, biometricRead, biometricStore, has as shellHas } from './shell'
 
 /** The client's ciphertext-awareness level; the server's minClientVersion is compared with it (design D9). */
 export const CLIENT_VERSION = 1
@@ -203,6 +204,8 @@ export async function cachedRecord(): Promise<KeyRecord | null> {
 }
 
 async function setEnabled(enabled: boolean, record: KeyRecord | null): Promise<void> {
+  // Encryption turned off: a key stored behind the device's biometrics is worthless (native-shells).
+  if (!enabled) await forgetBiometric()
   // A key kept after disabling belongs to the old record; a new record (encryption
   // enabled again, possibly elsewhere) has a new account key: lock instead of
   // producing undecryptable values.
@@ -402,6 +405,7 @@ export async function commitEnable({ record, key }: PreparedEnable): Promise<{ d
 
 /** Change the passphrase: re-wrap only, no content op (design D1). Needs the current passphrase. */
 export async function changePassphrase(current: string, next: string, opts: { iterations?: number } = {}): Promise<void> {
+  await forgetBiometric()
   const record = await refreshFromServer()
   if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const rewrapped = await attempt(() => rewrapWithPassphrase(record, current, next, opts))
@@ -411,6 +415,7 @@ export async function changePassphrase(current: string, next: string, opts: { it
 
 /** Reset a forgotten passphrase with the recovery key; returns the new recovery key (the old one stops working). */
 export async function resetPassphrase(recoveryKey: string, next: string, opts: { iterations?: number } = {}): Promise<{ recoveryKey: string }> {
+  await forgetBiometric()
   const record = await refreshFromServer()
   if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const reset = await attempt(() => resetWithRecoveryKey(record, recoveryKey, next, opts))
@@ -556,4 +561,61 @@ export async function decryptActivityPage<P extends { events: ActivityLike[] }>(
     ...(e.taskTitle !== undefined && e.taskId ? { taskTitle: (await displayValue('task', e.taskId, 'title', e.taskTitle)) as string } : {}),
   })))
   return { ...page, events }
+}
+
+// ---- biometric unlock in a native shell (OpenSpec change native-shells, design D7) ----
+
+/** The key record (its creation time) the key stored behind the biometrics belongs to. */
+const K_BIOMETRIC = 'e2ee:biometricFor'
+
+/** Whether this device can offer, and has, biometric unlock. */
+export async function biometricUnlockState(): Promise<{ available: boolean; enabled: boolean }> {
+  if (!shellHas('biometric')) return { available: false, enabled: false }
+  return { available: true, enabled: (await getMeta<number | null>(K_BIOMETRIC, null)) != null }
+}
+
+/**
+ * After a successful unlock with `secret`: unwrap the account key once more as
+ * extractable, hand its raw bytes to the shell to keep behind the device's
+ * biometrics, and drop the extractable copy. Returns false when the shell refused.
+ */
+export async function enableBiometricUnlock(secret: string, kind: 'passphrase' | 'recovery'): Promise<boolean> {
+  if (!shellHas('biometric')) return false
+  const record = await recordForUnlock()
+  const key = kind === 'passphrase' ? await unlockWithPassphrase(record, secret, true) : await unlockWithRecoveryKey(record, secret, true)
+  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key))
+  try {
+    if (!(await biometricStore(b64url(raw)))) return false
+  } finally {
+    raw.fill(0)
+  }
+  await setMeta(K_BIOMETRIC, record.createdAt ?? 0)
+  return true
+}
+
+/**
+ * Unlocks with the key kept behind the device's biometrics: the shell shows its
+ * prompt and returns the raw key, imported here as non-extractable. False when the
+ * prompt was cancelled, the key was invalidated (biometrics changed) or belongs to
+ * an older account key (encryption turned off and on again); the passphrase remains.
+ */
+export async function unlockWithBiometrics(): Promise<boolean> {
+  const stored = await getMeta<number | null>(K_BIOMETRIC, null)
+  if (stored == null || !shellHas('biometric')) return false
+  const record = await recordForUnlock()
+  if (stored !== (record.createdAt ?? 0)) {
+    await forgetBiometric()
+    return false
+  }
+  const raw = await biometricRead()
+  if (!raw) return false
+  const key = await crypto.subtle.importKey('raw', fromB64url(raw), { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
+  await storeKey(key, record)
+  return true
+}
+
+/** Forgets the key kept behind the biometrics (sign-out, passphrase change, encryption off). */
+export async function forgetBiometric(): Promise<void> {
+  biometricForget()
+  await db.meta.delete(K_BIOMETRIC)
 }

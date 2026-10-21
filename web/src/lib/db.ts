@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
+import { forgetShellData } from './shell'
 import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 
 export interface OutboxOp extends Op {
@@ -543,6 +544,8 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
   bumpLocalEpoch()
+  // Sign-out in a native shell: its schedule and the key behind the biometrics go too (native-shells).
+  forgetShellData()
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions, db.focus], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),

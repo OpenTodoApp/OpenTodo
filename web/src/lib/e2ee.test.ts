@@ -82,6 +82,7 @@ import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED } from './docfields'
 import { db, getMeta, setMeta, useDatabase } from './db'
 import {
   changePassphrase, commitEnable, currentKey, prepareEnable, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
+  biometricUnlockState, enableBiometricUnlock, unlockWithBiometrics,
   MAX_FAILURES, notYetEncrypted, refreshFromServer, resetPassphrase, restoreKeyRecord, turnOffAfterMissingRecord, unlock, UnlockThrottledError, UNDECRYPTABLE,
 } from './e2ee'
 import { decryptIncoming, LockedError, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
@@ -816,5 +817,76 @@ describe('locations and places (task-locations 1.4, "Encrypted locations and pla
     await unlock(PASS, 'passphrase')
     await syncNow()
     expect(await db.places.get('pl1')).toMatchObject({ name: 'Home', address: 'Via Po 2', geo: { lat: 45.07, lon: 7.69 } })
+  })
+})
+
+// Biometric unlock in a native shell (OpenSpec change native-shells, design D7).
+describe('biometric unlock through the shell', () => {
+  const g = globalThis as unknown as { window?: { opentodoShell?: unknown } }
+  let stored: string | null = null
+  let valid = true
+  let forgotten = 0
+  function installShell(capabilities = ['biometric']) {
+    stored = null
+    valid = true
+    forgotten = 0
+    g.window = {
+      opentodoShell: {
+        bridge: 1, platform: 'android', app: '0.10.0', capabilities,
+        biometricStore: async (k: string) => { stored = k; return true },
+        biometricRead: async () => (valid ? stored : null),
+        biometricForget: () => { stored = null; forgotten++ },
+      },
+    }
+  }
+  afterEach(() => { delete g.window })
+
+  it('enable after a passphrase unlock, then unlock with the biometric prompt alone', async () => {
+    installShell()
+    await enableOnA()
+    expect(await enableBiometricUnlock(PASS, 'passphrase')).toBe(true)
+    expect(stored).toMatch(/^[A-Za-z0-9_-]+$/)
+    expect(await biometricUnlockState()).toEqual({ available: true, enabled: true })
+    await lock()
+    expect(await currentKey()).toBeNull()
+    expect(await unlockWithBiometrics()).toBe(true)
+    const key = await currentKey()
+    expect(key).not.toBeNull()
+    expect(key!.extractable).toBe(false)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+  })
+
+  it('biometrics changed: the shell returns nothing and the passphrase still unlocks', async () => {
+    installShell()
+    await enableOnA()
+    await enableBiometricUnlock(PASS, 'passphrase')
+    await lock()
+    valid = false
+    expect(await unlockWithBiometrics()).toBe(false)
+    expect(await currentKey()).toBeNull()
+    await unlock(PASS, 'passphrase')
+    expect(await currentKey()).not.toBeNull()
+  })
+
+  it('a passphrase change here and encryption turned off delete the stored key', async () => {
+    installShell()
+    await enableOnA()
+    await enableBiometricUnlock(PASS, 'passphrase')
+    await changePassphrase(PASS, 'another long passphrase', FAST)
+    expect(forgotten).toBeGreaterThan(0)
+    expect((await biometricUnlockState()).enabled).toBe(false)
+    await enableBiometricUnlock('another long passphrase', 'passphrase')
+    await disableEncryption()
+    expect(stored).toBeNull()
+    expect((await biometricUnlockState()).enabled).toBe(false)
+  })
+
+  it('a shell without the biometric capability never offers it', async () => {
+    installShell(['reminders'])
+    await enableOnA()
+    expect(await biometricUnlockState()).toEqual({ available: false, enabled: false })
+    expect(await enableBiometricUnlock(PASS, 'passphrase')).toBe(false)
+    expect(stored).toBeNull()
   })
 })

@@ -125,6 +125,15 @@ export function biometricForget(): void {
   if (s && has('biometric')) s.biometricForget?.()
 }
 
+/** Sign-out: the shell drops the schedule, the widget data and the key behind the biometrics. */
+export function forgetShellData(): void {
+  const s = shell()
+  if (!s) return
+  if (has('reminders')) void Promise.resolve(s.scheduleReminders?.('[]')).catch(() => undefined)
+  if (has('widgets')) s.publishWidget?.(JSON.stringify({ updatedAt: Date.now(), locked: true, count: 0, overdue: 0, tasks: [] }))
+  if (has('biometric')) s.biometricForget?.()
+}
+
 /** Opens a URL outside the web view when the shell can; false means the caller opens it itself. */
 export function openExternal(url: string): boolean {
   const s = shell()
