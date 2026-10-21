@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule']
 
 export interface Op {
   id: string
@@ -330,6 +330,73 @@ export interface OnDropRule {
   start?: (typeof RULE_START)[number]
   section?: { project_id: string; section_id: string | null }
   state?: (typeof RULE_STATE)[number]
+}
+
+/** Trigger kinds of an automation rule (automation-rules "Rule validation"). */
+export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule'] as const
+export type RuleTriggerKind = (typeof RULE_TRIGGERS)[number]
+
+/** An automation rule's trigger: one kind with the members it takes. */
+export interface RuleTrigger {
+  kind: RuleTriggerKind
+  label_id?: string
+  project_id?: string
+  section_id?: string | null
+  /** `schedule`: HH:MM in the user's zone, on these weekdays (1 Monday … 7 Sunday). */
+  at?: string
+  weekdays?: number[]
+}
+
+/** A date predicate (`due`, `deadline`). */
+export type RuleDatePredicate = 'none' | 'set' | 'today' | 'overdue' | { within_days: number }
+/** A minutes predicate (`estimate`, `tracked`). */
+export type RuleMinutesPredicate = 'none' | { min_minutes: number } | { max_minutes: number }
+
+/** An automation rule's condition: every predicate that is set must hold (automation-rules "Conditions"). */
+export interface RuleCondition {
+  project?: 'none' | { in: string[]; descendants?: boolean }
+  section?: 'none' | { in: string[] }
+  labels?: { any?: string[]; all?: string[]; none?: string[] }
+  priority?: { in: number[] }
+  due?: RuleDatePredicate
+  deadline?: 'none' | 'set' | { within_days: number }
+  start?: 'someday' | 'deferred' | 'none'
+  evening?: boolean
+  blocked?: boolean
+  assignee?: 'me' | 'none' | 'anyone'
+  origin?: 'none' | { kind: OriginKind }
+  habit?: boolean
+  estimate?: RuleMinutesPredicate
+  tracked?: 'none' | { min_minutes: number }
+}
+
+/** An automation rule's actions: the on-drop keys plus the automation keys (automation-rules "Actions"). */
+export interface RuleActions extends Omit<OnDropRule, 'due'> {
+  due?: (typeof RULE_DUE)[number] | { in_days: number }
+  deadline?: 'clear' | { in_days: number }
+  assignee?: 'me' | 'clear'
+  comment?: { text: string }
+  notify?: true
+  webhook?: { webhook_id: string }
+}
+
+/**
+ * An automation rule (OpenSpec change `automation-rules`): personal like a label,
+ * run by the server for its author. `trigger`, `condition` and `actions` are each
+ * one whole value; a key this build does not know is kept in the row.
+ */
+export interface Rule {
+  id: string
+  name: string
+  enabled: boolean
+  trigger: RuleTrigger | null
+  condition: RuleCondition | null
+  actions: RuleActions | null
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
 }
 
 /** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */

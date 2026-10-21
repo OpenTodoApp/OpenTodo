@@ -46,6 +46,8 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   review: ['tomorrow_note'],
   // A place (task-locations D1): its coordinates are one object; position and times stay plaintext.
   place: ['name', 'address', 'geo'],
+  // An automation rule (automation-rules D1): its name; the rest is structural.
+  rule: ['name'],
 }
 
 /**
