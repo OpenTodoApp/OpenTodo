@@ -984,6 +984,9 @@
   "Android device": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "Android refused notifications for OpenTodo. Allow them in Android's settings (Apps → OpenTodo → Notifications); reminders still appear inside the app.": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
   "Animals|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
@@ -1883,6 +1886,7 @@
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ReauthDialog.tsx",
+    "web/src/app/ShellNotifications.tsx",
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Checklist": [
@@ -3469,7 +3473,8 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Enable notifications on this device": [
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/ShellNotifications.tsx"
   ],
   "Enable notifications on this device first.": [
     "web/src/app/NotificationsSettings.tsx"
@@ -3759,6 +3764,9 @@
   ],
   "Everywhere": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Exact alarms are not allowed for OpenTodo, so reminders may arrive a few minutes late. Allow \"Alarms & reminders\" for the app in Android's settings.": [
+    "web/src/app/ShellNotifications.tsx"
   ],
   "Examples": [
     "web/src/ui/patterns/AskComposer.tsx"
@@ -4057,6 +4065,9 @@
   ],
   "Find or create a project…": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Fingerprint or face did not unlock. Enter your passphrase; you can turn biometric unlock on again below.": [
+    "web/src/app/UnlockScreen.tsx"
   ],
   "Finish monthly look": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -4897,6 +4908,7 @@
   ],
   "Include task titles": [
     "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/ShellNotifications.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Indent list item (Shift-Tab: outdent)": [
@@ -6915,10 +6927,14 @@
     "web/src/lib/push.ts"
   ],
   "Notifications enabled on this device.": [
-    "web/src/app/NotificationsSettings.tsx"
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/ShellNotifications.tsx"
   ],
   "Notifications re-enabled.": [
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "Notifications through the app": [
+    "web/src/app/ShellNotifications.tsx"
   ],
   "Notifications, {unread} unread": [
     "web/src/app/NotificationBell.tsx"
@@ -6951,6 +6967,7 @@
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/ShellNotifications.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
@@ -7063,6 +7080,7 @@
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/ShellNotifications.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -7368,6 +7386,9 @@
   ],
   "OpenTodo export (JSON)": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "OpenTodo for {platform}": [
+    "web/src/app/AboutSection.tsx"
   ],
   "OpenTodo is free and open source, made by one person in the open. It is yours now: your server, your data, no subscription.": [
     "web/src/app/WelcomeDialog.tsx"
@@ -9246,6 +9267,9 @@
   "Send a reset link to <strong>{email}</strong>, or create one to deliver yourself. It works once and expires in 24 hours; any earlier link stops working.": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Send a test notification": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
   "Send any email to your personal address and it becomes an Inbox task.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10442,6 +10466,9 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/app/SecurityPanel.tsx"
   ],
+  "The Android app schedules your reminders on this phone and shows them without a push service.": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
   "The Focus timer: mode, lengths, breaks and sound. Synced to your devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10463,6 +10490,12 @@
   ],
   "The answer took too long and was stopped.": [
     "web/src/lib/assistant.ts"
+  ],
+  "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
+  "The app showed a test notification on this device.": [
+    "web/src/app/ShellNotifications.tsx"
   ],
   "The archive is damaged: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -11102,6 +11135,9 @@
   ],
   "This address is on a private network. The server owner can allow private targets.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": [
+    "web/src/app/AboutSection.tsx"
   ],
   "This archive comes from a newer version of OpenTodo. Update this server first. ({detail})": [
     "web/src/lib/restore.ts"
@@ -12186,6 +12222,12 @@
   ],
   "Unlock this device to turn it on.": [
     "web/src/app/RelaySettings.tsx"
+  ],
+  "Unlock with fingerprint or face": [
+    "web/src/app/UnlockScreen.tsx"
+  ],
+  "Unlock with fingerprint or face next time": [
+    "web/src/app/UnlockScreen.tsx"
   ],
   "Unlock your tasks": [
     "web/src/app/UnlockScreen.tsx"

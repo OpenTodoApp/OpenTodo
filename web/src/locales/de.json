@@ -4650,5 +4650,17 @@
   "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {innerhalb von # Tag} other {innerhalb von # Tagen}}",
   "{name} (copy)": "{name} (Kopie)",
   "{term} cannot be used in a rule": "{term} kann nicht in einer Regel verwendet werden",
-  "A server variable sets this; change it in the server configuration.": "Eine Servervariable legt das fest; ändere es in der Serverkonfiguration."
+  "A server variable sets this; change it in the server configuration.": "Eine Servervariable legt das fest; ändere es in der Serverkonfiguration.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings (Apps → OpenTodo → Notifications); reminders still appear inside the app.": "Android hat Benachrichtigungen für OpenTodo abgelehnt. Erlaube sie in den Android-Einstellungen (Apps → OpenTodo → Benachrichtigungen); Erinnerungen erscheinen weiterhin in der App.",
+  "Exact alarms are not allowed for OpenTodo, so reminders may arrive a few minutes late. Allow \"Alarms & reminders\" for the app in Android's settings.": "Exakte Wecker sind für OpenTodo nicht erlaubt, daher können Erinnerungen ein paar Minuten zu spät kommen. Erlaube „Wecker und Erinnerungen“ für die App in den Android-Einstellungen.",
+  "Fingerprint or face did not unlock. Enter your passphrase; you can turn biometric unlock on again below.": "Fingerabdruck oder Gesicht hat nicht entsperrt. Gib deine Passphrase ein; die biometrische Entsperrung kannst du unten wieder einschalten.",
+  "Notifications through the app": "Benachrichtigungen über die App",
+  "OpenTodo for {platform}": "OpenTodo für {platform}",
+  "Send a test notification": "Testbenachrichtigung senden",
+  "The Android app schedules your reminders on this phone and shows them without a push service.": "Die Android-App plant deine Erinnerungen auf diesem Telefon und zeigt sie ohne Push-Dienst an.",
+  "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": "Die App konnte keine Benachrichtigung anzeigen. Erlaube Benachrichtigungen für OpenTodo in den Android-Einstellungen.",
+  "The app showed a test notification on this device.": "Die App hat auf diesem Gerät eine Testbenachrichtigung angezeigt.",
+  "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": "Diese App ist älter, als dieser Server erwartet. Aktualisiere OpenTodo über deinen App-Store, damit alles funktioniert.",
+  "Unlock with fingerprint or face": "Mit Fingerabdruck oder Gesicht entsperren",
+  "Unlock with fingerprint or face next time": "Nächstes Mal mit Fingerabdruck oder Gesicht entsperren"
 }

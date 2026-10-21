@@ -4650,5 +4650,17 @@
   "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {entro # giorno} other {entro # giorni}}",
   "{name} (copy)": "{name} (copia)",
   "{term} cannot be used in a rule": "{term} non può essere usato in una regola",
-  "A server variable sets this; change it in the server configuration.": "Una variabile del server lo imposta; cambialo nella configurazione del server."
+  "A server variable sets this; change it in the server configuration.": "Una variabile del server lo imposta; cambialo nella configurazione del server.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings (Apps → OpenTodo → Notifications); reminders still appear inside the app.": "Android ha rifiutato le notifiche per OpenTodo. Consentile nelle impostazioni di Android (App → OpenTodo → Notifiche); i promemoria compaiono comunque nell'app.",
+  "Exact alarms are not allowed for OpenTodo, so reminders may arrive a few minutes late. Allow \"Alarms & reminders\" for the app in Android's settings.": "Le sveglie esatte non sono consentite per OpenTodo, quindi i promemoria possono arrivare con qualche minuto di ritardo. Consenti \"Sveglie e promemoria\" per l'app nelle impostazioni di Android.",
+  "Fingerprint or face did not unlock. Enter your passphrase; you can turn biometric unlock on again below.": "Impronta o volto non hanno sbloccato. Inserisci la tua passphrase; puoi riattivare lo sblocco biometrico qui sotto.",
+  "Notifications through the app": "Notifiche tramite l'app",
+  "OpenTodo for {platform}": "OpenTodo per {platform}",
+  "Send a test notification": "Invia una notifica di prova",
+  "The Android app schedules your reminders on this phone and shows them without a push service.": "L'app Android pianifica i tuoi promemoria su questo telefono e li mostra senza servizio push.",
+  "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": "L'app non è riuscita a mostrare una notifica. Consenti le notifiche per OpenTodo nelle impostazioni di Android.",
+  "The app showed a test notification on this device.": "L'app ha mostrato una notifica di prova su questo dispositivo.",
+  "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": "Questa app è più vecchia di quanto si aspetta questo server. Aggiorna OpenTodo dal tuo store per continuare a far funzionare tutto.",
+  "Unlock with fingerprint or face": "Sblocca con impronta o volto",
+  "Unlock with fingerprint or face next time": "La prossima volta sblocca con impronta o volto"
 }
