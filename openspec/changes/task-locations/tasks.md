@@ -23,16 +23,16 @@
 
 ## 4. Places
 
-- [x] 4.1 Places page at its own route: ordered list with address and open-task count, reorder, rename, delete, map of all places when maps are on; verify with happy-dom tests and stories (`npm test`, `make ui-check`) — `app/locations/PlacesView.tsx` at `/locations`, reorder by Move up/down in the row menu; story "Locations page" with baselines (no happy-dom test of the page yet: follow-up)
-- [x] 4.2 A place's task list using the standard list view; verify with a test that tasks linked to "Office" are listed and can be completed — the `place` list scope at `/location/<id>` (TaskListView; new tasks there get the location); covered by `tasksForView` through `linkedPlaceId` (a dedicated list test is a follow-up)
+- [x] 4.1 Places page at its own route: ordered list with address and open-task count, reorder, rename, delete, map of all places when maps are on; verify with happy-dom tests and stories (`npm test`, `make ui-check`) — `app/locations/PlacesView.tsx` at `/locations`, reorder by Move up/down in the row menu; story "Locations page" with baselines; `app/locations/places.test.tsx` "lists the locations in their order with address and open tasks, and moves one down" and "does draw a map for a readable location"
+- [x] 4.2 A place's task list using the standard list view; verify with a test that tasks linked to "Office" are listed and can be completed — the `place` list scope at `/location/<id>` (TaskListView; new tasks there get the location); `places.test.tsx` "lists the open tasks linked to the location and completes one"
 - [x] 4.3 Places entry in the sidebar's More group in every "How you work" mode, never primary unless promoted; verify with `sidebar.test.tsx` and the layout check (`make layout-check`) — "Locations" in More; `sidebar.test.tsx` updated (layout check: 7.2)
-- [ ] 4.4 Locked E2EE device shows "Encrypted" places with no pins and makes no map request; verify with an e2ee vitest — implemented (`placeEncrypted`, no pin for an undecryptable `geo`), test not written yet
+- [x] 4.4 Locked E2EE device shows "Encrypted" places with no pins and makes no map request; verify with an e2ee vitest — `places.test.tsx` "shows \"Encrypted\" for a location a locked device cannot read, with no pin and no map request" (with its readable control) and "a task whose location is encrypted shows no map and no \"Open in maps\""
 - [x] 4.5 Translations for every new string in the five catalogs; verify `node scripts/i18n-check.mjs`
 - [x] 4.6 Measure and record the lazy map chunk size and the binary growth in this design's D5; verify by comparing `npm run build` output and `ls -l bin/opentodo` before and after — recorded in design "Implementation notes"
 
 ## 5. Settings
 
-- [x] 5.1 Settings → Server → Maps card (on/off, providers, read-only when set by variables, a line naming what is sent); verify with a happy-dom test and the settings stories — `MapsServerPanel` (owner only); covered by the server route tests, no happy-dom test yet (follow-up)
+- [x] 5.1 Settings → Server → Maps card (on/off, providers, read-only when set by variables, a line naming what is sent); verify with a happy-dom test and the settings stories — `MapsServerPanel` (owner only); `places.test.tsx` "Settings → Server → Maps" (turning maps off saves and refreshes the device; variables lock and name the fields)
 - [x] 5.2 Settings → General → Maps switch for the user; verify a vitest that turning it off hides maps and search on the device and syncs the preference — `MapsUserSection`; `locations.test.ts` ("maps switch"), `locationEditor.test.tsx` (maps off: no search, no request)
 
 ## 6. Principle and documentation
@@ -44,7 +44,7 @@
 
 ## 7. Verification
 
-- [ ] 7.1 Network audit: with maps off, every browser and server request goes to the server's origin or configured destinations; with maps on, the only extra server requests go to the providers; verify with an end-to-end script run against a fresh server (`make e2e` gains the case) — covered by unit and route tests (no request with maps off; no client data upstream); the end-to-end case is a follow-up
-- [ ] 7.2 Layout check covers the location editor and the Places page at 360, 390 and 768 px in Chromium and WebKit; verify `make layout-check` — follow-up (CI runs the existing layout check on this branch)
+- [x] 7.1 Network audit: with maps off, every browser and server request goes to the server's origin or configured destinations; with maps on, the only extra server requests go to the providers; verify with an end-to-end script run against a fresh server (`make e2e` gains the case) — `scripts/e2e-network.mjs`, run by `make e2e`: a fake provider on localhost and two fresh servers; maps off: no browser request leaves the server's origin and the provider gets nothing; maps on: the browser still only talks to the server, and the provider gets the style, tiles, sprites and the search with OpenTodo's User-Agent and no cookie, token or address
+- [x] 7.2 Layout check covers the location editor and the Places page at 360, 390 and 768 px in Chromium and WebKit; verify `make layout-check` — `scripts/e2e-layout.mjs` gains the `locations` screen with its `new-location` form and the `location-editor` overlay on the project screen; `ONLY=locations,project` passes in Chromium and in WebKit at 360/390/768 px, light and dark
 - [x] 7.3 Run `make check`; verify it passes — `go test ./...`, `TZ=UTC npm test`, `npm run build`, `make ci-checks`, `make openspec-validate`, `make docs-check`, `make e2e` pass
 - [ ] 7.4 After `quiet-sidebar` and `sidebar-favourites` are archived, add Places to the More list of app-shell "Sidebar structure"; verify `make openspec-validate`

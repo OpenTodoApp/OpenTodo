@@ -62,7 +62,8 @@ describe('Locations page', () => {
     const task = await createTask({ title: 'Print badges' })
     await setTaskLocation(task, locationFromPlace((await db.places.get(office))!))
     const r = await render(<PlacesView />)
-    await waitFor(() => rows().length === 2, 'two rows')
+    // The open-task counts follow the live task list, which may arrive after the rows.
+    await waitFor(() => rows().length === 2 && /1 open task/.test(rows()[0].textContent ?? ''), 'two rows with their counts')
     expect(rows().map((el) => el.textContent)).toEqual([
       expect.stringMatching(/Office.*Via Po 2.*1 open task/),
       expect.stringMatching(/Gym.*0 open tasks/),

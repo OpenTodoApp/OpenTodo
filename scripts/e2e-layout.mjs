@@ -223,7 +223,7 @@ function screens(ids) {
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).
     { name: 'activity-redirect', path: '/activity', ready: heading('Updates') },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'when-popover', 'inline-editor', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'when-popover', 'inline-editor', 'zone-control', 'location-editor', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
     // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
@@ -240,6 +240,7 @@ function screens(ids) {
     { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // All projects (sidebar-favourites D6): the tree, the find field, and the archived projects opened from Settings → Data.
     { name: 'projects', path: '/projects', ready: heading('Projects') },
+    { name: 'locations', path: '/locations', ready: heading('Locations'), overlays: ['new-location'] },
     { name: 'projects-archived', path: '/projects#archived', ready: (p) => p.getByText('No archived projects').first().waitFor() },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
@@ -527,6 +528,22 @@ const OVERLAYS = {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
     const { editor, trigger } = await openProperty(p, 'due', 'Do on')
     return { overlay: editor, trigger, kind: 'popover' }
+  },
+  // A task's location editor (task-locations "Setting a location"): search, coordinates,
+  // "Use my location" and the saved locations; no map until "Pick on the map".
+  async 'location-editor'(p) {
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    const { editor, trigger } = await openProperty(p, 'location', 'Location')
+    await editor.locator('[data-location-editor]').waitFor()
+    return { overlay: editor, trigger, kind: 'popover' }
+  },
+  // The Locations page's new-location form (task-locations "Locations page").
+  async 'new-location'(p) {
+    const trigger = p.locator('[data-places-page]').getByRole('button', { name: 'New location' }).first()
+    await trigger.click()
+    const form = p.locator('[data-new-place]')
+    await form.waitFor()
+    return { overlay: form, kind: 'inline', after: async () => { await form.getByRole('button', { name: 'Cancel' }).click() } }
   },
   async 'zone-control'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
