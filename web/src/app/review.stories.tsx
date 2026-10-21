@@ -1,18 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { createProject, createTask, REVIEW_DEFAULTS, setTaskCompleted } from '../lib/ops'
 import { db } from '../lib/db'
-import type { EmailDigest, Task } from '../lib/types'
+import type { EmailDigest, Task, TimeEntry } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
-import { Bars } from './review/Bars'
 import { CloseDay } from './review/CloseDay'
 import { ReviewView } from './review/ReviewView'
 import { StatsContent } from './review/StatsView'
 import { HEX, project, seeded, task, TODAY, withClock, withSeed } from './stories/fixtures'
 
-// Statistics, the weekly review and the digest card (OpenSpec change
-// stats-and-review): the screens on design tokens, light and dark, at 375 px and
-// 1280 px, checked by the a11y and visual gates. Charts print every value, so
-// colour never carries meaning alone.
+// Statistics, the weekly review and the digest card (OpenSpec changes
+// stats-and-review and stats-dashboard): the screens on design tokens, light and
+// dark, at 375 px and 1280 px, checked by the a11y and visual gates. Every chart
+// has a summary and a table, so colour never carries meaning alone.
 const meta: Meta = { title: 'Screens/Review and statistics' }
 export default meta
 
@@ -30,31 +29,51 @@ const rows: Task[] = [
   task({ id: 'o2', title: 'Book the dentist', project_id: 'health', due: { date: '2026-10-13' }, created_at: at(13) }),
 ]
 
-/** This week on a Wednesday: numbers, per-day and per-project charts, late and slipped lists. */
+// A year of work for the dense stories, deterministic (a small linear congruential generator).
+function year(): { tasks: Task[]; entries: TimeEntry[] } {
+  let seed = 7
+  const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
+  const tasks: Task[] = []
+  const entries: TimeEntry[] = []
+  const base = new Date(2026, 9, 14, 9).getTime()
+  for (let back = 0; back < 371; back++) {
+    const weekday = new Date(base - back * 86_400_000).getDay()
+    const n = weekday === 0 || weekday === 6 ? Math.floor(rand() * 2) : Math.floor(rand() * 6)
+    for (let k = 0; k < n; k++) {
+      const id = `y${back}-${k}`
+      const hour = 8 + Math.floor(rand() * 10)
+      const p = ['work', 'work', 'home', 'health'][Math.floor(rand() * 4)]
+      const est = rand() < 0.5 ? 30 + 30 * Math.floor(rand() * 3) : null
+      const completed = base - back * 86_400_000 + (hour - 9) * 3_600_000
+      const due = rand() < 0.6 ? new Date(completed + (rand() < 0.8 ? 0 : -2) * 86_400_000).toISOString().slice(0, 10) : null
+      tasks.push(task({ id, title: `Task ${id}`, project_id: p, completed_at: completed, created_at: completed - 3 * 86_400_000, estimate_minutes: est, due: due ? { date: due } : null }))
+      if (est && back < 60) entries.push({ id: `e${id}`, task_id: id, user_id: 'u-ada', started_at: completed - 2 * 3_600_000, ended_at: completed - 2 * 3_600_000 + est * (0.8 + rand()) * 60_000, device_id: 'd', note: '', created_at: completed, deleted_at: null } as TimeEntry)
+    }
+  }
+  return { tasks, entries }
+}
+const dense = year()
+const slipping = [
+  { task: rows[9], moves: 4 },
+  { task: rows[10], moves: 3 },
+]
+
+/** This week on a Wednesday: the tiles, keeping up per day, where time goes, the year, the hours. */
 export const StatisticsThisWeek: StoryObj = {
   decorators: [withClock],
-  render: () => <StatsContent tasks={rows} projects={projects} memberships={[]} me="u-ada" today={TODAY} weekStart={1} period="this-week" onPeriod={() => {}} />,
+  render: () => <StatsContent tasks={rows} projects={projects} memberships={[]} me="u-ada" today={TODAY} weekStart={1} period="this-week" />,
 }
 
-/** The last four weeks: per-week and per-weekday charts join. */
-export const StatisticsFourWeeks: StoryObj = {
+/** This year on a busy account: monthly keeping up, tracked time, estimates and the slipping list. */
+export const StatisticsThisYear: StoryObj = {
   decorators: [withClock],
-  render: () => <StatsContent tasks={rows} projects={projects} memberships={[]} me="u-ada" today={TODAY} weekStart={1} period="4-weeks" onPeriod={() => {}} />,
+  render: () => <StatsContent tasks={[...dense.tasks, ...rows]} entries={dense.entries} projects={projects} memberships={[]} me="u-ada" today={TODAY} weekStart={1} period="this-year" slipping={slipping} />,
 }
 
-/** Nothing completed yet: zeros and a hint instead of empty charts. */
+/** Nothing completed yet: zeros and one line per panel instead of empty charts. */
 export const StatisticsEmpty: StoryObj = {
   decorators: [withClock],
-  render: () => <StatsContent tasks={[]} projects={[]} memberships={[]} me="u-ada" today={TODAY} weekStart={1} period="this-week" onPeriod={() => {}} />,
-}
-
-/** The bar chart on its own, with a zero bar. */
-export const BarChart: StoryObj = {
-  render: () => (
-    <div className="max-w-md">
-      <Bars title="Completed per day" bars={[{ label: 'Mon', value: 3 }, { label: 'Tue', value: 0 }, { label: 'Wed', value: 5 }, { label: 'Thu', value: 1 }]} />
-    </div>
-  ),
+  render: () => <StatsContent tasks={[]} projects={[]} memberships={[]} me="u-ada" today={TODAY} weekStart={1} period="this-week" />,
 }
 
 async function seedReview() {

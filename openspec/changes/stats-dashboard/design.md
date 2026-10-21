@@ -125,3 +125,20 @@ Nothing synced changes. The stored period key (`ot.stats.period`) falls back to 
 ## Open Questions
 
 - The exact wording of each panel's empty state and question heading; settled with the translations.
+
+## Implementation notes
+
+Recorded while applying the change (tasks 3.3, 5.1, 5.2).
+
+- **Size (task 3.3).** `npm run build`: the lazy `ReviewBundle` chunk goes from 44.64 KB (13.43 KB gzipped) on main to 66.89 KB (21.33 KB gzipped), +7.9 KB gzipped, inside the 12 KB budget. The main bundle is unchanged (323.80 → 323.78 KB gzipped). The image grows only by the embedded web build; no dependency, no runtime memory beyond the open page.
+- **Speed (D8).** In vitest on the development laptop, the one-pass model for 20,000 tasks and 5,000 entries builds in about 55 ms, and slicing all five periods takes about 49 ms in total. The test bound is 250 ms so a busy CI runner does not flake; `PERF=1` prints the numbers.
+- **Ramp (D2).** `color-mix(in oklab)` of the chart base (the accent in light, the accent text in dark) into the surface at 49 %, 66 % and 82 %, with step 1 a neutral "none". Checked for all eight accents in light and dark by `chartRamp.test.ts` with the dataviz validator's ordinal rules (monotone lightness, gaps ≥ 0.06, light end ≥ 2:1, top step ≥ 3:1); the validator itself passes on the coloured steps. The 8-point OKLab gap is kept between "none" and the first colour, not between coloured steps, which cannot meet it while also clearing 2:1.
+- **Layout (task 5.1).** `scripts/e2e-layout.mjs` gained a `stats` screen; `ONLY=stats` passes in Chromium and WebKit at 360, 390 and 768 px, light and dark (no sideways page scroll, no small target outside the chart grids, axe clean).
+- **Smoke (task 5.2).** Scripted with Playwright on the demo data at 1280 px light and 390 px dark: the five periods switch and update the tiles, the heatmap grid takes focus and two left arrows move two days back with the tooltip ("Mon, 19 Oct: 1 completed"), "Show as table" opens 13 month rows, the page never scrolls sideways, and no request leaves the page while Statistics is used (only the app's own boot requests before it).
+- **Deviations from the spec text**, kept small and listed here for review:
+  - The Streak tile shows the best run in 53 weeks instead of a change against the previous period: a streak has no meaningful "previous period" value.
+  - Heatmap cells are 14 px on a fine pointer (24 px on touch, with sideways scroll). A 24 px pitch on desktop would make 53 weeks wider than the page; the same values are reachable by keyboard and in the table (WCAG 2.5.8 "equivalent" exception). The dot grid is 18 px on a fine pointer, 24 px on touch.
+  - The heatmap and dot grid are HTML grids rather than SVG; the summary is the grid's accessible name.
+  - In the heatmap, left and right move by day and up and down by week, so "two left arrows move two days back" holds with weeks as columns.
+  - A repeating task is never listed under "keeps slipping": completing an occurrence moves its due date later by design.
+  - The old figures "completed late", "slipped" and "overdue now" and their lists left the screen with "Breakdowns and charts"; the Loop pulse, the review and the digest keep using `compute()` unchanged.

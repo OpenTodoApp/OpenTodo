@@ -114,6 +114,21 @@ describe('the Focus screen (focus-mode)', () => {
   })
 })
 
+describe('Statistics (stats-dashboard)', () => {
+  it('nothing between the header and the tiles, and no vertical scroll region of its own', async () => {
+    await createTask({ title: 'Done', due: { date: '2026-10-13' } })
+    navigate({ view: 'stats' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!r.container.querySelector('[data-stats-content] [data-testid="stats-tiles"]'))
+    const page = r.container.querySelector('[data-stats-page]')!
+    expect([...page.children].map((e) => e.tagName)).toEqual(['HEADER', 'DIV'])
+    expect(page.children[1].firstElementChild!.getAttribute('data-testid')).toBe('stats-tiles')
+    expect(scrollers(page)).toEqual([])
+    expect(scrollers(r.container).length).toBeLessThanOrEqual(MAX_SCROLLERS)
+    await r.unmount()
+  })
+})
+
 describe('the Plan (planner-view)', () => {
   it('one row of chrome above the columns, and no scroll region of its own', async () => {
     await createTask({ title: 'Planned', due: { date: '2026-10-15' }, estimate_minutes: 30 })

@@ -9,39 +9,94 @@ import type { Membership, Project, Task } from './types'
 import { t, msg, translatedMap } from './i18n'
 import { minutesOf, type EntryLike } from './time'
 
-export type PeriodKind = 'this-week' | 'last-week' | '4-weeks' | '12-weeks'
-export const PERIOD_KINDS: readonly PeriodKind[] = ['this-week', 'last-week', '4-weeks', '12-weeks']
+/**
+ * The periods Statistics offers (stats-dashboard D3), plus `4-weeks`, which the
+ * Monthly look reads and the chooser does not offer.
+ */
+export type PeriodKind = 'this-week' | 'this-month' | 'this-quarter' | 'this-year' | 'last-week' | '4-weeks'
+export type DashboardPeriod = Exclude<PeriodKind, '4-weeks'>
+export const PERIOD_KINDS: readonly DashboardPeriod[] = ['this-week', 'this-month', 'this-quarter', 'this-year', 'last-week']
 export const PERIOD_LABELS = translatedMap<PeriodKind>({
-  'this-week': msg('This week'), 'last-week': msg('Last week'), '4-weeks': msg('Last 4 weeks'), '12-weeks': msg('Last 12 weeks'),
+  'this-week': msg('This week'), 'this-month': msg('This month'), 'this-quarter': msg('This quarter'), 'this-year': msg('This year'),
+  'last-week': msg('Last week'), '4-weeks': msg('Last 4 weeks'),
 })
 
-/** An inclusive range of local days; `weeks` is the number of weeks it spans (1, 4 or 12). */
+/** The step of the "keeping up" series: per day up to a month, per week for a quarter, per month for a year. */
+export type PeriodUnit = 'day' | 'week' | 'month'
+
+/** An inclusive range of local days; `weeks` is the number of weeks it spans, rounded up. */
 export interface Period {
   kind: PeriodKind
   start: string
   end: string
   weeks: number
+  unit: PeriodUnit
 }
 
+/** First day of the calendar month `months` away from the month of `iso`. */
+export function monthStartOf(iso: string, months = 0): string {
+  const [y, m] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1 + months, 1)).toISOString().slice(0, 10)
+}
+
+/** Days from `start` to `end`, both included. */
+export function spanDays(start: string, end: string): number {
+  const ms = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d) }
+  return Math.round((ms(end) - ms(start)) / 86_400_000) + 1
+}
+
+const period = (kind: PeriodKind, start: string, end: string, unit: PeriodUnit): Period =>
+  ({ kind, start, end, unit, weeks: Math.ceil(spanDays(start, end) / 7) })
+
 /**
- * The days a period covers, from the viewer's `today` and first day of the week
- * (0 = Sunday). Weeks are resolved by the filter grammar's period code, so `this
- * week` here is `completed = this week` there. The current week ends today.
+ * The days a period covers, from the viewer's logical `today` and first day of the
+ * week (0 = Sunday). Weeks are resolved by the filter grammar's period code, so
+ * `this week` here is `completed = this week` there. A current period ends today;
+ * months, quarters and years are calendar units.
  */
 export function periodFor(kind: PeriodKind, today: string, weekStart: number): Period {
   const week = (offset: number) => resolveRange({ type: 'period', unit: 'week', offset }, today, weekStart)
-  const current = week(0)
   switch (kind) {
     case 'last-week': {
       const r = week(-1)
-      return { kind, start: r.start, end: r.end, weeks: 1 }
+      return period(kind, r.start, r.end, 'day')
     }
     case '4-weeks':
-      return { kind, start: shiftISO(current.start, -21), end: today, weeks: 4 }
-    case '12-weeks':
-      return { kind, start: shiftISO(current.start, -77), end: today, weeks: 12 }
+      return period(kind, shiftISO(week(0).start, -21), today, 'day')
+    case 'this-month':
+      return period(kind, monthStartOf(today), today, 'day')
+    case 'this-quarter': {
+      const month = Number(today.slice(5, 7)) - 1
+      return period(kind, monthStartOf(today, -(month % 3)), today, 'week')
+    }
+    case 'this-year':
+      return period(kind, `${today.slice(0, 4)}-01-01`, today, 'month')
     default:
-      return { kind: 'this-week', start: current.start, end: today, weeks: 1 }
+      return period('this-week', week(0).start, today, 'day')
+  }
+}
+
+/**
+ * What a period is compared with (stats-dashboard D3): the same number of days from
+ * the start of the previous unit, never past that unit's end, so a period to date
+ * is never measured against a full one. Last week is compared with the week before.
+ */
+export function comparisonOf(p: Period, weekStart: number): Pick<Period, 'start' | 'end'> {
+  const n = spanDays(p.start, p.end)
+  const from = (start: string, unitEnd: string) => {
+    const end = shiftISO(start, n - 1)
+    return { start, end: end < unitEnd ? end : unitEnd }
+  }
+  switch (p.kind) {
+    case 'this-month': return from(monthStartOf(p.start, -1), shiftISO(p.start, -1))
+    case 'this-quarter': return from(monthStartOf(p.start, -3), shiftISO(p.start, -1))
+    case 'this-year': return from(`${Number(p.start.slice(0, 4)) - 1}-01-01`, shiftISO(p.start, -1))
+    case '4-weeks': return { start: shiftISO(p.start, -28), end: shiftISO(p.start, -1) }
+    default: {
+      // This week and last week: the week before, the same days into it.
+      const prev = resolveRange({ type: 'period', unit: 'week', offset: -1 }, p.start, weekStart)
+      return from(prev.start, prev.end)
+    }
   }
 }
 
