@@ -371,25 +371,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const { due, text: reviewText, marker: reviewDot } = reviewMarker(review, method, today)
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
-  const moreEntries: MoreEntry[] = [
-    // The Open Loops views (open-loops-method D7, D9), in every mode.
-    { id: 'loop', route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' },
-    { id: 'next', route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
-    { id: 'waiting', route: { view: 'waiting' }, label: t('Waiting', { context: 'method' }), icon: 'hourglass' },
-    { id: 'anytime', route: { view: 'anytime' }, label: t('Anytime'), icon: 'layers' },
-    { id: 'someday', route: { view: 'someday' }, label: t('Someday'), icon: 'archive' },
-    // Assigned to me only where tasks can be assigned: when the account shares a project.
-    ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, route: { view: 'assigned' } as Route, label: t('Assigned to me'), icon: 'user-check' as IconName }] : []),
-    { id: 'completed', route: { view: 'completed' }, label: t('Completed'), icon: 'circle-check-big' },
-    { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewDot, note: reviewText, tip: reviewText },
-    { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
-    ...(sharedIds.size > 0 ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: unreadBadge, note: unread.total > 0 ? `${formatUnread(unread.total)} ${t('unread updates')}` : undefined }] : []),
-    // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
-    { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },
-    { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
-    { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
-    ...(assistant?.available ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
-  ]
+  const moreEntries = moreEntriesOf({ shared: sharedIds.size > 0, reviewDot, reviewText, unreadBadge, unreadTotal: unread.total, ask: !!assistant?.available })
   const first = method === 'first'
   const calendarMode = readCalendarMode()
   const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
@@ -573,6 +555,29 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
 // Each More destination once, as data: an item in the inline group, or a menu item.
 type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
+
+/** The More group's destinations, each once, as data (app-shell "Sidebar structure"). */
+function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean }): MoreEntry[] {
+  return [
+    // The Open Loops views (open-loops-method D7, D9), in every mode.
+    { id: 'loop', route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' },
+    { id: 'next', route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
+    { id: 'waiting', route: { view: 'waiting' }, label: t('Waiting', { context: 'method' }), icon: 'hourglass' },
+    { id: 'anytime', route: { view: 'anytime' }, label: t('Anytime'), icon: 'layers' },
+    { id: 'someday', route: { view: 'someday' }, label: t('Someday'), icon: 'archive' },
+    // Assigned to me only where tasks can be assigned: when the account shares a project.
+    ...(o.shared ? [{ id: 'assigned' as const, route: { view: 'assigned' } as Route, label: t('Assigned to me'), icon: 'user-check' as IconName }] : []),
+    { id: 'completed', route: { view: 'completed' }, label: t('Completed'), icon: 'circle-check-big' },
+    { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: o.reviewDot, note: o.reviewText, tip: o.reviewText },
+    { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
+    ...(o.shared ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: o.unreadBadge, note: o.unreadTotal > 0 ? `${formatUnread(o.unreadTotal)} ${t('unread updates')}` : undefined }] : []),
+    // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
+    { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },
+    { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
+    { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
+    ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
+  ]
+}
 
 /**
  * The Review entry's marker (weekly-review "Rhythm markers", quiet-sidebar D4): the

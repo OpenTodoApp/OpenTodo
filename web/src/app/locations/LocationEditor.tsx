@@ -4,12 +4,10 @@
 // map; "Save as a place"; and "Open in maps". Every choice is one undoable edit
 // of the task's whole location value.
 import { useCallback, useMemo, useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../../lib/db'
 import { isNetworkError, type MapResult } from '../../lib/api'
 import {
   createPlace, formatCoordinates, isPhone, locationFromPlace, locationLabel, makeLocation, openInMapsHref, parseCoordinates,
-  reverseAddress, searchAddress, setTaskLocation, shownLocation, sortedPlaces, useMapsOn, type ShownLocation,
+  reverseAddress, searchAddress, setTaskLocation, shownLocation, useLivePlaces, useMapsOn, usePlaceRows, type ShownLocation,
 } from '../../lib/locations'
 import type { Geo, Place, Task, TaskLocation } from '../../lib/types'
 import { Button, ComboboxPanel, Icon, Input, type AsyncSource } from '../../ui'
@@ -19,12 +17,12 @@ import { LocationMap } from './LocationMap'
 
 /** The live places in their order. */
 export function usePlaces(): Place[] {
-  return useLiveQuery(async () => sortedPlaces(await db.places.toArray()), [], []) ?? []
+  return useLivePlaces()
 }
 
 /** What a task's location shows now: the live linked place, else its own snapshot. */
 export function useShownLocation(task: Pick<Task, 'location'>): ShownLocation | null {
-  const places = useLiveQuery(() => db.places.toArray(), [], [] as Place[]) ?? []
+  const places = usePlaceRows()
   const map = useMemo(() => new Map(places.map((p) => [p.id, p])), [places])
   return shownLocation(task, map)
 }

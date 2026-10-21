@@ -3,12 +3,9 @@
 // OPENTODO_MAPS* variable sets them, and each user's own switch in Settings →
 // General (synced as user_prefs.maps).
 import { useEffect, useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { api, isNetworkError, type MapsSetting } from '../../lib/api'
-import { db } from '../../lib/db'
-import { mapsPrefOn, refreshMapsAvailable, setMapsPref } from '../../lib/locations'
+import { refreshMapsAvailable, setMapsPref, useMapsPref } from '../../lib/locations'
 import { cardCopy } from '../../lib/settingsCopy'
-import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { Button, Field, Input, Notice, SettingsSection, Switch } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -72,11 +69,11 @@ export function MapsServerPanel() {
 
 /** Settings → General → Maps: this user's switch, synced to every device. */
 export function MapsUserSection() {
-  const prefs = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const on = useMapsPref()
   return (
     <SettingsSection {...cardCopy('maps-user')} id="maps">
       <div className="mt-3">
-        <Switch label={t('Show maps and address search')} checked={mapsPrefOn(prefs)} onChange={(on) => act(setMapsPref(on))} />
+        <Switch label={t('Show maps and address search')} checked={on} onChange={(on) => act(setMapsPref(on))} />
       </div>
     </SettingsSection>
   )

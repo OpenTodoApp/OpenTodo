@@ -202,6 +202,35 @@ export function sortedPlaces(places: readonly Place[]): Place[] {
   return places.filter((p) => !p.deleted_at).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
 }
 
+// ---- reads for screens (web-layering: screens never touch the database) ----
+
+const NO_PLACES: Place[] = []
+
+/** Every place row, deleted ones included (a task's linked place may be gone). */
+export function usePlaceRows(): Place[] {
+  return useLiveQuery(() => db.places.toArray(), [], NO_PLACES) ?? NO_PLACES
+}
+
+/** The live places in their order. */
+export function useLivePlaces(): Place[] {
+  return useLiveQuery(async () => sortedPlaces(await db.places.toArray()), [], NO_PLACES) ?? NO_PLACES
+}
+
+/** One place: undefined while loading or without an id, null when it does not exist. */
+export function usePlace(id: string | null): Place | null | undefined {
+  return useLiveQuery(async () => (id ? (await db.places.get(id)) ?? null : undefined), [id])
+}
+
+/** One place, read once (quick add in a location's list). */
+export function getPlace(id: string): Promise<Place | undefined> {
+  return db.places.get(id)
+}
+
+/** The user's own maps switch, live. */
+export function useMapsPref(): boolean {
+  return mapsPrefOn(useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), []))
+}
+
 // ---- maps switches (design D6) ----
 
 const MAPS_KEY = 'mapsAvailable'
