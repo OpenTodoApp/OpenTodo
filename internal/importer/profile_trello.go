@@ -219,7 +219,7 @@ func (trelloProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			if b.Len() > 0 {
 				b.WriteString("\n\n")
 			}
-			b.WriteString("Comments\n")
+			b.WriteString("Comments")
 			for i := len(cs) - 1; i >= 0; i-- { // the export lists the newest first
 				c := cs[i]
 				day := c.date

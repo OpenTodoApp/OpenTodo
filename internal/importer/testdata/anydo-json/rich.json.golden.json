@@ -91,7 +91,7 @@
       "title": "Unknown category",
       "outcome": "create",
       "warnings": [
-        "parent \"anydo:missing\" not found; imported as a top-level task"
+        "parent \"missing\" not found; imported as a top-level task"
       ]
     }
   ],
