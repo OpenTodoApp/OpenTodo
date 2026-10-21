@@ -48,4 +48,4 @@ Every import appears under **Past imports**. **Undo** removes everything that im
 
 ## Good to know
 
-Import needs a connection to your server. Files can be up to 20 MB and 50,000 rows, unless your server allows more. Comments aren't imported. Time entries come back from your own export; entries another member tracked on a shared task are left out, with a note in the preview. The [full list](import-steps.md#good-to-know) covers attachments, CSV dates and JSON files that aren't recognised.
+Import needs a connection to your server. Files can be up to 20 MB and 50,000 rows, unless your server allows more. Comments aren't imported (the export lists each comment's reactions); the members a task's notes mention come back with the task. Time entries come back from your own export; entries another member tracked on a shared task are left out, with a note in the preview. The [full list](import-steps.md#good-to-know) covers attachments, CSV dates and JSON files that aren't recognised.
