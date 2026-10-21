@@ -362,6 +362,8 @@ export interface TaskRowProps {
   forceActions?: boolean
   /** Starts a drag (board-view: move between sections; manual-ordering: place in a list). */
   onPointerDown?: (e: React.PointerEvent<HTMLLIElement>) => void
+  /** A right-click: opens the row's actions menu at the pointer (task-row-context-menu). */
+  onContextMenu?: (e: React.MouseEvent<HTMLLIElement>) => void
   /** Drop target key for lib/dnd (manual-ordering): the row accepts drops before, after or inside it. */
   dropKey?: string
   /** Where the dragged task would land relative to this row (manual-ordering). */
@@ -496,7 +498,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -636,6 +638,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
         onOpen()
       }}
+      onContextMenu={onContextMenu}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
       data-row-layout={detailed ? 'detailed' : undefined}

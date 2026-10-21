@@ -133,12 +133,14 @@ function useBulkData(ids: readonly string[]): Data {
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, startPicker = null, onApplied, anchor }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, onApplied, anchor }: {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
   trigger?: React.ReactNode
   triggerClassName?: string
+  /** Extra attributes on the trigger button (the pointer position of a right-click menu). */
+  triggerProps?: React.ComponentProps<typeof ActionMenu>['triggerProps']
   startPicker?: string | null
   onApplied?: () => void
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
@@ -158,7 +160,7 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   return (
     <>
       <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} onOpenChange={onOpenChange}
-        trigger={trigger} triggerClassName={triggerClassName} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
+        trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
       {review && <BulkReview title={review.title} plan={review.plan} onClose={() => setReview(null)} onApplied={onApplied} />}
       {dating && (
         <Dialog title={t('Date for {tasks}', { tasks: tasksWord(n) })} onClose={() => setDating(false)}>

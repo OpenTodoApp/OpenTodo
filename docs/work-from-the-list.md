@@ -58,6 +58,8 @@ You don't have to open a task to change it. Select it and press:
 | <kbd>s</kbd> | Schedule it on the Day calendar |
 | <kbd>Delete</kbd> | Move it to the Trash |
 
+Right-click opens a menu at the pointer; tick several to act at once.
+
 ## Put things in order
 
 In the Inbox and in projects, you decide the order. Drag a task to a new place (on a touch screen, press and hold first), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> sends it to the top. Dropping a task on the middle of another one makes it a subtask. Projects in the sidebar can be reordered the same way.

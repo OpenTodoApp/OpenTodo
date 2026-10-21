@@ -43,6 +43,10 @@ export interface BindingContext {
   startInline?: (id: string, e?: React.MouseEvent) => boolean
   /** The row whose details are shown (row-expand D4): one per list, closed when the list changes. */
   setExpandedId: (update: (id: string | null) => string | null) => void
+  /** Opens the actions menu anchored at a pointer position (task-row-context-menu); stable. */
+  openContextMenu: (ids: string[], x: number, y: number) => void
+  /** While a row drag is lifted the right-click is ignored (the drag wins, ux-feedback-2 D4). */
+  draggingId: string | null
 }
 
 export function useListBindings(c: BindingContext): RowActions {
@@ -167,6 +171,14 @@ export function useListBindings(c: BindingContext): RowActions {
     expand: (id) => {
       setSelectedId(id)
       live.current.setExpandedId((cur) => (cur === id ? null : id))
+    },
+    context: (e, task) => {
+      // Right-click: the same actions menu the keyboard opens, at the pointer,
+      // for the ticked selection when the row is one of them, else just the row.
+      e.preventDefault()
+      if (live.current.draggingId) return
+      const c = live.current
+      c.openContextMenu(c.selection.ticked.has(task.id) ? c.ticked : [task.id], e.clientX, e.clientY)
     },
   }), [setSelectedId])
 }
