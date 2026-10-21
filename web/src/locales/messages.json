@@ -1273,7 +1273,8 @@
   "Attachments": [
     "web/src/app/settingsIndex.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/lib/settingsCopy.ts",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Attachments are turned off on this server, so the files are not attached.": [
     "web/src/app/ShareCapture.tsx"
@@ -1691,7 +1692,8 @@
   ],
   "Change": [
     "web/src/app/DigestCard.tsx",
-    "web/src/app/task-detail/ZoneControl.tsx"
+    "web/src/app/task-detail/ZoneControl.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Change passphrase": [
     "web/src/app/EncryptionPanel.tsx"
@@ -2273,7 +2275,8 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Conversation": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
+    "web/src/app/assistant/AssistantPanelBody.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Conversations": [
     "web/src/lib/settingsCopy.ts"
@@ -2327,7 +2330,8 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/UsersPanel.tsx",
-    "web/src/app/task-detail/TaskDetail.tsx"
+    "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Copy recovery key": [
     "web/src/app/EncryptionPanel.tsx"
@@ -2680,7 +2684,8 @@
   ],
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
-    "web/src/app/ScheduleSheet.tsx"
+    "web/src/app/ScheduleSheet.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
     "web/src/app/TaskRow.tsx"
@@ -2890,7 +2895,8 @@
   ],
   "Description": [
     "web/src/app/RelayConfirm.tsx",
-    "web/src/app/ShareCapture.tsx"
+    "web/src/app/ShareCapture.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Description changed": [
     "web/src/lib/assistant.ts"
@@ -3041,8 +3047,10 @@
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Done for today": [
     "web/src/app/review/DailyCheck.tsx"
@@ -3706,7 +3714,8 @@
     "web/src/app/MembersPanel.tsx"
   ],
   "Expires": [
-    "web/src/app/PublicLinksSection.tsx"
+    "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Expires in": [
     "web/src/app/InviteLinksSection.tsx",
@@ -5239,7 +5248,8 @@
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Link copied": [
-    "web/src/app/task-detail/TaskDetail.tsx"
+    "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Link to share": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -5374,6 +5384,7 @@
     "web/src/app/App.tsx"
   ],
   "Loading…": [
+    "web/src/page/TaskPageScreen.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
     "web/src/ui/IconPicker.tsx"
   ],
@@ -5387,7 +5398,8 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
@@ -5500,7 +5512,8 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Map of {place}": [
-    "web/src/app/locations/LocationPreview.tsx"
+    "web/src/app/locations/LocationPreview.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Map tiles": [
     "web/src/app/locations/MapsSettings.tsx"
@@ -5888,7 +5901,8 @@
     "web/src/lib/boardTemplates.ts"
   ],
   "Never": [
-    "web/src/app/PublicLinksSection.tsx"
+    "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Never reviewed": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -6276,6 +6290,7 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "No project": [
+    "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/pickerSources.ts"
   ],
   "No project matches.": [
@@ -6998,7 +7013,8 @@
   ],
   "Open in maps": [
     "web/src/app/locations/LocationEditor.tsx",
-    "web/src/app/locations/LocationPreview.tsx"
+    "web/src/app/locations/LocationPreview.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Open it": [
     "web/src/app/LabelsView.tsx"
@@ -8224,7 +8240,8 @@
   ],
   "Reopen": [
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Reopen task": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -8278,7 +8295,9 @@
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "Reply": [
-    "web/src/app/task-detail/CommentsTab.tsx"
+    "web/src/app/task-detail/CommentsTab.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Reply and tick": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -8494,7 +8513,8 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
-    "web/src/app/PublicLinksSection.tsx"
+    "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Revoke app password": [
     "web/src/app/CaldavPanel.tsx"
@@ -8916,7 +8936,8 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Send": [
-    "web/src/app/assistant/AssistantComposer.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Send a message to another service when tasks change": [
     "web/src/app/settingsIndex.ts"
@@ -11869,7 +11890,8 @@
     "web/src/lib/pickerSources.ts",
     "web/src/lib/subtasks.ts",
     "web/src/lib/trash.ts",
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Untitled location": [
     "web/src/app/locations/LocationEditor.tsx",
@@ -11903,7 +11925,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Updated {time}": [
-    "web/src/app/PublicListScreen.tsx"
+    "web/src/app/PublicListScreen.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Updates": [
     "web/src/app/AppearanceSection.tsx",
@@ -12254,7 +12277,8 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Where": [
-    "web/src/app/task-detail/Facets.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Where does my time go?": [
     "web/src/app/review/StatsView.tsx"
@@ -12659,6 +12683,9 @@
   ],
   "a Gemini model id": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "a Markdown vault": [
+    "web/src/lib/history.ts"
   ],
   "a calendar app (CalDAV)": [
     "web/src/lib/history.ts"
