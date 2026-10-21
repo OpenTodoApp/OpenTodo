@@ -19,7 +19,7 @@ export function HourGutter() {
   return (
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
-        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
+        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint tabular-nums text-faint" data-hour-label style={{ top: h * 60 * PX_PER_MIN }}>
           {h === 0 ? '' : formatHour(h)}
         </div>
       ))}

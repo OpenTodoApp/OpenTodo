@@ -82,7 +82,7 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
         }}
       >
         <span className="block truncate font-medium">{ev.summary || t('Busy')}</span>
-        {height >= 30 && <span className="block truncate text-hint">{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
+        {height >= 30 && <span className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
       </button>
       </Tooltip>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">

@@ -92,15 +92,14 @@ Projects, labels and views store a free hex string in their ops. At render time 
 
 ## Typeface
 
-Inter 4.1 is bundled as `web/src/assets/fonts/InterVariable-latin.woff2` (54 KB, weight axis only, Latin subset, licence in `OFL.txt`). It is served from the app's own origin, hashed by Vite and precached by the service worker; no font is ever requested from another host. The family is named `OpenTodo Inter`, so a locally installed Inter is never used instead, and `font-display: swap` shows the system font until it loads.
+Inter 4.1 is bundled as `web/src/assets/fonts/InterVariable-latin.woff2` (84 KB, weight and optical-size axes, Latin subset, licence in `OFL.txt`). `font-optical-sizing: auto` lets text at the display size use Inter's Display cut. It is served from the app's own origin, hashed by Vite and precached by the service worker; no font is ever requested from another host. The family is named `OpenTodo Inter`, so a locally installed Inter is never used instead, and `font-display: swap` shows the system font until it loads.
 
 To regenerate it (fonttools 4.60.1):
 
 ```sh
 python3 -m venv venv && ./venv/bin/pip install fonttools==4.60.1 brotli==1.1.0
 curl -LO https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip && unzip Inter-4.1.zip
-./venv/bin/fonttools varLib.instancer InterVariable.ttf opsz=14 -o inter-wght.ttf
-./venv/bin/pyftsubset inter-wght.ttf \
+./venv/bin/pyftsubset InterVariable.ttf \
   --unicodes="U+0000-00FF,U+0100-017F,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20A0-20CF,U+2122,U+2190-21FF,U+2212,U+2215,U+FEFF,U+FFFD" \
   --layout-features='kern,liga,calt,ccmp,locl,mark,mkmk,tnum,cv11' \
   --flavor=woff2 --output-file=InterVariable-latin.woff2

@@ -9,8 +9,8 @@
    element, so a [data-theme] subtree switches too. Text tokens meet WCAG AA on every
    surface they are allowed on (see pairs.ts). */
 /* Interface typeface (design-system "Bundled typeface without network access"):
-   Inter 4.1, weight axis only, Latin subset (docs/design-system.md has the subset
-   command). Served from the app's own origin, hashed by Vite, precached by the
+   Inter 4.1 with its weight and optical-size axes (tokens-v2 D7: 84 KB), Latin subset
+   (docs/design-system.md has the subset command). Served from the app's own origin, hashed by Vite, precached by the
    service worker. A unique family name keeps a locally installed Inter from being
    used instead; swap shows the system font until it loads. */
 @font-face {
@@ -632,6 +632,8 @@ html, body, #root {
 
 html {
   font-synthesis: style;
+  /* Inter's optical-size axis picks its Display cut at large sizes (tokens-v2 D7). */
+  font-optical-sizing: auto;
 }
 
 body {
@@ -845,7 +847,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 @layer components {
 /* Focus (OpenSpec change focus-mode, design D6): the timer's digits, from the type
    tokens, with tabular figures so they do not jump each second; fit at 360 px. */
-.focus-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-h1) * 2.75), 20vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.focus-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * 2.357), 20vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 /* Display mode (OpenSpec change display-mode, design D4): one view at a large type
    scale for a tablet or an e-ink panel. Sizes derive from the type tokens times
    --display-scale (set per size on the display's root), so they follow the
@@ -854,7 +856,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.35; }
 .display-root[data-size="m"] { --display-scale: 1.35; }
 .display-root[data-size="xl"] { --display-scale: 2.15; }
-.display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-h1) * var(--display-scale) * 1.75), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .display-date { @apply text-muted; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.25; }
 .display-title { @apply font-semibold text-strong; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.2; }
 .display-heading { @apply font-semibold text-strong; font-size: calc(var(--text-h3) * var(--display-scale)); line-height: 1.3; }

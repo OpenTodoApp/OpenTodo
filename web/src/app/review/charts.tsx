@@ -188,7 +188,7 @@ export function StatTile({ label, value, change, note, testId }: {
   return (
     <div className="min-w-0 rounded-card border border-default bg-surface p-3" data-tile={testId}>
       <dt className="text-meta text-muted">{label}</dt>
-      <dd className="text-h2 font-semibold text-default" data-tile-value>{value}</dd>
+      <dd className="text-h2 font-semibold tabular-nums text-default" data-tile-value>{value}</dd>
       {change && (
         <dd className="flex items-center gap-1 text-meta text-muted" data-tile-change={change.direction}>
           <Icon name={ARROW[change.direction]} size="xs" />{change.text}
