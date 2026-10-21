@@ -1,6 +1,7 @@
 // The command palette (OpenSpec change search-and-command-palette): one box on
 // Ctrl/⌘+K that finds any task, project, label, saved view or Settings section from
 // local data and runs any command by name. Lazy chunk, mounted by Shell on first open.
+import { useAgentExclusions } from '../../lib/agentAccess'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -63,6 +64,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     return () => clearTimeout(entry)
   }, [typed])
 
+  const agentExclusions = useAgentExclusions()
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
@@ -78,12 +80,13 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
         subCount: projects.filter((p) => p.parent_id === project.id).length,
         openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
         pinned: isFavourite(prefs, 'project', project.id),
+        keptAway: agentExclusions.has(project.id),
       } : undefined,
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   const source = useMemo(() => [...commandEntries(ctx), ...buildEntries({ tasks, projects, labels, views, user, today })], [ctx, tasks, projects, labels, views, user, today])

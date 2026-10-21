@@ -17,6 +17,7 @@ import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice 
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { refreshMapsAvailable } from './locations'
+import { refreshAgentExclusions } from './agentAccess'
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
@@ -600,6 +601,8 @@ export function startSync(): void {
   void refreshLimits()
   // Whether the server shows maps (task-locations D6); offline keeps the last answer.
   void refreshMapsAvailable()
+  // Projects kept away from AI assistants (agent-planning-fields D9).
+  void refreshAgentExclusions()
   // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
   void sweepInbox().catch(() => undefined)
   const offMutation = onLocalMutation(() => {

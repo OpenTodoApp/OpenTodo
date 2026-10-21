@@ -239,7 +239,7 @@ export const api = {
   reauth: (input: { password: string } | { code: string }) =>
     request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
   /** `config_warnings` is present for the owner's session only (trusted-proxies-lenient). */
-  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean }>('GET', '/api/v1/me'),
+  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean; agent_excluded_projects?: string[] }>('GET', '/api/v1/me'),
   mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
   enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
   confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),
@@ -269,6 +269,9 @@ export const api = {
       features: SYNC_FEATURES, ...(backfillAck > 0 ? { backfillAck } : {}),
     }, false, { signal }),
   // Project sharing: membership is server-side authorization data, changed only through these routes.
+  // Keep a project away from AI assistants (agent-planning-fields D9).
+  getProjectAgentAccess: (projectId: string) => request<{ kept_away: boolean; inherited_from: string | null }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/agent-access`),
+  setProjectAgentAccess: (projectId: string, keptAway: boolean) => request<{ kept_away: boolean; inherited_from: string | null }>('PUT', `/api/v1/projects/${encodeURIComponent(projectId)}/agent-access`, { kept_away: keptAway }),
   listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
   addMember: (projectId: string, email: string, role: ProjectRole) =>
     request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/members`, { email, role }),

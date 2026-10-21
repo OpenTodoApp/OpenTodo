@@ -4501,5 +4501,20 @@
   "Not this evening": "Nicht heute Abend",
   "Out of Someday": "Nicht mehr in Irgendwann",
   "Starts {from} → {to}": "Beginnt {from} → {to}",
-  "a place": "ein Ort"
+  "a place": "ein Ort",
+  "Allow": "Erlauben",
+  "Allow AI assistants in “{project}”?": "KI-Assistenten in „{project}“ erlauben?",
+  "Assistants of every member stop seeing this project, its sub-projects and their tasks.": "Die Assistenten aller Mitglieder sehen dieses Projekt, seine Unterprojekte und deren Aufgaben nicht mehr.",
+  "Changing this needs a connection.": "Zum Ändern ist eine Verbindung nötig.",
+  "Every member’s assistants can see and, where allowed, change this project again.": "Die Assistenten aller Mitglieder können dieses Projekt wieder sehen und, wo erlaubt, ändern.",
+  "Keep away": "Fernhalten",
+  "Keep away from AI assistants": "Von KI-Assistenten fernhalten",
+  "Keep “{project}” away from AI assistants?": "„{project}“ von KI-Assistenten fernhalten?",
+  "Kept away": "Ferngehalten",
+  "Kept away, through {parent}": "Ferngehalten, über {parent}",
+  "No member’s assistant will see this project, its sub-projects or their tasks, and assistants cannot change them. The app, sync and calendar apps are not affected.": "Kein Assistent eines Mitglieds sieht dieses Projekt, seine Unterprojekte oder deren Aufgaben, und Assistenten können sie nicht ändern. Die App, die Synchronisierung und Kalender-Apps sind nicht betroffen.",
+  "Project “{name}”: Allow AI assistants": "Projekt „{name}“: KI-Assistenten erlauben",
+  "Project “{name}”: Keep away from AI assistants": "Projekt „{name}“: Von KI-Assistenten fernhalten",
+  "This project is kept away from assistants": "Dieses Projekt wird von Assistenten ferngehalten",
+  "a parent project": "ein übergeordnetes Projekt"
 }

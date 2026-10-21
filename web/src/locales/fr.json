@@ -4501,5 +4501,20 @@
   "Not this evening": "Pas ce soir",
   "Out of Someday": "Sorti de Un jour",
   "Starts {from} → {to}": "Commence {from} → {to}",
-  "a place": "un lieu"
+  "a place": "un lieu",
+  "Allow": "Autoriser",
+  "Allow AI assistants in “{project}”?": "Autoriser les assistants IA dans « {project} » ?",
+  "Assistants of every member stop seeing this project, its sub-projects and their tasks.": "Les assistants de tous les membres ne voient plus ce projet, ses sous-projets ni leurs tâches.",
+  "Changing this needs a connection.": "Une connexion est nécessaire pour modifier ce réglage.",
+  "Every member’s assistants can see and, where allowed, change this project again.": "Les assistants de tous les membres pourront de nouveau voir ce projet et, si c’est permis, le modifier.",
+  "Keep away": "Tenir à l’écart",
+  "Keep away from AI assistants": "Tenir à l’écart des assistants IA",
+  "Keep “{project}” away from AI assistants?": "Tenir « {project} » à l’écart des assistants IA ?",
+  "Kept away": "Tenu à l’écart",
+  "Kept away, through {parent}": "Tenu à l’écart, via {parent}",
+  "No member’s assistant will see this project, its sub-projects or their tasks, and assistants cannot change them. The app, sync and calendar apps are not affected.": "Aucun assistant des membres ne verra ce projet, ses sous-projets ni leurs tâches, et les assistants ne pourront pas les modifier. L’app, la synchronisation et les apps de calendrier ne sont pas concernées.",
+  "Project “{name}”: Allow AI assistants": "Projet « {name} » : autoriser les assistants IA",
+  "Project “{name}”: Keep away from AI assistants": "Projet « {name} » : tenir à l’écart des assistants IA",
+  "This project is kept away from assistants": "Ce projet est tenu à l’écart des assistants",
+  "a parent project": "un projet parent"
 }

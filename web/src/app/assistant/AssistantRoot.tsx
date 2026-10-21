@@ -9,7 +9,7 @@ import { t } from '../../lib/i18n'
  * The lazy assistant chunk's root (in-app-assistant D9): mounted on first open
  * and kept, so the Undo toast outlives the panel.
  */
-export default function AssistantRoot({ context }: { context: () => { view?: string; selected?: string[] } }) {
+export default function AssistantRoot({ context }: { context: () => { view?: string; selected?: string[]; projectId?: string } }) {
   const open = useAssistantOpen()
   const [toast, setToast] = useState<{ text: string; undoId: string | null } | null>(null)
   useEffect(() => {

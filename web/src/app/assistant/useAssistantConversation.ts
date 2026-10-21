@@ -17,7 +17,7 @@ import { useSentenceAnnouncer } from './useSentenceAnnouncer'
 
 export interface ConversationOptions {
   /** Light context for the turn: the current view and selected tasks. */
-  context: () => { view?: string; selected?: string[] }
+  context: () => { view?: string; selected?: string[]; projectId?: string }
   onApplied: (r: { text: string; undoId: string }) => void
 }
 
@@ -258,7 +258,9 @@ export function useAssistantConversation({ context, onApplied }: ConversationOpt
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
     let streamed: StreamedAnswer
     try {
-      const ctx = context()
+      // projectId only drives the panel's kept-away line; the server never gets it.
+      const ctx = { ...context() }
+      delete ctx.projectId
       const req: TurnRequest = { messages: turnMessages(history, question, material ?? undefined), timezone: zone, ...ctx,
         ...(selection ? { selected: selection } : {}),
         ...(chosen ? { skill: chosen.id, workday: await workday() } : {}) }

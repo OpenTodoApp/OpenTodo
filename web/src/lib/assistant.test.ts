@@ -85,6 +85,27 @@ describe('words', () => {
   })
 })
 
+describe('planning fields (agent-planning-fields)', () => {
+  const names = () => ({ projects: new Map(), labels: new Map(), sections: new Map(), tasks: new Map([['p', 'Order parts']]) })
+  it('describes a deferral with a deadline', () => {
+    const d = describeChange({ entity: 'task', entityId: 't', patch: { start: '2026-11-03', deadline: '2026-11-06' }, base: { start: null, deadline: null } }, { title: 'Report' }, names())
+    expect(d.lines).toEqual(['Deadline Fri 6 Nov', 'Starts Tue 3 Nov'])
+  })
+  it('describes old → new, Someday, evening, waiting and location', () => {
+    const d = describeChange({ entity: 'task', entityId: 't', patch: { start: '2026-11-10', evening: true, blocked_by: ['p'], location: { name: 'Mum’s' } }, base: { start: '2026-11-03', evening: false, blocked_by: [] } }, { title: 'Shelves' }, names())
+    expect(d.lines).toEqual(['Starts Tue 3 Nov → Tue 10 Nov', 'This evening', 'Waits for “Order parts”', 'At Mum’s'])
+    const e = describeChange({ entity: 'task', entityId: 't', patch: { start: 'someday', blocked_by: [], location: null, deadline: null }, base: { start: null, blocked_by: ['p'], deadline: '2026-11-06' } }, { title: 'Shelves' }, names())
+    expect(e.lines).toEqual(['Deadline removed', 'Someday', 'No longer waits', 'Location removed'])
+  })
+  it('marks a start date changed on another device as stale', async () => {
+    const a = await task('Report', { start: '2026-11-03' })
+    const r = await reviewChangeSet([{ entity: 'task', entityId: a, patch: { start: '2026-11-10' }, base: { start: '2026-11-03' } }])
+    expect(r.items[0].state).toBe('ok')
+    await applyOps([{ id: crypto.randomUUID(), entity: 'task', entityId: a, field: 'start', value: '2026-11-05', ts: Date.now() + 10_000, device: 'phone' }])
+    expect((await refreshReview(r)).items[0].state).toBe('stale')
+  })
+})
+
 describe('review', () => {
   it('unchecks and marks an item changed since proposed, drops a missing one', async () => {
     const a = await task('Water plants')

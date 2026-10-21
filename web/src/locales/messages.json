@@ -377,6 +377,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "AI assistants": [
+    "web/src/app/AgentAccessRow.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "AI assistants (MCP)": [
@@ -811,11 +812,19 @@
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
+  "Allow": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "Allow AI assistants": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Allow AI assistants (MCP endpoint)": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "Allow AI assistants in “{project}”?": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "Allow AI assistants to make changes": [
     "web/src/app/auditFormat.ts"
@@ -859,6 +868,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Allowed": [
+    "web/src/app/AgentAccessRow.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -1235,6 +1245,9 @@
   ],
   "Assistants may make changes": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Assistants of every member stop seeing this project, its sub-projects and their tasks.": [
+    "web/src/app/AgentAccessRow.tsx"
   ],
   "At (minutes count)": [
     "web/src/app/BackupsPanel.tsx"
@@ -1763,6 +1776,9 @@
   ],
   "Changing it signs out your other sessions; this one stays signed in.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Changing this needs a connection.": [
+    "web/src/app/AgentAccessRow.tsx"
   ],
   "Check / uncheck item": [
     "web/src/lib/richtextEditor.ts"
@@ -3576,6 +3592,10 @@
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
   ],
+  "Every member’s assistants can see and, where allowed, change this project again.": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "Every month on day {day}": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -4943,6 +4963,13 @@
   "Keep as sections": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Keep away": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
+  "Keep away from AI assistants": [
+    "web/src/app/AgentAccessRow.tsx"
+  ],
   "Keep events for": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -4982,8 +5009,18 @@
   "Keep the locations you use often (home, the office, the gym) and give tasks a location in one step. A task’s location editor saves any address for reuse.": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "Keep “{project}” away from AI assistants?": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "Keep “{source}” as text": [
     "web/src/app/ParseChips.tsx"
+  ],
+  "Kept away": [
+    "web/src/app/AgentAccessRow.tsx"
+  ],
+  "Kept away, through {parent}": [
+    "web/src/app/AgentAccessRow.tsx"
   ],
   "Kept because they were changed again since: {items}.": [
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -6264,6 +6301,10 @@
   ],
   "No member matches.": [
     "web/src/app/AssigneePicker.tsx"
+  ],
+  "No member’s assistant will see this project, its sub-projects or their tasks, and assistants cannot change them. The app, sync and calendar apps are not affected.": [
+    "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "No microphone was found. Connect one, or keep typing.": [
     "web/src/lib/voice/dictation.ts"
@@ -7818,7 +7859,13 @@
   "Project “{name}”": [
     "web/src/app/palette/registry.ts"
   ],
+  "Project “{name}”: Allow AI assistants": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Project “{name}”: Colour {colour}": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Project “{name}”: Keep away from AI assistants": [
     "web/src/app/palette/registry.ts"
   ],
   "Project, label, priority, estimate": [
@@ -11140,6 +11187,9 @@
   "This project is end-to-end encrypted, so it cannot be published: the server cannot read its tasks.": [
     "web/src/app/PublicLinksSection.tsx"
   ],
+  "This project is kept away from assistants": [
+    "web/src/app/assistant/AssistantPanel.tsx"
+  ],
   "This project no longer exists.": [
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-list/ListChrome.tsx"
@@ -12745,6 +12795,9 @@
   ],
   "a model id from your OpenAI account": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "a parent project": [
+    "web/src/app/AgentAccessRow.tsx"
   ],
   "a place": [
     "web/src/lib/assistant.ts"

@@ -65,4 +65,5 @@ Every task has a comment thread under **Comments**, with @mentions, replies and 
 - **Labels and reminders stay personal.** Only you see the labels and reminders you add to a shared task.
 - **Moving a task out of a shared project** to your own project or Inbox makes a copy there and removes the original for everyone.
 - **Only the owner deletes a shared project.** It disappears for every member; its open tasks go to the owner's Inbox.
+- **Keep a project away from AI assistants.** In the share dialog, the owner or an admin can switch on **Keep away from AI assistants** (also in the command palette). No member's assistant then sees the project, its sub-projects or their tasks; the app, sync and calendar apps are unaffected.
 - **End-to-end encryption and sharing don't mix.** Shared projects are never encrypted, and an account with [encryption](e2ee.md) on can't share new projects.

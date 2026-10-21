@@ -9,6 +9,7 @@ import type { Membership, Project, ProjectRole } from '../lib/types'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 import { InviteLinksSection } from './InviteLinksSection'
 import { PublicLinksSection } from './PublicLinksSection'
+import { AgentAccessRow } from './AgentAccessRow'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
 
@@ -96,6 +97,7 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
         )}
         {roles.length > 0 && <InviteLinksSection projectId={project.id} myRole={myRole} />}
         {!locked && (myRole === 'owner' || myRole === 'admin') && <PublicLinksSection projectId={project.id} focus={section === 'public'} onChange={onPublicLinks} />}
+        <AgentAccessRow projectId={project.id} projectName={project.name} canChange={!locked && (myRole === 'owner' || myRole === 'admin')} />
         {locked && <p className="mb-3 text-body text-muted" data-testid="demo-share-note">{t('Sharing changes: {note}', { note: t(DEMO_RESTRICTED_NOTE) })}</p>}
         {error && <p role="alert" className="mb-3 text-body text-danger">{error}</p>}
         <ul aria-label={t('Members')} className="space-y-1">
