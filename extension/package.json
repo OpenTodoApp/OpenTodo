@@ -3,6 +3,6 @@
   "description": "Development only, not part of the extension zip: marks the sources as ES modules so `node --test` can import them. No dependencies.",
   "type": "module",
   "scripts": {
-    "test": "node --test share-url.test.js locales.test.js"
+    "test": "node --test share-url.test.js locales.test.js background.test.js options.test.js api.test.js mail.test.js popup.test.js build.test.js store.test.js"
   }
 }

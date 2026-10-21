@@ -1,0 +1,17 @@
+{
+  "about": "Gmail changed its page: the header cannot be read, so no From line; the subject and permalink remain.",
+  "url": "https://mail.google.com/mail/u/0/#search/boiler/FMfcgzQbfLnVwXkPqRtSzHjKmBdCxWvN",
+  "title": "Boiler service quote - me@example.com - Gmail",
+  "header": null,
+  "expect": {
+    "subject": "Boiler service quote",
+    "from": "",
+    "origin": {
+      "kind": "email",
+      "provider": "gmail",
+      "id": "FMfcgzQbfLnVwXkPqRtSzHjKmBdCxWvN",
+      "url": "https://mail.google.com/mail/u/0/#search/boiler/FMfcgzQbfLnVwXkPqRtSzHjKmBdCxWvN",
+      "title": "Boiler service quote"
+    }
+  }
+}

@@ -29,17 +29,19 @@ for (const lang of langs) {
   })
 }
 
-test('every key the manifest, background, options page and script use exists', () => {
+test('every key the manifest, pages and scripts use exists', () => {
   const read2 = (f) => readFileSync(new URL(f, import.meta.url), 'utf8')
+  const keys = (f, re) => [...read2(f).matchAll(re)].map((m) => m[1])
   const used = [
-    ...[...read2('./manifest.json').matchAll(/__MSG_(\w+)__/g)].map((m) => m[1]),
-    ...[...read2('./options.html').matchAll(/data-i18n="(\w+)"/g)].map((m) => m[1]),
-    ...[...read2('./options.js').matchAll(/msg\('(\w+)'/g)].map((m) => m[1]),
-    ...[...read2('./background.js').matchAll(/getMessage\('(\w+)'/g)].map((m) => m[1]),
+    ...keys('./manifest.src.json', /__MSG_(\w+)__/g),
+    ...['./options.html', './popup.html'].flatMap((f) => keys(f, /data-i18n="(\w+)"/g)),
+    ...['./options.js', './popup.js'].flatMap((f) => keys(f, /msg\('(\w+)'/g)),
+    ...['./popup-state.js', './settings.js'].flatMap((f) => keys(f, /(?:key|reason): '(\w+)'/g)),
+    ...keys('./background.js', /getMessage\('(\w+)'/g),
   ]
-  assert.ok(used.length > 10)
+  assert.ok(used.length > 40)
   for (const key of used) assert.ok(key in en, `missing message ${key}`)
-  assert.equal(JSON.parse(read2('./manifest.json')).default_locale, 'en')
+  assert.equal(JSON.parse(read2('./manifest.src.json')).default_locale, 'en')
 })
 
 test('French names the context-menu entry in French', () => {

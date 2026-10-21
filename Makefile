@@ -3,9 +3,12 @@ LDFLAGS := -s -w -X main.version=$(VERSION)
 
 CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
-EXT_ZIP := dist/opentodo-browser-extension.zip
+# The extension's two store packages (OpenSpec change extension-v2, design D7):
+# extension/build.mjs writes them from extension/manifest.src.json.
+EXT_ZIPS := dist/opentodo-browser-extension-chrome.zip dist/opentodo-browser-extension-firefox.zip
+# Pinned development tool, fetched by npx; never a dependency of the repository.
+WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
-EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png _locales
 
 .PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
@@ -43,12 +46,14 @@ skill:
 	cd skills && zip -q -X ../$(SKILL_ZIP) opentodo-cli/SKILL.md
 	@echo "  $(SKILL_ZIP) ($$(wc -c < $(SKILL_ZIP)) bytes)"
 
-## Test the browser extension and zip it into dist/ (not part of the container image).
+## Test the browser extension, build its Chrome and Firefox packages into dist/
+## (refusing host permissions, content scripts or a version missing from
+## extension/CHANGELOG.md) and lint the Firefox one with web-ext, which fails on
+## errors only. web-ext reads every manifest as Firefox's, so the Chrome package is
+## checked by extension/build.test.js instead. Not part of the container image.
 extension: test-extension
-	@node -e 'const m = require("./extension/manifest.json"); const opt = JSON.stringify(m.optional_host_permissions ?? []); if (m.host_permissions || m.content_scripts || (opt !== "[]" && opt !== JSON.stringify(["https://*/*", "http://*/*"]))) { console.error("extension/manifest.json must not declare host permissions or content scripts (only the optional http(s) access asked for the server origin)"); process.exit(1) }'
-	@mkdir -p dist && rm -f $(EXT_ZIP)
-	cd extension && zip -q -X -r ../$(EXT_ZIP) $(EXT_FILES)
-	@echo "  $(EXT_ZIP) ($$(wc -c < $(EXT_ZIP)) bytes)"
+	node extension/build.mjs
+	npx --yes $(WEB_EXT) lint --source-dir dist/extension-firefox --output text
 
 build: web server
 
@@ -110,7 +115,7 @@ test-web:
 	cd web && npm test
 
 test-extension:
-	node --test extension/share-url.test.js extension/locales.test.js
+	cd extension && npm test
 
 lint:
 	go vet ./...

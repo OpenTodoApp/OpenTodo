@@ -15,7 +15,7 @@ Many tasks start as "deal with this page later". OpenTodo can receive a page fro
 | --- | --- | --- |
 | Phone or desktop share sheet | Install the app, then choose **OpenTodo** in the share menu | Yes, once the app has been opened online |
 | Any desktop browser | The bookmarklet from **Settings → Capture** | The popup opens from the app's offline cache once the app has been loaded in that browser |
-| Chromium and Firefox | The browser extension in [`extension/`](../extension/) | Same as the bookmarklet |
+| Chromium and Firefox | The browser extension in [`extension/`](../extension/) | Same as the bookmarklet in Capture screen mode |
 
 The capture screen proposes:
 
@@ -32,7 +32,7 @@ When the capture screen was opened as a popup (bookmarklet, extension) or in a w
 
 A task saved from a shared link also remembers that link as its **origin**. The task's row shows a small chip with the link's host (`example.org`), and the task panel an **Origin** chip; both open the page in a new tab, and the page title you shared is their tooltip. In Calm rows the chip is quiet, like the counts at the end of the row; in Detailed rows it is a neutral chip. A link to an issue on GitHub, GitLab, Jira (`*.atlassian.net`) or Linear is recognised on your device, without opening it: the chip reads the issue (`owner/repo#7`, `ENG-123`) and the task is listed by `origin: github`, `origin: gitlab`, `origin: jira` or `origin: linear` in a [filter](filters.md). Self-hosted trackers are kept as ordinary links. The link still ends the description, so your notes read as before.
 
-To forget the origin, remove the **Origin** chip in the task panel; the description keeps the link. The [command palette](search.md) also finds a task by its issue id (`eng-123`) or the shared page title. Tasks [from email](email.md) carry an **Email** origin without a link, and [imported](import.md) tasks carry their source (`origin: todoist`).
+To forget the origin, remove the **Origin** chip in the task panel; the description keeps the link. The [command palette](search.md) also finds a task by its issue id (`eng-123`) or the shared page title. Tasks [from email](email.md) carry an **Email** origin without a link, and [imported](import.md) tasks carry their source (`origin: todoist`). A message saved from Gmail or Outlook on the web with the extension's Quick save reads **Gmail** or **Outlook**, opens the message, has the subject as its tooltip, and is listed by `origin: gmail` or `origin: outlook`.
 
 ## Share sheet (installed app)
 
@@ -87,26 +87,27 @@ If nothing happens, the browser blocked the popup: allow pop-ups for the site yo
 
 ## Browser extension
 
-[`extension/`](../extension/) holds a small Manifest V3 extension for Chromium-based browsers (Chrome, Edge, Brave, Vivaldi) and Firefox 121 or later. It adds:
+[`extension/`](../extension/) holds a small Manifest V3 extension for Chromium-based browsers (Chrome, Edge, Brave, Vivaldi) and Firefox 128 or later. The toolbar button and **Alt+Shift+O** (change it at `chrome://extensions/shortcuts` or in Firefox's **Manage Extension Shortcuts**) open a popup: one line with the page's title, the text you selected, a project and a label picker, the page as the task's origin (remove it with its cross), and **Save**. **Enter** saves, **Esc** closes without keeping anything.
 
-- a toolbar button **Add to OpenTodo**,
-- a context-menu entry **Add to OpenTodo** on pages and selections,
-- a keyboard shortcut, **Alt+Shift+O** by default (change it at `chrome://extensions/shortcuts` or in Firefox's **Manage Extension Shortcuts**).
+Right-click to start from something else with **Add to OpenTodo**: on a link, the link's text is the line and its address the origin; on an image, the file name is the line and the image's address starts the description (the extension never downloads the image). On a message open in Gmail or Outlook on the web, the subject is the line and **From:** with the sender starts the description; the message body is never read.
 
-Each opens your server's capture screen in a popup window with the current tab's address, title and selection.
+**Two modes**, chosen in the extension's options:
 
-The extension's own texts (its name in the browser, the menu entries and the options page) follow the browser's interface language in English, German, French, Spanish, Italian and Portuguese, and English otherwise. The capture popup is part of the app and follows your [interface language](language.md).
+- **Capture screen** (the default): Save opens your server's capture screen in a popup window with the line, the text and the address, where you check and save as above. The extension holds no token and sends nothing itself.
+- **Quick save**: paste a full-access [API token](api.md) (create one per browser, so you can revoke it alone). Save then creates the task at once and shows **Saved** with a link to it. While you type, the line is previewed as chips (date, project, labels, priority, reminders) in your account's language; a `#name` that is no project shows a grey chip and stays in the title. A label that does not exist yet is created. If the server cannot be reached or refuses the token, the popup keeps your text and offers **Open capture screen**. On an account with [end-to-end encryption](e2ee.md), save from the capture screen, which encrypts on your device. A read-only token previews but does not save.
 
-**Install** (it is not published in the browser stores yet):
+The extension's own texts follow the browser's interface language in English, German, French, Spanish, Italian and Portuguese, and English otherwise; the chips and the capture screen follow your [interface language](language.md).
 
-- *Chromium*: download `opentodo-browser-extension.zip` from a release (or run `make extension`), unzip it, open `chrome://extensions`, turn on **Developer mode**, **Load unpacked**, pick the unzipped folder.
-- *Firefox*: open `about:debugging#/runtime/this-firefox`, **Load Temporary Add-on…**, pick `manifest.json` from the unzipped folder. Temporary add-ons are removed when Firefox restarts; a signed build is a release task.
+**Install** (it is not published in the browser stores yet): download `opentodo-browser-extension-chrome.zip` or `opentodo-browser-extension-firefox.zip` from a release (or run `make extension`) and unzip it.
 
-**First use**: if no server is set, the extension opens its options page and asks for your server's address (for example `https://todo.example.com`). Once it is saved, the capture you started continues. Change it later in the extension's options.
+- *Chromium*: open `chrome://extensions`, turn on **Developer mode**, **Load unpacked**, pick the unzipped folder.
+- *Firefox*: open `about:debugging#/runtime/this-firefox`, **Load Temporary Add-on…**, pick `manifest.json` in the unzipped folder. Temporary add-ons are removed when Firefox restarts.
 
-**Screenshot**: right-click a page and choose **Add screenshot to OpenTodo**. The extension captures the visible part of the tab as a PNG and hands it to the capture popup, where it's listed under **Files** with the page's title and link; nothing is saved until you press Save. Handing the image to the popup needs access to your server's address, which the options page asks for when you save the address (you can also grant it later there). Without it the popup opens with the title and link and explains how to allow it.
+**First use**: if no server is set, the extension opens its options page and asks for your server's address (for example `https://todo.example.com`); the capture you started continues once it is saved.
 
-**Privacy**: the extension stores only the server address (in the browser's extension sync storage). It holds no token or password, has no content scripts, and makes no network requests itself; the only traffic is the capture popup you open, which loads your own server. Permissions: `activeTab` (read the current tab's address, title and selection, and capture it, when you click), `contextMenus`, `scripting` (read the selection, and hand a screenshot to the popup), `storage` (the server address), and, optional, access to your server's address only, for the screenshot.
+**Screenshot**: right-click a page and choose **Add screenshot to OpenTodo**. The visible part of the tab is handed to the capture screen as a PNG under **Files**; nothing is saved until you press Save. This needs access to your server's address, which the options page asks for.
+
+**Privacy**: the extension talks only to the server address you enter. It stores that address and the mode in the browser's extension sync storage, and the token, in Quick save mode, on this device only (browsers never synchronise it); a token travels only over `https` (or to `localhost`). It has no content scripts and opens no connections while idle. Permissions: `activeTab` (the clicked tab's address, title and selection), `contextMenus`, `scripting` (read the selection or a mail's sender, hand a screenshot over), `storage`, and, optional, access to your server's address only.
 
 ## Signed out
 

@@ -1,0 +1,20 @@
+{
+  "about": "Gmail, German interface: a conversation opened from a label, a subject with \" - \" and an account with a hyphen.",
+  "url": "https://mail.google.com/mail/u/1/#label/Haus/FMfcgzQbfMxYzAbCdEfGhIjKlMnOpQr",
+  "title": "Angebot - Kesselwartung 2026 - ich@mein-haus.example - Gmail",
+  "header": {
+    "name": "Heizung Müller",
+    "email": "angebot@heizung.example"
+  },
+  "expect": {
+    "subject": "Angebot - Kesselwartung 2026",
+    "from": "Heizung Müller <angebot@heizung.example>",
+    "origin": {
+      "kind": "email",
+      "provider": "gmail",
+      "id": "FMfcgzQbfMxYzAbCdEfGhIjKlMnOpQr",
+      "url": "https://mail.google.com/mail/u/1/#label/Haus/FMfcgzQbfMxYzAbCdEfGhIjKlMnOpQr",
+      "title": "Angebot - Kesselwartung 2026"
+    }
+  }
+}

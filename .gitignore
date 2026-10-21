@@ -35,3 +35,5 @@ coverage.out
 /docs-report/
 /web/storybook-static/
 /tmp/
+# extension-v2: written from extension/manifest.src.json for loading the folder unpacked
+/extension/manifest.json

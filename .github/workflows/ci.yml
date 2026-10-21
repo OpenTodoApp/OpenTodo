@@ -384,12 +384,16 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      # Runs the unit tests, refuses a manifest with host permissions and zips extension/.
+      # Runs the unit tests, refuses a manifest with host permissions or a version
+      # missing from extension/CHANGELOG.md, builds the Chrome and Firefox packages
+      # and lints both with the web-ext version pinned in the Makefile.
       - run: make extension
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: opentodo-browser-extension
-          path: dist/opentodo-browser-extension.zip
+          path: |
+            dist/opentodo-browser-extension-chrome.zip
+            dist/opentodo-browser-extension-firefox.zip
 
   # The agent skill (OpenSpec change agent-ready-cli): the same SKILL.md that
   # `ot skill` prints, zipped as a release asset.
@@ -538,7 +542,7 @@ jobs:
 
   # One job publishes the GitHub release for a v* tag, after everything it ships
   # has built and every gate passed: server and `ot` binaries for every platform,
-  # the extension zip, the agent skill zip, the site bundle and SHA256SUMS, with a
+  # the extension zips (Chrome and Firefox), the agent skill zip, the site bundle and SHA256SUMS, with a
   # build provenance attestation for each (`gh attestation verify`). Notes come from
   # the tag's section in CHANGELOG.md. A failed site bundle keeps the release unpublished.
   release:

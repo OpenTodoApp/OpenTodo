@@ -1,0 +1,46 @@
+/* The popup (OpenSpec change extension-v2, design D9): 360 px wide, at most 480 px
+   tall, the system font, light and dark from the browser. The extension has no
+   build step, so it does not share the app's tokens. */
+:root {
+  color-scheme: light dark;
+  --fg: #0f172a; --muted: #64748b; --bg: #ffffff; --line: #cbd5e1; --chip: #f1f5f9;
+  --accent: #047857; --on-accent: #ffffff; --err: #b91c1c; --ok: #047857;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --fg: #e2e8f0; --muted: #94a3b8; --bg: #0f172a; --line: #334155; --chip: #1e293b; --accent: #34d399; --on-accent: #022c22; --err: #fca5a5; --ok: #6ee7b7; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { width: 360px; max-height: 480px; overflow-y: auto; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); }
+form { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+input, select, button { font: inherit; color: inherit; }
+#line { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; }
+#line:focus, select:focus, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; min-height: 0; }
+.chips:empty { display: none; }
+.chip { padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
+.chip.unmatched { color: var(--muted); font-style: italic; }
+.description { margin: 0; padding: 6px 8px; border-left: 2px solid var(--line); color: var(--muted); font-size: 12px; white-space: pre-wrap; max-height: 72px; overflow: hidden; overflow-wrap: anywhere; }
+.row { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 8px; }
+.row label, .row .key { color: var(--muted); font-size: 12px; }
+select { width: 100%; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+.labels { display: flex; flex-direction: column; gap: 4px; }
+.label-list { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.label-list:empty { display: none; }
+.label-list li { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 8px; border-radius: 999px; background: var(--chip); font-size: 12px; }
+.origin { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.origin-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.icon-button { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.icon-button:hover { background: var(--chip); color: var(--fg); }
+.status { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+.status.error { color: var(--err); }
+.status.ok { color: var(--ok); }
+.status a { color: inherit; }
+.actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.link { margin-right: auto; color: var(--muted); font-size: 12px; }
+button[type="submit"], .secondary { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--accent); cursor: pointer; font-weight: 500; }
+button[type="submit"] { background: var(--accent); color: var(--on-accent); }
+button[type="submit"]:disabled { opacity: .6; cursor: progress; }
+.secondary { background: transparent; color: var(--accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }

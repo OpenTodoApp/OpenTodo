@@ -18,6 +18,14 @@
     button { margin-top: 1rem; padding: .45rem .9rem; font: inherit; font-weight: 500; color: #fff; background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
     #pending, #status { padding: .5rem .75rem; border-radius: 6px; border: 1px solid var(--line); }
     #status.error { color: var(--err); border-color: var(--err); }
+    fieldset { border: 0; margin: .5rem 0 0; padding: 0; }
+    .choice { display: flex; gap: .5rem; align-items: flex-start; margin-top: .75rem; font-weight: 400; }
+    .choice input { width: auto; margin-top: .3rem; }
+    .help { color: var(--muted); font-size: .9em; }
+    #mode-status, #token-status { padding: .5rem .75rem; border-radius: 6px; border: 1px solid var(--line); }
+    #mode-status.error, #token-status.error { color: var(--err); border-color: var(--err); }
+    .secondary { color: var(--accent); background: transparent; border: 1px solid var(--accent); margin-left: .5rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     [hidden] { display: none !important; }
   </style>
 </head>
@@ -32,6 +40,21 @@
       <button type="submit" data-i18n="save">Save</button>
     </form>
     <p id="status" role="status" hidden></p>
+    <h2 data-i18n="modeHeading">How Save works</h2>
+    <fieldset id="modes">
+      <legend class="sr-only" data-i18n="modeHeading">How Save works</legend>
+      <label class="choice"><input type="radio" name="mode" value="capture"> <span><strong data-i18n="modeCapture">Capture screen</strong><br><span class="help" data-i18n="modeCaptureHelp">Save opens your server's capture screen, where you check the task and save it. The extension holds no token and sends nothing itself.</span></span></label>
+      <label class="choice"><input type="radio" name="mode" value="quick"> <span><strong data-i18n="modeQuick">Quick save</strong><br><span class="help" data-i18n="modeQuickHelp">Save creates the task at once through your server's API, with the token below. The extension sends the line, the selected text and the page address to your server, and to no one else.</span></span></label>
+    </fieldset>
+    <p id="mode-status" role="status" hidden></p>
+    <form id="token-form" novalidate>
+      <label for="token" data-i18n="tokenLabel">API token</label>
+      <input id="token" name="token" type="password" autocomplete="off" spellcheck="false">
+      <p class="help" data-i18n="tokenHelp">Create a full-access token in OpenTodo under Settings, Integrations, API tokens, and name it after this browser so you can revoke it on its own. It stays on this device: browsers never synchronise it.</p>
+      <button type="submit" data-i18n="tokenSave">Check and save token</button>
+      <button type="button" id="forget" class="secondary" data-i18n="tokenForget" hidden>Forget token</button>
+    </form>
+    <p id="token-status" role="status" hidden></p>
     <h2 data-i18n="screenshotsHeading">Screenshots</h2>
     <p data-i18n="screenshotsIntro">"Add screenshot to OpenTodo" captures the visible part of a page and hands the image to your server's capture popup, where nothing is saved until you press Save. Handing it over needs access to your server's address, and only that address; the browser asks when you save it.</p>
     <p id="screenshots" role="status"></p>

@@ -25,7 +25,7 @@ cat <<NOTES
 
 - Docker: \`docker run -d -p 8080:8080 -v opentodo:/data ghcr.io/pixari/opentodo:$version\`
 - Binary: download \`opentodo-<os>-<arch>\` below, then run it (data goes to \`./data\`).
-- Command-line client: \`ot-<os>-<arch>\`. Browser extension: \`opentodo-browser-extension.zip\`.
+- Command-line client: \`ot-<os>-<arch>\`. Browser extension: \`opentodo-browser-extension-chrome.zip\` and \`opentodo-browser-extension-firefox.zip\`.
 
 Verify downloads with \`sha256sum -c SHA256SUMS\`. Self-hosting guides: [docs/self-hosting](https://github.com/pixari/opentodo/tree/v$version/docs/self-hosting).
 NOTES

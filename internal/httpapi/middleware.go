@@ -152,7 +152,11 @@ func (s *Server) authenticateScoped(r *http.Request) (*auth.User, *auth.Session,
 
 // isWriteRequest reports whether a request may change state: every method but
 // GET, HEAD and OPTIONS, and the sync route whatever its method (mcp-server D2).
+// The quick-add parse POST changes nothing (extension-v2 D1).
 func isWriteRequest(r *http.Request) bool {
+	if isReadOnlyPost(r) {
+		return false
+	}
 	switch r.Method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions:
 		return r.URL.Path == "/api/v1/sync"

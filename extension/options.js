@@ -1,3 +1,5 @@
+import { createApi } from './api.js'
+import { MODE_CAPTURE, MODE_QUICK, readSettings, scopeDecision, tokenAllowed } from './settings.js'
 import { buildShareUrl, decodePending, normalizeServer, originPattern } from './share-url.js'
 
 const ext = globalThis.browser ?? globalThis.chrome
@@ -77,4 +79,69 @@ form.addEventListener('submit', async (e) => {
   await ext.windows.create({ url: buildShareUrl(origin, pending), type: 'popup', width: 480, height: 640 })
   const tab = await ext.tabs.getCurrent()
   if (tab?.id != null) await ext.tabs.remove(tab.id)
+})
+
+// Save modes and the token (OpenSpec change extension-v2, design D2). The mode
+// syncs with the browser's settings; the token and what the server said about it
+// stay in storage.local on this device.
+const modeStatus = document.getElementById('mode-status')
+const tokenForm = document.getElementById('token-form')
+const tokenInput = document.getElementById('token')
+const tokenStatus = document.getElementById('token-status')
+const forget = document.getElementById('forget')
+
+function note(el, message, error = false) {
+  el.hidden = !message
+  el.textContent = message
+  el.classList.toggle('error', error)
+}
+
+async function showToken() {
+  const s = await readSettings(ext)
+  for (const r of document.querySelectorAll('input[name="mode"]')) r.checked = r.value === (s.mode === MODE_QUICK ? MODE_QUICK : MODE_CAPTURE)
+  forget.hidden = !s.token
+  if (s.token && s.account) note(tokenStatus, msg('tokenOk', s.account, s.scope))
+  if (s.mode === MODE_QUICK && !scopeDecision(s.scope).save) note(modeStatus, msg('modeNeedsToken'), true)
+  else note(modeStatus, '')
+}
+void showToken()
+
+for (const r of document.querySelectorAll('input[name="mode"]')) {
+  r.addEventListener('change', async () => {
+    if (!r.checked) return
+    await ext.storage.sync.set({ mode: r.value })
+    await showToken()
+  })
+}
+
+tokenForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const { server: current } = await ext.storage.sync.get('server')
+  const token = tokenInput.value.trim()
+  if (!current) return note(tokenStatus, msg('tokenNoServer'), true)
+  if (!tokenAllowed(current)) return note(tokenStatus, msg('tokenHttp'), true)
+  if (!token) return
+  // Access to the server's address, asked from this click (browsers require a gesture).
+  const access = await requestAccess(current)
+  if (!access) return note(tokenStatus, msg('tokenAccess'), true)
+  note(tokenStatus, msg('tokenChecking'))
+  try {
+    const me = await createApi({ server: current, token }).me()
+    const scope = me?.auth?.scope ?? ''
+    const decision = scopeDecision(scope)
+    if (!decision.parse) return note(tokenStatus, msg(decision.reason), true)
+    const account = me?.user?.name || me?.user?.email || ''
+    await ext.storage.local.set({ token, scope, account })
+    tokenInput.value = ''
+    note(tokenStatus, decision.save ? msg('tokenOk', account, scope) : msg(decision.reason), !decision.save)
+  } catch (err) {
+    note(tokenStatus, err?.kind === 'unreachable' ? msg('tokenUnreachable') : msg('tokenRejected', err?.message ?? ''), true)
+  }
+  await showToken()
+})
+
+forget.addEventListener('click', async () => {
+  await ext.storage.local.remove(['token', 'scope', 'account'])
+  note(tokenStatus, msg('tokenForgotten'))
+  await showToken()
 })

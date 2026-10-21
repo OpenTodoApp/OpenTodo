@@ -126,6 +126,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | --- | --- | --- | --- |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones; `?completed_after=…&completed_before=…` for [tasks completed in a range](#tasks-completed-in-a-range) |
 | POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create) |
+| POST | `/api/v1/quick-add/parse` | yes, every scope | read a quick-add line with the account's languages, projects and labels; writes nothing, so a `read` token may call it; see [Quick-add parse](#quick-add-parse) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
@@ -587,6 +588,19 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
 curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"completed_at":1760264400000}'
 ```
+
+### Quick-add parse
+
+`POST /api/v1/quick-add/parse` reads one line with the grammar of the app's quick add (OpenSpec `extension-v2`), so a client without the web parser can preview and save a line the same way. Body: `{"line": "…", "url"?: "…", "today"?: "YYYY-MM-DD", "now"?: "HH:MM"}`; send `today` and `now` from the device, which wins over the server's clock (that falls back to the email digest's time zone, else UTC). The line is read in the account's interface language, then the request's `Accept-Language`, then English, with the account's date order, week start and its projects and labels (encrypted names cannot be matched).
+
+The answer is `{title, fields, chips, unmatched, origin}`:
+
+- `fields` holds only what the line sets, in the form `POST /api/v1/tasks` takes: `due` (`{date, time?}`), `deadline`, `start` (`"someday"`), `evening`, `project_id`, `priority`, `estimate_minutes`, `recurrence`; plus `labels` as `[{id?, name}]` (no `id` for a label that does not exist yet: create it with `POST /api/v1/labels` first), `spent_minutes` (post one closed time entry ending now) and `reminders`, each `{kind: "relative", offset_minutes}` or `{kind: "absolute", date, time}` (a floating moment the client turns into `fire_at` in its own zone), to post with `POST /api/v1/reminders` once the task exists.
+- `chips` are the preview chips, `{kind, text, start, end}`, in the account's language; `start` and `end` count UTF-16 code units of the line. Kinds: `due`, `deadline`, `evening`, `someday`, `project`, `label`, `priority`, `estimate`, `recurrence`, `reminder`, `unmatched`.
+- `unmatched` lists the `#name` tokens that name no project; they stay in `title`.
+- `origin` is the recognised origin of `url` (an `issue` origin for a GitHub, GitLab, Jira or Linear link, else a `url` origin), or `null` without a `url`. The server makes no request to that address.
+
+Errors: `400 invalid_input` for a body that is not an object, a missing `line`, a line over 2,000 characters or a malformed `today`/`now`; `401` without credentials; `429 rate_limited` above 60 requests a minute per account. The results are pinned to the web parser by the shared vectors in `web/src/lib/nlp/quickadd.vectors.json`, like `ot add --natural`.
 
 ### Project fields
 

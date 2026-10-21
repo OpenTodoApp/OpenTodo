@@ -3,7 +3,8 @@
     "message": "OpenTodo Capture"
   },
   "extDescription": {
-    "message": "Envoyez la page en cours, son titre, le texte sélectionné ou une capture d’écran vers l’écran de capture de votre propre serveur OpenTodo. Aucun pistage, aucune requête réseau."
+    "message": "Ajoutez la page, un lien, une image, un e-mail ou le texte sélectionné à votre propre serveur OpenTodo, depuis une petite fenêtre. Elle ne communique qu’avec l’adresse de serveur que vous indiquez.",
+    "description": "The description in the browser’s extension list."
   },
   "actionTitle": {
     "message": "Ajouter à OpenTodo"
@@ -18,7 +19,8 @@
     "message": "Réglages d’OpenTodo Capture"
   },
   "optionsIntro": {
-    "message": "Saisissez l’adresse de votre serveur OpenTodo. L’extension ouvre l’écran de capture de ce serveur pour la page en cours. Elle n’enregistre que cette adresse, ne détient ni mot de passe ni jeton et ne contacte jamais le serveur elle-même."
+    "message": "Saisissez l’adresse de votre serveur OpenTodo. L’extension n’enregistre que cette adresse et, en mode Enregistrement direct, le jeton collé ci-dessous ; elle ne contacte aucune autre adresse.",
+    "description": "Options page introduction."
   },
   "pendingNote": {
     "message": "Indiquez votre serveur pour continuer à ajouter « $TITLE$ ».",
@@ -70,5 +72,189 @@
         "example": "https://todo.example.com"
       }
     }
+  },
+  "popupLine": {
+    "message": "Tâche",
+    "description": "Label of the quick-add line in the popup."
+  },
+  "popupProject": {
+    "message": "Projet",
+    "description": "Label of the project picker."
+  },
+  "popupInbox": {
+    "message": "Boîte de réception",
+    "description": "The project picker’s choice for no project."
+  },
+  "popupLabels": {
+    "message": "Étiquettes",
+    "description": "Label of the label picker."
+  },
+  "popupAddLabel": {
+    "message": "Ajouter une étiquette",
+    "description": "First entry of the label picker."
+  },
+  "popupRemoveLabel": {
+    "message": "Retirer l’étiquette $NAME$",
+    "description": "Accessible name of the button that removes a label; $NAME$ is the label.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "call"
+      }
+    }
+  },
+  "popupOrigin": {
+    "message": "Depuis",
+    "description": "Label of the task’s origin (the page it comes from)."
+  },
+  "popupRemoveOrigin": {
+    "message": "Retirer le lien",
+    "description": "Accessible name of the button that removes the page link."
+  },
+  "popupOptions": {
+    "message": "Réglages",
+    "description": "Link from the popup to the options page."
+  },
+  "popupOpenCapture": {
+    "message": "Ouvrir l’écran de capture",
+    "description": "Button that opens the server’s capture screen instead."
+  },
+  "popupSaving": {
+    "message": "Enregistrement…",
+    "description": "Status while the task is being saved."
+  },
+  "popupSaved": {
+    "message": "Enregistrée",
+    "description": "Status once the task was saved."
+  },
+  "popupOpenTask": {
+    "message": "Ouvrir la tâche",
+    "description": "Link to the saved task."
+  },
+  "popupUnreachable": {
+    "message": "Le serveur est injoignable. Votre texte est conservé.",
+    "description": "The server did not answer a save."
+  },
+  "popupTokenRefused": {
+    "message": "Le jeton ne fonctionne plus. Vérifiez-le dans les réglages.",
+    "description": "The token was refused by the server."
+  },
+  "popupEncrypted": {
+    "message": "Ce compte est chiffré de bout en bout : enregistrez depuis l’écran de capture, qui chiffre sur votre appareil.",
+    "description": "Quick save on an end-to-end encrypted account."
+  },
+  "popupRateLimited": {
+    "message": "Trop de requêtes. Réessayez dans une minute.",
+    "description": "Too many requests."
+  },
+  "popupFailed": {
+    "message": "La tâche n’a pas pu être enregistrée : $MESSAGE$",
+    "description": "A save failed; $MESSAGE$ is the server’s reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "title: required"
+      }
+    }
+  },
+  "popupNoServer": {
+    "message": "Indiquez d’abord l’adresse de votre serveur dans les réglages ; Enregistrer vous y emmène.",
+    "description": "The popup before a server address is set."
+  },
+  "modeHeading": {
+    "message": "Fonctionnement d’Enregistrer",
+    "description": "Options page heading of the save modes."
+  },
+  "modeCapture": {
+    "message": "Écran de capture",
+    "description": "The Capture screen mode."
+  },
+  "modeCaptureHelp": {
+    "message": "Enregistrer ouvre l’écran de capture de votre serveur, où vous vérifiez la tâche avant de l’enregistrer. L’extension ne détient aucun jeton et n’envoie rien elle-même.",
+    "description": "What the Capture screen mode does."
+  },
+  "modeQuick": {
+    "message": "Enregistrement direct",
+    "description": "The Quick save mode."
+  },
+  "modeQuickHelp": {
+    "message": "Enregistrer crée la tâche aussitôt via l’API de votre serveur, avec le jeton ci-dessous. L’extension envoie la ligne, le texte sélectionné et l’adresse de la page à votre serveur, et à personne d’autre.",
+    "description": "What the Quick save mode does."
+  },
+  "modeNeedsToken": {
+    "message": "L’enregistrement direct demande un jeton à accès complet : en attendant, Enregistrer ouvre l’écran de capture.",
+    "description": "Quick save chosen without a token that can save."
+  },
+  "tokenLabel": {
+    "message": "Jeton d’API",
+    "description": "Label of the token field."
+  },
+  "tokenHelp": {
+    "message": "Créez un jeton à accès complet dans OpenTodo sous Réglages, Intégrations, Jetons d’API, et nommez-le d’après ce navigateur pour pouvoir le révoquer seul. Il reste sur cet appareil : les navigateurs ne le synchronisent jamais.",
+    "description": "Help under the token field."
+  },
+  "tokenSave": {
+    "message": "Vérifier et enregistrer le jeton",
+    "description": "Button that checks and saves the token."
+  },
+  "tokenForget": {
+    "message": "Oublier le jeton",
+    "description": "Button that removes the token."
+  },
+  "tokenForgotten": {
+    "message": "Le jeton a été retiré de ce navigateur.",
+    "description": "Status after the token was removed."
+  },
+  "tokenChecking": {
+    "message": "Vérification du jeton…",
+    "description": "Status while the token is checked."
+  },
+  "tokenOk": {
+    "message": "Jeton de $NAME$ ($SCOPE$) : l’enregistrement direct est prêt.",
+    "description": "The token works; $NAME$ is the account, $SCOPE$ its scope.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alex"
+      },
+      "scope": {
+        "content": "$2",
+        "example": "full"
+      }
+    }
+  },
+  "tokenRead": {
+    "message": "Ce jeton en lecture seule peut prévisualiser une ligne mais pas enregistrer : Enregistrer continue d’ouvrir l’écran de capture.",
+    "description": "A read token was given."
+  },
+  "tokenAgent": {
+    "message": "Ce jeton est destiné aux assistants IA et ne peut pas enregistrer ici ; créez plutôt un jeton à accès complet.",
+    "description": "An AI assistant token was given."
+  },
+  "tokenRejected": {
+    "message": "Le serveur a refusé le jeton : $MESSAGE$",
+    "description": "The server refused the token; $MESSAGE$ is its reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "authentication required"
+      }
+    }
+  },
+  "tokenUnreachable": {
+    "message": "Le serveur est injoignable.",
+    "description": "The server did not answer the token check."
+  },
+  "tokenNoServer": {
+    "message": "Enregistrez d’abord l’adresse du serveur.",
+    "description": "A token was given before a server address."
+  },
+  "tokenHttp": {
+    "message": "Les jetons ne circulent qu’en https. Utilisez une adresse https (ou localhost) ; l’écran de capture continue de fonctionner.",
+    "description": "A token for a plain http address."
+  },
+  "tokenAccess": {
+    "message": "L’enregistrement direct a besoin d’accéder à l’adresse de votre serveur ; le navigateur ne l’a pas accordé.",
+    "description": "The browser did not grant access to the server address."
   }
 }

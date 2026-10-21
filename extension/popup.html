@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title data-i18n="actionTitle">Add to OpenTodo</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <form id="form" novalidate>
+    <label for="line" class="sr-only" data-i18n="popupLine">Task</label>
+    <input id="line" name="line" type="text" autocomplete="off" spellcheck="true" maxlength="2000">
+    <p id="chips" class="chips" role="status" aria-live="polite"></p>
+    <p id="description" class="description" hidden></p>
+    <div class="row">
+      <label for="project" data-i18n="popupProject">Project</label>
+      <select id="project" name="project"><option value="" data-i18n="popupInbox">Inbox</option></select>
+    </div>
+    <div class="row">
+      <label for="add-label" data-i18n="popupLabels">Labels</label>
+      <div class="labels">
+        <ul id="labels" class="label-list"></ul>
+        <select id="add-label" name="label"><option value="" data-i18n="popupAddLabel">Add a label</option></select>
+      </div>
+    </div>
+    <div id="origin-row" class="row" hidden>
+      <span class="key" data-i18n="popupOrigin">From</span>
+      <span class="origin"><span id="origin" class="origin-text"></span>
+        <button type="button" id="remove-origin" class="icon-button"><svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="sr-only" data-i18n="popupRemoveOrigin">Remove the link</span></button>
+      </span>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite" hidden></p>
+    <div class="actions">
+      <button type="button" id="capture" class="secondary" data-i18n="popupOpenCapture" hidden>Open capture screen</button>
+      <a id="options" href="options.html" target="_blank" class="link" data-i18n="popupOptions">Settings</a>
+      <button type="submit" id="save" data-i18n="save">Save</button>
+    </div>
+  </form>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

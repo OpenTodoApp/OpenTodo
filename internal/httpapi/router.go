@@ -122,6 +122,7 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerIssueRoutes(mux)
 	// Map proxy and its switches (OpenSpec `task-locations`).
 	s.registerMapRoutes(mux)
+	s.registerQuickAddRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`).
 	s.registerCommentRoutes(mux)
 	s.registerTimeEntryRoutes(mux)

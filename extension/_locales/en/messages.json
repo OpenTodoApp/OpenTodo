@@ -4,7 +4,7 @@
     "description": "The extension name in the browser’s extension list."
   },
   "extDescription": {
-    "message": "Send the current page, its title, the selected text or a screenshot to the capture screen of your own OpenTodo server. No tracking, no network requests.",
+    "message": "Add the current page, a link, an image, a mail or the selected text to your own OpenTodo server, from a small popup. It talks only to the server address you enter.",
     "description": "The description in the browser’s extension list."
   },
   "actionTitle": {
@@ -24,7 +24,7 @@
     "description": "Options page title."
   },
   "optionsIntro": {
-    "message": "Enter the address of your OpenTodo server. The extension opens that server's capture screen for the current page. It stores only this address, holds no password or token and never contacts the server itself.",
+    "message": "Enter the address of your OpenTodo server. The extension stores only this address and, in Quick save mode, the token you paste below; it talks to no other address.",
     "description": "Options page introduction."
   },
   "pendingNote": {
@@ -88,5 +88,189 @@
         "example": "https://todo.example.com"
       }
     }
+  },
+  "popupLine": {
+    "message": "Task",
+    "description": "Label of the quick-add line in the popup."
+  },
+  "popupProject": {
+    "message": "Project",
+    "description": "Label of the project picker."
+  },
+  "popupInbox": {
+    "message": "Inbox",
+    "description": "The project picker’s choice for no project."
+  },
+  "popupLabels": {
+    "message": "Labels",
+    "description": "Label of the label picker."
+  },
+  "popupAddLabel": {
+    "message": "Add a label",
+    "description": "First entry of the label picker."
+  },
+  "popupRemoveLabel": {
+    "message": "Remove label $NAME$",
+    "description": "Accessible name of the button that removes a label; $NAME$ is the label.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "call"
+      }
+    }
+  },
+  "popupOrigin": {
+    "message": "From",
+    "description": "Label of the task’s origin (the page it comes from)."
+  },
+  "popupRemoveOrigin": {
+    "message": "Remove the link",
+    "description": "Accessible name of the button that removes the page link."
+  },
+  "popupOptions": {
+    "message": "Settings",
+    "description": "Link from the popup to the options page."
+  },
+  "popupOpenCapture": {
+    "message": "Open capture screen",
+    "description": "Button that opens the server’s capture screen instead."
+  },
+  "popupSaving": {
+    "message": "Saving…",
+    "description": "Status while the task is being saved."
+  },
+  "popupSaved": {
+    "message": "Saved",
+    "description": "Status once the task was saved."
+  },
+  "popupOpenTask": {
+    "message": "Open the task",
+    "description": "Link to the saved task."
+  },
+  "popupUnreachable": {
+    "message": "The server could not be reached. Your text is still here.",
+    "description": "The server did not answer a save."
+  },
+  "popupTokenRefused": {
+    "message": "The token no longer works. Check it in the settings.",
+    "description": "The token was refused by the server."
+  },
+  "popupEncrypted": {
+    "message": "This account is end-to-end encrypted: save from the capture screen, which encrypts on your device.",
+    "description": "Quick save on an end-to-end encrypted account."
+  },
+  "popupRateLimited": {
+    "message": "Too many requests. Try again in a minute.",
+    "description": "Too many requests."
+  },
+  "popupFailed": {
+    "message": "The task could not be saved: $MESSAGE$",
+    "description": "A save failed; $MESSAGE$ is the server’s reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "title: required"
+      }
+    }
+  },
+  "popupNoServer": {
+    "message": "Set your server address in the settings first; Save takes you there.",
+    "description": "The popup before a server address is set."
+  },
+  "modeHeading": {
+    "message": "How Save works",
+    "description": "Options page heading of the save modes."
+  },
+  "modeCapture": {
+    "message": "Capture screen",
+    "description": "The Capture screen mode."
+  },
+  "modeCaptureHelp": {
+    "message": "Save opens your server’s capture screen, where you check the task and save it. The extension holds no token and sends nothing itself.",
+    "description": "What the Capture screen mode does."
+  },
+  "modeQuick": {
+    "message": "Quick save",
+    "description": "The Quick save mode."
+  },
+  "modeQuickHelp": {
+    "message": "Save creates the task at once through your server’s API, with the token below. The extension sends the line, the selected text and the page address to your server, and to no one else.",
+    "description": "What the Quick save mode does."
+  },
+  "modeNeedsToken": {
+    "message": "Quick save needs a full-access token: until then Save opens the capture screen.",
+    "description": "Quick save chosen without a token that can save."
+  },
+  "tokenLabel": {
+    "message": "API token",
+    "description": "Label of the token field."
+  },
+  "tokenHelp": {
+    "message": "Create a full-access token in OpenTodo under Settings, Integrations, API tokens, and name it after this browser so you can revoke it on its own. It stays on this device: browsers never synchronise it.",
+    "description": "Help under the token field."
+  },
+  "tokenSave": {
+    "message": "Check and save token",
+    "description": "Button that checks and saves the token."
+  },
+  "tokenForget": {
+    "message": "Forget token",
+    "description": "Button that removes the token."
+  },
+  "tokenForgotten": {
+    "message": "The token was removed from this browser.",
+    "description": "Status after the token was removed."
+  },
+  "tokenChecking": {
+    "message": "Checking the token…",
+    "description": "Status while the token is checked."
+  },
+  "tokenOk": {
+    "message": "Token of $NAME$ ($SCOPE$): Quick save is ready.",
+    "description": "The token works; $NAME$ is the account, $SCOPE$ its scope.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alex"
+      },
+      "scope": {
+        "content": "$2",
+        "example": "full"
+      }
+    }
+  },
+  "tokenRead": {
+    "message": "This read-only token can preview a line but not save: Save keeps opening the capture screen.",
+    "description": "A read token was given."
+  },
+  "tokenAgent": {
+    "message": "This token is for AI assistants and cannot save here; create a full-access token instead.",
+    "description": "An AI assistant token was given."
+  },
+  "tokenRejected": {
+    "message": "The server refused the token: $MESSAGE$",
+    "description": "The server refused the token; $MESSAGE$ is its reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "authentication required"
+      }
+    }
+  },
+  "tokenUnreachable": {
+    "message": "The server could not be reached.",
+    "description": "The server did not answer the token check."
+  },
+  "tokenNoServer": {
+    "message": "Save the server address first.",
+    "description": "A token was given before a server address."
+  },
+  "tokenHttp": {
+    "message": "Tokens travel only over https. Use an https address (or localhost); the capture screen keeps working.",
+    "description": "A token for a plain http address."
+  },
+  "tokenAccess": {
+    "message": "Quick save needs access to your server’s address; the browser did not grant it.",
+    "description": "The browser did not grant access to the server address."
   }
 }

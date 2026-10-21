@@ -3,7 +3,8 @@
     "message": "OpenTodo Capture"
   },
   "extDescription": {
-    "message": "Invia la pagina corrente, il suo titolo, il testo selezionato o uno screenshot alla schermata di acquisizione del tuo server OpenTodo. Nessun tracciamento, nessuna richiesta di rete."
+    "message": "Aggiungi la pagina, un link, un’immagine, una mail o il testo selezionato al tuo server OpenTodo, da una piccola finestra. Comunica solo con l’indirizzo del server che inserisci.",
+    "description": "The description in the browser’s extension list."
   },
   "actionTitle": {
     "message": "Aggiungi a OpenTodo"
@@ -18,7 +19,8 @@
     "message": "Impostazioni di OpenTodo Capture"
   },
   "optionsIntro": {
-    "message": "Inserisci l’indirizzo del tuo server OpenTodo. L’estensione apre la schermata di acquisizione di quel server per la pagina corrente. Salva solo questo indirizzo, non conserva password né token e non contatta mai il server da sola."
+    "message": "Inserisci l’indirizzo del tuo server OpenTodo. L’estensione salva solo questo indirizzo e, in modalità Salvataggio diretto, il token che incolli qui sotto; non comunica con nessun altro indirizzo.",
+    "description": "Options page introduction."
   },
   "pendingNote": {
     "message": "Imposta il tuo server per continuare ad aggiungere «$TITLE$».",
@@ -70,5 +72,189 @@
         "example": "https://todo.example.com"
       }
     }
+  },
+  "popupLine": {
+    "message": "Attività",
+    "description": "Label of the quick-add line in the popup."
+  },
+  "popupProject": {
+    "message": "Progetto",
+    "description": "Label of the project picker."
+  },
+  "popupInbox": {
+    "message": "In arrivo",
+    "description": "The project picker’s choice for no project."
+  },
+  "popupLabels": {
+    "message": "Etichette",
+    "description": "Label of the label picker."
+  },
+  "popupAddLabel": {
+    "message": "Aggiungi un’etichetta",
+    "description": "First entry of the label picker."
+  },
+  "popupRemoveLabel": {
+    "message": "Rimuovi l’etichetta $NAME$",
+    "description": "Accessible name of the button that removes a label; $NAME$ is the label.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "call"
+      }
+    }
+  },
+  "popupOrigin": {
+    "message": "Da",
+    "description": "Label of the task’s origin (the page it comes from)."
+  },
+  "popupRemoveOrigin": {
+    "message": "Rimuovi il link",
+    "description": "Accessible name of the button that removes the page link."
+  },
+  "popupOptions": {
+    "message": "Impostazioni",
+    "description": "Link from the popup to the options page."
+  },
+  "popupOpenCapture": {
+    "message": "Apri la schermata di acquisizione",
+    "description": "Button that opens the server’s capture screen instead."
+  },
+  "popupSaving": {
+    "message": "Salvataggio…",
+    "description": "Status while the task is being saved."
+  },
+  "popupSaved": {
+    "message": "Salvata",
+    "description": "Status once the task was saved."
+  },
+  "popupOpenTask": {
+    "message": "Apri l’attività",
+    "description": "Link to the saved task."
+  },
+  "popupUnreachable": {
+    "message": "Il server non è raggiungibile. Il tuo testo è ancora qui.",
+    "description": "The server did not answer a save."
+  },
+  "popupTokenRefused": {
+    "message": "Il token non funziona più. Controllalo nelle impostazioni.",
+    "description": "The token was refused by the server."
+  },
+  "popupEncrypted": {
+    "message": "Questo account è cifrato end-to-end: salva dalla schermata di acquisizione, che cifra sul tuo dispositivo.",
+    "description": "Quick save on an end-to-end encrypted account."
+  },
+  "popupRateLimited": {
+    "message": "Troppe richieste. Riprova tra un minuto.",
+    "description": "Too many requests."
+  },
+  "popupFailed": {
+    "message": "Impossibile salvare l’attività: $MESSAGE$",
+    "description": "A save failed; $MESSAGE$ is the server’s reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "title: required"
+      }
+    }
+  },
+  "popupNoServer": {
+    "message": "Imposta prima l’indirizzo del server nelle impostazioni; Salva ti porta lì.",
+    "description": "The popup before a server address is set."
+  },
+  "modeHeading": {
+    "message": "Come funziona Salva",
+    "description": "Options page heading of the save modes."
+  },
+  "modeCapture": {
+    "message": "Schermata di acquisizione",
+    "description": "The Capture screen mode."
+  },
+  "modeCaptureHelp": {
+    "message": "Salva apre la schermata di acquisizione del tuo server, dove controlli l’attività e la salvi. L’estensione non ha token e non invia nulla da sola.",
+    "description": "What the Capture screen mode does."
+  },
+  "modeQuick": {
+    "message": "Salvataggio diretto",
+    "description": "The Quick save mode."
+  },
+  "modeQuickHelp": {
+    "message": "Salva crea subito l’attività tramite l’API del tuo server, con il token qui sotto. L’estensione invia la riga, il testo selezionato e l’indirizzo della pagina al tuo server, e a nessun altro.",
+    "description": "What the Quick save mode does."
+  },
+  "modeNeedsToken": {
+    "message": "Il salvataggio diretto richiede un token con accesso completo: fino ad allora Salva apre la schermata di acquisizione.",
+    "description": "Quick save chosen without a token that can save."
+  },
+  "tokenLabel": {
+    "message": "Token API",
+    "description": "Label of the token field."
+  },
+  "tokenHelp": {
+    "message": "Crea un token con accesso completo in OpenTodo in Impostazioni, Integrazioni, Token API, e chiamalo come questo browser per poterlo revocare da solo. Resta su questo dispositivo: i browser non lo sincronizzano mai.",
+    "description": "Help under the token field."
+  },
+  "tokenSave": {
+    "message": "Verifica e salva il token",
+    "description": "Button that checks and saves the token."
+  },
+  "tokenForget": {
+    "message": "Dimentica il token",
+    "description": "Button that removes the token."
+  },
+  "tokenForgotten": {
+    "message": "Il token è stato rimosso da questo browser.",
+    "description": "Status after the token was removed."
+  },
+  "tokenChecking": {
+    "message": "Verifica del token…",
+    "description": "Status while the token is checked."
+  },
+  "tokenOk": {
+    "message": "Token di $NAME$ ($SCOPE$): il salvataggio diretto è pronto.",
+    "description": "The token works; $NAME$ is the account, $SCOPE$ its scope.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alex"
+      },
+      "scope": {
+        "content": "$2",
+        "example": "full"
+      }
+    }
+  },
+  "tokenRead": {
+    "message": "Questo token di sola lettura può mostrare l’anteprima di una riga ma non salvare: Salva continua ad aprire la schermata di acquisizione.",
+    "description": "A read token was given."
+  },
+  "tokenAgent": {
+    "message": "Questo token è per gli assistenti IA e qui non può salvare; crea invece un token con accesso completo.",
+    "description": "An AI assistant token was given."
+  },
+  "tokenRejected": {
+    "message": "Il server ha rifiutato il token: $MESSAGE$",
+    "description": "The server refused the token; $MESSAGE$ is its reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "authentication required"
+      }
+    }
+  },
+  "tokenUnreachable": {
+    "message": "Il server non è raggiungibile.",
+    "description": "The server did not answer the token check."
+  },
+  "tokenNoServer": {
+    "message": "Salva prima l’indirizzo del server.",
+    "description": "A token was given before a server address."
+  },
+  "tokenHttp": {
+    "message": "I token viaggiano solo su https. Usa un indirizzo https (o localhost); la schermata di acquisizione continua a funzionare.",
+    "description": "A token for a plain http address."
+  },
+  "tokenAccess": {
+    "message": "Il salvataggio diretto ha bisogno di accedere all’indirizzo del tuo server; il browser non l’ha concesso.",
+    "description": "The browser did not grant access to the server address."
   }
 }

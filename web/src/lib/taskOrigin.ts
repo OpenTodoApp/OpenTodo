@@ -95,11 +95,13 @@ export function originHost(origin: Origin): string {
 }
 
 /**
- * The short text a chip shows: the external id, else the URL's host. An email
- * origin has no readable label (its id is a Message-ID): callers show "Email".
+ * The short text a chip shows: a message open in a web mail client (an email
+ * origin with a URL and a provider) reads as the provider, "Gmail" or "Outlook"
+ * (extension-v2); else the external id, else the URL's host. An email origin
+ * without a link has no readable label (its id is a Message-ID): callers show "Email".
  */
 export function originLabel(origin: Origin): string {
-  if (origin.kind === 'email') return ''
+  if (origin.kind === 'email') return origin.url && origin.provider ? origin.provider.charAt(0).toUpperCase() + origin.provider.slice(1) : ''
   return origin.id || originHost(origin)
 }
 

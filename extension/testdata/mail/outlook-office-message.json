@@ -1,0 +1,20 @@
+{
+  "about": "Outlook on the web (work account, outlook.office.com), English: a message in the reading pane.",
+  "url": "https://outlook.office.com/mail/inbox/id/AAQkADAwATM0MDAAMS1iNTcwLWI2NTEtMDACLTAwCgAQAExampleId%3D",
+  "title": "Invoice 42 - Anne-Marie Dupont - Outlook",
+  "header": {
+    "name": "Billing Team",
+    "email": "billing@supplier.example"
+  },
+  "expect": {
+    "subject": "Invoice 42",
+    "from": "Billing Team <billing@supplier.example>",
+    "origin": {
+      "kind": "email",
+      "provider": "outlook",
+      "id": "AAQkADAwATM0MDAAMS1iNTcwLWI2NTEtMDACLTAwCgAQAExampleId=",
+      "url": "https://outlook.office.com/mail/inbox/id/AAQkADAwATM0MDAAMS1iNTcwLWI2NTEtMDACLTAwCgAQAExampleId%3D",
+      "title": "Invoice 42"
+    }
+  }
+}

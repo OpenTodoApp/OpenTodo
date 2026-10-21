@@ -178,10 +178,15 @@ func (o Origin) Host() string {
 	return strings.TrimPrefix(strings.ToLower(u.Hostname()), "www.")
 }
 
-// Label is the short text people see for the origin: the external id, else
-// the URL's host. Readers that show an email origin as a word (the row chip)
-// decide that themselves.
+// Label is the short text people see for the origin: a message open in a web
+// mail client (an email origin with a URL and a provider) reads as the provider,
+// "Gmail" or "Outlook" (extension-v2); else the external id, else the URL's
+// host. Readers that show an email origin without a link as a word (the row
+// chip) decide that themselves.
 func (o Origin) Label() string {
+	if o.Kind == KindEmail && o.URL != "" && o.Provider != "" {
+		return strings.ToUpper(o.Provider[:1]) + o.Provider[1:]
+	}
 	if o.ID != "" {
 		return o.ID
 	}

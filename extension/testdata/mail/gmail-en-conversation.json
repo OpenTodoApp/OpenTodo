@@ -1,0 +1,20 @@
+{
+  "about": "Gmail, English interface: a conversation opened from the inbox.",
+  "url": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQbfLnVwXkPqRtSzHjKmBdCxWvN",
+  "title": "Boiler service quote - me@example.com - Gmail",
+  "header": {
+    "name": "Acme Heating",
+    "email": "quotes@acme.example"
+  },
+  "expect": {
+    "subject": "Boiler service quote",
+    "from": "Acme Heating <quotes@acme.example>",
+    "origin": {
+      "kind": "email",
+      "provider": "gmail",
+      "id": "FMfcgzQbfLnVwXkPqRtSzHjKmBdCxWvN",
+      "url": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQbfLnVwXkPqRtSzHjKmBdCxWvN",
+      "title": "Boiler service quote"
+    }
+  }
+}

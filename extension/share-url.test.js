@@ -54,11 +54,11 @@ test('first run: a pending capture round-trips through the options page URL', ()
 })
 
 test('manifest: MV3, minimal permissions, no host access by default', () => {
-  const m = JSON.parse(readFileSync(new URL('./manifest.json', import.meta.url), 'utf8'))
+  const m = JSON.parse(readFileSync(new URL('./manifest.src.json', import.meta.url), 'utf8'))
   assert.equal(m.manifest_version, 3)
   assert.deepEqual([...m.permissions].sort(), ['activeTab', 'contextMenus', 'scripting', 'storage'])
   assert.equal(m.host_permissions, undefined)
-  // Only optional, for the screenshot hand-over, requested for the server origin alone.
+  // Only optional, for the screenshot hand-over and Quick save, requested for the server origin alone.
   assert.deepEqual(m.optional_host_permissions, ['https://*/*', 'http://*/*'])
   assert.equal(m.optional_permissions, undefined)
   assert.equal(m.content_scripts, undefined)
@@ -66,7 +66,7 @@ test('manifest: MV3, minimal permissions, no host access by default', () => {
   assert.ok(m.browser_specific_settings.gecko.id)
 })
 
-test('sources make no network requests of their own', () => {
+test('sources other than api.js make no network requests', () => {
   for (const f of ['background.js', 'options.js', 'share-url.js', 'options.html']) {
     const src = readFileSync(new URL(`./${f}`, import.meta.url), 'utf8')
     assert.doesNotMatch(src, /\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|<script[^>]+src=["']https?:/i, f)
