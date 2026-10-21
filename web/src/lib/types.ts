@@ -93,6 +93,12 @@ export interface Task {
    */
   blocked_by?: string[]
   /**
+   * The members an @mention in the notes names (OpenSpec change editor-everywhere,
+   * D7): written with `notes_doc`, filtered by the server to current members of
+   * the task's shared project, plaintext. Optional on older rows; read with `?? []`.
+   */
+  note_mentions?: string[]
+  /**
    * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
    * rule is a series: completing it records an occurrence and moves `due` forward.
    */
@@ -471,6 +477,12 @@ export interface Comment {
   guest_name?: string | null
   /** The task page a guest reply came through (task-pages D6); null otherwise. */
   page_id?: string | null
+  /**
+   * Reactions per account (editor-everywhere D8): `reactions[accountId]` is that
+   * account's list of names from REACTION_NAMES, each synced as its own
+   * `reactions.<account>` op so concurrent reactions never overwrite each other.
+   */
+  reactions?: Record<string, string[]>
   _clock: Clock
 }
 
@@ -1207,7 +1219,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by', 'completed_by',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by', 'completed_by', 'note_mentions',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

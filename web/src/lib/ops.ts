@@ -57,7 +57,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null,
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [],
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -80,7 +80,7 @@ const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = {
 }
 const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
   task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
-  guest_name: null, page_id: null,
+  guest_name: null, page_id: null, reactions: {},
 }
 /** attachment (attachments D1): every field but name, uploaded_at and deleted_at is fixed at creation. */
 export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
@@ -112,7 +112,7 @@ export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
  * the op's clock (comments-and-activity D2: mentions are filtered to members). When
  * the server's copy arrives with the clock the row already has, its value is adopted.
  */
-const SERVER_REWRITTEN = new Set(['comment.mentions'])
+const SERVER_REWRITTEN = new Set(['comment.mentions', 'task.note_mentions'])
 
 /**
  * Apply ops to the local store using per-field last-writer-wins. Safe to call with
@@ -155,10 +155,11 @@ export async function applyOps(
       for (const op of list) {
         const c = clock[op.field]
         const won = wins(op.ts, op.device, c)
-        // A custom field value `fields.<id>` lives in row.fields[id], its clock
-        // under the op field name (custom-fields D2).
-        const fid = entity === 'task' ? fieldValueId(op.field) : null
-        const current = fid ? (row.fields as Record<string, unknown> | undefined)?.[fid] : row[op.field]
+        // A field family value lives in a map on the row, its clock under the op
+        // field name: `fields.<id>` in row.fields[id] (custom-fields D2),
+        // `reactions.<account>` in row.reactions[account] (editor-everywhere D8).
+        const fam = familyOf(entity, op.field)
+        const current = fam ? (row[fam.key] as Record<string, unknown> | undefined)?.[fam.id] : row[op.field]
         // A losing op still happened: its old value is unknown here, the activity
         // rule takes it from the op before it in timestamp order.
         recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? current ?? null : undefined, projectKey: '' })
@@ -169,7 +170,7 @@ export async function applyOps(
         }
         const rewritten = !won && c && c.ts === op.ts && c.device === op.device && SERVER_REWRITTEN.has(`${entity}.${op.field}`)
         if (!won && !rewritten) continue
-        if (fid) row.fields = { ...(row.fields as Record<string, unknown> | undefined), [fid]: op.value }
+        if (fam) row[fam.key] = { ...(row[fam.key] as Record<string, unknown> | undefined), [fam.id]: op.value }
         else row[op.field] = op.value
         clock[op.field] = { ts: op.ts, device: op.device }
         changed = true
@@ -305,10 +306,30 @@ export function fieldValueId(field: string): string | null {
   return FIELD_ID.test(id) ? id : null
 }
 
-/** A row's value of an op field: `fields.<id>` reads row.fields[id]. */
+/** The op field prefix of a comment's per-account reactions (editor-everywhere D8). */
+export const REACTION_PREFIX = 'reactions.'
+
+/** The account id of a `reactions.<account>` op field, or null for any other field. */
+export function reactionAccount(field: string): string | null {
+  if (!field.startsWith(REACTION_PREFIX)) return null
+  const id = field.slice(REACTION_PREFIX.length)
+  return FIELD_ID.test(id) ? id : null
+}
+
+/** The row map and key a field family op lives under, or null for a plain field. */
+function familyOf(entity: string, field: string): { key: 'fields' | 'reactions'; id: string } | null {
+  const fid = entity === 'task' ? fieldValueId(field) : null
+  if (fid) return { key: 'fields', id: fid }
+  const account = entity === 'comment' ? reactionAccount(field) : null
+  return account ? { key: 'reactions', id: account } : null
+}
+
+/** A row's value of an op field: `fields.<id>` reads row.fields[id], `reactions.<account>` row.reactions[account]. */
 export function readField(row: Record<string, unknown>, field: string): unknown {
   const id = fieldValueId(field)
-  return id ? (row.fields as Record<string, unknown> | undefined)?.[id] : row[field]
+  if (id) return (row.fields as Record<string, unknown> | undefined)?.[id]
+  const account = reactionAccount(field)
+  return account ? (row.reactions as Record<string, unknown> | undefined)?.[account] : row[field]
 }
 
 /**

@@ -181,7 +181,7 @@ func (b *applyBatch) store(op Op, scope string) error {
 	// is stored with the filtered value and handed back to the author's
 	// device, whose copy carries the same clock (see applyOps on the client).
 	filtered := false
-	if op.Entity == "comment" && op.Field == "mentions" {
+	if (op.Entity == "comment" && op.Field == "mentions") || (op.Entity == "task" && op.Field == "note_mentions") {
 		var err error
 		if op.Value, filtered, err = b.rs.filterMentions(scope, op.Value); err != nil {
 			return err

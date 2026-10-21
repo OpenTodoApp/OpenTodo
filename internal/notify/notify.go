@@ -73,6 +73,9 @@ type Mentioned struct {
 	ProjectName string `json:"projectName,omitempty"`
 	Excerpt     string `json:"excerpt"`
 	At          int64  `json:"at"` // Unix ms, server time of the batch
+	// Source is "note" for a mention in a task's notes (editor-everywhere D7, no
+	// CommentID); empty for a comment.
+	Source string `json:"source,omitempty"`
 }
 
 // MentionSink is implemented by sinks that also handle mentions. It is separate

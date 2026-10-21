@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 // checks the same file against sync.Schema and e2ee.ContentFields).
 import fixture from '../../../internal/sync/testdata/schema_fixture.json'
 import { CONTENT_FIELDS, CONTENT_PREFIXES } from './e2ee'
-import { DEFAULTS, FIELD_VALUE_PREFIX } from './ops'
+import { DEFAULTS, FIELD_VALUE_PREFIX, REACTION_PREFIX } from './ops'
 import { ENTITIES } from './types'
 
 const sorted = (m: Partial<Record<string, readonly string[]>>) =>
@@ -22,7 +22,7 @@ describe('op schema fixture (test-integrity)', () => {
       const keys = Object.keys(DEFAULTS[entity]).filter((k) => !families.includes(k)).sort()
       expect(keys, entity).toEqual([...fixture.entities[entity as keyof typeof fixture.entities]].sort())
     }
-    expect(prefixes).toEqual({ task: [FIELD_VALUE_PREFIX] })
+    expect(prefixes).toEqual({ task: [FIELD_VALUE_PREFIX], comment: [REACTION_PREFIX] })
     expect(Object.keys(DEFAULTS.task)).toContain('fields')
   })
 
