@@ -52,11 +52,15 @@ When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_t
 - **THEN** the response is a JSON-RPC `-32602` error naming the unexpected argument and nothing is written
 
 ### Requirement: Encrypted accounts and write tools
-For an account with end-to-end encryption, `tools/list` SHALL omit write tools whose required arguments are content fields and SHALL offer `update_tasks`, `update_project`, `create_sections` and `update_sections` with their content arguments described as accepting ciphertext only. A call supplying a content field as plaintext SHALL return the tool error `encryption_enabled` and change nothing; a content field supplied as a well-formed ciphertext envelope SHALL be stored unchanged. Structural changes (complete, reopen, schedule, move, priority, label ids, trash, and a project's or section's colour, icon, parent, position and Favourites entry) SHALL work and converge with offline device edits by last-writer-wins.
+For an account with end-to-end encryption, `tools/list` SHALL list every write tool the caller may use with its content arguments (titles, descriptions, names, comment bodies) described as accepting ciphertext only and without plaintext length bounds, and SHALL leave out the arguments that cannot be sent as ciphertext (`origin_url`). A call supplying a content field as plaintext SHALL return the tool error `encryption_enabled` and change nothing; a content field supplied as a well-formed ciphertext envelope SHALL be stored unchanged. Structural changes (complete, reopen, schedule, move, priority, label ids, trash, and a project's or section's colour, icon, parent, position and Favourites entry) SHALL work and converge with offline device edits by last-writer-wins.
 
 #### Scenario: Create refused for an encrypted account
 - **WHEN** an allowed assistant of an encrypted account calls `create_tasks` with a plaintext title
 - **THEN** the result is the tool error `encryption_enabled` and no op is written
+
+#### Scenario: Content tools are listed as ciphertext only
+- **WHEN** an allowed assistant of an encrypted account lists the tools
+- **THEN** `create_tasks`, `update_tasks`, `create_project`, `update_project`, `create_label`, `add_comment`, `create_sections` and `update_sections` are listed, their text arguments say they accept ciphertext only, and no `origin_url` argument is offered
 
 #### Scenario: Rescheduling works for an encrypted account
 - **WHEN** the same assistant calls `schedule_tasks` for two tasks
@@ -150,7 +154,7 @@ read-scoped token. In decrypting mode the bridge SHALL transform messages as the
 - **THEN** the response is 401 with a `WWW-Authenticate: Bearer` challenge and no catalogue data
 
 ### Requirement: Caller-chosen ids on create
-`create_tasks`, `create_project`, `create_label` and `create_sections` SHALL accept an optional `id` per created item, a UUID. When no entity of any kind has that id the item SHALL be created with it; otherwise the item SHALL fail with the tool error `conflict` and nothing in the call SHALL be written. A retry of the same call, with the same `id` and the same `client_request_id`, SHALL return the original result without writing again. Items without `id` SHALL get ids as before.
+`create_tasks`, `create_project`, `create_label`, `create_sections` and `add_comment` SHALL accept an optional `id` per created item, a UUID. When no entity of any kind has that id the item SHALL be created with it; otherwise the item SHALL fail with the tool error `conflict` and nothing in the call SHALL be written. A retry of the same call, with the same `id` and the same `client_request_id`, SHALL return the original result without writing again. Items without `id` SHALL get ids as before.
 
 #### Scenario: Chosen id is used
 - **WHEN** an allowed assistant calls `create_sections` with `id: "3f1c…"` and a name

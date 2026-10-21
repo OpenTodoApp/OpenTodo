@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "encryption_state",
+  "type": "object",
+  "required": ["state", "profile"],
+  "properties": {
+    "state": {"type": "string", "enum": ["unlocked", "locked", "stale", "not_encrypted"]},
+    "profile": {"type": "string"},
+    "key_version": {"type": "integer"},
+    "removed": {"type": "boolean", "description": "lock only: whether a stored key was deleted"}
+  }
+}

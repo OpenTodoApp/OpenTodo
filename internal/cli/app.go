@@ -38,6 +38,8 @@ type App struct {
 	IsTerminal func() bool
 	// ReadPassword reads a secret without echo. nil means the built-in reader.
 	ReadPassword func(prompt string) (string, error)
+	// Sleep waits (the unlock delay after repeated failures). nil means time.Sleep.
+	Sleep func(time.Duration)
 
 	in *bufio.Reader
 	// out is the real stdout: a dry run silences Stdout while the command runs
@@ -75,6 +77,15 @@ func (a *App) init() {
 	}
 	if a.ReadPassword == nil {
 		a.ReadPassword = a.defaultReadPassword
+	}
+	if a.Sleep == nil {
+		a.Sleep = time.Sleep
+	}
+}
+
+func (a *App) sleep(d time.Duration) {
+	if d > 0 {
+		a.Sleep(d)
 	}
 }
 
@@ -156,7 +167,8 @@ func init() {
 		{"rm", "delete one or more tasks (soft delete)", "ot rm <ref>... [--yes]", cmdRm},
 		{"project", "manage projects: list, add, rename, archive, rm", "ot project list [--all]\not project add <name> [--color <#rrggbb>] [--idempotency-key <key>]\not project rename <ref> <new-name>\not project archive <ref> [--undo]\not project rm <ref> [--yes]", cmdProject},
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name> [--yes]", cmdToken},
-		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token]", cmdMCP},
+		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token] [--decrypt]", cmdMCP},
+		{"encryption", "end-to-end encryption on this machine: unlock, lock, status", "ot encryption unlock [--recovery] [--passphrase-file <path>]\not encryption lock\not encryption status", cmdEncryption},
 		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
 		{"time", "track time: start, stop, log, list, export", "ot time start <ref> [--note <text>]\not time stop\not time log <ref> <duration> [--on <day>] [--note <text>]\not time log <ref> --from HH:MM --to HH:MM [--on <day>] [--note <text>]\not time list [--task <ref>] [--from <day>] [--to <day>] [--running] [--limit <n>]\not time export [--from <day>] [--to <day>] [-o <file>]", cmdTime},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},

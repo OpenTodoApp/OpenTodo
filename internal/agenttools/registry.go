@@ -51,8 +51,10 @@ type Definition struct {
 	// Kind is read or write.
 	Kind Kind `json:"-"`
 	// ContentFields are the user-written fields the tool may set (e2ee
-	// content). RequiresContent marks tools that cannot work without one: they
-	// are left out for encrypted accounts (design D7).
+	// content). For an encrypted account they are accepted only as ciphertext
+	// envelopes (mcp-projects D3). RequiresContent marks tools that cannot work
+	// without one; their content arguments are described as ciphertext only for
+	// encrypted accounts.
 	ContentFields   []string `json:"-"`
 	RequiresContent bool     `json:"-"`
 }
@@ -246,8 +248,10 @@ func lookupAll(name string, c Caller) (tool, Definition, bool) {
 }
 
 // Definitions lists the tools this caller may use, in a stable order: the read
-// tools always, write tools only when the permission gate allows, minus the
-// ones that need content for an encrypted account (design D3, D7).
+// tools always, write tools only when the permission gate allows (design D3).
+// For an encrypted account every write tool is listed with its content
+// arguments described as ciphertext only (mcp-projects D3), so a client that
+// encrypts on the user's machine (`ot mcp --decrypt`) sees the same tools.
 func (r *Registry) Definitions(c Caller) []Definition {
 	out := []Definition{}
 	for _, t := range registry {
@@ -255,8 +259,11 @@ func (r *Registry) Definitions(c Caller) []Definition {
 			continue
 		}
 		d := t.def(c)
-		if d.Kind == KindWrite && (!c.CanWrite() || (c.Encrypted && d.RequiresContent)) {
+		if d.Kind == KindWrite && !c.CanWrite() {
 			continue
+		}
+		if c.Encrypted && d.Kind == KindWrite {
+			d.InputSchema = ciphertextOnly(d.InputSchema, d.ContentFields)
 		}
 		out = append(out, d)
 	}
@@ -288,11 +295,8 @@ func (r *Registry) Plan(ctx context.Context, c Caller, name string, rawArgs json
 		return Plan{Result: res}, err
 	}
 	if c.Encrypted {
-		if d.RequiresContent {
-			return Plan{}, encryptionErr()
-		}
 		for _, f := range d.ContentFields {
-			if a.mentions(f) {
+			if a.plainContent(f) {
 				return Plan{}, encryptionErr()
 			}
 		}
@@ -301,7 +305,7 @@ func (r *Registry) Plan(ctx context.Context, c Caller, name string, rawArgs json
 }
 
 func encryptionErr() *ToolError {
-	return toolErr("encryption_enabled", "this account uses end-to-end encryption: the server holds no key, so an assistant cannot write readable text (titles, descriptions, names, comments) to it. Scheduling, completing, moving, priorities and labels still work.")
+	return toolErr("encryption_enabled", "this account uses end-to-end encryption: the server holds no key, so an assistant cannot write readable text (titles, descriptions, names, comments) to it. Scheduling, completing, moving, priorities, labels, colours, icons and order still work; text is accepted only as ciphertext made on the user's machine (ot mcp --decrypt).")
 }
 
 func parseArgs(raw json.RawMessage) (args, error) {

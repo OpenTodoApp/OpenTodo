@@ -37,6 +37,17 @@ describe('AssistantsView', () => {
     expect(on).toContain('connect an assistant with its own token')
   })
 
+  it('tells an encrypted account what remote assistants can do and how ot mcp --decrypt works (mcp-projects)', () => {
+    const html = render({ encrypted: true, status: { enabled: true, endpoint } })
+    expect(html).toContain('data-assistants-encrypted')
+    expect(html).toContain('colours, icons, order and dates')
+    expect(html).toContain('<code>ot encryption unlock</code>')
+    expect(html).toContain('<code>ot mcp --decrypt</code>')
+    expect(html).toContain('Your AI provider then receives that text in plain form; the server still receives only ciphertext.')
+    expect(render({ status: { enabled: true, endpoint } })).not.toContain('data-assistants-encrypted')
+    expect(render({ encrypted: true })).not.toContain('data-assistants-encrypted')
+  })
+
   it('shows members the status without a toggle', () => {
     const html = render({ isOwner: false })
     expect(html).not.toContain('role="switch"')

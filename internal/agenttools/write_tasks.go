@@ -34,20 +34,32 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	var cs ChangeSet
 	var out []map[string]any
 	var refused []map[string]any
+	chosen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin"); err != nil {
+		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id"); err != nil {
 			return Plan{}, err
 		}
-		title, _, err := it.text("title", true, 500)
+		title, _, err := it.contentText(c, "title", true, 500)
 		if err != nil {
 			return Plan{}, argErr(p + err.Error())
 		}
-		desc, _, err := it.text("description", false, 20000)
+		desc, _, err := it.contentText(c, "description", false, 20000)
 		if err != nil {
 			return Plan{}, argErr(p + err.Error())
 		}
-		id := entityID(seed, i)
+		id, err := it.chosenID(p)
+		if err != nil {
+			return Plan{}, err
+		}
+		if id == "" {
+			id = entityID(seed, i)
+		} else {
+			if chosen[id] {
+				return Plan{}, argErr(p + "id: each id may appear only once per call")
+			}
+			chosen[id] = true
+		}
 		patch := map[string]json.RawMessage{
 			"title": raw(strings.TrimSpace(title)), "description": raw(desc), "project_id": nullRaw, "parent_id": nullRaw,
 			"priority": raw(4), "due": nullRaw, "labels": raw([]string{}), "position": raw(now + int64(i)),
@@ -135,6 +147,9 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	if len(refused) > 0 {
 		return Plan{}, forbidden(refused)
 	}
+	if err := r.claimIDs(ctx, c, cs, chosen); err != nil {
+		return Plan{}, err
+	}
 	return Plan{Result: result("create_tasks", out, len(cs)), Changes: cs, Count: len(cs)}, nil
 }
 
@@ -171,7 +186,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 		}
 		seen[id] = true
 		patch := map[string]json.RawMessage{}
-		if v, has, err := it.text("title", false, 500); err != nil {
+		if v, has, err := it.contentText(c, "title", false, 500); err != nil {
 			return Plan{}, argErr(p + err.Error())
 		} else if has {
 			if strings.TrimSpace(v) == "" {
@@ -179,7 +194,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			}
 			patch["title"] = raw(strings.TrimSpace(v))
 		}
-		if v, has, err := it.text("description", false, 20000); err != nil {
+		if v, has, err := it.contentText(c, "description", false, 20000); err != nil {
 			return Plan{}, argErr(p + err.Error())
 		} else if has {
 			patch["description"] = raw(v)

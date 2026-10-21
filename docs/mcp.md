@@ -53,8 +53,10 @@ Clients that take a JSON server entry (Settings has a copy button that fills in 
 Menus differ between assistants; look for "add custom connector", "remote MCP server" or "HTTP server".
 
 Clients that only speak stdio can launch the bundled CLI bridge. Create a
-read-only token, store it with `ot auth set-token`, then configure the client to
-run `ot mcp` using the stored profile:
+read-only token (or an `agent` token for an assistant that may make changes),
+store it with `ot auth set-token`, then configure the client to run `ot mcp`
+using the stored profile (`ot mcp --decrypt` for an
+[encrypted account](#encrypted-accounts-on-your-computer)):
 
 ```json
 {
@@ -118,6 +120,7 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 | `get_task` | `id` (required), `timezone` | `{task, subtasks:[…], comments:[{id,parent_id?,author_id,author_is_you,untrusted_text:{body,author},created_at,edited_at?}], attachments:[{id,untrusted_text:{name,mime?,url?},size?,uploaded,comment_id?,created_at}], timezone, today, server_time, _notice}` |
 | `search_tasks` | `query` (required), `include_completed`, `timezone`, `limit`, `cursor` | like `list_tasks`; matches title or description, case-insensitive |
 | `today_summary` | `timezone` | `{overdue:[…], due_today:[…], counts:{overdue,due_today,inbox,per_project:[{id,untrusted_text:{name},open}]}, timezone, today, server_time, _notice}` |
+| `list_icons` | `query` (optional words), `limit` (1–200, default 50) | `{icons:[{name,category,keywords}], total, truncated, _notice}`: the icons a project or section can have, best matches first (exact name, name prefix, keyword, category), the same search as the app's icon picker. Pass a `name` to `update_project`, `create_sections` or `update_sections`; any other icon is a `-32602` error. |
 | `list_time_entries` | `task_id`, `from`, `to` (local days YYYY-MM-DD in `timezone`), `running` (default false), `timezone`, `limit` (≤200), `cursor` | `{time_entries:[{id,task_id,user_id,tracked_by_you,untrusted_text:{note,task},started_at,ended_at,minutes}], total_minutes, next_cursor, timezone, server_time, _notice}`, newest first: the [time entries](time-tracking.md) you can read, other members' on shared tasks included; `ended_at` is null and `minutes` counts to the server time while an entry runs; an encrypted note reads `[encrypted]` |
 
 `today` lists open tasks due today or earlier, overdue first; `upcoming` lists open tasks due after today. Tasks are ordered by due date and time (undated last), then priority. Tasks in archived projects are left out unless `project_id` names that project.
@@ -173,16 +176,23 @@ Every write tool is annotated `readOnlyHint: false`, `openWorldHint: false`; `up
 | `reopen_tasks` | `ids` | |
 | `move_tasks` | `ids`, `project_id` (null for the inbox), `section_id` | Tasks cannot move between projects that are shared differently (`scope_change`). A subtask whose parent stays behind becomes a top-level task. |
 | `schedule_tasks` | `ids`, `due` (`{date, time?, tz?}` or null) | Keeps each task's time of day and time zone unless `time` is given; null removes the due date. Relative reminders follow. |
-| `create_project` | `name`, `color` (`#rrggbb`), `parent_id`, `client_request_id` | |
-| `create_label` | `name`, `color`, `client_request_id` | Returns the existing label when one has the same name. |
-| `add_comment` | `task_id`, `body`, `parent_id` | Comments from an assistant never notify anyone, even with `@mentions`. |
+| `create_project` | `name`, `color` (`#rrggbb`), `icon`, `parent_id`, `client_request_id`, `id` | |
+| `update_project` | `id` plus any of `name`, `color`, `icon` (a `list_icons` name, or null for the colour dot), `parent_id` (a project id, or null for the top level), `position` | Moving a project under itself or one of its sub-projects is refused with `invalid`. `archived`, `deleted` and `description` are unknown arguments (`-32602`): no tool archives, deletes or writes a project's note. |
+| `set_favourite` | `kind` (`project`), `id`, `favourite` (true or false) | Adds the project to your Favourites at the end, or removes it; the other entries keep their order. Calling it twice changes nothing the second time. |
+| `create_sections` | `project_id`, `items` (1–50: `name` required, `color`, `icon`, `position`, `id`), `client_request_id` | After the project's existing sections unless `position` is given. |
+| `update_sections` | `updates` (1–50: `id` plus any of `name`, `color` (or null for the default), `icon` (or null), `position`) | |
+| `reorder_sections` | `project_id`, `ids` | The listed sections come first, in that order; sections not listed keep their order after them. Only positions are written, so tasks stay in their sections. |
+| `create_label` | `name`, `color`, `client_request_id`, `id` | Returns the existing label when one has the same name. |
+| `add_comment` | `task_id`, `body`, `parent_id`, `id` | Comments from an assistant never notify anyone, even with `@mentions`. |
 | `trash_tasks` | `ids` | Only tasks created with the **same token**; anything else is refused with `not_permitted` and nothing changes. |
 
-There is no tool that deletes permanently, empties the Trash, archives or deletes projects, assigns people, or touches sharing, members, tokens, settings, webhooks, backups, imports or exports, and no setting adds one.
+There is no tool that deletes permanently, empties the Trash, archives or deletes projects or sections, assigns people, or touches sharing, members, tokens, settings, webhooks, backups, imports or exports, and no setting adds one.
 
 **Custom field values.** `fields` is a list of `{id, value}` items, where `id` is a definition id from `list_projects` and `value` is text read by the field's type (`"120"` for a number, `"true"` or `"false"` for a checkbox, `"2026-10-16"` for a date, one of the options for a choice, an `http(s)` address for a link) or `null` to clear; an object keyed by definition id with typed values (`{"<cost-id>": 120}`, the REST shape) is accepted too. Values are checked against the definitions of the task's project: an unknown or foreign id, or a value of the wrong type, is a `-32602` error naming the field and its type, and nothing changes. No tool defines or deletes custom fields. For an encrypted account, text values are refused with `encryption_enabled`; numbers and checkboxes still work.
 
-**Retries.** `create_tasks`, `create_project` and `create_label` accept a `client_request_id` you choose. The same user, token and request id always produce the same ids, so a retry after a timeout returns the earlier result instead of creating duplicates.
+**Retries.** `create_tasks`, `create_project`, `create_label` and `create_sections` accept a `client_request_id` you choose. The same user, token and request id always produce the same ids, so a retry after a timeout returns the earlier result instead of creating duplicates.
+
+**Chosen ids.** `create_tasks` (per item), `create_project`, `create_label`, `create_sections` (per item) and `add_comment` accept an optional `id`, a UUID. It is used as given when nothing has that id yet; otherwise the call fails with `conflict` and nothing is written. A retry with the same `id` and `client_request_id` returns the original result. `ot mcp --decrypt` uses it to bind an encrypted name to the item it creates.
 
 **Errors.** A malformed call (an unknown argument, `priority: 7`, more than 50 items) is JSON-RPC `-32602` and changes nothing. A refused call is a result with `isError: true` and a JSON body `{error, message, …}`: `not_found` (unknown, deleted or someone else's ids, indistinguishable, listed in `ids`), `forbidden` (your role in a shared project does not allow it; `items` names them), `scope_change`, `not_permitted`, `encryption_enabled`, `rate_limited` (with `retry_after_seconds`) or a gate code.
 
@@ -210,7 +220,22 @@ Over a limit the result is `rate_limited` with `retry_after_seconds`, and nothin
 
 ### Encrypted accounts
 
-The server holds no key. For an account with [end-to-end encryption](e2ee.md), the tools that need readable text (`create_tasks`, `create_project`, `create_label`, `add_comment`) are not offered, and `update_tasks` is offered without `title`, `description` and `origin_url`. A call that supplies text anyway gets `encryption_enabled` and nothing is written: an assistant never writes readable text into an account whose owner chose encryption. Scheduling, completing, reopening, moving, priorities, labels and `trash_tasks` keep working, because those fields are plaintext by design.
+The server holds no key. For an account with [end-to-end encryption](e2ee.md), every write tool is listed, but its text arguments (titles, descriptions, names, comment bodies) say **ciphertext only**: they accept only an `enc:v1:` envelope made with the account key, stored exactly as sent. Plain text gets `encryption_enabled` and nothing is written, so an assistant never writes readable text into an account whose owner chose encryption. `origin_url` and custom field text are not offered. Scheduling, completing, reopening, moving, priorities, labels, `trash_tasks`, and a project's or section's colour, icon, parent, position and Favourites entry keep working in plain form, because those fields are plaintext by design.
+
+The server can't tell whether an envelope was made with the right key: a wrong one reads as "can't decrypt" on your devices, and the field's history still holds the previous value. To let an assistant read and write your text, run it on your own computer through [`ot mcp --decrypt`](#encrypted-accounts-on-your-computer).
+
+#### Encrypted accounts on your computer
+
+`ot mcp --decrypt` is the [stdio bridge](cli.md#mcp-bridge-and-encryption) with your account key on your machine:
+
+1. `ot encryption unlock` asks for your encryption passphrase (or `--recovery` for the recovery key), unwraps the key locally and stores it for the profile in an owner-only file next to the CLI's configuration. The server only serves the wrapped key record; the passphrase and the key never leave your computer.
+2. Point your MCP client (Claude Desktop, Claude Code, any stdio client) at `ot mcp --decrypt`, with a `read` token for a read-only assistant or an `agent` token for one that makes changes.
+
+The bridge then encrypts every title, name and comment body an assistant writes before it reaches the server, choosing the new item's id first, and replaces each "Encrypted item" placeholder in results with the decrypted text, inside the same `untrusted_text` objects, by reading the raw value over the REST API. Writes still go through the switches, limits and audit above.
+
+> When it starts, the bridge writes: *The assistant will read your encrypted tasks in plain text; your AI provider receives them.* End-to-end encryption keeps your content from the server, not from the model you choose to give it to.
+
+It refuses to start, without prompting, when the key isn't stored (`ot encryption unlock`), or when your passphrase or key changed on another device; a change during a session makes every later request fail with a stale-key error until you unlock again. `ot encryption lock` deletes the key. A remote assistant (a cloud connector) still can't read encrypted content.
 
 ### Prompt injection
 
@@ -263,7 +288,7 @@ The server offers the assistant's [skills](assistant.md#skills) as MCP prompts, 
 
 ## End-to-end encryption
 
-The server holds no key. For an account with [end-to-end encryption](e2ee.md), encrypted titles, descriptions and project, label and section names are reported as `"Encrypted item"` with `"encrypted": true` on the task; `search_tasks` never matches encrypted text. Due dates, priorities, completion and structure are still reported because they are stored in plaintext. For writes, see [Encrypted accounts](#encrypted-accounts).
+The server holds no key. For an account with [end-to-end encryption](e2ee.md), encrypted titles, descriptions and project, label and section names are reported as `"Encrypted item"` with `"encrypted": true` on the task (`ot mcp --decrypt` turns them back into text on your computer); `search_tasks` never matches encrypted text. Due dates, priorities, completion and structure are still reported because they are stored in plaintext. For writes, see [Encrypted accounts](#encrypted-accounts).
 
 ## Protocol details
 

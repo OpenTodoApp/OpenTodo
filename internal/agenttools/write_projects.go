@@ -13,10 +13,10 @@ import (
 // ---- create_project / create_label ----
 
 func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "name", "color", "parent_id", "client_request_id"); err != nil {
+	if err := a.only("", "name", "color", "icon", "parent_id", "client_request_id", "id"); err != nil {
 		return Plan{}, err
 	}
-	name, _, err := a.text("name", true, 200)
+	name, _, err := a.contentText(c, "name", true, 200)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -33,9 +33,21 @@ func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, over
 		return Plan{}, err
 	}
 	now := stamp()
-	id := entityID(seed, 0)
+	id, err := a.chosenID("")
+	if err != nil {
+		return Plan{}, err
+	}
+	chosen := map[string]bool{id: id != ""}
+	if id == "" {
+		id = entityID(seed, 0)
+	}
 	patch := map[string]json.RawMessage{"name": raw(strings.TrimSpace(name)), "color": color, "position": raw(now),
 		"archived": raw(false), "parent_id": nullRaw, "created_at": raw(now), "deleted_at": nullRaw}
+	if v, has, err := a.icon(""); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["icon"] = v
+	}
 	if parent, err := a.str("parent_id"); err != nil {
 		return Plan{}, err
 	} else if parent != "" {
@@ -48,14 +60,17 @@ func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, over
 		return Plan{}, err
 	}
 	cs := ChangeSet{{Entity: "project", EntityID: id, Create: true, Patch: patch, opSeed: seed}}
+	if err := r.claimIDs(ctx, c, cs, chosen); err != nil {
+		return Plan{}, err
+	}
 	return Plan{Result: result("create_project", []map[string]any{{"id": id, "status": "created"}}, 1), Changes: cs, Count: 1}, nil
 }
 
 func (r *Registry) planCreateLabel(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "name", "color", "client_request_id"); err != nil {
+	if err := a.only("", "name", "color", "client_request_id", "id"); err != nil {
 		return Plan{}, err
 	}
-	name, _, err := a.text("name", true, 100)
+	name, _, err := a.contentText(c, "name", true, 100)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -72,7 +87,14 @@ func (r *Registry) planCreateLabel(ctx context.Context, c Caller, a args, overla
 	if err != nil {
 		return Plan{}, err
 	}
-	id := entityID(seed, 0)
+	id, err := a.chosenID("")
+	if err != nil {
+		return Plan{}, err
+	}
+	chosen := map[string]bool{id: id != ""}
+	if id == "" {
+		id = entityID(seed, 0)
+	}
 	for _, l := range snap.labelList {
 		lid := str(l, "id")
 		if lid == id || strings.EqualFold(plainOrEmpty(l, "name"), name) {
@@ -85,20 +107,23 @@ func (r *Registry) planCreateLabel(ctx context.Context, c Caller, a args, overla
 		return Plan{}, err
 	}
 	cs := ChangeSet{{Entity: "label", EntityID: id, Create: true, Patch: patch, opSeed: seed}}
+	if err := r.claimIDs(ctx, c, cs, chosen); err != nil {
+		return Plan{}, err
+	}
 	return Plan{Result: result("create_label", []map[string]any{{"id": id, "status": "created"}}, 1), Changes: cs, Count: 1}, nil
 }
 
 // ---- add_comment ----
 
 func (r *Registry) planAddComment(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "task_id", "body", "parent_id"); err != nil {
+	if err := a.only("", "task_id", "body", "parent_id", "id"); err != nil {
 		return Plan{}, err
 	}
 	taskID, err := a.str("task_id")
 	if err != nil || taskID == "" {
 		return Plan{}, argErr("task_id: the task id is required")
 	}
-	body, _, err := a.text("body", true, 10000)
+	body, _, err := a.contentText(c, "body", true, 10000)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -122,7 +147,16 @@ func (r *Registry) planAddComment(ctx context.Context, c Caller, a args, overlay
 		}
 		parent = raw(pid)
 	}
-	id := ids.New()
+	// An id chosen by the caller lets ot mcp --decrypt bind the body's
+	// ciphertext to this comment (mcp-projects D4).
+	id, err := a.chosenID("")
+	if err != nil {
+		return Plan{}, err
+	}
+	chosen := map[string]bool{id: id != ""}
+	if id == "" {
+		id = ids.New()
+	}
 	now := stamp()
 	// mentions stays empty: assistant comments never notify (design D9.3).
 	patch := map[string]json.RawMessage{
@@ -133,5 +167,8 @@ func (r *Registry) planAddComment(ctx context.Context, c Caller, a args, overlay
 		return Plan{}, err
 	}
 	cs := ChangeSet{{Entity: "comment", EntityID: id, Create: true, Patch: patch}}
+	if err := r.claimIDs(ctx, c, cs, chosen); err != nil {
+		return Plan{}, err
+	}
 	return Plan{Result: result("add_comment", []map[string]any{{"id": id, "status": "created", "task_id": taskID}}, 1), Changes: cs, Count: 1}, nil
 }

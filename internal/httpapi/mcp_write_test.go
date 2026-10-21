@@ -217,7 +217,7 @@ func TestAgentTokenDowngradeSafe(t *testing.T) {
 	if _, err := e.db.Exec(`DELETE FROM api_token_agent WHERE token_id = ?`, tokenID); err != nil {
 		t.Fatal(err)
 	}
-	if n := len(c.toolNames(secret)); n != 6 {
+	if n := len(c.toolNames(secret)); n != 7 {
 		t.Fatalf("tools without the marker = %d", n)
 	}
 	if sc, isErr := c.toolCall(secret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "x"}}}); !isErr || sc["error"] != "token_scope" {
@@ -307,11 +307,11 @@ func TestToolsListByToken(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	tid := out["id"].(string)
 	read, full := e.token("read"), e.token("full")
-	if n := len(c.toolNames(agentSecret)); n != 16 {
+	if n := len(c.toolNames(agentSecret)); n != 22 {
 		t.Fatalf("agent tools = %d", n)
 	}
 	for name, secret := range map[string]string{"read": read, "full": full} {
-		if n := len(c.toolNames(secret)); n != 6 {
+		if n := len(c.toolNames(secret)); n != 7 {
 			t.Fatalf("%s token sees %d tools", name, n)
 		}
 		for _, tool := range []string{"complete_tasks", "create_tasks", "trash_tasks"} {
@@ -326,7 +326,7 @@ func TestToolsListByToken(t *testing.T) {
 	}
 	// The user's switch off: writes_disabled_by_user, nothing created.
 	e.allowMyAssistants(false)
-	if n := len(c.toolNames(agentSecret)); n != 6 {
+	if n := len(c.toolNames(agentSecret)); n != 7 {
 		t.Fatalf("user off: %d tools", n)
 	}
 	if sc, isErr := c.toolCall(agentSecret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "x"}}}); !isErr || sc["error"] != "writes_disabled_by_user" {
@@ -336,7 +336,7 @@ func TestToolsListByToken(t *testing.T) {
 	e.allowMyAssistants(true)
 	c.mustTool(agentSecret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "while allowed"}}})
 	e.allowWrites(false)
-	if n := len(c.toolNames(agentSecret)); n != 6 {
+	if n := len(c.toolNames(agentSecret)); n != 7 {
 		t.Fatalf("owner off: %d tools", n)
 	}
 	if sc, isErr := c.toolCall(agentSecret, "complete_tasks", map[string]any{"ids": []string{tid}}); !isErr || sc["error"] != "writes_disabled_by_owner" {
@@ -545,14 +545,25 @@ func TestEncryptedAccountWriteRules(t *testing.T) {
 	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": cipher})
 	e.mustStatus(resp, 201, out)
 	id := out["id"].(string)
+	// mcp-projects D3: every write tool is listed; content takes ciphertext only.
 	names := strings.Join(c.toolNames(secret), ",")
-	for _, hidden := range []string{"create_tasks", "create_project", "create_label", "add_comment"} {
-		if strings.Contains(names, hidden) {
-			t.Fatalf("%s offered to an encrypted account: %s", hidden, names)
+	for _, want := range []string{"schedule_tasks", "update_tasks", "create_tasks", "update_project", "create_sections"} {
+		if !strings.Contains(names, want) {
+			t.Fatalf("%s missing for an encrypted account: %s", want, names)
 		}
 	}
-	if !strings.Contains(names, "schedule_tasks") || !strings.Contains(names, "update_tasks") {
-		t.Fatalf("structural tools missing: %s", names)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": cipher})
+	e.mustStatus(resp, 201, out)
+	pid := out["id"].(string)
+	if sc, isErr := c.toolCall(secret, "update_project", map[string]any{"id": pid, "name": "Garden"}); !isErr || sc["error"] != "encryption_enabled" {
+		t.Fatalf("plaintext project name: %v", sc)
+	}
+	renamed := "enc:v1:" + strings.Repeat("B", 60)
+	c.mustTool(secret, "update_project", map[string]any{"id": pid, "name": renamed, "color": "#16a34a", "icon": "sprout"})
+	resp, out = e.do("GET", "/api/v1/projects/"+pid, nil)
+	e.mustStatus(resp, 200, out)
+	if out["name"] != renamed || out["icon"] != "sprout" {
+		t.Fatalf("project after encrypted rename: %v", out)
 	}
 	before := countOps(t, e)
 	for name, args := range map[string]map[string]any{

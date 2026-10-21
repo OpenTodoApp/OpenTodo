@@ -20,19 +20,20 @@ const maxMCPResponse = 64 << 20
 func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("mcp", g)
 	allowFullToken := fs.Bool("allow-full-token", false, "allow a full-access API token")
+	decrypt := fs.Bool("decrypt", false, "decrypt and encrypt content on this machine (end-to-end encrypted accounts)")
 	pos, err := a.parse(g, fs, "mcp", args)
 	if err != nil {
 		return a.helpOr("mcp", err)
 	}
 	if len(pos) != 0 {
-		return usageErr("usage: ot mcp [--allow-full-token]")
+		return usageErr("usage: ot mcp [--allow-full-token] [--decrypt]")
 	}
 
-	c, _, err := a.connect(g)
+	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
-	if g.readOnly || !*allowFullToken {
+	if g.readOnly || !*allowFullToken || *decrypt {
 		_, cred, err := c.meAuth(ctx)
 		if err != nil {
 			return err
@@ -43,12 +44,33 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			}
 			return authErr("could not verify the configured token scope; use a read-only token or pass --allow-full-token")
 		}
-		if cred.Scope != "read" {
-			if g.readOnly {
-				return authErr("read-only mode requires a read-only token, but the configured token has %q scope; --allow-full-token cannot override --read-only or OPENTODO_READ_ONLY", cred.Scope)
-			}
-			return authErr("the configured token has %q scope; create a read-only token for MCP or pass --allow-full-token", cred.Scope)
+		switch {
+		case g.readOnly && cred.Scope != "read":
+			return authErr("read-only mode requires a read-only token, but the configured token has %q scope; --allow-full-token cannot override --read-only or OPENTODO_READ_ONLY", cred.Scope)
+		case *decrypt && cred.Scope != "read" && cred.Scope != "agent":
+			// Decrypted content must reach the server only through the agent gate.
+			return authErr("--decrypt needs a read or agent token, but the configured token has %q scope", cred.Scope)
+		case !*allowFullToken && cred.Scope != "read" && cred.Scope != "agent":
+			// An agent token writes only through the server's write gate (mcp-projects D5).
+			return authErr("the configured token has %q scope; create a read or agent token for MCP or pass --allow-full-token", cred.Scope)
 		}
+	}
+	var dec *decrypter
+	if *decrypt {
+		state, kf, key, _, err := a.keyState(ctx, c, t.Profile)
+		if err != nil {
+			return err
+		}
+		switch state {
+		case "not_encrypted":
+			return usageErr("--decrypt is for accounts with end-to-end encryption; this account has none. Run `ot mcp` without it.")
+		case "locked":
+			return authErr("the account key is not on this machine; run `ot encryption unlock` first")
+		case "stale":
+			return authErr("the stored account key is out of date (the passphrase or key changed); run `ot encryption unlock` again")
+		}
+		dec = &decrypter{c: c, key: key, version: kf.KeyVersion}
+		fmt.Fprintln(a.Stderr, PlaintextNotice)
 	}
 
 	scanner := bufio.NewScanner(a.Stdin)
@@ -58,7 +80,26 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		if len(message) == 0 {
 			continue
 		}
+		var method, tool string
+		if dec != nil {
+			var stale bool
+			message, method, tool, stale, err = dec.before(ctx, message)
+			if err != nil {
+				return err
+			}
+			if stale {
+				if id, ok := jsonRPCRequestID(message); ok {
+					if err := writeJSONRPCError(a.Stdout, id, "the stored account key is out of date (the passphrase or key changed elsewhere); run `ot encryption unlock` again"); err != nil {
+						return serverErr("write MCP error response: %v", err)
+					}
+				}
+				continue
+			}
+		}
 		response, status, err := c.mcp(ctx, message)
+		if err == nil && dec != nil && status != http.StatusAccepted && len(bytes.TrimSpace(response)) > 0 {
+			response = dec.after(ctx, response, method, tool)
+		}
 		if err != nil {
 			switch {
 			case status == http.StatusBadRequest && isJSONRPCError(response):

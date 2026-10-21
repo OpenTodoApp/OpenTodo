@@ -115,7 +115,7 @@ func TestMCPBridgeRejectsFullTokenByDefault(t *testing.T) {
 	if code := a.Main([]string{"mcp"}); code != ExitAuth {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "read-only token") || stdout.Len() != 0 {
+	if !strings.Contains(stderr.String(), "create a read or agent token") || stdout.Len() != 0 {
 		t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
 	}
 }

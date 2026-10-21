@@ -14,6 +14,7 @@ package e2ee
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 )
 
@@ -95,6 +96,15 @@ func IsContentField(entity, field string) bool {
 
 // IsCiphertext reports whether a string value is a ciphertext envelope.
 func IsCiphertext(s string) bool { return strings.HasPrefix(s, Prefix) }
+
+var envelopeRe = regexp.MustCompile(`^enc:v[0-9]+:[A-Za-z0-9_-]{38,}$`)
+
+// IsEnvelope reports whether s is a well-formed ciphertext envelope: "enc:vN:" and
+// at least a nonce and a tag of base64url. Stricter than IsCiphertext, like
+// isEnvelope in web/src/lib/crypto.ts: an assistant writing ciphertext for an
+// encrypted account (OpenSpec change mcp-projects, design D3) must send one. The
+// server still cannot tell whether it was made with the right key.
+func IsEnvelope(s string) bool { return envelopeRe.MatchString(s) }
 
 // IsCiphertextJSON reports whether a JSON value is a string holding a ciphertext envelope.
 func IsCiphertextJSON(raw json.RawMessage) bool {

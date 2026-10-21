@@ -625,39 +625,6 @@ func page[T any](items []keyed[T], cursor string, limit int) ([]T, string, error
 
 type args map[string]json.RawMessage
 
-// mentions reports whether any object in the arguments, at any depth, has the
-// key name (content fields of encrypted accounts, design D7).
-func (a args) mentions(name string) bool {
-	var walk func(v any) bool
-	walk = func(v any) bool {
-		switch t := v.(type) {
-		case map[string]any:
-			for k, x := range t {
-				if k == name || walk(x) {
-					return true
-				}
-			}
-		case []any:
-			for _, x := range t {
-				if walk(x) {
-					return true
-				}
-			}
-		}
-		return false
-	}
-	for k, raw := range a {
-		if k == name {
-			return true
-		}
-		var v any
-		if json.Unmarshal(raw, &v) == nil && walk(v) {
-			return true
-		}
-	}
-	return false
-}
-
 func (a args) present(name string) bool {
 	raw, ok := a[name]
 	return ok && string(raw) != "null"

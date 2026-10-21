@@ -66,6 +66,7 @@ func init() {
 			"recurrence":       recurProp,
 			"fields":           fieldsProp,
 			"origin_url":       originURLProp,
+			"id":               chosenIDProp,
 		})
 		return writeDef("create_tasks", "Create tasks",
 			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order.", PerCall),
@@ -84,10 +85,10 @@ func init() {
 			"recurrence":       map[string]any{"type": []string{"string", "null"}, "maxLength": recurrence.MaxLen, "description": "Recurrence rule, or null to stop repeating."},
 			"fields":           fieldsProp,
 		}
-		desc := fmt.Sprintf("Change the priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
+		props["title"] = titleProp
+		props["description"] = descProp
+		desc := fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
 		if !c.Encrypted {
-			props["title"] = titleProp
-			props["description"] = descProp
 			props["origin_url"] = originURLClearProp
 			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence, origin or custom field values of up to %d tasks", PerCall)
 		}
@@ -134,8 +135,10 @@ func init() {
 			object([]string{"name"}, map[string]any{
 				"name":              map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "Project name."},
 				"color":             map[string]any{"type": "string", "description": "Colour as #rrggbb, optional."},
+				"icon":              iconProp,
 				"parent_id":         map[string]any{"type": "string", "description": "Parent project id, optional."},
 				"client_request_id": requestIDProp,
+				"id":                chosenIDProp,
 			}), false, false, []string{"name"}, true)
 	}, plan: (*Registry).planCreateProject})
 
@@ -145,6 +148,7 @@ func init() {
 				"name":              map[string]any{"type": "string", "minLength": 1, "maxLength": 100, "description": "Label name."},
 				"color":             map[string]any{"type": "string", "description": "Colour as #rrggbb, optional."},
 				"client_request_id": requestIDProp,
+				"id":                chosenIDProp,
 			}), false, true, []string{"name"}, true)
 	}, plan: (*Registry).planCreateLabel})
 
@@ -155,6 +159,7 @@ func init() {
 				"task_id":   map[string]any{"type": "string", "description": "Task id."},
 				"body":      map[string]any{"type": "string", "minLength": 1, "maxLength": 10000, "description": "Comment text (Markdown)."},
 				"parent_id": map[string]any{"type": "string", "description": "Comment id to reply to (same task), optional."},
+				"id":        chosenIDProp,
 			}), false, false, []string{"body"}, true)
 	}, plan: (*Registry).planAddComment})
 
