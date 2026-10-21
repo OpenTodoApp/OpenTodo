@@ -45,7 +45,8 @@ var ContentFields = map[string][]string{
 	"label":   {"name"},
 	"section": {"name"},
 	"view":    {"name", "query"},
-	"comment": {"body"},
+	// A guest's typed name on a task page reply (OpenSpec task-pages, design D6).
+	"comment": {"body", "guest_name"},
 	// Attachments (OpenSpec attachments, design D8): the bytes are an envelope too.
 	"attachment": {"name", "mime", "url"},
 	// Custom field definitions (OpenSpec custom-fields, design D4).

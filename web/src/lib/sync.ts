@@ -337,6 +337,9 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
     // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
     await ensureFeedBaselines()
     alive()
+    // Encrypted task pages (task-pages D3, D4): a new snapshot after a change, and the
+    // guests' replies imported. Loaded on demand; it skips itself when there is nothing.
+    void import('./taskPages').then((m) => m.maintainTaskPages()).catch(() => undefined)
     failures = 0
     const held = await heldCount()
     alive()

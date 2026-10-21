@@ -637,6 +637,19 @@
       ]
     },
     {
+      "name": "a task page guest's tick next to the publisher's edit stays its own event (task-pages)",
+      "ops": [
+        {"id":"tp1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Paint the fence","ts":400000,"device":"da"},
+        {"id":"tp2","seq":2,"actor":"alice","entity":"task","entityId":"st1","field":"completed_at","value":401000,"ts":401000,"device":"page:page1"},
+        {"id":"tp3","seq":3,"actor":"alice","entity":"task","entityId":"t1","field":"completed_at","value":402000,"ts":402000,"device":"page:page1"}
+      ],
+      "events": [
+        {"id":"tp1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":400000,"opIds":["tp1"],"changes":[{"field":"title","from":null,"to":"Paint the fence"}]},
+        {"id":"tp2","kind":"completed","actor":"alice","entity":"task","entityId":"st1","taskId":"st1","ts":401000,"opIds":["tp2"],"changes":[{"field":"completed_at","from":null,"to":401000}],"device":"page:page1"},
+        {"id":"tp3","kind":"completed","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":402000,"opIds":["tp3"],"changes":[{"field":"completed_at","from":null,"to":402000}],"device":"page:page1"}
+      ]
+    },
+    {
       "name": "a deadline edit is an edited event (deadlines)",
       "ops": [
         {"id":"dl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"deadline","value":"2026-11-20","ts":200000,"device":"da"}

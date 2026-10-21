@@ -22,6 +22,12 @@ func (s *Service) AddSink(sink notify.Sink) {
 	}
 }
 
+// EmitPageActivity hands a task page event (a guest's reply or completion) to
+// the sinks (OpenSpec task-pages, design D9).
+func (s *Service) EmitPageActivity(ctx context.Context, e notify.PageEvent) {
+	s.sinks.PageActivity(ctx, e)
+}
+
 // emitAssignments hands one notify.Assigned event per task whose assignee_id
 // changed in a committed batch to someone other than its author. It runs after
 // commit, so the sinks see the stored state and cannot affect the batch.

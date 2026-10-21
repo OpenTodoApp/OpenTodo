@@ -264,7 +264,7 @@ func (s *Server) labelEvents(ctx context.Context, uid string, page []activity.Ev
 	out := make([]apiEvent, len(page))
 	for i, e := range page {
 		out[i] = apiEvent{Event: e, ActorName: names[e.Actor]}
-		if l := public.label(ctx, e.Device); l != "" {
+		if l := public.label(ctx, e.Device, e.TS); l != "" {
 			out[i].ActorName = l
 		}
 		if e.TaskID == "" {

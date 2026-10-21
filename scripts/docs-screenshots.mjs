@@ -167,8 +167,14 @@ async function plainSetup() {
   const garden = await api('POST', '/api/v1/projects', { name: 'Garden', color: '#22c55e', parent_id: home.id })
   await api('POST', '/api/v1/tasks', { title: 'Plant the spring bulbs', project_id: garden.id })
   await api('PATCH', `/api/v1/projects/${garden.id}`, { archived: true })
+  // A published task page with a guest's reply (task-pages).
+  const fence = await api('POST', '/api/v1/tasks', { title: 'Paint the fence', description: 'Two coats of **white**. The paint is in the shed; brushes are on the shelf.', due: { date: '2026-10-25' } })
+  for (const title of ['Buy primer', 'Sand the boards', 'First coat']) await api('POST', '/api/v1/tasks', { title, parent_id: fence.id })
+  const page = await api('POST', `/api/v1/tasks/${fence.id}/page`, { rights: 'tick', label: 'paint-the-fence' })
+  const secret = page.link.split('/t/')[1].split('/')[0]
+  await api('POST', `/api/v1/pages/${secret}/replies`, { name: 'Marco', body: 'Bought the primer, starting tomorrow morning.' })
   await p.reload(); await settle(p, 1500)
-  const state = await c.storageState(); await c.close(); return { state, home }
+  const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
 }
 
 // ------------------------------------------------------------------ assistant instance
@@ -418,6 +424,10 @@ const shots = [
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 350 }
+  } },
+  // A task page as a guest sees it (task-pages): its own document at /t/<secret>.
+  { name: 'task-page', server: P, async run(p) {
+    await p.goto(plain.pageLink); await p.getByRole('heading', { level: 1, name: 'Paint the fence' }).waitFor(); await settle(p, 800)
   } },
   { name: 'settings-passkeys', server: P, async run(p) {
     await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())

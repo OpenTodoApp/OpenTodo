@@ -354,7 +354,16 @@ func (s *Server) publicLabeler(viewerID string) *publicLabels {
 	return &publicLabels{s: s, viewer: viewerID, cache: map[string]string{}}
 }
 
-func (p *publicLabels) label(ctx context.Context, device string) string {
+func (p *publicLabels) label(ctx context.Context, device string, ts int64) string {
+	// A task page's guest write (task-pages D5): the name the guest typed for
+	// that write, for every viewer, since the guest chose to show it.
+	if pageID, ok := strings.CutPrefix(device, opsync.PageDevicePrefix); ok {
+		name, err := p.s.auth.TaskPageGuestName(ctx, pageID, ts)
+		if err != nil || name == "" {
+			return "Guest (task page)"
+		}
+		return name + " (guest, task page)"
+	}
 	linkID, ok := strings.CutPrefix(device, opsync.PublicDevicePrefix)
 	if !ok {
 		return ""

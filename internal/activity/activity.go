@@ -33,6 +33,15 @@ import (
 // PublicDevicePrefix marks a public link's ops (mirrors sync.PublicDevicePrefix).
 const PublicDevicePrefix = "public:"
 
+// PageDevicePrefix marks a task page's guest ops (mirrors sync.PageDevicePrefix,
+// OpenSpec task-pages D5); they group apart like a public link's.
+const PageDevicePrefix = "page:"
+
+// guestDevice reports a device whose ops form their own groups (a guest's).
+func guestDevice(device string) bool {
+	return strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, PageDevicePrefix)
+}
+
 // Window folds quick consecutive ops by one actor on one entity into one event.
 const Window = 5000 // ms
 
@@ -71,8 +80,9 @@ type Event struct {
 	OpIDs    []string `json:"opIds"`
 	Changes  []Change `json:"changes"`
 	// Device is set only for a public link's ticks (public:<link-id>,
-	// OpenSpec `public-links` D6): those form their own groups and read
-	// "Public link" instead of the link creator's name.
+	// OpenSpec `public-links` D6) and a task page's guest writes
+	// (page:<page-id>, task-pages D5): those form their own groups and read
+	// "Public link" or "<name> (guest, task page)" instead of the creator's name.
 	Device string `json:"device,omitempty"`
 }
 
@@ -145,7 +155,7 @@ func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 		last[fk] = op.Value
 		gk := op.Actor + "\x00" + op.Entity + "\x00" + op.EntityID
 		public := ""
-		if strings.HasPrefix(op.Device, PublicDevicePrefix) {
+		if guestDevice(op.Device) {
 			public = op.Device
 			gk += "\x00" + public
 		}

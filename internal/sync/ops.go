@@ -427,6 +427,10 @@ var Schema = map[string]map[string]kind{
 		"created_at": kNumber,
 		"edited_at":  kNullableNumber,
 		"deleted_at": kNullableNumber,
+		// A reply a guest sent through a task page (OpenSpec task-pages, design D6):
+		// the name they typed (content, encrypted for encrypted accounts) and the page.
+		"guest_name": kNullableText,
+		"page_id":    kNullableString,
 	},
 	// attachment: a file or link on a task or one of its comments (OpenSpec change
 	// attachments, design D1). Metadata only: the bytes live under

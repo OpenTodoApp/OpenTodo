@@ -51,6 +51,15 @@ Public links (`public-links`) already solve most of the hard parts for a project
 
 One additive migration creates the two tables; older servers ignore the new comment fields (additive op schema). Rolling back the binary leaves the tables unused and pages unreachable; guest comments stay as ordinary comments with extra fields that older clients ignore.
 
+## Notes from implementation
+
+- **Page bundle (D8) is over the 40 KB target.** The page's own code is 4.3 KB gzipped (`t-*.js`) plus 0.5 KB of share-key crypto, but it is a React page and shares a chunk with the app (React DOM, the Markdown renderer, dates and i18n), about 97 KB gzipped in all on a first visit. Meeting 40 KB would need a page without React, which would also mean a second Markdown renderer and a second map wrapper; recorded instead of done. The page is never precached and never registers the service worker (the build removes the PWA tags from `t.html`), and the map chunk loads only when a location is shown.
+- **A list route for the publisher's devices.** Devices need to know which of their tasks have encrypted pages and the wrapped share keys, so `GET /api/v1/task-pages` lists the caller's own active pages (spec updated). The status route still never returns a key.
+- **Guest names in history.** Ticks carry no content, so the name a guest typed is kept server-side per write in `task_page_actions` (page id and op timestamp) and history and activity label the change "<name> (guest, task page)". On an encrypted page the name is content and is not kept: ticks read "Guest (task page)". The device-side activity label comes from `guest_name` on replies and from the server's label otherwise.
+- **The page's map and files.** Guests have no session, so the page has its own routes for files (always a download) and for the map proxy (style rewritten to point at the page's routes, a separate per-page budget for tiles).
+- **Push.** The server has no push channel for notifications today (push is for reminders), so page events reach the in-app inbox only; the sink is ready for a push implementation.
+- **The guest's name** is stored under a hash of the secret, never the secret itself. The language follows the browser and is not stored.
+
 ## Open Questions
 
 - Whether a member who is the task's assignee (not owner or admin) should also receive the guest notifications; deferrable, it does not change the routes or the data model.

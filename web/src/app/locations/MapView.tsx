@@ -21,13 +21,17 @@ export interface MapViewProps {
   /** Called when the map cannot be shown (no WebGL, maps unavailable); the caller hides it. */
   onUnavailable?: () => void
   className?: string
+  /** The style to load: the signed-in proxy by default, a task page's own proxy for guests (task-pages). */
+  styleUrl?: string
+  /** Sends the session cookie (the signed-in proxy); a task page sends none. */
+  credentials?: RequestCredentials
 }
 
 /** Makes the proxy's root-relative URLs absolute, as MapLibre needs. */
 function absolute(style: unknown): unknown {
   const origin = window.location.origin
   const walk = (v: unknown): unknown => {
-    if (typeof v === 'string') return v.startsWith('/api/v1/maps/') ? origin + v : v
+    if (typeof v === 'string') return v.startsWith('/api/v1/') ? origin + v : v
     if (Array.isArray(v)) return v.map(walk)
     if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]))
     return v
@@ -39,7 +43,7 @@ function accent(): string {
   return getComputedStyle(document.documentElement).getPropertyValue('--ot-accent').trim() || 'currentColor'
 }
 
-export default function MapView({ points, onPick, label, onUnavailable, className }: MapViewProps) {
+export default function MapView({ points, onPick, label, onUnavailable, className, styleUrl = '/api/v1/maps/style', credentials = 'same-origin' }: MapViewProps) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibre | null>(null)
   const markers = useRef<Marker[]>([])
@@ -52,7 +56,7 @@ export default function MapView({ points, onPick, label, onUnavailable, classNam
     let live = true
     void (async () => {
       try {
-        const res = await fetch('/api/v1/maps/style', { credentials: 'same-origin' })
+        const res = await fetch(styleUrl, { credentials })
         if (!res.ok) throw new Error(`style ${res.status}`)
         const style = absolute(await res.json()) as StyleSpecification
         if (!live || !box.current) return

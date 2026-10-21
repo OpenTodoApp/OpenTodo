@@ -93,6 +93,8 @@ type Server struct {
 	smtpTestLimiter *rateLimiter
 	// public holds the public-link limiters (OpenSpec `public-links`).
 	public publicLimiters
+	// pages limits task pages (OpenSpec task-pages), see taskpages.go.
+	pages taskPageLimiters
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).

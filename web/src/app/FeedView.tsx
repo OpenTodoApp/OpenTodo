@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { describeEvent, isPending, isPublicEvent, mergeOlder, pendingOpIds, PUBLIC_ACTOR_LABEL } from '../lib/activity'
+import { describeEvent, guestActorLabel, isPending, mergeOlder, pendingOpIds } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
 import { useAllProjects, useTasksById } from '../lib/localData'
 import { dayOf, FEED_KINDS, feedEvents, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, sharedProjectIds, type FeedKind } from '../lib/feed'
@@ -164,7 +164,7 @@ export function FeedView() {
                     className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-accent-soft' : ''}`}>
                     <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`}>{fresh && <span className="sr-only">{t('New')}</span>}</span>
                     <span className="min-w-0 flex-1">
-                      <strong className="font-medium text-default">{isPublicEvent(e) ? t(PUBLIC_ACTOR_LABEL) : name(e.actor)}</strong>{' '}
+                      <strong className="font-medium text-default">{guestActorLabel(e) ?? name(e.actor)}</strong>{' '}
                       <span className="text-muted">{describeEvent(e, name, (id) => projectName(id))}</span>
                       {title && e.entity !== 'project' && (
                         <> {e.entity === 'comment' ? t('on', { context: 'comment' }) : '·'}{' '}

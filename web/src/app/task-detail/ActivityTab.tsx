@@ -4,7 +4,7 @@
 // unsent changes marked pending); "Load older" pages history from the server.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { describeEvent, fetchActivity, isPublicEvent, mergeOlder, pendingOpIds, PUBLIC_ACTOR_LABEL, taskActivity } from '../../lib/activity'
+import { describeEvent, fetchActivity, guestActorLabel, mergeOlder, pendingOpIds, taskActivity } from '../../lib/activity'
 import { type ActivityRun, groupRuns, summarizeRun } from '../../lib/activityRuns'
 import { isNetworkError } from '../../lib/api'
 import { useAllProjects, useTasksById } from '../../lib/localData'
@@ -146,7 +146,8 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   }, [task.id])
 
   const name = useCallback((id: string, ev?: ActivityEvent) => {
-    if (isPublicEvent(ev)) return t(PUBLIC_ACTOR_LABEL)
+    const guest = guestActorLabel(ev)
+    if (guest) return guest
     if (id && id === me) return t('You')
     return memberName(id, memberships) ?? (ev?.actorName || older.find((e) => e.actor === id && e.actorName)?.actorName) ?? t('Someone')
   }, [me, memberships, older])
