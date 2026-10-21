@@ -1,4 +1,4 @@
-import { Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, CatalogueIcon, Icon, IconButton, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -553,8 +553,10 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
 
 /** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
 export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, 'color' | 'icon'>; size?: 'sm' | 'md' }) {
-  if (project.icon && isIconName(project.icon)) return <span style={{ color: project.color }} className="flex items-center"><Icon name={project.icon} size={size === 'md' ? 'md' : 'sm'} /></span>
-  return <span className={`inline-block shrink-0 rounded-full ${size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'}`} style={{ backgroundColor: project.color }} />
+  const dot = <span className={`inline-block shrink-0 rounded-full ${size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'}`} style={{ backgroundColor: project.color }} />
+  // A catalogue icon (icons-and-section-style); the dot while the catalogue loads and for a name this device does not know.
+  if (!project.icon || !isCatalogueIcon(project.icon)) return dot
+  return <span style={{ color: project.color }} className="flex items-center"><CatalogueIcon name={project.icon} size={size === 'md' ? 'md' : 'sm'} fallback={dot} /></span>
 }
 
 /** Unread activity count (activity-feed): others' changes since the project's activity was last seen. */

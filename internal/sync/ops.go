@@ -339,6 +339,12 @@ var Schema = map[string]map[string]kind{
 		"position":   kNumber,
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
+		// A palette colour (#rrggbb) and a name from the icon catalogue, or null
+		// (OpenSpec change icons-and-section-style, design D4–D5). Not user text,
+		// so neither is an encrypted content field. Sync checks the kind only: a
+		// newer client may write an icon this server does not know yet.
+		"color": kNullableString,
+		"icon":  kNullableString,
 	},
 	// field: a custom field definition of one project (OpenSpec change
 	// custom-fields, design D1). Like a section it lives in its project's sharing

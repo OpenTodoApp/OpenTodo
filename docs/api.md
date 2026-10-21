@@ -594,6 +594,8 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 | `name` | string | required, not blank |
 | `project_id` | string | required on create: an existing, non-deleted project; cannot change afterwards (`400 invalid_input`) |
 | `position` | number | ascending order within the project; defaults to now (last) |
+| `color` | string or null | a `#rrggbb` colour shown before the name, `null` for none (the default); anything else is `400 invalid_input` |
+| `icon` | string or null | a name from the icon catalogue (`web/src/ui/icons/catalogue.json`, such as `hourglass`), `null` for none (the default); an unknown name is `400 invalid_input`. Responses always carry both fields |
 | `created_at` | number | set by the server when omitted |
 | `deleted_at` | number or null | set by `DELETE` |
 
@@ -602,7 +604,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 ```sh
 # Create a section, put a task in it, then move the task back to "No section"
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"<project>"}' $BASE/api/v1/sections
-# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000}
+# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null}
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BASE/api/v1/tasks/$TASK
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections

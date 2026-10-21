@@ -52,6 +52,17 @@ export type ActionItem =
   // `any`: a menu mixes pickers of different item types.
   | (ItemBase & { kind: 'picker'; picker: PickerSpec<any> })
   | (ItemBase & { kind: 'confirm'; confirm: ConfirmSpec })
+  // A step swaps the items for its own content in the same overlay (the icon picker,
+  // a colour palette); `done` closes the menu, `back` returns to the items.
+  | (ItemBase & { kind: 'step'; step: StepSpec })
+
+export interface StepSpec {
+  title: string
+  render: (done: () => void, back: () => void) => ReactNode
+  /** The same choice as a Combobox picker, for the command palette. */
+  // `any`: a menu mixes pickers of different item types.
+  palette?: PickerSpec<any>
+}
 
 export interface ActionGroup {
   label?: string
@@ -71,10 +82,11 @@ function NoClose({ children }: { children: ReactNode }) {
   return <MenuCloseContext.Provider value={() => {}}>{children}</MenuCloseContext.Provider>
 }
 
-function Items({ groups, onPicker, onConfirm }: {
+function Items({ groups, onPicker, onStep, onConfirm }: {
   groups: ActionGroup[]
   // `any`: a menu mixes pickers of different item types.
   onPicker: (p: PickerSpec<any>) => void
+  onStep: (s: StepSpec) => void
   onConfirm: (c: ConfirmSpec) => void
 }) {
   const close = useContext(MenuCloseContext)
@@ -98,6 +110,8 @@ function Items({ groups, onPicker, onConfirm }: {
                   return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onPicker(item.picker)} /></NoClose>
                 case 'confirm':
                   return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => { close?.(); onConfirm(item.confirm) }} /></NoClose>
+                case 'step':
+                  return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onStep(item.step)} /></NoClose>
               }
             })}
           </MenuGroup>
@@ -127,6 +141,22 @@ function PickerStep({ picker, onBack, onDone, onConfirm }: { picker: PickerSpec<
           if (!cfg.multiple || next) onDone()
           if (next) onConfirm(next)
         }} />
+    </div>
+  )
+}
+
+function StepFrame({ step, onBack, onDone }: { step: StepSpec; onBack: () => void; onDone: () => void }) {
+  return (
+    <div className="space-y-1 p-1" data-menu-step>
+      <div className="flex items-center gap-1">
+        <Tooltip label={t('Back')} shortcut="Esc">
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-1" aria-label={t('Back')} onClick={onBack}>
+            <Icon name="arrow-left" />
+          </button>
+        </Tooltip>
+        <span className="text-meta font-semibold text-muted">{step.title}</span>
+      </div>
+      {step.render(onDone, onBack)}
     </div>
   )
 }
@@ -171,6 +201,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   // `any`: a menu mixes pickers of different item types.
   const [picker, setPicker] = useState<PickerSpec<any> | null>(null)
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
+  const [step, setStep] = useState<StepSpec | null>(null)
   const setOpen = (v: boolean) => {
     if (openProp === undefined) setOwnOpen(v)
     onOpenChange?.(v)
@@ -185,19 +216,22 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   const current = picker
   return (
     <>
-      <Menu label={label} title={title} kind={current ? 'dialog' : 'menu'} align={align} width={width} className="p-1"
+      <Menu label={label} title={title} kind={current || step ? 'dialog' : 'menu'} align={align} width={width} className="p-1"
         trigger={trigger ?? <Icon name="ellipsis" />}
         triggerClassName={triggerClassName ?? 'ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-faint'}
         open={open}
         onOpenChange={(v) => {
           // The first Escape (or outside tap) in a picker step goes back to the items.
-          if (!v && current) { setPicker(null); return }
+          if (!v && (current || step)) { setPicker(null); setStep(null); return }
           setPicker(null)
+          setStep(null)
           setOpen(v)
         }}>
         {current
           ? <PickerStep picker={current} onBack={() => setPicker(null)} onDone={() => { setPicker(null); setOpen(false) }} onConfirm={setConfirm} />
-          : <>{header}{header && <MenuSeparator />}<Items groups={groups} onPicker={setPicker} onConfirm={setConfirm} /></>}
+          : step
+            ? <StepFrame step={step} onBack={() => setStep(null)} onDone={() => { setStep(null); setOpen(false) }} />
+            : <>{header}{header && <MenuSeparator />}<Items groups={groups} onPicker={setPicker} onStep={setStep} onConfirm={setConfirm} /></>}
       </Menu>
       {confirm && <Confirmation spec={confirm} onClose={() => setConfirm(null)} />}
     </>

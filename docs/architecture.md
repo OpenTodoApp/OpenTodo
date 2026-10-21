@@ -126,6 +126,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `digest` | The opt-in weekly email digest: per-user settings, the scheduler on the jobs leader, and the content built from the user's materialised rows with the same definitions as the Statistics screen |
 | `e2ee` | Server side of end-to-end encryption: stores the wrapped key record with optimistic versioning, recognises ciphertext so server-side features degrade explicitly, purges superseded content ops. The server runs no content cryptography. See [e2ee.md](e2ee.md) |
 | `ids` | UUID v4, name-based ids (SHA-256, version 8 UUIDs, for recurring occurrences and tasks created from email) and random secrets |
+| `iconset` | The icon catalogue's names, categories and keywords, generated from `web/src/ui/icons/catalogue.json` and checked against it by a test; `Valid` checks an icon name in REST and MCP writes, `Search` orders matches as the app's icon picker does |
 | `cli` | The `ot` command-line client (`cmd/ot`): profiles, REST calls, table and `--json` output. See [cli.md](cli.md) |
 
 ### Tables

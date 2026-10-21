@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
+	"github.com/pixari/opentodo/internal/iconset"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -20,6 +22,9 @@ import (
 // and a section never moves to another project. It returns a user-facing
 // message when the body is rejected.
 func (s *Server) checkSection(ctx context.Context, uid string, body map[string]json.RawMessage, existing opsync.Entity) (string, error) {
+	if msg := checkSectionStyle(body); msg != "" {
+		return msg, nil
+	}
 	if raw, has := body["name"]; has || existing == nil {
 		var name string
 		if err := json.Unmarshal(raw, &name); has && err != nil {
@@ -48,6 +53,29 @@ func (s *Server) checkSection(ctx context.Context, uid string, body map[string]j
 		return fmt.Sprintf("section.project_id references unknown or deleted project %q", pid), nil
 	}
 	return "", nil
+}
+
+// hexColour is a palette colour as the API accepts it.
+var hexColour = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// checkSectionStyle validates a section's optional colour and icon (OpenSpec
+// change icons-and-section-style, design D4): null clears either; otherwise the
+// colour is #rrggbb and the icon a name from the icon catalogue. Only REST checks
+// the catalogue; sync accepts names it does not know yet.
+func checkSectionStyle(body map[string]json.RawMessage) string {
+	if raw, has := body["color"]; has && string(raw) != "null" {
+		var c string
+		if json.Unmarshal(raw, &c) != nil || !hexColour.MatchString(c) {
+			return "section.color must be a #rrggbb colour or null"
+		}
+	}
+	if raw, has := body["icon"]; has && string(raw) != "null" {
+		var name string
+		if json.Unmarshal(raw, &name) != nil || !iconset.Valid(name) {
+			return fmt.Sprintf("section.icon must be a name from the icon catalogue or null, got %s", raw)
+		}
+	}
+	return ""
 }
 
 // checkSections dispatches the section rules of the entity being written.

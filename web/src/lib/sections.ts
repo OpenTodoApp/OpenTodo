@@ -35,6 +35,19 @@ export async function renameSection(id: string, name: string): Promise<void> {
 }
 
 /**
+ * A section's colour and icon (icons-and-section-style): null clears either. Each
+ * is its own field, so a colour on one device and a rename on another both win.
+ */
+export async function setSectionStyle(id: string, style: { color?: string | null; icon?: string | null }): Promise<void> {
+  const s = await db.sections.get(id)
+  if (!s || s.deleted_at) return
+  const patch: Partial<Pick<Section, 'color' | 'icon'>> = {}
+  if (style.color !== undefined && style.color !== (s.color ?? null)) patch.color = style.color
+  if (style.icon !== undefined && style.icon !== (s.icon ?? null)) patch.icon = style.icon
+  if (Object.keys(patch).length) await mutate('section', id, patch)
+}
+
+/**
  * Move a section one place up (-1) or down (+1), or to the first or last place,
  * among its project's sections: usually one position op between the new
  * neighbours; when that gap is exhausted, the few neighbours around it are

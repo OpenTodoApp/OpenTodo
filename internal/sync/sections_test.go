@@ -18,13 +18,20 @@ func TestValidateAcceptsSectionOps(t *testing.T) {
 		op("6", "section", "s1", "deleted_at", `1700000000000`, 1, "A"),
 		op("7", "task", "t1", "section_id", `"s1"`, 1, "A"),
 		op("8", "task", "t1", "section_id", `null`, 1, "A"),
+		// Colour and icon (icons-and-section-style); sync does not check the
+		// catalogue, so a name from a newer client is accepted.
+		op("9", "section", "s1", "color", `"#3b82f6"`, 1, "A"),
+		op("10", "section", "s1", "color", `null`, 1, "A"),
+		op("11", "section", "s1", "icon", `"hourglass"`, 1, "A"),
+		op("12", "section", "s1", "icon", `"icon-from-a-newer-client"`, 1, "A"),
+		op("13", "section", "s1", "icon", `null`, 1, "A"),
 	} {
 		if err := Validate(g); err != nil {
 			t.Errorf("case %d should pass: %v", i, err)
 		}
 	}
 	for i, b := range []Op{
-		op("1", "section", "s1", "color", `"#fff"`, 1, "A"), // unknown field
+		op("1", "section", "s1", "emoji", `"x"`, 1, "A"), // unknown field
 		op("2", "section", "s1", "project_id", `null`, 1, "A"),
 		op("3", "section", "s1", "project_id", `""`, 1, "A"),
 		op("4", "section", "s1", "name", `7`, 1, "A"),
@@ -37,6 +44,35 @@ func TestValidateAcceptsSectionOps(t *testing.T) {
 	}
 	if Plural["sections"] != "section" {
 		t.Fatal("sections collection is not mapped")
+	}
+}
+
+// A rename on one device and a colour on another converge to both, in any
+// delivery order (sections-and-boards "Colour and rename at the same time").
+func TestSectionColourAndRenameConverge(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	base := []Op{
+		op("c1", "section", "s1", "name", `"Doing"`, 100, "A"),
+		op("c2", "section", "s1", "project_id", `"p1"`, 100, "A"),
+	}
+	rename := op("a1", "section", "s1", "name", `"In progress"`, 200, "A")
+	colour := op("b1", "section", "s1", "color", `"#3b82f6"`, 150, "B")
+	icon := op("b2", "section", "s1", "icon", `"hourglass"`, 150, "B")
+	for user, order := range map[string][]Op{
+		"u1": append(append([]Op{}, base...), rename, colour, icon),
+		"u2": append([]Op{icon, colour, rename}, base...),
+	} {
+		if _, err := s.Apply(ctx, user, order); err != nil {
+			t.Fatal(err)
+		}
+		row, err := s.Get(ctx, user, "section", "s1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(row["name"]) != `"In progress"` || string(row["color"]) != `"#3b82f6"` || string(row["icon"]) != `"hourglass"` {
+			t.Fatalf("%s section = name %s, color %s, icon %s", user, row["name"], row["color"], row["icon"])
+		}
 	}
 }
 

@@ -218,6 +218,10 @@ export interface Section {
   position: number
   created_at: number
   deleted_at: number | null
+  /** A palette colour, or null (icons-and-section-style). */
+  color?: string | null
+  /** A name from the icon catalogue, or null (icons-and-section-style). */
+  icon?: string | null
   _clock: Clock
 }
 

@@ -72,7 +72,7 @@ const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
   created_at: 0, deleted_at: null,
 }
 const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
-  name: '', project_id: '', position: 0, created_at: 0, deleted_at: null,
+  name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null,
 }
 /** field (custom-fields D1): project_id and type are fixed at creation. */
 const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = {

@@ -101,9 +101,12 @@ const prompt = (title: string, label: string, initial: string, onSubmit: (v: str
 
 /** Commands from an object menu: every enabled item, run as the menu runs it. */
 function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Command[] {
-  return groups.flatMap((g) => g.items).filter((i) => !i.disabled).map((i: ActionItem): Command => ({
-    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.label,
-    run: () => (i.kind === 'picker' ? { kind: 'picker', picker: i.picker } as Step : i.kind === 'confirm' ? { kind: 'confirm', confirm: i.confirm } as Step : i.onSelect()),
+  // A step (the icon grid, the colour swatches) runs here as its Combobox form; one without it is not listed.
+  return groups.flatMap((g) => g.items).filter((i) => !i.disabled && (i.kind !== 'step' || i.step.palette)).map((i: ActionItem): Command => ({
+    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.kind === 'step' ? `${i.label}…` : i.label,
+    run: () => (i.kind === 'picker' ? { kind: 'picker', picker: i.picker } as Step
+      : i.kind === 'step' ? { kind: 'picker', picker: i.step.palette! } as Step
+        : i.kind === 'confirm' ? { kind: 'confirm', confirm: i.confirm } as Step : i.onSelect()),
   }))
 }
 
@@ -196,6 +199,7 @@ export function commands(ctx: PaletteContext): Command[] {
   if (ctx.section) {
     const s = ctx.section
     out.push(...fromMenu(t('Section “{name}”', { name: s.row.name }), sectionMenuGroups(s.row.name, s, {
+      section: s.row,
       rename: () => prompt(t('Rename section'), t('Section name'), s.row.name, (n) => renameSection(s.row.id, n)),
       move: (d) => reorderSection(s.row.id, d),
       remove: () => deleteSection(s.row.id),
