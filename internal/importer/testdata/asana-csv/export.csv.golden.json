@@ -1,0 +1,89 @@
+{
+  "format": "asana-csv",
+  "notes": [
+    "the Projects column names other Asana projects; one file is imported as one project, so they are not created"
+  ],
+  "totals": {
+    "rows": 5,
+    "create": 5,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 1,
+    "newProjects": 1,
+    "newLabels": 1,
+    "newSections": 2,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 1,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 9,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "asana:project:export",
+      "kind": "project",
+      "title": "export",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "asana:1205673412345671",
+      "kind": "task",
+      "title": "Task one",
+      "project": "export",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 3,
+      "sourceId": "asana:1205673412345672",
+      "kind": "task",
+      "title": "Task two",
+      "project": "export",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "asana:1205673412345673",
+      "kind": "task",
+      "title": "Task three",
+      "project": "export",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "asana:1205673412345674",
+      "kind": "task",
+      "title": "Task four",
+      "project": "export",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0003: name=\"Tag one\" created_at=1791979200000",
+    "project id-0001: name=\"export\" archived=false created_at=1791979200000",
+    "section id-0004: name=\"Section one\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0007: name=\"Section two\" project_id=\"id-0001\" created_at=1791979200000",
+    "field id-0009: name=\"Effort\" project_id=\"id-0001\" type=\"number\" options=\"\" created_at=1791979200000",
+    "task id-0002: title=\"Task one\" description=\"Note one\" priority=1 created_at=1790553600000 project_id=\"id-0001\" due={\"date\":\"2026-10-24\"} origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"1205673412345671\"} labels=[\"id-0003\"] section_id=\"id-0004\" fields.id-0009=3",
+    "task id-0005: title=\"Task two\" description=\"\" priority=2 created_at=1790553600000 project_id=\"id-0001\" due={\"date\":\"2026-10-30\"} start=\"2026-10-20\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"1205673412345672\"} labels=[] section_id=\"id-0004\" fields.id-0009=5 blocked_by=[\"id-0002\"]",
+    "task id-0006: title=\"Task three\" description=\"Tag two\" priority=3 created_at=1790640000000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"1205673412345673\"} assignee_id=\"user-1\" completed_at=1791158400000 labels=[\"id-0003\"] section_id=\"id-0007\"",
+    "task id-0008: title=\"Task four\" description=\"\" priority=4 created_at=1790726400000 project_id=\"id-0001\" parent_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"1205673412345674\"} labels=[] section_id=\"id-0007\" fields.id-0009=2"
+  ]
+}

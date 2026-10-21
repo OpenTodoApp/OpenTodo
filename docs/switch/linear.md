@@ -34,11 +34,12 @@ Each project opens as a board on this device, with one column per status.
 - Sub-issues as subtasks.
 - Completed issues; canceled ones are completed with the label `canceled`.
 - Issues assigned to you stay assigned to you.
+- Estimates become a number field "Estimate" on the project (see [Custom fields](../custom-fields.md)).
 
 The full mapping is in [Import formats](../import.md#linear-linear-csv).
 
 ## What does not
 
-- **Blocked by** relations between issues in the export become [Blocked by](../tasks-and-projects.md#wait-for-another-task) on the tasks. Estimates (points), cycles, milestones, initiatives, SLAs and the other issue relations (related, duplicate) are dropped with a warning.
+- **Blocked by** relations between issues in the export become [Blocked by](../tasks-and-projects.md#wait-for-another-task) on the tasks. Cycles, milestones, initiatives, SLAs and the other issue relations (related, duplicate) are dropped with a warning.
 - Issues assigned to other people arrive unassigned; [share the project](../sharing.md) and assign them again.
 - Comments and attachments are not part of the CSV export.

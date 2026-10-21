@@ -1,0 +1,27 @@
+{
+  "value": [
+    {
+      "displayName": "Home",
+      "wellknownListName": "none",
+      "id": "home",
+      "tasks": [
+        { "id": "fix-tap", "title": "Fix tap", "importance": "normal", "status": "notStarted",
+          "checklistItems": [ { "id": "w", "displayName": "Buy washer", "isChecked": true }, { "id": "s", "displayName": "Shut the water", "isChecked": false } ] },
+        { "id": "daily", "title": "Water plants", "importance": "normal", "status": "notStarted",
+          "dueDateTime": { "dateTime": "2026-11-03T00:00:00.0000000", "timeZone": "Tokyo Standard Time" },
+          "recurrence": { "pattern": { "type": "daily", "interval": 2 }, "range": { "type": "numbered", "numberOfOccurrences": 10 } } },
+        { "id": "monthly", "title": "Pay rent", "importance": "high", "status": "notStarted",
+          "dueDateTime": { "dateTime": "2026-11-01T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "absoluteMonthly", "interval": 1, "dayOfMonth": 1 }, "range": { "type": "noEnd" } } },
+        { "id": "relative", "title": "Board meeting", "importance": "normal", "status": "notStarted",
+          "dueDateTime": { "dateTime": "2026-11-12T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "relativeMonthly", "interval": 1, "daysOfWeek": ["thursday"], "index": "second" }, "range": { "type": "noEnd" } } },
+        { "id": "zone", "title": "Unknown zone", "importance": "normal", "status": "notStarted", "isReminderOn": true,
+          "reminderDateTime": { "dateTime": "2026-11-03T09:00:00.0000000", "timeZone": "Mars Standard Time" } },
+        { "id": "links", "title": "Two links", "importance": "normal", "status": "notStarted",
+          "linkedResources": [ { "webUrl": "https://example.com/a", "displayName": "A" }, { "webUrl": "https://example.com/b", "applicationName": "App" } ] },
+        { "id": "notitle", "importance": "normal", "status": "notStarted" }
+      ]
+    }
+  ]
+}

@@ -119,6 +119,10 @@ type Row struct {
 	// AssignSelf assigns the task to the importing account (a Linear issue
 	// assigned to the importer's own email address).
 	AssignSelf bool
+	// Fields are typed values beyond the task model (Linear estimates, Asana
+	// custom columns, Trello custom fields); the planner writes them as custom
+	// field values of the task's project (more-importers D3).
+	Fields []FieldValue
 
 	// Origin is where the task came from (OpenSpec change task-origin): an issue
 	// for Linear, the source id for Todoist, Things and TickTick; nil otherwise.
@@ -157,6 +161,23 @@ func (r *Row) fail(format string, args ...any) {
 
 // Link is a link attachment read from a file.
 type Link struct{ Name, URL string }
+
+// Custom field value types a profile may produce (more-importers D3).
+const (
+	FieldNumber   = "number"
+	FieldText     = "text"
+	FieldChoice   = "choice"
+	FieldCheckbox = "checkbox"
+	FieldDate     = "date"
+)
+
+// FieldValue is one named, typed value read from a file: a float64 for a
+// number, a bool for a checkbox, a string otherwise ("YYYY-MM-DD" for a date).
+type FieldValue struct {
+	Name  string
+	Type  string
+	Value any
+}
 
 // addLink keeps an http(s) URL as a link attachment, or warns that the value
 // cannot be kept (a file the export only names, a local path).
@@ -227,9 +248,12 @@ type Profile interface {
 }
 
 // Profiles lists every format in detection order: the own export first, then each
-// JSON shape by its structural signature, then CSV.
-var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{}, itemsProfile{}, listsProfile{}, genericProfile{},
-	todoistProfile{}, tickTickProfile{}, linearProfile{}, csvProfile{}}
+// named app's JSON shape by its structural signature (more-importers D2), then the
+// generic JSON shapes, then the named CSV exports and generic CSV.
+var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{},
+	googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
+	itemsProfile{}, listsProfile{}, genericProfile{},
+	todoistProfile{}, tickTickProfile{}, linearProfile{}, asanaProfile{}, csvProfile{}}
 
 // formatAliases are format names that select a profile for a container: a
 // Todoist backup is a ZIP of todoist-csv files.
@@ -355,7 +379,9 @@ type Options struct {
 	tempDir       string    // where an uploaded database is copied to be read
 	exportedAt    time.Time // reference date for dates written without a year
 	importerEmail string    // the importing account's email (Linear assignees)
+	importerName  string    // the importing account's display name (Trello members)
 	entryName     string    // archive entry being read
+	fileName      string    // the uploaded file's name (an Asana CSV names its project)
 	thingsWAL     []byte    // a Things database's WAL from the same archive
 	// ownFiles are the attachment files of an own ZIP export, by attachment id.
 	ownFiles map[string][]byte
@@ -406,6 +432,12 @@ func (o *Options) Normalize() error {
 	}
 	o.TargetProject = strings.TrimSpace(o.TargetProject)
 	return nil
+}
+
+// SetFileName records the uploaded file's name; a profile whose file is one
+// project (an Asana CSV) names the project after it.
+func (o *Options) SetFileName(name string) {
+	o.fileName = strings.TrimSpace(name)
 }
 
 // Location returns the normalised time zone (UTC before Normalize).

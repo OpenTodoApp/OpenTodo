@@ -1,0 +1,27 @@
+{
+  "kind": "tasks#taskLists",
+  "items": [
+    {
+      "kind": "tasks#taskList",
+      "id": "@default",
+      "title": "Tasks",
+      "items": [
+        { "kind": "tasks#task", "id": "rich-1", "title": "Due west of UTC", "status": "needsAction", "due": "2026-11-03T00:00:00.000Z", "notes": "First line\nSecond line" },
+        { "kind": "tasks#task", "id": "rich-2", "title": "Deleted item", "status": "needsAction", "deleted": true },
+        { "kind": "tasks#task", "id": "rich-3", "status": "needsAction" },
+        { "kind": "tasks#task", "id": "rich-4", "title": "Bad due", "status": "needsAction", "due": "next week" }
+      ]
+    },
+    {
+      "kind": "tasks#taskList",
+      "id": "groceries",
+      "title": "Groceries",
+      "items": [
+        { "kind": "tasks#task", "id": "fruit", "title": "Fruit", "status": "needsAction" },
+        { "kind": "tasks#task", "id": "apples", "title": "Apples", "parent": "fruit", "status": "completed", "completed": "2026-10-01T09:12:00.000Z" },
+        { "kind": "tasks#task", "id": "orphan", "title": "Parent elsewhere", "parent": "missing", "status": "needsAction" },
+        { "kind": "tasks#task", "id": "linked", "title": "With links", "status": "needsAction", "links": [ { "type": "email", "description": "Thread", "link": "https://mail.example.com/thread/1" }, { "type": "file", "description": "Local", "link": "file:///tmp/x" } ] }
+      ]
+    }
+  ]
+}

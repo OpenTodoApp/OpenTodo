@@ -1,0 +1,5 @@
+Task ID,Created At,Completed At,Last Modified,Name,Section/Column,Assignee,Assignee Email,Start Date,Due Date,Tags,Notes,Projects,Parent task,Blocked By (Dependencies),Blocking (Dependencies),Priority,Effort
+1205673412345671,2026-09-28,,2026-10-10,Task one,Section one,Person one,person.one@example.test,,2026-10-24,Tag one,Note one,Project one,,,1205673412345672,High,3
+1205673412345672,2026-09-28,,2026-10-11,Task two,Section one,,,2026-10-20,2026-10-30,,,Project one,,1205673412345671,,Medium,5
+1205673412345673,2026-09-29,2026-10-05,2026-10-05,Task three,Section two,Owner,owner@example.test,,,Tag one,Tag two,Project one,,,,Low,
+1205673412345674,2026-09-30,,2026-10-12,Task four,Section two,,,,,,,Project one,Task one,,,,2

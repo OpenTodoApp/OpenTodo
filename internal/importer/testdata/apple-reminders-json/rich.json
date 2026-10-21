@@ -1,0 +1,9 @@
+[
+  { "identifier": "g1", "list": "Groceries", "title": "Milk", "isCompleted": false, "priority": 9, "dueDate": "2026-11-03T08:00:00Z" },
+  { "identifier": "g2", "list": "Groceries", "title": "Bread", "isCompleted": false, "priority": 3, "flagged": true, "tags": ["bakery", "Bakery"] },
+  { "identifier": "w1", "list": "Work", "title": "Report", "isCompleted": false, "priority": 7,
+    "subtasks": [ { "identifier": "w1a", "title": "Draft", "isCompleted": true, "completionDate": "2026-10-20T16:45:00-04:00" }, { "identifier": "w1b", "title": "Review", "isCompleted": false } ] },
+  { "identifier": "w2", "list": "Work", "title": "Bad values", "isCompleted": false, "priority": 42, "dueDate": "tomorrow-ish", "url": "notes://local/1" },
+  { "identifier": "w3", "list": "Work", "title": "", "isCompleted": false },
+  { "identifier": "r1", "list": "Reminders", "title": "Default list item", "isCompleted": false }
+]

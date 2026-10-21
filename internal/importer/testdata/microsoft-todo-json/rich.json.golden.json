@@ -1,0 +1,130 @@
+{
+  "format": "microsoft-todo-json",
+  "notes": [],
+  "totals": {
+    "rows": 10,
+    "create": 9,
+    "update": 0,
+    "skip": 0,
+    "error": 1,
+    "possibleDuplicates": 0,
+    "warnings": 3,
+    "newProjects": 1,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 2,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 2,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 11,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "microsoft-todo:list:home",
+      "kind": "project",
+      "title": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "microsoft-todo:fix-tap",
+      "kind": "task",
+      "title": "Fix tap",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "microsoft-todo:check:w",
+      "kind": "task",
+      "title": "Buy washer",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "microsoft-todo:check:s",
+      "kind": "task",
+      "title": "Shut the water",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "microsoft-todo:daily",
+      "kind": "task",
+      "title": "Water plants",
+      "project": "Home",
+      "outcome": "create",
+      "warnings": [
+        "recurrence end dropped (rules repeat without an end)"
+      ]
+    },
+    {
+      "row": 5,
+      "sourceId": "microsoft-todo:monthly",
+      "kind": "task",
+      "title": "Pay rent",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "microsoft-todo:relative",
+      "kind": "task",
+      "title": "Board meeting",
+      "project": "Home",
+      "outcome": "create",
+      "warnings": [
+        "recurrence {\"daysOfWeek\":[\"thursday\"],\"index\":\"second\",\"interval\":1,\"type\":\"relativeMonthly\"} not supported; imported without a rule"
+      ]
+    },
+    {
+      "row": 7,
+      "sourceId": "microsoft-todo:zone",
+      "kind": "task",
+      "title": "Unknown zone",
+      "project": "Home",
+      "outcome": "create",
+      "warnings": [
+        "reminder dropped (time zone \"Mars Standard Time\" not recognised)"
+      ]
+    },
+    {
+      "row": 8,
+      "sourceId": "microsoft-todo:links",
+      "kind": "task",
+      "title": "Two links",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "microsoft-todo:notitle",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "title is required (list \"Home\", task 7)"
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"Home\" archived=false created_at=1791979200000",
+    "task id-0002: title=\"Fix tap\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"fix-tap\"} labels=[]",
+    "task id-0003: title=\"Buy washer\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0002\" completed_at=1791979200000 labels=[]",
+    "task id-0004: title=\"Shut the water\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0002\" labels=[]",
+    "task id-0005: title=\"Water plants\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-03\"} recurrence=\"every 2 days\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"daily\"} labels=[]",
+    "task id-0006: title=\"Pay rent\" description=\"\" priority=1 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-01\"} recurrence=\"every 1st\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"monthly\"} labels=[]",
+    "task id-0007: title=\"Board meeting\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-12\"} origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"relative\"} labels=[]",
+    "task id-0008: title=\"Unknown zone\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"zone\"} labels=[]",
+    "task id-0009: title=\"Two links\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"links\"} labels=[]",
+    "attachment id-0010: task_id=\"id-0009\" author_id=\"user-1\" comment_id=null name=\"A\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://example.com/a\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null",
+    "attachment id-0011: task_id=\"id-0009\" author_id=\"user-1\" comment_id=null name=\"App\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://example.com/b\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
+  ]
+}

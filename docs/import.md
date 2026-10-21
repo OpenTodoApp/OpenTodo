@@ -26,6 +26,11 @@ The format is detected from the content, in this order; the preview shows what w
 | --- | --- | --- |
 | `opentodo` | a top-level `"format": "opentodo-export"` | Exact round trip, see below |
 | `things-db` | a SQLite database with Things 3's tables | a copy of Things' `main.sqlite`, see [Things](#things-database-things-db) |
+| `google-tasks-json` | `"kind": "tasks#taskLists"`, or `items` of kind `tasks#taskList` | Google Takeout's `Tasks.json`, see [Google Tasks](#google-tasks-google-tasks-json) |
+| `trello-json` | top-level `id`, `name` and `lists`, `cards`, `checklists` arrays | one Trello board, see [Trello](#trello-trello-json) |
+| `microsoft-todo-json` | lists with `wellknownListName`, or with `tasks` that have `importance` and `dueDateTime` or `isReminderOn` | written by a PowerShell script, see [Microsoft To Do](#microsoft-to-do-microsoft-todo-json) |
+| `apple-reminders-json` | an array whose every element has `identifier` and `isCompleted` | written by a Shortcut, see [Apple Reminders](#apple-reminders-apple-reminders-json) |
+| `anydo-json` | `categories` and `tasks` arrays, tasks with `categoryId` and `status` | Any.do's data request, see [Any.do](#anydo-anydo-json) |
 | `json-items` | top-level `items` and `projects` arrays | "projects / sections / items" backups |
 | `json-lists` | a top-level `lists` array | lists of tasks; each list becomes a project |
 | `json-generic` | a top-level array of objects, or a `tasks` array | a generic task list |
@@ -33,6 +38,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `todoist-backup` | a ZIP of `todoist-csv` files | Todoist's backup of every project |
 | `ticktick-csv` | a preamble starting with `Date:`, then a `Folder Name, List Name, Title, Kind` header | TickTick's CSV backup, see [TickTick](#ticktick-ticktick-csv) |
 | `linear-csv` | a header with `ID`, `Team`, `Title`, `Status`, `Priority` and `UUID` | Linear's workspace export, see [Linear](#linear-linear-csv) |
+| `asana-csv` | a header with `Task ID`, `Created At`, `Completed At`, `Last Modified`, `Name`, `Section/Column`, `Assignee`, `Due Date` and `Parent task` | one Asana project, see [Asana](#asana-asana-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
 
 **ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db).
@@ -118,7 +124,8 @@ Linear exports a workspace's issues as CSV from its workspace settings (Import /
 | `Completed` / `Canceled` | completed / completed with the label `canceled` |
 | `Assignee` | kept when it is your own email address, otherwise dropped with a warning |
 | `Blocked by` | the issues it waits for become [Blocked by](tasks-and-projects.md#wait-for-another-task), when they are in the same file; others are dropped with a warning |
-| `Estimate`, cycles, milestones, initiatives, SLA, `Related to`, `Duplicate of` | dropped with a warning |
+| `Estimate` | a number [custom field](#custom-fields) "Estimate" on the project |
+| cycles, milestones, initiatives, SLA, `Related to`, `Duplicate of` | dropped with a warning |
 
 ### Things database (`things-db`)
 
@@ -143,6 +150,115 @@ The file is read from a private copy on the server, read-only, using only Things
 | This Evening | the task's evening flag |
 | trashed items | skipped |
 | the to-do's or checklist item's uuid | the task's origin, `{kind: "import", provider: "things", id: <uuid>}` (`origin: things`) |
+
+### Google Tasks (`google-tasks-json`)
+
+Google Takeout exports Google Tasks as `Tasks.json` (choose only **Tasks** at takeout.google.com).
+
+| Google Tasks | Becomes |
+| --- | --- |
+| list | a project (`My Tasks`, the default list, goes to your Inbox or the target project) |
+| `title`, `notes` | the title and the description |
+| `parent` | the parent task |
+| `due` | the due date, exactly as shown in Google Tasks (the file holds no time) |
+| `status` `completed`, `completed` | completed, at that time |
+| `links` | link attachments |
+| `deleted` items | skipped, with a note |
+| `id` | the task's origin, `{kind: "import", provider: "google-tasks", id: <id>}` |
+
+The file has no priorities, labels, reminders or recurrence, so none are created.
+
+### Trello (`trello-json`)
+
+Trello exports one board as JSON from the board menu (**Print, export and share → Export as JSON**). A ZIP of several board files imports them in one job.
+
+| Trello | Becomes |
+| --- | --- |
+| board | a project, which opens as a board on the importing device |
+| list (open or archived, in board order) | a section |
+| card `name`, `desc` | the title and the description |
+| labels | labels, by name, or by colour when unnamed |
+| `due` (with its time), `start` | the due date and time in the import's time zone, the start date |
+| `dueComplete`, archived card, card in an archived list | completed |
+| checklist items | subtasks; checked items are completed |
+| comments | appended to the description under "Comments", with author and date (warning: their authors are not kept) |
+| link attachments | link attachments; uploaded files are not in the export and are dropped with a warning |
+| members | the card stays assigned when one member is you (by name or username); others are dropped with a warning |
+| custom fields (number, text, checkbox, date, list) | [custom fields](#custom-fields) of the same type, list as a choice |
+| `id`, `shortUrl` | the task's origin, with a link to the card |
+
+### Asana (`asana-csv`)
+
+Asana exports one project as CSV from the project menu (**Export → CSV**). The project is named after the file (or its name in a ZIP); a ZIP of several project files imports them in one job.
+
+| Asana | Becomes |
+| --- | --- |
+| `Section/Column` | a section, in the order they first appear; when every task has one, the project opens as a board |
+| `Name`, `Notes` | the title and the description |
+| `Parent task` | the parent task, matched by name in the same file (a warning when it is not there) |
+| `Tags` | labels |
+| `Due Date` (and `Due Time`), `Start Date` | the due date and time, the start date |
+| `Completed At`, `Created At` | completed at that time, created at |
+| `Priority` High / Medium / Low | p1 / p2 / p3 |
+| `Assignee`, `Assignee Email` | kept when it is your own email address, otherwise dropped with a warning; `Collaborators` are dropped with a warning |
+| `Blocked By (Dependencies)` | [Blocked by](tasks-and-projects.md#wait-for-another-task), when the task is in the same file |
+| `Projects` | a note: one file is imported as one project |
+| any other column | a [custom field](#custom-fields): numbers become a number field, Yes/No a checkbox, dates a date field, at most ten distinct values a choice, anything else text |
+| `Task ID` | the task's origin, `{kind: "import", provider: "asana", id: <Task ID>}` |
+
+### Microsoft To Do (`microsoft-todo-json`)
+
+Microsoft To Do has no export. The [Microsoft To Do guide](switch/microsoft-todo.md) has a short PowerShell script that reads your lists through Microsoft Graph and writes one JSON file; the importer reads that file (an array of lists, each with its `tasks`, or Graph's `value` wrapper).
+
+| Microsoft To Do | Becomes |
+| --- | --- |
+| list | a project (`Tasks`, the default list, goes to your Inbox or the target project; flagged emails go to a project "Flagged emails") |
+| `title`, `body` | the title and the description (HTML becomes plain text) |
+| `importance` high | p1 |
+| `categories` | labels |
+| `status` completed, `completedDateTime` | completed, at that time |
+| `checklistItems` | subtasks; checked items are completed |
+| `dueDateTime`, `startDateTime` | the due date and start date as shown in To Do (To Do has no due times) |
+| `reminderDateTime` with `isReminderOn` | a reminder at that moment; Windows time zone names are converted, an unknown one drops the reminder with a warning |
+| `recurrence` daily, weekly, monthly on a day, yearly | a recurrence rule; an end date or count, and "the second Thursday" patterns, are dropped with a warning |
+| `linkedResources` | link attachments (a single link also becomes the origin's link) |
+| file attachments | dropped with a warning (not in the file) |
+| `id` | the task's origin, `{kind: "import", provider: "microsoft-todo", id: <id>}` |
+
+### Apple Reminders (`apple-reminders-json`)
+
+Apple Reminders has no export. Reminders syncs over [CalDAV](caldav.md) when your lists are in iCloud; otherwise the [Apple Reminders guide](switch/apple-reminders.md) shows a Shortcut that writes your reminders to one JSON file.
+
+| Apple Reminders | Becomes |
+| --- | --- |
+| `list` | a project (`Reminders`, the default list, goes to your Inbox or the target project) |
+| `title`, `notes` | the title and the description |
+| `subtasks`, `parent` | subtasks |
+| `priority` 1–4 / 5 / 6–9 / 0 | p1 / p2 / p3 / p4 |
+| `flagged` | the label `flagged` |
+| `tags` | labels |
+| `url` | a link attachment |
+| `dueDate` | the due date, with its time in the import's time zone when it has one |
+| `isCompleted`, `completionDate`, `creationDate` | completed at that time, created at |
+| `identifier` | the task's origin, `{kind: "import", provider: "apple-reminders", id: <identifier>}` |
+
+### Any.do (`anydo-json`)
+
+Any.do sends your data as JSON when you ask for it (see the [Any.do guide](switch/anydo.md)). The format is not documented and may change without notice.
+
+| Any.do | Becomes |
+| --- | --- |
+| category | a project (the default category goes to your Inbox or the target project) |
+| `title`, `note` | the title and the description |
+| `parentGlobalTaskId` | the parent task |
+| `priority` High | p1 |
+| `status` CHECKED or DONE | completed; `DELETED` tasks are skipped and counted in a note |
+| `dueDate` | the due date, with its time unless it is midnight |
+| `repeatingMethod` daily, weekly, monthly, yearly | a recurrence rule |
+| `tags` | labels |
+| `alert` | a reminder at that moment |
+| shared members, attachments, the daily plan | dropped with a warning |
+| `globalTaskId` | the task's origin, `{kind: "import", provider: "anydo", id: <globalTaskId>}` |
 
 ### CSV (`csv`)
 
@@ -241,6 +357,11 @@ Items and projects marked `is_deleted` are skipped.
 - **Dates**: plain dates stay dates; date-times without a zone keep their wall clock; date-times with a zone become the wall clock of that instant in the chosen time zone (default: the browser's zone in the web app, UTC through the API). Due dates are always stored floating. A deadline is a date only: a time on it is dropped with a warning, keeping the day as written. The preview counts the tasks that get a deadline.
 - **Completion**: a completed row keeps its source completion time, or the import time when the source has none.
 - **Unsupported attributes** (attachments that are not web addresses, comments, assignees, links, location reminders, recurrence rules the grammar cannot express) never block a row: the task is imported and the row carries a warning naming what was dropped.
+- **Custom fields**: see [Custom fields](#custom-fields).
+
+### Custom fields
+
+Trello custom fields, Asana's extra columns and Linear estimates become [custom fields](custom-fields.md) of the task's project. A field of the same name (ignoring case) and type in that project is reused; otherwise one is created, and the preview counts it under new fields. A choice field gets the values in the order they first appear. A value is dropped with a warning when the project already has a field of that name with another type, when the project already holds 30 fields, or when the task goes to the Inbox (fields belong to a project). Undo removes the fields the import created and leaves fields that were there before.
 
 ### Sections
 
@@ -275,7 +396,7 @@ A relative reminder fires at the due time plus its offset, with a date-only due 
 
 ### Origins
 
-Tasks from Todoist, TickTick, Things and Linear keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field and shown as a chip on the row. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
+Tasks from Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders and Any.do keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field and shown as a chip on the row. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
 
 ## Duplicates
 

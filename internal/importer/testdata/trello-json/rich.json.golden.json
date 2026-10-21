@@ -1,0 +1,164 @@
+{
+  "format": "trello-json",
+  "notes": [],
+  "totals": {
+    "rows": 13,
+    "create": 12,
+    "update": 0,
+    "skip": 0,
+    "error": 1,
+    "possibleDuplicates": 0,
+    "warnings": 2,
+    "newProjects": 1,
+    "newLabels": 1,
+    "newSections": 4,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 5,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 18,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "trello:board:rich-board",
+      "kind": "project",
+      "title": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "trello:list:l-todo",
+      "kind": "section",
+      "title": "To do",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "trello:list:l-doing",
+      "kind": "section",
+      "title": "Doing",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "trello:list:l-done",
+      "kind": "section",
+      "title": "Done",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "trello:list:l-old",
+      "kind": "section",
+      "title": "Old ideas",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "trello:c-1",
+      "kind": "task",
+      "title": "Paint the walls",
+      "project": "Renovation",
+      "outcome": "create",
+      "warnings": [
+        "1 member dropped (only your own account can be assigned by an import)",
+        "comment authors cannot be kept; 1 comment added to the description"
+      ]
+    },
+    {
+      "row": 3,
+      "sourceId": "trello:check:ci-1",
+      "kind": "task",
+      "title": "Tape the edges",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "trello:check:ci-2",
+      "kind": "task",
+      "title": "First coat",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "trello:c-2",
+      "kind": "task",
+      "title": "Tiles",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "trello:c-3",
+      "kind": "task",
+      "title": "Archived card",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "trello:c-4",
+      "kind": "task",
+      "title": "Card in a closed list",
+      "project": "Renovation",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "trello:c-5",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "card #5 has no name"
+    },
+    {
+      "row": 9,
+      "sourceId": "trello:c-6",
+      "kind": "task",
+      "title": "Bad due",
+      "project": "Renovation",
+      "outcome": "create",
+      "warnings": [
+        "due date \"someday\" not understood; imported without a due date"
+      ]
+    }
+  ],
+  "fields": [
+    "label id-0010: name=\"purple\" created_at=1791979200000",
+    "project id-0001: name=\"Renovation\" archived=false created_at=1791979200000",
+    "section id-0002: name=\"To do\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0003: name=\"Doing\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0004: name=\"Done\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0005: name=\"Old ideas\" project_id=\"id-0001\" created_at=1791979200000",
+    "field id-0014: name=\"Cost\" project_id=\"id-0001\" type=\"number\" options=\"\" created_at=1791979200000",
+    "field id-0015: name=\"Room\" project_id=\"id-0001\" type=\"choice\" options=\"Kitchen\\nBathroom\" created_at=1791979200000",
+    "field id-0016: name=\"Paid\" project_id=\"id-0001\" type=\"checkbox\" options=\"\" created_at=1791979200000",
+    "field id-0017: name=\"Supplier\" project_id=\"id-0001\" type=\"text\" options=\"\" created_at=1791979200000",
+    "field id-0018: name=\"Ordered on\" project_id=\"id-0001\" type=\"date\" options=\"\" created_at=1791979200000",
+    "task id-0006: title=\"Paint the walls\" description=\"Two coats\\n\\nComments\\n- Someone Else, 2026-10-12: Bought the paint\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-05\",\"time\":\"17:00\"} start=\"2026-11-01\" origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"c-1\",\"url\":\"https://trello.com/c/AbCd1234\"} assignee_id=\"user-1\" labels=[] section_id=\"id-0002\" fields.id-0014=120.5 fields.id-0015=\"Kitchen\" fields.id-0016=true fields.id-0017=\"Hardware store\" fields.id-0018=\"2026-10-20\"",
+    "task id-0007: title=\"Tape the edges\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0006\" completed_at=1791979200000 labels=[]",
+    "task id-0008: title=\"First coat\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0006\" labels=[]",
+    "task id-0009: title=\"Tiles\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"c-2\",\"url\":\"https://trello.com/c/EfGh5678\"} labels=[\"id-0010\"] section_id=\"id-0003\" fields.id-0015=\"Bathroom\" fields.id-0014=80",
+    "task id-0011: title=\"Archived card\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"c-3\"} completed_at=1790769600000 labels=[] section_id=\"id-0004\"",
+    "task id-0012: title=\"Card in a closed list\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"c-4\"} completed_at=1791979200000 labels=[] section_id=\"id-0005\"",
+    "task id-0013: title=\"Bad due\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"c-6\"} labels=[] section_id=\"id-0002\""
+  ]
+}

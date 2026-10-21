@@ -1,0 +1,66 @@
+{
+  "user": { "email": "person.one@example.test", "name": "Person one", "creationDate": 1726000000000 },
+  "categories": [
+    { "id": "Y2F0LTAwMDAwMDAwMDAwMQ==", "name": "Personal", "isDefault": true, "position": "a", "isDeleted": false },
+    { "id": "Y2F0LTAwMDAwMDAwMDAwMg==", "name": "Category two", "isDefault": false, "position": "b", "isDeleted": false }
+  ],
+  "tasks": [
+    {
+      "globalTaskId": "dGFzay0wMDAwMDAwMDAwMDE=",
+      "categoryId": "Y2F0LTAwMDAwMDAwMDAwMQ==",
+      "title": "Task one",
+      "note": "Note one",
+      "status": "UNCHECKED",
+      "priority": "High",
+      "dueDate": 1793664000000,
+      "repeatingMethod": "TASK_REPEAT_WEEK",
+      "tags": [],
+      "alert": { "type": "CUSTOM", "customTime": 1793685600000 },
+      "creationDate": 1760083200000,
+      "lastUpdateDate": 1760256000000,
+      "parentGlobalTaskId": null,
+      "position": "a"
+    },
+    {
+      "globalTaskId": "dGFzay0wMDAwMDAwMDAwMDI=",
+      "categoryId": "Y2F0LTAwMDAwMDAwMDAwMg==",
+      "title": "Task two",
+      "note": "",
+      "status": "CHECKED",
+      "priority": "Normal",
+      "dueDate": 1793727000000,
+      "repeatingMethod": "TASK_REPEAT_OFF",
+      "tags": ["tag-one"],
+      "alert": { "type": "NONE" },
+      "creationDate": 1760169600000,
+      "lastUpdateDate": 1760342400000,
+      "parentGlobalTaskId": null,
+      "position": "b"
+    },
+    {
+      "globalTaskId": "dGFzay0wMDAwMDAwMDAwMDM=",
+      "categoryId": "Y2F0LTAwMDAwMDAwMDAwMg==",
+      "title": "Subtask one",
+      "note": "",
+      "status": "UNCHECKED",
+      "priority": "Normal",
+      "dueDate": 0,
+      "repeatingMethod": "TASK_REPEAT_OFF",
+      "tags": [],
+      "creationDate": 1760169700000,
+      "parentGlobalTaskId": "dGFzay0wMDAwMDAwMDAwMDI=",
+      "position": "c"
+    },
+    {
+      "globalTaskId": "dGFzay0wMDAwMDAwMDAwMDQ=",
+      "categoryId": "Y2F0LTAwMDAwMDAwMDAwMg==",
+      "title": "Task four",
+      "note": "",
+      "status": "DELETED",
+      "priority": "Normal",
+      "dueDate": 0,
+      "creationDate": 1760169800000,
+      "parentGlobalTaskId": null
+    }
+  ]
+}

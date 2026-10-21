@@ -29,6 +29,12 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'things-db': msg('Things 3 database'),
   'ticktick-csv': msg('TickTick backup (CSV)'),
   'linear-csv': msg('Linear export (CSV)'),
+  'google-tasks-json': msg('Google Tasks (Takeout JSON)'),
+  'trello-json': msg('Trello board (JSON)'),
+  'asana-csv': msg('Asana project (CSV)'),
+  'microsoft-todo-json': msg('Microsoft To Do (JSON from the PowerShell script)'),
+  'apple-reminders-json': msg('Apple Reminders (JSON from the Shortcut)'),
+  'anydo-json': msg('Any.do (JSON from a data request)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),
@@ -107,6 +113,7 @@ function Totals({ t: item }: { t: ImportPreview['totals'] }) {
     item.newProjects ? t('{n, plural, one {# new project} other {# new projects}}', { n: item.newProjects }) : '', item.newLabels ? t('{n, plural, one {# new label} other {# new labels}}', { n: item.newLabels }) : '',
     item.newSections ? t('{n, plural, one {# new section} other {# new sections}}', { n: item.newSections }) : '', item.recurring ? t('{n} recurring', { n: item.recurring }) : '',
     item.reminders ? t('{n, plural, one {# reminder} other {# reminders}}', { n: item.reminders }) : '', item.deadlines ? t('{n} with deadlines', { n: item.deadlines }) : '',
+    item.fields ? t('{n, plural, one {# new field} other {# new fields}}', { n: item.fields }) : '',
   ].filter(Boolean)
   return <p className="text-body text-muted">{t('{n, plural, one {# row} other {# rows}}: {summary}', { n: item.rows, summary: parts.join(' · ') })}</p>
 }

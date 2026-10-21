@@ -73,12 +73,12 @@ describe('ImportView', () => {
   it('shows section, recurrence and reminder counts, notes and the section option', () => {
     const preview: ImportPreview = {
       format: 'opentodo', options: {}, truncated: false, version: 1,
-      totals: totals({ rows: 6, create: 6, newSections: 2, recurring: 1, reminders: 3, deadlines: 2 }),
+      totals: totals({ rows: 6, create: 6, newSections: 2, recurring: 1, reminders: 3, deadlines: 2, fields: 1 }),
       rows: [{ kind: 'section', title: 'Doing', outcome: 'create' }],
       notes: ['4 comments are not imported: a comment keeps its author'],
     }
     const html = render({ preview, fileName: 'opentodo-export.json' })
-    expect(html).toContain('2 new sections · 1 recurring · 3 reminders · 2 with deadlines')
+    expect(html).toContain('2 new sections · 1 recurring · 3 reminders · 2 with deadlines · 1 new field')
     expect(html).toContain('4 comments are not imported')
     expect(html).toContain('Keep as sections')
     expect(html).toMatch(/<option value="section" selected="">Keep as sections/)
@@ -112,7 +112,9 @@ describe('import route', () => {
 
   it('offers the named app formats and shows archive entry names (named-importers)', () => {
     const html = render()
-    for (const label of ['Todoist backup (ZIP)', 'Todoist project (CSV)', 'Things 3 database', 'TickTick backup (CSV)', 'Linear export (CSV)']) {
+    for (const label of ['Todoist backup (ZIP)', 'Todoist project (CSV)', 'Things 3 database', 'TickTick backup (CSV)', 'Linear export (CSV)',
+      'Google Tasks (Takeout JSON)', 'Trello board (JSON)', 'Asana project (CSV)', 'Microsoft To Do (JSON from the PowerShell script)',
+      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)']) {
       expect(html).toContain(label)
     }
     const preview: ImportPreview = {

@@ -1,0 +1,74 @@
+{
+  "kind": "tasks#taskLists",
+  "items": [
+    {
+      "kind": "tasks#taskList",
+      "id": "MDk0OTMxNjU1NTE2MjQ3NDUyNzU6MDow",
+      "title": "My Tasks",
+      "updated": "2026-10-12T08:31:44.000Z",
+      "selfLink": "https://www.googleapis.com/tasks/v1/users/@me/lists/MDk0OTMxNjU1NTE2MjQ3NDUyNzU6MDow",
+      "items": [
+        {
+          "kind": "tasks#task",
+          "id": "T1A0eGx6Y2dKcF9zVFZ5Zw",
+          "etag": "\"LTE3NDY0MjA0NDY\"",
+          "title": "Task one",
+          "updated": "2026-10-12T08:30:10.000Z",
+          "selfLink": "https://www.googleapis.com/tasks/v1/lists/MDk0OTMxNjU1NTE2MjQ3NDUyNzU6MDow/tasks/T1A0eGx6Y2dKcF9zVFZ5Zw",
+          "position": "00000000000000000000",
+          "status": "needsAction",
+          "due": "2026-11-03T00:00:00.000Z",
+          "notes": "Note one"
+        },
+        {
+          "kind": "tasks#task",
+          "id": "bFRzR3RTV0hUcGx5aUlMSQ",
+          "title": "Task two",
+          "updated": "2026-10-01T09:12:00.000Z",
+          "position": "00000000000000000001",
+          "status": "completed",
+          "completed": "2026-10-01T09:12:00.000Z",
+          "hidden": true
+        },
+        {
+          "kind": "tasks#task",
+          "id": "c3VidGFza0lkMTIzNDU2Nw",
+          "title": "Task three",
+          "updated": "2026-10-12T08:31:00.000Z",
+          "parent": "T1A0eGx6Y2dKcF9zVFZ5Zw",
+          "position": "00000000000000000000",
+          "status": "needsAction",
+          "links": [
+            { "type": "email", "description": "Link one", "link": "https://mail.example.com/mail/u/0/#all/18c2" }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "tasks#taskList",
+      "id": "N0ZDYXp4Ql9zX0NTbm1GbA",
+      "title": "List two",
+      "updated": "2026-10-11T18:02:13.000Z",
+      "items": [
+        {
+          "kind": "tasks#task",
+          "id": "ZnJ1aXRJZDEyMzQ1Njc4OQ",
+          "title": "Task four",
+          "updated": "2026-10-11T18:01:59.000Z",
+          "position": "00000000000000000000",
+          "status": "needsAction"
+        },
+        {
+          "kind": "tasks#task",
+          "id": "YXBwbGVzSWQxMjM0NTY3OA",
+          "title": "Task five",
+          "updated": "2026-10-11T18:02:13.000Z",
+          "parent": "ZnJ1aXRJZDEyMzQ1Njc4OQ",
+          "position": "00000000000000000000",
+          "status": "needsAction",
+          "due": "2026-10-25T00:00:00.000Z"
+        }
+      ]
+    }
+  ]
+}

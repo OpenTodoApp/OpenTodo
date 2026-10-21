@@ -1,0 +1,106 @@
+{
+  "format": "anydo-json",
+  "notes": [
+    "the list \"Personal\" is your default list; its tasks go to the target project (the Inbox unless you choose one)",
+    "2 deleted tasks skipped"
+  ],
+  "totals": {
+    "rows": 7,
+    "create": 6,
+    "update": 0,
+    "skip": 0,
+    "error": 1,
+    "possibleDuplicates": 0,
+    "warnings": 3,
+    "newProjects": 1,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 1,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 6,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 2,
+      "sourceId": "anydo:category:work",
+      "kind": "project",
+      "title": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "anydo:midnight",
+      "kind": "task",
+      "title": "Due at midnight",
+      "project": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "anydo:monthly",
+      "kind": "task",
+      "title": "Monthly",
+      "project": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "anydo:odd-repeat",
+      "kind": "task",
+      "title": "Odd repeat",
+      "project": "Work",
+      "outcome": "create",
+      "warnings": [
+        "priority \"Urgent\" not recognised; imported as p4",
+        "repeat \"TASK_REPEAT_FORTNIGHT\" not supported; imported without a rule"
+      ]
+    },
+    {
+      "row": 4,
+      "sourceId": "anydo:shared",
+      "kind": "task",
+      "title": "Shared and attached",
+      "project": "Work",
+      "outcome": "create",
+      "warnings": [
+        "shared-list members dropped (an import cannot share a task)",
+        "attachments dropped (they are not in the file)",
+        "Any.do moment plan dropped (not supported)"
+      ]
+    },
+    {
+      "row": 5,
+      "sourceId": "anydo:nameless",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "title is required"
+    },
+    {
+      "row": 6,
+      "sourceId": "anydo:orphan",
+      "kind": "task",
+      "title": "Unknown category",
+      "outcome": "create",
+      "warnings": [
+        "parent \"missing\" not found; imported as a top-level task"
+      ]
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"Work\" archived=false created_at=1791979200000",
+    "task id-0002: title=\"Due at midnight\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-03\"} origin={\"kind\":\"import\",\"provider\":\"anydo\",\"id\":\"midnight\"} labels=[]",
+    "task id-0003: title=\"Monthly\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-03\"} recurrence=\"every month\" origin={\"kind\":\"import\",\"provider\":\"anydo\",\"id\":\"monthly\"} labels=[]",
+    "task id-0004: title=\"Odd repeat\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"anydo\",\"id\":\"odd-repeat\"} completed_at=1760342400000 labels=[]",
+    "task id-0005: title=\"Shared and attached\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"anydo\",\"id\":\"shared\"} labels=[]",
+    "task id-0006: title=\"Unknown category\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"anydo\",\"id\":\"orphan\"} labels=[]"
+  ]
+}

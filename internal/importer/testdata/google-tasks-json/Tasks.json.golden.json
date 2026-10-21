@@ -1,0 +1,84 @@
+{
+  "format": "google-tasks-json",
+  "notes": [
+    "the list \"My Tasks\" is your default list; its tasks go to the target project (the Inbox unless you choose one)"
+  ],
+  "totals": {
+    "rows": 6,
+    "create": 6,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 1,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 1,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 7,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "google-tasks:T1A0eGx6Y2dKcF9zVFZ5Zw",
+      "kind": "task",
+      "title": "Task one",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "google-tasks:bFRzR3RTV0hUcGx5aUlMSQ",
+      "kind": "task",
+      "title": "Task two",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "google-tasks:c3VidGFza0lkMTIzNDU2Nw",
+      "kind": "task",
+      "title": "Task three",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "google-tasks:list:N0ZDYXp4Ql9zX0NTbm1GbA",
+      "kind": "project",
+      "title": "List two",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "google-tasks:ZnJ1aXRJZDEyMzQ1Njc4OQ",
+      "kind": "task",
+      "title": "Task four",
+      "project": "List two",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "google-tasks:YXBwbGVzSWQxMjM0NTY3OA",
+      "kind": "task",
+      "title": "Task five",
+      "project": "List two",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"List two\" archived=false created_at=1791979200000",
+    "task id-0002: title=\"Task one\" description=\"Note one\" priority=4 created_at=1791979200000 due={\"date\":\"2026-11-03\"} origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"T1A0eGx6Y2dKcF9zVFZ5Zw\"} labels=[]",
+    "task id-0003: title=\"Task two\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"bFRzR3RTV0hUcGx5aUlMSQ\"} completed_at=1790845920000 labels=[]",
+    "task id-0004: title=\"Task three\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"c3VidGFza0lkMTIzNDU2Nw\"} labels=[]",
+    "task id-0006: title=\"Task four\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"ZnJ1aXRJZDEyMzQ1Njc4OQ\"} labels=[]",
+    "task id-0007: title=\"Task five\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0006\" due={\"date\":\"2026-10-25\"} origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"YXBwbGVzSWQxMjM0NTY3OA\"} labels=[]",
+    "attachment id-0005: task_id=\"id-0004\" author_id=\"user-1\" comment_id=null name=\"Link one\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://mail.example.com/mail/u/0/#all/18c2\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
+  ]
+}

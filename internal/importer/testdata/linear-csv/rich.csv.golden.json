@@ -16,10 +16,10 @@
     "reminders": 0,
     "deadlines": 0,
     "attachments": 0,
-    "fields": 0,
+    "fields": 1,
     "timeEntries": 0,
     "places": 0,
-    "entities": 20,
+    "entities": 21,
     "written": 0,
     "ops": 0
   },
@@ -100,7 +100,6 @@
       "project": "Project 1",
       "outcome": "create",
       "warnings": [
-        "estimate (points) dropped (not supported)",
         "cycle dropped (not supported)"
       ]
     },
@@ -144,13 +143,14 @@
     "section id-0013: name=\"Done\" project_id=\"id-0001\" created_at=1791979200000",
     "section id-0016: name=\"Canceled\" project_id=\"id-0001\" created_at=1791979200000",
     "section id-0020: name=\"Triage\" project_id=\"id-0002\" created_at=1791979200000",
+    "field id-0021: name=\"Estimate\" project_id=\"id-0001\" type=\"number\" options=\"\" created_at=1791979200000",
     "task id-0003: title=\"Urgent issue\" description=\"ENG-101\" priority=1 created_at=1790845200000 project_id=\"id-0001\" due={\"date\":\"2026-10-21\"} origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-101\"} assignee_id=\"user-1\" labels=[] section_id=\"id-0004\"",
     "task id-0005: title=\"High issue with labels\" description=\"ENG-102\\n\\nSays \\\"quoted\\\" text\" priority=2 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-102\"} labels=[\"id-0006\",\"id-0007\"] section_id=\"id-0008\"",
     "task id-0009: title=\"Medium issue assigned to someone else\" description=\"ENG-103\" priority=3 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-103\"} labels=[] section_id=\"id-0004\"",
     "task id-0010: title=\"Low sub-issue\" description=\"ENG-104\" priority=4 created_at=1790845200000 project_id=\"id-0001\" parent_id=\"id-0003\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-104\"} labels=[] section_id=\"id-0011\"",
     "task id-0012: title=\"Completed issue\" description=\"ENG-105\" priority=4 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-105\"} completed_at=1791201600000 labels=[] section_id=\"id-0013\"",
     "task id-0014: title=\"Canceled issue\" description=\"ENG-106\" priority=4 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-106\"} completed_at=1791288000000 labels=[\"id-0015\"] section_id=\"id-0016\"",
-    "task id-0017: title=\"Issue with estimate and cycle\" description=\"ENG-107\" priority=3 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-107\"} labels=[] section_id=\"id-0004\"",
+    "task id-0017: title=\"Issue with estimate and cycle\" description=\"ENG-107\" priority=3 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-107\"} labels=[] section_id=\"id-0004\" fields.id-0021=3",
     "task id-0018: title=\"Issue with milestone and relations\" description=\"ENG-108\" priority=4 created_at=1790845200000 project_id=\"id-0001\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-108\"} labels=[] section_id=\"id-0011\" blocked_by=[\"id-0005\"]",
     "task id-0019: title=\"Team issue without a project\" description=\"ENG-109\" priority=4 created_at=1790845200000 project_id=\"id-0002\" origin={\"kind\":\"issue\",\"provider\":\"linear\",\"id\":\"ENG-109\"} labels=[] section_id=\"id-0020\""
   ]

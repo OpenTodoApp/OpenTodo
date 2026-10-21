@@ -1,0 +1,179 @@
+{
+  "format": "asana-csv",
+  "notes": [
+    "the Projects column names other Asana projects; one file is imported as one project, so they are not created"
+  ],
+  "totals": {
+    "rows": 14,
+    "create": 13,
+    "update": 0,
+    "skip": 0,
+    "error": 1,
+    "possibleDuplicates": 0,
+    "warnings": 2,
+    "newProjects": 1,
+    "newLabels": 2,
+    "newSections": 2,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 5,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 22,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "asana:project:rich",
+      "kind": "project",
+      "title": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "asana:101",
+      "kind": "task",
+      "title": "Write brief",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "asana:102",
+      "kind": "task",
+      "title": "Order paint",
+      "project": "rich",
+      "outcome": "create",
+      "warnings": [
+        "due date \"soon\" not understood; imported without a due date",
+        "assignee dropped (only your own account can be assigned by an import)",
+        "collaborators dropped (an import cannot share a task)"
+      ]
+    },
+    {
+      "row": 4,
+      "sourceId": "asana:103",
+      "kind": "task",
+      "title": "Paint the walls",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "asana:104",
+      "kind": "task",
+      "title": "Orphan subtask",
+      "project": "rich",
+      "outcome": "create",
+      "warnings": [
+        "parent task \"Not in this file\" is not in this file; imported as a top-level task"
+      ]
+    },
+    {
+      "row": 6,
+      "sourceId": "asana:105",
+      "kind": "task",
+      "title": "Choose tiles",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "asana:106",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "name is required"
+    },
+    {
+      "row": 8,
+      "sourceId": "asana:107",
+      "kind": "task",
+      "title": "Clean up",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "asana:108",
+      "kind": "task",
+      "title": "Buy brushes",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "asana:109",
+      "kind": "task",
+      "title": "Rent a ladder",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "asana:110",
+      "kind": "task",
+      "title": "Book the painter",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "asana:111",
+      "kind": "task",
+      "title": "Protect the floor",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "asana:112",
+      "kind": "task",
+      "title": "Pick a colour",
+      "project": "rich",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "asana:113",
+      "kind": "task",
+      "title": "Check the weather",
+      "project": "rich",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0003: name=\"design\" created_at=1791979200000",
+    "label id-0004: name=\"urgent\" created_at=1791979200000",
+    "project id-0001: name=\"rich\" archived=false created_at=1791979200000",
+    "section id-0005: name=\"Backlog\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0008: name=\"In progress\" project_id=\"id-0001\" created_at=1791979200000",
+    "field id-0018: name=\"Budget\" project_id=\"id-0001\" type=\"number\" options=\"\" created_at=1791979200000",
+    "field id-0019: name=\"Stage\" project_id=\"id-0001\" type=\"choice\" options=\"Draft\\nReview\\nDone\" created_at=1791979200000",
+    "field id-0020: name=\"Approved\" project_id=\"id-0001\" type=\"checkbox\" options=\"\" created_at=1791979200000",
+    "field id-0021: name=\"Ordered on\" project_id=\"id-0001\" type=\"date\" options=\"\" created_at=1791979200000",
+    "field id-0022: name=\"Supplier notes\" project_id=\"id-0001\" type=\"text\" options=\"\" created_at=1791979200000",
+    "task id-0002: title=\"Write brief\" description=\"First draft\" priority=4 created_at=1790553600000 project_id=\"id-0001\" due={\"date\":\"2026-10-24\",\"time\":\"14:30\"} origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"101\"} labels=[\"id-0003\",\"id-0004\"] section_id=\"id-0005\" fields.id-0018=1200 fields.id-0019=\"Draft\" fields.id-0020=true fields.id-0021=\"2026-10-01\" fields.id-0022=\"Call before noon\"",
+    "task id-0006: title=\"Order paint\" description=\"\" priority=4 created_at=1790553600000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"102\"} labels=[] section_id=\"id-0005\" fields.id-0018=80.5 fields.id-0019=\"Review\" fields.id-0020=false fields.id-0021=\"2026-10-02\" fields.id-0022=\"Second supplier note\"",
+    "task id-0007: title=\"Paint the walls\" description=\"Two coats\" priority=4 created_at=1790640000000 project_id=\"id-0001\" parent_id=\"id-0002\" due={\"date\":\"2026-11-05\"} origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"103\"} completed_at=1791216000000 labels=[] section_id=\"id-0008\" fields.id-0018=300 fields.id-0019=\"Draft\" fields.id-0020=true fields.id-0021=\"2026-10-03\" fields.id-0022=\"Third supplier note\" blocked_by=[\"id-0006\"]",
+    "task id-0009: title=\"Orphan subtask\" description=\"\" priority=4 created_at=1790726400000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"104\"} labels=[] section_id=\"id-0008\"",
+    "task id-0010: title=\"Choose tiles\" description=\"\" priority=4 created_at=1790726400000 project_id=\"id-0001\" start=\"2026-10-20\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"105\"} labels=[] section_id=\"id-0008\" fields.id-0018=15 fields.id-0019=\"Done\" fields.id-0020=false fields.id-0022=\"Fourth supplier note\"",
+    "task id-0011: title=\"Clean up\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"107\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Draft\" fields.id-0022=\"Fifth supplier note\"",
+    "task id-0012: title=\"Buy brushes\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"108\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Review\" fields.id-0022=\"Sixth supplier note\"",
+    "task id-0013: title=\"Rent a ladder\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"109\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Done\" fields.id-0022=\"Seventh supplier note\"",
+    "task id-0014: title=\"Book the painter\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"110\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Draft\" fields.id-0022=\"Eighth supplier note\"",
+    "task id-0015: title=\"Protect the floor\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"111\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Draft\" fields.id-0022=\"Ninth supplier note\"",
+    "task id-0016: title=\"Pick a colour\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"112\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Review\" fields.id-0022=\"Tenth supplier note\"",
+    "task id-0017: title=\"Check the weather\" description=\"\" priority=4 created_at=1790812800000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"asana\",\"id\":\"113\"} labels=[] section_id=\"id-0008\" fields.id-0019=\"Draft\" fields.id-0022=\"Eleventh supplier note\""
+  ]
+}

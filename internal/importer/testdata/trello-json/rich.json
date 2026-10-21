@@ -1,0 +1,44 @@
+{
+  "id": "rich-board",
+  "name": "Renovation",
+  "lists": [
+    { "id": "l-todo", "name": "To do", "closed": false, "pos": 1 },
+    { "id": "l-doing", "name": "Doing", "closed": false, "pos": 2 },
+    { "id": "l-done", "name": "Done", "closed": false, "pos": 3 },
+    { "id": "l-old", "name": "Old ideas", "closed": true, "pos": 4 }
+  ],
+  "labels": [],
+  "members": [
+    { "id": "m-me", "fullName": "Owner Example", "username": "owner" },
+    { "id": "m-other", "fullName": "Someone Else", "username": "someone" }
+  ],
+  "customFields": [
+    { "id": "cf-cost", "name": "Cost", "type": "number" },
+    { "id": "cf-room", "name": "Room", "type": "list", "options": [ { "id": "o-kitchen", "value": { "text": "Kitchen" } }, { "id": "o-bath", "value": { "text": "Bathroom" } } ] },
+    { "id": "cf-paid", "name": "Paid", "type": "checkbox" },
+    { "id": "cf-note", "name": "Supplier", "type": "text" },
+    { "id": "cf-date", "name": "Ordered on", "type": "date" }
+  ],
+  "cards": [
+    { "id": "c-1", "name": "Paint the walls", "desc": "Two coats", "closed": false, "due": "2026-11-05T17:00:00.000Z", "start": "2026-11-01T00:00:00.000Z", "idList": "l-todo", "idMembers": ["m-me", "m-other"], "shortUrl": "https://trello.com/c/AbCd1234",
+      "customFieldItems": [
+        { "idCustomField": "cf-cost", "value": { "number": "120.5" } },
+        { "idCustomField": "cf-room", "idValue": "o-kitchen" },
+        { "idCustomField": "cf-paid", "value": { "checked": "true" } },
+        { "idCustomField": "cf-note", "value": { "text": "Hardware store" } },
+        { "idCustomField": "cf-date", "value": { "date": "2026-10-20T12:00:00.000Z" } }
+      ] },
+    { "id": "c-2", "name": "Tiles", "desc": "", "closed": false, "idList": "l-doing", "labels": [ { "name": "", "color": "purple" } ], "shortUrl": "https://trello.com/c/EfGh5678",
+      "customFieldItems": [ { "idCustomField": "cf-room", "idValue": "o-bath" }, { "idCustomField": "cf-cost", "value": { "number": "80" } } ] },
+    { "id": "c-3", "name": "Archived card", "closed": true, "dateLastActivity": "2026-09-30T12:00:00.000Z", "idList": "l-done" },
+    { "id": "c-4", "name": "Card in a closed list", "closed": false, "idList": "l-old" },
+    { "id": "c-5", "name": "", "idList": "l-todo" },
+    { "id": "c-6", "name": "Bad due", "due": "someday", "idList": "l-todo" }
+  ],
+  "checklists": [
+    { "id": "cl-1", "name": "Steps", "idCard": "c-1", "checkItems": [ { "id": "ci-1", "name": "Tape the edges", "state": "complete" }, { "id": "ci-2", "name": "First coat", "state": "incomplete" } ] }
+  ],
+  "actions": [
+    { "type": "commentCard", "date": "2026-10-12T09:15:00.000Z", "memberCreator": { "fullName": "Someone Else" }, "data": { "text": "Bought the paint", "card": { "id": "c-1" } } }
+  ]
+}
