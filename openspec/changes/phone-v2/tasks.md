@@ -1,0 +1,47 @@
+# Tasks
+
+## 1. Phone chrome: the bar and its overflow
+
+- [ ] 1.1 Move the list actions of `web/src/app/task-list/ListChrome.tsx` into the phone bar's slots and overflow per design D1 (Process the Inbox and the Today Ask action visible, the duration filter visible or in the overflow, Display mode and "Select tasks" in the overflow, the active filter as one chip in the bar), and remove the Select button; verify with `npm test -- budget` after adding a phone case to `web/src/app/budget.test.tsx`: at 390 px Today, the Inbox and a project show nothing between `[data-phone-bar]` and the quick add, and the overflow lists Display mode
+- [ ] 1.2 Make the Inbox's planned-without-project count the phone bar's subtitle (`PageBar` subtitle) that opens the Filter view with `no project`; verify with a happy-dom test in `inboxPlanned.test.tsx` (or the existing Inbox test file) that the subtitle reads "3 planned tasks without a project" at 390 px and navigates on tap
+- [ ] 1.3 Reserve the add button's footprint under every list below 768 px (bottom padding on the content scroller of the button height plus its offset plus the safe-area inset); verify with `budget.test.tsx` that the last row's bounding box at 390×844 does not intersect `[data-add-button]`, and with `make layout-check`
+
+## 2. Tab bar and add button
+
+- [ ] 2.1 Add a `useScrollDirection` hook on the content scroller and make `TabBar.tsx` minimise to icons (40 px) and the add button slide out when scrolling down more than 24 px, both returning on scroll up, at the end, or 600 ms after the scroll stops, and never under reduced motion or while a sheet is open; raise the tabs to 48 px; verify with `tabBar.test.tsx` (scroll down hides labels and the button, scroll up restores, `prefers-reduced-motion: reduce` keeps both, a sheet open keeps both hidden as before) and `npm run build`
+- [ ] 2.2 Update the `Screens/Shell` phone stories (375 px, both themes) with the full and the minimised bar; verify `npm run storybook` renders them and `make ui-check` passes once baselines come from CI's ui-check artifact or `make ui-baselines` (Docker)
+
+## 3. Swipe actions
+
+- [ ] 3.1 Add `web/src/app/rowSwipe.ts` beside `lib/dnd.ts`: pointer events with `touch-action: pan-y`, the direction lock (12 px horizontal, < 8 px vertical), reveal at 64 px, commit at 96 px or > 0.5 px/ms past 64 px, cancel under 32 px, 120 px maximum translation, a 120 ms return with `ease-calm`, disabled with a fine pointer, while any row is ticked, on read-only rows, in the Trash, while the inline editor is open; verify with `rowSwipe.test.ts` table tests for every threshold in the design's gesture table
+- [ ] 3.2 Wire the handler into `TaskRow.tsx`: the tinted edge (success for complete, accent for schedule) with its catalogue icon and word, right commit runs `toggleComplete` (reopen in Completed) with the completion feedback and Undo, left commit opens a Schedule sheet (Today, Tomorrow, Next week, Pick a day, Someday) that writes `due`/`start` through `mutate()`; verify with `rowSwipe.test.tsx` (happy-dom): swipe right completes and offers Undo, short pull cancels, flick commits, swipe left opens the sheet and Tomorrow sets the date, a diagonal move scrolls, a ticked selection disables swipes, a viewer row does not move, offline the op is queued (`db` shows the pending op)
+- [ ] 3.3 Add "Complete" and "Schedule…" as the first items of the row menu on touch devices, reusing the same handlers; verify with `taskRow.test.tsx` that the menu's first two items act as the swipes do
+- [ ] 3.4 Keep the long-press drag of `lib/dnd.ts` working next to the swipe: a hold without movement still starts the drag, a swipe that began is never a drag; verify with `dnd.test.ts` extended with a hold-then-horizontal-move case
+- [ ] 3.5 The one-time cue: on the first touch-screen list with a swipeable row, peek the first row 40 px right and back over 400 ms (skipped under reduced motion) and show the toast "Swipe right to complete, left to schedule. Also in a task's menu."; store the flag in local storage; verify with `rowSwipe.test.tsx` (cue shown once, toast only under reduced motion) and the i18n check
+- [ ] 3.6 Add a `Screens/Phone/Row mid-swipe` story (right edge revealed, left edge revealed) at 375 px in both themes; verify `make ui-check` passes once baselines exist
+
+## 4. The task sheet
+
+- [ ] 4.1 Turn the phone task panel in `web/src/app/task-detail/TaskDetail.tsx` into a bottom sheet: drag handle strip (36×4 px handle on a 20 px strip) above the sticky header, 90 dvh cap, scrim over the list, Close replacing Back with the same accessible name rule, drag down > 80 px or a flick on the handle or header closes, a drag on the body closes only at scroll top, scrim tap and Escape close, focus returns to the row; verify by extending `taskDetailSheet.test.tsx` (handle drag closes, body drag at scroll top closes, body drag when scrolled does not, scrim tap closes, address loses `?task=`, 768 px keeps the panel)
+- [ ] 4.2 Keep the focused field visible with the keyboard up (`visualViewport` resize moves the sheet's scroller so the composer stays above the keyboard); verify with a happy-dom test that simulates a `visualViewport` height change and asserts the composer's bounding box is inside the sheet's visible area
+- [ ] 4.3 Give menus, popovers and pickers below 640 px a drag handle, the 90 dvh cap and drag-down close in `web/src/ui/overlay/Popover.tsx` and `Menu.tsx`, and move the toast above the tab bar (and higher while a sheet is open); verify with `overlay` tests (handle present below 640 px, drag down closes) and `budget.test.tsx` (the toast's box does not intersect a row or the focused control at 390 px)
+- [ ] 4.4 Add the `Screens/Phone/Task sheet` story (open over Today, 375 px, both themes); verify `make ui-check` once baselines exist
+
+## 5. The drawer
+
+- [ ] 5.1 Build the phone drawer in `web/src/app/Sidebar.tsx` (or a `PhoneDrawer.tsx` beside it) per design D7: find field, the primary destinations the tab bar lacks per "How you work" mode, the More group, Favourites, Projects, Labels, Filters as 48 px rows, a pinned footer with the account row (Settings, Help, Keyboard shortcuts, Sign out), the assistant launcher, the bell and the sync dot; 85 vw and 20 rem caps, the scrim, choosing a destination closes it; verify with `sidebar.test.tsx` cases at 390 px: Companion lists Calendar first and no Today/Inbox/Upcoming, Open Loops first lists Loop home, Next, Waiting, Review, forty projects scroll to Filters with the footer fixed, Settings opens from the footer and the drawer closes
+- [ ] 5.2 Apply the sidebar tones from `sidebar-v2` to the drawer rows (reference its tokens; if `sidebar-v2` is not merged yet, use the current sidebar classes and leave a one-line note in this change's design); verify `npm test -- tokens` (no raw colours) and `make ui-lint`
+- [ ] 5.3 Add the `Screens/Phone/Drawer` story (Companion and Open Loops first) at 375 px, both themes; verify `make ui-check` once baselines exist
+
+## 6. Selection on touch
+
+- [ ] 6.1 Implement the long-press selection entry in `web/src/app/selection.ts` and `TaskRow.tsx`: a hold without movement ticks the row, shows every checkbox and the selection bar and pulses `navigator.vibrate(10)` where supported; a hold on a ticked row followed by movement starts the selection drag as today; "Select tasks" in the overflow shows the checkboxes without a tick; Done stays in the selection bar; checkboxes 48 px on touch; verify with `bulkActions.test.tsx` (long press ticks, hold-and-move drags without ticking a third row, overflow item shows checkboxes, Done hides them with the ticks kept)
+- [ ] 6.2 Update the `?` overlay and `docs/bulk-actions.md` touch paragraph (long press, "Select tasks" in the menu); verify with `make docs-check`
+
+## 7. Layout check, documentation and release
+
+- [ ] 7.1 Add German and French runs of the phone screens at 360 px in Chromium to `scripts/e2e-layout.mjs` and the layout-check CI job (`WIDTHS=360`, language `de` then `fr`), failing on sideways scroll or a clipped control; verify with `make layout-check` locally and the CI job's report
+- [ ] 7.2 Document the phone: a "On a phone" section in `docs/interface-guide.md` (bar slots and overflow, the sheet, the drawer, swipes, the budget), swipe and long press in `docs/work-from-the-list.md`, the add button and the drawer in `docs/getting-started.md` and `docs/install-phone.md`; regenerate `docs/images/mobile-today-*.webp` and `mobile-menu-*.webp` with `make docs-screenshots` (`mobile-today`, `mobile-menu`); verify with `make docs-check` and by eye that the images show two rows of chrome and the new drawer
+- [ ] 7.3 Translate every new string (Complete, Schedule…, Select tasks, the cue toast, the sheet choices) in the five catalogs; verify `node scripts/i18n-check.mjs`
+- [ ] 7.4 Real-device smoke, recorded in this change folder: iOS Safari (installed app and tab) and Android Chrome at 360 and 390 px: swipe right and left, diagonal scroll, long press, the system back-swipe at the left edge, the task sheet with the keyboard up, the drawer with forty projects, the tab bar minimising, large text setting; fix what it turns up
+- [ ] 7.5 Measure the bundle growth (`npm run build` before and after, expected about 1.5 KB gzipped) and record it in design D11; run `make check` and add the CHANGELOG.md entry under Unreleased ("Changed: the app on a phone")
