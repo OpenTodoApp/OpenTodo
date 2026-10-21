@@ -4,8 +4,8 @@
 
 | File | What it is |
 | --- | --- |
-| `app.yaml` | Catalogue metadata: version `1.0.0` of the app, `app_version` `0.8.0` (the image tag), category productivity, `run_as_context` 568:568, library `2.3.17` and its hash |
-| `ix_values.yaml` | The images: `ghcr.io/pixari/opentodo` tag `"0.8.0"`, and TrueNAS's `container-utils` for the permissions container |
+| `app.yaml` | Catalogue metadata: version `1.0.0` of the app, `app_version` `0.9.0` (the image tag), category productivity, `run_as_context` 568:568, library `2.3.17` and its hash |
+| `ix_values.yaml` | The images: `ghcr.io/pixari/opentodo` tag `"0.9.0"`, and TrueNAS's `container-utils` for the permissions container |
 | `questions.yaml` | The install form: Base URL, Setup Token (private), Allow Sign-up, Trusted Proxies, additional variables, user and group (568), Web UI port (30530), storage, labels, resources |
 | `templates/docker-compose.yaml` | The Jinja template TrueNAS's library renders: user 568:568, health check `/opentodo healthcheck` (the image has no shell or wget), `OPENTODO_ADDR=:<chosen port>`, `OPENTODO_DATA_DIR=/data`, the data mount, and a permissions container that chowns it to the chosen user |
 | `templates/test_values/basic-values.yaml` | What their CI renders and starts |
@@ -14,7 +14,7 @@
 
 TrueNAS apps listen on the port the user chooses (so the **Host Network** option works), which is why the template sets `OPENTODO_ADDR` from it instead of mapping a port to 8080. The test values choose 8080, the image's own port; the default in the form is 30530, which was free in `truenas/apps` on 17 October 2026 (their `.github/scripts/port_validation.py`).
 
-The image is pinned to a release (`0.8.0`), not `stable`: `truenas/apps` versions every app by its image tag, and their Renovate bot bumps it. `make check` (`scripts/deploy/truenas.mjs`) fails when the tag is not the latest release in `CHANGELOG.md`, when `app_version` differs from it, and on the shared rules in [`../deploy.json`](../deploy.json).
+The image is pinned to a release (`0.9.0`), not `stable`: `truenas/apps` versions every app by its image tag, and their Renovate bot bumps it. `make check` (`scripts/deploy/truenas.mjs`) fails when the tag is not the latest release in `CHANGELOG.md`, when `app_version` differs from it, and on the shared rules in [`../deploy.json`](../deploy.json).
 
 **Status: not yet submitted.**
 

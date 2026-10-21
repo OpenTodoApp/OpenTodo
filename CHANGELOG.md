@@ -4,6 +4,21 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-21
+
+OpenTodo 0.9.0 is about the time you spend in a task, not only the list of them. **Time tracking** and a **Focus** timer log where the hours go, the new **Plan** view lays out the next two weeks against your day length, and **Close the day** wraps up today in one batch. Tasks remember **where they came from** (a page, an email, a GitHub, GitLab, Jira or Linear issue), and assigned **GitHub and GitLab issues** can arrive as tasks by themselves. Everyday editing got calmer: press <kbd>g</kbd> and pause to see where you can go, type `#` or `@` for suggestions, click a title to edit it in place, and read the task panel as four short lines with a When editor in plain words.
+
+### Upgrade notes
+
+- **One migration, no new environment variables.** Replace the image or the binary and restart; migration 0039 (issue connections) runs on start. There are no down-migrations, so back up first.
+- **Sync is additive:** new fields (`task.origin`, `view.on_drop`, the `time_entry` entity, `user_prefs.day_start`, `row_detail`, `favourites` and the `focus_*` settings, and `closed_at` and `tomorrow_note` on the review row) are ignored by older apps. Upgrade the server before the devices, as for every release. A task's origin, a time entry's note and the line for tomorrow are encrypted for end-to-end encrypted accounts.
+- **Issue import is off** until the server owner turns it on; it then makes requests only to the hosts users enter.
+- **A click on a task's title now edits it in place** on desktop. **Settings → General → Keyboard → Click a task to** brings back opening the panel on that device.
+
+### Security
+
+- **Release binaries and the image are built with Go 1.27.3**, which fixes GO-2026-6809 (`crypto/x509` trusted compromised intermediate certificates; OpenTodo reaches it through TLS connections such as outgoing email).
+
 ### Added
 
 - **A spotlight after `g`.** Pause after pressing <kbd>g</kbd> and a small card opens in the middle of the screen: it shows <kbd>g</kbd> +, waits for the second key as long as you need, and lists every key that can follow there, grouped into views, calendar, review and planning, and tools. Press one, or click it, to go; <kbd>Esc</kbd>, the close button, a click outside or a key that is not listed cancels. Typing <kbd>g</kbd> <kbd>t</kbd> quickly never shows it. ([Keyboard shortcuts](docs/keyboard.md))
@@ -612,7 +627,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/pixari/opentodo/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.8.0
 [0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...01b1fe0
 [0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1

@@ -26,7 +26,7 @@ body:
     attributes:
       label: OpenTodo version
       description: Shown by `opentodo version`, or `version` in `GET /api/v1/auth/status`.
-      placeholder: v0.8.0
+      placeholder: v0.9.0
     validations:
       required: true
   - type: dropdown

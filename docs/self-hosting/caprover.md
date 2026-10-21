@@ -29,7 +29,7 @@ Open `http://<app name>.<your root domain>`. The first visitor creates the owner
 
 | Field | Default | What it does |
 | --- | --- | --- |
-| OpenTodo version | the latest release, for example `0.8.0` | The image tag of `ghcr.io/pixari/opentodo`. |
+| OpenTodo version | the latest release, for example `0.9.0` | The image tag of `ghcr.io/pixari/opentodo`. |
 | Base URL | empty | The https address people open. Leave it empty until https is on (see below). |
 | Setup token | generated, 32 characters | Asked for when the owner account is created, so a stranger cannot claim a new server first. |
 | Open sign-up | `false` | `true` lets anyone who can reach the server create an account. |
@@ -63,7 +63,7 @@ chown -R 65532:65532 /path/on/the/server
 
 ## Updates and backups
 
-The version field picks one release, and CapRover never updates an installed app by itself. To update, open the app's **Deployment** tab and, under **Deploy via ImageName**, enter the new version, for example `ghcr.io/pixari/opentodo:0.8.0`, then deploy. CapRover pulls the image you name each time you deploy, so entering `ghcr.io/pixari/opentodo:stable` instead gets the current release whenever you deploy it again. Migrations run on start. There are no down-migrations, so back up first. Releases are listed on [GitHub](https://github.com/pixari/opentodo/releases).
+The version field picks one release, and CapRover never updates an installed app by itself. To update, open the app's **Deployment** tab and, under **Deploy via ImageName**, enter the new version, for example `ghcr.io/pixari/opentodo:0.9.0`, then deploy. CapRover pulls the image you name each time you deploy, so entering `ghcr.io/pixari/opentodo:stable` instead gets the current release whenever you deploy it again. Migrations run on start. There are no down-migrations, so back up first. Releases are listed on [GitHub](https://github.com/pixari/opentodo/releases).
 
 Back up the volume folder above with your server's backups, or turn on scheduled backups in OpenTodo's **Settings → Server** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
 

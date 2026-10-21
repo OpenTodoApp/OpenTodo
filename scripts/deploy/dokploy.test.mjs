@@ -36,7 +36,7 @@ test('dokploy: TOML subset parser', () => {
 
 test('dokploy: image policy and the pull on deploy', () => {
   has(withCompose('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(withCompose('opentodo:stable', 'opentodo:0.8.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(withCompose('opentodo:stable', 'opentodo:0.9.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(withCompose('    pull_policy: always\n', ''), /pull_policy must be always/)
 })
 
@@ -70,7 +70,7 @@ test('dokploy: template.toml domain, token and base URL', () => {
 
 test('dokploy: meta.json and the base-URL list', () => {
   const meta = files().meta
-  has(checkAll({ ...files(), meta: meta.replace('"version": "stable"', '"version": "0.8.0"') }, ctx), /version must be "stable"/)
+  has(checkAll({ ...files(), meta: meta.replace('"version": "stable"', '"version": "0.9.0"') }, ctx), /version must be "stable"/)
   has(checkAll({ ...files(), meta: meta.replace('"id": "opentodo"', '"id": "open-todo"') }, ctx), /id must be "opentodo"/)
   has(checkAll({ ...files(), index: '[]\n' }, ctx), /as Dokploy's generate-meta\.js writes it/)
 })

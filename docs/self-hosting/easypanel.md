@@ -15,7 +15,7 @@ An OpenTodo template has been prepared for Easypanel's template list but is not 
 ## Install as an app service
 
 1. In a project, click **+ Service → App** and name it `opentodo`.
-2. **Source**: choose **Docker Image** and enter `ghcr.io/pixari/opentodo:0.8.0`.
+2. **Source**: choose **Docker Image** and enter `ghcr.io/pixari/opentodo:0.9.0`.
 3. **Environment**: add
 
    ```
@@ -47,6 +47,6 @@ Every other `OPENTODO_*` variable from the [configuration table](https://github.
 
 ## Updates and backups
 
-The service names one release (`0.8.0`), never a moving tag, so it changes only when you change it: set the image to the new release under **Source** and **Deploy**. Migrations run on start and there are no down-migrations, so back up first.
+The service names one release (`0.9.0`), never a moving tag, so it changes only when you change it: set the image to the new release under **Source** and **Deploy**. Migrations run on start and there are no down-migrations, so back up first.
 
 Everything OpenTodo stores is in the `data` volume. Turn on scheduled backups in **Settings → Server** (written to `backups/` in the same volume, or to S3 or WebDAV) to get copies off the server. See [Backups](../backups.md).

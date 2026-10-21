@@ -15,7 +15,7 @@ const values = readText(VALUES)
 const schema = readText(SCHEMA)
 const deployment = readText(DEPLOYMENT)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
-const valuesFound = (text, s = schema) => checkValues(text, s, '0.8.0', ctx)
+const valuesFound = (text, s = schema) => checkValues(text, s, '0.9.0', ctx)
 /** The shared rules on values.yaml as the chart renders it. */
 const shared = (text) => {
   const v = valuesFound(text)
@@ -29,11 +29,11 @@ test('helm: the committed chart passes', () => {
 
 test('helm: Chart.yaml follows the latest release', () => {
   assert.deepEqual(checkChart(chart, ctx).errors, [])
-  has(checkChart(chart.replace('version: 0.8.0', 'version: 0.9.0'), ctx).errors, /version \(0\.9\.0\) must equal appVersion/)
-  has(checkChart(chart.replace('appVersion: "0.8.0"', 'appVersion: "0.6.0"'), ctx).errors, /appVersion must be 0\.8\.0/)
-  has(checkChart(chart.replace('appVersion: "0.8.0"', 'appVersion: 0.8.0'), ctx).errors, /quote appVersion/)
+  has(checkChart(chart.replace('version: 0.9.0', 'version: 0.8.0'), ctx).errors, /version \(0\.8\.0\) must equal appVersion/)
+  has(checkChart(chart.replace('appVersion: "0.9.0"', 'appVersion: "0.6.0"'), ctx).errors, /appVersion must be 0\.9\.0/)
+  has(checkChart(chart.replace('appVersion: "0.9.0"', 'appVersion: 0.9.0'), ctx).errors, /quote appVersion/)
   has(checkChart(chart.replace('apiVersion: v2', 'apiVersion: v1'), ctx).errors, /apiVersion must be v2/)
-  has(checkChart(chart.replace('image: ghcr.io/pixari/opentodo:0.8.0', 'image: ghcr.io/pixari/opentodo:stable'), ctx).errors, /artifacthub\.io\/images must list exactly/)
+  has(checkChart(chart.replace('image: ghcr.io/pixari/opentodo:0.9.0', 'image: ghcr.io/pixari/opentodo:stable'), ctx).errors, /artifacthub\.io\/images must list exactly/)
   has(checkChart(chart.replace('artifacthub.io/license: AGPL-3.0-only', 'artifacthub.io/license: MIT'), ctx).errors, /license/)
   has(checkChart(chart.replace('- name: support', '- name: issues'), ctx).errors, /"support" link/)
   has(checkChart(chart.replace('pwa-512.png', 'logo.png'), ctx).errors, /icon must be/)
@@ -44,7 +44,7 @@ test('helm: Chart.yaml follows the latest release', () => {
 test('helm: values.yaml image policy and variables', () => {
   assert.deepEqual(shared(values), [])
   has(shared(values.replace('tag: ""', 'tag: "stable"')), /image\.tag must be ""/)
-  has(shared(values.replace('tag: ""', 'tag: "stable"')), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0/)
+  has(shared(values.replace('tag: ""', 'tag: "stable"')), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0/)
   has(shared(values.replace('repository: ghcr.io/pixari/opentodo', 'repository: docker.io/pixari/opentodo')), /image\.repository must be/)
   has(shared(values.replace('  OPENTODO_TRUSTED_PROXIES: ""\n', '')), /OPENTODO_TRUSTED_PROXIES must be offered/)
   has(shared(values.replace('  OPENTODO_ALLOW_SIGNUP: "false"', '  OPENTODO_ALLOW_SIGNUP: "true"')), /defaults to "true", the catalogue says "false"/)

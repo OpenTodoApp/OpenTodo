@@ -4,7 +4,7 @@ An [Easypanel](https://easypanel.io) template in the format of [`easypanel-io/te
 
 | File | What it is |
 | --- | --- |
-| [`meta.yaml`](meta.yaml) | The listing (description, instructions, links, benefits, features, tags) and the form: service name (`opentodo`) and image (`ghcr.io/pixari/opentodo:0.8.0`) |
+| [`meta.yaml`](meta.yaml) | The listing (description, instructions, links, benefits, features, tags) and the form: service name (`opentodo`) and image (`ghcr.io/pixari/opentodo:0.9.0`) |
 | [`index.ts`](index.ts) | `generate()`: one app service from that image, the domain `$(EASYPANEL_DOMAIN)` on port 8080, the volume `data` on `/data`, and `OPENTODO_BASE_URL=https://$(PRIMARY_DOMAIN)`, a generated 32-character `OPENTODO_SETUP_TOKEN`, `OPENTODO_ALLOW_SIGNUP=false` and an empty `OPENTODO_TRUSTED_PROXIES` |
 | `assets/logo.svg` | The logo mark, identical to [`../coolify/opentodo.svg`](../coolify/opentodo.svg) |
 | `assets/screenshot.png` | [`docs/images/board-light.webp`](../../docs/images/board-light.webp) as PNG |

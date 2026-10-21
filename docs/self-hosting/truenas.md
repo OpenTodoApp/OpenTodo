@@ -21,7 +21,7 @@ OpenTodo is not in the TrueNAS **Apps** catalogue yet: the app has been prepared
    ```yaml
    services:
      opentodo:
-       image: ghcr.io/pixari/opentodo:0.8.0
+       image: ghcr.io/pixari/opentodo:0.9.0
        user: "568:568"
        restart: unless-stopped
        ports:
@@ -62,6 +62,6 @@ On the server's address (`http://192.168.1.10:30530`) tasks, projects, sync, sha
 
 ## Updates and backups
 
-The app names one release (`0.8.0`), never a moving tag. With Install via YAML, change the tag in the app's YAML (**Edit**) to the new release and save; TrueNAS pulls it and restarts the app. From the catalogue, TrueNAS shows **Update** on the app when the catalogue has a new version (its maintainers bump it after each OpenTodo release). Migrations run on start and there are no down-migrations, so back up first.
+The app names one release (`0.9.0`), never a moving tag. With Install via YAML, change the tag in the app's YAML (**Edit**) to the new release and save; TrueNAS pulls it and restarts the app. From the catalogue, TrueNAS shows **Update** on the app when the catalogue has a new version (its maintainers bump it after each OpenTodo release). Migrations run on start and there are no down-migrations, so back up first.
 
 Everything OpenTodo stores is in its dataset (or ixVolume). Protect it with periodic **snapshots** and **replication** or a **Cloud Sync** task, or turn on scheduled backups in **Settings → Server** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).

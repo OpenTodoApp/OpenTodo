@@ -32,7 +32,7 @@ test('render: strict YAML and Blueprint fields', () => {
 
 test('render: image policy, port and data path', () => {
   has(sub('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(sub('opentodo:stable', 'opentodo:0.8.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(sub('opentodo:stable', 'opentodo:0.9.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(sub('value: "8080"', 'value: "10000"'), /port must be 8080/)
   has(sub('value: "8080"', 'value: 8080'), /PORT: value must be a quoted string/)
   has(sub('      - key: PORT\n        value: "8080"\n', ''), /PORT must be set/)

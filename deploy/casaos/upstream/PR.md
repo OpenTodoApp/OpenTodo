@@ -16,7 +16,7 @@ Add OpenTodo
 
 - Website: https://open-todo.app
 - Source: https://github.com/pixari/opentodo
-- Image: `ghcr.io/pixari/opentodo:0.8.0` (amd64, arm64; published by the project's release workflow)
+- Image: `ghcr.io/pixari/opentodo:0.9.0` (amd64, arm64; published by the project's release workflow)
 
 **What changed:** adds `Apps/OpenTodo/` only: `docker-compose.yml`, `icon.svg`, `icon.png`, `thumbnail.png` and two screenshots.
 

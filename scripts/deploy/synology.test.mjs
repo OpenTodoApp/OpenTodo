@@ -29,7 +29,7 @@ test('synology: strict YAML and shape', () => {
 
 test('synology: image policy and updates', () => {
   has(sub('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(sub('opentodo:stable', 'opentodo:0.8.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(sub('opentodo:stable', 'opentodo:0.9.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(sub('pull_policy: always', 'pull_policy: missing'), /pull_policy must be always/)
 })
 

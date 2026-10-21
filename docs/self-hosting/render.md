@@ -64,7 +64,7 @@ The service uses the `stable` image, which every release moves. Render does not 
 
 With **Auto Sync** on, a change to the Blueprint file in OpenTodo's repository also redeploys the service; such changes are listed in the [changelog](https://github.com/pixari/opentodo/blob/main/CHANGELOG.md).
 
-To stay on one release line, set the image to `ghcr.io/pixari/opentodo:0.8` (or one version, `0.8.0`) as the **Image URL** in the service's **Settings**, with **Auto Sync** off (a sync would set `stable` again).
+To stay on one release line, set the image to `ghcr.io/pixari/opentodo:0.9` (or one version, `0.9.0`) as the **Image URL** in the service's **Settings**, with **Auto Sync** off (a sync would set `stable` again).
 
 ## Data and backups
 

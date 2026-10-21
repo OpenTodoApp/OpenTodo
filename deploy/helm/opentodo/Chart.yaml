@@ -3,8 +3,8 @@ name: opentodo
 description: Open-source, local-first task manager. Works offline and syncs every device from one small container.
 type: application
 # Both follow the OpenTodo release (the chart is published from its v* tag): check with node scripts/deploy-check.mjs.
-version: 0.8.0
-appVersion: "0.8.0"
+version: 0.9.0
+appVersion: "0.9.0"
 kubeVersion: ">=1.23.0-0"
 home: https://open-todo.app
 icon: https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png
@@ -28,7 +28,7 @@ annotations:
       url: https://github.com/pixari/opentodo/issues
   artifacthub.io/images: |
     - name: opentodo
-      image: ghcr.io/pixari/opentodo:0.8.0
+      image: ghcr.io/pixari/opentodo:0.9.0
       platforms:
         - linux/amd64
         - linux/arm64
