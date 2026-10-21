@@ -56,6 +56,9 @@ func newFake(t *testing.T) *fakeProvider {
 			_, _ = w.Write([]byte("glyphs:" + r.URL.EscapedPath()))
 		case strings.HasPrefix(r.URL.Path, "/sprites/"):
 			_, _ = w.Write([]byte("sprite:" + r.URL.Path))
+		case (r.URL.Path == "/api" || r.URL.Path == "/reverse") && !map[string]bool{"": true, "default": true, "en": true, "de": true, "fr": true}[r.URL.Query().Get("lang")]:
+			// Like the public Photon instance: any other language is refused.
+			http.Error(w, "language not supported", http.StatusBadRequest)
 		case r.URL.Path == "/api":
 			_, _ = w.Write([]byte(`{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[9.1916,45.4641]},
 				"properties":{"name":"Piazza del Duomo","street":"Piazza del Duomo","postcode":"20122","city":"Milano","country":"Italia","q":"` + r.URL.Query().Get("q") + `","lang":"` + r.URL.Query().Get("lang") + `"}}]}`))

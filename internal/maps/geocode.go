@@ -24,9 +24,10 @@ type Result struct {
 // MaxQuery bounds a search text.
 const MaxQuery = 200
 
-// photonLangs are the languages the public Photon instance answers in; any
+// photonLangs are the languages the public Photon instance answers in (it refuses
+// any other `lang`, such as it or es, with 400 Bad Request); any
 // other interface language gets Photon's default (local names).
-var photonLangs = map[string]bool{"en": true, "de": true, "fr": true, "it": true}
+var photonLangs = map[string]bool{"en": true, "de": true, "fr": true}
 
 // Search sends the typed text to the geocoder and returns up to limit results.
 // Searches are never cached: what one user typed is not kept on disk.

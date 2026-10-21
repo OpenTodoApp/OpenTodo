@@ -63,6 +63,9 @@ export default function MapView({ points, onPick, label, onUnavailable, classNam
         })
         m.on('click', (e) => pick.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng }))
         m.on('error', () => undefined) // a missing tile is not a broken map
+        // MapLibre opens the compact attribution until the first interaction, covering a small
+        // map; start it closed, its "i" button still opens it.
+        m.once('load', () => box.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'))
         map.current = m
         setReady(true)
       } catch {
