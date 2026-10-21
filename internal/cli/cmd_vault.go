@@ -2,8 +2,8 @@ package cli
 
 import (
 	"context"
-	"flag"
 	"errors"
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
