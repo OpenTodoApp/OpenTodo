@@ -4,10 +4,10 @@
 // subtree completion, un-parking on a date, the section cleared on a project
 // change, labels read just before being written and written whole), and the
 // one-line wording shown on the panel, in Arrange and in the toast.
-import { mergeChanges, planComplete, planDue, planLabels, planMoveGroups, planPriority, planReopen } from './bulk'
-import type { Change } from './ops'
-import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Membership, type OnDropRule, type Project, type Section, type Task } from './types'
-import { t } from './i18n'
+import { mergeChanges, planComplete, planDue, planLabels, planMoveGroups, planPriority, planReopen } from '../bulk'
+import type { Change } from '../ops'
+import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Membership, type OnDropRule, type Project, type Section, type Task } from '../types'
+import { t } from '../i18n'
 
 export interface RuleContext {
   now: number

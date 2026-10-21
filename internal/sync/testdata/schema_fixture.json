@@ -87,6 +87,16 @@
       "monthly_at",
       "tomorrow_note"
     ],
+    "rule": [
+      "actions",
+      "condition",
+      "created_at",
+      "deleted_at",
+      "enabled",
+      "name",
+      "position",
+      "trigger"
+    ],
     "section": [
       "color",
       "created_at",
@@ -210,6 +220,9 @@
     ],
     "review": [
       "tomorrow_note"
+    ],
+    "rule": [
+      "name"
     ],
     "section": [
       "name"

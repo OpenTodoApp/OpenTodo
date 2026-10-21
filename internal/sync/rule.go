@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+
+	"github.com/pixari/opentodo/internal/ruleval"
 )
 
 // MaxRuleLabels caps each label list of an on-drop rule.
@@ -45,10 +47,10 @@ func ParseRule(raw json.RawMessage) (Rule, error) {
 	if err := json.Unmarshal(raw, &members); err != nil || members == nil {
 		return r, errors.New("must be null or an object")
 	}
-	for k := range members {
-		if !slices.Contains(RuleKeys, k) {
-			return r, fmt.Errorf("unknown rule key %q (allowed: add_labels, remove_labels, priority, due, start, section, state)", k)
-		}
+	// The key check is shared with automation rules' actions (automation-rules
+	// D4), whose set extends this one; on_drop keeps its own closed set.
+	if err := ruleval.CheckKeys(members, RuleKeys, "rule"); err != nil {
+		return r, err
 	}
 	if sec, ok := members["section"]; ok {
 		if err := checkRuleSection(sec); err != nil {
