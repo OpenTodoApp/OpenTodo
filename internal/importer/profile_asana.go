@@ -236,7 +236,7 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 func asanaFieldTypes(columns []string, each func(func(func(string) string))) map[string]string {
 	type stats struct {
 		num, check, date, total int
-		distinct              map[string]bool
+		distinct                map[string]bool
 	}
 	st := map[string]*stats{}
 	for _, c := range columns {

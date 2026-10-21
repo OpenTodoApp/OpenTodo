@@ -199,16 +199,28 @@ func TestThingsPackedValues(t *testing.T) {
 // Every fixture is detected as its own format and nothing else.
 func TestNamedFormatDetection(t *testing.T) {
 	cases := map[string]string{
-		"testdata/ticktick-csv/backup.csv": tickTickFormat,
-		"testdata/linear-csv/export.csv":   linearFormat,
-		"testdata/things-db/main.sqlite":   thingsFormat,
-		"testdata/ticktick-csv/rich.csv":   tickTickFormat,
-		"testdata/linear-csv/rich.csv":     linearFormat,
-		"testdata/things-db/rich.sqlite":   thingsFormat,
-		"testdata/tasks.csv":               "csv",
-		"testdata/items.json":              "json-items",
-		"testdata/lists.json":              "json-lists",
-		"testdata/generic.json":            "json-generic",
+		"testdata/ticktick-csv/backup.csv":             tickTickFormat,
+		"testdata/linear-csv/export.csv":               linearFormat,
+		"testdata/things-db/main.sqlite":               thingsFormat,
+		"testdata/ticktick-csv/rich.csv":               tickTickFormat,
+		"testdata/linear-csv/rich.csv":                 linearFormat,
+		"testdata/things-db/rich.sqlite":               thingsFormat,
+		"testdata/google-tasks-json/Tasks.json":        "google-tasks-json",
+		"testdata/google-tasks-json/rich.json":         "google-tasks-json",
+		"testdata/trello-json/board.json":              "trello-json",
+		"testdata/trello-json/rich.json":               "trello-json",
+		"testdata/asana-csv/export.csv":                "asana-csv",
+		"testdata/asana-csv/rich.csv":                  "asana-csv",
+		"testdata/microsoft-todo-json/todo.json":       "microsoft-todo-json",
+		"testdata/microsoft-todo-json/rich.json":       "microsoft-todo-json",
+		"testdata/apple-reminders-json/reminders.json": "apple-reminders-json",
+		"testdata/apple-reminders-json/rich.json":      "apple-reminders-json",
+		"testdata/anydo-json/data.json":                "anydo-json",
+		"testdata/anydo-json/rich.json":                "anydo-json",
+		"testdata/tasks.csv":                           "csv",
+		"testdata/items.json":                          "json-items",
+		"testdata/lists.json":                          "json-lists",
+		"testdata/generic.json":                        "json-generic",
 	}
 	for path, want := range cases {
 		data, err := os.ReadFile(path)

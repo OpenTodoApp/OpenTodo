@@ -520,6 +520,35 @@ func TestImportNamedFormatRefusals(t *testing.T) {
 	anon.mustStatus(resp, 401, out)
 }
 
+// An Asana CSV names its project after the uploaded file and creates one
+// custom field for its "Effort" column (OpenSpec change more-importers).
+func TestImportAsanaPreviewOverHTTP(t *testing.T) {
+	e := newEnv(t, false)
+	e.register("owner@example.test")
+	data, err := os.ReadFile("../importer/testdata/asana-csv/export.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, out := e.upload("/api/v1/import/preview", "Renovation.csv", data, nil)
+	e.mustStatus(resp, 200, out)
+	if out["format"] != "asana-csv" {
+		t.Fatalf("preview = %v", out)
+	}
+	totals := out["totals"].(map[string]any)
+	if totals["fields"] != float64(1) || totals["newProjects"] != float64(1) {
+		t.Fatalf("preview totals = %v", totals)
+	}
+	named := false
+	for _, r := range out["rows"].([]any) {
+		if m := r.(map[string]any); m["kind"] == "project" && m["title"] == "Renovation" {
+			named = true
+		}
+	}
+	if !named {
+		t.Fatalf("the project is not named after the file: %v", out["rows"])
+	}
+}
+
 func TestImportLinearOverHTTP(t *testing.T) {
 	e := newEnv(t, false)
 	e.register("owner@example.test")

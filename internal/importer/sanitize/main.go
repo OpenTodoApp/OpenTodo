@@ -6,7 +6,9 @@
 //
 //	go run ./internal/importer/sanitize <in> <out>
 //
-// <in> is a CSV, a ZIP of CSVs (Todoist backup) or a Things main.sqlite. Nothing
+// <in> is a CSV (Todoist, TickTick, Linear, Asana), a ZIP of CSVs (Todoist
+// backup), a Things main.sqlite or a JSON export (Google Tasks, Trello, Microsoft
+// To Do, Apple Reminders, Any.do; see json.go). Nothing
 // imports this package, so it is never part of the server binary. Review every
 // output before committing it.
 package main
@@ -52,6 +54,12 @@ func run(in, out string) error {
 		return os.WriteFile(out, b, 0o644)
 	case bytes.HasPrefix(data, []byte("SQLite format 3\x00")):
 		return s.sqlite(in, out)
+	case isJSON(data):
+		b, err := s.jsonFile(data)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(out, b, 0o644)
 	default:
 		b, err := s.csvFile(data)
 		if err != nil {
@@ -59,6 +67,11 @@ func run(in, out string) error {
 		}
 		return os.WriteFile(out, b, 0o644)
 	}
+}
+
+func isJSON(data []byte) bool {
+	t := bytes.TrimLeft(bytes.TrimPrefix(data, []byte("\xef\xbb\xbf")), " \t\r\n")
+	return len(t) > 0 && (t[0] == '{' || t[0] == '[')
 }
 
 // scrubber hands out stable placeholders: the same input always maps to the same
@@ -175,7 +188,7 @@ func (s *scrubber) csvFile(data []byte) ([]byte, error) {
 	}
 	hi := headerIndex(recs)
 	if hi < 0 {
-		return nil, fmt.Errorf("no known header (Todoist, TickTick or Linear)")
+		return nil, fmt.Errorf("no known header (Todoist, TickTick, Linear or Asana)")
 	}
 	header := recs[hi]
 	col := map[string]int{}
@@ -210,7 +223,7 @@ func headerIndex(recs [][]string) int {
 			continue
 		}
 		switch strings.TrimSpace(r[0]) {
-		case "TYPE", "Folder Name", "ID":
+		case "TYPE", "Folder Name", "ID", "Task ID":
 			return i
 		}
 	}
@@ -243,6 +256,45 @@ func rulesFor(header []string) fieldRule {
 			"Column Name": func(s *scrubber, v string) string { return s.text("Column", v) },
 			"taskId":      func(s *scrubber, v string) string { return s.id("t", v) },
 			"parentId":    func(s *scrubber, v string) string { return s.id("t", v) },
+		}
+	case "Task ID": // Asana; custom columns are left as they are, review them by hand
+		task := func(s *scrubber, v string) string { return s.text("Task", v) }
+		people := func(s *scrubber, v string) string {
+			if strings.TrimSpace(v) == "" {
+				return v
+			}
+			parts := strings.Split(v, ",")
+			for i, p := range parts {
+				parts[i] = s.person(strings.TrimSpace(p))
+			}
+			return strings.Join(parts, ", ")
+		}
+		refs := func(s *scrubber, v string) string { // ids stay, names become task placeholders
+			if strings.TrimSpace(v) == "" {
+				return v
+			}
+			parts := strings.Split(v, ",")
+			for i, p := range parts {
+				p = strings.TrimSpace(p)
+				if strings.Trim(p, "0123456789") != "" {
+					p = s.text("Task", p)
+				}
+				parts[i] = p
+			}
+			return strings.Join(parts, ", ")
+		}
+		return fieldRule{
+			"Name":                      task,
+			"Parent task":               task,
+			"Section/Column":            func(s *scrubber, v string) string { return s.text("Section", v) },
+			"Assignee":                  func(s *scrubber, v string) string { return s.person(v) },
+			"Assignee Email":            func(s *scrubber, v string) string { return s.email(v) },
+			"Collaborators":             people,
+			"Tags":                      func(s *scrubber, v string) string { return s.labelList(v, ",") },
+			"Notes":                     func(s *scrubber, v string) string { return s.prose("Notes", v) },
+			"Projects":                  func(s *scrubber, v string) string { return s.text("Project", v) },
+			"Blocked By (Dependencies)": refs,
+			"Blocking (Dependencies)":   refs,
 		}
 	default: // Linear
 		ident := func(s *scrubber, v string) string {
