@@ -121,7 +121,7 @@ async function demoState() {
   const c = await context('light'); const p = await c.newPage()
   await p.goto(demoBase)
   await p.getByRole('button', { name: /Try the demo/i }).click()
-  await p.getByRole('textbox', { name: 'Add a task' }).waitFor({ timeout: 20000 })
+  await p.getByRole('combobox', { name: 'Add a task' }).waitFor({ timeout: 20000 })
   await settle(p, 1500)
   const state = await c.storageState(); await c.close(); return state
 }
@@ -138,7 +138,7 @@ async function plainSetup() {
   }
   await p.getByLabel('Name').fill('Ada Lovelace'); await p.getByLabel('Email').fill('ada@example.com'); await p.getByLabel(/Password/).fill(PASSWORD)
   await p.getByRole('button', { name: 'Create owner account' }).click()
-  await p.getByRole('textbox', { name: 'Add a task' }).waitFor()
+  await p.getByRole('combobox', { name: 'Add a task' }).waitFor()
   // The owner's one-time welcome note (welcome-note) is closed before the scenes.
   await p.locator('[data-welcome-close]').click({ timeout: 10000 }).catch(() => {})
   // A second account, a shared project and a pending invitation.
@@ -190,11 +190,11 @@ async function assistantSetup() {
   await api('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true,
     providers: { compatible: { enabled: true, model: 'llama3.1', base_url: `http://127.0.0.1:${llmPort}/v1` } } })
   await api('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
-  await p.goto(assistantBase + '/inbox'); await p.getByRole('textbox', { name: 'Add a task' }).waitFor(); await settle(p, 1000)
+  await p.goto(assistantBase + '/inbox'); await p.getByRole('combobox', { name: 'Add a task' }).waitFor(); await settle(p, 1000)
   const state = await c.storageState(); await c.close(); return state
 }
 async function ask(p, question, ready) {
-  await go(p, assistantBase, '/inbox', () => p.getByRole('textbox', { name: 'Add a task' }).waitFor())
+  await go(p, assistantBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
   await p.keyboard.press('Shift+I'); await p.locator('[data-assistant-panel]').waitFor(); await settle(p, 400)
   await p.locator('[data-assistant-composer]').fill(question); await p.keyboard.press('Enter')
   await ready(); await settle(p, 600)
@@ -216,7 +216,7 @@ const shots = [
   { name: 'today', server: D, card: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()) } },
   { name: 'quick-add', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
-    const qa = p.getByRole('textbox', { name: 'Add a task' }); await qa.click()
+    const qa = p.getByRole('combobox', { name: 'Add a task' }); await qa.click()
     await qa.pressSequentially('Call Sam about the tiles tomorrow at 4pm #Home @call p2 +15m', { delay: 5 }); await settle(p, 500)
     const main = p.locator('main'); const b = await main.boundingBox()
     const h1 = await p.getByRole('heading', { level: 1 }).boundingBox()
@@ -366,9 +366,9 @@ const shots = [
     await p.keyboard.press('?'); await p.getByText('Keyboard shortcuts').first().waitFor(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'sync-status', card: true, server: D, async run(p, { ctx }) {
-    await go(p, demoBase, '/inbox', () => p.getByRole('textbox', { name: 'Add a task' }).waitFor())
+    await go(p, demoBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
     await ctx.setOffline(true); await settle(p, 800)
-    const qa = p.getByRole('textbox', { name: 'Add a task' }); await qa.click(); await qa.fill('Buy stamps'); await qa.press('Enter'); await settle(p, 1200)
+    const qa = p.getByRole('combobox', { name: 'Add a task' }); await qa.click(); await qa.fill('Buy stamps'); await qa.press('Enter'); await settle(p, 1200)
     const main = p.locator('main'); const b = await main.boundingBox()
     return { x: b.x, y: b.y, width: b.width, height: 330 }
   }, async after(p, { ctx }) { await ctx.setOffline(false); await settle(p, 2500) } },
