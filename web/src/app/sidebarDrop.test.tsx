@@ -111,7 +111,8 @@ describe('drop a task on a project', () => {
     const mine = await createProject({ name: 'Mine' })
     const id = await createTask({ title: 'Keep me' })
     const r = await shell({ view: 'inbox' })
-    await waitFor(() => !!document.querySelector(`[data-project-row="${shared}"]`) && !!target(`project:${mine}`))
+    // The task row too: under load it can render after the sidebar.
+    await waitFor(() => !!document.querySelector(`[data-project-row="${shared}"]`) && !!target(`project:${mine}`) && !!row(id))
     const viewerRow = document.querySelector(`[data-project-row="${shared}"]`)!
     expect(viewerRow.hasAttribute('data-task-drop')).toBe(false)
     const { active } = await drag(row(id), viewerRow)
