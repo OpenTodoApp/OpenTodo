@@ -7,7 +7,8 @@
 import { planComplete, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
-import { getDeviceId, type Change } from './ops'
+import { getDeviceId, planReminders, type Change } from './ops'
+import type { ReminderPhrase } from './nlp'
 import { currentUserId, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
 import { planRule, ruleParts, type RuleNames } from './rules'
@@ -118,3 +119,20 @@ export async function dropOnPanel(taskId: string, view: Pick<View, 'name' | 'que
   const r = await apply(changes, label)
   return { ...r, taskId: after.id, matches, changed: true, row: await db.tasks.get(after.id) }
 }
+
+/**
+ * A title edit with what it set (smart-title-tokens D5): the fields, the labels added
+ * and any reminders, written as one undoable batch. Recurrence and project moves go
+ * through their own helpers before this (they plan series and scopes).
+ */
+export async function titleEditUndoable(id: string, patch: Partial<Task>, reminders: ReminderPhrase[] = []): Promise<UndoableResult> {
+  const task = (await readTicked([id])).tasks[0]
+  if (!task) return { entry: null, label: '' }
+  const due = 'due' in patch ? patch.due ?? null : task.due
+  const changes: Change[] = []
+  if (Object.keys(patch).length) changes.push({ entity: 'task', entityId: id, patch })
+  changes.push(...planReminders(id, due, reminders))
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, t('Task updated'))
+}
+
