@@ -19,13 +19,13 @@ A **deadline** is the day a task must be finished by, and the two are separate: 
 
 A task with a deadline shows a countdown on its row, next to an hourglass: `3d` for three days to go, `Today` on the day, and `2d over` once it has passed. It turns amber in the last week and red on the day and after. Hover it to see the full date. The countdown follows the calendar on your device, so it moves on at midnight even offline.
 
-Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with-today), and you can add a reminder before the deadline (see [Reminders](reminders.md)). From the list, <kbd>d</kbd> sets the deadline (`fri`, `2026-11-06`).
+Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with-today), and you can add a reminder before the deadline (see [Reminders](reminders.md)). In the panel, **Deadline** in the **When** editor offers **End of week**, **End of month** and **In 2 weeks**, a field and a calendar. From the list, <kbd>d</kbd> sets the deadline (`fri`, `2026-11-06`).
 
 ## When a task starts
 
 Not every task is for now. **Start**, in the panel's **When** editor, says when a task becomes relevant:
 
-- **Anytime**, the default: the task is in your lists as usual.
+- **No start date**, the default: the task is in your lists as usual. **Clear** in the editor brings a task back to it.
 - **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project or Inbox lists it at the end under **Later**, with a **Starts 21 Oct** chip. On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
 - **Someday** parks the task: it moves to the [Someday view](views.md#park-ideas-in-someday) and its project's Later group, and its due date is cleared (a repeating task stops repeating). Giving it a due date or a start date brings it back.
 

@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
-import { createProject, unparkTask, updateTask } from '../../lib/ops'
+import { createProject, setRecurrence, unparkTask, updateTask } from '../../lib/ops'
 import { INBOX_KEY, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
@@ -155,9 +155,10 @@ function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }: {
       due: task.due ? () => act(setDueWithUndo(task.id, null)) : undefined,
       start: task.start ? () => void unparkTask(task.id) : undefined,
       deadline: task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined,
+      repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
     }
     return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} />, clear[segment],
-      { header: <WhenSegmentPicker value={segment} onChange={onSegment} />, width: 'sm:w-96' })
+      { header: <WhenSegmentPicker value={segment} onChange={onSegment} />, width: 'sm:w-[28rem]' })
   }
 
   switch (id) {

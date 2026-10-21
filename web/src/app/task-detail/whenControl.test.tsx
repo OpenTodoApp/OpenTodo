@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-// The When control (OpenSpec change ux-overhaul, web-app "Task panel layout",
-// design D4): one editor with six segments. Each segment writes exactly the field
-// its previous editor wrote (checked on the queued ops), locally first and offline.
+// The When control (OpenSpec changes ux-overhaul and task-panel-polish): one editor
+// with six segments, each now quick choices, the date in words and a calendar. Each
+// writes exactly the field its previous editor wrote (checked on the queued ops),
+// locally first and offline.
 import 'fake-indexeddb/auto'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { describe, expect, it, vi } from 'vitest'
@@ -59,7 +60,7 @@ describe('WhenControl', () => {
     await unmount()
   })
 
-  it('Start writes start (a date, Someday parks with due cleared, Anytime unparks)', async () => {
+  it('Start writes start (a date, Someday parks with due cleared, a quick choice starts it again)', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-20' } })
     const { seg, unmount } = await mount(id, 'start')
     let from = await mark()
@@ -76,13 +77,13 @@ describe('WhenControl', () => {
     expect(await queuedFields(id, from)).toMatchObject({ start: 'someday', due: null })
 
     from = await mark()
-    await click([...seg('start').querySelectorAll('button')].find((b) => b.textContent === 'Anytime')!)
+    await click(seg('start').querySelector('[data-choice="tomorrow"]')!)
     await settle()
-    expect(await queuedFields(id, from)).toMatchObject({ start: null })
+    expect(await queuedFields(id, from)).toMatchObject({ start: '2026-10-15' })
     await unmount()
   })
 
-  it('Deadline writes deadline only and its clear writes null', async () => {
+  it('Deadline writes deadline only, typed or from a quick choice', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
     const { seg, unmount } = await mount(id, 'deadline')
     let from = await mark()
@@ -92,9 +93,9 @@ describe('WhenControl', () => {
     await settle()
     expect(await queuedFields(id, from)).toEqual({ deadline: '2026-10-16' })
     from = await mark()
-    await click(seg('deadline').querySelector('button[aria-label="Clear deadline"]')!)
+    await click(seg('deadline').querySelector('[data-choice="end-of-month"]')!)
     await settle()
-    expect(await queuedFields(id, from)).toEqual({ deadline: null })
+    expect(await queuedFields(id, from)).toEqual({ deadline: '2026-10-31' })
     await unmount()
   })
 
@@ -108,12 +109,21 @@ describe('WhenControl', () => {
     await unmount()
   })
 
-  it('Repeat writes recurrence only', async () => {
+  it('Repeat writes recurrence only, from a preset or the custom rule', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
     const { seg, unmount } = await mount(id, 'repeat')
-    const from = await mark()
+    let from = await mark()
+    // Presets name the due date's weekday and day; the rule written is the editor's own.
+    await click(seg('repeat').querySelector('[data-preset="weekly"]')!)
+    await settle()
+    expect(Object.keys(await queuedFields(id, from))).toEqual(['recurrence'])
+    expect((await db.tasks.get(id))!.recurrence).toBe('every thursday')
+    expect(seg('repeat').querySelector('[data-preset="weekly"]')!.getAttribute('aria-checked')).toBe('true')
+    expect(seg('repeat').querySelector('[data-rule-words]')!.textContent).toContain('every thursday')
+    from = await mark()
+    await click(seg('repeat').querySelector('[data-preset="custom"]')!)
+    await settle()
     const input = seg('repeat').querySelector('input[aria-label="Repeat rule"]') as HTMLInputElement
-    expect(document.activeElement).toBe(input)
     await type(input, 'every week')
     await key(input, 'Enter')
     await settle()
@@ -156,6 +166,28 @@ describe('WhenControl', () => {
     expect(await db.tasks.get(id)).toMatchObject({ start: '2026-10-16', deadline: '2026-10-22' })
     expect(await queuedFields(id, from)).toEqual({ start: '2026-10-16', deadline: '2026-10-22' })
     vi.unstubAllGlobals()
+    await unmount()
+  })
+
+  it('Do on: Tomorrow in one click; Add time with a suggestion; the zone line only with a time', async () => {
+    const id = await createTask({ title: 'Plan' })
+    const { seg, unmount } = await mount(id)
+    let from = await mark()
+    await click(seg('due').querySelector('[data-choice="tomorrow"]')!)
+    await settle()
+    expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15' } })
+    expect(seg('due').querySelector('[data-zone-line]')).toBeNull()
+    expect(seg('due').textContent).not.toContain('time zone')
+    await click(seg('due').querySelector('[data-add-time]')!)
+    await settle()
+    from = await mark()
+    await click(seg('due').querySelector('[data-time-suggestion="09:00"]')!)
+    await settle()
+    expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '09:00' } })
+    await waitFor(() => !!seg('due').querySelector('[data-zone-line]'), 'the zone line')
+    expect(seg('due').querySelector('[data-zone-line]')!.textContent).toContain('Floating time')
+    expect(seg('due').querySelector('button[aria-label^="Time zone:"]')!.textContent).toBe('Change')
+    expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
     await unmount()
   })
 })

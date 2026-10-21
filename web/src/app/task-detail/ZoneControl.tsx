@@ -71,9 +71,11 @@ export interface ZoneControlProps {
   viewerZone?: string
   /** Opens the panel on mount (stories). */
   defaultOpen?: boolean
+  /** `line`: a quiet "Floating time · Change" line (the Do on segment); `chip` by default. */
+  variant?: 'chip' | 'line'
 }
 
-export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = false }: ZoneControlProps) {
+export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = false, variant = 'chip' }: ZoneControlProps) {
   const liveZone = useViewerZone()
   const zone = viewerZone ?? liveZone
   const dt = useDateTimeFormat()
@@ -119,9 +121,23 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
     return t('{there} = {time}{day} your time ({city})', { there, time: dt.formatTime(local.time!), day, city: zoneCity(zone) })
   }
 
+  // In the Do on segment (task-panel-polish D3): one quiet line, "Floating time · Change", shown only with a time.
+  const line = variant === 'line' && (
+    <span className="flex flex-wrap items-center gap-1 text-meta text-muted" data-zone-line>
+      <Icon name="globe" size="xs" className="text-faint" />
+      <span>{zoned ? t('Fixed to {zoneCity}', { zoneCity: zoneCity(due!.tz!) }) : t('Floating time')}</span>
+      {!readOnly && <span aria-hidden="true" className="text-faint">·</span>}
+      {!readOnly && (
+        <button ref={chip} type="button" className="rounded-control text-accent hover:underline focus-visible:outline-2 focus-visible:outline-focus"
+          aria-label={t('Time zone: {text}', { text })} aria-haspopup="dialog" aria-expanded={open} aria-keyshortcuts={ZONE_TOGGLE_KEY}
+          onClick={() => setOpen(true)}>{t('Change')}</button>
+      )}
+    </span>
+  )
+
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <Tooltip label={canFix ? t('Time zone') : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
+      {line || <><Tooltip label={canFix ? t('Time zone') : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
         <button
           ref={chip}
           type="button"
@@ -137,7 +153,7 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
           <Icon name="globe" size="sm" />{text}
         </button>
       </Tooltip>
-      {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}
+      {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}</>}
       <Popover open={open} onClose={close} anchor={chip} label={t('Time zone')} align="start" width="sm:w-80" className="space-y-3 p-3">
         <div className="space-y-2 text-meta">
           <p className={zoned ? 'text-muted' : 'text-default'} data-testid="zone-mode-floating">

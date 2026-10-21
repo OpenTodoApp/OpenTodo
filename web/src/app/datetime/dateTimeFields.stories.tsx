@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { resolveDateTime } from '../../lib/dates'
+import { quickChoices, resolveDateTime } from '../../lib/dates'
+import { withClock } from '../stories/fixtures'
+import { DatePicker } from './DatePicker'
 import { CalendarGrid, DateField } from './DateField'
 import { TimeField } from './TimeField'
 
@@ -38,3 +40,16 @@ export const CalendarSundayStart: StoryObj = {
     </div>
   ),
 }
+
+/** The When popover's date picker (task-panel-polish): quick choices, the date in words, the calendar. */
+function Picker({ kind, initial }: { kind: 'due' | 'start' | 'deadline'; initial: string | null }) {
+  const [value, setValue] = useState<string | null>(initial)
+  return (
+    <div className="w-[28rem] max-w-full rounded-lg border border-default bg-surface p-3">
+      <DatePicker label="Due date" value={value} onChange={setValue} choices={quickChoices(kind, '2026-10-14')} />
+    </div>
+  )
+}
+
+export const DatePickerDoOn: StoryObj = { decorators: [withClock], render: () => <Picker kind="due" initial="2026-10-15" /> }
+export const DatePickerDeadlineEmpty: StoryObj = { decorators: [withClock], render: () => <Picker kind="deadline" initial={null} /> }
