@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vault_status",
+  "description": "A vault read without the server: files changed or missing since the last sync, and the conflict files.",
+  "type": "object",
+  "required": ["device", "profile", "server", "cursor", "changed", "missing", "conflicts"],
+  "properties": {
+    "device": {"type": "string"},
+    "profile": {"type": "string"},
+    "server": {"type": "string"},
+    "cursor": {"type": "integer"},
+    "changed": {"type": "array", "items": {"type": "string"}},
+    "missing": {"type": "array", "items": {"type": "string"}},
+    "conflicts": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1034,6 +1034,88 @@
       }
     },
     {
+      "name": "vault init",
+      "summary": "make a folder a Markdown vault of the account (a sync device with its state in <dir>/.opentodo/) and write every project file",
+      "args": [
+        {
+          "name": "dir",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "adopt",
+          "type": "bool",
+          "description": "accept a folder that already holds .md files; they become projects on the first sync"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/vault_report"
+      }
+    },
+    {
+      "name": "vault status",
+      "summary": "list the vault files changed since the last sync and the conflict files, without the server",
+      "args": [
+        {
+          "name": "dir",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/vault_status"
+      }
+    },
+    {
+      "name": "vault sync",
+      "summary": "two-way sync of a vault folder (default .): pull, merge, push the file edits, write the files; --read-only pushes nothing",
+      "args": [
+        {
+          "name": "dir",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/vault_report"
+      }
+    },
+    {
+      "name": "vault watch",
+      "summary": "keep a vault in sync until interrupted: the server's live channel and a two-second file poll",
+      "args": [
+        {
+          "name": "dir",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/vault_report"
+      }
+    },
+    {
       "name": "version",
       "summary": "print the client version",
       "args": [],
@@ -2160,6 +2242,157 @@
         },
         "secret": {
           "type": "string"
+        }
+      }
+    },
+    "vault_report": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "vault_report",
+      "description": "What one vault sync did (OpenSpec markdown-vault): counts, one event per output line, warnings, the cursor it ended on; a dry run adds the planned ops and files.",
+      "type": "object",
+      "required": [
+        "written",
+        "created",
+        "updated",
+        "trashed",
+        "conflicts",
+        "warnings",
+        "cursor",
+        "events"
+      ],
+      "properties": {
+        "written": {
+          "type": "integer",
+          "description": "project files written"
+        },
+        "created": {
+          "type": "integer",
+          "description": "tasks created from new lines"
+        },
+        "updated": {
+          "type": "integer",
+          "description": "tasks changed, completed or reopened from the files"
+        },
+        "trashed": {
+          "type": "integer",
+          "description": "tasks trashed because their line was removed"
+        },
+        "conflicts": {
+          "type": "integer"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cursor": {
+          "type": "integer"
+        },
+        "projects": {
+          "type": "integer"
+        },
+        "tasks": {
+          "type": "integer"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "text"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "written",
+                  "restored",
+                  "removed",
+                  "created",
+                  "updated",
+                  "completed",
+                  "reopened",
+                  "trashed",
+                  "conflict",
+                  "project",
+                  "section",
+                  "label"
+                ]
+              },
+              "file": {
+                "type": "string"
+              },
+              "task": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "planned": {
+          "type": "array",
+          "description": "dry run: the ops that would be sent",
+          "items": {
+            "type": "object"
+          }
+        },
+        "files": {
+          "type": "array",
+          "description": "dry run: the files that would be written",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "vault_status": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "vault_status",
+      "description": "A vault read without the server: files changed or missing since the last sync, and the conflict files.",
+      "type": "object",
+      "required": [
+        "device",
+        "profile",
+        "server",
+        "cursor",
+        "changed",
+        "missing",
+        "conflicts"
+      ],
+      "properties": {
+        "device": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "server": {
+          "type": "string"
+        },
+        "cursor": {
+          "type": "integer"
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

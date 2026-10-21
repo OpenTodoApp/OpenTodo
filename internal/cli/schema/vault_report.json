@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vault_report",
+  "description": "What one vault sync did (OpenSpec markdown-vault): counts, one event per output line, warnings, the cursor it ended on; a dry run adds the planned ops and files.",
+  "type": "object",
+  "required": ["written", "created", "updated", "trashed", "conflicts", "warnings", "cursor", "events"],
+  "properties": {
+    "written": {"type": "integer", "description": "project files written"},
+    "created": {"type": "integer", "description": "tasks created from new lines"},
+    "updated": {"type": "integer", "description": "tasks changed, completed or reopened from the files"},
+    "trashed": {"type": "integer", "description": "tasks trashed because their line was removed"},
+    "conflicts": {"type": "integer"},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "cursor": {"type": "integer"},
+    "projects": {"type": "integer"},
+    "tasks": {"type": "integer"},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "text"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["written", "restored", "removed", "created", "updated", "completed", "reopened", "trashed", "conflict", "project", "section", "label"]},
+          "file": {"type": "string"},
+          "task": {"type": "string"},
+          "text": {"type": "string"}
+        }
+      }
+    },
+    "planned": {"type": "array", "description": "dry run: the ops that would be sent", "items": {"type": "object"}},
+    "files": {"type": "array", "description": "dry run: the files that would be written", "items": {"type": "string"}}
+  }
+}

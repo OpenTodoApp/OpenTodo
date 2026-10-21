@@ -230,7 +230,7 @@ func (e *engine) plan(dry bool) error {
 		e.rep.Conflicts++
 		e.rep.event("conflict", to, "", "the project of %s is archived or trashed in the app, and the file was edited; it is now %s", from, to)
 	}
-	e.rep.Projects, e.rep.Tasks = len(layout), countTasks(e.app, e.st)
+	e.rep.Projects, e.rep.Tasks = len(layout)-1, countTasks(e.app, e.st) // the Inbox is not a project
 	if dry {
 		for p := range writes {
 			e.rep.Files = append(e.rep.Files, p)
