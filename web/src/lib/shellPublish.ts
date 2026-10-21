@@ -54,6 +54,16 @@ export function shellWidget(tasks: readonly Task[], today: string, now: number, 
   return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows }
 }
 
+/** Whether notifications carry task titles on this device (shared with web push). */
+export async function shellTitlesEnabled(): Promise<boolean> {
+  return getMeta<boolean>(META_INCLUDE, false)
+}
+
+/** Sets whether notifications carry task titles; the publisher re-sends the schedule. */
+export async function setShellTitles(on: boolean): Promise<void> {
+  await setMeta(META_INCLUDE, on)
+}
+
 /** Whether the device's notifications go through the shell. */
 export async function shellNotificationsEnabled(): Promise<boolean> {
   return getMeta<boolean>(META_SHELL_NOTIFICATIONS, false)

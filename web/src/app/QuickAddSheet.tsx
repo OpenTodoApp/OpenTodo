@@ -11,6 +11,8 @@ import { taskDefaults } from './listActions'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { t } from '../lib/i18n'
+import { takeQuickAddPrefill } from '../lib/shellActions'
+import { useMemo } from 'react'
 
 // An empty view's "Add a task" on a touch device opens this sheet (lean-chrome D7,
 // task-list-presentation "Empty views"): the Shell registers the opener; without a
@@ -39,6 +41,8 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
 }) {
   // Live projects, archived included, as in the views' quick add: the parser and the
   // pickers leave archived ones out themselves (web-layering, one visibility rule).
+  // Text from a native shell's quick-add widget, read once (native-shells D6).
+  const prefill = useMemo(() => (open ? takeQuickAddPrefill() : null), [open])
   const projects = useProjects()
   const labels = useLabels()
   // The same defaults as the view's own quick add line; attributes typed in the line override them.
@@ -51,7 +55,7 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   return (
     <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="p-3">
       <div data-quick-add-sheet>
-        <QuickAdd autoFocus hideHint placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} />
+        <QuickAdd autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} />
       </div>
     </Popover>
   )
