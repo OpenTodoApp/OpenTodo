@@ -75,7 +75,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   limit_reached: msg('You have reached the limit: {detail}'),
   link_invalid: msg('This link is no longer valid.'),
   page_invalid: msg('This page is no longer available.'),
-  not_encrypted: msg('This task is shown live on its page; it needs no snapshot.'),
+  page_not_encrypted: msg('This task is shown live on its page; it needs no snapshot.'),
   managed_by_env: msg('This setting is managed by the server configuration.'),
   method_not_allowed: msg('This request is not allowed here.'),
   mfa_already_enrolled: msg('Two-factor authentication is already turned on for this account.'),

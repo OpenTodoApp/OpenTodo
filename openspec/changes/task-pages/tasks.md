@@ -1,6 +1,6 @@
 ## 1. Data model and op schema
 
-- [x] 1.1 Add migration `NNNN_task_pages.sql` with `task_pages` and `task_page_replies` (design D6); verify with a `internal/store` migration test that applies it on a fresh and an existing database (`go test ./internal/store/...`) — `0040_task_pages.sql`, plus `task_page_actions` (guest names per write, see design notes); `TestMigrationTaskPages`
+- [x] 1.1 Add migration `NNNN_task_pages.sql` with `task_pages` and `task_page_replies` (design D6); verify with a `internal/store` migration test that applies it on a fresh and an existing database (`go test ./internal/store/...`) — `0041_task_pages.sql`, plus `task_page_actions` (guest names per write, see design notes); `TestMigrationTaskPages`
 - [x] 1.2 Add comment fields `guest_name` and `page_id` to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts` and the defaults in `web/src/lib/ops.ts`, and `guest_name` to `internal/e2ee.ContentFields` and `CONTENT_FIELDS` in `web/src/lib/e2ee.ts`; verify with the schema parity test and an e2ee field-list test (`go test ./internal/sync/... ./internal/e2ee/...`, `cd web && npm test -- ops e2ee`) — `TestSchemaMatchesSharedFixture`, `TestCiphertextValuesValidateUnchanged`
 - [x] 1.3 Refuse `page:` devices in `POST /api/v1/sync` like `public:`; verify with the "Forged task page device" scenario as a handler test (`go test ./internal/httpapi/...`) — in `TestTaskPageLiveRead`
 

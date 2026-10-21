@@ -280,4 +280,4 @@ For an encrypted page, the publisher's devices SHALL find their pages and the wr
 
 #### Scenario: Invalid snapshot or reply
 - **WHEN** a snapshot is larger than 256 KB, a guest's encrypted reply larger than 16 KB, or a snapshot is uploaded for a task whose page is served live
-- **THEN** the response is 400 `invalid_input` (409 `not_encrypted` for the live page) and nothing is stored
+- **THEN** the response is 400 `invalid_input` (409 `page_not_encrypted` for the live page) and nothing is stored

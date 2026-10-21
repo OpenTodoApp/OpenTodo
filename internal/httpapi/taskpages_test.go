@@ -393,7 +393,7 @@ func TestTaskPageEncrypted(t *testing.T) {
 	se.bob.mustStatus(resp, 201, out)
 	bobTask := out["id"].(string)
 	publishPage(t, se.bob, bobTask, map[string]any{"rights": "view"})
-	if resp, out := se.bob.do("PUT", "/api/v1/tasks/"+bobTask+"/page/snapshot", map[string]any{"ciphertext": ct("x"), "version": 1, "wrappedKey": "k"}); resp.StatusCode != 409 || errCode(out) != "not_encrypted" {
+	if resp, out := se.bob.do("PUT", "/api/v1/tasks/"+bobTask+"/page/snapshot", map[string]any{"ciphertext": ct("x"), "version": 1, "wrappedKey": "k"}); resp.StatusCode != 409 || errCode(out) != "page_not_encrypted" {
 		t.Fatalf("live snapshot = %d %v", resp.StatusCode, out)
 	}
 }

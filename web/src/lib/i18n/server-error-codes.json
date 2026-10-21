@@ -78,6 +78,7 @@
   "oidc_state_invalid",
   "owner_must_transfer",
   "page_invalid",
+  "page_not_encrypted",
   "passkey_challenge_invalid",
   "passkeys_unavailable",
   "passphrase_invalid",

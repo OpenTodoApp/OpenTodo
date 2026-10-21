@@ -142,7 +142,7 @@ func (s *Server) handlePublishTaskPage(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "snapshot and wrappedKey: a task with end-to-end encryption is published from an unlocked device")
 		return
 	case !encrypted && (in.Snapshot != "" || in.WrappedKey != ""):
-		writeError(w, http.StatusConflict, "not_encrypted", "this task is served live; send no snapshot")
+		writeError(w, http.StatusConflict, "page_not_encrypted", "this task is served live; send no snapshot")
 		return
 	}
 	if !s.pages.create.allow(u.ID) {
@@ -280,7 +280,7 @@ func (s *Server) handleTaskPageSnapshot(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if !encrypted {
-		writeError(w, http.StatusConflict, "not_encrypted", "this task is served live; send no snapshot")
+		writeError(w, http.StatusConflict, "page_not_encrypted", "this task is served live; send no snapshot")
 		return
 	}
 	if err := s.auth.PutTaskPageSnapshot(r.Context(), p.ID, []byte(in.Ciphertext), in.Version, in.WrappedKey); err != nil {
