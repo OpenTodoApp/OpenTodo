@@ -43,6 +43,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   encryption_enabled: msg('Not available with end-to-end encryption: {detail}'),
   feeds_disabled: msg('Calendar feeds are not enabled on this server.'),
   issues_disabled: msg('Issue connections are not enabled on this server.'),
+  maps_disabled: msg('Maps are turned off on this server.'),
+  maps_unavailable: msg('The map provider did not answer. Try again later.'),
   connection_disabled: msg('This connection is disabled. Enable it first.'),
   connection_stopped: msg('This connection is stopped. Replace its token, edit its host or enable it again.'),
   provider_rate_limited: msg("The provider's rate limit was reached. Polling resumes later on its own."),

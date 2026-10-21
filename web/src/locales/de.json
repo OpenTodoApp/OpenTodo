@@ -4345,7 +4345,6 @@
   "No saved location matches. Type coordinates such as 45.4642, 9.19.": "Kein gespeicherter Ort passt. Gib Koordinaten wie 45.4642, 9.19 ein.",
   "No saved locations yet": "Noch keine gespeicherten Orte",
   "No task is linked to this location.": "Keine Aufgabe ist mit diesem Ort verknüpft.",
-  "Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.": "Aus: auf keinem deiner Geräte wird eine Karte gezeigt oder nach Adressen gesucht. Orte funktionieren weiter mit Koordinaten und „In Karten öffnen“.",
   "Open in maps": "In Karten öffnen",
   "Optional, such as 45.4642, 9.19": "Optional, etwa 45.4642, 9.19",
   "Pick on the map": "Auf der Karte wählen",
@@ -4357,7 +4356,6 @@
   "Search an address, a saved location or coordinates": "Adresse, gespeicherten Ort oder Koordinaten suchen",
   "Set the location of {title}": "Ort von {title} festlegen",
   "Show maps and address search": "Karten und Adresssuche zeigen",
-  "Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.": "Orte von Aufgaben können Karten zeigen und Adressen suchen. Kacheln und Suchen kommen vom Anbieter unten, über diesen Server: Der Anbieter sieht den Server, den gezeigten Bereich und den Suchtext, nie Konten oder Aufgaben.",
   "The browser did not share the position.": "Der Browser hat die Position nicht freigegeben.",
   "The position is not available right now.": "Die Position ist gerade nicht verfügbar.",
   "This browser cannot share its position.": "Dieser Browser kann seine Position nicht teilen.",
@@ -4370,5 +4368,9 @@
   "Use my location": "Meinen Standort verwenden",
   "Use {coords}": "{coords} verwenden",
   "What you type here is sent to the map provider through this server.": "Was du hier eingibst, geht über diesen Server an den Kartenanbieter.",
-  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": "{n, plural, one {# Aufgabe zeigt diesen Ort weiter so, wie er gesetzt wurde.} other {# Aufgaben zeigen diesen Ort weiter so, wie er gesetzt wurde.}}"
+  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": "{n, plural, one {# Aufgabe zeigt diesen Ort weiter so, wie er gesetzt wurde.} other {# Aufgaben zeigen diesen Ort weiter so, wie er gesetzt wurde.}}",
+  "Maps and address search from the provider below, always through this server.": "Karten und Adresssuche vom Anbieter unten, immer über diesen Server.",
+  "Off: no maps or address search on your devices; locations still work.": "Aus: keine Karten und keine Adresssuche auf deinen Geräten; Orte funktionieren weiter.",
+  "Maps are turned off on this server.": "Karten sind auf diesem Server ausgeschaltet.",
+  "The map provider did not answer. Try again later.": "Der Kartenanbieter hat nicht geantwortet. Versuche es später erneut."
 }

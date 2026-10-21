@@ -4345,7 +4345,6 @@
   "No saved location matches. Type coordinates such as 45.4642, 9.19.": "Aucun lieu enregistré ne correspond. Saisissez des coordonnées comme 45.4642, 9.19.",
   "No saved locations yet": "Aucun lieu enregistré pour l’instant",
   "No task is linked to this location.": "Aucune tâche n’est liée à ce lieu.",
-  "Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.": "Désactivé : aucune carte et aucune recherche d’adresse sur aucun de vos appareils. Les lieux fonctionnent toujours avec les coordonnées et « Ouvrir dans les cartes ».",
   "Open in maps": "Ouvrir dans les cartes",
   "Optional, such as 45.4642, 9.19": "Facultatif, par exemple 45.4642, 9.19",
   "Pick on the map": "Choisir sur la carte",
@@ -4357,7 +4356,6 @@
   "Search an address, a saved location or coordinates": "Rechercher une adresse, un lieu enregistré ou des coordonnées",
   "Set the location of {title}": "Définir le lieu de {title}",
   "Show maps and address search": "Afficher les cartes et la recherche d’adresse",
-  "Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.": "Les lieux des tâches peuvent afficher des cartes et rechercher des adresses. Les tuiles et les recherches viennent du fournisseur ci-dessous, via ce serveur : le fournisseur voit le serveur, la zone affichée et le texte recherché, jamais les comptes ni les tâches.",
   "The browser did not share the position.": "Le navigateur n’a pas partagé la position.",
   "The position is not available right now.": "La position n’est pas disponible pour le moment.",
   "This browser cannot share its position.": "Ce navigateur ne peut pas partager sa position.",
@@ -4370,5 +4368,9 @@
   "Use my location": "Utiliser ma position",
   "Use {coords}": "Utiliser {coords}",
   "What you type here is sent to the map provider through this server.": "Ce que vous saisissez ici est envoyé au fournisseur de cartes via ce serveur.",
-  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": "{n, plural, one {# tâche continue d’afficher ce lieu tel qu’il était défini.} other {# tâches continuent d’afficher ce lieu tel qu’il était défini.}}"
+  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": "{n, plural, one {# tâche continue d’afficher ce lieu tel qu’il était défini.} other {# tâches continuent d’afficher ce lieu tel qu’il était défini.}}",
+  "Maps and address search from the provider below, always through this server.": "Cartes et recherche d’adresse du fournisseur ci-dessous, toujours via ce serveur.",
+  "Off: no maps or address search on your devices; locations still work.": "Désactivé : ni cartes ni recherche d’adresse sur vos appareils ; les lieux restent.",
+  "Maps are turned off on this server.": "Les cartes sont désactivées sur ce serveur.",
+  "The map provider did not answer. Try again later.": "Le fournisseur de cartes n’a pas répondu. Réessayez plus tard."
 }

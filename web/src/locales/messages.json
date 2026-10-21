@@ -5360,7 +5360,13 @@
     "web/src/app/locations/LocationEditor.tsx"
   ],
   "Maps": [
-    "web/src/app/locations/MapsSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Maps and address search from the provider below, always through this server.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Maps are turned off on this server.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "Mark {title} for This Evening": [
     "web/src/app/palette/registry.ts"
@@ -6559,8 +6565,8 @@
   "Off: members' links only work for people who already have an account.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.": [
-    "web/src/app/locations/MapsSettings.tsx"
+  "Off: no maps or address search on your devices; locations still work.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Off: the push carries only encrypted ids and this device adds the title.": [
     "web/src/lib/settingsCopy.ts"
@@ -9691,9 +9697,6 @@
   "Task deleted": [
     "web/src/lib/webhooks.ts"
   ],
-  "Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.": [
-    "web/src/app/locations/MapsSettings.tsx"
-  ],
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
@@ -10060,6 +10063,9 @@
   ],
   "The mail server refused the message": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "The map provider did not answer. Try again later.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "The microphone is used only while you dictate; the browser asks for permission the first time.": [
     "web/src/app/VoiceSettings.tsx"

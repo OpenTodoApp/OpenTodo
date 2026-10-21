@@ -53,6 +53,8 @@
   "limit_reached",
   "link_invalid",
   "managed_by_env",
+  "maps_disabled",
+  "maps_unavailable",
   "method_not_allowed",
   "mfa_already_enrolled",
   "mfa_challenge_invalid",

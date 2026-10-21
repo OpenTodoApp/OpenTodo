@@ -4345,7 +4345,6 @@
   "No saved location matches. Type coordinates such as 45.4642, 9.19.": "Nenhum local guardado corresponde. Escreva coordenadas como 45.4642, 9.19.",
   "No saved locations yet": "Ainda não há locais guardados",
   "No task is linked to this location.": "Nenhuma tarefa está ligada a este local.",
-  "Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.": "Desligado: nenhum mapa é mostrado e nenhum endereço é pesquisado em nenhum dos seus dispositivos. Os locais continuam a funcionar com coordenadas e «Abrir nos mapas».",
   "Open in maps": "Abrir nos mapas",
   "Optional, such as 45.4642, 9.19": "Opcional, por exemplo 45.4642, 9.19",
   "Pick on the map": "Escolher no mapa",
@@ -4357,7 +4356,6 @@
   "Search an address, a saved location or coordinates": "Pesquise um endereço, um local guardado ou coordenadas",
   "Set the location of {title}": "Definir o local de {title}",
   "Show maps and address search": "Mostrar mapas e pesquisa de endereços",
-  "Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.": "Os locais das tarefas podem mostrar mapas e pesquisar endereços. Os mosaicos e as pesquisas vêm do fornecedor abaixo, através deste servidor: o fornecedor vê o servidor, a zona mostrada e o texto pesquisado, nunca contas nem tarefas.",
   "The browser did not share the position.": "O navegador não partilhou a posição.",
   "The position is not available right now.": "A posição não está disponível agora.",
   "This browser cannot share its position.": "Este navegador não pode partilhar a sua posição.",
@@ -4370,5 +4368,9 @@
   "Use my location": "Usar a minha localização",
   "Use {coords}": "Usar {coords}",
   "What you type here is sent to the map provider through this server.": "O que escreve aqui é enviado ao fornecedor de mapas através deste servidor.",
-  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": "{n, plural, one {# tarefa continua a mostrar este local como estava definido.} other {# tarefas continuam a mostrar este local como estava definido.}}"
+  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": "{n, plural, one {# tarefa continua a mostrar este local como estava definido.} other {# tarefas continuam a mostrar este local como estava definido.}}",
+  "Maps and address search from the provider below, always through this server.": "Mapas e pesquisa de endereços do fornecedor abaixo, sempre através deste servidor.",
+  "Off: no maps or address search on your devices; locations still work.": "Desligado: sem mapas nem pesquisa de endereços; os locais continuam a funcionar.",
+  "Maps are turned off on this server.": "Os mapas estão desligados neste servidor.",
+  "The map provider did not answer. Try again later.": "O fornecedor de mapas não respondeu. Tente mais tarde."
 }

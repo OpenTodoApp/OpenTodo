@@ -7,6 +7,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { api, isNetworkError, type MapsSetting } from '../../lib/api'
 import { db } from '../../lib/db'
 import { mapsPrefOn, refreshMapsAvailable, setMapsPref } from '../../lib/locations'
+import { cardCopy } from '../../lib/settingsCopy'
 import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { Button, Field, Input, Notice, SettingsSection, Switch } from '../../ui'
 import { t } from '../../lib/i18n'
@@ -44,8 +45,7 @@ export function MapsServerPanel() {
   const locked = (f: string) => !!s?.locked.includes(f)
   const byVariable = (name: string) => t('Set by {variable}', { variable: name })
   return (
-    <SettingsSection title={t('Maps')} id="maps" learnMore="locations"
-      description={t('Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.')}>
+    <SettingsSection {...cardCopy('maps-server')} id="maps">
       {s && (
         <div className="mt-3 space-y-3" data-maps-server>
           <Switch label={t('Show maps and address search')} checked={s.enabled} disabled={locked('enabled')}
@@ -74,8 +74,7 @@ export function MapsServerPanel() {
 export function MapsUserSection() {
   const prefs = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
   return (
-    <SettingsSection title={t('Maps')} id="maps" learnMore="locations"
-      description={t('Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.')}>
+    <SettingsSection {...cardCopy('maps-user')} id="maps">
       <div className="mt-3">
         <Switch label={t('Show maps and address search')} checked={mapsPrefOn(prefs)} onChange={(on) => act(setMapsPref(on))} />
       </div>
