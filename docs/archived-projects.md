@@ -9,7 +9,7 @@ order: 132
 ---
 # Archived projects
 
-<picture><source srcset="images/archived-projects-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/archived-projects-light.webp" alt="Settings, Projects section: the automatic archiving option and an Archived projects list with two projects, each with a Restore button."></picture>
+<picture><source srcset="images/archived-projects-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/archived-projects-light.webp" alt="The bottom of the Projects page with Archived projects open: the archived projects, each with a Restore button."></picture>
 
 Archiving is different from deleting. An archived project disappears from the sidebar, but it isn't in the Trash and isn't deleted after 30 days: it and its tasks are kept as they are. Archive a project from its **Project** menu.
 

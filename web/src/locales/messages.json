@@ -9262,6 +9262,9 @@
   "Success": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Sunday": [
     "web/src/app/DateTimeSettings.tsx"
   ],

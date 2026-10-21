@@ -9,7 +9,7 @@ order: 52
 ---
 # Task reminders
 
-<picture><source srcset="images/reminders-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reminders-light.webp" alt="The Due and Reminders fields of a task: due today at 10:00, with one reminder 30 minutes before and one at a set time tomorrow morning."></picture>
+<picture><source srcset="images/reminders-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reminders-light.webp" alt="The When editor on its Reminders tab for a task due today at 10:00: one reminder 30 minutes before, one at a set time tomorrow morning, and Add reminder."></picture>
 
 A reminder gives you a nudge at a moment you choose. Reminders are personal, even in shared projects (see [Recurring tasks and reminders](recurring-and-reminders.md#shared-projects)), and the [reminders reference](reminders.md) has the details on snooze, web push and privacy.
 

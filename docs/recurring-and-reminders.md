@@ -10,7 +10,7 @@ card: today
 ---
 # Recurring tasks and reminders
 
-<picture><source srcset="images/repeat-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/repeat-light.webp" alt="The Repeat field with the rule every monday, the next three dates below it, and the Skip and This occurrence only buttons."></picture>
+<picture><source srcset="images/repeat-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/repeat-light.webp" alt="The When editor on its Repeat tab: one-click rules, the rule every monday with its next three dates, the Skip and This occurrence only buttons, and Track as a habit."></picture>
 
 Some tasks come back: pay the rent, water the plants, the weekly one-to-one. Make them repeat once and OpenTodo moves them forward each time you complete them. Add a reminder and you'll get a nudge when it matters.
 
