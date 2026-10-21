@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTodo</string>
+    <string name="setup_title">Ligue-se ao seu servidor</string>
+    <string name="setup_intro">Introduza o endereço do seu servidor OpenTodo, o que abre no navegador.</string>
+    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_connect">Ligar</string>
+    <string name="setup_connect_anyway">Ligar mesmo assim</string>
+    <string name="setup_try">Experimentar %1$s</string>
+    <string name="setup_refused">Este endereço não pode ser usado. Introduza um endereço como todo.example.com.</string>
+    <string name="setup_needs_https">Este endereço precisa de uma ligação segura (https).</string>
+    <string name="setup_insecure">Este endereço está na sua rede local e não é cifrado: outras pessoas na mesma rede poderiam ler o que envia. Toque novamente para ligar mesmo assim.</string>
+    <string name="setup_no_network">Sem ligação. O primeiro arranque precisa da rede; este ecrã tenta de novo quando ela voltar.</string>
+    <string name="setup_not_opentodo">Este endereço não responde como um servidor OpenTodo. Verifique o endereço.</string>
+    <string name="setup_untrusted">Este telemóvel não confia no certificado do servidor. Pergunte a quem gere o servidor ou instale a respetiva autoridade de certificação nas definições do Android.</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="change_server">Mudar de servidor</string>
+    <string name="change_server_confirm">Isto remove deste telemóvel os dados do servidor atual: a cópia offline, os lembretes agendados, os dados dos widgets e o desbloqueio por impressão digital. As alterações ainda não sincronizadas perdem-se.</string>
+    <string name="error_offline">Não é possível contactar o servidor e o OpenTodo nunca foi aberto neste telemóvel.</string>
+    <string name="error_untrusted">Este telemóvel não confia no certificado do servidor.</string>
+    <string name="channel_reminders">Lembretes</string>
+    <string name="reminder_generic">Lembrete</string>
+    <string name="reminder_text">Lembrete de tarefa</string>
+    <string name="action_snooze">Adiar 10 min</string>
+    <string name="action_dismiss">Dispensar</string>
+    <string name="test_title">As notificações funcionam</string>
+    <string name="test_text">Os lembretes vão aparecer assim.</string>
+    <string name="biometric_enable_title">Desbloquear com impressão digital ou rosto</string>
+    <string name="biometric_unlock_title">Desbloquear o OpenTodo</string>
+    <string name="biometric_use_passphrase">Usar frase-passe</string>
+    <string name="widget_today">Hoje</string>
+    <string name="widget_today_description">As suas tarefas de hoje</string>
+    <string name="widget_quick_add">Adição rápida</string>
+    <string name="widget_quick_add_label">Adicionar tarefa</string>
+    <string name="widget_quick_add_description">Abre o OpenTodo para adicionar uma tarefa</string>
+    <string name="widget_updated">Atualizado às %1$s</string>
+    <string name="widget_open_app">Abra o OpenTodo uma vez para preencher este widget.</string>
+    <string name="widget_locked">Bloqueado. Tarefas: %1$d, em atraso: %2$d</string>
+    <string name="widget_empty">Nada mais para hoje.</string>
+    <string name="widget_untitled">Tarefa</string>
+    <string name="widget_more">+ mais %1$d</string>
+</resources>

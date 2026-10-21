@@ -1,0 +1,7 @@
+# The Android permissions the store listings declare; must equal the manifest's (./gradlew :app:checkStoreMetadata).
+INTERNET
+ACCESS_NETWORK_STATE
+POST_NOTIFICATIONS
+SCHEDULE_EXACT_ALARM
+RECEIVE_BOOT_COMPLETED
+USE_BIOMETRIC

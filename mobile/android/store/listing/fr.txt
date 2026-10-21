@@ -1,0 +1,11 @@
+Title: OpenTodo
+Short description: Votre propre gestionnaire de tâches, sur votre propre serveur.
+
+OpenTodo est un gestionnaire de tâches open source que vous hébergez vous-même. Cette application ouvre votre serveur OpenTodo et ajoute ce que seule une application de téléphone sait faire :
+
+- Des rappels à l’heure, programmés sur le téléphone, sans service push intermédiaire
+- Partagez liens, texte, photos et fichiers depuis n’importe quelle application vers une nouvelle tâche
+- Un widget Aujourd’hui et un bouton d’ajout rapide sur l’écran d’accueil
+- Déverrouillez un compte chiffré de bout en bout avec votre empreinte ou votre visage
+
+Ni traceurs, ni statistiques, ni publicité. L’application ne parle qu’au serveur que vous saisissez. Il vous faut un serveur OpenTodo : voir le guide d’auto-hébergement sur le site du projet.

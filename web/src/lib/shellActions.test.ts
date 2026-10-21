@@ -19,6 +19,7 @@ describe('shell address actions', () => {
     expect(shellUrlAction('?reminder=r1&action=snooze')).toEqual({ kind: 'reminder', id: 'r1', action: 'snooze' })
     expect(shellUrlAction('?reminder=r1&action=delete')).toBeNull()
     expect(shellUrlAction('?add=Call%20the%20plumber%20tomorrow%209am')).toEqual({ kind: 'add', text: 'Call the plumber tomorrow 9am' })
+    expect(shellUrlAction('?add=')).toEqual({ kind: 'add', text: '' })
     expect(shellUrlAction('?task=t1')).toBeNull()
   })
 

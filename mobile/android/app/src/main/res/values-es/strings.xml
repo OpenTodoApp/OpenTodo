@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTodo</string>
+    <string name="setup_title">Conéctate a tu servidor</string>
+    <string name="setup_intro">Escribe la dirección de tu servidor OpenTodo, la que abres en el navegador.</string>
+    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_connect">Conectar</string>
+    <string name="setup_connect_anyway">Conectar de todos modos</string>
+    <string name="setup_try">Probar %1$s</string>
+    <string name="setup_refused">Esta dirección no se puede usar. Escribe una dirección como todo.example.com.</string>
+    <string name="setup_needs_https">Esta dirección necesita una conexión segura (https).</string>
+    <string name="setup_insecure">Esta dirección está en tu red local y no está cifrada: otras personas en la misma red podrían leer lo que envías. Toca de nuevo para conectar de todos modos.</string>
+    <string name="setup_no_network">Sin conexión. El primer inicio necesita la red; esta pantalla lo vuelve a intentar cuando vuelva.</string>
+    <string name="setup_not_opentodo">Esta dirección no responde como un servidor OpenTodo. Revisa la dirección.</string>
+    <string name="setup_untrusted">Este teléfono no confía en el certificado del servidor. Pregunta a quien gestiona el servidor o instala su autoridad de certificación en los ajustes de Android.</string>
+    <string name="retry">Reintentar</string>
+    <string name="change_server">Cambiar de servidor</string>
+    <string name="change_server_confirm">Esto elimina de este teléfono los datos del servidor actual: la copia sin conexión, los recordatorios programados, los datos de los widgets y el desbloqueo con huella. Se pierden los cambios aún no sincronizados.</string>
+    <string name="error_offline">No se puede acceder al servidor y OpenTodo nunca se ha abierto en este teléfono.</string>
+    <string name="error_untrusted">Este teléfono no confía en el certificado del servidor.</string>
+    <string name="channel_reminders">Recordatorios</string>
+    <string name="reminder_generic">Recordatorio</string>
+    <string name="reminder_text">Recordatorio de tarea</string>
+    <string name="action_snooze">Posponer 10 min</string>
+    <string name="action_dismiss">Descartar</string>
+    <string name="test_title">Las notificaciones funcionan</string>
+    <string name="test_text">Los recordatorios aparecerán así.</string>
+    <string name="biometric_enable_title">Desbloquear con huella o cara</string>
+    <string name="biometric_unlock_title">Desbloquear OpenTodo</string>
+    <string name="biometric_use_passphrase">Usar frase de contraseña</string>
+    <string name="widget_today">Hoy</string>
+    <string name="widget_today_description">Tus tareas de hoy</string>
+    <string name="widget_quick_add">Añadir rápido</string>
+    <string name="widget_quick_add_label">Añadir tarea</string>
+    <string name="widget_quick_add_description">Abre OpenTodo para añadir una tarea</string>
+    <string name="widget_updated">Actualizado %1$s</string>
+    <string name="widget_open_app">Abre OpenTodo una vez para llenar este widget.</string>
+    <string name="widget_locked">Bloqueado. Tareas: %1$d, vencidas: %2$d</string>
+    <string name="widget_empty">No queda nada para hoy.</string>
+    <string name="widget_untitled">Tarea</string>
+    <string name="widget_more">+ %1$d más</string>
+</resources>

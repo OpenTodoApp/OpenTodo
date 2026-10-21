@@ -15,8 +15,9 @@ export function shellUrlAction(search: string): ShellUrlAction {
   const id = p.get('reminder')
   const action = p.get('action')
   if (id && (action === 'snooze' || action === 'dismiss')) return { kind: 'reminder', id, action }
+  // `add` may be empty: the widget's button opens quick add (Android widgets hold no text field).
   const add = p.get('add')
-  if (add != null && add.trim()) return { kind: 'add', text: add.slice(0, 500) }
+  if (add != null) return { kind: 'add', text: add.slice(0, 500) }
   return null
 }
 

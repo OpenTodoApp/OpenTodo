@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the app icon: "Change server" (the shell's own menu, native-shells "First-run server screen"). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher"
+        android:shortcutId="change_server"
+        android:shortcutShortLabel="@string/change_server">
+        <intent
+            android:action="app.opentodo.CHANGE_SERVER"
+            android:targetClass="app.opentodo.MainActivity"
+            android:targetPackage="app.opentodo" />
+    </shortcut>
+</shortcuts>
