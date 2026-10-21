@@ -4,8 +4,8 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 
 ## 1. Selection
 
-- [ ] 1.1 Replace the selected row's ring and background with `.row-selected` (leading accent bar, faint tint, no ring), keep hover, ticked and focus styles distinct; verify with `taskRow.test.tsx` (class on the selected row, no `ring-` class) and the `Task/Row` story baselines in both themes via `make ui-check` (axe non-text contrast clean).
-- [ ] 1.2 Add the click-away handler on the content column (commit, clear selection, close the panel; ignore rows, overlays, the panel and controls); verify with `taskListView.test.tsx` (happy-dom: a click below the last row clears the selection and closes the panel, a click in the panel or a popover does not, Esc order unchanged).
+- [x] 1.1 Replace the selected row's ring and background with `.row-selected` (leading accent bar, faint tint, no ring), keep hover, ticked and focus styles distinct; verify with `taskRow.test.tsx` (class on the selected row, no `ring-` class) and the `Task/Row` story baselines in both themes via `make ui-check` (axe non-text contrast clean).
+- [x] 1.2 Add the click-away handler on the content column (commit, clear selection, close the panel; ignore rows, overlays, the panel and controls); verify with `taskListView.test.tsx` (happy-dom: a click below the last row clears the selection and closes the panel, a click in the panel or a popover does not, Esc order unchanged).
 
 ## 2. Inline editing
 

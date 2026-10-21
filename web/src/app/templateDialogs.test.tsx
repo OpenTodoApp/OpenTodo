@@ -148,7 +148,7 @@ describe('Shift+D', () => {
     const copy = top[1]
     expect((await db.tasks.toArray()).filter((t) => t.parent_id === copy.id)).toHaveLength(3)
     // The copy is the selected row.
-    await waitFor(() => !!document.querySelector(`[data-task-id="${copy.id}"]`)?.className.includes('ring-accent'))
+    await waitFor(() => !!document.querySelector(`[data-task-id="${copy.id}"]`)?.hasAttribute('aria-current'))
   })
 
   it('a viewer’s Shift+D writes nothing', async () => {

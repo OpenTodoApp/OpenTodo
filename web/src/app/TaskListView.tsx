@@ -26,6 +26,7 @@ import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
 import { taskDefaults } from './listActions'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
+import { useClickAway } from './task-list/useClickAway'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
@@ -95,6 +96,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const fine = useFinePointer()
   const addFromEmpty = useCallback(() => { if (fine || !requestQuickAddSheet()) focusQuickAdd() }, [fine, focusQuickAdd])
   const listRoot = useRef<HTMLDivElement>(null)
+  // A press on empty space of the column clears the selection and closes the panel (inline-task-editing D4).
+  useClickAway(listRoot, !!selectedId || !!openId, () => {
+    setSelectedId(null)
+    if (openId) setOpenId(null)
+  })
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
 
