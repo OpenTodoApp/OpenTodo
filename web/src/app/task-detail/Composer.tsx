@@ -72,6 +72,8 @@ export interface ComposerProps {
   onSubmit: (body: string, mentions: string[], files: File[], extras: ComposedExtras) => Promise<unknown>
   /** The task, for images embedded in a new comment (the main composer only). */
   taskId?: string
+  /** The rich editor (default) or the plain field. */
+  rich?: boolean
   /** Offer an attach button: picked or pasted files go with the comment (OpenSpec attachments). */
   attach?: boolean
   onCancel?: () => void
@@ -82,9 +84,9 @@ export interface ComposerProps {
 }
 
 export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function Composer(
-  { id, draftTaskId, initial = '', members, me, onSubmit, onCancel, autoFocus, submitLabel, label, attach = false, taskId }, ref,
+  { id, draftTaskId, initial = '', members, me, onSubmit, onCancel, autoFocus, submitLabel, label, attach = false, taskId, rich: richProp }, ref,
 ) {
-  const [rich] = useState(() => richComposer)
+  const [rich] = useState(() => richProp ?? richComposer)
   const richField = useRef<{ focus: () => void } | null>(null)
   const richMentions = useRef<string[] | null>(null)
   const commentId = useRef(uuid())

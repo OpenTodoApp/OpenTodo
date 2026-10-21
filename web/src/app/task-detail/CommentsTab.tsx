@@ -66,10 +66,12 @@ export interface CommentsViewProps {
   composerHost?: HTMLElement | null
   /** Changes when Shift+C asks for the composer: it expands and takes focus. */
   expand?: number
+  /** The composer's field: the rich editor (default) or the plain text field (stories with fixed baselines). */
+  richComposer?: boolean
 }
 
 export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(function CommentsView(
-  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, onReact, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0 }, composerRef,
+  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, onReact, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0, richComposer }, composerRef,
 ) {
   // Mention tokens of the members, shown as chips in the bodies.
   const mentionChips = new Map(members.map((m) => [mentionToken(m), m.name || m.email]))
@@ -171,7 +173,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
           </div>
           {editing === c.id ? (
             <div className="mt-1">
-              <Composer id={`edit-${c.id}`} initial={c.body} members={members} me={me} autoFocus submitLabel={t('Save')} label={t('Edit comment')}
+              <Composer id={`edit-${c.id}`} rich={richComposer} initial={c.body} members={members} me={me} autoFocus submitLabel={t('Save')} label={t('Edit comment')}
                 onCancel={() => setEditing(null)}
                 onSubmit={(body, mentions) => {
                   // Submitted unchanged: nothing to write (comments "Unchanged edit is byte-identical").
@@ -216,7 +218,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
           <IconButton icon="x" size="sm" label={t('Cancel reply')} onClick={() => setReplyTo(null)} />
         </div>
       )}
-      <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
+      <Composer ref={composerRef} id="comment-composer" rich={richComposer} draftTaskId={taskId} members={members} me={me}
         submitLabel={replyTarget ? t('Reply') : t('Comment')} label={replyTarget ? t('Write a reply') : t('Write a comment')} attach={canAttach}
         taskId={taskId} onSubmit={(body, mentions, files, extras) => onCreate(body, mentions, replyTarget?.id ?? null, files, extras).then((ok) => { if (ok) { setReplyTo(null); posted.current = true } return ok })} />
     </div>

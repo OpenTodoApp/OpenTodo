@@ -11,7 +11,7 @@ import { mentionIds } from '../../lib/editorNotes'
 import { parseMarkdown, renderMarkdown, type RNode } from '../../lib/richtext'
 import { createState, markdownSlice, modelToPm, pmToModel, schema, type EditorHooks } from '../../lib/richtextEditor'
 import type { ProjectMember } from '../../lib/types'
-import { EditorToolbar, useEditorChrome } from '../EditorChrome'
+import { EditorToolbar, openCellMenu, useEditorChrome } from '../EditorChrome'
 import type { CommandEnv } from '../editorCommands'
 import { imageViews } from '../editorImage'
 import { LinkDialog } from '../LinkDialog'
@@ -128,13 +128,7 @@ export default function RichComposerField(p: RichComposerFieldProps) {
           setFocused(false)
           return false
         },
-        contextmenu: (pv, event) => {
-          const cell = (event.target as HTMLElement).closest('td, th') as HTMLElement | null
-          if (!cell) return false
-          event.preventDefault()
-          chrome.openTableMenu(pv, cell)
-          return true
-        },
+        contextmenu: (pv, event) => openCellMenu(pv, event, chrome.openTableMenu),
       },
       dispatchTransaction(tr) {
         const next = v.state.apply(tr)

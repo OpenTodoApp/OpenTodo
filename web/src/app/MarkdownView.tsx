@@ -4,7 +4,7 @@ import { type ComponentType, Fragment, type ReactNode, useMemo } from 'react'
 import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdown'
 import { originFromUrl } from '../lib/taskOrigin'
 import { t } from '../lib/i18n'
-import { Icon } from '../ui'
+import { Icon, Tooltip } from '../ui'
 
 /** What the app resolves on the device: embedded attachments and links to tasks. */
 export interface MarkdownEmbeds {
@@ -103,7 +103,7 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
     case 'strong': return <strong key={i}>{inl(n.c)}</strong>
     case 'strike': return <s key={i}>{inl(n.c)}</s>
     case 'mention':
-      return <span key={i} className="mention-chip" title={ctx.mentions?.get(n.v)}>@{n.v}</span>
+      return <Tooltip key={i} label={ctx.mentions?.get(n.v) ?? `@${n.v}`}><span className="mention-chip" data-mention-token={n.v}>@{n.v}</span></Tooltip>
     case 'task':
       return ctx.embeds ? <ctx.embeds.TaskLink key={i} id={n.id}>{inl(n.c)}</ctx.embeds.TaskLink> : <Fragment key={i}>{inl(n.c)}</Fragment>
     case 'link': {
@@ -111,9 +111,11 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
       if (origin?.kind === 'issue' && origin.id) {
         // A recognised issue address reads as its id; recognition makes no request.
         return (
-          <a key={i} href={n.href} target="_blank" rel={LINK_REL} className="issue-chip" title={n.href}>
-            <Icon name="link" size="xs" />{origin.id}
-          </a>
+          <Tooltip key={i} label={n.href}>
+            <a href={n.href} target="_blank" rel={LINK_REL} className="issue-chip">
+              <Icon name="link" size="xs" />{origin.id}
+            </a>
+          </Tooltip>
         )
       }
       return <a key={i} href={n.href} target="_blank" rel={LINK_REL} className="text-accent underline">{inl(n.c)}</a>
