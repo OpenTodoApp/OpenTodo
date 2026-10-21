@@ -82,11 +82,11 @@ When the typed text is a valid filter query containing at least one term other t
 - **THEN** the Filter view opens with that query and its results, and the query is added to this device's filter history
 
 ### Requirement: Commands by name
-The palette SHALL list every command the app offers by name, each with its keyboard shortcut when it has one, and only when it applies in the current context. A command SHALL run the same function as the button, key or menu item it stands for.
+The palette SHALL list every command the app offers by name, each with its keyboard shortcut when it has one, and only when it applies in the current context. A command SHALL run the same function as the button, key or menu item it stands for. The commands SHALL include "Go to Focus" (`g` then `Shift+F`) and, for the selected or open task, "Focus on this task" (OpenSpec change `focus-mode`).
 
 #### Scenario: Command families
 - **WHEN** the user opens the palette on any screen
-- **THEN** the commands available are drawn from: going to each view, calendar, the Trash, Activity, Help and each Settings section; acting on the selected task; every action-menu item of the current project, saved view or label; creating a task, project, label or dashboard; saving the current filter as a view; sync now; the keyboard shortcuts; Vim keybindings on or off; and searching Help for the typed text
+- **THEN** the commands available are drawn from: going to each view, Focus, calendar, the Trash, Activity, Help and each Settings section; acting on the selected task, including focusing on it; every action-menu item of the current project, saved view or label; creating a task, project, label or dashboard; saving the current filter as a view; sync now; the keyboard shortcuts; Vim keybindings on or off; and searching Help for the typed text
 
 #### Scenario: Navigate
 - **WHEN** the user types `upco` and presses Enter on "Go to Upcoming"
@@ -103,6 +103,10 @@ The palette SHALL list every command the app offers by name, each with its keybo
 #### Scenario: Context commands on an empty box
 - **WHEN** the user opens the palette with a task selected and types nothing
 - **THEN** the commands for that task and the current view are listed before recently picked entries
+
+#### Scenario: Focus on the selected task
+- **WHEN** the task "Write the report" is selected and the user types `focus`
+- **THEN** "Focus on Write the report" is listed and runs the same action as the task panel's menu item, opening `/focus/<its id>`; with no task selected only "Go to Focus" is listed
 
 ### Requirement: Picking an entry
 Enter or a tap on an entry SHALL run it and close the palette: a task opens in its project or Inbox with its detail panel; a project, label, saved view, dashboard or Settings section opens; a command runs. Running a command that writes data SHALL use the same local-first path as the button or key it stands for, so it applies at once, works offline and converges like any edit.

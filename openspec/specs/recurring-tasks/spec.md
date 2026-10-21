@@ -125,7 +125,7 @@ Completing an occurrence SHALL produce a completed occurrence record whose id is
 - **THEN** after sync the series stays deleted and the completed occurrence record remains in Completed
 
 ### Requirement: Recurring tasks in views
-Today, Upcoming and project views SHALL show a recurring task once, at its current occurrence, with a repeat indicator and the rule visible in the detail panel. Completed SHALL list each completed occurrence as its own entry. The detail panel SHALL show a preview of the next three occurrences, computed locally, and SHALL make the rule, skip and detach controls reachable with the keyboard.
+Today, Upcoming and project views SHALL show a recurring task once, at its current occurrence, with a repeat indicator and the rule visible in the detail panel. Completed SHALL list each completed occurrence as its own entry. The detail panel SHALL show a preview of the next three occurrences, computed locally, and SHALL make the rule, skip and detach controls reachable with the keyboard. The calendar's Plan mode (OpenSpec `planner-view`) SHALL additionally draw the occurrences that would follow the current one, dimmed and read-only, computed on the device from the rule and never written; every other view shows only the current occurrence.
 
 #### Scenario: One row per series
 - **WHEN** Upcoming is opened with a task due tomorrow that repeats daily
@@ -134,6 +134,10 @@ Today, Upcoming and project views SHALL show a recurring task once, at its curre
 #### Scenario: Preview updates offline
 - **WHEN** the device is offline and the user changes the rule in the detail panel
 - **THEN** the next-three preview updates immediately
+
+#### Scenario: Projected in the plan only
+- **WHEN** a task with `every monday` due next Monday is viewed in Upcoming, the Month and the Plan
+- **THEN** Upcoming and the Month list it on next Monday only, and the Plan lists it on next Monday as a row and on the Mondays after as dimmed projections that cannot be moved and write nothing
 
 ### Requirement: Deadline follows the series
 When a series moves to its next occurrence (by completion, skip or detaching), a deadline on the series SHALL move by the same number of calendar days as the due date moved. The completed occurrence record and a detached copy SHALL keep the deadline of the occurrence they were made from. The shift SHALL be a function of the old and new due dates computed on the device, so devices that complete the same occurrence offline converge on the same deadline.

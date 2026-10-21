@@ -291,7 +291,7 @@ The client SHALL offer shared cards, badges or chips (solid and soft variants in
 - **THEN** focus and selection move to the next tab and its panel is shown
 
 ### Requirement: Settings section and row patterns
-Settings content SHALL be built from sections and rows with a fixed anatomy. A section is a titled card with a one-sentence description and rows; it has no help link of its own and no action in its header. A row puts a label and its description beside the control from 640 px wide, stacks them below 640 px, shows the current state as a badge beside the label before any action, and places a primary action as the control of its last row. Keyboard hints live in tooltips, never as paragraphs.
+Settings content SHALL be built from sections and rows with a fixed anatomy. A section is a titled card with a one-line description and rows; it has no help link of its own in its header and no action in its header. The description SHALL be one sentence of at most 90 characters in English and MAY end with an inline "Learn more" link that opens contextual help at the section's screen id; an option in a choice section SHALL have a label and at most 60 characters of description; anything longer belongs in Help. A row puts a label and its description beside the control from 640 px wide, stacks them below 640 px, shows the current state as a badge beside the label before any action, and places a primary action as the control of its last row. Keyboard hints live in tooltips, never as paragraphs.
 
 #### Scenario: Row stacks on phones
 - **WHEN** a settings row is shown 375 px wide
@@ -300,6 +300,14 @@ Settings content SHALL be built from sections and rows with a fixed anatomy. A s
 #### Scenario: Two-factor section anatomy
 - **WHEN** a user with two-factor off opens Account
 - **THEN** the Two-factor row shows an "Off" badge beside its label and "Set up" as its control, and the section header has no button or help link
+
+#### Scenario: Learn more is part of the line
+- **WHEN** the settings-section story is shown at 1280 px with a description and a Learn more link
+- **THEN** the link sits at the end of the description line in the metadata size, is reachable with Tab after the heading and before the first control, is announced as "Learn more: <section title>", and the card header has no button
+
+#### Scenario: Literal description in a story
+- **WHEN** a story passes a literal 120-character sentence as a settings section's description instead of a copy-table entry
+- **THEN** the settings copy lint in `npm test` fails naming the story file and line
 
 ### Requirement: Confirmation dialog
 The client SHALL offer one shared confirmation dialog, used instead of the browser's native confirm prompt. It SHALL name the action and its consequence, start focus on the safe choice, cancel on Escape and return focus to the control that opened it. A destructive confirmation SHALL NOT close on an outside tap. The client SHALL NOT use the browser's native `confirm()`, `prompt()` or `alert()` anywhere: confirmations use this dialog, and a question that needs an answer (such as the address of a link in a note) uses a small dialog of the app that validates the answer before it is applied.
@@ -537,3 +545,45 @@ Text that stands for a longer phrase (a count read as "3 comments", an icon read
 
 - **WHEN** a component puts `aria-label` on a `span` without a role
 - **THEN** `npm run lint` fails and names the file and line
+
+### Requirement: Icon catalogue
+The icons a person can choose for their own things (projects and sections) SHALL come from one catalogue, a curated subset of the app's icon set of at least 300 icons. Each entry SHALL have a stable name (lowercase letters, digits and hyphens), one category, and search keywords. A name, once in a released catalogue, SHALL never be removed or given a different picture; a picture that changes meaning gets a new name. The catalogue SHALL be defined once in the repository; the server SHALL hold an identical list of names, and a test SHALL fail when the two differ.
+
+The icons of the interface itself SHALL be available without loading the catalogue. The rest of the catalogue SHALL load only when a picker opens or when something stored names an icon outside the interface icons, and SHALL work offline once loaded. Until it has loaded, and for any name the device does not know (written by a newer client), the place of the icon SHALL show the fallback of what carries it (a project's colour dot, nothing before a section title), and SHALL never show an error, a broken image or an empty box.
+
+The picker SHALL search as the person types, matching the name, the keywords and the category, with category names in the interface language. It SHALL list results grouped by category, offer "No icon" first, show the current choice as selected, and be fully usable from the keyboard (type to filter, arrows to move, Enter to pick, Esc to close without a change).
+
+#### Scenario: Find an icon by a keyword
+- **WHEN** the user opens the icon picker of a project and types "dog"
+- **THEN** the results include the paw and dog icons under their category, and Enter on the first result sets it as the project's icon
+
+#### Scenario: Category names in the interface language
+- **WHEN** the interface is in Italian and the user types "cibo" in the picker
+- **THEN** the icons of the Food category are listed
+
+#### Scenario: Icon from a newer client
+- **WHEN** a project carries an icon name that is not in this device's catalogue
+- **THEN** the sidebar and the page header show the project's colour dot, and the stored name is kept unchanged
+
+#### Scenario: Catalogue offline
+- **WHEN** the catalogue has been loaded once and the device goes offline, then the user opens the icon picker
+- **THEN** the picker lists and searches the whole catalogue without a network request
+
+#### Scenario: Server list drifts from the catalogue
+- **WHEN** a contributor adds an icon to the catalogue without regenerating the server's list
+- **THEN** the test suite fails and names the icon missing on the server side
+
+### Requirement: Illustrations
+The client SHALL draw illustrations for empty and finished states in one calm style: inline SVG line drawings built only from the design tokens (stroke in the muted text colour, at most one accent fill from the theme's accent at low opacity, the sunken surface as the only shape fill), round line caps and joins, one stroke width, no gradients, shadows, text, raster images or external files. Each illustration SHALL render correctly in light and dark themes and every colour theme by following the tokens, SHALL be decorative (hidden from assistive technology, the message is in the text beside it), SHALL fit a 160 by 120 px box, SHALL weigh at most 4 KB of markup, SHALL not animate when the user prefers reduced motion, and SHALL be shown as a story in the workbench in both themes. The empty-state pattern SHALL accept an illustration in place of its icon. The first illustration SHALL be Inbox zero: an empty tray with one small resting mark (a leaf or a check) beside it.
+
+#### Scenario: Follows the theme
+- **WHEN** the user switches from the light theme to the dark theme and to another colour theme while the Inbox zero state is shown
+- **THEN** the illustration's strokes and fill change with the tokens, and no colour stays from the previous theme
+
+#### Scenario: Not read by a screen reader
+- **WHEN** a screen reader reaches the Inbox zero state
+- **THEN** it reads the heading "Inbox zero: every task has a place." and the action, and nothing for the illustration
+
+#### Scenario: Style gate
+- **WHEN** a contributor adds an illustration that uses a hard-coded hex colour or a raster image
+- **THEN** the UI lint fails and names the file

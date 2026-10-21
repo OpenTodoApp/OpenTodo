@@ -3,7 +3,7 @@ title: Focus
 summary: Work on one task at a time with a Pomodoro, Flowtime or Countdown timer, take breaks when you need them, and log the time worked on the task.
 audience: user
 section: Guides
-specs: [web-app, settings-navigation]
+specs: [web-app, settings-navigation, focus-mode]
 screens: [focus, settings/focus]
 order: 22
 ---

@@ -28,11 +28,35 @@ A project whose parent is unset SHALL be a top-level project; a project whose pa
 - **THEN** the project is shown at the top level until the parent arrives or is restored, and no data is changed
 
 ### Requirement: Inbox is the default container
-A task without a project SHALL belong to the Inbox. The Inbox SHALL always exist and SHALL not be deletable or renamable.
+A task SHALL be an Inbox task while it is open, not deleted, has no project, is not scheduled, and no task above it (its parent, that parent's parent and so on) has a project or is scheduled: a subtask is part of its parent's plan and follows it out of the Inbox. Whether such a parent is open, completed or deleted SHALL NOT matter; a parent the device or server does not know ends the check. A task SHALL be scheduled when it has a do-on date (`due`), a start date (`start` set to a date) or is parked in Someday (`start` set to `someday`). A deadline, a reminder, a repeat rule without a do-on date, a label or an assignee SHALL NOT make a task scheduled. Membership SHALL be computed on every device from the task's own fields, with no operation written, so it works offline and changes exactly when those fields converge. Every place that lists or counts the Inbox (the Inbox view and its counts, the Process control and the triage queue, the weekly review, the Daily check, the Open Loops pulse, the command-line client, the assistant tools and resources) SHALL use this one rule. The Inbox SHALL always exist and SHALL not be deletable or renamable.
 
 #### Scenario: Task without project
 - **WHEN** a task is created outside any project view or its project is cleared
-- **THEN** it is listed in the Inbox
+- **THEN** it is listed in the Inbox while it has no do-on date, no start and is not in Someday
+
+#### Scenario: Subtask of a scheduled parent
+- **WHEN** a task without a project has a do-on date and two subtasks without a project or any date
+- **THEN** neither the task nor its subtasks are in the Inbox or its count, and when the parent's date is removed all three are back in the Inbox
+
+#### Scenario: Scheduling takes a task out of the Inbox
+- **WHEN** an Inbox task without a project is given the do-on date Friday
+- **THEN** it leaves the Inbox and its count on every device once the date syncs, it is listed in Upcoming under Friday, and no other field is written
+
+#### Scenario: Clearing the date brings it back
+- **WHEN** the user removes the do-on date of a task without a project and without a start
+- **THEN** the task is listed in the Inbox again, at its manual position
+
+#### Scenario: A deadline alone does not schedule
+- **WHEN** a task without a project has only the deadline 2026-11-06
+- **THEN** it stays in the Inbox, and it also appears in Today and Upcoming as the deadlines capability defines
+
+#### Scenario: Concurrent edits converge
+- **WHEN** device A gives an Inbox task the start next Monday while device B, offline, moves it into "Home", and both sync
+- **THEN** every device shows the task in "Home" starting next Monday and not in the Inbox, because membership follows the converged fields
+
+#### Scenario: Someday is a decision
+- **WHEN** the user parks a task without a project in Someday
+- **THEN** it leaves the Inbox and is listed in the Someday view
 
 ### Requirement: Rename and recolour
 The user SHALL be able to rename a project and choose its colour from a palette.
@@ -72,7 +96,7 @@ Deleting a project SHALL soft-delete it. Its tasks SHALL keep their project refe
 - **THEN** the project and its three open tasks are visible again exactly as before deletion
 
 ### Requirement: Open task counts
-The sidebar SHALL show the number of open tasks for the Inbox, for Today and for each project. For a collapsed project the count SHALL include the open tasks of all its non-archived, non-deleted descendants; for an expanded project it SHALL count only the project's own tasks. Counts SHALL be computed from local data so they are correct offline.
+The sidebar SHALL show the number of Inbox tasks (OpenSpec `project-organization`, "Inbox is the default container") and of open tasks for Today at all times, and for each project while its row is hovered or focused; on a coarse pointer, where there is no hover, a project's count SHALL be visible at all times. A project row's accessible name SHALL always carry its count ("Website launch, 5 open tasks"), so the number is read whether or not it is visible, and revealing it SHALL not change the row's height or move its label. For a collapsed project the count SHALL include the open tasks of all its non-archived, non-deleted descendants; for an expanded project it SHALL count only the project's own tasks. Counts SHALL be computed from local data so they are correct offline, and SHALL follow changes from other devices after sync; nothing is written for them.
 
 #### Scenario: Counts update live
 - **WHEN** a task in a project is completed
@@ -82,8 +106,20 @@ The sidebar SHALL show the number of open tasks for the Inbox, for Today and for
 - **WHEN** "Home" has 2 open tasks and its sub-project "Garden" has 3, and "Home" is collapsed
 - **THEN** the sidebar shows 5 next to "Home"; expanding it shows 2 next to "Home" and 3 next to "Garden"
 
+#### Scenario: Nothing visible at rest
+- **WHEN** no project row is hovered or focused on a desktop with a mouse
+- **THEN** no project row shows a number, and a screen reader moving down the tree still reads each project's count
+
+#### Scenario: Touch screen
+- **WHEN** the sidebar is shown on a tablet without a mouse
+- **THEN** every project with open tasks shows its count at all times, as before this change
+
+#### Scenario: Inbox count follows scheduling
+- **WHEN** the Inbox count reads 5 and the user schedules one of its tasks for tomorrow
+- **THEN** the count reads 4 at once, offline too, and the tab bar on a phone shows the same number
+
 ### Requirement: Project tree in the sidebar
-The sidebar SHALL render non-archived projects as a tree ordered by position within each level, indenting each level 12 px beneath its parent, inside the sidebar's single scroller. Each project SHALL show its icon in its colour, or a coloured dot when it has no icon. The tree SHALL be rendered from local data and SHALL reflect remote moves after sync without a reload.
+The sidebar SHALL render non-archived projects as a tree ordered by position within each level, indenting each level 16 px beneath its parent, inside the sidebar's single scroller. Project rows SHALL be separated by at least 2 px; the open children of a project SHALL be joined to it by a thin vertical guide line in the border colour, running from below the parent's icon down the side of its last visible descendant, and an expanded top-level project's subtree SHALL be followed by 6 px of space before the next top-level project. The guide line is decoration: it is not read by assistive technology, which keeps the tree's levels. Each project SHALL show its icon in its colour, or a coloured dot when it has no icon. The tree SHALL be rendered from local data and SHALL reflect remote moves after sync without a reload.
 
 #### Scenario: Three levels
 - **WHEN** "Work" contains "Client A", which contains "Q4 launch"
@@ -92,6 +128,14 @@ The sidebar SHALL render non-archived projects as a tree ordered by position wit
 #### Scenario: Remote move appears
 - **WHEN** another device moves "Q4 launch" directly under "Work" and this device syncs
 - **THEN** the sidebar shows "Q4 launch" as a sibling of "Client A" without a page reload
+
+#### Scenario: Children read as children
+- **WHEN** "Work" is expanded and contains "Client A" and "Hiring", and "Home" follows it
+- **THEN** "Client A" and "Hiring" are indented 16 px under "Work" with a guide line beside them from "Work" down to "Hiring", and "Home" starts 6 px below "Hiring"
+
+#### Scenario: Guide line on narrow screens
+- **WHEN** the sidebar shows four levels on a 360 px screen where indentation is capped
+- **THEN** the guide lines stop at the capped indentation and the full path is still in each row's tooltip
 
 ### Requirement: Deep nesting on narrow screens
 Deeply nested levels SHALL stay readable on a 360 px wide screen by capping the visual indentation while keeping the nesting order, and a row's tooltip SHALL show its full path.
@@ -169,15 +213,19 @@ A project's view SHALL show a collapsible "Sub-projects" group at the top of its
 - **THEN** the task belongs to "Home" and is not shown inside "Garden"
 
 ### Requirement: Archived projects list
-The app SHALL list every archived, non-deleted project under "Archived projects" in Settings → Projects, sorted by name, each with its parent project's name when it is a sub-project and its open task count. The list SHALL be rendered from local data, so it is correct offline, and SHALL reflect archives and restores from other devices after sync without a reload.
+The app SHALL list every archived, non-deleted project under "Archived projects" on the All projects page, behind a disclosure closed by default, sorted by name, each with its parent project's name when it is a sub-project and its open task count; Settings → Data SHALL link to it. The list SHALL be rendered from local data, so it is correct offline, and SHALL reflect archives and restores from other devices after sync without a reload.
 
 #### Scenario: Listed with context
 - **WHEN** "Garden" (a sub-project of "Home" with one open task) and "Trip 2026" are archived
-- **THEN** Settings → Projects lists "Garden", "In Home · 1 open task", and "Trip 2026", "0 open tasks", in that order
+- **THEN** the All projects page's "Archived projects" disclosure reads "2" and, opened, lists "Garden", "In Home · 1 open task", and "Trip 2026", "0 open tasks", in that order
 
 #### Scenario: Nothing archived
 - **WHEN** the user has no archived projects
-- **THEN** the section says there are no archived projects
+- **THEN** the disclosure says there are no archived projects
+
+#### Scenario: Reached from Settings
+- **WHEN** the user opens Settings → Data and activates the archived projects link
+- **THEN** the All projects page opens with the disclosure expanded
 
 ### Requirement: Restore an archived project
 Each listed project SHALL have a keyboard-reachable Restore action that sets its existing `archived` field to false through the operation log, restoring that project alone. Restoring SHALL apply locally at once, work offline, and converge on every device under per-field last-writer-wins. This device SHALL not archive a restored project automatically again. Restore SHALL be unavailable when the user's role cannot archive the project.
@@ -207,12 +255,65 @@ Each listed project SHALL have a keyboard-reachable Restore action that sets its
 - **THEN** the project is listed but its Restore action is unavailable, with a note that only the owner or an admin can restore it
 
 ### Requirement: Project icon
-A project MAY carry an icon from the app's icon set, stored as an additive `icon` field on the project and changed as an ordinary project operation (applied locally first, converging by last-writer-wins). The sidebar, the page header and the project chip SHALL show it in the project's colour; without one they show a coloured dot.
+A project MAY carry an icon from the icon catalogue (`design-system` "Icon catalogue"), stored as an additive `icon` field on the project and changed as an ordinary project operation (applied locally first, converging by last-writer-wins). The project menu SHALL open the searchable icon picker, with "No icon" first. The sidebar, the page header and the project chip SHALL show the icon in the project's colour; without one, or with a name the device does not know, they show a coloured dot.
 
 #### Scenario: Pick an icon offline
 - **WHEN** the device is offline and the user picks the "briefcase" icon for "Work" from the project menu
 - **THEN** the sidebar shows it at once, and other devices show it after sync
 
+#### Scenario: Pick from the whole catalogue
+- **WHEN** the user opens the icon picker of "Garden", types "plant" and picks the sprout icon
+- **THEN** the project shows the sprout icon in the sidebar, the header and its chips, on this device at once and on other devices after sync
+
+#### Scenario: Concurrent icon changes
+- **WHEN** two devices set different icons for the same project while offline and both sync
+- **THEN** every device shows the icon written with the greater timestamp
+
 #### Scenario: Clients that know no icon
 - **WHEN** an older client or the CLI reads a project with an icon
 - **THEN** the field is ignored and the project renders with its dot as before
+
+### Requirement: Pin a project
+Every project menu (the sidebar row, the project header, the All projects page) SHALL offer a checkable "Pin to sidebar" that adds the project to, or removes it from, the user's favourites. The project SHALL stay in the Projects tree either way. Pinning SHALL be a change to the user's own preference, never to the project, so members of a shared project do not see each other's pins.
+
+#### Scenario: Pin from the header
+- **WHEN** the user opens a project's header menu and checks "Pin to sidebar"
+- **THEN** the project appears in the Favourites group with its count, the item reads as checked in every menu of that project, and the project is still listed in the tree
+
+#### Scenario: Shared project pinned by one member
+- **WHEN** Ada pins a project shared with Bob
+- **THEN** Bob's sidebar is unchanged and no project operation is written
+
+### Requirement: All projects page
+The app SHALL offer an All projects page at `/projects`, reachable with `g Shift+P`, from the palette and from an "All" action on the Projects header, using the page template: the whole project tree with icons, colours and open-task counts, a find field that narrows the tree keeping ancestors, New project and From a template as actions, each row opening the project with its menu, and the archived projects disclosure. It SHALL render from local data and update live after sync.
+
+#### Scenario: Find a project
+- **WHEN** the user presses `g Shift+P` and types "des"
+- **THEN** the page shows "Work › Hiring › Designer" and "Website launch › Design" with their ancestors and no other project, and Enter on the first opens it
+
+#### Scenario: Every project is one click away
+- **WHEN** the user's sidebar shows only Favourites and a collapsed Projects group
+- **THEN** the "All" action on the Projects header opens the page listing all thirty projects
+
+#### Scenario: Offline
+- **WHEN** the device is offline
+- **THEN** the page lists the projects, counts and archived projects from local data and the find field works
+
+### Requirement: Drop a task on a project
+A task dragged from a list or a board SHALL be droppable on a project row in the sidebar, on the Inbox entry and on a pinned project in Favourites. While the pointer is over a target the target SHALL show the drop ring and the list SHALL not show a drop line. Dropping SHALL move the task to that project (the Inbox: no project) exactly as the Move action does, with its sub-tasks, through the operation log, and a toast SHALL name the project with Undo. When the dragged task is part of the bulk selection, every selected task SHALL move as one batch. Dropping on the project the task is already in, on a project the user may not add tasks to, or pressing Escape SHALL change nothing. The move SHALL apply locally at once, work offline through the outbox and converge per field like any move; on touch the drag starts after the same long press as reordering. `m` remains the keyboard way to move.
+
+#### Scenario: Drop on a project
+- **WHEN** the user drags "Buy paint" from the Inbox and releases it over "Home renovation" in the sidebar
+- **THEN** the task leaves the Inbox and is in "Home renovation", and the toast reads "Moved to Home renovation" with Undo
+
+#### Scenario: Several selected tasks
+- **WHEN** three tasks are selected and the user drags one of them onto "Work"
+- **THEN** all three move to "Work" and one Undo moves all three back
+
+#### Scenario: Viewer of a shared project
+- **WHEN** the user drags a task over a project where they are a viewer
+- **THEN** the project shows no drop ring and releasing there changes nothing
+
+#### Scenario: Offline move converges
+- **WHEN** the phone is offline, the user drops a task on "Work", and the laptop renames the same task meanwhile
+- **THEN** after both sync every device shows the renamed task in "Work"

@@ -3,7 +3,7 @@ title: Issue import
 summary: Bring the open GitHub and GitLab issues assigned to you into OpenTodo as tasks that complete when the issue closes.
 audience: user
 section: Integrations
-specs: [webhooks, end-to-end-encryption]
+specs: [webhooks, end-to-end-encryption, issue-connections]
 screens: [settings/issues]
 order: 35
 ---

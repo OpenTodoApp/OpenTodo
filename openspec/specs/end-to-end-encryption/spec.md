@@ -21,19 +21,15 @@ A signed-in user SHALL be able to enable encryption from Settings. The device SH
 - **THEN** the response is a 401 `unauthorized` error for the anonymous request and a 409 `encryption_conflict` error for the second device, whose client then prompts for the existing passphrase instead
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links) and the bytes of its attachment files before they leave the device. A task's `origin` SHALL be encrypted as one whole value (the object serialised, then encrypted into one ciphertext string), because its `title`, `url` and `id` name the page, mail or issue; the server accepts that string wherever it accepts the object. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; time entry notes; attachment names, types and links; the review record's line for tomorrow) and the bytes of its attachment files before they leave the device. A task's `origin` SHALL be encrypted as one whole value (the object serialised, then encrypted into one ciphertext string), because its `title`, `url` and `id` name the page, mail or issue; the server accepts that string wherever it accepts the object. Scheduling, ordering and structure fields SHALL stay plaintext, including the review record's times and focus and a time entry's `task_id`, `user_id`, `started_at`, `ended_at`, `device_id`, `created_at` and `deleted_at`; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
-- **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`
+- **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, a project's `color` or `archived`, or a time entry's `started_at` or `ended_at`
 - **THEN** the operations carry plaintext values
 
 #### Scenario: Title is ciphertext, due date is not
 - **WHEN** an encrypted account creates a task "Dentist" due tomorrow
 - **THEN** the operations sent to the server carry a ciphertext string for `title` and the plaintext `{date}` object for `due`
-
-#### Scenario: Origin is one ciphertext
-- **WHEN** an encrypted account captures `https://example.org/post` from the share sheet
-- **THEN** the `origin` operation carries one ciphertext string, the server stores and serves it unchanged, another unlocked device shows the chip with the host and opens the page, and `origin: url` matches on both devices
 
 #### Scenario: Label names encrypted, label assignments plaintext
 - **WHEN** an encrypted account has labels `home` and `errand` and a task carries both
@@ -58,6 +54,18 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Attachment opened on another device
 - **WHEN** an unlocked device of the account downloads the encrypted attachment
 - **THEN** it decrypts chunk by chunk with the account key, verifies every chunk, and shows the file; a chunk that fails authentication makes the whole file "undecryptable" and nothing partial is shown
+
+#### Scenario: Line for tomorrow is ciphertext, the close time is not
+- **WHEN** an encrypted account closes the day with the note "Call the bank"
+- **THEN** the review record's `tomorrow_note` operation carries a ciphertext string and its `closed_at` operation the plaintext time, the server never sees the note, and purging history removes superseded notes like any content field
+
+#### Scenario: Origin is one ciphertext
+- **WHEN** an encrypted account captures `https://example.org/post` from the share sheet
+- **THEN** the `origin` operation carries one ciphertext string, the server stores and serves it unchanged, another unlocked device shows the chip with the host and opens the page, and `origin: url` matches on both devices
+
+#### Scenario: Time entry note in the personal scope
+- **WHEN** an encrypted account logs 30 minutes on an Inbox task with the note "call with the client"
+- **THEN** the `note` operation carries ciphertext while `started_at` and `ended_at` are plaintext, so the server's CSV and the MCP tool show the minutes and "[encrypted]" for the note, and another unlocked device shows the note in the Time tab
 
 ### Requirement: Encrypted custom fields
 For an encrypted account the device SHALL also encrypt, in its personal scope, custom field names and choice options and every string value of a custom field (text, link, date and choice), like other user-written text (OpenSpec `custom-fields`). Number and checkbox values SHALL stay plaintext, like `priority`.
@@ -166,7 +174,7 @@ Enabling encryption SHALL re-write every content field as ciphertext through ord
 - **THEN** the content operations already queued stay queued, the files not yet re-uploaded keep their old form, and the job continues when the network returns
 
 ### Requirement: Consequences for server-side reads and integrations
-For an encrypted account, REST collections and the export SHALL return ciphertext for content fields, and the export SHALL include the wrapped key record; plaintext REST writes are accepted and encrypted later. The profile SHALL expose `encryption: {enabled, keyVersion}`. Server-side integrations SHALL treat content fields as opaque and be disabled or limited where they need content; project sharing SHALL be refused for an encrypted account.
+For an encrypted account, REST collections and the export SHALL return ciphertext for content fields, and the export SHALL include the wrapped key record; plaintext REST writes are accepted and encrypted later. The profile SHALL expose `encryption: {enabled, keyVersion}`. Server-side integrations SHALL treat content fields as opaque and be disabled or limited where they need content; project sharing SHALL be refused for an encrypted account. The one exception SHALL be an MCP tool call answered through a device the user opted in to answer AI connectors: the device decrypts or encrypts the values that call needs, the server never holds the key, and relayed plaintext exists only in the server's memory for the duration of that call, never stored, cached, logged or audited.
 
 #### Scenario: REST read of an encrypted task
 - **WHEN** a script requests a task of an encrypted account with a bearer token
@@ -179,6 +187,10 @@ For an encrypted account, REST collections and the export SHALL return ciphertex
 #### Scenario: Sharing refused
 - **WHEN** an encrypted account attempts to share a project
 - **THEN** the request is refused with a 409 `encryption_enabled` error explaining that sharing is not yet available for encrypted accounts
+
+#### Scenario: Relayed read leaves nothing behind
+- **WHEN** an assistant reads task titles through an opted-in device and the server's database, op log, logs and audit log are inspected afterwards
+- **THEN** they contain only ciphertext for those titles and no key material
 
 ### Requirement: Calendar feeds for encrypted accounts
 For an encrypted account the task feed SHALL serve every event with the placeholder summary and no description, labels or project name, keeping dates, times, durations and recurrence, so a calendar app shows when the user is busy but never ciphertext. Calendar subscriptions SHALL work unchanged; their events are fetched and stored by the server in plaintext, and the Settings panel SHALL say so.
@@ -196,7 +208,7 @@ For an encrypted account the task feed SHALL serve every event with the placehol
 - **THEN** the events are fetched, stored on the server and drawn in the grid next to the decrypted tasks, and the panel notes that external events are not encrypted
 
 ### Requirement: Encrypted projects cannot be published
-An account with encryption on SHALL NOT create a public link for a project it has not shared (409 `encryption_enabled`), because the server holds only ciphertext for it. A public link of an unshared project whose creator enables encryption later SHALL answer 404 `link_invalid` from then on, so ciphertext never reaches a guest. Links on shared projects, which are plaintext, are unaffected.
+An account with encryption on SHALL NOT create a public link for a project it has not shared (409 `encryption_enabled`), because the server holds only ciphertext for it. A public link of an unshared project whose creator enables encryption later SHALL answer 404 `link_invalid` from then on, so ciphertext never reaches a guest. Links on shared projects, which are plaintext, are unaffected. A single task of an encrypted account MAY be published as a task page (OpenSpec change `task-pages`), because its page is encrypted on the device with a share key that only the link carries and the server never receives: the server then stores and serves only ciphertext for it, and the account key is never shared.
 
 #### Scenario: Creation refused
 - **WHEN** an encrypted account creates a public link for an unshared project
@@ -209,6 +221,10 @@ An account with encryption on SHALL NOT create a public link for a project it ha
 #### Scenario: Shared project
 - **WHEN** an encrypted account that is an admin of a shared project creates a public link for it
 - **THEN** the link works and serves the plaintext titles every member sees
+
+#### Scenario: Task page of an encrypted task
+- **WHEN** an encrypted account publishes a personal task as a task page
+- **THEN** the page is created, the server holds only the snapshot ciphertext and a key wrapped with the account key, and a guest with the full link reads the task in their browser
 
 ### Requirement: Re-write job reads incrementally
 
@@ -278,3 +294,33 @@ Turning encryption on SHALL move the account's personal link attachments to ciph
 #### Scenario: Nothing left to migrate
 - **WHEN** the migration has run and is started again
 - **THEN** no link is replaced again
+
+### Requirement: Issue connections for encrypted accounts
+For an encrypted account, creating or enabling an issue connection (OpenSpec `issue-connections`) SHALL be refused with 409 `encryption_enabled`, because the server would write issue titles and bodies as plaintext operations on every poll. Enabling encryption SHALL stop the account's existing connections with reason `encrypted_account`, the response SHALL report it, and the encryption screen SHALL say so; tasks already created stay and are encrypted with the rest of the account's content.
+
+#### Scenario: Enable encryption with connections
+- **WHEN** a user with two enabled issue connections turns on encryption
+- **THEN** both connections are stopped with reason `encrypted_account`, the encryption screen lists them, their tasks are re-written as ciphertext like every other task, and no poll happens afterwards
+
+#### Scenario: Connection refused
+- **WHEN** an encrypted account posts an issue connection
+- **THEN** the response is a 409 `encryption_enabled` error and nothing is stored
+
+### Requirement: Encrypted locations and places
+For an encrypted account the device SHALL encrypt a task's `location` as one whole value (the object serialised, then encrypted into one ciphertext string), and a place's `name`, `address` and coordinate pair, before they leave the device; a place's `position`, `created_at` and `deleted_at` SHALL stay plaintext. The server SHALL accept the ciphertext string wherever it accepts the object and serve it unchanged. Address search and reverse search SHALL run from the unlocked device through the server's map proxy, so only the typed search text or the picked point reaches the provider, never a stored location. In shared projects locations SHALL stay plaintext like every other field.
+
+#### Scenario: Location is one ciphertext
+- **WHEN** an encrypted account sets a task's location to "Mum's, Via Roma 1, Torino" with coordinates
+- **THEN** the `location` operation carries one ciphertext string, the server stores and serves it unchanged, and another unlocked device shows the name, address and map
+
+#### Scenario: Place position hidden
+- **WHEN** an encrypted account creates a place "Home" with a pin
+- **THEN** the `name`, `address` and coordinate operations carry ciphertext and the place's `position` is plaintext
+
+#### Scenario: Locked device
+- **WHEN** a device of an encrypted account is locked and shows the Locations page
+- **THEN** each place reads "Encrypted" with no map pin, and no request reaches a map route for it
+
+#### Scenario: Offline on an encrypted account
+- **WHEN** an unlocked device of an encrypted account sets a saved place as a task's location while offline
+- **THEN** the location is encrypted and queued, syncs when the device reconnects, and converges like any other location

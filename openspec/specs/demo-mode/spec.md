@@ -89,11 +89,33 @@ The server SHALL make no outbound request and SHALL send no email even when `OPE
 - **THEN** no message is sent for any action and the authentication status reports `outgoingEmail.enabled: false`
 
 ### Requirement: Demo sign-in and banner
-With demo mode on, `GET /api/v1/auth/status` SHALL include a `demo` object with a short-lived creation token, the sandbox lifetimes and the next reset, and no credentials. "Try the demo" SHALL create a sandbox and sign the browser into it. The app SHALL show a banner that the sandbox is private and deleted after 2 hours of inactivity, and Settings SHALL hide or disable restricted controls with a short note.
+With demo mode on, `GET /api/v1/auth/status` SHALL include a `demo` object with a short-lived creation token, the sandbox lifetimes and the next reset, and no credentials. "Try the demo" SHALL create a sandbox and sign the browser into it. Settings SHALL hide or disable restricted controls with a short note.
+
+While signed into a sandbox the app SHALL show a demo banner above the shell that is **one line at every width** from 360 px up, reading "Demo: private sandbox, deleted after {idle} h of inactivity. Don't store anything personal." followed by a "Learn more" link; below 640 px the second sentence is left to the Details control and the rest is cut with an ellipsis rather than wrapped, so the banner never takes a second line. The link SHALL open the demo section of the getting-started guide in the Help panel over the current screen. `{idle}` SHALL be the idle lifetime in hours from the status's `demo.sandboxHours`, remembered on the device so the line is the same offline, never a number fixed in the app. The banner SHALL offer a Dismiss control and a Details control: Dismiss hides the banner on this device until the browser session ends (stored on the device only, never synced, never sent); Details shows the full text (private sandbox, the idle lifetime, the maximum age, the nightly reset, nothing personal) as a tooltip with a fine pointer and as a dialog on touch. While the sandbox's write budget is used up, the line SHALL show the write-limit notice in the banner's place, dismissed or not, and return to the demo line when writes are accepted again. The banner SHALL be a status region for assistive technology and SHALL not be shown in docs screenshots.
 
 #### Scenario: Try the demo
 - **WHEN** a visitor clicks "Try the demo"
 - **THEN** a new sandbox is created, they are signed into it and see the sample data and the banner
+
+#### Scenario: One line on a phone
+- **WHEN** a sandbox is open on a 360 px wide screen
+- **THEN** the banner is one line reading "Demo: private sandbox, deleted after 2 h of inactivity." (cut with an ellipsis if it still does not fit) with its Learn more link and its two controls, Details shows the full text, and the first task of the Inbox is two lines higher than before
+
+#### Scenario: Lifetime from the server
+- **WHEN** a demo server reports an idle lifetime of 3 hours
+- **THEN** the banner reads "deleted after 3 h of inactivity", also after the tab was reopened offline
+
+#### Scenario: Dismissed for the session
+- **WHEN** a visitor dismisses the banner, opens another view and reloads the tab
+- **THEN** the banner stays hidden; in a new browser session or another browser it is shown again, and nothing was written to the account
+
+#### Scenario: Learn more
+- **WHEN** a visitor activates Learn more while editing a task
+- **THEN** the demo section of the guide opens in the Help panel beside the screen and the task stays open as it was
+
+#### Scenario: Write limit
+- **WHEN** a sandbox that dismissed the banner reaches its write limit
+- **THEN** the banner's line shows the write-limit notice until writes are accepted again
 
 #### Scenario: Returning visitor
 - **WHEN** a visitor comes back within the sandbox lifetime in the same browser
@@ -105,7 +127,7 @@ With demo mode on, `GET /api/v1/auth/status` SHALL include a `demo` object with 
 
 #### Scenario: Status without demo mode
 - **WHEN** demo mode is off and the status is requested
-- **THEN** the response has no `demo` field
+- **THEN** the response has no `demo` field and no banner is shown
 
 ### Requirement: Sandbox isolation
 A sandbox SHALL only read and write its own personal data and the project shared with its own non-interactive collaborator, whose account has no password and no session. Nothing a sandbox writes SHALL be visible to another sandbox or to anonymous visitors: membership changes stay refused, and assignments, mentions, notifications and activity stay inside the sandbox.
@@ -229,3 +251,18 @@ With demo mode on, every request to `/api/v1/projects/{id}/public-links` and `/a
 #### Scenario: Public read refused
 - **WHEN** an anonymous client requests `/api/v1/public/<any secret>` on a demo instance
 - **THEN** the response is 403 `demo_restricted`
+
+### Requirement: Issue connections refused on the demo
+With demo mode on, every request to `/api/v1/issues` and `/api/v1/settings/issues` SHALL be refused with 403 `demo_restricted` before authentication, so the demo server never contacts a visitor's host with a visitor's token. The Issues panel SHALL be replaced by the demo note there.
+
+#### Scenario: Connection refused
+- **WHEN** a demo sandbox posts an issue connection
+- **THEN** the response is 403 `demo_restricted`, nothing is stored and no outbound request is made
+
+#### Scenario: Owner switch refused
+- **WHEN** any client calls `PUT /api/v1/settings/issues` on a demo instance
+- **THEN** the response is 403 `demo_restricted`
+
+#### Scenario: Panel on the demo
+- **WHEN** a sandbox opens `/settings/integrations`
+- **THEN** the Issues panel is shown under the demo note with disabled controls

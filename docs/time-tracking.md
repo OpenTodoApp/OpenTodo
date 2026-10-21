@@ -3,7 +3,7 @@ title: Time tracking
 summary: Track the time you spend on a task with a start and stop, add past work by hand, compare it with the estimate, and export it as a CSV.
 audience: user
 section: Reference
-specs: [web-app, statistics]
+specs: [web-app, statistics, time-tracking]
 screens: []
 order: 25
 ---

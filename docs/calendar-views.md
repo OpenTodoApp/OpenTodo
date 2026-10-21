@@ -3,7 +3,7 @@ title: Day, Week and Month
 summary: Open the calendar, read the Day and Week grids, see six weeks in the Month, and plan the next two weeks against your day length.
 audience: user
 section: Guides
-specs: [time-blocking]
+specs: [time-blocking, planner-view]
 screens: [calendar#open-the-calendar]
 order: 61
 ---
