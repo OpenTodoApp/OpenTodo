@@ -1,4 +1,4 @@
-import { Button, Icon, type IconName, isIconName, PageHeader, Tooltip } from '../ui'
+import { Button, Icon, IconPicker, PageHeader, Tooltip } from '../ui'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { useMembership, useProjects } from '../lib/localData'
@@ -17,6 +17,7 @@ import { FieldsDialog } from './FieldsDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { iconPickerSpec } from './menus/stylePickers'
 import { closePanel, openPanel, usePanelOccupantKey } from './panel'
 import { PanelFrame } from './PanelFrame'
 import { ProjectMark } from './Sidebar'
@@ -110,6 +111,16 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         onPick: (item: MoveTarget) => { act(moveProject(project.id, item.id || null)) },
       } },
       { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename },
+      // The searchable icon picker (icons-and-section-style), inside the same overlay.
+      { kind: 'step', id: 'icon', label: t('Icon'), icon: 'image', step: {
+        title: t('Icon'),
+        render: (done, back) => (
+          <IconPicker value={project.icon} color={project.color} onClose={back}
+            noneMark={<span className="block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: project.color }} />}
+            onPick={(icon) => { act(updateProject(project.id, { icon })); done() }} />
+        ),
+        palette: iconPickerSpec(project.icon, (icon) => act(updateProject(project.id, { icon }))),
+      } },
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
         title: t('Archive “{name}”?', { name: project.name }), tone: 'default', confirmLabel: t('Archive'),
         body: subCount
@@ -127,34 +138,6 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
     } }] }] : []),
   ]
 
-}
-
-/** Icons a project may carry (project-organization "Project icon"), from the bundled set. */
-export const PROJECT_ICONS: readonly IconName[] = [
-  'briefcase', 'house', 'heart', 'star', 'book-open', 'rocket', 'graduation-cap', 'plane', 'car', 'gift',
-  'music', 'coffee', 'leaf', 'dumbbell', 'wallet', 'shopping-cart', 'camera', 'wrench', 'lightbulb', 'flame', 'anchor', 'globe', 'palette', 'folder',
-]
-
-/** Icon choices with radio semantics, inside the menu (they keep the menu open); "none" is the colour dot. */
-function IconSwatches({ project }: { project: Project }) {
-  const current = project.icon && isIconName(project.icon) ? project.icon : null
-  const pick = (icon: string | null) => act(updateProject(project.id, { icon }))
-  return (
-    <div role="group" aria-label={t('Icon')} className="flex flex-wrap gap-0.5 border-t border-default px-1.5 py-1.5" data-project-icons>
-      <button type="button" role="menuitemradio" aria-checked={current === null} aria-label={t('No icon')} data-menu-label="No icon"
-        className={`touch-target inline-flex h-8 w-8 items-center justify-center rounded-control outline-none focus-visible:ring-2 focus-visible:ring-focus ${current === null ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
-        onClick={() => pick(null)}>
-        <span className="block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: project.color }} />
-      </button>
-      {PROJECT_ICONS.map((name) => (
-        <button key={name} type="button" role="menuitemradio" aria-checked={current === name} aria-label={t('Icon {name}', { name })} data-menu-label={`Icon ${name}`}
-          className={`touch-target inline-flex h-8 w-8 items-center justify-center rounded-control outline-none focus-visible:ring-2 focus-visible:ring-focus ${current === name ? 'bg-accent-soft' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}
-          style={current === name ? { color: project.color } : undefined} onClick={() => pick(name)}>
-          <Icon name={name} />
-        </button>
-      ))}
-    </div>
-  )
 }
 
 const ACTIVITY_PANEL = 'project-activity'
@@ -286,7 +269,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
           </Tooltip>
           {actions}
         </>}
-        menu={<ActionMenu label={t('Project menu')} title={project.name} groups={groups} header={editable ? <><ColourSwatches project={project} /><IconSwatches project={project} /></> : undefined}
+        menu={<ActionMenu label={t('Project menu')} title={project.name} groups={groups} header={editable ? <ColourSwatches project={project} /> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership ?? undefined} section={sharing === 'public' ? 'public' : undefined}

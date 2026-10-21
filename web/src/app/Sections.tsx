@@ -1,12 +1,14 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
-import { IconButton, ListGroupHeader } from '../ui'
+import { CatalogueIcon, HUES, hueFor, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader } from '../ui'
+import { hueName } from '../lib/colourNames'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useState } from 'react'
 import { createTask } from '../lib/ops'
-import { createSection, deleteSection, renameSection, reorderSection } from '../lib/sections'
+import { createSection, deleteSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { t } from '../lib/i18n'
@@ -14,10 +16,28 @@ import { act } from './actionError'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
-  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown }): ActionGroup[] {
+  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section }): ActionGroup[] {
   const board = o.layout === 'board'
+  const section = a.section
+  // Colour and icon (icons-and-section-style): steps inside the same overlay.
+  const style: ActionGroup['items'] = section ? [
+    { kind: 'step', id: 'colour', label: t('Colour'), icon: 'palette', step: {
+      title: t('Colour'),
+      render: (done) => <SectionColours section={section} onPicked={done} />,
+      palette: colourPickerSpec(section.color, (color) => act(setSectionStyle(section.id, { color }))),
+    } },
+    { kind: 'step', id: 'icon', label: t('Icon'), icon: 'image', step: {
+      title: t('Icon'),
+      render: (done, back) => (
+        <span data-hue={section.color ? hueFor(section.color) : undefined} className={section.color ? 'text-hue' : undefined}>
+          <IconPicker value={section.icon} onClose={back} onPick={(icon) => { act(setSectionStyle(section.id, { icon })); done() }} />
+        </span>
+      ),
+      palette: iconPickerSpec(section.icon, (icon) => act(setSectionStyle(section.id, { icon }))),
+    } },
+  ] : []
   return [
-    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }] },
+    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }, ...style] },
     { items: [
       { kind: 'action', id: 'before', label: board ? t('Move left') : t('Move up'), icon: 'arrow-up', disabled: o.first, reason: t('Already first'), onSelect: () => a.move(-1) },
       { kind: 'action', id: 'after', label: board ? t('Move right') : t('Move down'), icon: 'arrow-down', disabled: o.last, reason: t('Already last'), onSelect: () => a.move(1) },
@@ -29,6 +49,45 @@ export function sectionMenuGroups(title: string, o: { first: boolean; last: bool
       onConfirm: a.remove,
     } }] },
   ]
+}
+
+/** The section colours: the project palette and "No colour". */
+function SectionColours({ section, onPicked }: { section: Section; onPicked: () => void }) {
+  const current = section.color ? hueFor(section.color) : null
+  const pick = (color: string | null) => { act(setSectionStyle(section.id, { color })); onPicked() }
+  return (
+    <div role="radiogroup" aria-label={t('Colour')} className="flex flex-wrap gap-1 px-1.5 py-1.5" data-section-colours>
+      <button type="button" role="radio" aria-checked={current === null} aria-label={t('No colour')} autoFocus={current === null}
+        className="touch-target inline-flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        onClick={() => pick(null)}>
+        <span className={`block h-5 w-5 rounded-full border border-dashed border-default ${current === null ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`} />
+      </button>
+      {HUES.map((h) => (
+        <button key={h.name} type="button" role="radio" aria-checked={h.name === current} aria-label={t('Colour {name}', { name: hueName(h.name) })} autoFocus={h.name === current}
+          className="touch-target inline-flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          onClick={() => pick(h.hex)}>
+          <span data-hue={h.name} className={`block h-5 w-5 rounded-full bg-hue-solid ${h.name === current ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`} />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Before a section's title (sections-and-boards "Section colour and icon"): its icon,
+ * in its colour when it has one; else a dot of its colour; else nothing.
+ */
+export function SectionMark({ section }: { section: Pick<Section, 'color' | 'icon'> }) {
+  const hue = section.color ? hueFor(section.color) : undefined
+  const dot = hue ? <span data-hue={hue} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-section-mark="dot" /> : null
+  if (section.icon && isCatalogueIcon(section.icon)) {
+    return (
+      <span data-hue={hue} className={`inline-flex shrink-0 items-center ${hue ? 'text-hue' : ''}`} data-section-mark="icon">
+        <CatalogueIcon name={section.icon} fallback={dot} />
+      </span>
+    )
+  }
+  return dot
 }
 
 export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd, completed = 0, revealed = false, onReveal }: {
@@ -60,6 +119,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   const [menuOpen, setMenuOpen] = useState(false)
   const startRename = () => { if (section) { setName(section.name); setRenaming(true) } }
   const groups = section ? sectionMenuGroups(title, { first, last, layout, count }, {
+    section,
     rename: startRename,
     move: (d) => reorderSection(section.id, d),
     remove: () => deleteSection(section.id),
@@ -77,6 +137,8 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
         if (e.key === 'Enter') void commit()
         if (e.key === 'Escape') { e.stopPropagation(); setName(section.name); setRenaming(false) }
       }} />
+  ) : section && (section.icon || section.color) ? (
+    <span className="inline-flex min-w-0 items-center gap-1.5"><SectionMark section={section} /><span className="truncate">{title}</span></span>
   ) : title
 
   // One group header for every list (task-list-presentation "Group headers"); a

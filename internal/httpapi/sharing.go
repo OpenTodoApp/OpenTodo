@@ -208,6 +208,18 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 		}
 		return nil
 	}
+	if entity == "section" {
+		// Every section representation carries color and icon, null when unset
+		// (OpenSpec change icons-and-section-style, "Sections API").
+		for _, e := range list {
+			for _, f := range []string{"color", "icon"} {
+				if _, has := e[f]; e != nil && !has {
+					e[f] = json.RawMessage("null")
+				}
+			}
+		}
+		return nil
+	}
 	if entity == "view" {
 		// Every view representation carries on_drop, null when unset
 		// (OpenSpec change rule-boards, "Views API and export").

@@ -8,6 +8,10 @@ export const RESERVED: readonly IconName[] = [
   'copy', 'pin', 'pin-off', 'tag', 'folder', 'flag', 'link', 'key-round', 'shield-check', 'log-out',
   'download', 'upload', 'external-link', 'sun', 'moon', 'grip-vertical', 'eye', 'eye-off',
   'globe', 'hash', 'at-sign', 'send', 'rotate-ccw', 'history',
+  // icons-and-section-style: the 24 former project icons stay interface icons, so a
+  // project that already carries one draws it at once, before the catalogue loads.
+  'book-open', 'briefcase', 'camera', 'car', 'dumbbell', 'gift', 'graduation-cap', 'leaf', 'music', 'plane',
+  'shopping-cart', 'wallet', 'wrench',
 ]
 
 const sources = import.meta.glob<string>(['../../**/*.tsx', '../../**/*.ts', '!../../**/*.test.*', '!../../**/*.stories.tsx', '!./**'], {

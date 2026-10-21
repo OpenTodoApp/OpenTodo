@@ -845,6 +845,9 @@
   "Android device": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "Animals|icon category": [
+    "web/src/ui/icons/catalogue.ts"
+  ],
   "Another answer is still being written. Wait for it or stop it first.": [
     "web/src/lib/assistant.ts",
     "web/src/lib/i18n/errors.ts"
@@ -1885,10 +1888,13 @@
   "Colour": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/LabelsView.tsx",
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/Sections.tsx",
+    "web/src/app/menus/stylePickers.tsx"
   ],
   "Colour {name}": [
     "web/src/app/ProjectHeader.tsx",
+    "web/src/app/Sections.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/lib/assistant.ts"
   ],
@@ -1953,6 +1959,9 @@
   ],
   "Common tasks": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "Communication|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Community": [
     "web/src/app/settingsIndex.ts",
@@ -3680,6 +3689,9 @@
     "web/src/app/palette/entries.ts",
     "web/src/lib/shortcuts.ts"
   ],
+  "Find a colour…": [
+    "web/src/app/menus/stylePickers.tsx"
+  ],
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/RuleEditor.tsx"
@@ -3814,6 +3826,9 @@
   ],
   "Follow quick add ({language})": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Food|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "For Chromium and Firefox, in the repository under {path}.": [
     "web/src/lib/settingsCopy.ts"
@@ -4121,6 +4136,9 @@
   "Health and appointments": [
     "web/src/lib/review.ts"
   ],
+  "Health|icon category": [
+    "web/src/ui/icons/catalogue.ts"
+  ],
   "Help": [
     "web/src/app/SidebarFooter.tsx",
     "web/src/app/focus/FocusView.tsx",
@@ -4185,6 +4203,9 @@
   "Home SSO": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Home|icon category": [
+    "web/src/ui/icons/catalogue.ts"
+  ],
   "Host": [
     "web/src/app/IssueEditor.tsx"
   ],
@@ -4243,10 +4264,13 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Icon": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/Sections.tsx",
+    "web/src/app/menus/stylePickers.tsx",
+    "web/src/ui/IconPicker.tsx"
   ],
-  "Icon {name}": [
-    "web/src/app/ProjectHeader.tsx"
+  "Icons are not available offline yet.": [
+    "web/src/ui/IconPicker.tsx"
   ],
   "Ideas you keep coming back to": [
     "web/src/lib/review.ts"
@@ -4457,7 +4481,6 @@
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
-    "web/src/app/taskDrop.ts",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/listGroups.ts",
@@ -4466,6 +4489,7 @@
     "web/src/lib/shortcuts.ts",
     "web/src/lib/stats.ts",
     "web/src/lib/trash.ts",
+    "web/src/lib/undoActions.ts",
     "web/src/lib/views.ts"
   ],
   "Inbox zero: every task has a place.": [
@@ -4898,6 +4922,9 @@
   "Learn the method: {method}": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
+  "Learning|icon category": [
+    "web/src/ui/icons/catalogue.ts"
+  ],
   "Leave": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -4924,6 +4951,9 @@
   ],
   "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "Leisure|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Length in minutes": [
     "web/src/app/focus/FocusParts.tsx"
@@ -5095,7 +5125,8 @@
     "web/src/app/App.tsx"
   ],
   "Loading…": [
-    "web/src/ui/Combobox/Combobox.tsx"
+    "web/src/ui/Combobox/Combobox.tsx",
+    "web/src/ui/IconPicker.tsx"
   ],
   "Local notification shown. It came from this page, not from the server, so it does not prove that reminders reach this device.": [
     "web/src/app/NotificationsSettings.tsx"
@@ -5306,6 +5337,9 @@
   ],
   "Money, bills and paperwork": [
     "web/src/lib/review.ts"
+  ],
+  "Money|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Month": [
     "web/src/app/CalendarRange.tsx",
@@ -5526,6 +5560,9 @@
   ],
   "Natural-language parsing, its languages and the date order": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Nature|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Need an account? Sign up": [
     "web/src/app/AuthScreen.tsx"
@@ -5756,6 +5793,10 @@
   "No changes: this column is not a drop target.": [
     "web/src/app/RuleEditor.tsx"
   ],
+  "No colour": [
+    "web/src/app/Sections.tsx",
+    "web/src/app/menus/stylePickers.tsx"
+  ],
   "No comments yet. Ask a question or leave a note; comments work offline.": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -5808,7 +5849,11 @@
     "web/src/app/HistoryPanel.tsx"
   ],
   "No icon": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/stylePickers.tsx",
+    "web/src/ui/IconPicker.tsx"
+  ],
+  "No icons match “{query}”.": [
+    "web/src/ui/IconPicker.tsx"
   ],
   "No imports loaded yet.": [
     "web/src/app/ImportScreen.tsx"
@@ -5841,8 +5886,10 @@
     "web/src/lib/assistant.ts"
   ],
   "No matches": [
+    "web/src/app/menus/stylePickers.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
-    "web/src/ui/Combobox/useCombobox.ts"
+    "web/src/ui/Combobox/useCombobox.ts",
+    "web/src/ui/IconPicker.tsx"
   ],
   "No matches. Try a shorter or different word.": [
     "web/src/app/help/HelpView.tsx"
@@ -6992,6 +7039,9 @@
   ],
   "People without an account can create one with this link.": [
     "web/src/app/InviteLinksSection.tsx"
+  ],
+  "People|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Period": [
     "web/src/app/review/StatsView.tsx"
@@ -8309,6 +8359,10 @@
   "Search help, e.g. board, repeat, offline": [
     "web/src/app/help/HelpView.tsx"
   ],
+  "Search icons": [
+    "web/src/app/menus/stylePickers.tsx",
+    "web/src/ui/IconPicker.tsx"
+  ],
   "Search or type a command…": [
     "web/src/app/palette/CommandPalette.tsx"
   ],
@@ -8595,6 +8649,9 @@
   ],
   "Setup token": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Shapes and symbols|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Share": [
     "web/src/app/ProjectHeader.tsx",
@@ -9445,6 +9502,9 @@
   ],
   "Teal": [
     "web/src/lib/colourNames.ts"
+  ],
+  "Technology|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.": [
     "web/src/app/AssistantsPanel.tsx"
@@ -10699,6 +10759,9 @@
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
+  "Time|icon category": [
+    "web/src/ui/icons/catalogue.ts"
+  ],
   "Time|tracking": [
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
@@ -10867,6 +10930,9 @@
   "Tools": [
     "web/src/app/shortcuts/Spotlight.tsx"
   ],
+  "Tools|icon category": [
+    "web/src/ui/icons/catalogue.ts"
+  ],
   "Top level": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/TemplateDialogs.tsx"
@@ -10913,6 +10979,9 @@
   ],
   "Trash and projects": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Travel|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Try again": [
     "web/src/app/EmailScreens.tsx",
@@ -11652,6 +11721,9 @@
   ],
   "Working…": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Work|icon category": [
+    "web/src/ui/icons/catalogue.ts"
   ],
   "Write a comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
@@ -13446,7 +13518,8 @@
     "web/src/app/IssuesPanel.tsx"
   ],
   "{n, plural, one {# result available} other {# results available}}": [
-    "web/src/ui/Combobox/useCombobox.ts"
+    "web/src/ui/Combobox/useCombobox.ts",
+    "web/src/ui/IconPicker.tsx"
   ],
   "{n, plural, one {# result} other {# results}}": [
     "web/src/app/help/HelpView.tsx"

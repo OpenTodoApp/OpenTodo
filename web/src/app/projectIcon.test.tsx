@@ -1,15 +1,16 @@
 // @vitest-environment happy-dom
-// Project icon (OpenSpec change ux-overhaul, project-organization "Project icon",
-// design D8): an additive field picked from the project menu, written as one op
-// offline, shown in the sidebar, the header and the chip; the colour dot otherwise.
+// Project icon (OpenSpec changes ux-overhaul D8 and icons-and-section-style,
+// project-organization "Project icon"): an additive field picked from the icon
+// catalogue through the searchable picker in the project menu, written as one op
+// offline, shown in the sidebar and the header; the colour dot otherwise.
 import 'fake-indexeddb/auto'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
-import { PROJECT_ICONS, ProjectHeader } from './ProjectHeader'
+import { click, flush, key, render, type } from '../ui/test-utils'
+import { ProjectHeader } from './ProjectHeader'
 import { ProjectMark, Sidebar } from './Sidebar'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -46,7 +47,7 @@ describe('project mark', () => {
 })
 
 describe('icon picker', () => {
-  it('picks an icon offline from the project menu as one op, and the sidebar row shows it', async () => {
+  it('picks an icon offline from the project menu through search, as one op, and the sidebar shows it at once', async () => {
     const id = await createProject({ name: 'Work' })
     const project = (await db.projects.get(id))!
     expect(project.icon ?? null).toBeNull()
@@ -58,25 +59,41 @@ describe('icon picker', () => {
     await flush(40)
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
     await flush(30)
-    const swatches = document.querySelector('[role="group"][aria-label="Icon"]')!
-    expect(swatches.getAttribute('data-project-icons')).not.toBeNull()
-    expect(PROJECT_ICONS.length).toBeGreaterThanOrEqual(12)
-    expect(swatches.querySelectorAll('[role="menuitemradio"]')).toHaveLength(PROJECT_ICONS.length + 1)
-    expect(swatches.querySelector('[aria-checked="true"]')?.getAttribute('aria-label')).toBe('No icon')
+    // The 24-icon grid is gone: "Icon…" opens the searchable picker in the same overlay.
+    expect(document.querySelector('[data-project-icons]')).toBeNull()
+    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))!)
+    await waitFor(() => document.querySelector('[data-icon-picker]') !== null && document.querySelector('[data-icon-option="briefcase"]') !== null)
+    expect(document.querySelector('[data-icon-option="none"]')?.getAttribute('aria-selected')).toBe('true')
 
-    await click(swatches.querySelector('[aria-label="Icon briefcase"]')!)
+    const input = document.querySelector<HTMLInputElement>('[data-icon-picker] input[role="combobox"]')!
+    await type(input, 'brief')
+    await flush(20)
+    await key(input, 'Enter')
     await waitFor(async () => (await db.projects.get(id))?.icon === 'briefcase')
     const ops = (await db.outbox.toArray()).filter((o) => o.entityId === id && o.field === 'icon')
     expect(ops).toHaveLength(1)
     expect(ops[0].value).toBe('briefcase')
-    await waitFor(() => side.container.querySelector(`[data-project-id="${id}"] svg`) !== null)
+    // Offline, the sidebar shows it at once.
+    await waitFor(() => side.container.querySelector(`[data-project-id="${id}"] svg[data-icon="briefcase"]`) !== null)
+    expect(document.querySelector('[data-icon-picker]')).toBeNull()
 
-    // The header shows the mark next to the name; the picker, still open, marks the choice.
+    // An icon outside the interface set loads with the catalogue and is drawn too.
     await r.rerender(<ProjectHeader project={(await db.projects.get(id))!} />)
+    await click(r.container.querySelector('button[aria-label="Project menu"]')!)
     await flush(30)
-    expect(r.container.querySelector('[data-page-header] h1')?.parentElement?.querySelector('svg')).toBeTruthy()
-    await waitFor(() => document.querySelector('[data-project-icons] [aria-checked="true"]')?.getAttribute('aria-label') === 'Icon briefcase')
-    await click(document.querySelector('[data-project-icons] [aria-label="No icon"]')!)
+    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))!)
+    await waitFor(() => document.querySelector('[data-icon-option="briefcase"]')?.getAttribute('aria-selected') === 'true')
+    await click(document.querySelector('[data-icon-option="paw-print"]')!)
+    await waitFor(async () => (await db.projects.get(id))?.icon === 'paw-print')
+    await waitFor(() => side.container.querySelector(`[data-project-id="${id}"] svg[data-icon="paw-print"]`) !== null)
+
+    // "No icon" brings the dot back.
+    await r.rerender(<ProjectHeader project={(await db.projects.get(id))!} />)
+    await click(r.container.querySelector('button[aria-label="Project menu"]')!)
+    await flush(30)
+    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))!)
+    await waitFor(() => document.querySelector('[data-icon-option="none"]') !== null)
+    await click(document.querySelector('[data-icon-option="none"]')!)
     await waitFor(async () => (await db.projects.get(id))?.icon === null)
     await r.unmount()
     await side.unmount()

@@ -31,6 +31,7 @@ Select the **+** on a section heading and type: the task goes straight into that
 Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the heading focused):
 
 - **Rename** (<kbd>F2</kbd>)
+- **Colour…** and **Icon…** mark the section before its name.
 - **Move** it up or down (left or right on the board). At the first or last place the option is unavailable and says why.
 - **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
 
@@ -70,8 +71,8 @@ Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it sh
 ## Good to know
 
 - Moving a task to another project removes it from its section, because sections belong to one project.
-- If someone deletes a section while you were moving a task into it on another device, the task ends up under **No section**. Nothing is lost.
-- Sections are part of the export and come back when you import it.
+- If a section is deleted while another device moves a task into it, the task ends up under **No section**. Nothing is lost.
+- Sections are exported and come back on import.
 
 ## Ideas for sections
 

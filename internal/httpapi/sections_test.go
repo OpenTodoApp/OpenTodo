@@ -105,6 +105,60 @@ func TestSectionCreateRejectsMissingProject(t *testing.T) {
 	}
 }
 
+// Section colour and icon (OpenSpec change icons-and-section-style, "Sections API").
+func TestSectionStyle(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Work"})
+	e.mustStatus(resp, 201, out)
+	pid := out["id"].(string)
+
+	// A new section carries both fields, null.
+	resp, out = e.do("POST", "/api/v1/sections", map[string]any{"name": "Doing", "project_id": pid})
+	e.mustStatus(resp, 201, out)
+	sid := out["id"].(string)
+	if v, has := out["color"]; !has || v != nil {
+		t.Fatalf("new section color = %v (present %v)", v, has)
+	}
+	if v, has := out["icon"]; !has || v != nil {
+		t.Fatalf("new section icon = %v (present %v)", v, has)
+	}
+
+	// Style it; list and get return the values.
+	resp, out = e.do("PATCH", "/api/v1/sections/"+sid, map[string]any{"color": "#3b82f6", "icon": "hourglass"})
+	e.mustStatus(resp, 200, out)
+	if out["color"] != "#3b82f6" || out["icon"] != "hourglass" {
+		t.Fatalf("styled section = %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/sections", nil)
+	e.mustStatus(resp, 200, out)
+	if s := out["sections"].([]any)[0].(map[string]any); s["color"] != "#3b82f6" || s["icon"] != "hourglass" {
+		t.Fatalf("listed section = %v", s)
+	}
+
+	// Unknown icon and malformed colour are refused, naming the field, and nothing is written.
+	for _, body := range []map[string]any{{"icon": "not-an-icon"}, {"color": "blue"}, {"color": "#3b82f"}, {"icon": 7}} {
+		resp, out = e.do("PATCH", "/api/v1/sections/"+sid, body)
+		e.mustStatus(resp, 400, out)
+		if errCode(out) != "invalid_input" {
+			t.Fatalf("%v: %v", body, out)
+		}
+	}
+	resp, out = e.do("POST", "/api/v1/sections", map[string]any{"name": "Later", "project_id": pid, "icon": "nope"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("GET", "/api/v1/sections/"+sid, nil)
+	e.mustStatus(resp, 200, out)
+	if out["color"] != "#3b82f6" || out["icon"] != "hourglass" {
+		t.Fatalf("a refused patch changed the section: %v", out)
+	}
+
+	// Null clears either.
+	resp, out = e.do("PATCH", "/api/v1/sections/"+sid, map[string]any{"color": nil, "icon": nil})
+	e.mustStatus(resp, 200, out)
+	if out["color"] != nil || out["icon"] != nil {
+		t.Fatalf("cleared section = %v", out)
+	}
+}
+
 func TestSectionsRequireAuth(t *testing.T) {
 	e := ownerEnv(t)
 	anon := newClientFor(e)

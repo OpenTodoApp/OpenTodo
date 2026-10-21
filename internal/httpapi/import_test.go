@@ -290,7 +290,8 @@ func TestRoundTripExportImportExport(t *testing.T) {
 	// import-completeness: sections, a recurring series with an occurrence
 	// record, absolute and relative reminders, saved views, the newer task fields
 	// and a comment (which is reported, not imported).
-	doing := mk("/api/v1/sections", map[string]any{"name": "Doing", "project_id": garden})
+	// icons-and-section-style 3.5: a section's colour and icon round-trip; the other section has neither.
+	doing := mk("/api/v1/sections", map[string]any{"name": "Doing", "project_id": garden, "color": "#3b82f6", "icon": "hourglass"})
 	mk("/api/v1/sections", map[string]any{"name": "Later", "project_id": garden})
 	water := mk("/api/v1/tasks", map[string]any{"title": "Water plants", "project_id": garden, "section_id": doing, "recurrence": "Every Monday",
 		"due": map[string]any{"date": "2027-03-01", "time": "08:00", "tz": "Europe/Rome"}, "estimate_minutes": 15,
@@ -312,6 +313,19 @@ func TestRoundTripExportImportExport(t *testing.T) {
 	}
 	if !noted {
 		t.Fatal("the export lacks the project note")
+	}
+	styled := 0
+	for _, s := range exportA["sections"].([]any) {
+		m := s.(map[string]any)
+		if m["id"] == doing && m["color"] == "#3b82f6" && m["icon"] == "hourglass" {
+			styled++
+		}
+		if _, has := m["icon"]; !has {
+			t.Fatalf("an exported section lacks icon: %v", m)
+		}
+	}
+	if styled != 1 {
+		t.Fatal("the export lacks the section's colour and icon")
 	}
 	fileA, _ := json.Marshal(exportA)
 

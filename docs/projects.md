@@ -1,6 +1,6 @@
 ---
 title: Projects and sub-projects
-summary: Create projects and nest them, use the Project menu to colour, move, rename, archive or delete, duplicate a project or a task, and what happens when a project is done.
+summary: Create projects and nest them, use the Project menu to colour, pick an icon, move, rename, archive or delete, duplicate a project or a task, and what happens when a project is done.
 audience: user
 section: Guides
 specs: [project-organization]
@@ -19,10 +19,11 @@ To create a project, click **+** next to **Projects** in the sidebar, type a nam
 
 The **Project** menu at the top right of a project lets you:
 
-- pick a **colour** from the swatches at the top,
+- pick a **colour**,
 - **Pin to sidebar**, which adds it to **Favourites** (see below),
-- **Move to…** another project, or back to the top level. Type to find the target; <kbd>m</kbd> opens the menu straight at this step.
+- **Move to…** another project, or back to the top level; <kbd>m</kbd> opens the menu straight at this step.
 - **Rename** it,
+- pick an **Icon…**: type to search, or **No icon** for the dot,
 - **Archive…** it, which hides it and its sub-projects from the sidebar while keeping every task,
 - **Delete project…**, which moves it to the Trash.
 
