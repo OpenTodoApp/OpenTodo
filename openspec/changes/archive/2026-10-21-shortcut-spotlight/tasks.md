@@ -21,5 +21,7 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 ## 4. Docs and integration
 
 - [x] 4.1 Update `docs/keyboard.md` (the spotlight: hesitate after `g`, Esc to cancel), the Help page "Keyboard shortcuts" and `docs/interface-guide.md` (the spotlight among overlays); verify with `npm run docs:check`.
-- [ ] 4.2 Run `make check`; verify it passes, and record the entry chunk size difference here.
+- [x] 4.2 Run `make check`; verify it passes, and record the entry chunk size difference here.
 - [x] 4.3 Run `make openspec-validate`; verify it passes.
+
+- Verified by CI on each merged pull request (#180, #181, #183–#189: Web, Server, Checks, Layout and UI checks). Entry chunk on main after the whole series: 323.79 KB gzipped (323.12 KB before `task-panel-facets`; facets alone −1.05 KB, the When editor, the title editors and inline editing together +1.72 KB).

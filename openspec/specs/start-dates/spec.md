@@ -115,15 +115,23 @@ In Today, tasks of today's group with `evening` set SHALL be listed under a **Th
 - **THEN** the task moves between the groups at once and the change uploads on the next sync
 
 ### Requirement: Setting when from the panel and the keyboard
-The detail panel SHALL set the start inside the unified When control opened from the Do on chip: a Start segment offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, plus an Evening toggle; a task with a start or Someday SHALL show it as part of the Do on chip's text ("Starts 21 Oct", "Someday"). Viewers SHALL see the values as text. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
+The detail panel SHALL set the start inside the When popover: a Start segment offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, with the Evening toggle in the Do on segment; a task with a start SHALL show it as a part of the When line reading "from" with a future date, "since" with a past date, or "Someday". Viewers SHALL see the values as text. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
 
 #### Scenario: Start after due refused
 - **WHEN** a task is due 2026-10-16 and the user types `2026-10-21` into its start date field
 - **THEN** the field says the start must be on or before the due date and the task's start is unchanged
 
 #### Scenario: Start from the When control
-- **WHEN** the user opens the Do on chip of a task, switches to Start and picks a date
-- **THEN** the control closes on confirm, the chip reads the due date and "Starts" with the start date, and no separate When row exists in the panel
+- **WHEN** the user opens the Do on part of a task, switches to Start and picks a date next week
+- **THEN** the popover closes on Done, the When line reads the due date and "from" with the start date, and no separate Start line exists in the panel
+
+#### Scenario: Start in the past
+- **WHEN** a task's start was two days ago
+- **THEN** the When line reads "since" with that date
+
+#### Scenario: Parked task
+- **WHEN** a task is parked in Someday
+- **THEN** the When line reads "Someday" and the Start segment shows Someday selected
 
 ### Requirement: Start shortcuts in a list
 In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the inline start date field and `Shift+E` SHALL toggle This Evening.
@@ -135,3 +143,18 @@ In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the
 #### Scenario: Park with the keyboard
 - **WHEN** a task is selected in a project view and the user presses `n`
 - **THEN** the task moves to the Later group as parked, and pressing `n` again returns it to the active list with no due date
+
+### Requirement: Start segment quick choices
+The Start segment of the When popover SHALL offer the quick choices Today, Tomorrow, Next week and Someday, each with the date it means (none for Someday), followed by the same worded date field and visible month calendar as the Do on segment. An empty start SHALL read "No start date", not a bare word before an empty field. Choosing Someday SHALL park the task exactly as the Someday control does today.
+
+#### Scenario: Start next week
+- **WHEN** the user opens the Start segment and chooses Next week
+- **THEN** the task's start is the first day of next week in the user's week setting, and the When line reads "from" with that date
+
+#### Scenario: Park from the segment
+- **WHEN** the user chooses Someday in the Start segment
+- **THEN** the task is parked in Someday and the When line reads "Someday"
+
+#### Scenario: Empty start
+- **WHEN** a task has no start date and the user opens the Start segment
+- **THEN** the segment reads "No start date" above the quick choices, and no choice is selected

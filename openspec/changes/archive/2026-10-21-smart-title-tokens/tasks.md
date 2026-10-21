@@ -15,10 +15,12 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 ## 3. Title editors
 
 - [x] 3.1 Add `TitleField.tsx` (input, chips while editing, suggestions, commit and cancel, the remote-change rule) and use it in the panel header; verify with `titleField.test.tsx` (append ` tomorrow p1` then Enter sets due and priority and cleans the title, one Undo restores all, viewers do not parse, parsing off saves the text) and `titleDraft.test.tsx` passing unchanged.
-- [ ] 3.2 Hand `TitleField` to the inline editor of `inline-task-editing` (or, if that change lands later, leave the hook in place and note it there); verify with the inline editor's tests when both exist.
+- [x] 3.2 Hand `TitleField` to the inline editor of `inline-task-editing` (or, if that change lands later, leave the hook in place and note it there); verify with the inline editor's tests when both exist.
 
 ## 4. Docs and integration
 
 - [x] 4.1 Update `docs/quick-add.md` (suggestions, path form, unmatched chip, editing a title), `docs/task-panel.md`, the Help page "Quick add" and the cheat sheet's quick add syntax rows; verify with `npm run docs:check`.
-- [ ] 4.2 Run `make check`; verify it passes, and record the entry chunk size difference here.
-- [ ] 4.3 Run `make openspec-validate`; verify it passes.
+- [x] 4.2 Run `make check`; verify it passes, and record the entry chunk size difference here.
+- [x] 4.3 Run `make openspec-validate`; verify it passes.
+
+- Verified by CI on each merged pull request (#180, #181, #183–#189: Web, Server, Checks, Layout and UI checks). Entry chunk on main after the whole series: 323.79 KB gzipped (323.12 KB before `task-panel-facets`; facets alone −1.05 KB, the When editor, the title editors and inline editing together +1.72 KB).

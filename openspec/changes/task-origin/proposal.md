@@ -29,7 +29,7 @@ No new environment variable. Additive op field, no rename, no format change. Not
 
 - `task-management`: a new "Task origin" requirement defines the field, its validation, the default, and its offline and convergence behaviour.
 - `task-list-presentation`: "Metadata language" gains the origin chip among the neutral chips.
-- `web-app`: "Task panel property chips" gains the origin chip, which opens the source instead of an editor and can be removed.
+- `web-app`: no delta any more. "Task panel property chips" was replaced by "Task panel facets" (`task-panel-facets`, archived 2026-10-21), which already carries the origin as a part of the Where line that opens its source, with Remove origin in the header menu.
 - `filter-queries`: a new "Origin terms" requirement (`origin`, `no origin`, `origin: value`).
 - `command-palette`: "Search over local data" also matches a task's origin id and title.
 - `share-capture`: "Capture screen" sets the origin from the shared URL and title, keeping the URL in the notes.

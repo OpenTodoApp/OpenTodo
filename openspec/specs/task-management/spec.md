@@ -220,15 +220,19 @@ The sync and REST representation of a zoned due SHALL be the existing `due` obje
 - **THEN** the response is 400 with code `invalid_input` and the task is unchanged
 
 ### Requirement: Zone control
-Next to a timed due the panel SHALL show a zone control reading "Floating" or the zone's city and current UTC offset. Opening it SHALL explain both modes in one sentence each, offer "Fix to my zone" or "Make floating", and offer a searchable list of all IANA zones with the viewer's zone and recently used zones first. Without a time the control SHALL be disabled with the reason stated.
+A due fixed to a zone SHALL read its zone's city as a suffix of the Do on part ("Tomorrow 09:00 · New York"); a floating due SHALL show no zone at rest. The Do on segment of the When popover SHALL hold the zone control reading "Floating" or the zone's city and current UTC offset. Opening it SHALL explain both modes in one sentence each, offer "Fix to my zone" or "Make floating", and offer a searchable list of all IANA zones with the viewer's zone and recently used zones first. Without a time the control SHALL be disabled with the reason stated inside the segment only.
 
 #### Scenario: Read the mode at a glance
 - **WHEN** a task is due `09:00 America/New_York`
-- **THEN** the due row shows a zone control reading "New York · UTC−4" (or −5 in winter)
+- **THEN** the Do on part reads the local time and "· New York", and the zone control in the Do on segment reads "New York · UTC−4" (or −5 in winter)
+
+#### Scenario: Floating at rest
+- **WHEN** a task has a floating due with a time
+- **THEN** the Do on part shows no zone suffix, and the Do on segment's zone control reads "Floating"
 
 #### Scenario: No time set
 - **WHEN** the task has a due date without a time
-- **THEN** the zone control is disabled and states that a time is needed to fix a zone
+- **THEN** the panel shows no zone text at rest, and in the Do on segment the zone control is disabled and states that a time is needed to fix a zone
 
 ### Requirement: Fix a due to any zone
 Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
