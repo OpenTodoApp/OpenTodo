@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links; the review record's line for tomorrow) and the bytes of its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext, including the review record's times and focus; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links; the review record's line for tomorrow) and the bytes of its attachment files before they leave the device. A task's `origin` SHALL be encrypted as one whole value (the object serialised, then encrypted into one ciphertext string), because its `title`, `url` and `id` name the page, mail or issue; the server accepts that string wherever it accepts the object. Scheduling, ordering and structure fields SHALL stay plaintext, including the review record's times and focus; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`
@@ -40,3 +40,8 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Line for tomorrow is ciphertext, the close time is not
 - **WHEN** an encrypted account closes the day with the note "Call the bank"
 - **THEN** the review record's `tomorrow_note` operation carries a ciphertext string and its `closed_at` operation the plaintext time, the server never sees the note, and purging history removes superseded notes like any content field
+
+#### Scenario: Origin is one ciphertext
+- **WHEN** an encrypted account captures `https://example.org/post` from the share sheet
+- **THEN** the `origin` operation carries one ciphertext string, the server stores and serves it unchanged, another unlocked device shows the chip with the host and opens the page, and `origin: url` matches on both devices
+
