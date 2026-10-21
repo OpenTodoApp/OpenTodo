@@ -12008,6 +12008,9 @@
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Your account uses end-to-end encryption, so a remote assistant sees your text as “Encrypted item” and can change only colours, icons, order and dates. To let an assistant on your computer read and write your text, run {unlock} once, then connect it with {bridge}. Your AI provider then receives that text in plain form; the server still receives only ciphertext.": [
+    "web/src/app/AssistantsPanel.tsx"
+  ],
   "Your account uses end-to-end encryption, so the server holds no key to your tasks and cannot pass them to a model. The rest of the app works as usual.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],

@@ -11,6 +11,7 @@ import {
   cacheAccess, cacheStatus, connectionSnippet, describeAssistantsError, loadCachedAccess, loadCachedStatus, writesAllowed,
   type AgentAccess, type McpStatus,
 } from '../lib/assistants'
+import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
@@ -19,6 +20,8 @@ export type CopyTarget = 'endpoint' | 'token' | 'snippet'
 
 export interface AssistantsViewProps {
   isOwner: boolean
+  /** The account uses end-to-end encryption (mcp-projects: what remote assistants can do, and ot mcp --decrypt). */
+  encrypted?: boolean
   /** False while offline or while the server is unreachable: actions are disabled. */
   connected: boolean
   status: McpStatus | null
@@ -113,6 +116,14 @@ export function AssistantsView(p: AssistantsViewProps) {
 
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
+      {p.encrypted && p.status?.enabled && (
+        <div data-assistants-encrypted><Notice>
+          {t.rich('Your account uses end-to-end encryption, so a remote assistant sees your text as “Encrypted item” and can change only colours, icons, order and dates. To let an assistant on your computer read and write your text, run {unlock} once, then connect it with {bridge}. Your AI provider then receives that text in plain form; the server still receives only ciphertext.', {
+            unlock: <code>ot encryption unlock</code>, bridge: <code>ot mcp --decrypt</code>,
+          })}
+        </Notice></div>
+      )}
+
       {p.status && (
         <details className="py-3 text-body">
           <summary className="cursor-pointer font-medium text-default">{t('Connection instructions')}</summary>
@@ -135,6 +146,7 @@ export function AssistantsView(p: AssistantsViewProps) {
 /** Settings → Integrations → AI assistants: the owner's switches, the user's switch, the endpoint and token shortcuts. */
 export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean; onTokenCreated?: () => void }) {
   const online = useOnline()
+  const encryption = useEncryption()
   const [status, setStatus] = useState<McpStatus | null>(null)
   const [access, setAccess] = useState<AgentAccess | null>(null)
   const [secretScope, setSecretScope] = useState<'read' | 'agent'>('read')
@@ -181,7 +193,7 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
 
   return (
     <AssistantsView
-      isOwner={isOwner} connected={online && !unreachable} status={status} access={access} busy={busy} error={error}
+      isOwner={isOwner} encrypted={encryption.enabled} connected={online && !unreachable} status={status} access={access} busy={busy} error={error}
       secret={secret} secretScope={secretScope} copied={copied}
       onToggle={(enabled) => void run(async () => {
         const s = await api.setMcpSettings(enabled)

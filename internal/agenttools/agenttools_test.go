@@ -199,7 +199,7 @@ func TestToolSurfaceIsClosed(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	want := "add_comment,complete_tasks,create_label,create_project,create_tasks,get_task,list_projects,list_tasks,list_time_entries,move_tasks,reopen_tasks,schedule_tasks,search_tasks,today_summary,trash_tasks,update_tasks"
+	want := "add_comment,complete_tasks,create_label,create_project,create_sections,create_tasks,get_task,list_icons,list_projects,list_tasks,list_time_entries,move_tasks,reopen_tasks,reorder_sections,schedule_tasks,search_tasks,set_favourite,today_summary,trash_tasks,update_project,update_sections,update_tasks"
 	if got := strings.Join(names, ","); got != want {
 		t.Fatalf("tools = %s", got)
 	}
@@ -245,19 +245,28 @@ func TestToolsListByPermission(t *testing.T) {
 			t.Fatalf("%s lists more than the read tools", n)
 		}
 	}
-	// Encrypted: no content tools, update_tasks without title/description.
+	// Encrypted (mcp-projects D3): every write tool is listed; content arguments
+	// say ciphertext only and lose their length bounds; origins are left out.
+	listed := map[string]bool{}
 	for _, d := range r.Definitions(enc) {
-		switch d.Name {
-		case "create_tasks", "create_project", "create_label", "add_comment":
-			t.Fatalf("%s offered to an encrypted account", d.Name)
-		case "update_tasks":
+		listed[d.Name] = true
+		if d.Name == "update_tasks" {
 			props := d.InputSchema["properties"].(map[string]any)["updates"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)
-			if _, ok := props["title"]; ok {
-				t.Fatalf("update_tasks offers title to an encrypted account")
+			title := props["title"].(map[string]any)
+			if !strings.HasSuffix(title["description"].(string), CiphertextOnlyNote) || title["maxLength"] != nil {
+				t.Fatalf("update_tasks title for an encrypted account = %v", title)
 			}
-			if _, ok := props["description"]; ok {
-				t.Fatalf("update_tasks offers description to an encrypted account")
+			if _, ok := props["origin_url"]; ok {
+				t.Fatal("update_tasks offers origin_url to an encrypted account")
 			}
+			if strings.Contains(props["priority"].(map[string]any)["description"].(string), CiphertextOnlyNote) {
+				t.Fatal("a structural argument is marked ciphertext only")
+			}
+		}
+	}
+	for _, n := range []string{"create_tasks", "create_project", "create_label", "add_comment", "update_project", "create_sections", "update_sections", "reorder_sections", "set_favourite"} {
+		if !listed[n] {
+			t.Fatalf("%s not offered to an encrypted account", n)
 		}
 	}
 }
@@ -762,23 +771,22 @@ func TestPlanOverlaySeesEarlierChanges(t *testing.T) {
 
 // TestRestOnlyToolHiddenFromMCP: update_project exists for the agent REST
 // routes (agent-ready-cli D8) and is never listed or callable through Call.
-func TestRestOnlyToolHiddenFromMCP(t *testing.T) {
+// TestUpdateProjectOnMCP (mcp-projects 2.1): update_project left the REST-only
+// set; MCP lists and calls it, and the agent REST route still reaches it.
+func TestUpdateProjectOnMCP(t *testing.T) {
 	f := newFixture(t)
 	c := agent("u1")
-	for _, d := range f.reg.Definitions(c) {
-		if d.Name == "update_project" {
-			t.Fatal("update_project listed for MCP")
-		}
-	}
-	if _, ok := f.reg.Lookup("update_project", c); ok {
-		t.Fatal("update_project found by Lookup")
+	if _, ok := f.reg.Lookup("update_project", c); !ok {
+		t.Fatal("update_project not found by Lookup")
 	}
 	f.put("u1", "project", "p1", map[string]any{"name": "Home", "color": "#64748b", "archived": false})
-	if _, err := f.call(c, "update_project", map[string]any{"id": "p1", "name": "x"}); !isArgErr(err) {
-		t.Fatalf("Call(update_project) = %v", err)
+	f.mustCall(c, "update_project", map[string]any{"id": "p1", "name": "Home 2"})
+	p, _ := f.sync.Get(context.Background(), "u1", "project", "p1")
+	if str(p, "name") != "Home 2" {
+		t.Fatalf("project = %v", p)
 	}
-	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","name":"x"}`), nil); !isArgErr(err) {
-		t.Fatalf("Plan(update_project) = %v", err)
+	if _, err := f.reg.CallAll(context.Background(), c, []ToolCall{{Name: "update_project", Args: json.RawMessage(`{"id":"p1","color":"#22c55e"}`)}}); err != nil {
+		t.Fatalf("CallAll(update_project) = %v", err)
 	}
 }
 

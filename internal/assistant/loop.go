@@ -244,6 +244,9 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 	caller := Caller(in.UserID)
 	var tools []ToolDef
 	for _, d := range l.Tools.Definitions(caller) {
+		if notInApp[d.Name] {
+			continue
+		}
 		if in.Skill != nil && !in.Skill.Allows(d.Name) {
 			continue // a skill offers only its own tools (assistant-skills D2)
 		}
@@ -311,11 +314,17 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 	return res
 }
 
+// notInApp are registry write tools the in-app assistant does not offer: the
+// project and section structure tools of OpenSpec change mcp-projects, whose
+// changes (sections, Favourites) the review screen does not describe yet.
+var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "create_sections": true, "update_sections": true, "reorder_sections": true}
+
 // runTool runs one call: read tools return their result with the untrusted
 // notice; write tools plan into the draft and never apply. Anything else (an
-// unknown name, a REST-only tool) is an error result.
+// unknown name, a tool not offered in the app) is an error result.
 func (l *Loop) runTool(ctx context.Context, caller agenttools.Caller, skill *agenttools.Skill, call ToolCall, draft *agenttools.ChangeSet, log *slog.Logger) (string, bool) {
 	def, ok := l.Tools.Lookup(call.Name, caller)
+	ok = ok && !notInApp[call.Name]
 	if ok && skill != nil && !skill.Allows(call.Name) {
 		return marshal(map[string]any{"error": "unavailable", "message": "the tool " + clip(call.Name) + " is not available in the skill " + skill.Name + "; use only the tools listed"}), true
 	}

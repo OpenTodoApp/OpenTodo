@@ -4310,5 +4310,6 @@
   "{project} · moved {n, plural, one {# time} other {# times}}": "{project} · adiada {n, plural, one {# vez} other {# vezes}}",
   "{sign}{n} pts {vs}": "{sign}{n} p.p. {vs}",
   "{total} completed in the last 53 weeks; busiest day {date} with {n}; current streak {streak, plural, one {# day} other {# days}}.": "{total} concluídas nas últimas 53 semanas; dia com mais {date}, com {n}; sequência atual {streak, plural, one {# dia} other {# dias}}.",
-  "{total} completions by weekday and hour; most often on {day} at {hour}.": "{total} conclusões por dia da semana e hora; mais vezes à {day} às {hour}."
+  "{total} completions by weekday and hour; most often on {day} at {hour}.": "{total} conclusões por dia da semana e hora; mais vezes à {day} às {hour}.",
+  "Your account uses end-to-end encryption, so a remote assistant sees your text as “Encrypted item” and can change only colours, icons, order and dates. To let an assistant on your computer read and write your text, run {unlock} once, then connect it with {bridge}. Your AI provider then receives that text in plain form; the server still receives only ciphertext.": "A sua conta usa encriptação ponta a ponta: um assistente remoto vê o seu texto como «Encrypted item» e só pode alterar cores, ícones, ordem e datas. Para que um assistente no seu computador leia e escreva o seu texto, execute {unlock} uma vez e ligue-o com {bridge}. O seu fornecedor de IA recebe então esse texto em claro; o servidor continua a receber apenas texto cifrado."
 }

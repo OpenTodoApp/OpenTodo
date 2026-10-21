@@ -240,6 +240,56 @@
       }
     },
     {
+      "name": "encryption lock",
+      "summary": "delete the account key stored for the profile",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/encryption_state"
+      }
+    },
+    {
+      "name": "encryption status",
+      "summary": "report locked, unlocked, stale or not_encrypted (never key material)",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/encryption_state"
+      }
+    },
+    {
+      "name": "encryption unlock",
+      "summary": "unwrap the account key with the passphrase (or --recovery key) on this machine and store it owner-only for the profile",
+      "args": [],
+      "flags": [
+        {
+          "name": "recovery",
+          "type": "bool",
+          "description": "use the recovery key instead of the passphrase"
+        },
+        {
+          "name": "passphrase-file",
+          "type": "string",
+          "description": "read the passphrase or recovery key from this file instead of the terminal"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/encryption_state"
+      }
+    },
+    {
       "name": "export",
       "summary": "download the full JSON export",
       "args": [],
@@ -445,7 +495,12 @@
         {
           "name": "allow-full-token",
           "type": "bool",
-          "description": "allow a full-access token instead of requiring read scope"
+          "description": "allow a full-access token instead of requiring a read or agent token"
+        },
+        {
+          "name": "decrypt",
+          "type": "bool",
+          "description": "end-to-end encrypted accounts: decrypt results and encrypt written text on this machine with the key stored by `ot encryption unlock`; the AI provider then receives the plaintext"
         }
       ],
       "writes": false,
@@ -1404,6 +1459,36 @@
             "type": "string"
           },
           "description": "changes to the local config file that would be made"
+        }
+      }
+    },
+    "encryption_state": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "encryption_state",
+      "type": "object",
+      "required": [
+        "state",
+        "profile"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "unlocked",
+            "locked",
+            "stale",
+            "not_encrypted"
+          ]
+        },
+        "profile": {
+          "type": "string"
+        },
+        "key_version": {
+          "type": "integer"
+        },
+        "removed": {
+          "type": "boolean",
+          "description": "lock only: whether a stored key was deleted"
         }
       }
     },

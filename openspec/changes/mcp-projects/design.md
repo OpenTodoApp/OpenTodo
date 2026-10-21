@@ -137,6 +137,17 @@ No new op fields beyond `section.color` and `section.icon`, which belong to `ico
 - **Favourites race.** `set_favourite` rewrites the whole favourites string, so an offline device editing Favourites at the same time wins or loses as a whole. This is the same rule that applies between two devices today.
 - **Two changes extend "Read-only tools".** This change and `time-tracking` both extend it (`list_icons`, `list_time_entries`). This change adds `list_icons` through its own requirement; the "exactly the read tools" scenario is reconciled when the second of the two is archived (task 6.3).
 
+## Implementation notes
+
+- **Every write tool stays listed for encrypted accounts (D3 adjusted).** The first draft kept omitting the content tools (`create_tasks`, `create_project`, `create_label`, `add_comment`) from `tools/list`, but `ot mcp --decrypt` forwards the server's list, so its assistant would never see them. Every write tool is now listed; text arguments carry `agenttools.CiphertextOnlyNote` and lose their plaintext length bounds, `origin_url` is left out, and the bridge strips the note. A remote assistant that sends plain text still gets `encryption_enabled`.
+- **`add_comment` takes a chosen id too (D4).** The bridge needs the id to bind a comment body's ciphertext.
+- **Results carry placeholders, not envelopes (D5 adjusted).** Read tools never put ciphertext into a model's context: the server writes "Encrypted item" (`[encrypted]` for a time entry note). The bridge therefore attributes each placeholder by the result's shape (task, project or project count, section in a project resource, custom field definition, comment, time entry) and reads the raw value of that entity's field through the REST collections (`/tasks`, `/projects`, `/labels`, `/sections`, `/fields`, `/tasks/{id}/comments`, `/time-entries`), once per message, then decrypts it. `TestMCPBridgeDecrypts` seeds a value in every content field a read tool shows and fails when one comes back as a placeholder.
+- **Stale check.** Before each `tools/call` and `resources/read` the bridge reads `/api/v1/me` and compares the key version; a change answers that request with a JSON-RPC error and forwards nothing.
+- **Passphrase normalisation.** Devices NFC-normalise the passphrase before PBKDF2; Go's standard library has no normaliser, so `ot` does not. A passphrase with non-ASCII characters typed in another normal form fails to unwrap; the error suggests `--recovery`.
+- **Not in the in-app assistant.** The in-app assistant shares the registry but its review screen describes task, project, label and comment changes only, so `update_project`, `set_favourite` and the section tools are left out of it (`internal/assistant` `notInApp`).
+- **Vectors.** The CLI's crypto (`internal/e2ee/crypt`) is checked against the existing shared vectors `web/src/lib/e2ee.vectors.json`, which `crypto.test.ts` already verifies, instead of a second copy under `internal/e2ee/testdata`.
+- **Sizes.** `ot` grows by the standard-library crypto and the bridge code only (no new module; the 11.9 MB `ot` binary of this branch includes them); the server binary does not link `internal/e2ee/crypt` (`TestServerDoesNotLinkCrypt`); web: one sentence and its translations.
+
 ## Open decisions
 
 - **Key storage.** File versus OS keychain (D6). Default: the file now, the keychain later.

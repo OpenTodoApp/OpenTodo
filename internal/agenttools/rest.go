@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // Agent REST routes (OpenSpec change `agent-ready-cli`, design D8). An `agent`
@@ -108,11 +106,8 @@ func (r *Registry) planWrite(ctx context.Context, c Caller, name string, rawArgs
 		return Plan{}, err
 	}
 	if c.Encrypted {
-		if d.RequiresContent {
-			return Plan{}, encryptionErr()
-		}
 		for _, f := range d.ContentFields {
-			if a.mentions(f) {
+			if a.plainContent(f) {
 				return Plan{}, encryptionErr()
 			}
 		}
@@ -136,73 +131,4 @@ func (ch Change) OpID(field string) string {
 func KeyedChange(c Caller, clientRequestID, entity string, i int) Change {
 	seed := requestSeed(c, clientRequestID)
 	return Change{Entity: entity, EntityID: entityID(seed, i), Create: true, opSeed: seed}
-}
-
-// ---- update_project (REST only: PATCH /api/v1/projects/{id} with name, color) ----
-
-func init() {
-	register(tool{rest: true, def: func(Caller) Definition {
-		return writeDef("update_project", "Rename or recolour a project", "Change a project's name or colour.",
-			object([]string{"id"}, map[string]any{
-				"id":    map[string]any{"type": "string", "description": "Project id."},
-				"name":  map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
-				"color": map[string]any{"type": "string", "description": "Colour as #rrggbb."},
-			}), false, true, []string{"name"}, false)
-	}, plan: (*Registry).planUpdateProject})
-}
-
-func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "id", "name", "color"); err != nil {
-		return Plan{}, err
-	}
-	id, err := a.str("id")
-	if err != nil || id == "" {
-		return Plan{}, argErr("id: the project id is required")
-	}
-	patch := map[string]json.RawMessage{}
-	if v, has, err := a.text("name", false, 200); err != nil {
-		return Plan{}, err
-	} else if has {
-		if strings.TrimSpace(v) == "" {
-			return Plan{}, argErr("name: must not be empty")
-		}
-		patch["name"] = raw(strings.TrimSpace(v))
-	}
-	if a.present("color") {
-		col, err := a.color("")
-		if err != nil {
-			return Plan{}, err
-		}
-		patch["color"] = col
-	}
-	if len(patch) == 0 {
-		return Plan{}, argErr("nothing to change: give name or color")
-	}
-	snap, err := r.loadFor(ctx, c, overlay)
-	if err != nil {
-		return Plan{}, err
-	}
-	p, ok := snap.projects[id]
-	if !ok {
-		return Plan{}, notFound("project", []string{id})
-	}
-	role := snap.role(id)
-	for f := range patch {
-		if !opsync.CanWrite(role, "project", f) {
-			return Plan{}, forbidden([]map[string]any{{"id": id, "reason": "forbidden", "role": role}})
-		}
-	}
-	if err := checkPatch("", "project", id, patch); err != nil {
-		return Plan{}, err
-	}
-	for f, v := range patch {
-		if opsync.SameJSON(p[f], v) {
-			delete(patch, f)
-		}
-	}
-	if len(patch) == 0 {
-		return Plan{Result: result("update_project", []map[string]any{{"id": id, "status": "unchanged"}}, 0)}, nil
-	}
-	cs := ChangeSet{{Entity: "project", EntityID: id, Patch: patch, Base: base(p, patch)}}
-	return Plan{Result: result("update_project", []map[string]any{{"id": id, "status": "updated"}}, 1), Changes: cs, Count: 1}, nil
 }

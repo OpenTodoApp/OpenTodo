@@ -183,6 +183,11 @@ func TestMcpCookieRejected401(t *testing.T) {
 	if strings.Contains(string(raw), "projects") && strings.Contains(string(raw), "result") {
 		t.Fatalf("data returned: %s", raw)
 	}
+	// The icon catalogue holds no user data and is still behind the token (mcp-projects).
+	resp, raw = e.mcpPost("", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_icons","arguments":{"query":"plant"}}}`)
+	if resp.StatusCode != 401 || !strings.HasPrefix(resp.Header.Get("WWW-Authenticate"), "Bearer") || strings.Contains(string(raw), "sprout") {
+		t.Fatalf("list_icons without a token: %d %s", resp.StatusCode, raw)
+	}
 }
 
 func TestMcpRevokedTokenRateLimited(t *testing.T) {
@@ -341,7 +346,7 @@ func TestMcpSession(t *testing.T) {
 		t.Fatalf("initialized: %d", resp.StatusCode)
 	}
 	tools := c.rpc(secret, "tools/list", map[string]any{})["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 6 {
+	if len(tools) != 7 {
 		t.Fatalf("tools = %v", tools)
 	}
 	projects := c.mcpTool(secret, "list_projects", nil)["projects"].([]any)
