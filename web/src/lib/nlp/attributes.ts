@@ -16,7 +16,7 @@ export interface ProjectRef {
 export const MAX_ESTIMATE_MINUTES = 10080
 
 /** Fold a project name or a #token for comparison: no case, diacritics or spaces. */
-function foldName(s: string): string {
+export function foldName(s: string): string {
   return normalize(s).replace(/[\s_-]+/g, '')
 }
 
@@ -49,6 +49,7 @@ function depthOf(p: ProjectRef, byId: Map<string, ProjectRef>): number {
  */
 export function matchProject(token: string, projects: readonly ProjectRef[]): ProjectRef | null {
   if (!token.startsWith('#') || token.length < 2) return null
+  if (token.includes('/')) return matchProjectPath(token, projects)
   const want = foldName(token.slice(1))
   if (!want) return null
   const live = projects.filter((p) => !p.archived && !p.deleted_at)
@@ -62,6 +63,39 @@ export function matchProject(token: string, projects: readonly ProjectRef[]): Pr
   }
   const prefix = live.filter((p) => foldName(p.name).startsWith(want))
   return prefix.length === 1 ? prefix[0] : null
+}
+
+/**
+ * A `#Parent/Child` path (smart-title-tokens D2): every segment matches a project name
+ * exactly (folded) and each is the parent of the next, so two projects with the same
+ * name under different parents are told apart. No prefix matching; null otherwise.
+ */
+export function matchProjectPath(token: string, projects: readonly ProjectRef[]): ProjectRef | null {
+  const parts = token.slice(1).split('/').map(foldName)
+  if (parts.length < 2 || parts.some((x) => !x)) return null
+  const live = projects.filter((p) => !p.archived && !p.deleted_at)
+  const byId = new Map(live.map((p) => [p.id, p]))
+  const fits = (p: ProjectRef): boolean => {
+    let cur: ProjectRef | undefined = p
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (!cur || foldName(cur.name) !== parts[i]) return false
+      cur = i > 0 ? (cur.parent_id ? byId.get(cur.parent_id) : undefined) : cur
+    }
+    return true
+  }
+  const found = live.filter(fits)
+  if (!found.length) return null
+  found.sort((a, b) => depthOf(a, byId) - depthOf(b, byId) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  return found[0]
+}
+
+/** Why a `#token` names no project: none starts with it, or several do (smart-title-tokens D4). */
+export function projectMiss(token: string, projects: readonly ProjectRef[]): { reason: 'none' } | { reason: 'ambiguous'; count: number } | null {
+  if (!token.startsWith('#') || token.length < 2 || matchProject(token, projects)) return null
+  const want = foldName(token.slice(1).split('/').pop() ?? '')
+  if (!want) return null
+  const n = projects.filter((p) => !p.archived && !p.deleted_at && foldName(p.name).startsWith(want)).length
+  return n > 1 && !token.includes('/') ? { reason: 'ambiguous', count: n } : { reason: 'none' }
 }
 
 /** `@name` → `name`, exactly as typed (trailing comma dropped); null otherwise. */

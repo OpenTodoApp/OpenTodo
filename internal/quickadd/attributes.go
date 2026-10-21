@@ -44,6 +44,9 @@ func matchProject(token string, projects []Project) *Project {
 	if !strings.HasPrefix(token, "#") || len(token) < 2 {
 		return nil
 	}
+	if strings.Contains(token, "/") {
+		return matchProjectPath(token, projects)
+	}
 	want := foldName(token[1:])
 	if want == "" {
 		return nil
@@ -200,4 +203,58 @@ func matchSpent(token string) (spent, estimate int, ok bool) {
 	}
 	spent, estimate = spentPartMinutes(m[1]), spentPartMinutes(m[2])
 	return spent, estimate, spent > 0 && estimate > 0
+}
+
+// matchProjectPath resolves a "#Parent/Child" token (smart-title-tokens D2): every
+// segment matches a project name exactly (folded) and each is the parent of the next.
+// No prefix matching. Mirrors matchProjectPath in web/src/lib/nlp/attributes.ts.
+func matchProjectPath(token string, projects []Project) *Project {
+	raw := strings.Split(token[1:], "/")
+	parts := make([]string, len(raw))
+	for i, r := range raw {
+		parts[i] = foldName(r)
+		if parts[i] == "" {
+			return nil
+		}
+	}
+	if len(parts) < 2 {
+		return nil
+	}
+	byID := map[string]Project{}
+	var live []Project
+	for _, p := range projects {
+		if !p.Archived && !p.Deleted {
+			live = append(live, p)
+			byID[p.ID] = p
+		}
+	}
+	fits := func(p Project) bool {
+		cur, ok := p, true
+		for i := len(parts) - 1; i >= 0; i-- {
+			if !ok || foldName(cur.Name) != parts[i] {
+				return false
+			}
+			if i > 0 {
+				cur, ok = byID[cur.ParentID]
+			}
+		}
+		return true
+	}
+	var found []Project
+	for _, p := range live {
+		if fits(p) {
+			found = append(found, p)
+		}
+	}
+	if len(found) == 0 {
+		return nil
+	}
+	sort.SliceStable(found, func(i, j int) bool {
+		di, dj := depthOf(found[i], byID), depthOf(found[j], byID)
+		if di != dj {
+			return di < dj
+		}
+		return found[i].ID < found[j].ID
+	})
+	return &found[0]
 }

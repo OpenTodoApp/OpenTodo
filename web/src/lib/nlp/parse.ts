@@ -2,7 +2,7 @@
 // only on the line, the reference date and time, the languages, the project list and
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
-import { matchDuration, matchLabel, matchPriority, matchProject, matchSpent, type ProjectRef } from './attributes'
+import { matchDuration, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
 import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
@@ -59,7 +59,12 @@ export interface ParseResult {
   reminders: ReminderPhrase[]
   /** One chip per attribute in line order (one per label and per reminder). */
   chips: Chip[]
+  /** `#tokens` that name no project, or several, in line order; they stay in the title. */
+  unmatched: Unmatched[]
 }
+
+/** A `#token` that resolved to no project (smart-title-tokens D4). */
+export type Unmatched = { span: Span; reason: 'none' } | { span: Span; reason: 'ambiguous'; count: number }
 
 function spanOf(line: string, tokens: readonly Token[], from: number, to: number): Span {
   const start = tokens[from].start
@@ -101,6 +106,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let recurrence: { value: string; span: Span } | null = null
   const reminders: { value: ReminderPhrase; span: Span }[] = []
   const labels: { value: string; span: Span }[] = []
+  const unmatched: Unmatched[] = []
 
   let i = 0
   while (i < tokens.length) {
@@ -121,6 +127,9 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
           i++
           continue
         }
+        // A #token that names no project stays in the title; the preview says why (smart-title-tokens D4).
+        const miss = projectMiss(tok.text, ctx.projects)
+        if (miss) unmatched.push({ span: one, ...miss })
       }
       const label = matchLabel(tok.text)
       if (label !== null) {
@@ -268,6 +277,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     recurrence: recurrence?.value ?? null,
     reminders: reminders.map((r) => r.value),
     chips,
+    unmatched,
   }
 }
 

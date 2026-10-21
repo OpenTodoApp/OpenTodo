@@ -547,7 +547,7 @@ describe('parse: escaping and dismissal', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {
@@ -745,5 +745,31 @@ describe('ordinal weekdays (OpenSpec quick-add-nth-weekday 2.4)', () => {
       }
       for (const p of [...v.ordinalArticles, ...v.ordinalOf, ...v.ofMonthWords]) expect(p.trim(), v.code).not.toBe('')
     }
+  })
+})
+
+// Smart title tokens (OpenSpec change smart-title-tokens, design D2 and D4).
+describe('project paths and unmatched tokens', () => {
+  const projects = [
+    { id: 'p-work', name: 'Work' }, { id: 'p-home', name: 'Home' }, { id: 'p-homework', name: 'Homework' },
+    { id: 'p-work-docs', name: 'Docs', parent_id: 'p-work' }, { id: 'p-home-docs', name: 'Docs', parent_id: 'p-home' },
+    { id: 'p-reno', name: 'Home renovation' },
+  ]
+  const at = (line: string) => parse(line, { today: '2026-10-09', languages: ['en'], projects })
+
+  it('#Parent/Child picks the child under that parent; a wrong parent matches nothing', () => {
+    expect(at('Write #Home/Docs').projectId).toBe('p-home-docs')
+    expect(at('Write #work/docs').projectId).toBe('p-work-docs')
+    expect(at('Write #Garden/Docs')).toMatchObject({ projectId: null, title: 'Write #Garden/Docs' })
+  })
+
+  it('a name with spaces is matched by the token a suggestion inserts', () => {
+    expect(at('Paint #HomeRenovation').projectId).toBe('p-reno')
+  })
+
+  it('explains a #token that names no project, or several', () => {
+    expect(at('Rake leaves #gardn').unmatched).toEqual([{ span: { start: 12, end: 18, text: '#gardn' }, reason: 'none' }])
+    expect(at('Fix sink #hom').unmatched).toEqual([expect.objectContaining({ reason: 'ambiguous', count: 3 })])
+    expect(at('Fix sink #home').unmatched).toEqual([])
   })
 })

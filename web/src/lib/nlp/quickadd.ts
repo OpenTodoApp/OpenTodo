@@ -49,12 +49,18 @@ export function labelNameKey(name: string): string {
 export function findLabel(name: string, labels: readonly LabelRef[]): LabelRef | undefined {
   const key = labelNameKey(name)
   if (!key) return undefined
-  let best: LabelRef | undefined
-  for (const l of labels) {
-    if (l.deleted_at || labelNameKey(l.name) !== key) continue
-    if (!best || compareLabels(l, best) < 0) best = l
+  const pick = (same: (l: LabelRef) => boolean) => {
+    let best: LabelRef | undefined
+    for (const l of labels) {
+      if (l.deleted_at || !same(l)) continue
+      if (!best || compareLabels(l, best) < 0) best = l
+    }
+    return best
   }
-  return best
+  // Exactly the name first; then the name with spaces, dashes and underscores folded, so
+  // the `@deep-work` a suggestion inserts finds "deep work" (smart-title-tokens D2).
+  const fold = (s: string) => labelNameKey(s).replace(/[\s_-]+/g, '')
+  return pick((l) => labelNameKey(l.name) === key) ?? pick((l) => fold(l.name) === fold(name))
 }
 
 function compareLabels(a: LabelRef, b: LabelRef): number {
