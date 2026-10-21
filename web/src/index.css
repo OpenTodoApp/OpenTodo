@@ -149,10 +149,10 @@
   --ot-success: oklch(0.5081 0.1049 165.61);
   --ot-success-soft: oklch(0.9793 0.0207 166.11);
   --ot-success-soft-text: oklch(0.4318 0.0865 166.91);
-  --ot-warning: oklch(0.5553 0.1455 49);
+  --ot-warning: oklch(0.53 0.14 49);
   --ot-warning-soft: oklch(0.9869 0.0214 95.28);
   --ot-warning-soft-text: oklch(0.4732 0.1247 46.2);
-  --ot-danger: oklch(0.5771 0.2152 27.33);
+  --ot-danger: oklch(0.535 0.195 27.3);
   --ot-danger-soft: oklch(0.9705 0.0129 17.38);
   --ot-danger-soft-text: oklch(0.4437 0.1613 26.9);
   --ot-info: oklch(0.5 0.1193 242.75);
