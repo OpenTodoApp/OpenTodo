@@ -11,7 +11,8 @@ export const MAIL_CLIENTS = [
     provider: 'gmail',
     hosts: ['mail.google.com'],
     // "Boiler service quote - me@gmail.com - Gmail"; list views are "Inbox (3) - … - Gmail".
-    title: /^(.*) - [^-]+ - Gmail$/,
+    // The account never holds " - "; the subject may.
+    title: /^(.*) - (?:(?! - ).)+ - Gmail$/,
     // #inbox/FMfcgz…, #label/Work/FMfcgz…, #search/boiler/FMfcgz…: the last part is the conversation.
     id: (u) => {
       const parts = u.hash.replace(/^#/, '').split('/').filter(Boolean)
@@ -22,7 +23,8 @@ export const MAIL_CLIENTS = [
     provider: 'outlook',
     hosts: ['outlook.office.com', 'outlook.office365.com', 'outlook.live.com'],
     // "Invoice 42 - Jane Doe - Outlook" or "Invoice 42 - Outlook"; the list is "Mail - Jane Doe - Outlook".
-    title: /^(.*?)(?: - [^-]+)? - Outlook$/,
+    // A name like "Anne-Marie Dupont" holds a hyphen but never " - ".
+    title: /^(.*?)(?: - (?:(?! - ).)+)? - Outlook$/,
     // /mail/inbox/id/AAQk…, /mail/id/AAQk…, /mail/deeplink/read/AAQk…
     id: (u) => {
       const m = u.pathname.match(/\/(?:id|read)\/([^/]+)/)

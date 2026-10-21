@@ -1,0 +1,20 @@
+{
+  "about": "Outlook.com (personal account, outlook.live.com), French interface: a message opened from a deep link.",
+  "url": "https://outlook.live.com/mail/0/deeplink/read/AQMkADAwATZiZmYAZC1hZGQ0LTExExampleLive",
+  "title": "Facture de juin - Outlook",
+  "header": {
+    "name": "Service client",
+    "email": "factures@fournisseur.example"
+  },
+  "expect": {
+    "subject": "Facture de juin",
+    "from": "Service client <factures@fournisseur.example>",
+    "origin": {
+      "kind": "email",
+      "provider": "outlook",
+      "id": "AQMkADAwATZiZmYAZC1hZGQ0LTExExampleLive",
+      "url": "https://outlook.live.com/mail/0/deeplink/read/AQMkADAwATZiZmYAZC1hZGQ0LTExExampleLive",
+      "title": "Facture de juin"
+    }
+  }
+}

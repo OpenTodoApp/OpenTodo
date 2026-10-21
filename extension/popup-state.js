@@ -1,6 +1,69 @@
 // The popup's logic without its page (OpenSpec change extension-v2, design D4;
 // share-capture "Quick save"): what a save sends, in the order `ot add --natural`
 // sends it. Tested with `node --test extension/popup.test.js` against a stubbed API.
+import { descriptionOf } from './capture.js'
+
+/**
+ * What the popup starts with: the capture (captureFromMenu / captureFromTab) and,
+ * for a message open in Gmail or Outlook, its recognition (mail.js): the subject
+ * as the line and "From: …" leading the text. A mail whose header could not be
+ * read still gives the subject and the permalink, without a From line.
+ */
+export function prefill(capture, mail = null) {
+  const from = mail?.from ? `From: ${mail.from}` : ''
+  return {
+    line: mail ? mail.subject : capture.title,
+    text: [from, String(capture.text ?? '').trim()].filter(Boolean).join('\n\n'),
+    url: capture.url ?? '',
+    imageUrl: capture.imageUrl ?? '',
+    mailOrigin: mail?.origin ?? null,
+  }
+}
+
+/** The origin a save sends: the mail's, else the one the parse recognised, else the page as a url origin; null once removed. */
+export function originFor(p, parsed, keep = true) {
+  if (!keep || !p.url) return null
+  return p.mailOrigin ?? parsed?.origin ?? { kind: 'url', url: p.url }
+}
+
+/** The description a save sends: the image address, the text, then the page address when kept. */
+export function descriptionFor(p, keep = true) {
+  return descriptionOf({ imageUrl: p.imageUrl, text: p.text, url: p.url, keepUrl: keep })
+}
+
+/** What the capture screen (/share) gets in Capture screen mode and as the fallback. */
+export function sharePage(p, line, keep = true) {
+  return { title: line, text: descriptionOf({ imageUrl: p.imageUrl, text: p.text, keepUrl: false }), url: keep ? p.url : '' }
+}
+
+/**
+ * The parse a save uses: the one for exactly this line, else a fresh one (the
+ * user pressed Enter before the preview arrived), else none (the route is
+ * unavailable: the line is the title).
+ */
+export async function parseForSave(api, line, last, ask) {
+  if (last && last.line === line) return last.parsed
+  if (!api || !ask) return null
+  try {
+    return await ask(line)
+  } catch {
+    return null
+  }
+}
+
+/** A guard that lets one save run at a time: a second Enter while one is in flight does nothing. */
+export function onceAtATime(fn) {
+  let busy = false
+  return async (...args) => {
+    if (busy) return undefined
+    busy = true
+    try {
+      return await fn(...args)
+    } finally {
+      busy = false
+    }
+  }
+}
 
 /**
  * The labels a save uses: the parse's labels unless the user picked labels in the

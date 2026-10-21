@@ -26,7 +26,8 @@ export function fileNameOf(src) {
 export function captureFromMenu(info, tab) {
   const tabTitle = String(tab?.title ?? '')
   const tabUrl = isWebUrl(tab?.url) ? tab.url : ''
-  if (info?.mediaType === 'image' && info.srcUrl) {
+  // An inline (data:) image has no address worth keeping: the page is captured instead.
+  if (info?.mediaType === 'image' && isWebUrl(info.srcUrl)) {
     return clip({ title: fileNameOf(info.srcUrl), text: '', url: tabUrl, imageUrl: info.srcUrl })
   }
   if (info?.linkUrl) {
