@@ -1,6 +1,6 @@
 ## 1. Layout check
 
-- [x] 1.1 Run the layout check as a matrix over `chromium` and `webkit` (`ENGINES`), installing only that engine, with `layout-report-<engine>` artifacts
+- [x] 1.1 Run the layout check as a matrix: Chromium at all widths, WebKit once per width (`ENGINES`, `WIDTHS`); every leg installs Chromium, which seeds the data; artifacts `layout-report-<engine>-<n>`
 - [x] 1.2 Depend on `web` instead of `server`; run `make e2e` on the Chromium job only
 
 ## 2. UI check

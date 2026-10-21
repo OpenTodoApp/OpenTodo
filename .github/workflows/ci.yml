@@ -135,10 +135,10 @@ jobs:
   # under 44 px (OpenSpec change mobile-layout). Every screen and overlay, in
   # light and dark, and the docs website are also checked with axe-core
   # (serious and critical issues fail). Screenshots of failures are uploaded as the
-  # layout-report-<engine> artifact. Then, on the Chromium leg, the browser end-to-end
+  # layout-report-<engine>-<n> artifact. Then, on the Chromium leg, the browser end-to-end
   # checks: two devices, an offline edit converging, the PWA, inbox triage and saved
-  # views (`make e2e`). One job per engine, so the two run side by side; each builds its
-  # own server binary and only needs the web build.
+  # views (`make e2e`). One job for Chromium and one per width for WebKit, side by
+  # side; each builds its own server binary and only needs the web build.
   layout:
     name: Layout check (${{ matrix.name }})
     runs-on: ubuntu-latest
@@ -150,8 +150,11 @@ jobs:
       matrix:
         include:
           # The script seeds its data through Chromium, so every leg installs it.
-          - { engine: chromium, name: Chromium, browsers: chromium }
-          - { engine: webkit, name: WebKit, browsers: chromium webkit }
+          # WebKit is about twice as slow on the runner, so it is split by width.
+          - { engine: chromium, name: Chromium, browsers: chromium, widths: '360,390,768' }
+          - { engine: webkit, name: WebKit 360 px, browsers: chromium webkit, widths: '360' }
+          - { engine: webkit, name: WebKit 390 px, browsers: chromium webkit, widths: '390' }
+          - { engine: webkit, name: WebKit 768 px, browsers: chromium webkit, widths: '768' }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -177,6 +180,7 @@ jobs:
       - name: Run the layout check against a fresh server
         env:
           ENGINES: ${{ matrix.engine }}
+          WIDTHS: ${{ matrix.widths }}
         run: |
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
@@ -187,7 +191,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: layout-report-${{ matrix.engine }}
+          name: layout-report-${{ matrix.engine }}-${{ strategy.job-index }}
           path: layout-report
 
   # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
