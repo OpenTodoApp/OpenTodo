@@ -104,10 +104,11 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	loc := opts.Location()
 	me := strings.ToLower(strings.TrimSpace(opts.importerEmail))
 
-	// One file is one project: named after the archive entry, else the target.
+	// One file is one project: named after the archive entry or the uploaded
+	// file, else the target.
 	projSource := ""
-	if opts.entryName != "" {
-		name := strings.TrimSuffix(path.Base(opts.entryName), path.Ext(opts.entryName))
+	if file := firstNonEmpty(opts.entryName, opts.fileName); strings.TrimSpace(file) != "" {
+		name := strings.TrimSuffix(path.Base(file), path.Ext(file))
 		projSource = "asana:project:" + name
 		out.Rows = append(out.Rows, Row{Line: 1, Kind: KindProject, SourceID: projSource, Title: name})
 	}

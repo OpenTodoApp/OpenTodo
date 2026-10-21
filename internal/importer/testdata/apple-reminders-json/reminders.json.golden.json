@@ -1,0 +1,96 @@
+{
+  "format": "apple-reminders-json",
+  "notes": [
+    "the list \"Reminders\" is your default list; its reminders go to the target project (the Inbox unless you choose one)"
+  ],
+  "totals": {
+    "rows": 7,
+    "create": 7,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 2,
+    "newLabels": 2,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 1,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 10,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "apple-reminders:x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A61",
+      "kind": "task",
+      "title": "Reminder one",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "apple-reminders:list:list two",
+      "kind": "project",
+      "title": "List two",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "apple-reminders:x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A62",
+      "kind": "task",
+      "title": "Reminder two",
+      "project": "List two",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "apple-reminders:x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A63",
+      "kind": "task",
+      "title": "Subtask one",
+      "project": "List two",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "apple-reminders:x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A64",
+      "kind": "task",
+      "title": "Subtask two",
+      "project": "List two",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "apple-reminders:list:list three",
+      "kind": "project",
+      "title": "List three",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "apple-reminders:x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A65",
+      "kind": "task",
+      "title": "Reminder three",
+      "project": "List three",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0004: name=\"tag-one\" created_at=1791979200000",
+    "label id-0005: name=\"flagged\" created_at=1791979200000",
+    "project id-0001: name=\"List two\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"List three\" archived=false created_at=1791979200000",
+    "task id-0003: title=\"Reminder one\" description=\"Note one\" priority=1 created_at=1791612000000 due={\"date\":\"2026-11-03\",\"time\":\"16:30\"} origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A61\"} labels=[\"id-0004\",\"id-0005\"]",
+    "task id-0007: title=\"Reminder two\" description=\"\" priority=2 created_at=1791702000000 project_id=\"id-0001\" due={\"date\":\"2026-11-04\"} origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A62\"} labels=[]",
+    "task id-0008: title=\"Subtask one\" description=\"\" priority=3 created_at=1791702060000 project_id=\"id-0001\" parent_id=\"id-0007\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A63\"} completed_at=1791792000000 labels=[]",
+    "task id-0009: title=\"Subtask two\" description=\"\" priority=4 created_at=1791702120000 project_id=\"id-0001\" parent_id=\"id-0007\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A64\"} labels=[]",
+    "task id-0010: title=\"Reminder three\" description=\"\" priority=4 created_at=1791795600000 project_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"x-apple-reminder://8C6A2F7E-1B3D-4E5F-9A0B-1C2D3E4F5A65\"} labels=[]",
+    "attachment id-0006: task_id=\"id-0003\" author_id=\"user-1\" comment_id=null name=\"example.com-page-one\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://example.com/page-one\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
+  ]
+}

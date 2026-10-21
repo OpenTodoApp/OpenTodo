@@ -1,0 +1,126 @@
+{
+  "format": "apple-reminders-json",
+  "notes": [
+    "the list \"Reminders\" is your default list; its reminders go to the target project (the Inbox unless you choose one)"
+  ],
+  "totals": {
+    "rows": 10,
+    "create": 9,
+    "update": 0,
+    "skip": 0,
+    "error": 1,
+    "possibleDuplicates": 0,
+    "warnings": 1,
+    "newProjects": 2,
+    "newLabels": 2,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 11,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "apple-reminders:list:groceries",
+      "kind": "project",
+      "title": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "apple-reminders:g1",
+      "kind": "task",
+      "title": "Milk",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "apple-reminders:g2",
+      "kind": "task",
+      "title": "Bread",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "apple-reminders:list:work",
+      "kind": "project",
+      "title": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "apple-reminders:w1",
+      "kind": "task",
+      "title": "Report",
+      "project": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "apple-reminders:w1a",
+      "kind": "task",
+      "title": "Draft",
+      "project": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "apple-reminders:w1b",
+      "kind": "task",
+      "title": "Review",
+      "project": "Work",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "apple-reminders:w2",
+      "kind": "task",
+      "title": "Bad values",
+      "project": "Work",
+      "outcome": "create",
+      "warnings": [
+        "priority \"42\" not recognised; imported as p4",
+        "attachment \"notes://local/1\" dropped (only links can be imported; use the original app's export of files)",
+        "due date \"tomorrow-ish\" not understood; imported without a due date"
+      ]
+    },
+    {
+      "row": 7,
+      "sourceId": "apple-reminders:w3",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "title is required"
+    },
+    {
+      "row": 8,
+      "sourceId": "apple-reminders:r1",
+      "kind": "task",
+      "title": "Default list item",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0005: name=\"bakery\" created_at=1791979200000",
+    "label id-0006: name=\"flagged\" created_at=1791979200000",
+    "project id-0001: name=\"Groceries\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Work\" archived=false created_at=1791979200000",
+    "task id-0003: title=\"Milk\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-03\",\"time\":\"08:00\"} origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"g1\"} labels=[]",
+    "task id-0004: title=\"Bread\" description=\"\" priority=1 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"g2\"} labels=[\"id-0005\",\"id-0006\"]",
+    "task id-0007: title=\"Report\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"w1\"} labels=[]",
+    "task id-0008: title=\"Draft\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0007\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"w1a\"} completed_at=1792529100000 labels=[]",
+    "task id-0009: title=\"Review\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0007\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"w1b\"} labels=[]",
+    "task id-0010: title=\"Bad values\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"w2\"} labels=[]",
+    "task id-0011: title=\"Default list item\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"apple-reminders\",\"id\":\"r1\"} labels=[]"
+  ]
+}

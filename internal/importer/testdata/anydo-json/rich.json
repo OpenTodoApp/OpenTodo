@@ -1,0 +1,16 @@
+{
+  "categories": [
+    { "id": "personal", "name": "Personal", "isDefault": true },
+    { "id": "work", "name": "Work", "isDefault": false }
+  ],
+  "tasks": [
+    { "globalTaskId": "midnight", "categoryId": "work", "title": "Due at midnight", "status": "UNCHECKED", "priority": "Normal", "dueDate": 1793664000000 },
+    { "globalTaskId": "monthly", "categoryId": "work", "title": "Monthly", "status": "UNCHECKED", "priority": "Normal", "dueDate": 1793664000000, "repeatingMethod": "TASK_REPEAT_MONTH" },
+    { "globalTaskId": "odd-repeat", "categoryId": "work", "title": "Odd repeat", "status": "DONE", "priority": "Urgent", "repeatingMethod": "TASK_REPEAT_FORTNIGHT", "completionDate": 1760342400000 },
+    { "globalTaskId": "shared", "categoryId": "work", "title": "Shared and attached", "status": "UNCHECKED", "priority": "Normal", "sharedMembers": [ { "email": "a@example.test" } ], "attachments": [ { "name": "plan.pdf" } ], "momentPlan": { "date": 1793664000000 } },
+    { "globalTaskId": "nameless", "categoryId": "personal", "title": "", "status": "UNCHECKED" },
+    { "globalTaskId": "orphan", "categoryId": "unknown", "title": "Unknown category", "status": "UNCHECKED", "parentGlobalTaskId": "missing" },
+    { "globalTaskId": "gone", "categoryId": "work", "title": "Deleted", "status": "DELETED" },
+    { "globalTaskId": "gone-2", "categoryId": "work", "title": "Deleted too", "status": "DELETED" }
+  ]
+}

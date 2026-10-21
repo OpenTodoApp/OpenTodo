@@ -1,0 +1,14 @@
+Task ID,Created At,Completed At,Last Modified,Name,Section/Column,Assignee,Assignee Email,Start Date,Due Date,Due Time,Tags,Notes,Projects,Parent task,Blocked By (Dependencies),Blocking (Dependencies),Collaborators,Budget,Stage,Approved,Ordered on,Supplier notes
+101,2026-09-28,,2026-10-10,Write brief,Backlog,,,,2026-10-24,14:30,"design, urgent",First draft,,,,,,1200,Draft,Yes,2026-10-01,Call before noon
+102,2026-09-28,,2026-10-11,Order paint,Backlog,someone@example.test,someone@example.test,,soon,,,,Other project,,,,a@example.test,80.5,Review,No,2026-10-02,Second supplier note
+103,2026-09-29,2026-10-05T16:00:00Z,2026-10-05,Paint the walls,In progress,,,,2026-11-05,,,Two coats,,Write brief,Order paint,,,300,Draft,Yes,2026-10-03,Third supplier note
+104,2026-09-30,,2026-10-12,Orphan subtask,In progress,,,,,,,,,Not in this file,,,,,,,,
+105,2026-09-30,,2026-10-12,Choose tiles,In progress,,,2026-10-20,,,,,,,,,,15,Done,No,,Fourth supplier note
+106,2026-09-30,,2026-10-12,,In progress,,,,,,,,,,,,,,,,,
+107,2026-10-01,,2026-10-12,Clean up,In progress,,,,,,,,,,,,,,Draft,,,Fifth supplier note
+108,2026-10-01,,2026-10-12,Buy brushes,In progress,,,,,,,,,,,,,,Review,,,Sixth supplier note
+109,2026-10-01,,2026-10-12,Rent a ladder,In progress,,,,,,,,,,,,,,Done,,,Seventh supplier note
+110,2026-10-01,,2026-10-12,Book the painter,In progress,,,,,,,,,,,,,,Draft,,,Eighth supplier note
+111,2026-10-01,,2026-10-12,Protect the floor,In progress,,,,,,,,,,,,,,Draft,,,Ninth supplier note
+112,2026-10-01,,2026-10-12,Pick a colour,In progress,,,,,,,,,,,,,,Review,,,Tenth supplier note
+113,2026-10-01,,2026-10-12,Check the weather,In progress,,,,,,,,,,,,,,Draft,,,Eleventh supplier note

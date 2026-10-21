@@ -1,0 +1,112 @@
+{
+  "format": "google-tasks-json",
+  "notes": [
+    "the list \"Tasks\" is your default list; its tasks go to the target project (the Inbox unless you choose one)",
+    "1 deleted item skipped"
+  ],
+  "totals": {
+    "rows": 8,
+    "create": 7,
+    "update": 0,
+    "skip": 0,
+    "error": 1,
+    "possibleDuplicates": 0,
+    "warnings": 3,
+    "newProjects": 1,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 1,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 8,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "google-tasks:rich-1",
+      "kind": "task",
+      "title": "Due west of UTC",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "google-tasks:rich-3",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "title is required (list \"Tasks\", item 3)"
+    },
+    {
+      "row": 4,
+      "sourceId": "google-tasks:rich-4",
+      "kind": "task",
+      "title": "Bad due",
+      "outcome": "create",
+      "warnings": [
+        "due date \"next week\" not understood; imported without a due date"
+      ]
+    },
+    {
+      "row": 2,
+      "sourceId": "google-tasks:list:groceries",
+      "kind": "project",
+      "title": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "google-tasks:fruit",
+      "kind": "task",
+      "title": "Fruit",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "google-tasks:apples",
+      "kind": "task",
+      "title": "Apples",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "google-tasks:orphan",
+      "kind": "task",
+      "title": "Parent elsewhere",
+      "project": "Groceries",
+      "outcome": "create",
+      "warnings": [
+        "parent \"google-tasks:missing\" not found; imported as a top-level task"
+      ]
+    },
+    {
+      "row": 8,
+      "sourceId": "google-tasks:linked",
+      "kind": "task",
+      "title": "With links",
+      "project": "Groceries",
+      "outcome": "create",
+      "warnings": [
+        "attachment \"Local\" dropped (only links can be imported; use the original app's export of files)"
+      ]
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"Groceries\" archived=false created_at=1791979200000",
+    "task id-0002: title=\"Due west of UTC\" description=\"First line\\nSecond line\" priority=4 created_at=1791979200000 due={\"date\":\"2026-11-03\"} origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"rich-1\"} labels=[]",
+    "task id-0003: title=\"Bad due\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"rich-4\"} labels=[]",
+    "task id-0004: title=\"Fruit\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"fruit\"} labels=[]",
+    "task id-0005: title=\"Apples\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0004\" origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"apples\"} completed_at=1790845920000 labels=[]",
+    "task id-0006: title=\"Parent elsewhere\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"orphan\"} labels=[]",
+    "task id-0007: title=\"With links\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"google-tasks\",\"id\":\"linked\"} labels=[]",
+    "attachment id-0008: task_id=\"id-0007\" author_id=\"user-1\" comment_id=null name=\"Thread\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://mail.example.com/thread/1\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
+  ]
+}

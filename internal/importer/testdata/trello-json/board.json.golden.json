@@ -1,0 +1,126 @@
+{
+  "format": "trello-json",
+  "notes": [],
+  "totals": {
+    "rows": 9,
+    "create": 9,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 1,
+    "newProjects": 1,
+    "newLabels": 3,
+    "newSections": 3,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 1,
+    "fields": 1,
+    "timeEntries": 0,
+    "places": 0,
+    "entities": 14,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "trello:board:6527f0a1c3b4d5e6f7a8b9c0",
+      "kind": "project",
+      "title": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "trello:list:6527f0a1c3b4d5e6f7a8b9e1",
+      "kind": "section",
+      "title": "List one",
+      "project": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "trello:list:6527f0a1c3b4d5e6f7a8b9e2",
+      "kind": "section",
+      "title": "List two",
+      "project": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "trello:list:6527f0a1c3b4d5e6f7a8b9e3",
+      "kind": "section",
+      "title": "List three",
+      "project": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "trello:6527f0a1c3b4d5e6f7a8b9f1",
+      "kind": "task",
+      "title": "Card one",
+      "project": "Board one",
+      "outcome": "create",
+      "warnings": [
+        "attachment \"File one.pdf\" dropped (uploaded files are not in the export; only links are imported)",
+        "1 member dropped (only your own account can be assigned by an import)",
+        "comment authors cannot be kept; 2 comments added to the description"
+      ]
+    },
+    {
+      "row": 3,
+      "sourceId": "trello:check:6527f0a1c3b4d5e6f7a8ba11",
+      "kind": "task",
+      "title": "Item one",
+      "project": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "trello:check:6527f0a1c3b4d5e6f7a8ba12",
+      "kind": "task",
+      "title": "Item two",
+      "project": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "trello:6527f0a1c3b4d5e6f7a8b9f2",
+      "kind": "task",
+      "title": "Card two",
+      "project": "Board one",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "trello:6527f0a1c3b4d5e6f7a8b9f3",
+      "kind": "task",
+      "title": "Card three",
+      "project": "Board one",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0006: name=\"Label one\" created_at=1791979200000",
+    "label id-0007: name=\"yellow\" created_at=1791979200000",
+    "label id-0012: name=\"Label two\" created_at=1791979200000",
+    "project id-0001: name=\"Board one\" archived=false created_at=1791979200000",
+    "section id-0002: name=\"List one\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0003: name=\"List two\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0004: name=\"List three\" project_id=\"id-0001\" created_at=1791979200000",
+    "field id-0014: name=\"Field one\" project_id=\"id-0001\" type=\"number\" options=\"\" created_at=1791979200000",
+    "task id-0005: title=\"Card one\" description=\"Description one\\n\\nComments\\n\\n- Person one, 2026-10-10: Comment one\\n- Person one, 2026-10-12: Comment two\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-05\",\"time\":\"17:00\"} origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"6527f0a1c3b4d5e6f7a8b9f1\",\"url\":\"https://trello.com/c/AbCd1234\"} labels=[\"id-0006\",\"id-0007\"] section_id=\"id-0002\" fields.id-0014=8",
+    "task id-0009: title=\"Item one\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0005\" completed_at=1791979200000 labels=[]",
+    "task id-0010: title=\"Item two\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0005\" labels=[]",
+    "task id-0011: title=\"Card two\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-10-01\",\"time\":\"10:00\"} origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"6527f0a1c3b4d5e6f7a8b9f2\",\"url\":\"https://trello.com/c/EfGh5678\"} completed_at=1791979200000 labels=[\"id-0012\"] section_id=\"id-0003\"",
+    "task id-0013: title=\"Card three\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"trello\",\"id\":\"6527f0a1c3b4d5e6f7a8b9f3\",\"url\":\"https://trello.com/c/IjKl9012\"} completed_at=1790769600000 labels=[] section_id=\"id-0004\"",
+    "attachment id-0008: task_id=\"id-0005\" author_id=\"user-1\" comment_id=null name=\"Link one\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://example.com/spec\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
+  ]
+}

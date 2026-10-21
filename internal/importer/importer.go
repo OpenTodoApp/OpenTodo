@@ -381,6 +381,7 @@ type Options struct {
 	importerEmail string    // the importing account's email (Linear assignees)
 	importerName  string    // the importing account's display name (Trello members)
 	entryName     string    // archive entry being read
+	fileName      string    // the uploaded file's name (an Asana CSV names its project)
 	thingsWAL     []byte    // a Things database's WAL from the same archive
 	// ownFiles are the attachment files of an own ZIP export, by attachment id.
 	ownFiles map[string][]byte
@@ -431,6 +432,12 @@ func (o *Options) Normalize() error {
 	}
 	o.TargetProject = strings.TrimSpace(o.TargetProject)
 	return nil
+}
+
+// SetFileName records the uploaded file's name; a profile whose file is one
+// project (an Asana CSV) names the project after it.
+func (o *Options) SetFileName(name string) {
+	o.fileName = strings.TrimSpace(name)
 }
 
 // Location returns the normalised time zone (UTC before Normalize).

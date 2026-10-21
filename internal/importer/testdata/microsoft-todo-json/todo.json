@@ -1,0 +1,83 @@
+[
+  {
+    "@odata.etag": "W/\"Ve3Ab8uYk0y5gk7b1Q0aHwABqHq3Pw==\"",
+    "displayName": "Tasks",
+    "isOwner": true,
+    "isShared": false,
+    "wellknownListName": "defaultList",
+    "id": "AAMkADAwATM3ZmYAZS0wMDACLTAwAC4AAAAAAMb0kpHOWntCqDDrFIdtsRsBAMHJ7q1ElX5Gg9P8lE0P0n0AAAIBEgAAAA==",
+    "tasks": [
+      {
+        "@odata.etag": "W/\"Ve3Ab8uYk0y5gk7b1Q0aHwABqHqnAA==\"",
+        "importance": "high",
+        "isReminderOn": true,
+        "status": "notStarted",
+        "title": "Task one",
+        "createdDateTime": "2026-10-10T07:12:44.1234567Z",
+        "lastModifiedDateTime": "2026-10-12T08:01:12.7654321Z",
+        "hasAttachments": false,
+        "categories": ["Category one"],
+        "id": "AAMkADAwATM3ZmYAZS0wMDACLTAwAAoARgAAA1",
+        "body": { "content": "<p>Body one</p><p>Second paragraph &amp; more</p>", "contentType": "html" },
+        "dueDateTime": { "dateTime": "2026-11-03T00:00:00.0000000", "timeZone": "Pacific Standard Time" },
+        "reminderDateTime": { "dateTime": "2026-11-03T09:00:00.0000000", "timeZone": "W. Europe Standard Time" },
+        "recurrence": {
+          "pattern": { "type": "weekly", "interval": 1, "month": 0, "dayOfMonth": 0, "daysOfWeek": ["monday", "wednesday"], "firstDayOfWeek": "sunday", "index": "first" },
+          "range": { "type": "noEnd", "startDate": "2026-11-02", "endDate": "0001-01-01", "recurrenceTimeZone": "W. Europe Standard Time", "numberOfOccurrences": 0 }
+        },
+        "checklistItems": [],
+        "linkedResources": [
+          { "id": "a1b2c3d4", "webUrl": "https://outlook.example.com/mail/item/1", "applicationName": "Outlook", "displayName": "Link one", "externalId": "1" }
+        ]
+      },
+      {
+        "importance": "normal",
+        "isReminderOn": false,
+        "status": "completed",
+        "title": "Task two",
+        "createdDateTime": "2026-09-30T10:00:00.0000000Z",
+        "completedDateTime": { "dateTime": "2026-10-02T00:00:00.0000000", "timeZone": "UTC" },
+        "hasAttachments": true,
+        "categories": [],
+        "id": "AAMkADAwATM3ZmYAZS0wMDACLTAwAAoARgAAA2",
+        "body": { "content": "", "contentType": "text" },
+        "checklistItems": [],
+        "linkedResources": []
+      }
+    ]
+  },
+  {
+    "displayName": "List two",
+    "isOwner": true,
+    "isShared": false,
+    "wellknownListName": "none",
+    "id": "AAMkADAwATM3ZmYAZS0wMDACLTAwAC4AAAAAAMb0kpHOWntCqDDrFIdtsRsBAMHJ7q1ElX5Gg9P8lE0P0n0AAAIBEgAAAB==",
+    "tasks": [
+      {
+        "importance": "low",
+        "isReminderOn": false,
+        "status": "notStarted",
+        "title": "Task three",
+        "createdDateTime": "2026-10-11T18:00:00.0000000Z",
+        "hasAttachments": false,
+        "categories": [],
+        "id": "AAMkADAwATM3ZmYAZS0wMDACLTAwAAoARgAAA3",
+        "body": { "content": "Plain body", "contentType": "text" },
+        "startDateTime": { "dateTime": "2026-10-28T00:00:00.0000000", "timeZone": "W. Europe Standard Time" },
+        "checklistItems": [
+          { "displayName": "Step one", "createdDateTime": "2026-10-11T18:00:00Z", "checkedDateTime": "2026-10-12T08:00:00Z", "isChecked": true, "id": "c1" },
+          { "displayName": "Step two", "createdDateTime": "2026-10-11T18:00:00Z", "isChecked": false, "id": "c2" }
+        ],
+        "linkedResources": []
+      }
+    ]
+  },
+  {
+    "displayName": "Flagged email",
+    "isOwner": true,
+    "isShared": false,
+    "wellknownListName": "flaggedEmails",
+    "id": "AAMkADAwATM3ZmYAZS0wMDACLTAwAC4AAAAAAMb0kpHOWntCqDDrFIdtsRsBAMHJ7q1ElX5Gg9P8lE0P0n0AAAIBEgAAAC==",
+    "tasks": []
+  }
+]
