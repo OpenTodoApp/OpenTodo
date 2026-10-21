@@ -251,7 +251,7 @@ func TestResourcesListShape(t *testing.T) {
 		}
 		uris = append(uris, m["uri"].(string))
 	}
-	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://integrations/issues" {
+	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://integrations/issues" {
 		t.Fatalf("resources = %v", uris)
 	}
 	tpl := f.call("u1", "resources/templates/list", nil)["result"].(map[string]any)
@@ -335,7 +335,7 @@ func TestListTasksInvalidPriority32602(t *testing.T) {
 	f := newFixture(t)
 	for _, a := range []map[string]any{
 		{"priority": 7}, {"priority": 0}, {"priority": 1.5}, {"priority": "high"},
-		{"view": "someday"}, {"due_from": "10/03/2026"}, {"limit": 0}, {"cursor": "!!"}, {"project_id": "nope"},
+		{"view": "later"}, {"due_from": "10/03/2026"}, {"limit": 0}, {"cursor": "!!"}, {"project_id": "nope"},
 		{"completed_after": "yesterday"}, {"completed_before": "2026-02-30"},
 	} {
 		r := f.call("u1", "tools/call", map[string]any{"name": "list_tasks", "arguments": a})
@@ -538,7 +538,7 @@ func TestReadResources(t *testing.T) {
 	if task, _ := read("opentodo://tasks/t1"); ut(task["task"].(map[string]any))["title"] != "Water" {
 		t.Fatalf("task = %v", task)
 	}
-	for _, uri := range []string{"opentodo://tasks/t2", "opentodo://tasks/nope", "opentodo://projects/nope", "opentodo://views/someday", "https://example.com/x"} {
+	for _, uri := range []string{"opentodo://tasks/t2", "opentodo://tasks/nope", "opentodo://projects/nope", "opentodo://views/later", "https://example.com/x"} {
 		if _, r := read(uri); errCode(r) != CodeResourceNotFound {
 			t.Fatalf("%s: %v", uri, r)
 		}

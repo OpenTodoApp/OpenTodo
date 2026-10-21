@@ -31,10 +31,14 @@
         "readOnlyHint": true,
         "title": "List tasks"
       },
-      "description": "List tasks with filters. view: all (default), inbox (open tasks without a project that are not scheduled: no do-on date, start date or Someday), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
+      "description": "List tasks with filters. view: all (default), inbox (open tasks without a project that are not scheduled: no do-on date, start date or Someday), today (open tasks due today or overdue, overdue first), upcoming (open tasks due after today), someday (open tasks parked in Someday) or anytime (open tasks with no do-on date, deadline or start). blocked: true lists only tasks waiting for an open task, false only the others. Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
+          "blocked": {
+            "description": "true: only tasks waiting for an open task; false: only tasks that are not.",
+            "type": "boolean"
+          },
           "completed_after": {
             "description": "Only tasks completed at or after this time: YYYY-MM-DD (start of that day in timezone), an RFC 3339 time or Unix milliseconds. Implies completed tasks only.",
             "type": "string"
@@ -92,7 +96,9 @@
               "all",
               "inbox",
               "today",
-              "upcoming"
+              "upcoming",
+              "someday",
+              "anytime"
             ],
             "type": "string"
           }
