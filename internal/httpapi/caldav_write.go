@@ -114,6 +114,11 @@ func (d *davRequest) put() {
 	case errors.Is(err, caldav.ErrInvalidObject):
 		d.precondition(http.StatusForbidden, "c", "valid-calendar-object-resource")
 		return
+	case errors.Is(err, caldav.ErrInvalidValue):
+		// Well-formed calendar data with a value the task cannot hold (an
+		// estimate beyond a week): refused, nothing written (caldav-interop).
+		d.precondition(http.StatusForbidden, "c", "valid-calendar-data")
+		return
 	case err != nil:
 		d.precondition(http.StatusUnsupportedMediaType, "c", "valid-calendar-data")
 		return
@@ -187,34 +192,64 @@ func projectValue(cal string) json.RawMessage {
 	return mustJSON(cal)
 }
 
-// fields maps an inbound VTODO onto task field values (everything but
-// created_at, completed_at and the recurrence decision, which depend on the
-// current task). New labels needed for unknown categories are returned as ops.
-func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entity, ts int64) (map[string]json.RawMessage, []opsync.Op) {
+// davFields is what an inbound VTODO writes: the task's field values (every
+// field but created_at, completed_at and the recurrence decision, which depend
+// on the current task), the ops that must precede the task's (new labels),
+// the reminder ops that follow them, and the reminders those ops write.
+type davFields struct {
+	f       map[string]json.RawMessage
+	pre     []opsync.Op
+	post    []opsync.Op
+	touched map[string]bool
+}
+
+// dateWrites is the "Inbound date shapes" table (OpenSpec change
+// caldav-interop, design D1): what each shape writes to due and deadline,
+// given whether the task has a deadline now. A date the shape does not name is
+// never written, so it is never cleared by omission.
+func dateWrites(in *caldav.Inbound, current opsync.Entity) (dueVal, deadlineVal json.RawMessage, writeDue, writeDeadline bool) {
+	hasDeadline := current != nil && !isNullish(current["deadline"])
+	value := func() json.RawMessage { return mustJSON(due{Date: in.Due.Date, Time: in.Due.Time, TZ: in.Due.TZ}) }
+	switch in.Shape {
+	case caldav.ShapeDueOnly:
+		if hasDeadline {
+			// Served as the deadline: it is the deadline, and no due date.
+			return json.RawMessage("null"), mustJSON(in.Due.Date), true, true
+		}
+		return value(), nil, true, false
+	case caldav.ShapeStartDueEqual, caldav.ShapeStartDuration:
+		return value(), nil, true, false
+	case caldav.ShapeStartDue:
+		return value(), mustJSON(in.Deadline), true, true
+	case caldav.ShapeStartAlone:
+		return nil, nil, false, false
+	}
+	// Neither date nor duration: the due date was removed; the deadline stays.
+	return json.RawMessage("null"), nil, true, false
+}
+
+// fields maps an inbound VTODO onto task field values and the reminder ops of
+// its alarms. id is the task the reminders belong to; current is nil on create.
+func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entity, id string, ts int64) (davFields, error) {
 	f := map[string]json.RawMessage{
 		"title":       mustJSON(in.Title),
 		"description": mustJSON(in.Description),
 		"priority":    mustJSON(in.Priority),
 	}
-	if in.Due != nil {
-		f["due"] = mustJSON(due{Date: in.Due.Date, Time: in.Due.Time, TZ: in.Due.TZ})
-	} else {
-		f["due"] = json.RawMessage("null")
-	}
-	// Deadlines (design D6): DTSTART and a differing DUE carry both dates. A DUE
-	// alone on a task that has a deadline is the deadline, as it was served;
-	// without DUE the deadline is gone. The field is only written when a
-	// deadline is or was set, so tasks without one keep their op footprint.
-	deadline := json.RawMessage("null")
+	dueVal, deadlineVal, writeDue, writeDeadline := dateWrites(in, current)
 	switch {
-	case in.Deadline != "":
-		deadline = mustJSON(in.Deadline)
-	case in.DueOnly && !isNullish(current["deadline"]):
-		deadline = mustJSON(in.Due.Date)
+	case writeDue:
+		f["due"] = dueVal
+	case current == nil:
 		f["due"] = json.RawMessage("null")
 	}
-	if !isNullish(deadline) || !isNullish(current["deadline"]) {
-		f["deadline"] = deadline
+	if writeDeadline {
+		f["deadline"] = deadlineVal
+	}
+	// ESTIMATED-DURATION (caldav-interop "Estimate mapping"): only a property
+	// the client sent changes the estimate; absence is not removal.
+	if in.EstimateMinutes != nil {
+		f["estimate_minutes"] = mustJSON(*in.EstimateMinutes)
 	}
 	// X-OPENTODO-START / -EVENING (someday-and-evening D7): only a property the
 	// client sent changes the field; absence leaves it alone.
@@ -225,6 +260,17 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 		f["evening"] = mustJSON(*in.Evening)
 	}
 	extra := in.Extra
+	alarms, err := d.alarmWrites(v, in, current, id, f, ts)
+	if err != nil {
+		return davFields{}, err
+	}
+	for _, l := range alarms.kept {
+		if extra == "" {
+			extra = l
+		} else {
+			extra += "\r\n" + l
+		}
+	}
 	f["parent_id"] = json.RawMessage("null")
 	if in.ParentUID != "" {
 		if p := v.taskByUID(in.ParentUID); p != nil {
@@ -316,7 +362,7 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 		labels = []string{}
 	}
 	f["labels"] = mustJSON(labels)
-	return f, extraOps
+	return davFields{f: f, pre: extraOps, post: alarms.ops, touched: alarms.touched}, nil
 }
 
 func sameLabels(a, b json.RawMessage) bool {
@@ -365,7 +411,11 @@ func (d *davRequest) create(v *davView, in *caldav.Inbound) (string, error) {
 
 func (d *davRequest) applyCreate(v *davView, in *caldav.Inbound, id, cal string) (opsync.ApplyResult, error) {
 	ts := d.s.opTS()
-	f, extra := d.fields(v, in, nil, ts)
+	df, err := d.fields(v, in, nil, id, ts)
+	if err != nil {
+		return opsync.ApplyResult{}, err
+	}
+	f, extra := df.f, df.pre
 	now := time.Now().UnixMilli()
 	f["project_id"] = projectValue(cal)
 	f["position"] = mustJSON(now)
@@ -390,6 +440,7 @@ func (d *davRequest) applyCreate(v *davView, in *caldav.Inbound, id, cal string)
 	for field, val := range f {
 		ops = append(ops, d.op("task", id, field, val, ts))
 	}
+	ops = append(ops, df.post...)
 	return d.apply(ops)
 }
 
@@ -411,7 +462,11 @@ func (d *davRequest) recordName(id, name, uid string) error {
 func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (string, error) {
 	id := idOf(cur["id"])
 	ts := d.s.opTS()
-	f, extraOps := d.fields(v, in, cur, ts)
+	df, err := d.fields(v, in, cur, id, ts)
+	if err != nil {
+		return "", err
+	}
+	f, extraOps := df.f, df.pre
 	body := map[string]json.RawMessage{}
 	for field, val := range f {
 		same := opsync.SameJSON(val, cur[field])
@@ -479,11 +534,18 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	if err != nil {
 		return "", err
 	}
-	extra = append(extra, rops...)
+	// Reminders the alarms wrote already carry their firing time from this
+	// batch's dates (design D6); recompute only the others.
+	for _, op := range rops {
+		if !df.touched[op.EntityID] {
+			extra = append(extra, op)
+		}
+	}
 	ops := extra
 	for field, val := range body {
 		ops = append(ops, d.op("task", id, field, val, ts))
 	}
+	ops = append(ops, df.post...)
 	if len(ops) == 0 {
 		return id, d.recordMoveName(id, moving, in.UID)
 	}
@@ -511,7 +573,11 @@ func (d *davRequest) recordMoveName(id string, moving bool, uid string) error {
 func (d *davRequest) copyMove(v *davView, cur opsync.Entity, in *caldav.Inbound) (string, error) {
 	id := ids.New()
 	ts := d.s.opTS()
-	f, extraOps := d.fields(v, in, nil, ts)
+	df, err := d.fields(v, in, nil, id, ts)
+	if err != nil {
+		return "", err
+	}
+	f, extraOps := df.f, df.pre
 	f["project_id"] = projectValue(d.path.calendar)
 	f["position"] = cur["position"]
 	f["created_at"] = cur["created_at"]
@@ -533,13 +599,14 @@ func (d *davRequest) copyMove(v *davView, cur opsync.Entity, in *caldav.Inbound)
 	if isNullish(f["recurrence"]) {
 		f["recurrence"] = json.RawMessage("null")
 	}
-	if est, ok := cur["estimate_minutes"]; ok {
+	if est, ok := cur["estimate_minutes"]; ok && f["estimate_minutes"] == nil {
 		f["estimate_minutes"] = est
 	}
 	ops := extraOps
 	for field, val := range f {
 		ops = append(ops, d.op("task", id, field, val, ts))
 	}
+	ops = append(ops, df.post...)
 	ops = append(ops, d.op("task", idOf(cur["id"]), "deleted_at", mustJSON(time.Now().UnixMilli()), ts))
 	if _, err := d.apply(ops); err != nil {
 		return "", err

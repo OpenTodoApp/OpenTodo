@@ -20,6 +20,10 @@ var (
 	// ErrInvalidObject: no UID, several UIDs, or no VTODO at all
 	// (CALDAV:valid-calendar-object-resource).
 	ErrInvalidObject = errors.New("invalid calendar object resource")
+	// ErrInvalidValue: a property the mapping consumes has a value outside
+	// what the task field accepts, e.g. an ESTIMATED-DURATION beyond one week
+	// (CALDAV:valid-calendar-data, 403).
+	ErrInvalidValue = errors.New("invalid calendar data value")
 )
 
 // Due mirrors the task due value: a floating date, a floating date and time, or
@@ -53,7 +57,32 @@ type Task struct {
 	Recurrence  string // canonical rule or ""
 	Extra       string // ical_extra: unmapped content lines, unfolded, CRLF separated
 	Modified    int64  // greatest field timestamp: LAST-MODIFIED and DTSTAMP
+	// EstimateMinutes is served as ESTIMATED-DURATION when positive, and
+	// Reminders as VALARMs (OpenSpec change caldav-interop).
+	EstimateMinutes int
+	Reminders       []Reminder
 }
+
+// DateShape is the shape of an inbound VTODO's date properties (OpenSpec
+// change caldav-interop, "Inbound date shapes"); the caller decides what each
+// shape writes, from the task's current state.
+type DateShape int
+
+const (
+	// ShapeNone: neither DTSTART nor DUE, no duration.
+	ShapeNone DateShape = iota
+	// ShapeDueOnly: DUE without DTSTART.
+	ShapeDueOnly
+	// ShapeStartDueEqual: DTSTART and DUE that are the same value.
+	ShapeStartDueEqual
+	// ShapeStartDue: DTSTART and DUE that differ (the due date and the deadline).
+	ShapeStartDue
+	// ShapeStartDuration: DTSTART and a duration (ESTIMATED-DURATION or
+	// DURATION) without DUE: a scheduled time.
+	ShapeStartDuration
+	// ShapeStartAlone: DTSTART without DUE and without a duration (client data).
+	ShapeStartAlone
+)
 
 // Inbound is what a client's VTODO says about the mapped fields.
 type Inbound struct {
@@ -63,11 +92,20 @@ type Inbound struct {
 	Priority    int // app priority 1..4
 	Due         *Due
 	// Deadline is the date of DUE when the client sent a DTSTART that differs
-	// from it (design D6); then Due is the DTSTART. DueOnly reports a DUE
-	// without any DTSTART: the caller decides whether it is the due date or,
-	// on a task that has a deadline, the deadline.
+	// from it (design D6); then Due is the DTSTART. With ShapeStartDuration Due
+	// is the DTSTART. Shape tells the caller which row of the inbound date
+	// table applies (a DUE alone is the deadline on a task that has one).
 	Deadline string
-	DueOnly  bool
+	Shape    DateShape
+	// EstimateMinutes is ESTIMATED-DURATION in whole minutes (nil when the
+	// client did not send it); HasDuration reports ESTIMATED-DURATION or
+	// DURATION, which makes a DTSTART without DUE a scheduled time.
+	EstimateMinutes *int
+	HasDuration     bool
+	// Alarms are the VTODO's VALARMs; ServedAlarms is the X-OPENTODO-ALARMS
+	// count this server served and the client echoed (nil when absent).
+	Alarms       []Alarm
+	ServedAlarms *int
 	// Start and Evening come from X-OPENTODO-START and X-OPENTODO-EVENING
 	// (someday-and-evening D7); nil means the client did not send the property,
 	// which leaves the field alone.
@@ -183,6 +221,16 @@ func Encode(t Task) []byte {
 			add("RRULE", r.RRULE())
 		}
 	}
+	if t.EstimateMinutes > 0 {
+		add("ESTIMATED-DURATION", DurationText(t.EstimateMinutes))
+	}
+	extra = dropTopLevel(extra, "ESTIMATED-DURATION", "X-OPENTODO-ALARMS")
+	// How many alarms the client was shown: an echo tells the server the client
+	// saw them, so a missing one was removed on purpose (design D3). Without
+	// alarms there is nothing to remove, so nothing is served.
+	if len(t.Reminders) > 0 {
+		add("X-OPENTODO-ALARMS", strconv.Itoa(len(t.Reminders)))
+	}
 	// iCalendar has no deferral or evening bucket: OpenTodo's own properties.
 	switch {
 	case t.Start == "someday":
@@ -223,6 +271,10 @@ func Encode(t Task) []byte {
 	todoLines := todo.Lines()
 	todoLines = todoLines[:len(todoLines)-1]
 	lines = append(lines, todoLines...)
+	for _, r := range t.Reminders {
+		alarm := alarmComponent(r, t.Title, t.Deadline != "").Lines()
+		lines = append(lines, alarm...)
+	}
 	lines = append(lines, extra...)
 	lines = append(lines, "END:VTODO", "END:VCALENDAR")
 	var b bytes.Buffer

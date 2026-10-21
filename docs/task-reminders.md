@@ -37,3 +37,4 @@ Snoozing or dismissing on one device applies to all of them.
 - For bills, use a day-of-month rule (`every 1st`) plus a **1 day before** reminder.
 - A reminder on a task without a time fires at 09:00 for "at due time". Give the task a time if you need it earlier.
 - Deleted tasks don't remind you. If you restore one, its reminders come back.
+- Alarms you add in a calendar app connected over [CalDAV](caldav.md#alarms-and-reminders) become reminders here, and your reminders appear there as alarms.

@@ -48,6 +48,8 @@ describe('history', () => {
     expect(deviceLabel({ device: 'public:l1', userId: 'alice' }, 'mine', 'bob', [{ projectId: 'p', role: 'editor', ownerId: 'alice', members: [{ userId: 'alice', name: 'Alice', email: 'a@x', role: 'owner' }] }])).toBe('a public link')
     expect(deviceLabel({ device: 'public:l1', userId: 'alice', device_label: 'Public link (Grandma)' }, 'mine', 'alice')).toBe('Public link (Grandma)')
     expect(deviceLabel({ device: 'agent:t1', userId: 'u' }, 'mine')).toBe('AI assistant')
+    // A reminder or task change from a calendar app (caldav-interop "Reminders written by calendar clients").
+    expect(deviceLabel({ device: 'caldav:ap1', userId: 'u' }, 'mine')).toBe('a calendar app (CalDAV)')
     expect(deviceLabel({ device: 'abcdef', userId: 'u' }, 'mine')).toBe('another device (abcd)')
     expect(deviceLabel({ device: 'abcdef', userId: 'bob' }, 'mine', 'me', [
       { projectId: 'p', role: 'owner', ownerId: 'me', members: [{ userId: 'bob', name: 'Bob', email: 'b@x', role: 'editor' }] },

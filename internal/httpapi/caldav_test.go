@@ -114,6 +114,21 @@ func (e *env) caldavOps(id string) map[string]int {
 	return out
 }
 
+// reminders lists a task's live reminders through the REST API.
+func (e *env) reminders(taskID string) []map[string]any {
+	e.t.Helper()
+	resp, out := e.do("GET", "/api/v1/reminders", nil)
+	e.mustStatus(resp, 200, out)
+	var list []map[string]any
+	for _, r := range out["reminders"].([]any) {
+		m := r.(map[string]any)
+		if m["task_id"] == taskID && m["deleted_at"] == nil {
+			list = append(list, m)
+		}
+	}
+	return list
+}
+
 var etagRe = regexp.MustCompile(`<d:getetag>([^<]*)</d:getetag>`)
 
 func TestAppPasswordRoutesRequireAuth(t *testing.T) {
@@ -334,8 +349,12 @@ func TestPutCreatesTaskViaOps(t *testing.T) {
 	if d := task["due"].(map[string]any); d["date"] != "2026-10-11" || d["time"] != "09:30" || d["tz"] != nil {
 		t.Fatalf("due %v", d)
 	}
-	if !strings.Contains(task["ical_extra"].(string), "BEGIN:VALARM") || len(task["labels"].([]any)) != 2 {
+	// The display alarm became a reminder (caldav-interop), not client data.
+	if task["ical_extra"] != nil || len(task["labels"].([]any)) != 2 {
 		t.Fatalf("extra/labels %v", task)
+	}
+	if rems := e.reminders(uid); len(rems) != 1 || rems[0]["kind"] != "relative" || rems[0]["offset_minutes"].(float64) != -15 {
+		t.Fatalf("reminders %v", rems)
 	}
 	// Every field came from an op written by the caldav device.
 	ops := e.caldavOps(uid)

@@ -48,7 +48,7 @@ func TestDeadlineDecode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if in.Due == nil || in.Due.Date != "2026-10-13" || in.Due.Time != nil || in.Deadline != "2026-10-17" || in.DueOnly || strings.Contains(in.Extra, "DTSTART") {
+	if in.Due == nil || in.Due.Date != "2026-10-13" || in.Due.Time != nil || in.Deadline != "2026-10-17" || in.Shape != ShapeStartDue || strings.Contains(in.Extra, "DTSTART") {
 		t.Fatalf("start and due: %+v due=%+v", in, in.Due)
 	}
 	// Timed DUE with a start keeps the day.
@@ -61,17 +61,17 @@ func TestDeadlineDecode(t *testing.T) {
 	}
 	// Only DUE: the due date, flagged for the caller.
 	in, _ = Decode(vtodo("DUE;TZID=Europe/Berlin:20261011T093000"))
-	if in.Due == nil || in.Deadline != "" || !in.DueOnly {
+	if in.Due == nil || in.Deadline != "" || in.Shape != ShapeDueOnly {
 		t.Fatalf("due only: %+v", in)
 	}
 	// Recurring anchor sent back: due only, no deadline, nothing kept.
 	in, _ = Decode(vtodo("DTSTART;VALUE=DATE:20261011\r\nDUE;VALUE=DATE:20261011\r\nRRULE:FREQ=WEEKLY"))
-	if in.Deadline != "" || in.Rule != "every week" || strings.Contains(in.Extra, "DTSTART") || in.DueOnly {
+	if in.Deadline != "" || in.Rule != "every week" || strings.Contains(in.Extra, "DTSTART") || in.Shape != ShapeStartDueEqual {
 		t.Fatalf("recurring anchor: %+v", in)
 	}
 	// A DTSTART without DUE stays client data.
 	in, _ = Decode(vtodo("DTSTART;VALUE=DATE:20261011"))
-	if in.Due != nil || !strings.Contains(in.Extra, "DTSTART;VALUE=DATE:20261011") {
+	if in.Due != nil || in.Shape != ShapeStartAlone || !strings.Contains(in.Extra, "DTSTART;VALUE=DATE:20261011") {
 		t.Fatalf("start only: %+v", in)
 	}
 }
