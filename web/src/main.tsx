@@ -6,6 +6,8 @@ import { ErrorBoundary } from './app/ErrorBoundary'
 import { watchVisualViewport } from './ui'
 import { bootLanguage } from './lib/i18n'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
+import { installShellLinks } from './lib/shell'
+import { startShellPublishers } from './lib/shellPublish'
 
 // Bottom sheets sit above the on-screen keyboard; the focused field stays visible.
 watchVisualViewport()
@@ -15,6 +17,10 @@ watchVisualViewport()
 watchAppUpdates()
 // A rejected promise nobody handled leaves a trace instead of vanishing.
 logUnhandledRejections()
+// In a native shell, links to other origins open in the system browser (native-shells D5).
+installShellLinks()
+// In a native shell, reminders and the widgets' Today list are handed over as they change.
+startShellPublishers()
 
 // The last language applied on this device (else the browser's) is loaded before
 // the first render, so there is no flash of English (app-localization D3).
