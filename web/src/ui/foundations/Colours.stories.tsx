@@ -96,7 +96,7 @@ function Accents() {
                 <button type="button" className="ui-btn ui-btn--primary ui-btn--sm">Add task</button>
                 <p className="text-meta text-accent">Accent text on surface</p>
                 <p className="rounded-control bg-accent-soft px-2 py-1 text-meta text-on-accent-soft">Selected item</p>
-                <div className="flex gap-1" aria-label="Derived steps">
+                <div className="flex gap-1" role="group" aria-label="Derived steps">
                   {['accent', 'accent-hover', 'accent-soft', 'accent-soft-text', 'focus'].map((t) => (
                     <span key={t} title={t} className="h-4 w-4 rounded-chip border border-default" style={{ background: `var(--ot-${t})` }} />
                   ))}

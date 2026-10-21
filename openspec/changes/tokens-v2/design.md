@@ -72,6 +72,16 @@ See proposal.md for motivation. Relevant current state:
 
 Stylesheet only; no data, no server change. Deploy with any release. Rollback: revert the stylesheet, the font file and the test resolver together (the baselines of the previous state are in history). The allow-lists in `notYetMigrated.ts` do not change size; the lint's new rules apply to every file at once because the screens already use tokens.
 
+## Implementation notes
+
+Recorded while applying the change.
+
+- **Font (D7).** The two-axis Latin subset (opsz 14–32, wght 100–900) measures 83,544 bytes (84 KB), under the 120 KB budget, so the two-axis path was taken; no fallback instance. The subset command in `docs/design-system.md` drops the `instancer` step.
+- **Soft steps mix in OKLab (D4, D5).** Mixing a hue `in oklch` into the dark surface (hue 262) rotated the hue along the shorter arc (emerald soft read blue), because the surface carries a hue. Steps into a surface or canvas therefore mix `in oklab`; steps toward black or white stay `in oklch`, which keeps the hue. The chart ramp already mixed in OKLab and is unchanged in method.
+- **Overrides (D4, D5).** One: graphite's dark `accent` (`--ot-ad-accent`), as planned. Yellow and lime pass with the derived steps; no hue override was needed.
+- **Neutrals (D3).** Kept as listed except light `border-soft`, moved from L 0.94 to 0.93 (within the tolerance) so it reaches 1.1:1 on the sunken surface. The dark canvas stays at 0.17. The dark bar colour (`DARK_BAR`) follows it to `#0c0f16`.
+- **Display tracking (Open Questions).** Kept at −0.02em: with optical sizing on, the Display cut at 28 px reads tight but not crowded in the Type story.
+
 ## Open Questions
 
 - The exact neutral values within D3's tolerance, and whether the dark canvas sits at 0.17 or 0.18 L, are settled by eye in the workbench during task 2.3 without changing the specs.
