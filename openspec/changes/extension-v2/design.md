@@ -66,3 +66,17 @@ No data migration and no op-log change. Existing installs keep Capture screen mo
 
 - Whether Fastmail and Proton Mail on the web should join the recognised clients in a follow-up; the module and fixtures are built so that adding a client is one table row and one fixture, and the spec names only Gmail and Outlook now.
 - The exact debounce (150 ms) and the parse rate limit (60 a minute) can be tuned after measuring real typing without changing the specs' intent; the spec states the limit, so a change there is a spec edit at archive time.
+
+## Implementation notes
+
+- **Parse route zone.** With no `today`/`now` in the body, the route uses the time zone the weekly digest keeps for the account, else UTC; the server has no other record of the devices' zone. The extension always sends its local day and time.
+- **Languages for the parse.** The account's interface language plus the `Accept-Language` tags of the request decide the quick-add languages (`quickadd.ActiveLanguages`); the device-local quick-add language choice of the web app is not known to the server.
+- **Read tokens and a POST.** `isWriteRequest` treats `POST /api/v1/quick-add/parse` as a read (`isReadOnlyPost`), so a `read` token can preview.
+- **Spans.** `quickadd.ParseMarked` returns the parse with the spans of what it recognised; `Parse` is unchanged, so the shared vectors still compare the same structure.
+- **Mail origin in Capture screen mode.** D5 keeps mail recognition out of the server and the app, so `/share` stores a Gmail or Outlook permalink as a `url` origin; only Quick save stores the `email` origin that the chip reads as "Gmail"/"Outlook". Passing an origin through `/share` would need a new capture-screen parameter; left for the owner.
+- **Linting.** `web-ext lint` reads every manifest as Firefox's and reports the Chrome form's missing `background.scripts` and add-on id as errors, so it runs on the Firefox package only; the Chrome manifest's keys are checked in `build.test.js`. The Firefox minimum moved from 121 to 128, the first version with `optional_host_permissions` (web-ext warned about it).
+- **Inline images.** A right-click on a `data:` image captures the page instead: such an address is not worth keeping in a description.
+- **Stale preview.** When Enter comes before the preview for the current line, the popup asks the parse route once more before saving, so `tomorrow` is never saved as a word; a failed parse saves the line as the title.
+- **Test names.** The tasks' `options.test.js` and `background.test.js` test the pure modules `settings.js` and `capture.js`; `build.test.js` and `store.test.js` were added for packaging.
+- **Portuguese.** The extension catalog was already Brazilian Portuguese ("Salvar", "captura de tela"); the new texts follow it.
+- **Fixtures.** The mail fixtures are synthetic, in the clients' shapes; refreshing them from real sessions is described in `extension/testdata/mail/README.md`.
