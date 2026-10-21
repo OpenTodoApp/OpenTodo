@@ -962,6 +962,9 @@
   "Any time": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "Any.do (JSON from a data request)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Anyone with the link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx"
@@ -1012,6 +1015,9 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Apple Reminders (JSON from the Shortcut)": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Applied": [
     "web/src/app/review/CloseDay.tsx"
@@ -1115,6 +1121,9 @@
   "Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.": [
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
+  ],
+  "Asana project (CSV)": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Ascending": [
     "web/src/app/SavedViewView.tsx"
@@ -4292,6 +4301,9 @@
   "Go to the weekly Review": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Google Tasks (Takeout JSON)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
   ],
@@ -5611,6 +5623,9 @@
   ],
   "Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.": [
     "web/src/lib/voice/dictation.ts"
+  ],
+  "Microsoft To Do (JSON from the PowerShell script)": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Midnight (default)": [
     "web/src/app/DateTimeSettings.tsx"
@@ -11567,6 +11582,9 @@
   "Travel|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
+  "Trello board (JSON)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Try again": [
     "web/src/app/EmailScreens.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -14177,6 +14195,9 @@
   ],
   "{n, plural, one {# more matches, keep typing} other {# more match, keep typing}}": [
     "web/src/ui/Combobox/Combobox.tsx"
+  ],
+  "{n, plural, one {# new field} other {# new fields}}": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "{n, plural, one {# new label} other {# new labels}}": [
     "web/src/app/ImportScreen.tsx"
