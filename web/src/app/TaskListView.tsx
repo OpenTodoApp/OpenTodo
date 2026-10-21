@@ -89,8 +89,12 @@ function useListUi() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; setActionsPicker(picker); setActionsOpen(true) }, [])
   const onActionsOpen = useCallback((v: boolean) => { setActionsOpen(v); if (!v) setActionsPicker(null) }, [])
+  /** Right-click (task-row-context-menu): the actions menu at the pointer. */
+  const [ctxMenu, setCtxMenu] = useState<{ ids: string[]; x: number; y: number } | null>(null)
+  const openContextMenu = useCallback((ids: string[], x: number, y: number) => setCtxMenu({ ids, x, y }), [])
+  const closeContextMenu = useCallback((v: boolean) => { if (!v) setCtxMenu(null) }, [])
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, setAddingTo, openActions }
-  return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId }
+  return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, ctxMenu, openContextMenu, closeContextMenu }
 }
 
 /**
@@ -140,7 +144,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const collapsedGroups = useCollapsedGroups()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
-  const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId } = useListUi()
+  const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, ctxMenu, openContextMenu, closeContextMenu } = useListUi()
   // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
   // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
   const openId = usePanelTaskId()
@@ -266,7 +270,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     today, userId, acceptPrompt, moveToSection, toggleViewMode,
     editInline: (id) => { setSelectedId(id); setInline({ id }) }, expandedId, setExpandedId,
   })
-  const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, setExpandedId })
+  const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, setExpandedId, openContextMenu, draggingId: drag.draggingId })
 
   const renderRow = rowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked,
@@ -335,6 +339,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // `.` with nothing ticked: the same menu for the cursor task.
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={onActionsOpen} startPicker={actionsPicker} anchor={actionsFrom}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
+          )}
+          {ctxMenu && (
+            // Right-click (task-row-context-menu): the same menu, anchored where the pointer was.
+            <BulkActionsMenu ids={ctxMenu.ids} open onOpenChange={closeContextMenu}
+              trigger={<span className="sr-only" />}
+              triggerProps={{ style: { position: 'fixed', left: ctxMenu.x, top: ctxMenu.y } }}
+              triggerClassName="sr-only" />
           )}
 
           {route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
