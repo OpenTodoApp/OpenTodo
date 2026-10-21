@@ -131,6 +131,7 @@ func (s *Server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["mode"] = "live"
+	out["id"] = p.TaskID
 	t := rp.tp.Task
 	for _, f := range pageTaskFields {
 		out[f] = rawOrNull(t[f])

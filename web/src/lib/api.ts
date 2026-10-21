@@ -13,6 +13,7 @@ import type {
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
+  OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
 } from './types'
 
 export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
@@ -374,6 +375,18 @@ export const api = {
     request<PublicLink & { link: string }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links`, input),
   revokePublicLink: (projectId: string, id: string) =>
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links/${encodeURIComponent(id)}`),
+  // Task pages (OpenSpec `task-pages`): one task published as a page; the link is returned once.
+  publishTaskPage: (taskId: string, input: PublishTaskPageInput) =>
+    request<TaskPageCreated>('POST', `/api/v1/tasks/${encodeURIComponent(taskId)}/page`, input),
+  taskPageStatus: (taskId: string) => request<TaskPageStatus>('GET', `/api/v1/tasks/${encodeURIComponent(taskId)}/page`),
+  revokeTaskPage: (taskId: string) => request<void>('DELETE', `/api/v1/tasks/${encodeURIComponent(taskId)}/page`),
+  myTaskPages: () => request<{ pages: OwnTaskPage[] }>('GET', '/api/v1/task-pages'),
+  putTaskPageSnapshot: (taskId: string, input: { ciphertext: string; version: number; wrappedKey?: string }) =>
+    request<{ ok: true }>('PUT', `/api/v1/tasks/${encodeURIComponent(taskId)}/page/snapshot`, input),
+  taskPageReplies: (taskId: string) =>
+    request<{ replies: { id: string; ciphertext: string; createdAt: number }[] }>('GET', `/api/v1/tasks/${encodeURIComponent(taskId)}/page/replies`),
+  confirmTaskPageReply: (taskId: string, replyId: string) =>
+    request<void>('DELETE', `/api/v1/tasks/${encodeURIComponent(taskId)}/page/replies/${encodeURIComponent(replyId)}`),
   previewProjectInvite: (token: string) => request<ProjectInvitePreview>('GET', `/api/v1/project-invites/${encodeURIComponent(token)}`),
   acceptProjectInvite: (token: string) =>
     request<{ projectId: string; role: ProjectRole }>('POST', `/api/v1/project-invites/${encodeURIComponent(token)}/accept`, {}),

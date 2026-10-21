@@ -1,14 +1,38 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // The production bundle is written into the Go module so it can be embedded in
 // the single binary (see internal/web/web.go).
+/**
+ * The task page (task-pages D8) is not the app: no web app manifest and no service
+ * worker registration in t.html, so a guest's browser never installs or precaches
+ * the app. The PWA plugin adds both to every page; this takes them out of that one.
+ */
+function taskPageWithoutPwa(): Plugin {
+  return {
+    name: 'opentodo-task-page-without-pwa',
+    enforce: 'post',
+    // After everything is written: the PWA plugin adds its tags late in the build.
+    writeBundle(options) {
+      const file = path.join(options.dir ?? '', 't.html')
+      if (!fs.existsSync(file)) return
+      const html = fs.readFileSync(file, 'utf8')
+        .replace(/<link rel="manifest"[^>]*>/g, '')
+        .replace(/<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/g, '')
+      fs.writeFileSync(file, html)
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    taskPageWithoutPwa(),
     tailwindcss(),
     VitePWA({
       // Our own worker (OpenSpec attachments D9): Workbox precaching plus the
@@ -53,7 +77,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // The map (task-locations D5) is not precached: it needs the network for
         // its tiles anyway, and a device with maps off should never download it.
-        globIgnores: ['**/MapView-*', '**/maplibre-gl-worker-*'],
+        globIgnores: ['**/MapView-*', '**/maplibre-gl-worker-*', 't.html', '**/assets/t-*'],
         // A classic worker, so importScripts('push-sw.js') keeps working.
         rollupFormat: 'iife',
       },
@@ -70,6 +94,11 @@ export default defineConfig({
     // collaborative-rich-text. All are precached by the service worker, so the
     // preload helper would only add bytes to the main chunk; skip it.
     modulePreload: false,
+    rollupOptions: {
+      // The task page (task-pages D8) is its own small document: no app shell, no
+      // local database, no editor. The server serves t.html for /t/<secret>.
+      input: { main: 'index.html', t: 't.html' },
+    },
   },
   server: {
     port: 5173,

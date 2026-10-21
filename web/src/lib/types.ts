@@ -374,9 +374,9 @@ export interface Comment {
   edited_at: number | null
   deleted_at: number | null
   /** The name a guest typed on a task page (task-pages D6); null for members' comments. */
-  guest_name: string | null
+  guest_name?: string | null
   /** The task page a guest reply came through (task-pages D6); null otherwise. */
-  page_id: string | null
+  page_id?: string | null
   _clock: Clock
 }
 
@@ -1557,6 +1557,79 @@ export interface PublicLink {
   expiresAt: number | null
   lastUsedAt: number | null
 }
+
+/** What guests may do on a task page (OpenSpec `task-pages`): read, reply, or reply and tick. */
+export type TaskPageRights = 'view' | 'reply' | 'tick'
+
+/** A publish request; snapshot and wrappedKey only for a task with end-to-end encryption. */
+export interface PublishTaskPageInput {
+  rights: TaskPageRights
+  label?: string
+  expiresInDays?: number
+  includeMap?: boolean
+  snapshot?: string
+  wrappedKey?: string
+}
+
+/** The answer to publishing: the link is returned once. */
+export interface TaskPageCreated {
+  id: string
+  taskId: string
+  rights: TaskPageRights
+  label: string | null
+  includeMap: boolean
+  encrypted: boolean
+  publishedAt: number
+  expiresAt: number | null
+  link: string
+}
+
+/** A task's active page as its publisher, owner and admins see it: never the secret or a key. */
+export interface TaskPageStatus {
+  id: string
+  taskId: string
+  rights: TaskPageRights
+  label: string | null
+  includeMap: boolean
+  createdBy: string
+  publishedAt: number
+  expiresAt: number | null
+  lastOpenedAt: number | null
+  replies: number
+  ticks: number
+  encrypted: boolean
+  snapshotAt: number | null
+  pendingReplies: number
+}
+
+/** One of the user's own pages, with the wrapped share key of an encrypted one (task-pages D3). */
+export interface OwnTaskPage extends Omit<TaskPageStatus, 'encrypted'> {
+  encrypted: boolean
+  snapshotVersion: number
+  wrappedKey?: string
+}
+
+/** What a task page shows (live from the server, or decrypted from a snapshot). */
+export interface TaskPageContent {
+  /** The published task's id: what "Mark as done" ticks. */
+  id: string
+  title: string
+  description: string
+  due: { date: string; time?: string } | null
+  deadline: string | null
+  completed_at: number | null
+  subtasks: { id: string; title: string; completed_at: number | null; depth: number }[]
+  links: { id: string; name: string; url: string }[]
+  files: { id: string; name: string; size: number | null }[]
+  location: TaskLocation | null
+  comments: { id: string; name: string; guest: boolean; body: string; createdAt: number }[]
+}
+
+/** A task page as the guest's browser receives it. */
+export type TaskPageResponse = { rights: TaskPageRights; serverTime: number; label: string | null } & (
+  | ({ mode: 'live' } & TaskPageContent)
+  | { mode: 'encrypted'; snapshot: string; snapshotAt: number | null }
+)
 
 /** What a guest sees through a public link: the project's open tasks (and those completed in the last day). */
 export interface PublicList {

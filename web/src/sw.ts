@@ -20,7 +20,8 @@ precacheAndRoute(self.__WB_MANIFEST)
 
 // Nothing under /api/ (in particular the live event stream) or /healthz is ever
 // answered by the app shell or stored in a cache.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//, /^\/healthz/] }))
+// A task page (/t/, task-pages D8) is its own document from the server, never the app.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//, /^\/healthz/, /^\/t\//] }))
 
 registerRoute(
   ({ url, request }) => url.pathname === '/share' && request.method === 'POST',
