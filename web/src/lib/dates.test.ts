@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   compareDue, currentDayStart, describeDue, logicalDay, logicalToday, setDayStart, todayISO, dueFromView, dueToInstant, fixDueToZone, instantToLocalDue, localDueOf, onViewerZoneChange,
-  refreshViewerZone, releaseDue, viewerZone, watchViewerZone, zonedInstant, zoneHint,
+  refreshViewerZone, releaseDue, viewerZone, watchViewerZone, zonedInstant, zoneHint, quickChoices, setDateTime,
 } from './dates'
 import vectors from './zoned.vectors.json'
 import { dayInZone } from './stats'
@@ -200,5 +200,36 @@ describe('logical day (day-boundary D2)', () => {
     expect(zurich(180)(Date.parse('2026-10-25T02:30:00+01:00'))).toBe('2026-10-24')
     expect(zurich(180)(Date.parse('2026-10-25T03:00:00+01:00'))).toBe('2026-10-25')
     expect(zurich(0)(Date.parse('2026-10-25T00:30:00+02:00'))).toBe('2026-10-25')
+  })
+})
+
+// Quick choices of the When popover (OpenSpec change task-panel-polish, design D2).
+describe('quickChoices', () => {
+  const monday = { order: 'DM', hour12: false, weekStart: 1 } as const
+  const sunday = { order: 'MD', hour12: true, weekStart: 0 } as const
+  const dates = (kind: Parameters<typeof quickChoices>[0], today: string, p: typeof monday | typeof sunday) => {
+    setDateTime({ date_format: 'system', time_format: 'system', week_start: p.weekStart === 1 ? 'mon' : 'sun' }, p)
+    return Object.fromEntries(quickChoices(kind, today).map((c) => [c.id, c.date]))
+  }
+  afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
+
+  it('Do on: today, tomorrow, the coming Saturday, the next week start and no date', () => {
+    expect(dates('due', '2026-10-21', monday)).toEqual({ today: '2026-10-21', tomorrow: '2026-10-22', weekend: '2026-10-24', 'next-week': '2026-10-26', none: null })
+    expect(dates('due', '2026-10-21', sunday)['next-week']).toBe('2026-10-25')
+  })
+
+  it('This weekend is today on a Saturday or a Sunday', () => {
+    expect(dates('due', '2026-10-24', monday).weekend).toBe('2026-10-24')
+    expect(dates('due', '2026-10-25', monday).weekend).toBe('2026-10-25')
+  })
+
+  it('Deadline: the end of the user\'s week, the end of the month, two weeks out', () => {
+    expect(dates('deadline', '2026-10-21', monday)).toEqual({ 'end-of-week': '2026-10-25', 'end-of-month': '2026-10-31', 'two-weeks': '2026-11-04' })
+    expect(dates('deadline', '2026-10-21', sunday)['end-of-week']).toBe('2026-10-24')
+    expect(dates('deadline', '2026-02-10', monday)['end-of-month']).toBe('2026-02-28')
+  })
+
+  it('Start offers Someday', () => {
+    expect(dates('start', '2026-10-21', monday)).toMatchObject({ today: '2026-10-21', someday: 'someday' })
   })
 })

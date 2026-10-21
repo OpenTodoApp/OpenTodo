@@ -3,17 +3,20 @@
 // (Anytime, a date, Someday), Deadline, Evening, Repeat and Reminders as segments
 // under a shared header and footer. Every segment is the editor it replaces and
 // writes exactly the fields it wrote before.
-import { type KeyboardEvent, useEffect, useRef, type ReactNode } from 'react'
-import { localDueOf } from '../../lib/dates'
-import { unparkTask, updateTask } from '../../lib/ops'
+import { type KeyboardEvent, useEffect, useRef, useState, type ReactNode } from 'react'
+import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
+import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
+import { parseRule } from '../../lib/recurrence'
 import type { WhenSegmentId } from '../../lib/facets'
 import type { Task } from '../../lib/types'
-import { Button, Icon, IconButton, type IconName, Switch } from '../../ui'
-import { DateField } from '../datetime/DateField'
-import { DueField } from '../DueField'
+import { Button, Icon, type IconName, Switch } from '../../ui'
+import { DatePicker } from '../datetime/DatePicker'
+import { TimeField } from '../datetime/TimeField'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { parkWithUndo } from '../undoable'
+import { parkWithUndo, setDueWithUndo } from '../undoable'
+import { ZoneControl } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -65,6 +68,102 @@ export function WhenSegmentPicker({ value, onChange }: { value: WhenSegmentId; o
   )
 }
 
+function EveningSwitch({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  return (
+    <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
+      onChange={(on) => act(updateTask(task.id, { evening: on }))} />
+  )
+}
+
+/** Suggested times for a due (task-panel-polish D3). */
+const TIME_SUGGESTIONS = ['09:00', '13:00', '18:00']
+
+/**
+ * The Do on segment (task-panel-polish D3): quick choices, the date in words, the
+ * calendar, then Add time with suggestions, the Evening switch and, only with a time,
+ * one quiet line about the time zone. Clear is the popover's footer.
+ */
+function DoOn({ task, readOnly, withEvening }: { task: Task; readOnly: boolean; withEvening: boolean }) {
+  const zone = useViewerZone()
+  const dt = useDateTimeFormat()
+  const view = localDueOf(task.due, zone)
+  const [addingTime, setAddingTime] = useState(false)
+  useEffect(() => { setAddingTime(false) }, [task.id])
+  const setView = (next: { date: string; time?: string } | null) => act(setDueWithUndo(task.id, dueFromView(task.due, next, zone)))
+  const showTime = !!view && (!!view.time || addingTime)
+  return (
+    <div className="space-y-3">
+      <DatePicker label={t('Due date')} value={view?.date ?? null} choices={quickChoices('due')} emptyText={t('Not scheduled')}
+        onChange={(date) => setView(date ? { date, ...(view?.time ? { time: view.time } : {}) } : null)} />
+      {view && (showTime ? (
+        <div className="space-y-1.5" data-due-time>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TimeField label={t('Due time')} hideLabel value={view.time ?? null} disabled={readOnly}
+              onChange={(time) => setView(time ? { date: view.date, time } : { date: view.date })} />
+            {TIME_SUGGESTIONS.map((tm) => (
+              <button key={tm} type="button" aria-pressed={view.time === tm} data-time-suggestion={tm}
+                className={`min-h-8 rounded-control border px-2 py-1 text-meta tabular-nums ${view.time === tm ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
+                onClick={() => setView({ date: view.date, time: tm })}>{dt.formatTime(tm)}</button>
+            ))}
+          </div>
+          <button type="button" className="text-meta text-muted hover:text-default hover:underline" onClick={() => { setAddingTime(false); setView({ date: view.date }) }}>{t('Remove time')}</button>
+        </div>
+      ) : (
+        <Button variant="ghost" size="sm" icon="clock" className="-ml-2" onClick={() => setAddingTime(true)} data-add-time>{t('Add time')}</Button>
+      ))}
+      {withEvening && <EveningSwitch task={task} readOnly={readOnly} />}
+      {task.due?.time && <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} variant="line" />}
+    </div>
+  )
+}
+
+const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`
+
+/**
+ * The Repeat segment (task-panel-polish D4): the rule in words, then presets built
+ * from the due date (today without one), then Custom…, the full rule editor. A preset
+ * writes the rule the editor would write for it; rules are English, the labels are not.
+ */
+function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => void }) {
+  const dt = useDateTimeFormat()
+  const zone = useViewerZone()
+  const base = localDueOf(task.due, zone)?.date ?? logicalToday()
+  const day = Number(base.slice(8))
+  const wd = new Date(Number(base.slice(0, 4)), Number(base.slice(5, 7)) - 1, day).getDay()
+  const presets = [
+    { id: 'daily', label: t('Every day'), rule: 'every day' },
+    { id: 'weekdays', label: t('Every weekday'), rule: 'every weekday' },
+    { id: 'weekly', label: t('Every week on {weekday}', { weekday: weekday(base) }), rule: `every ${WEEKDAYS[wd]}` },
+    { id: 'monthly', label: t('Every month on day {day}', { day }), rule: `every ${ordinal(day)}` },
+    { id: 'yearly', label: t('Every year on {date}', { date: dt.formatDate(base, 'compact') }), rule: 'every year' },
+  ].map((p) => ({ ...p, canonical: (() => { const r = parseRule(p.rule); return r.ok ? r.canonical : p.rule })() }))
+  const current = presets.find((p) => p.canonical === task.recurrence)?.id ?? null
+  const [custom, setCustom] = useState(false)
+  useEffect(() => { setCustom(false) }, [task.id])
+  const showCustom = custom || (!!task.recurrence && !current)
+  return (
+    <div className="space-y-3">
+      {task.recurrence && <p className="text-body text-default" data-rule-words>{t('Repeats {rule}', { rule: task.recurrence })}</p>}
+      <div role="radiogroup" aria-label={t('Repeat')} className="flex flex-col gap-1" data-repeat-presets>
+        {presets.map((p) => (
+          <button key={p.id} type="button" role="radio" aria-checked={current === p.id} data-preset={p.id}
+            className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body ${current === p.id ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
+            onClick={() => act(setRecurrence(task.id, p.rule))}>
+            <Icon name={current === p.id ? 'check' : 'repeat'} size="xs" className={current === p.id ? '' : 'text-faint'} />{p.label}
+          </button>
+        ))}
+        <button type="button" role="radio" aria-checked={showCustom && !current} aria-expanded={showCustom} data-preset="custom"
+          className="flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body text-default hover:bg-sunken dark:hover:bg-raised"
+          onClick={() => setCustom((v) => !v)}>
+          <Icon name="pencil" size="xs" className="text-faint" />{t('Custom…')}
+        </button>
+      </div>
+      {showCustom && <RecurrenceField task={task} onOpen={onOpen} />}
+    </div>
+  )
+}
+
 export function WhenControl({ task, readOnly = false, focus = 'due', segment, onDone, onOpen }: {
   task: Task
   readOnly?: boolean
@@ -95,35 +194,30 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
     <div ref={root} data-when-control data-when-shown={segment} className="space-y-3">
       {shows('due') && (
         <Segment id="due" icon="calendar-days" label={t('Do on')} bare={!!segment}>
-          <DueField task={task} readOnly={readOnly} clearable={!segment} />
+          <DoOn task={task} readOnly={readOnly} withEvening={!!segment} />
         </Segment>
       )}
 
       {shows('start') && <Segment id="start" icon="calendar-range" label={t('Start')} bare={!!segment}>
-        <div className="flex flex-wrap items-start gap-2">
-          <Button variant="ghost" size="sm" aria-pressed={!task.start} onClick={() => void unparkTask(task.id)}>{t('Anytime')}</Button>
-          <DateField label={t('Start date')} hideLabel className="min-w-44 flex-1" value={task.start && task.start !== 'someday' ? task.start : null}
-            validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
-            onChange={(start) => act(updateTask(task.id, { start }))} />
-          <Button variant="ghost" size="sm" icon="archive" aria-pressed={task.start === 'someday'} onClick={() => act(parkWithUndo(task.id))}>{t('Someday')}</Button>
-        </div>
+        {!task.start && <p className="mb-2 text-meta text-muted" data-start-empty>{t('No start date')}</p>}
+        <DatePicker label={t('Start date')} value={task.start && task.start !== 'someday' ? task.start : null} choices={quickChoices('start')}
+          chosen={task.start === 'someday' ? 'someday' : undefined} emptyText={t('No start date')}
+          validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
+          onChoice={(c) => { if (c.date === 'someday') act(parkWithUndo(task.id)) }}
+          onChange={(start) => (start ? act(updateTask(task.id, { start })) : void unparkTask(task.id))} />
       </Segment>}
 
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>
-        <div className="flex flex-wrap items-start gap-2">
-          <DateField label={t('Deadline')} hideLabel className="min-w-44 flex-1" value={task.deadline ?? null}
-            onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
-          {task.deadline && !segment && <IconButton icon="x" label={t('Clear deadline')} onClick={() => act(updateTask(task.id, { deadline: null }))} />}
-        </div>
+        <DatePicker label={t('Deadline')} value={task.deadline ?? null} choices={quickChoices('deadline')} emptyText={t('No deadline')}
+          onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
       </Segment>}
 
-      {shows('evening') && <Segment id="evening" icon="moon" label={t('Evening')} bare={!!segment}>
-        <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
-          onChange={(on) => act(updateTask(task.id, { evening: on }))} />
+      {shows('evening') && !segment && <Segment id="evening" icon="moon" label={t('Evening')}>
+        <EveningSwitch task={task} readOnly={readOnly} />
       </Segment>}
 
       {shows('repeat') && <Segment id="repeat" icon="repeat" label={t('Repeat')} bare={!!segment}>
-        <RecurrenceField task={task} onOpen={onOpen} />
+        <RepeatPresets task={task} onOpen={onOpen} />
       </Segment>}
 
       {shows('reminders') && <Segment id="reminders" icon="alarm-clock" label={t('Reminders')} bare={!!segment}>

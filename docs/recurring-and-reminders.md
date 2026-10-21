@@ -16,7 +16,7 @@ Some tasks come back: pay the rent, water the plants, the weekly one-to-one. Mak
 
 ## Make a task repeat
 
-Open the task and type a rule into **Repeat**, such as `every week`. A list of suggestions appears as you type. Under the field you'll see the next three dates, so you can check the rule does what you meant.
+Open the task, click its date and choose **Repeat**: pick **Every day**, **Every weekday**, **Every week on Thursday**, **Every month on day 22** or **Every year**, named from the task's date. **Custom…** takes any rule, such as `every 3 months`, and shows the next three dates so you can check it does what you meant.
 
 Set a rule in the task panel under **Repeat**, or type it straight into quick add: `Water plants every Monday` creates the task with the rule and its first date. See [Repeat and remind](quick-add.md#repeat-and-remind) for the phrases in each language.
 

@@ -641,7 +641,8 @@
     "web/src/app/IssueEditor.tsx"
   ],
   "Add time": [
-    "web/src/app/task-detail/TimeTab.tsx"
+    "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Add to OpenTodo": [
     "web/src/app/CaptureSettings.tsx",
@@ -877,7 +878,6 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Anywhere": [
@@ -1564,7 +1564,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Change": [
-    "web/src/app/DigestCard.tsx"
+    "web/src/app/DigestCard.tsx",
+    "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Change passphrase": [
     "web/src/app/EncryptionPanel.tsx"
@@ -1740,9 +1741,6 @@
   ],
   "Clear conversations on this device?": [
     "web/src/app/assistant/AssistantSettings.tsx"
-  ],
-  "Clear deadline": [
-    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Clear due date": [
     "web/src/app/DueField.tsx"
@@ -2384,7 +2382,8 @@
   ],
   "Custom…": [
     "web/src/app/AuditPanel.tsx",
-    "web/src/app/RemindersField.tsx"
+    "web/src/app/RemindersField.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Cut off: the answer reached its length limit.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -2927,14 +2926,16 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
     "web/src/app/SavedViewView.tsx",
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageView.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due date and time (6 languages)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx"
+    "web/src/app/DueField.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today and in the next six days. Set priorities with 1 to 4.": [
     "web/src/app/review/ReviewView.tsx"
@@ -3179,6 +3180,12 @@
   "End": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "End of month": [
+    "web/src/lib/dates.ts"
+  ],
+  "End of week": [
+    "web/src/lib/dates.ts"
+  ],
   "End the break": [
     "web/src/app/focus/FocusParts.tsx"
   ],
@@ -3313,6 +3320,9 @@
   "Every assistant conversation stored in this browser is deleted. Your tasks and changes already applied stay as they are.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Every day": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
   "Every day at {time}": [
     "web/src/lib/backups.ts"
   ],
@@ -3327,6 +3337,9 @@
   ],
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
+  ],
+  "Every month on day {day}": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Every project always shows its very next action.": [
     "web/src/lib/method/vocabulary.json"
@@ -3345,6 +3358,15 @@
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
+  ],
+  "Every week on {weekday}": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Every weekday": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Every year on {date}": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Every {h} hours": [
     "web/src/app/IssueEditor.tsx"
@@ -3712,10 +3734,16 @@
   "Fixed to a time zone:": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
+  "Fixed to {zoneCity}": [
+    "web/src/app/task-detail/ZoneControl.tsx"
+  ],
   "Floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Floating (now):": [
+    "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Floating time": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Floating:": [
@@ -4249,6 +4277,9 @@
   ],
   "Importing…": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "In 2 weeks": [
+    "web/src/lib/dates.ts"
   ],
   "In Filter: jump from the query to the first result / back to the query": [
     "web/src/lib/shortcuts.ts"
@@ -5605,7 +5636,8 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/lib/dates.ts"
   ],
   "Next {n} days": [
     "web/src/app/PlanView.tsx"
@@ -5698,8 +5730,12 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/views.ts"
+  ],
+  "No deadline": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "No deliveries yet.": [
     "web/src/app/WebhooksPanel.tsx"
@@ -5877,6 +5913,9 @@
   "No shortcut matches “{q}”.": [
     "web/src/app/ShortcutHelp.tsx"
   ],
+  "No start date": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
   "No status fetched yet.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -5942,7 +5981,8 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Not a valid date. Try {example}, {iso} or “tomorrow”.": [
-    "web/src/app/datetime/DateField.tsx"
+    "web/src/app/datetime/DateField.tsx",
+    "web/src/app/datetime/DatePicker.tsx"
   ],
   "Not a valid time. Try 15:30, 3:30 pm or 1530.": [
     "web/src/app/datetime/TimeField.tsx"
@@ -6020,6 +6060,7 @@
   ],
   "Not scheduled": [
     "web/src/app/RemindersField.tsx",
+    "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/facets.ts"
   ],
   "Not sent: the account uses end-to-end encryption": [
@@ -7379,6 +7420,9 @@
   "Quick add; in project lists and the Inbox the new task lands after the selection": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Quick dates": [
+    "web/src/app/datetime/DatePicker.tsx"
+  ],
   "Quick wins": [
     "web/src/lib/filters.ts"
   ],
@@ -7606,6 +7650,9 @@
   "Remove the skill {name}": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
+  "Remove time": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
   "Remove {nameOf} from the dashboard": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -7707,6 +7754,7 @@
     "web/src/app/ParseChips.tsx"
   ],
   "Repeats {rule}": [
+    "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/assistant.ts"
   ],
   "Replace token": [
@@ -8907,7 +8955,7 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/history.ts",
     "web/src/lib/review.ts",
@@ -10508,6 +10556,9 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/lib/stats.ts"
   ],
+  "This weekend": [
+    "web/src/lib/dates.ts"
+  ],
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -10912,6 +10963,9 @@
   ],
   "Type a date such as fri or 3/11 and press Enter. Esc cancels.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "Type a date: fri, 3 days, 22/10": [
+    "web/src/app/datetime/DatePicker.tsx"
   ],
   "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": [
     "web/src/app/FirstRun.tsx"
