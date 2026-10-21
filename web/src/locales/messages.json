@@ -1263,6 +1263,9 @@
   "At most {n} options.": [
     "web/src/lib/fields.ts"
   ],
+  "At {place}": [
+    "web/src/lib/assistant.ts"
+  ],
   "Attach": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -2691,13 +2694,20 @@
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
   ],
+  "Deadline removed": [
+    "web/src/lib/assistant.ts"
+  ],
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/ScheduleSheet.tsx",
+    "web/src/lib/assistant.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "Deadline {from} → {to}": [
+    "web/src/lib/assistant.ts"
   ],
   "Decide once what each item is and what it needs.": [
     "web/src/lib/method/vocabulary.json"
@@ -5413,6 +5423,9 @@
     "web/src/lib/facets.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Location removed": [
+    "web/src/lib/assistant.ts"
+  ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/locations/PlacesView.tsx"
@@ -6237,6 +6250,9 @@
   "No longer a subtask": [
     "web/src/lib/assistant.ts"
   ],
+  "No longer waits": [
+    "web/src/lib/assistant.ts"
+  ],
   "No matches": [
     "web/src/app/menus/stylePickers.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
@@ -6366,7 +6382,8 @@
     "web/src/app/ShortcutHelp.tsx"
   ],
   "No start date": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "No status fetched yet.": [
     "web/src/app/BackupsPanel.tsx"
@@ -6539,6 +6556,9 @@
   ],
   "Not synced since this screen opened": [
     "web/src/app/display/DisplayScreen.tsx"
+  ],
+  "Not this evening": [
+    "web/src/lib/assistant.ts"
   ],
   "Not today": [
     "web/src/app/method/DailyCheckToast.tsx"
@@ -7230,6 +7250,9 @@
   ],
   "Other edits": [
     "web/src/lib/activity.ts"
+  ],
+  "Out of Someday": [
+    "web/src/lib/assistant.ts"
   ],
   "Outcome": [
     "web/src/app/AuditPanel.tsx",
@@ -9566,6 +9589,7 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/CloseDay.tsx",
+    "web/src/lib/assistant.ts",
     "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/history.ts",
@@ -9739,7 +9763,11 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Starts {date}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/lib/assistant.ts"
+  ],
+  "Starts {from} → {to}": [
+    "web/src/lib/assistant.ts"
   ],
   "Start|timer": [
     "web/src/app/focus/FocusParts.tsx",
@@ -10927,7 +10955,8 @@
     "web/src/app/settingsIndex.ts"
   ],
   "This evening": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "This file could not be opened.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -12161,9 +12190,6 @@
     "web/src/lib/method/vocabulary.json",
     "web/src/lib/shortcuts.ts"
   ],
-  "Waits for nothing": [
-    "web/src/lib/assistant.ts"
-  ],
   "Waits for someone or something else first.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -12719,6 +12745,9 @@
   ],
   "a model id from your OpenAI account": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "a place": [
+    "web/src/lib/assistant.ts"
   ],
   "a project": [
     "web/src/lib/assistant.ts"

@@ -3044,7 +3044,6 @@
   "Waiting": "Aguardando",
   "Waiting for": "Aguardando",
   "Waiting for the first refresh": "Aguardando a primeira atualização",
-  "Waits for nothing": "Não aguarda nada",
   "Waits for {tasks}": "Aguarda {tasks}",
   "We sent a link to <strong>{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.": "Enviamos um link para <strong>{checkEmail}</strong>. Abra-o em até 24 horas para criar sua conta. Nada é criado até você fazer isso.",
   "Webhook created": "Webhook criado",
@@ -4493,5 +4492,14 @@
   "through the task page": "pela página da tarefa",
   "{n, plural, one {# reply} other {# replies}} from guests": "{n, plural, one {# resposta} other {# respostas}} de convidados",
   "{name} (guest)": "{name} (convidado)",
-  "{name} (guest, task page)": "{name} (convidado, página da tarefa)"
+  "{name} (guest, task page)": "{name} (convidado, página da tarefa)",
+  "At {place}": "Em {place}",
+  "Deadline removed": "Prazo removido",
+  "Deadline {from} → {to}": "Prazo {from} → {to}",
+  "Location removed": "Local removido",
+  "No longer waits": "Já não espera",
+  "Not this evening": "Não hoje à noite",
+  "Out of Someday": "Fora de Algum dia",
+  "Starts {from} → {to}": "Começa {from} → {to}",
+  "a place": "um local"
 }
