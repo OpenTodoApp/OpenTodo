@@ -10,8 +10,8 @@
 // leaves unknown marks and nodes alone), and a remote merge becomes one replace
 // step over the changed range, so ProseMirror maps the selection through it and
 // the caret stays on its character.
-import { chainCommands, exitCode, setBlockType, toggleMark, baseKeymap } from 'prosemirror-commands'
-import { history, redo, undo } from 'prosemirror-history'
+import { chainCommands, exitCode, newlineInCode, setBlockType, toggleMark, baseKeymap } from 'prosemirror-commands'
+import { history, redo, undo, undoDepth } from 'prosemirror-history'
 import { InputRule, inputRules, textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules'
 import { keymap } from 'prosemirror-keymap'
 import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment } from 'prosemirror-model'
@@ -22,8 +22,15 @@ import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
 import { msg, translatedList } from './i18n'
+import { suggestPlugin, type SuggestBridge } from './editorSuggest'
+import { tablePlugins, tableShiftTab, tableTab } from './editorTables'
 
 // ---- schema ----
+
+/** A table scrolls sideways inside its own box; the panel never widens (D3). */
+function wrapTable(nodes: ReturnType<typeof tableNodes>): ReturnType<typeof tableNodes> {
+  return { ...nodes, table: { ...nodes.table, toDOM: () => ['div', { class: 'tableWrapper' }, ['table', ['tbody', 0]]] } }
+}
 
 export const schema = new Schema({
   nodes: {
@@ -57,7 +64,7 @@ export const schema = new Schema({
       toDOM: (n) => ['pre', n.attrs.lang ? { 'data-lang': n.attrs.lang } : {}, ['code', 0]],
     },
     // Cells hold inline content only, so every table projects to a pipe table (design D4).
-    ...tableNodes({
+    ...wrapTable(tableNodes({
       tableGroup: 'block', cellContent: 'inline*',
       cellAttributes: {
         align: {
@@ -68,7 +75,7 @@ export const schema = new Schema({
           },
         },
       },
-    }),
+    })),
     // An image names an attachment of the task; the bytes are never part of the note (design D5).
     image: {
       group: 'block', atom: true, selectable: true, draggable: true, attrs: { id: { default: '' }, alt: { default: '' } },
@@ -365,7 +372,11 @@ export const SHORTCUTS: { keys: string; label: string }[] = translatedList([
   { keys: 'Mod-Shift-7', label: msg('Numbered list') },
   { keys: 'Mod-Shift-9', label: msg('Check list') },
   { keys: 'Mod-Enter', label: msg('Check / uncheck item') },
-  { keys: 'Tab', label: msg('Indent list item (Shift-Tab: outdent)') },
+  { keys: 'Mod-Shift-Enter', label: msg('Make the check-list line a subtask') },
+  { keys: '/', label: msg('Command menu: headings, lists, table, quote, code, image, date, mention') },
+  { keys: '@', label: msg('Mention a member') },
+  { keys: '> ', label: msg('Block quote (``` and Enter: code block)') },
+  { keys: 'Tab', label: msg('Indent list item, or next table cell (Shift-Tab: back)') },
   { keys: 'Shift-Enter', label: msg('Line break') },
   { keys: 'Mod-z', label: msg('Undo (Mod-Shift-z: redo)') },
   { keys: 'Escape', label: msg('Leave the notes') },
@@ -408,6 +419,8 @@ function rules(): Plugin {
         return null
       }),
       wrappingInputRule(/^\s*([-+*])\s$/, nodes.bullet_list),
+      wrappingInputRule(/^\s*>\s$/, nodes.blockquote),
+      textblockTypeInputRule(/^```([\w+#-]*)\s$/, nodes.code_block, (m) => ({ lang: m[1] })),
       wrappingInputRule(/^(\d+)[.)]\s$/, nodes.ordered_list, (m) => ({ order: Number(m[1]) }), (m, n) => n.childCount + n.attrs.order === Number(m[1])),
       markRule(/\*\*([^*]+)\*\*$/, marks.strong, 2),
       markRule(/(?:^|[^*\w])\*([^*\s][^*]*)\*$/, marks.em, 1),
@@ -427,6 +440,14 @@ export interface EditorHooks {
   size: () => number
   /** Shown while the note is empty. */
   placeholder?: string
+  /** The `/` command menu and `@` completion (editor-everywhere D7, D9). */
+  suggest?: SuggestBridge
+  /** Say why a command did nothing (a table limit). */
+  notify?: (message: string) => void
+  /** Make subtask on a check-list line (notes of a task only, D6). */
+  makeSubtask?: Command
+  /** Called after an undo with the history depth before it (Make subtask reverts its task). */
+  onUndo?: (depthBefore: number) => void
 }
 
 const isEmpty = (doc: PMNode) => doc.childCount === 1 && doc.firstChild?.type === schema.nodes.paragraph && doc.firstChild.content.size === 0
@@ -438,9 +459,29 @@ function placeholder(text: string): Plugin {
   })
 }
 
+/** "```" (and a language) then Enter on its own line starts a code block. */
+export const fenceOnEnter: Command = (state, dispatch) => {
+  const { $from, empty } = state.selection
+  if (!empty || $from.parent.type !== schema.nodes.paragraph || $from.parentOffset !== $from.parent.content.size) return false
+  const m = /^```([\w+#-]*)$/.exec($from.parent.textContent)
+  if (!m) return false
+  if (dispatch) {
+    const tr = state.tr.delete($from.start(), $from.end())
+    dispatch(tr.setBlockType($from.start(), $from.start(), schema.nodes.code_block, { lang: m[1] }).scrollIntoView())
+  }
+  return true
+}
+
 /** Every plugin of the notes editor. */
 export function plugins(hooks: EditorHooks): Plugin[] {
   const { nodes, marks } = schema
+  const notify = hooks.notify ?? (() => {})
+  const undoAndTell: Command = (state, dispatch, view) => {
+    const before = undoDepth(state)
+    const done = undo(state, dispatch, view)
+    if (done && dispatch) hooks.onUndo?.(before)
+    return done
+  }
   const lineBreak: Command = chainCommands(exitCode, (state, dispatch) => {
     if (dispatch) dispatch(state.tr.replaceSelectionWith(nodes.hard_break.create()).scrollIntoView())
     return true
@@ -448,9 +489,11 @@ export function plugins(hooks: EditorHooks): Plugin[] {
   return [
     placeholder(hooks.placeholder ?? ''),
     sizeLimit(hooks.size),
+    ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
     rules(),
+    ...tablePlugins(),
     keymap({
-      'Mod-z': undo, 'Mod-Shift-z': redo, 'Mod-y': redo,
+      'Mod-z': undoAndTell, 'Mod-Shift-z': redo, 'Mod-y': redo,
       'Mod-b': toggleMark(marks.strong), 'Mod-i': toggleMark(marks.em), 'Mod-Shift-x': toggleMark(marks.strike),
       'Mod-e': toggleMark(marks.code), 'Mod-k': linkCommand(hooks.askLink),
       'Mod-Alt-0': setBlockType(nodes.paragraph),
@@ -458,7 +501,10 @@ export function plugins(hooks: EditorHooks): Plugin[] {
       'Mod-Alt-3': setBlockType(nodes.heading, { level: 3 }),
       'Mod-Shift-8': wrapInList(nodes.bullet_list), 'Mod-Shift-7': wrapInList(nodes.ordered_list), 'Mod-Shift-9': wrapInCheckList,
       'Mod-Enter': toggleCheck,
-      Enter: splitListItem(nodes.list_item), Tab: sinkListItem(nodes.list_item), 'Shift-Tab': liftListItem(nodes.list_item),
+      'Mod-Shift-Enter': hooks.makeSubtask ?? (() => false),
+      Enter: chainCommands(newlineInCode, fenceOnEnter, splitListItem(nodes.list_item)),
+      Tab: chainCommands(tableTab(notify), sinkListItem(nodes.list_item)),
+      'Shift-Tab': chainCommands(tableShiftTab, liftListItem(nodes.list_item)),
       'Shift-Enter': lineBreak,
       Escape: () => {
         hooks.onEscape()
@@ -475,8 +521,16 @@ export function createState(nodes: RNode[], hooks: EditorHooks): EditorState {
   return EditorState.create({ doc: modelToPm(nodes), plugins: plugins(hooks) })
 }
 
-/** Pasted plain text is read as Markdown, so pasting a formatted note keeps its structure. */
+/**
+ * Pasted plain text is read as Markdown, so pasting a formatted note keeps its
+ * structure. A pasted web address (an image's too) becomes a link, never an
+ * embed: the app loads nothing from other sites (editor-everywhere D5).
+ */
 export function markdownSlice(text: string): Slice {
+  const url = text.trim()
+  if (/^https?:\/\/\S+$/i.test(url) && safeHref(url)) {
+    return new Slice(Fragment.from(schema.text(url, [schema.marks.link.create({ href: url })])), 0, 0)
+  }
   const doc = modelToPm(parseMarkdown(text))
   return new Slice(Fragment.from(doc.content), 1, 1)
 }

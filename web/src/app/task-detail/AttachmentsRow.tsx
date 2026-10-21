@@ -100,8 +100,9 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     if (!el || !canAdd) return
     const onPaste = (e: ClipboardEvent) => {
       const files = filesFrom(e.clipboardData)
-      // The comment box has its own attach button; leave its pastes alone.
-      if (files.length === 0 || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
+      // The comment box has its own attach button, and the notes embed what they
+      // take (editor-everywhere D5): leave their pastes alone.
+      if (e.defaultPrevented || files.length === 0 || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
       e.preventDefault()
       void addRef.current(files)
     }
@@ -112,7 +113,7 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     }
     const onDragLeave = (e: globalThis.DragEvent) => { if (e.target === el) setDragging(false) }
     const onDrop = (e: globalThis.DragEvent) => {
-      if (!e.dataTransfer?.types.includes('Files') || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
+      if (e.defaultPrevented || !e.dataTransfer?.types.includes('Files') || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
       e.preventDefault()
       setDragging(false)
       void addRef.current(filesFrom(e.dataTransfer))
