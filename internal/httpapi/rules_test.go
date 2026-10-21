@@ -1,12 +1,15 @@
 package httpapi
 
 import (
+	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"testing"
 
 	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/settings"
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // rulesEnv is a signed-in owner on a server with the rules engine; env is
@@ -121,5 +124,34 @@ func TestAutomationsVariableWins(t *testing.T) {
 	e.mustStatus(resp, 409, out)
 	if errCode(out) != "set_by_environment" {
 		t.Fatalf("code %v", out)
+	}
+}
+
+// trash-and-history: a rule's batch reads "Rule (<name>)" for its author while
+// the rule exists, "Rule" once it is deleted.
+func TestHistoryLabelsRuleBatches(t *testing.T) {
+	e := rulesEnv(t, nil)
+	uid := e.userID()
+	rule := e.create("/api/v1/rules", map[string]any{"name": "Sunday sweep", "trigger": map[string]any{"kind": "task.created"}, "actions": map[string]any{"priority": 1}})
+	task := e.create("/api/v1/tasks", map[string]any{"title": "Call Ana"})
+	op := opsync.Op{ID: "rule-op-1", Entity: "task", EntityID: task, Field: "priority", Value: json.RawMessage("1"), TS: e.sync.ServerTS(), Device: "rule:" + rule}
+	if _, err := e.sync.ApplyStrict(context.Background(), uid, []opsync.Op{op}); err != nil {
+		t.Fatal(err)
+	}
+	label := func() any {
+		resp, out := e.do("GET", "/api/v1/tasks/"+task+"/history", nil)
+		e.mustStatus(resp, 200, out)
+		sets := out["changeSets"].([]any)
+		return sets[len(sets)-1].(map[string]any)["device_label"]
+	}
+	if l := label(); l != "Rule (Sunday sweep)" {
+		t.Fatalf("label %v", l)
+	}
+	resp, out := e.do("DELETE", "/api/v1/rules/"+rule, nil)
+	if resp.StatusCode >= 300 {
+		t.Fatalf("delete %d %v", resp.StatusCode, out)
+	}
+	if l := label(); l != "Rule" {
+		t.Fatalf("label after delete %v", l)
 	}
 }

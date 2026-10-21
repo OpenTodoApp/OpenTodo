@@ -37,9 +37,15 @@ const PublicDevicePrefix = "public:"
 // OpenSpec task-pages D5); they group apart like a public link's.
 const PageDevicePrefix = "page:"
 
-// guestDevice reports a device whose ops form their own groups (a guest's).
+// RuleDevicePrefix marks an automation rule's ops (mirrors sync.RuleDevicePrefix,
+// OpenSpec automation-rules); they group apart and read as the rule's event.
+const RuleDevicePrefix = "rule:"
+
+// guestDevice reports a device whose ops form their own groups (a guest's, or
+// an automation rule's).
 func guestDevice(device string) bool {
-	return strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, PageDevicePrefix)
+	return strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, PageDevicePrefix) ||
+		strings.HasPrefix(device, RuleDevicePrefix)
 }
 
 // Window folds quick consecutive ops by one actor on one entity into one event.

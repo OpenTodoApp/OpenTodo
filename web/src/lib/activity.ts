@@ -35,6 +35,14 @@ export function isPageEvent(ev: Pick<ActivityEvent, 'device'> | undefined): bool
   return !!ev?.device?.startsWith(PAGE_DEVICE_PREFIX)
 }
 
+/** Device prefix of an automation rule's ops (OpenSpec `automation-rules`). */
+export const RULE_DEVICE_PREFIX = 'rule:'
+
+/** True for an event an automation rule made: it groups apart from the user's own edits. */
+export function isRuleEvent(ev: Pick<ActivityEvent, 'device'> | undefined): boolean {
+  return !!ev?.device?.startsWith(RULE_DEVICE_PREFIX)
+}
+
 /**
  * The actor shown for a guest's event, or null for a member's: "Public link" for a
  * public link's tick, "<name> (guest, task page)" for a task page's write. The name
@@ -43,6 +51,7 @@ export function isPageEvent(ev: Pick<ActivityEvent, 'device'> | undefined): bool
  */
 export function guestActorLabel(ev: Pick<ActivityEvent, 'device' | 'changes' | 'actorName'> | undefined): string | null {
   if (isPublicEvent(ev)) return t(PUBLIC_ACTOR_LABEL)
+  if (isRuleEvent(ev)) return t('Rule')
   if (!isPageEvent(ev)) return null
   const typed = ev?.changes.find((c) => c.field === 'guest_name')?.to
   if (typeof typed === 'string' && typed) return t('{name} (guest, task page)', { name: typed })
@@ -108,7 +117,7 @@ export function deriveActivity(ops: ActivityOp[], prior?: Map<string, unknown>):
     const actor = op.actor ?? ''
     // A public link's ticks and a task page's guest writes group apart and carry
     // their device (public-links D6, task-pages D5).
-    const pub = op.device?.startsWith(PUBLIC_DEVICE_PREFIX) || op.device?.startsWith(PAGE_DEVICE_PREFIX) ? op.device : ''
+    const pub = op.device?.startsWith(PUBLIC_DEVICE_PREFIX) || op.device?.startsWith(PAGE_DEVICE_PREFIX) || op.device?.startsWith(RULE_DEVICE_PREFIX) ? op.device : ''
     const gk = `${actor}\u0000${op.entity}\u0000${op.entityId}${pub ? `\u0000${pub}` : ''}`
     let g = open.get(gk)
     if (!g || op.ts - g.ev.ts > WINDOW_MS) {

@@ -713,6 +713,17 @@
         {"id":"cf3","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":400000,"opIds":["cf3","cf4"],"changes":[{"field":"fields.f1","from":null,"to":150}]},
         {"id":"cf5","kind":"edited","actor":"bob","entity":"task","entityId":"occ1","taskId":"occ1","ts":500000,"opIds":["cf5"],"changes":[{"field":"fields.f1","from":null,"to":40}]}
       ]
+    },
+    {
+      "name": "a rule's change next to the user's edit stays its own event (automation-rules)",
+      "ops": [
+        {"id":"ru1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Call Ana","ts":500000,"device":"da"},
+        {"id":"ru2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"priority","value":1,"ts":501000,"device":"rule:r1"}
+      ],
+      "events": [
+        {"id":"ru1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":500000,"opIds":["ru1"],"changes":[{"field":"title","from":null,"to":"Call Ana"}]},
+        {"id":"ru2","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":501000,"opIds":["ru2"],"changes":[{"field":"priority","from":null,"to":1}],"device":"rule:r1"}
+      ]
     }
   ]
 }
