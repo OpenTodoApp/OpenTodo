@@ -462,8 +462,11 @@ const shots = [
   } },
   { name: 'import', card: true, server: P, async run(p) { await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor()) } },
   // The switch guides (named-importers 7.4): the import preview of each app's real
-  // export, from the sanitised fixtures in internal/importer/testdata.
-  ...[['todoist', 'todoist-backup/backup.zip'], ['things', 'things-db/main.sqlite'], ['ticktick', 'ticktick-csv/backup.csv'], ['linear', 'linear-csv/export.csv']].map(([app, fixture]) => (
+  // export, from the sanitised fixtures in internal/importer/testdata (and the
+  // synthesised ones of more-importers).
+  ...[['todoist', 'todoist-backup/backup.zip'], ['things', 'things-db/main.sqlite'], ['ticktick', 'ticktick-csv/backup.csv'], ['linear', 'linear-csv/export.csv'],
+    ['google-tasks', 'google-tasks-json/Tasks.json'], ['trello', 'trello-json/board.json'], ['asana', 'asana-csv/export.csv'],
+    ['microsoft-todo', 'microsoft-todo-json/todo.json'], ['apple-reminders', 'apple-reminders-json/reminders.json'], ['anydo', 'anydo-json/data.json']].map(([app, fixture]) => (
     { name: `import-${app}`, server: P, async run(p) {
       await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor())
       await p.locator('#import-file').setInputFiles(`internal/importer/testdata/${fixture}`)

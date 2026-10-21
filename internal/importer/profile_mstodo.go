@@ -64,7 +64,9 @@ func (msTodoProfile) Detect(data []byte) bool {
 		for _, t := range asList(lo["tasks"]) {
 			to := asObj(t)
 			if _, ok := to["importance"]; ok {
-				if _, ok := to["dueDateTime"]; ok {
+				_, due := to["dueDateTime"]
+				_, reminder := to["isReminderOn"] // Graph always writes it
+				if due || reminder {
 					return true
 				}
 			}

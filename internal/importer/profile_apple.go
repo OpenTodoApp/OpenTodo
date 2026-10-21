@@ -47,6 +47,17 @@ func (appleRemindersProfile) Detect(data []byte) bool {
 
 // applePriority maps Apple's 0 (none), 1–4 (high), 5 (medium), 6–9 (low).
 func applePriority(s string) (int, bool) {
+	// Shortcuts shows the priority as a word; EventKit stores the number.
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "high":
+		return 1, true
+	case "medium":
+		return 2, true
+	case "low":
+		return 3, true
+	case "none":
+		return 4, true
+	}
 	n, err := strconv.Atoi(strings.TrimSpace(s))
 	switch {
 	case s == "":

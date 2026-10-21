@@ -109,6 +109,15 @@ func TestMicrosoftToDoWeeklyAndZone(t *testing.T) {
 	}
 }
 
+func TestMicrosoftToDoHandMadeFile(t *testing.T) {
+	// The Graph Explorer route of the guide: lists written by hand around the
+	// tasks responses, without wellknownListName and without due dates.
+	p, err := Detect([]byte(`[{"displayName":"Groceries","tasks":[{"id":"t1","title":"Milk","importance":"normal","isReminderOn":false,"status":"notStarted"}]}]`), "")
+	if err != nil || p.Name() != "microsoft-todo-json" {
+		t.Fatalf("detected %v (%v)", p, err)
+	}
+}
+
 func TestMicrosoftToDoNotAFile(t *testing.T) {
 	if p, err := Detect([]byte(`[{"displayName":"Work","id":"l1"}]`), ""); err == nil && p.Name() == "microsoft-todo-json" {
 		t.Fatal("a list without To Do keys must not be detected as Microsoft To Do")
@@ -120,8 +129,9 @@ func TestAppleRemindersPriorityAndTime(t *testing.T) {
 		{"identifier":"a","list":"Home","title":"High","isCompleted":false,"priority":1,"dueDate":"2026-11-03T17:30:00+01:00"},
 		{"identifier":"b","list":"Home","title":"Medium","isCompleted":false,"priority":5,"dueDate":"2026-11-04"},
 		{"identifier":"c","list":"Home","title":"Low","isCompleted":false,"priority":9},
-		{"identifier":"d","list":"Home","title":"None","isCompleted":false,"priority":0}]`, "Europe/Rome")
-	for title, want := range map[string]int{"High": 1, "Medium": 2, "Low": 3, "None": 4} {
+		{"identifier":"d","list":"Home","title":"None","isCompleted":false,"priority":0},
+		{"identifier":"e","list":"Home","title":"Word","isCompleted":false,"priority":"Medium"}]`, "Europe/Rome")
+	for title, want := range map[string]int{"High": 1, "Medium": 2, "Low": 3, "None": 4, "Word": 2} {
 		if got := taskRow(t, p, title).Priority; got != want && !(want == 4 && got == 0) {
 			t.Errorf("%s: priority %d, want %d", title, got, want)
 		}
