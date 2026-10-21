@@ -283,10 +283,13 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Tab</kbd> / <kbd>Enter</kbd> | In the thread: in the Comments tab: reach Reply, Edit and Delete; in the Activity tab: expand a group or load older activity |
 | <kbd>←</kbd> / <kbd>→</kbd> | On the task tabs: switch between Comments, Activity and History in the task panel |
 | <kbd>Shift+H</kbd> | Show or hide the project activity; Tab reaches the person and kind filters |
-| <kbd>Ctrl+B</kbd> / <kbd>Ctrl+I</kbd> / <kbd>Ctrl+Shift+X</kbd> / <kbd>Ctrl+E</kbd> / <kbd>Ctrl+K</kbd> | In the notes: bold, italic, strikethrough, inline code, link (⌘ on a Mac) |
-| <kbd>Ctrl+Alt+1</kbd> / <kbd>Ctrl+Alt+2</kbd> / <kbd>Ctrl+Alt+3</kbd> / <kbd>Ctrl+Alt+0</kbd> | In the notes: heading 1–3 / normal text |
+| <kbd>Ctrl+B</kbd> / <kbd>Ctrl+I</kbd> / <kbd>Ctrl+Shift+X</kbd> / <kbd>Ctrl+E</kbd> / <kbd>Ctrl+K</kbd> | In the notes and comments: bold, italic, strikethrough, inline code, link (⌘ on a Mac) |
+| <kbd>Ctrl+Alt+1</kbd> / <kbd>Ctrl+Alt+2</kbd> / <kbd>Ctrl+Alt+3</kbd> / <kbd>Ctrl+Alt+0</kbd> | In the notes and comments: heading 1–3 / normal text |
 | <kbd>Ctrl+Shift+8</kbd> / <kbd>Ctrl+Shift+7</kbd> / <kbd>Ctrl+Shift+9</kbd> | In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent |
-| <kbd>-</kbd> · <kbd>1.</kbd> · <kbd>#</kbd> · <kbd>[</kbd> then <kbd>]</kbd> · <kbd>**x**</kbd> | Typed in the notes: markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes |
+| <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | On a check-list line: in a task's notes: make the check-list line a subtask (Ctrl+Z takes it back) |
+| <kbd>/</kbd> | At the start of a line or after a space: in the notes and comments: the command menu (headings, lists, table, quote, code, link, image, date, mention); ↑ / ↓ move, Enter applies, Esc closes |
+| <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | In a table: in a table: next / previous cell; Tab in the last cell adds a row |
+| <kbd>-</kbd> · <kbd>1.</kbd> · <kbd>#</kbd> · <kbd>[</kbd> then <kbd>]</kbd> · <kbd>&gt;</kbd> · <kbd>```</kbd> · <kbd>**x**</kbd> | Typed in the notes: markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes |
 
 ### Settings
 
