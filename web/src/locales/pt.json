@@ -4657,10 +4657,11 @@
   "Notifications through the app": "Notificações pelo app",
   "OpenTodo for {platform}": "OpenTodo para {platform}",
   "Send a test notification": "Enviar uma notificação de teste",
-  "The Android app schedules your reminders on this phone and shows them without a push service.": "O app Android agenda seus lembretes neste telefone e os mostra sem serviço de push.",
   "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": "O app não conseguiu mostrar uma notificação. Permita as notificações do OpenTodo nas configurações do Android.",
   "The app showed a test notification on this device.": "O app mostrou uma notificação de teste neste dispositivo.",
   "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": "Este app é mais antigo do que este servidor espera. Atualize o OpenTodo pela sua loja de apps para tudo continuar funcionando.",
   "Unlock with fingerprint or face": "Desbloquear com digital ou rosto",
-  "Unlock with fingerprint or face next time": "Desbloquear com digital ou rosto na próxima vez"
+  "Unlock with fingerprint or face next time": "Desbloquear com digital ou rosto na próxima vez",
+  "Reminders are scheduled on this phone and shown without a push service.": "Os lembretes são agendados neste telemóvel e mostrados sem serviço push.",
+  "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": "Desativado: os lembretes dizem \"Lembrete\" até abrir a app. Nunca com cifragem."
 }

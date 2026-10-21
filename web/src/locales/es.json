@@ -4657,10 +4657,11 @@
   "Notifications through the app": "Notificaciones a través de la aplicación",
   "OpenTodo for {platform}": "OpenTodo para {platform}",
   "Send a test notification": "Enviar una notificación de prueba",
-  "The Android app schedules your reminders on this phone and shows them without a push service.": "La aplicación de Android programa tus recordatorios en este teléfono y los muestra sin servicio push.",
   "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": "La aplicación no pudo mostrar una notificación. Permite las notificaciones de OpenTodo en los ajustes de Android.",
   "The app showed a test notification on this device.": "La aplicación mostró una notificación de prueba en este dispositivo.",
   "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": "Esta aplicación es más antigua de lo que espera este servidor. Actualiza OpenTodo desde tu tienda de aplicaciones para que todo siga funcionando.",
   "Unlock with fingerprint or face": "Desbloquear con huella o rostro",
-  "Unlock with fingerprint or face next time": "Desbloquear con huella o rostro la próxima vez"
+  "Unlock with fingerprint or face next time": "Desbloquear con huella o rostro la próxima vez",
+  "Reminders are scheduled on this phone and shown without a push service.": "Los recordatorios se programan en este teléfono y se muestran sin servicio push.",
+  "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": "Desactivado: los recordatorios dicen «Recordatorio» hasta que abras la app. Nunca con cifrado."
 }

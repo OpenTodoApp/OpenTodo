@@ -67,7 +67,7 @@ export function ShellNotificationsView({ state: s, busy, message, onEnable, onIn
         <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : (
         <>
-          <SettingRow label={t('Notifications through the app')} description={t('The Android app schedules your reminders on this phone and shows them without a push service.')}
+          <SettingRow {...rowCopy('notifications', 'shell')}
             status={<Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? t('On') : t('Off')}</Badge>}
             control={<Switch checked={s.enabled} disabled={busy} onChange={onEnable} label={t('Enable notifications on this device')} hideLabel />} />
           {s.permission === 'denied' && (
@@ -76,7 +76,7 @@ export function ShellNotificationsView({ state: s, busy, message, onEnable, onIn
           {s.permission === 'exact-denied' && (
             <Notice tone="warning">{t('Exact alarms are not allowed for OpenTodo, so reminders may arrive a few minutes late. Allow "Alarms & reminders" for the app in Android\'s settings.')}</Notice>
           )}
-          <SettingRow {...rowCopy('notifications', 'titles')}
+          <SettingRow {...rowCopy('notifications', 'shellTitles')}
             control={<Switch checked={s.includeContent} disabled={busy} onChange={onIncludeContent} label={t('Include task titles')} hideLabel />} />
           <div className="py-3">
             <Button size="sm" disabled={busy || !s.enabled} onClick={onTest}>{t('Send a test notification')}</Button>

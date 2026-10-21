@@ -6934,7 +6934,7 @@
     "web/src/app/NotificationsSettings.tsx"
   ],
   "Notifications through the app": [
-    "web/src/app/ShellNotifications.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Notifications, {unread} unread": [
     "web/src/app/NotificationBell.tsx"
@@ -6998,6 +6998,9 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Off: no maps or address search on your devices; locations still work.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Off: the push carries only encrypted ids and this device adds the title.": [
@@ -8407,6 +8410,9 @@
   "Reminders": [
     "web/src/app/RemindersField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Reminders are scheduled on this phone and shown without a push service.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Reminders delivered to this device, and a test": [
     "web/src/app/settingsIndex.ts"
@@ -10465,9 +10471,6 @@
   "That took too long. Please try again.": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/SecurityPanel.tsx"
-  ],
-  "The Android app schedules your reminders on this phone and shows them without a push service.": [
-    "web/src/app/ShellNotifications.tsx"
   ],
   "The Focus timer: mode, lengths, breaks and sound. Synced to your devices.": [
     "web/src/lib/settingsCopy.ts"

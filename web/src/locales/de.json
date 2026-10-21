@@ -4657,10 +4657,11 @@
   "Notifications through the app": "Benachrichtigungen über die App",
   "OpenTodo for {platform}": "OpenTodo für {platform}",
   "Send a test notification": "Testbenachrichtigung senden",
-  "The Android app schedules your reminders on this phone and shows them without a push service.": "Die Android-App plant deine Erinnerungen auf diesem Telefon und zeigt sie ohne Push-Dienst an.",
   "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": "Die App konnte keine Benachrichtigung anzeigen. Erlaube Benachrichtigungen für OpenTodo in den Android-Einstellungen.",
   "The app showed a test notification on this device.": "Die App hat auf diesem Gerät eine Testbenachrichtigung angezeigt.",
   "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": "Diese App ist älter, als dieser Server erwartet. Aktualisiere OpenTodo über deinen App-Store, damit alles funktioniert.",
   "Unlock with fingerprint or face": "Mit Fingerabdruck oder Gesicht entsperren",
-  "Unlock with fingerprint or face next time": "Nächstes Mal mit Fingerabdruck oder Gesicht entsperren"
+  "Unlock with fingerprint or face next time": "Nächstes Mal mit Fingerabdruck oder Gesicht entsperren",
+  "Reminders are scheduled on this phone and shown without a push service.": "Erinnerungen werden auf diesem Telefon geplant und ohne Push-Dienst angezeigt.",
+  "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": "Aus: Erinnerungen lauten „Erinnerung“, bis du die App öffnest. Nie mit Verschlüsselung."
 }

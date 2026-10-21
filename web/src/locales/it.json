@@ -4657,10 +4657,11 @@
   "Notifications through the app": "Notifiche tramite l'app",
   "OpenTodo for {platform}": "OpenTodo per {platform}",
   "Send a test notification": "Invia una notifica di prova",
-  "The Android app schedules your reminders on this phone and shows them without a push service.": "L'app Android pianifica i tuoi promemoria su questo telefono e li mostra senza servizio push.",
   "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": "L'app non è riuscita a mostrare una notifica. Consenti le notifiche per OpenTodo nelle impostazioni di Android.",
   "The app showed a test notification on this device.": "L'app ha mostrato una notifica di prova su questo dispositivo.",
   "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": "Questa app è più vecchia di quanto si aspetta questo server. Aggiorna OpenTodo dal tuo store per continuare a far funzionare tutto.",
   "Unlock with fingerprint or face": "Sblocca con impronta o volto",
-  "Unlock with fingerprint or face next time": "La prossima volta sblocca con impronta o volto"
+  "Unlock with fingerprint or face next time": "La prossima volta sblocca con impronta o volto",
+  "Reminders are scheduled on this phone and shown without a push service.": "I promemoria sono programmati su questo telefono e mostrati senza servizio push.",
+  "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": "Disattivo: i promemoria dicono \"Promemoria\" finché non apri l’app. Mai con la cifratura."
 }
