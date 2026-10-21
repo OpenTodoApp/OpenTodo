@@ -7,7 +7,7 @@ import { db } from '../../lib/db'
 import { activeLabels, createLabel } from '../../lib/labels'
 import { archiveProject, createProject, createSubtask, createTask, setTaskCompleted, setTaskParent } from '../../lib/ops'
 import { createSection, moveTaskToSection } from '../../lib/sections'
-import { click, key, type } from '../../ui/test-utils'
+import { click, key, type, visibleText } from '../../ui/test-utils'
 import { ME, membership, open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
@@ -38,7 +38,7 @@ describe('facet parts (2.3, task-panel-facets)', () => {
     const id = await createTask({ title: 'Plan', project_id: work, priority: 2, due: { date: '2026-10-15', time: '09:00' } })
     const { container, row, unmount } = await open(id)
     expect(row('project').textContent).toContain('Work')
-    expect(row('priority').textContent).toBe('P2')
+    expect(visibleText(row('priority'))).toBe('P2')
     expect(row('due').textContent).toContain('Tomorrow 09:00')
     expect(container.querySelector('section[aria-label="Properties"] input')).toBeNull()
     // An empty property is not a part; the Add menu offers it.

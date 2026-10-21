@@ -54,9 +54,10 @@ export function FacetLine({ facet, icon, name, parts, readOnly = false, open = n
               ) : withTip(p.tip, (
                 <button type="button" ref={(el) => partRef?.(p.id, el)} data-part={p.id}
                   aria-expanded={p.id === 'origin' ? undefined : open === p.id} aria-haspopup={p.id === 'origin' ? undefined : 'dialog'}
-                  aria-label={`${name} · ${p.text}`}
                   className={`inline-flex min-h-7 max-w-full items-center rounded-control px-1 text-left hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:hover:bg-raised ${open === p.id ? 'bg-sunken dark:bg-raised' : ''} ${tone}`}
                   onClick={(e) => onPart?.(p, e.currentTarget)}>
+                  {/* The facet's name is read first; the visible text stays part of the name (label-content-name-match). */}
+                  <span className="sr-only">{`${name}: `}</span>
                   {content}
                 </button>
               ))}

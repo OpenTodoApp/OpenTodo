@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createTask } from '../../lib/ops'
-import { click, key } from '../../ui/test-utils'
+import { click, key, visibleText } from '../../ui/test-utils'
 import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
@@ -15,7 +15,7 @@ describe('priority part', () => {
   it('reads the level without options until opened; a pick writes it and closes the editor', async () => {
     const id = await createTask({ title: 'Plan', priority: 2 })
     const { row, valueButton, editor, unmount } = await open(id)
-    expect(row('priority').textContent).toBe('P2')
+    expect(visibleText(row('priority'))).toBe('P2')
     expect(editor()).toBeNull()
     await click(valueButton('priority'))
     await settle()
@@ -26,7 +26,7 @@ describe('priority part', () => {
     await settle()
     expect((await db.tasks.get(id))!.priority).toBe(1)
     expect(editor()).toBeNull()
-    await waitFor(() => row('priority').textContent === 'P1', 'the part reads P1')
+    await waitFor(() => visibleText(row('priority')) === 'P1', 'the part reads P1')
     expect(document.activeElement).toBe(valueButton('priority'))
     await unmount()
   })
@@ -36,7 +36,7 @@ describe('priority part', () => {
     const { row, valueButton, unmount } = await open(id)
     valueButton('project').focus()
     await key(document.activeElement!, '3')
-    await waitFor(() => row('priority').textContent === 'P3', 'the part reads P3')
+    await waitFor(() => visibleText(row('priority')) === 'P3', 'the part reads P3')
     expect((await db.tasks.get(id))!.priority).toBe(3)
     await unmount()
   })

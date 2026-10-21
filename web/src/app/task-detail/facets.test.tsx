@@ -8,14 +8,14 @@ import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask } from '../../lib/ops'
-import { click, flush, key, type } from '../../ui/test-utils'
+import { click, flush, key, type, visibleText } from '../../ui/test-utils'
 import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
 
 /** What the user sees as properties: the facet lines plus the Add control. */
 const visibleItems = (root: ParentNode) => root.querySelectorAll('[data-facets] [data-facet], [data-facets] button[aria-label="Add a property"]').length
-const lineText = (root: ParentNode, facet: string) => root.querySelector(`[data-facet="${facet}"]`)?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+const lineText = (root: ParentNode, facet: string) => { const el = root.querySelector(`[data-facet="${facet}"]`); return el ? visibleText(el).replace(/\s+/g, ' ').trim() : '' }
 
 describe('facet lines', () => {
   it('an empty task reads Where, When "Not scheduled" and How "P4", with Add: at most seven items', async () => {
