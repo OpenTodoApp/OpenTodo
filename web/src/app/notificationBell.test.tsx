@@ -26,6 +26,19 @@ describe('NotificationBell', () => {
     await r.unmount()
   })
 
+  it('words a mention in a task\'s notes (editor-everywhere D7) apart from a comment mention', async () => {
+    const base = { recipientId: 'bob', actorId: 'alice', actorName: 'Alice', commentId: '', taskId: 't1', taskTitle: 'Book flights', excerpt: '', at: 1 }
+    await db.notifications.put({ id: 'm1', kind: 'mentioned', createdAt: 1_760_000_000_000, readAt: null, payload: { ...base, source: 'note' } } as never)
+    await db.notifications.put({ id: 'm2', kind: 'mentioned', createdAt: 1_760_000_000_001, readAt: null, payload: { ...base, commentId: 'c1' } } as never)
+    const r = await render(<NotificationBell />)
+    for (let i = 0; i < 50 && !document.querySelector('[data-unread]'); i++) await flush(20)
+    await click(document.querySelector('[data-notifications]')!)
+    for (let i = 0; i < 50 && !document.querySelector('[data-mention-source="note"]'); i++) await flush(20)
+    expect(document.querySelector('[data-mention-source="note"]')!.textContent).toBe('Alice mentioned you in the notes of Book flights')
+    expect(document.body.textContent).toContain('Alice mentioned you on Book flights')
+    await r.unmount()
+  })
+
   const put = (id: string, readAt: number | null = null, taskId = id) => db.notifications.put({
     id, kind: 'assigned', createdAt: 1_760_000_000_000 + id.length, readAt,
     payload: { assigneeId: 'bob', actorId: 'alice', actorName: 'Alice', taskId, taskTitle: `Task ${id}`, projectId: null, projectName: '', at: 1 },

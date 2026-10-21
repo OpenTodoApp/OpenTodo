@@ -1613,6 +1613,8 @@ export interface MentionedPayload {
   projectName?: string
   excerpt: string
   at: number
+  /** "note" for a mention in a task's notes (editor-everywhere D7); absent for a comment. */
+  source?: 'note'
 }
 
 /** Payload of an `assigned` notification (task-assignment); names resolved by the server. */

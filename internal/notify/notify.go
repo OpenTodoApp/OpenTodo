@@ -58,8 +58,8 @@ func (Nop) Assigned(context.Context, Assigned) {}
 // (OpenSpec change `comments-and-activity`).
 const KindMentioned = "mentioned"
 
-// Mentioned is emitted once per account newly listed in a comment's mentions,
-// after the batch that added it committed. Only current members of the task's
+// Mentioned is emitted once per account newly listed in a comment's mentions or
+// a task's note_mentions, after the batch that added it committed. Only current members of the task's
 // shared project are ever mentioned (the sync engine filters the list at
 // receipt). Excerpt is the start of the comment body on one line.
 type Mentioned struct {

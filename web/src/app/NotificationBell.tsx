@@ -76,7 +76,9 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                     {(n.kind === 'page_replied' || n.kind === 'page_completed') && 'pageId' in n.payload ? (
                       <PageNotification kind={n.kind} payload={n.payload} />
                     ) : n.kind === 'mentioned' ? (
-                      <span className="block">{t.rich('<b>{actor}</b> mentioned you on <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}
+                      <span className="block" data-mention-source={'source' in n.payload ? n.payload.source : undefined}>{'source' in n.payload && n.payload.source === 'note'
+                        ? t.rich('<b>{actor}</b> mentioned you in the notes of <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })
+                        : t.rich('<b>{actor}</b> mentioned you on <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}
                         {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-meta text-muted">“{n.payload.excerpt}”</span>}
                       </span>
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
