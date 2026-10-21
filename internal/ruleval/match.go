@@ -50,6 +50,10 @@ func LogicalDate(nowMs int64, offsetMinutes int, dayStart string) string {
 	return t.Format("2006-01-02")
 }
 
+// DayStartMinutes reads a day start ("HH:MM", up to 06:00) as minutes after
+// midnight; anything else is midnight.
+func DayStartMinutes(s string) int { return dayStartMinutes(s) }
+
 func dayStartMinutes(s string) int {
 	if len(s) != 5 || s[2] != ':' {
 		return 0
