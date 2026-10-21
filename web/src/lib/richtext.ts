@@ -18,14 +18,18 @@
 // every fold-back of a plain-text `description` write creates the body named
 // after that write's clock. Inside a body, elements mirror the editor schema
 // (paragraph, heading{level}, bullet_list, ordered_list{order},
-// list_item{checked}); text blocks hold one XmlText whose formatting attributes
-// are marks (strong, em, strike, code: {}; link: {href}). A hard line break is a
-// "\n" character. Unknown elements, attributes and marks (from newer clients) are
-// kept by every merge and never rewritten unless the user edits that text.
+// list_item{checked}, blockquote, code_block{lang}, table, table_row,
+// table_cell{align}, table_header{align}, image{id, alt}); text blocks hold one
+// XmlText whose formatting attributes are marks (strong, em, strike, code: {};
+// link: {href}; mention: {id, name}). A hard line break is a "\n" character.
+// Unknown elements, attributes and marks (from newer clients) are kept by every
+// merge and never rewritten unless the user edits that text.
 import * as Y from 'yjs'
 import { MAX_DOC_CHARS } from './docfields'
+import { parseMarkdown, renderMarkdown } from './richtextMarkdown'
 
 export { MAX_DOC_CHARS }
+export { parseInline, parseMarkdown, renderInline, renderMarkdown, MAX_TABLE_COLS, MAX_TABLE_ROWS, type ParseOptions } from './richtextMarkdown'
 export const DOC_PREFIX = 'ydoc:v1:'
 /** The editor warns from here on (90 % of the cap). */
 export const WARN_DOC_CHARS = Math.floor(MAX_DOC_CHARS * 0.9)
@@ -42,19 +46,26 @@ export interface Run {
   marks: Marks
 }
 export interface RNode {
-  type: 'paragraph' | 'heading' | 'bullet_list' | 'ordered_list' | 'list_item'
+  type: 'paragraph' | 'heading' | 'bullet_list' | 'ordered_list' | 'list_item' | 'blockquote' | 'code_block'
+    | 'table' | 'table_row' | 'table_cell' | 'table_header' | 'image'
   attrs: Record<string, unknown>
-  /** Child blocks (lists, list items). */
+  /** Child blocks (lists, list items, quotes, tables, rows). */
   content?: RNode[]
-  /** Inline content (paragraph, heading). */
+  /** Inline content (paragraph, heading, code block, table cell). */
   runs?: Run[]
 }
 
-/** Marks in nesting order: a link wraps bold wraps italic wraps strike wraps code. */
-export const KNOWN_MARKS = ['link', 'strong', 'em', 'strike', 'code'] as const
-const TEXTBLOCKS = new Set(['paragraph', 'heading'])
-const CONTAINERS = new Set(['bullet_list', 'ordered_list', 'list_item'])
-const KNOWN_ATTRS: Record<string, string[]> = { heading: ['level'], ordered_list: ['order'], list_item: ['checked'] }
+/** Marks in nesting order: a link wraps bold wraps italic wraps strike wraps code wraps a mention. */
+export const KNOWN_MARKS = ['link', 'strong', 'em', 'strike', 'code', 'mention'] as const
+const TEXTBLOCKS = new Set(['paragraph', 'heading', 'code_block', 'table_cell', 'table_header'])
+const CONTAINERS = new Set(['bullet_list', 'ordered_list', 'list_item', 'blockquote', 'table', 'table_row'])
+const LEAVES = new Set(['image'])
+const CELLS = new Set(['table_cell', 'table_header'])
+const KNOWN_ATTRS: Record<string, string[]> = {
+  heading: ['level'], ordered_list: ['order'], list_item: ['checked'], code_block: ['lang'],
+  table_cell: ['align'], table_header: ['align'], image: ['id', 'alt'],
+}
+const ALIGNS = ['left', 'center', 'right']
 
 // ---- envelope ----
 
@@ -227,6 +238,9 @@ function knownMarks(attrs: Record<string, unknown> | undefined): Marks {
     if (m === 'link') {
       const href = typeof v === 'object' && typeof (v as { href?: unknown }).href === 'string' ? (v as { href: string }).href : ''
       if (href) out.link = { href }
+    } else if (m === 'mention') {
+      const { id, name } = (typeof v === 'object' ? v : {}) as { id?: unknown; name?: unknown }
+      if (typeof id === 'string' && id) out.mention = { id, name: typeof name === 'string' ? name : '' }
     } else out[m] = {}
   }
   return out
@@ -249,11 +263,12 @@ function sameMarks(a: Marks, b: Marks): boolean {
   for (const k of ka) {
     if (!(k in b)) return false
     if (k === 'link' && a.link.href !== b.link.href) return false
+    if (k === 'mention' && (a.mention.id !== b.mention.id || a.mention.name !== b.mention.name)) return false
   }
   return true
 }
 
-function pushRun(runs: Run[], text: string, marks: Marks): void {
+export function pushRun(runs: Run[], text: string, marks: Marks): void {
   const last = runs[runs.length - 1]
   if (last && sameMarks(last.marks, marks)) last.text += text
   else runs.push({ text, marks })
@@ -270,10 +285,16 @@ function attrsOf(type: string, el: Y.XmlElement): Record<string, unknown> {
   if (type === 'heading') out.level = clampInt(all.level, 1, 6, 1)
   if (type === 'ordered_list') out.order = clampInt(all.order, 1, 1e9, 1)
   if (type === 'list_item') out.checked = typeof all.checked === 'boolean' ? all.checked : null
+  if (type === 'code_block') out.lang = typeof all.lang === 'string' ? all.lang : ''
+  if (CELLS.has(type)) out.align = ALIGNS.includes(all.align as string) ? all.align : null
+  if (type === 'image') {
+    out.id = typeof all.id === 'string' ? all.id : ''
+    out.alt = typeof all.alt === 'string' ? all.alt : ''
+  }
   return out
 }
 
-function clampInt(v: unknown, lo: number, hi: number, dflt: number): number {
+export function clampInt(v: unknown, lo: number, hi: number, dflt: number): number {
   const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN
   return Number.isInteger(n) ? Math.min(hi, Math.max(lo, n)) : dflt
 }
@@ -288,10 +309,21 @@ export function nodeModel(child: Y.XmlElement | Y.XmlText): RNode {
   const type = child.nodeName
   const kids = child.toArray() as (Y.XmlElement | Y.XmlText)[]
   if (TEXTBLOCKS.has(type)) {
-    return { type: type as RNode['type'], attrs: attrsOf(type, child), runs: runsOf(kids.filter((k): k is Y.XmlText => k instanceof Y.XmlText)) }
+    const runs = runsOf(kids.filter((k): k is Y.XmlText => k instanceof Y.XmlText))
+    return { type: type as RNode['type'], attrs: attrsOf(type, child), runs: type === 'code_block' ? plainRuns(runs.map((r) => r.text).join('')) : runs }
   }
+  if (LEAVES.has(type)) return { type: 'image', attrs: attrsOf(type, child) }
   if (CONTAINERS.has(type)) {
     const content = kids.map(nodeModel)
+    if (type === 'blockquote') return { type, attrs: {}, content: content.length ? content : [{ type: 'paragraph', attrs: {}, runs: [] }] }
+    if (type === 'table') {
+      const rows = content.filter((n) => n.type === 'table_row')
+      return rows.length ? { type, attrs: {}, content: rows } : { type: 'paragraph', attrs: {}, runs: plainRuns(plainText(child)) }
+    }
+    if (type === 'table_row') {
+      // A row holds cells only; anything else becomes a cell with its text.
+      return { type, attrs: {}, content: content.map((n) => (CELLS.has(n.type) ? n : { type: 'table_cell', attrs: { align: null }, runs: n.runs ?? [] })) }
+    }
     if (type === 'list_item') {
       if (content.length === 0 || content[0].type !== 'paragraph') content.unshift({ type: 'paragraph', attrs: {}, runs: [] })
       return { type: 'list_item', attrs: attrsOf(type, child), content }
@@ -315,7 +347,9 @@ export function toModel(body: Y.XmlFragment | Y.XmlElement): RNode[] {
 
 function attrsFor(marks: Marks): Record<string, unknown> {
   const out: Record<string, unknown> = {}
-  for (const m of KNOWN_MARKS) out[m] = marks[m] ? (m === 'link' ? { href: marks.link.href } : {}) : null
+  for (const m of KNOWN_MARKS) {
+    out[m] = !marks[m] ? null : m === 'link' ? { href: marks.link.href } : m === 'mention' ? { id: marks.mention.id, name: marks.mention.name } : {}
+  }
   return out
 }
 
@@ -330,7 +364,7 @@ function fillElement(el: Y.XmlElement, node: RNode): void {
       t.insert(pos, r.text, attrsFor(r.marks))
       pos += r.text.length
     }
-  } else insertModel(el, 0, node.content ?? [])
+  } else if (!LEAVES.has(node.type)) insertModel(el, 0, node.content ?? [])
 }
 
 /** Insert model nodes into an integrated parent at `index` (deterministic sequence of edits). */
@@ -353,10 +387,14 @@ export function normalizeModel(nodes: RNode[]): RNode[] {
   return nodes.map((n) => {
     if (TEXTBLOCKS.has(n.type)) {
       const runs: Run[] = []
-      for (const r of n.runs ?? []) if (r.text) pushRun(runs, r.text, knownMarks(r.marks as Record<string, unknown>))
-      const attrs: Record<string, unknown> = n.type === 'heading' ? { level: clampInt(n.attrs.level, 1, 6, 1) } : {}
+      const code = n.type === 'code_block'
+      for (const r of n.runs ?? []) if (r.text) pushRun(runs, r.text, code ? {} : knownMarks(r.marks as Record<string, unknown>))
+      const attrs: Record<string, unknown> = n.type === 'heading' ? { level: clampInt(n.attrs.level, 1, 6, 1) }
+        : code ? { lang: typeof n.attrs.lang === 'string' ? n.attrs.lang : '' }
+          : CELLS.has(n.type) ? { align: ALIGNS.includes(n.attrs.align as string) ? n.attrs.align : null } : {}
       return { type: n.type, attrs, runs }
     }
+    if (n.type === 'image') return { type: n.type, attrs: { id: String(n.attrs.id ?? ''), alt: String(n.attrs.alt ?? '') } }
     const attrs: Record<string, unknown> = n.type === 'ordered_list' ? { order: clampInt(n.attrs.order, 1, 1e9, 1) }
       : n.type === 'list_item' ? { checked: typeof n.attrs.checked === 'boolean' ? n.attrs.checked : null } : {}
     return { type: n.type, attrs, content: normalizeModel(n.content ?? []) }
@@ -401,7 +439,7 @@ function updateNode(y: Y.XmlElement | Y.XmlText, t: RNode): boolean {
     return true
   }
   const name = y.nodeName
-  const known = TEXTBLOCKS.has(name) || CONTAINERS.has(name)
+  const known = TEXTBLOCKS.has(name) || CONTAINERS.has(name) || LEAVES.has(name)
   if (known && name !== t.type) return false
   const kids = y.toArray() as (Y.XmlElement | Y.XmlText)[]
   if (!known) {
@@ -428,7 +466,7 @@ function updateNode(y: Y.XmlElement | Y.XmlText, t: RNode): boolean {
       if (at >= 0) y.delete(at, 1)
     }
     updateText(text, t.runs ?? [])
-  } else updateBody(y, t.content ?? [])
+  } else if (!LEAVES.has(t.type)) updateBody(y, t.content ?? [])
   return true
 }
 
@@ -499,394 +537,4 @@ function updateText(text: Y.XmlText, target: Run[]): void {
     pos += s.length
     i = j
   }
-}
-
-// ---- Markdown projection ----
-
-const PUNCT = '\\`*_{}[]()#+-.!~>|<'
-
-function escapeText(s: string, inLink: boolean): string {
-  let out = ''
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i]
-    const prev = s[i - 1] ?? ' '
-    const next = s[i + 1] ?? ' '
-    if (c === '\\' || c === '`' || c === '*' || c === '[' || (inLink && c === ']')) out += `\\${c}`
-    else if (c === '~' && (next === '~' || prev === '~' || i === 0 || i === s.length - 1)) out += '\\~'
-    else if (c === '_' && (!/[\p{L}\p{N}]/u.test(prev) || !/[\p{L}\p{N}]/u.test(next))) out += '\\_'
-    else out += c
-  }
-  return out
-}
-
-const BLOCK_START = /^(\s*)(#{1,6}(?=\s|$)|[-+*](?=\s|$)|\d{1,9}(?=[.)](\s|$))|>)/
-
-/** Backslash the first marker of a line that would otherwise start a block. */
-function escapeLineStart(line: string): string {
-  const m = BLOCK_START.exec(line)
-  if (!m) return line
-  const at = m[1].length
-  if (/\d/.test(line[at])) {
-    const dot = at + m[2].length
-    return `${line.slice(0, dot)}\\${line.slice(dot)}`
-  }
-  return `${line.slice(0, at)}\\${line.slice(at)}`
-}
-
-function codeSpan(s: string): string {
-  let n = 1
-  while (s.includes('`'.repeat(n))) n++
-  const fence = '`'.repeat(n)
-  const pad = s.startsWith('`') || s.endsWith('`') || (s.startsWith(' ') && s.endsWith(' ') && s.trim() !== '') ? ' ' : ''
-  return `${fence}${pad}${s}${pad}${fence}`
-}
-
-function encodeHref(href: string): string {
-  return href.replace(/[\s()<>]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`)
-}
-
-// Emphasis is written as \u0001…\u0002 first and resolved once its neighbours are
-// known: `_x_` normally, `*x*` when a letter or digit touches it (intraword).
-const EM_OPEN = '\u0001'
-const EM_CLOSE = '\u0002'
-const OPEN: Record<string, string> = { strong: '**', em: EM_OPEN, strike: '~~', code: '' }
-const CLOSE: Record<string, string> = { ...OPEN, em: EM_CLOSE }
-
-function resolveEmphasis(s: string): string {
-  if (!s.includes(EM_OPEN)) return s
-  const out = [...s]
-  const open: number[] = []
-  out.forEach((c, i) => {
-    if (c === EM_OPEN) open.push(i)
-    else if (c === EM_CLOSE) {
-      const at = open.pop() as number
-      const d = isWord(out[at - 1]) || isWord(out[i + 1]) ? '*' : '_'
-      out[at] = d
-      out[i] = d
-    }
-  })
-  return out.join('')
-}
-
-/** Inline Markdown for runs; newlines become "\n" + indent with line starts escaped. */
-export function renderInline(runs: Run[], indent = ''): string {
-  let out = ''
-  const stack: { mark: string; href?: string }[] = []
-  const close = (to: number) => {
-    while (stack.length > to) {
-      const top = stack.pop() as { mark: string; href?: string }
-      out += top.mark === 'link' ? `](${encodeHref(top.href ?? '')})` : CLOSE[top.mark]
-    }
-  }
-  let atLineStart = true
-  for (const r of runs) {
-    if (!r.text) continue
-    const want = KNOWN_MARKS.filter((m) => m !== 'code' && r.marks[m]).map((m) => ({ mark: m as string, href: m === 'link' ? String(r.marks.link.href) : undefined }))
-    let k = 0
-    while (k < stack.length && k < want.length && stack[k].mark === want[k].mark && stack[k].href === want[k].href) k++
-    close(k)
-    for (const w of want.slice(k)) {
-      out += w.mark === 'link' ? '[' : OPEN[w.mark]
-      stack.push(w)
-      atLineStart = false
-    }
-    const inLink = stack.some((x) => x.mark === 'link')
-    const lines = r.text.split('\n')
-    lines.forEach((line, li) => {
-      if (li > 0) {
-        out += `\n${indent}`
-        atLineStart = true
-      }
-      if (!line) return
-      if (r.marks.code) out += codeSpan(line)
-      else {
-        const esc = escapeText(line, inLink)
-        out += atLineStart ? escapeLineStart(esc) : esc
-      }
-      atLineStart = false
-    })
-  }
-  close(0)
-  return resolveEmphasis(out)
-}
-
-function hasText(n: RNode): boolean {
-  if (n.runs) return n.runs.some((r) => r.text.trim() !== '')
-  return (n.content ?? []).some(hasText)
-}
-
-function renderBlocks(nodes: RNode[], indent: string): string[] {
-  const out: string[] = []
-  for (const n of nodes) {
-    switch (n.type) {
-      case 'heading': {
-        if (!hasText(n)) break
-        const text = renderInline((n.runs ?? []).map((r) => ({ ...r, text: r.text.replace(/\n/g, ' ') })), indent)
-        out.push(`${'#'.repeat(clampInt(n.attrs.level, 1, 6, 1))} ${text}`)
-        break
-      }
-      case 'bullet_list':
-      case 'ordered_list': {
-        const items: string[] = []
-        let num = clampInt(n.attrs.order, 1, 1e9, 1)
-        for (const item of n.content ?? []) {
-          const marker = n.type === 'bullet_list' ? '- ' : `${num++}. `
-          const pad = indent + ' '.repeat(marker.length)
-          const box = item.attrs.checked === true ? '[x] ' : item.attrs.checked === false ? '[ ] ' : ''
-          const [first, ...rest] = item.content ?? []
-          const head = first && first.type === 'paragraph' ? renderInline(first.runs ?? [], pad) : ''
-          let s = `${marker}${box}${head}`.trimEnd()
-          for (const child of first && first.type === 'paragraph' ? rest : item.content ?? []) {
-            const [b] = renderBlocks([child], pad)
-            if (b === undefined) continue
-            // A nested list follows its item's text directly; other blocks after a blank line.
-            s += child.type === 'bullet_list' || child.type === 'ordered_list' ? `\n${pad}${b}` : `\n\n${pad}${b}`
-          }
-          items.push(s)
-        }
-        if (items.length) out.push(items.join(`\n${indent}`))
-        break
-      }
-      case 'list_item':
-        out.push(...renderBlocks(n.content ?? [], indent))
-        break
-      default: {
-        if (!hasText(n)) break
-        out.push(renderInline(n.runs ?? [], indent))
-      }
-    }
-  }
-  return out
-}
-
-/**
- * The Markdown text of a body: `#` headings, `**bold**`, `_italic_`, `~~strike~~`,
- * `` `code` ``, `[text](url)`, `-` and `1.` lists, `- [ ]`/`- [x]` check items;
- * a hard line break is a newline. Empty blocks are left out. Deterministic, so
- * every device projects the same text from the same merged document.
- */
-export function renderMarkdown(nodes: RNode[]): string {
-  return renderBlocks(nodes, '').map((b) => b.replace(/[ \t]+$/gm, '')).join('\n\n')
-}
-
-// ---- Markdown parsing (for plain-text writes and legacy notes) ----
-
-const LIST = /^( {0,3})([-*+]|\d{1,9}[.)])(?:[ \t]+(.*))?$/
-const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$/
-const TASK = /^\[( |x|X)\](?:[ \t]+(.*))?$/
-
-const blank = (l: string) => l.trim() === ''
-const nextFilled = (lines: string[], from: number) => {
-  let k = from
-  while (k < lines.length && blank(lines[k])) k++
-  return k
-}
-const indentOf = (l: string) => l.length - l.replace(/^ +/, '').length
-
-/** Parse Markdown (the supported subset) into the display model. Unknown syntax stays literal text. */
-export function parseMarkdown(src: string): RNode[] {
-  return parseBlocks(src.replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), 0)
-}
-
-function parseBlocks(lines: string[], depth: number): RNode[] {
-  const out: RNode[] = []
-  let i = 0
-  while (i < lines.length) {
-    const line = lines[i]
-    if (blank(line)) {
-      i++
-      continue
-    }
-    const h = HEADING.exec(line)
-    if (h) {
-      out.push({ type: 'heading', attrs: { level: h[1].length }, runs: parseInline((h[2] ?? '').trim()) })
-      i++
-      continue
-    }
-    const first = LIST.exec(line)
-    if (first && depth < 16) {
-      const ordered = /\d/.test(first[2])
-      const items: RNode[] = []
-      while (i < lines.length) {
-        if (blank(lines[i])) {
-          // A loose list: blank lines between items of the same kind.
-          const k = nextFilled(lines, i)
-          const next = k < lines.length ? LIST.exec(lines[k]) : null
-          if (!next || /\d/.test(next[2]) !== ordered) break
-          i = k
-        }
-        const m = LIST.exec(lines[i])
-        if (!m || /\d/.test(m[2]) !== ordered) break
-        const width = m[1].length + m[2].length + 1
-        const body: string[] = [m[3] ?? '']
-        i++
-        while (i < lines.length) {
-          const l = lines[i]
-          if (blank(l)) {
-            // Blank lines stay inside the item when indented content follows.
-            const k = nextFilled(lines, i)
-            if (k < lines.length && indentOf(lines[k]) >= 2) {
-              for (; i < k; i++) body.push('')
-              continue
-            }
-            break
-          }
-          const ind = indentOf(l)
-          if (ind >= 2) {
-            body.push(l.slice(Math.min(ind, width)))
-            i++
-            continue
-          }
-          if (LIST.exec(l) || HEADING.exec(l)) break
-          // A lazy continuation line joins the item's first paragraph.
-          if (body.length > 0 && !blank(body[body.length - 1])) {
-            body.push(l.trim())
-            i++
-            continue
-          }
-          break
-        }
-        let checked: boolean | null = null
-        const task = TASK.exec(body[0])
-        if (task) {
-          checked = task[1] !== ' '
-          body[0] = task[2] ?? ''
-        }
-        // The first line is the item's paragraph even when it looks like a block.
-        const head = [body[0]]
-        let j = 1
-        while (j < body.length && !blank(body[j]) && !LIST.exec(body[j]) && !HEADING.exec(body[j])) head.push(body[j++])
-        const content: RNode[] = [{ type: 'paragraph', attrs: {}, runs: parseInline(head.map((x) => x.trim()).join('\n')) }]
-        content.push(...parseBlocks(body.slice(j), depth + 1))
-        items.push({ type: 'list_item', attrs: { checked }, content })
-      }
-      out.push(ordered ? { type: 'ordered_list', attrs: { order: clampInt(first[2].slice(0, -1), 1, 1e9, 1) }, content: items } : { type: 'bullet_list', attrs: {}, content: items })
-      continue
-    }
-    const para: string[] = []
-    while (i < lines.length && !blank(lines[i]) && (para.length === 0 || (!LIST.exec(lines[i]) && !HEADING.exec(lines[i])))) para.push(lines[i++].trim())
-    out.push({ type: 'paragraph', attrs: {}, runs: parseInline(para.join('\n')) })
-  }
-  return out
-}
-
-function withMark(marks: Marks, mark: string, attrs: Record<string, unknown> = {}): Marks {
-  return { ...marks, [mark]: attrs }
-}
-
-const isWord = (c: string | undefined) => !!c && /[\p{L}\p{N}]/u.test(c)
-
-/** Index of the closing delimiter, skipping escapes and code spans; -1 when none. */
-function findClose(s: string, from: number, delim: string, check?: (at: number) => boolean): number {
-  let i = from
-  while (i < s.length) {
-    const c = s[i]
-    if (c === '\\') {
-      i += 2
-      continue
-    }
-    if (c === '`') {
-      let n = 1
-      while (s[i + n] === '`') n++
-      const end = s.indexOf('`'.repeat(n), i + n)
-      if (end > 0) {
-        i = end + n
-        continue
-      }
-    }
-    if (s.startsWith(delim, i) && (!check || check(i))) return i
-    i++
-  }
-  return -1
-}
-
-/** Parse inline Markdown into runs. Unmatched delimiters are literal. */
-export function parseInline(s: string, marks: Marks = {}, depth = 0): Run[] {
-  const runs: Run[] = []
-  let buf = ''
-  const flush = () => {
-    if (buf) pushRun(runs, buf, marks)
-    buf = ''
-  }
-  const nest = (inner: string, m: Marks) => {
-    flush()
-    for (const r of depth < 12 ? parseInline(inner, m, depth + 1) : [{ text: inner, marks: m }]) pushRun(runs, r.text, r.marks)
-  }
-  let i = 0
-  while (i < s.length) {
-    const c = s[i]
-    if (c === '\\' && i + 1 < s.length && PUNCT.includes(s[i + 1])) {
-      buf += s[i + 1]
-      i += 2
-      continue
-    }
-    if (c === '`') {
-      let n = 1
-      while (s[i + n] === '`') n++
-      const fence = '`'.repeat(n)
-      let end = s.indexOf(fence, i + n)
-      while (end > 0 && s[end + n] === '`') end = s.indexOf(fence, end + n + 1)
-      if (end > 0) {
-        let code = s.slice(i + n, end)
-        if (code.length > 2 && code.startsWith(' ') && code.endsWith(' ') && code.trim()) code = code.slice(1, -1)
-        flush()
-        pushRun(runs, code, withMark(marks, 'code'))
-        i = end + n
-        continue
-      }
-      buf += fence
-      i += n
-      continue
-    }
-    if (s.startsWith('**', i) && !marks.strong) {
-      let end = findClose(s, i + 2, '**')
-      // In a run like `***` the strong delimiter is the last two stars.
-      while (end > 0 && s[end + 2] === '*') end++
-      if (end > i + 2) {
-        nest(s.slice(i + 2, end), withMark(marks, 'strong'))
-        i = end + 2
-        continue
-      }
-    }
-    if (s.startsWith('~~', i) && !marks.strike) {
-      const end = findClose(s, i + 2, '~~')
-      if (end > i + 2) {
-        nest(s.slice(i + 2, end), withMark(marks, 'strike'))
-        i = end + 2
-        continue
-      }
-    }
-    if (c === '*' && s[i + 1] !== '*' && !marks.em) {
-      const end = findClose(s, i + 1, '*', (at) => s[at + 1] !== '*' && s[at - 1] !== '*')
-      if (end > i + 1) {
-        nest(s.slice(i + 1, end), withMark(marks, 'em'))
-        i = end + 1
-        continue
-      }
-    }
-    if (c === '_' && !isWord(s[i - 1]) && !marks.em) {
-      const end = findClose(s, i + 1, '_', (at) => !isWord(s[at + 1]))
-      if (end > i + 1) {
-        nest(s.slice(i + 1, end), withMark(marks, 'em'))
-        i = end + 1
-        continue
-      }
-    }
-    if (c === '[' && !marks.link) {
-      const close = findClose(s, i + 1, ']')
-      if (close > i && s[close + 1] === '(') {
-        const paren = s.indexOf(')', close + 2)
-        const href = paren > 0 ? s.slice(close + 2, paren).trim() : ''
-        if (paren > 0 && href && !/\s/.test(href)) {
-          nest(s.slice(i + 1, close), withMark(marks, 'link', { href }))
-          i = paren + 1
-          continue
-        }
-      }
-    }
-    buf += c
-    i++
-  }
-  flush()
-  return runs
 }

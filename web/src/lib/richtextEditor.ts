@@ -17,6 +17,7 @@ import { keymap } from 'prosemirror-keymap'
 import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment } from 'prosemirror-model'
 import { liftListItem, sinkListItem, splitListItem, wrapInList } from 'prosemirror-schema-list'
 import { type Command, EditorState, Plugin, PluginKey, type Transaction } from 'prosemirror-state'
+import { tableNodes } from 'prosemirror-tables'
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
@@ -49,10 +50,40 @@ export const schema = new Schema({
       }],
       toDOM: (n) => (n.attrs.checked === null ? ['li', 0] : ['li', { 'data-checked': String(n.attrs.checked), class: 'task-item' }, 0]),
     },
+    blockquote: { group: 'block', content: 'block+', defining: true, parseDOM: [{ tag: 'blockquote' }], toDOM: () => ['blockquote', 0] },
+    code_block: {
+      group: 'block', content: 'text*', marks: '', code: true, defining: true, attrs: { lang: { default: '' } },
+      parseDOM: [{ tag: 'pre', preserveWhitespace: 'full', getAttrs: (d) => ({ lang: (d as HTMLElement).getAttribute('data-lang') ?? '' }) }],
+      toDOM: (n) => ['pre', n.attrs.lang ? { 'data-lang': n.attrs.lang } : {}, ['code', 0]],
+    },
+    // Cells hold inline content only, so every table projects to a pipe table (design D4).
+    ...tableNodes({
+      tableGroup: 'block', cellContent: 'inline*',
+      cellAttributes: {
+        align: {
+          default: null,
+          getFromDOM: (d) => (['left', 'center', 'right'].includes(d.style.textAlign) ? d.style.textAlign : null),
+          setDOMAttr: (v, attrs) => {
+            if (v) attrs.style = `text-align: ${v as string}`
+          },
+        },
+      },
+    }),
+    // An image names an attachment of the task; the bytes are never part of the note (design D5).
+    image: {
+      group: 'block', atom: true, selectable: true, draggable: true, attrs: { id: { default: '' }, alt: { default: '' } },
+      parseDOM: [{ tag: 'figure[data-attachment]', getAttrs: (d) => ({ id: (d as HTMLElement).getAttribute('data-attachment') ?? '', alt: (d as HTMLElement).getAttribute('data-alt') ?? '' }) }],
+      toDOM: (n) => ['figure', { 'data-attachment': n.attrs.id, 'data-alt': n.attrs.alt, class: 'note-image' }],
+    },
     text: { group: 'inline' },
     hard_break: { inline: true, group: 'inline', selectable: false, parseDOM: [{ tag: 'br' }], toDOM: () => ['br'] },
   },
   marks: {
+    mention: {
+      attrs: { id: {}, name: { default: '' } }, inclusive: false, excludes: '_',
+      parseDOM: [{ tag: 'span[data-mention]', getAttrs: (d) => ({ id: (d as HTMLElement).getAttribute('data-mention') ?? '', name: (d as HTMLElement).getAttribute('data-name') ?? '' }) }],
+      toDOM: (m) => ['span', { 'data-mention': m.attrs.id, 'data-name': m.attrs.name, class: 'mention' }, 0],
+    },
     link: {
       attrs: { href: {} }, inclusive: false,
       parseDOM: [{ tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) }],
@@ -69,7 +100,10 @@ export const schema = new Schema({
 
 function marksOf(marks: readonly Mark[]): Marks {
   const out: Marks = {}
-  for (const m of marks) out[m.type.name] = m.type.name === 'link' ? { href: m.attrs.href } : {}
+  for (const m of marks) {
+    const name = m.type.name
+    out[name] = name === 'link' ? { href: m.attrs.href } : name === 'mention' ? { id: m.attrs.id, name: m.attrs.name } : {}
+  }
   return out
 }
 
@@ -89,9 +123,18 @@ export function pmToModel(doc: PMNode): RNode[] {
   return out
 }
 
+function textblockAttrs(n: PMNode): Record<string, unknown> {
+  const type = n.type.name
+  if (type === 'heading') return { level: n.attrs.level }
+  if (type === 'code_block') return { lang: n.attrs.lang }
+  if (type === 'table_cell' || type === 'table_header') return { align: n.attrs.align }
+  return {}
+}
+
 function nodeToModel(n: PMNode): RNode {
   const type = n.type.name as RNode['type']
-  if (n.isTextblock) return { type, attrs: type === 'heading' ? { level: n.attrs.level } : {}, runs: runsOfBlock(n) }
+  if (n.isTextblock) return { type, attrs: textblockAttrs(n), runs: runsOfBlock(n) }
+  if (type === 'image') return { type, attrs: { id: n.attrs.id, alt: n.attrs.alt } }
   const content: RNode[] = []
   n.forEach((c) => content.push(nodeToModel(c)))
   const attrs = type === 'ordered_list' ? { order: n.attrs.order } : type === 'list_item' ? { checked: n.attrs.checked } : {}
@@ -103,7 +146,7 @@ function inline(runs: Run[] | undefined): PMNode[] {
   for (const r of runs ?? []) {
     const marks = Object.entries(r.marks)
       .filter(([name]) => name in schema.marks)
-      .map(([name, attrs]) => schema.marks[name].create(name === 'link' ? { href: (attrs as { href?: string }).href ?? '' } : null))
+      .map(([name, attrs]) => schema.marks[name].create(name === 'link' || name === 'mention' ? attrs : null))
     r.text.split('\n').forEach((part, i) => {
       if (i > 0) out.push(schema.nodes.hard_break.create())
       if (part) out.push(schema.text(part, marks))
@@ -127,9 +170,33 @@ function modelToNode(n: RNode): PMNode | null {
       if (kids.length === 0 || kids[0].type.name !== 'paragraph') kids.unshift(schema.nodes.paragraph.create())
       return schema.nodes.list_item.create({ checked: typeof n.attrs.checked === 'boolean' ? n.attrs.checked : null }, kids)
     }
+    case 'blockquote': {
+      const kids = (n.content ?? []).map(modelToNode).filter((x): x is PMNode => !!x && x.type.name !== 'list_item')
+      return schema.nodes.blockquote.create(null, kids.length ? kids : [schema.nodes.paragraph.create()])
+    }
+    case 'code_block': {
+      const text = (n.runs ?? []).map((r) => r.text).join('')
+      return schema.nodes.code_block.create({ lang: typeof n.attrs.lang === 'string' ? n.attrs.lang : '' }, text ? schema.text(text) : null)
+    }
+    case 'table':
+      return tableToNode(n)
+    case 'image':
+      return schema.nodes.image.create({ id: String(n.attrs.id ?? ''), alt: String(n.attrs.alt ?? '') })
     default:
       return schema.nodes.paragraph.create(null, inline(n.runs))
   }
+}
+
+/** A table node, padded to a rectangle (a merged remote edit may leave rows of different lengths). */
+function tableToNode(n: RNode): PMNode | null {
+  const rows = (n.content ?? []).filter((r) => r.type === 'table_row')
+  if (rows.length === 0) return null
+  const cols = Math.max(1, ...rows.map((r) => (r.content ?? []).length))
+  const cell = (c: RNode | undefined, header: boolean) => {
+    const type = c?.type === 'table_header' || (!c && header) ? schema.nodes.table_header : schema.nodes.table_cell
+    return type.create({ align: c?.attrs.align ?? null }, inline(c?.runs))
+  }
+  return schema.nodes.table.create(null, rows.map((r, i) => schema.nodes.table_row.create(null, Array.from({ length: cols }, (_, c) => cell(r.content?.[c], i === 0)))))
 }
 
 /** An editor document for a model; never empty, never invalid. */
