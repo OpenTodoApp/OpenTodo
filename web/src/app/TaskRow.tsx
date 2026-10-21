@@ -33,6 +33,7 @@ import { t } from '../lib/i18n'
 import { originOf } from '../lib/taskOrigin'
 import { trackedLabel, trackedText } from '../lib/time'
 import { useTaskTracked } from '../lib/timeEntries'
+import { isInboxTask } from '../lib/inbox'
 import { OriginChip } from './OriginChip'
 
 /** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
@@ -311,7 +312,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       {!calm && counts.filter((c) => c !== progressCount).map((c) => <CountChip key={c.key} c={c} />)}
       {calm ? <LabelDots labels={shownLabels} /> : labels.map((l) => <LabelChip key={l.id} name={l.name} color={l.color} />)}
       {showProject && project && <NeutralChip dot={project.color} data-project="">{project.name}</NeutralChip>}
-      {showProject && !project && !task.project_id && <NeutralChip data-project="">{t('Inbox')}</NeutralChip>}
+      {showProject && !project && !task.project_id && isInboxTask(task) && <NeutralChip data-project="">{t('Inbox')}</NeutralChip>}
       {card && quiet}
     </div>
   )
@@ -379,7 +380,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           </label>
         )}
       </span>
-      {inline ?? <button type="button" className="min-w-0 flex-1 text-left" data-row-open
+      {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left" data-row-open
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }

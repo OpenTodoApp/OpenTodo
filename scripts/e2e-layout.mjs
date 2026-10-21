@@ -767,6 +767,25 @@ function verticalScrollers() {
 const MAX_SCROLLERS = 3
 
 // Touch targets inside `root` (default: the whole page) that are visible in the viewport.
+// Task rows whose checkbox circle and title's first line are not centred on the same
+// line (more than 3 px apart): on touch screens the title grows to the 44 px target and
+// the circle has to follow it.
+function rowMisalignment() {
+  const out = []
+  for (const row of document.querySelectorAll('[data-task-id]')) {
+    const circle = row.querySelector('.group\\/check')
+    const text = row.querySelector('[data-row-open] .user-text')
+    if (!circle || !text) continue
+    const c = circle.getBoundingClientRect(), t = text.getBoundingClientRect()
+    if (!c.height || !t.height || c.bottom < 0 || c.top > innerHeight) continue
+    const line = parseFloat(getComputedStyle(text).lineHeight) || t.height
+    const off = Math.abs((c.top + c.height / 2) - (t.top + Math.min(line, t.height) / 2))
+    if (off > 3) out.push(`row "${text.textContent.trim().slice(0, 30)}": circle ${Math.round(off)} px off the title's first line`)
+    if (out.length >= 3) break
+  }
+  return out
+}
+
 function smallTargets([rootSel, min]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
   if (!root) return []
@@ -933,6 +952,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       const scrollers = await p.evaluate(verticalScrollers)
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
+      for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       // Accessibility of the whole screen (axe-core, serious and critical issues).
       for (const m of await axeProblems(p)) await fail(p, s.name, null, m)
       if (s.offline && engine === 'chromium') {

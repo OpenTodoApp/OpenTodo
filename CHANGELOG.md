@@ -36,6 +36,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **A click selects a task in the Plan.** Clicking a task in the Plan selected it and cleared the selection in the same moment, so the arrow keys moved nothing; the arrows now move the clicked task.
+- **Task rows line up on phones.** On touch screens the circle sat about half a line above the title; it is centred on the title's first line again, keeping the 44 px tap areas. The layout check now fails when they drift apart.
+- **"Inbox" means the Inbox.** A dated task without a project no longer carries an "Inbox" chip on its row; the task panel says "No project".
 - **Subtasks leave the Inbox with their parent.** A subtask without a project or date of its own stayed in the Inbox after its parent was scheduled or moved to a project; it now follows the parent, in the app, the count, `ot inbox` and the MCP tools.
 - **Scheduling shows your date and time formats.** Process the Inbox and Focus showed a due time as `15:00` even with the 12-hour clock, and a time-zone-fixed due in its own zone; they now follow your formats and your zone. The date field's hint now gives an example in your date order instead of `22/10`.
 
