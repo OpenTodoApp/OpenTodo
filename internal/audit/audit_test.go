@@ -35,6 +35,8 @@ func allConstructors() []Event {
 		PublicLinkRevoked("o", "pl1", "p1"),
 		AgentWrite("u", "complete_tasks", "t", "Desk assistant", 3),
 		AgentWrite("u", "create_tasks", "t", "Desk assistant", 0).Failed("writes_disabled_by_user"),
+		RelayEnabled("u", "device-1", "Laptop"),
+		RelayDisabled("u", "device-1", "Laptop", "locked"),
 		MFAEnrolled("u", "totp"),
 		MFADisabled("o", "u", "totp"),
 		MFAReset("o", "u"),

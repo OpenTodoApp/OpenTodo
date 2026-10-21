@@ -149,6 +149,8 @@ func (s *Server) handleDeleteEncryptionKeys(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	s.audit.Record(r.Context(), audit.SettingsChanged(uid, "encryption", "enabled", "disabled"))
+	// Nothing is left to relay (mcp-device-relay D9).
+	s.relayEndAccount(r.Context(), uid)
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -11,6 +11,7 @@ import { SignOutDialog } from './AccountSettings'
 import { NotificationBell } from './NotificationBell'
 import { navigate, type Route } from './router'
 import { SyncStatus } from './SyncStatus'
+import { RelayIndicator } from './RelaySettings'
 import { TrackingIndicator } from './TrackingIndicator'
 
 const ACTIVE = 'bg-accent-soft font-medium text-on-accent-soft'
@@ -58,6 +59,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
         </Menu>
         {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" className={TOUCH} onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
         <NotificationBell compact={collapsed} />
+        <RelayIndicator />
         <SyncStatus compact={collapsed} />
         {collapsed && onSearch && <SidebarItem icon="search" label={t('Search and commands')} collapsed onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
         {onToggleCollapse && (

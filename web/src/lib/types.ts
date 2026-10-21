@@ -1258,6 +1258,8 @@ export const AUDIT_EVENT_NAMES = [
   'agent.write',
   'email.sent',
   'email.failed',
+  'relay.enabled',
+  'relay.disabled',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 

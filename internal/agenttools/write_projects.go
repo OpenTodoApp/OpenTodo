@@ -138,7 +138,7 @@ func (r *Registry) planAddComment(ctx context.Context, c Caller, a args, overlay
 	if pid, err := a.str("parent_id"); err != nil {
 		return Plan{}, err
 	} else if pid != "" {
-		pc, err := r.sync.Get(ctx, c.UserID, "comment", pid)
+		pc, err := r.get(ctx, c.UserID, "comment", pid)
 		if err != nil {
 			return Plan{}, err
 		}

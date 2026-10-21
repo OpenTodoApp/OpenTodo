@@ -128,6 +128,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerEncryptionRoutes(mux)
 	// Read-only MCP endpoint and its owner toggle (OpenSpec `mcp-server`).
 	s.registerMCPRoutes(mux)
+	// Device relay for encrypted accounts' MCP calls (OpenSpec `mcp-device-relay`).
+	s.registerRelayRoutes(mux)
 	// In-app assistant (OpenSpec `in-app-assistant`): settings, consent, usage
 	// and the turn route over the same tool registry.
 	s.registerAssistantRoutes(mux)

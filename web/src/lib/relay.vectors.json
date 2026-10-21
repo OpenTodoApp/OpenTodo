@@ -1,0 +1,14 @@
+{
+  "deviceJwk": {
+    "crv": "P-256",
+    "d": "ERERERERERERERERERERERERERERERERERERERERERE",
+    "kty": "EC",
+    "x": "AhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0",
+    "y": "GUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q"
+  },
+  "serverPub": "BNZak5d8qj0bCBhS_1ennkZfFmBXcwS66tUF3TpIWJzzUBheiVNy32Ih6joTdVfkc_3bZ1XwW9UHw8Uz_OnJEoU",
+  "stream": "0123456789abcdef0123456789abcdef",
+  "id": "fedcba9876543210fedcba9876543210",
+  "plaintext": "{\"op\":\"decrypt\",\"items\":[]}",
+  "box": "uEVzO8CeOJQmNwgJtjDIXUwmh2v6SBCvxCWvZDACzo9ZTB3Fvb72lzDtewQW3jCP76_3ct5HBw"
+}

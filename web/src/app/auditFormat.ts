@@ -55,6 +55,8 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'agent.write': msg('AI assistant made changes'),
   'email.sent': msg('Email sent'),
   'email.failed': msg('Email not sent'),
+  'relay.enabled': msg('Device answers AI connectors'),
+  'relay.disabled': msg('Device stopped answering AI connectors'),
 })
 
 const REASONS = translatedMap<string>({
@@ -74,6 +76,15 @@ const REASONS = translatedMap<string>({
   writes_disabled_by_user: msg('assistant changes are off for this account'),
   encryption_enabled: msg('end-to-end encryption is on'),
   not_permitted: msg('not created by this assistant'),
+  // relay.disabled (mcp-device-relay)
+  user: msg('turned off'),
+  locked: msg('device locked'),
+  signed_out: msg('signed out'),
+  encryption_off: msg('encryption turned off'),
+  device_unavailable: msg('no device online to answer'),
+  device_timeout: msg('the device did not answer in time'),
+  declined_on_device: msg('declined on the device'),
+  device_limit: msg('the device reached its limit'),
 })
 
 const EMAIL_KINDS = translatedMap<string>({
@@ -108,6 +119,7 @@ export function eventSummary(ev: AuditEvent): string {
   if (d.email_kind) parts.push(t('{kind} to {email}', { kind: EMAIL_KINDS[d.email_kind] ?? d.email_kind.replace(/_/g, ' '), email: d.email ?? '?' }))
   if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? t('new account') : t('via {method}', { method: d.method }))
   if (d.tool) parts.push(d.tool)
+  if (d.relay_device_label) parts.push(`“${d.relay_device_label}”`)
   if (d.token_name) parts.push(d.token_scope === 'read' ? t('“{name}” (read-only)', { name: d.token_name }) : d.token_scope === 'agent' ? t('“{name}” (assistant, can make changes)', { name: d.token_name }) : d.token_scope === 'admin' ? t('“{name}” (admin)', { name: d.token_name }) : `“${d.token_name}”`)
   if (d.session_count) parts.push(t('{n, plural, one {# session} other {# sessions}}', { n: Number(d.session_count) }))
   if (d.token_count && d.token_count !== '0') parts.push(t('{n, plural, one {# API token} other {# API tokens}}', { n: Number(d.token_count) }))

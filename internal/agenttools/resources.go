@@ -44,7 +44,7 @@ func (r *Registry) ProjectResource(ctx context.Context, userID, id string, loc *
 		Untrusted nameText `json:"untrusted_text"`
 	}
 	sections := []sectionOut{}
-	secs, err := r.sync.List(ctx, userID, "section", false)
+	secs, err := r.list(ctx, userID, "section", false)
 	if err != nil {
 		return nil, false, err
 	}

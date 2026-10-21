@@ -31,6 +31,7 @@ import (
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/oidc"
 	"github.com/pixari/opentodo/internal/push"
+	"github.com/pixari/opentodo/internal/relay"
 	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
@@ -135,6 +136,10 @@ type Server struct {
 	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).
 	agentTools  *agenttools.Registry
 	agentAccess *agenttools.Access
+	// relayStore and relayHub let an encrypted account's opted-in device answer
+	// MCP tool calls (mcp-device-relay); see relay.go.
+	relayStore *relay.Store
+	relayHub   *relay.Hub
 	// email is email capture (OpenSpec `email-to-task`); emailLimiter caps
 	// inbox changes and rotations per account (30/hour).
 	email        *email.Service
