@@ -352,6 +352,7 @@ func TestTaskPageEncrypted(t *testing.T) {
 	resp, out = e.do("DELETE", p+"/replies/"+replies[0].(map[string]any)["id"].(string), nil)
 	e.mustStatus(resp, 204, out)
 	resp, out = e.do("GET", p+"/replies", nil)
+	e.mustStatus(resp, 200, out)
 	if len(out["replies"].([]any)) != 0 {
 		t.Fatalf("after confirm = %v", out)
 	}
