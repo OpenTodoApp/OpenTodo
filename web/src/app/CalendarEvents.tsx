@@ -82,7 +82,7 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
         }}
       >
         <span className="block truncate font-medium">{ev.summary || t('Busy')}</span>
-        {height >= 30 && <span className="block truncate text-hint opacity-80">{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
+        {height >= 30 && <span className="block truncate text-hint">{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
       </button>
       </Tooltip>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
@@ -145,7 +145,7 @@ export function EventRow({ ev, start, end, sub, zone }: { ev: CalendarEvent; sta
         {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
         <span className="shrink-0 tabular-nums">{time}</span>
         <span className="min-w-0 flex-1 truncate font-medium">{ev.summary || t('Busy')}</span>
-        <span className="shrink-0 text-hint tabular-nums opacity-80">{length}</span>
+        <span className="shrink-0 text-hint tabular-nums">{length}</span>
         {(ev.location || sub?.name) && <span className="sr-only">{`, ${[ev.location, sub?.name].filter(Boolean).join(', ')}`}</span>}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">

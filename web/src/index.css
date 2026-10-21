@@ -322,6 +322,13 @@
   --ot-hue-slate-solid: oklch(0.7107 0.0351 256.79); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
 }
 
+/* A browser without OKLCH or color-mix (tokens-v2, risks) gets the six surface and
+   text tokens as plain sRGB so the app stays readable, though not themed. Outside the
+   token blocks the token lint checks. */
+@supports not (color: oklch(0 0 0)) {
+  :root { --ot-canvas: #f9fafc; --ot-surface: #ffffff; --ot-raised: #ffffff; --ot-sunken: #f1f4f6; --ot-text: #191f2b; --ot-muted: #525b6b; }
+}
+
 /* Accents (OpenSpec change theming, design D3, D4; tokens-v2 D4): a theme declares
    three values: its light accent (also the browser bar colour), its bright dark-mode
    accent for text, focus and the chart, and the colour of text on the accent. Every

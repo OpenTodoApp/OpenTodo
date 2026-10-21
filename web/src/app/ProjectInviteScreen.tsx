@@ -185,7 +185,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
     <div className="rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-summary">
       <p>{t.rich('<strong>{inviterName}</strong> invited you to the project <strong2>{projectName}</strong2> as <strong3>{role}</strong3>.', { inviterName: p.inviterName, projectName: p.projectName, role: roleName(p.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong>, strong3: (chunks) => <strong>{chunks}</strong> })}</p>
       {p.email && <p className="mt-1">{t.rich('This link is for <strong>{email}</strong>.', { email: p.email, strong: (chunks) => <strong>{chunks}</strong> })}</p>}
-      <p className="mt-1 text-meta opacity-80">{t('It expires {when} and works once.', { when: when(p.expiresAt) })}</p>
+      <p className="mt-1 text-meta">{t('It expires {when} and works once.', { when: when(p.expiresAt) })}</p>
     </div>
   )
   if (user) {

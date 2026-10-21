@@ -267,6 +267,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const checked = done || completing
   const feedback = dragFeedback(prefersReducedMotion())
   const lift = dragging ? feedback.lift : ''
+  const fade = completing ? 'opacity-50' : '' // tone-lint-allow: a completing row fades out (motion), not quieter text
 
   const progressCount = counts.find((c) => c.key === 'progress')
   const quiet = calm && counts.length > 0 ? <RowCounts counts={counts} card={card} /> : null
@@ -332,7 +333,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       aria-setsize={card ? undefined : setSize}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${completing ? 'opacity-50' : ''} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${fade} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
