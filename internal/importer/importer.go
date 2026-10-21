@@ -248,9 +248,12 @@ type Profile interface {
 }
 
 // Profiles lists every format in detection order: the own export first, then each
-// JSON shape by its structural signature, then CSV.
-var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{}, itemsProfile{}, listsProfile{}, genericProfile{},
-	todoistProfile{}, tickTickProfile{}, linearProfile{}, csvProfile{}}
+// named app's JSON shape by its structural signature (more-importers D2), then the
+// generic JSON shapes, then the named CSV exports and generic CSV.
+var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{},
+	googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
+	itemsProfile{}, listsProfile{}, genericProfile{},
+	todoistProfile{}, tickTickProfile{}, linearProfile{}, asanaProfile{}, csvProfile{}}
 
 // formatAliases are format names that select a profile for a container: a
 // Todoist backup is a ZIP of todoist-csv files.
@@ -376,6 +379,7 @@ type Options struct {
 	tempDir       string    // where an uploaded database is copied to be read
 	exportedAt    time.Time // reference date for dates written without a year
 	importerEmail string    // the importing account's email (Linear assignees)
+	importerName  string    // the importing account's display name (Trello members)
 	entryName     string    // archive entry being read
 	thingsWAL     []byte    // a Things database's WAL from the same archive
 	// ownFiles are the attachment files of an own ZIP export, by attachment id.

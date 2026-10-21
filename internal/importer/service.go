@@ -181,7 +181,7 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 		}
 	}
 	opts.maxBytes, opts.tempDir, opts.exportedAt = s.maxBytes, s.tempDir, s.now()
-	if err := s.db.QueryRowContext(ctx, "SELECT email FROM users WHERE id = ?", uid).Scan(&opts.importerEmail); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := s.db.QueryRowContext(ctx, "SELECT email, name FROM users WHERE id = ?", uid).Scan(&opts.importerEmail, &opts.importerName); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 	parsed, err := Parse(data, opts)
