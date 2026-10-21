@@ -340,7 +340,7 @@ func (e *engine) placeTasks(m *mergeRun) error {
 				e.rep.warn("%s: the task %s appears twice; the second line becomes a new task", p, short(id))
 				id = ""
 			case id != "" && e.app.Get("task", id) == nil:
-				e.rep.warn("%s: the task id %s is not in the account; the line is left as it is", p, short(id))
+				e.rep.warn("%s: the task id %s is not in the account; the line is left as it is", p, id)
 				unknown = append(unknown, id)
 				return
 			}
