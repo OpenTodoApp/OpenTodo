@@ -1,6 +1,9 @@
-// OpenTodo Capture: open the server's /share screen for the current tab.
-// No fetch, no XHR, no host permissions: the only "network" activity is the popup
-// window the user asked for, which loads the user's own server.
+// OpenTodo Capture: the toolbar button and the shortcut open the popup
+// (popup.html, the manifest's default_popup); the context-menu entries hand what
+// was clicked to the popup (OpenSpec change extension-v2, design D3), and the
+// screenshot entry opens the server's /share screen as before. No fetch here: the
+// only network code is api.js, used by the popup in Quick save mode.
+import { PENDING_KEY, captureFromMenu, captureFromTab, descriptionOf } from './capture.js'
 import { MAX_TEXT, buildShareUrl, encodePending, filesMessage, isWebUrl, originPattern, screenshotName } from './share-url.js'
 
 // Firefox exposes promise-based `browser`, Chromium promise-based `chrome`.
@@ -11,16 +14,37 @@ const SHOT_ID = 'opentodo-screenshot'
 
 ext.runtime.onInstalled.addListener(() => {
   // Titles follow the browser's interface language (_locales; OpenSpec app-localization D10).
-  ext.contextMenus.create({ id: MENU_ID, title: ext.i18n.getMessage('actionTitle'), contexts: ['page', 'selection'] })
+  ext.contextMenus.create({ id: MENU_ID, title: ext.i18n.getMessage('actionTitle'), contexts: ['page', 'selection', 'link', 'image'] })
   ext.contextMenus.create({ id: SHOT_ID, title: ext.i18n.getMessage('menuScreenshot'), contexts: ['page'] })
 })
 
-ext.action.onClicked.addListener((tab) => void capture(tab))
-
 ext.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === MENU_ID) void capture(tab, info.selectionText)
+  if (info.menuItemId === MENU_ID) void fromMenu(info, tab)
   if (info.menuItemId === SHOT_ID) void screenshot(tab)
 })
+
+/**
+ * Hand a context-menu capture to the popup: stored once in storage.session (kept
+ * in memory, never written to disk), read and cleared by the popup. Where the
+ * browser cannot open the popup from here, the capture screen opens instead.
+ */
+async function fromMenu(info, tab) {
+  const page = captureFromMenu(info, tab)
+  if (typeof ext.action.openPopup === 'function') {
+    try {
+      // Same tick: Firefox opens the popup only while the click is still the
+      // user's gesture, and the storage write, queued first, lands before the
+      // popup reads it.
+      const stored = ext.storage.session.set({ [PENDING_KEY]: page })
+      const opened = ext.action.openPopup()
+      await Promise.all([stored, opened])
+      return
+    } catch {
+      await ext.storage.session.remove(PENDING_KEY).catch(() => {})
+    }
+  }
+  await capture(tab, page)
+}
 
 /** Read the selection from the active tab; activeTab grants this on the user's click. */
 async function selectionOf(tab) {
@@ -37,13 +61,11 @@ async function selectionOf(tab) {
   }
 }
 
-/** Open the capture popup, or the options page first when no server is set. */
-async function capture(tab, selectionText) {
-  const page = {
-    title: tab?.title ?? '',
-    url: tab?.url ?? '',
-    text: selectionText || (await selectionOf(tab)),
-  }
+/** Open the capture screen window, or the options page first when no server is set. */
+async function capture(tab, ready) {
+  const c = ready ?? captureFromTab(tab, await selectionOf(tab))
+  // An image's address leads the text, as in the popup.
+  const page = { title: c.title, url: c.url, text: descriptionOf({ imageUrl: c.imageUrl, text: c.text, keepUrl: false }) }
   const { server } = await ext.storage.sync.get('server')
   if (!server) {
     // First run: the options page carries the capture in its own URL (never stored)
