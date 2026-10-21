@@ -20,7 +20,7 @@ type vector struct {
 
 // TestVectors: the rule matches the vectors the web helper reads too.
 func TestVectors(t *testing.T) {
-	raw, err := os.ReadFile("testdata/inbox_vectors.json")
+	raw, err := os.ReadFile("../../web/src/lib/inbox.vectors.json")
 	if err != nil {
 		t.Fatal(err)
 	}

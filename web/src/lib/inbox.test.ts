@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import vectors from '../../../internal/inbox/testdata/inbox_vectors.json'
+import vectors from './inbox.vectors.json'
 import { isInboxTask, isPlannedWithoutProject } from './inbox'
 import type { Due } from './types'
 

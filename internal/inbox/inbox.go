@@ -4,7 +4,7 @@
 // (past or future) or Someday (`start: "someday"`); a deadline, a reminder or a
 // label alone does not schedule a task. Membership is derived from synced fields
 // only, so it needs no clock and converges with them. The same rule is
-// implemented in web/src/lib/inbox.ts; both read testdata/inbox_vectors.json.
+// implemented in web/src/lib/inbox.ts; both read web/src/lib/inbox.vectors.json.
 package inbox
 
 // Task is the part of a task the rule reads.

@@ -3,7 +3,7 @@
 ## 1. One Inbox predicate
 
 - [x] 1.1 Confirm with the maintainer the definition of "scheduled" in design D1 (due, start date or Someday; deadline alone does not count) before writing code; record the answer in design.md — Confirmed by the maintainer on 2026-10-21 (recorded in design.md, Open Questions).
-- [x] 1.2 Add `internal/inbox` with `IsTask` and the shared vectors `internal/inbox/testdata/inbox_vectors.json` (open/completed/deleted, project or not, due, start date past and future, someday, deadline only, reminder only); `go test ./internal/inbox/...` passes — `internal/inbox` (`IsTask`, `Scheduled`), 14 vectors; `go test ./internal/inbox/...` passes.
+- [x] 1.2 Add `internal/inbox` with `IsTask` and the shared vectors `web/src/lib/inbox.vectors.json` (open/completed/deleted, project or not, due, start date past and future, someday, deadline only, reminder only); `go test ./internal/inbox/...` passes — `internal/inbox` (`IsTask`, `Scheduled`), 14 vectors; `go test ./internal/inbox/...` passes.
 - [x] 1.3 Add `isInboxTask` in `web/src/lib/inbox.ts` reading the same vectors in a vitest test; `cd web && npm test -- inbox` passes — `web/src/lib/inbox.ts` (`isInboxTask`, `isPlannedWithoutProject`); `lib/inbox.test.ts` reads the same vectors and passes.
 - [x] 1.4 Add a test that fails when `project_id` null is used as an Inbox test outside the helpers in the files named in design D2; it passes after group 2 — Web: `lib/inboxGuard.test.ts`; Go: `internal/inbox/guard_test.go`; both pass.
 
