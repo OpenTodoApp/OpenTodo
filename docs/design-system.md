@@ -172,13 +172,13 @@ Put a `*.stories.tsx` file next to the component, in Component Story Format; `ma
 | Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark |
 | Visual regression | `make ui-check`, CI job "UI check" | a story × theme × width screenshot that differs from its baseline by more than 0.2% |
 
-`make ui-check` needs Playwright and `@playwright/test` 1.56.1 installed globally, as CI does (`npm i -g playwright@1.56.1 @playwright/test@1.56.1 && playwright install chromium`). Set `PLAYWRIGHT_NODE_PATH` to use another install. Failures leave actual, expected and diff images in `web/test-results/ui-visual`, and CI uploads them as the `ui-check-report` artifact.
+`make ui-check` needs Playwright and `@playwright/test` 1.56.1 installed globally, as CI does (`npm i -g playwright@1.56.1 @playwright/test@1.56.1 && playwright install chromium`). Set `PLAYWRIGHT_NODE_PATH` to use another install. Failures leave actual, expected and diff images in `web/test-results/ui-visual`, and CI uploads them as the `ui-check-report-<shard>` artifact of the visual regression shard that failed.
 
 ### Updating baselines
 
 Font rendering differs between operating systems, so baselines are only generated inside the pinned Playwright image and stored under `web/src/ui/__screenshots__/`:
 
 - With Docker: `make ui-baselines`, then review and commit the changed PNGs.
-- Without Docker: run the **UI baselines** workflow on GitHub (Actions → UI baselines → Run workflow), download the `ui-baselines` artifact and commit its PNGs. For a story that has no baseline yet, the CI "UI check" job also writes one and fails; its `ui-check-report` artifact contains it under `web/src/ui/__screenshots__`.
+- Without Docker: run the **UI baselines** workflow on GitHub (Actions → UI baselines → Run workflow), download the `ui-baselines` artifact and commit its PNGs. For a story that has no baseline yet, the CI "UI check (visual regression)" job also writes one and fails; its `ui-check-report-<shard>` artifact contains it under `web/src/ui/__screenshots__`.
 
 Update baselines only for intended visual changes, in the same pull request as the change.
