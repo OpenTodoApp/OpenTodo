@@ -500,7 +500,7 @@ The template conformance check SHALL read every YAML template with one shared st
 - **THEN** the deploy tests fail and point to the shared parser
 
 ### Requirement: Gated and verifiable releases
-CI SHALL publish the container image (including the `stable` and `latest` tags) and the GitHub release only after every other CI job of the run succeeded. Before publishing, CI SHALL build the image, scan it for known vulnerabilities and fail on a critical finding that has a fixed version, and start that same build the way the Coolify template does. The published image SHALL carry an SBOM and build provenance and its digest SHALL be signed keylessly with cosign; every GitHub release asset SHALL have a build provenance attestation. The self-hosting docs SHALL explain how to verify both.
+CI SHALL publish the container image (including the `stable` and `latest` tags) and the GitHub release only after every other CI job of the run succeeded. A check that runs as several parallel jobs (one per browser engine, or one per shard of the visual comparison) SHALL count as succeeded only when every one of its jobs succeeded. Before publishing, CI SHALL build the image, scan it for known vulnerabilities and fail on a critical finding that has a fixed version, and start that same build the way the Coolify template does. The published image SHALL carry an SBOM and build provenance and its digest SHALL be signed keylessly with cosign; every GitHub release asset SHALL have a build provenance attestation. The self-hosting docs SHALL explain how to verify both.
 
 #### Scenario: A gate fails on a release tag
 - **WHEN** the tag `v0.7.0` is pushed and the layout, UI, docs website or template check fails
@@ -517,6 +517,10 @@ CI SHALL publish the container image (including the `stable` and `latest` tags) 
 #### Scenario: Operator verifies an image
 - **WHEN** an operator runs `cosign verify` on a released image with the release workflow's identity and GitHub's OIDC issuer
 - **THEN** the signature verifies, and `gh attestation verify` verifies a downloaded release binary
+
+#### Scenario: One shard of a split check fails
+- **WHEN** the visual comparison runs in three shards on a push to `main` and only the second shard finds a difference
+- **THEN** the run fails, no image tag moves, and the second shard's report artifact holds the diff
 
 ### Requirement: Pinned build inputs
 Workflow actions SHALL be pinned to full commit SHAs with the release named in a comment; Dockerfile base images and CI job images SHALL be pinned by digest next to their tag; the OpenSpec CLI SHALL run at one exact version. Dependabot SHALL propose updates weekly for Go modules, the web app's npm packages, GitHub Actions and Docker base images. Every CI job SHALL have a timeout, and every workflow a concurrency group that cancels superseded pull request runs but never a run for the main branch or a tag.

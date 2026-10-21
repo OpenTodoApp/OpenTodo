@@ -11,4 +11,4 @@
 
 ## 3. Verify
 
-- [ ] 3.1 Compare the pull request's CI wall time and per-job times with the runs before the change
+- [x] 3.1 Compare the pull request's CI wall time and per-job times with the runs before the change: 22–24 min before, 10.1 min after (longest job: the Chromium layout check, 7.4 min)
