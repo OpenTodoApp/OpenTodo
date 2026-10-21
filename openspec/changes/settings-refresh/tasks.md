@@ -1,0 +1,51 @@
+## 1. Shared Settings pieces
+
+- [ ] 1.1 Card icons (D1): an `icon` on each card in `settingsSections.ts` and the panels' card headings, drawn before the title by the Settings card pattern, aria-hidden, title aligned for cards without one; the same icon in `settingsIndex.ts` results. Verify: a `settingsAnatomy.test.tsx` case that every You, App and Data card has an icon and the screen reader name is the title alone; stories updated; `make ui-check` (regenerate only the changed stories' baselines in the pinned image)
+- [ ] 1.2 `LearnMore` element in `web/src/ui` (D2) replacing every "Learn more" variant in Settings; pointer cursor and link underline; `make ui-lint` refuses a "Learn more" text not rendered by it. Verify: a happy-dom test that each Learn more in Settings has `cursor: pointer` via its class and opens the Help panel on Enter; `make ui-lint`
+- [ ] 1.3 Card action labels lose the trailing "…" ("Set up encryption", and any other card button found); translations updated in all five catalogs. Verify: `rg '…"' web/src/app/*Settings*.tsx web/src/app/SecurityPanel.tsx` finds no card button label; `node scripts/i18n-check.mjs`
+
+## 2. Account
+
+- [ ] 2.1 "Start guide" row in How you work (D3): label, description, state from `first_run`, "Open the start guide" navigating to `/inbox` and opening the guide at step 1 without a write. Verify: a `firstRun.test.tsx` case "Shown again from Settings" (Inbox route, step 1, closing writes no op) and "Not finished yet"; `npm test`
+- [ ] 2.2 Recent activity (D4): group by day, fold repeated sign-ins per client and day with a count, ten lines and "Show all", warning tone for failed or unusual events. Verify: unit tests for the grouping and folding in `auditFormat.test.ts`; a story with 30 events; `make ui-check`
+- [ ] 2.3 Profile card (account-profile): picture or initials, name, email with edit actions, offline note. Verify: `accountSettings.test.tsx` cases for rename, the email states (pending, confirmed, SSO read-only) and offline; `npm test`
+
+## 3. Profile on the server
+
+- [ ] 3.1 Migration `0042_profile.sql` (`users.avatar_version`, `users.pending_email`, `users.pending_email_sent_at`, table `email_changes`) and the store methods. Verify: `go test ./internal/store/... ./internal/auth/...`
+- [ ] 3.2 `PATCH /api/v1/me/profile` (name), registered through `routes.handle` with `signedIn.fullTokens().demoDenied()`, demo deny list entry, `account.name_changed`. Verify: `go test ./internal/httpapi/ -run Profile` covering rename, empty name 400, 401 without a session, demo refusal; `policy_test.go`
+- [ ] 3.3 Email change: `POST /api/v1/me/email` (`recent`), `POST /api/v1/me/email/confirm`, the confirmation and notice mails in the six template languages (`internal/mail`), `email_taken`, rate limit, SSO-only refusal, audit events without addresses. Verify: Go tests with `smtptest` for the link flow, without email (immediate), 409, 403 `confirmation_required`, 401, `invalid_token`, and that the audit details hold no address
+- [ ] 3.4 Avatars: `PUT`/`DELETE /api/v1/me/avatar` (decode PNG or JPEG, 256×256 only, re-encode JPEG, atomic write under `<data>/avatars`, bump `avatar_version`, 512 KB cap, `too_large`), `GET /api/v1/users/{id}/avatar` (self or shared project or workspace, else 404; immutable caching), deletion with the account, inclusion in the export archive and backups; `avatar_version` in member and assignee payloads. Verify: Go tests for a JPEG with GPS EXIF (stored file has none), a 1024×1024 PNG and a GIF refused, 401, a stranger's 404, removal, export archive contents
+- [ ] 3.5 Picture dialog: lazy `react-easy-crop` chunk (pin the exact version; record the gzipped size in this file), round crop, keyboard pan and zoom (dialog-scope entries in the shortcut registry), canvas to 256×256 JPEG, WebP input converted on the client, upload, remove, the "who sees it" line. Verify: a happy-dom test of the keyboard and the upload call with a canvas mock; `npm run build` shows the cropper in its own chunk and the main bundle within 2 KB of before; the shortcut conflict test passes
+- [ ] 3.6 Avatar primitive draws the picture with the initials as fallback, everywhere initials are drawn (account menu, comments, assignee chips, members, activity). Verify: `ui/Avatar` stories with and without a picture; `make ui-check`; a test that a failed image load shows the initials
+
+## 4. General and Capture
+
+- [ ] 4.1 Date and time "Sample" box (D5) with the shared formatters, fitting 360 px. Verify: `dateTimeSettings.test.tsx` cases for the 12-hour switch and the day start; the layout check at 360 px on `/settings/general` passes in Chromium and WebKit
+- [ ] 4.2 Remove the quick-add numeric order (D6): the Capture select, the `dayMonthOrder` field of `opentodo.quickadd` (dropped on load), `lib/nlp` reading the order from the date format only. Verify: `quickadd.test.ts` cases "Numeric date follows the date format" and "An old device order is ignored"; `npm test -- nlp`; the shared quick-add vectors with Go still pass (`go test ./internal/quickadd/`)
+
+## 5. Voice capture with a speech service
+
+- [ ] 5.1 Owner configuration (D7): `internal/stt` (config with `OPENTODO_STT_URL`, `OPENTODO_STT_MODEL`, `OPENTODO_STT_KEY_FILE`, none required; key in `<data>/secrets/stt.json`), `GET`/`PUT /api/v1/settings/stt` and `POST /api/v1/settings/stt/test` (`ownerOnly`, demo-denied, deny list), requests through `internal/outbound` without redirects. Verify: Go tests with an in-process fake OpenAI-compatible server for save, test, member 403, bad URL 400, key never returned, private target refused unless allowed
+- [ ] 5.2 `POST /api/v1/voice/transcribe` (session or `full` token, demo-denied, 30 per minute, 5 MB and 60 s, accepted types, 30 s timeout, nothing written or logged). Verify: Go tests for the happy path against the fake, 401, `stt_not_configured`, `invalid_input` for a 6 MB body and a GIF, `stt_unavailable` on timeout, `rate_limited`; a test that the server log captured during the request does not contain the returned text
+- [ ] 5.3 Client: recogniser choice per device in Voice capture with the statement per recogniser (D7, naming the host), `MediaRecorder` phrase recording, upload, text into quick add with chips, errors keep the field. Verify: `voiceCapture.test.tsx` cases with a fake `MediaRecorder` and fetch for the server path, the statement before the switch takes effect, and the browser path unchanged
+- [ ] 5.4 Owner's Speech to text card on Server (URL, model, key, Test, private-network note, read-only fields named by their variable). Verify: a happy-dom test for Test success and failure stages; story and baselines
+- [ ] 5.5 Docs (D8): `docs/self-hosting/speech-to-text.md` with a Docker Compose snippet for Speaches tested locally against a running Speaches container (record the image digest and model used here), the voice section of `docs/quick-add.md`, README feature line, AGENTS.md rule 5 gains "the speech-to-text service", `docs/self-hosting` index. Verify: `make docs` and `make docs-check`; the compose snippet transcribes the built-in sample through `POST /api/v1/settings/stt/test`
+- [ ] 5.6 Website follow-up: open an issue in pixari/OpenTodoWebsite with the text in D8 for the self-host page and the privacy section, to be written once this ships in a release. Verify: the issue link recorded here
+
+## 6. Integrations
+
+- [ ] 6.1 Issue connection editor in three steps with "More options" and a sticky action bar (D9). Verify: `issuesSettings.test.tsx` "Short form by default" (More options closed, Test and Save visible at 1280×800) and the existing editor scenarios; stories and baselines
+- [ ] 6.2 API tokens rows and create dialog (account-access "API tokens in Settings"). Verify: `tokens.test.tsx` cases for the row text, the one-time box and revoke confirmation; story with three tokens; `make ui-check`
+- [ ] 6.3 Assistant card structure (in-app-assistant "Assistant card structure") and the owner form's Provider and Limits groups. Verify: `assistantSettings.test.tsx` cases "Member's view" and "Owner's view while off"; stories for owner, member, off; `make ui-check`
+- [ ] 6.4 AI assistants card: owner switches group, then the three steps with client tabs and the prefilled snippet (mcp-server "Settings screen for assistants"). Verify: `assistantsSettings.test.tsx` "Three steps", the existing read and agent token scenarios; story; `make ui-check`
+
+## 7. Server audit log
+
+- [ ] 7.1 Audit log card as a compact list with the filter row or disclosure, chips, Export in the header, and the separate "Audit settings" card (D4). Verify: `auditSettings.test.tsx` cases for filters as chips, export carrying the filters and the phone disclosure; the layout check on `/settings/server` at 360, 390 and 768 px
+
+## 8. Wrap-up
+
+- [ ] 8.1 CHANGELOG entries under Unreleased (Added: profile, speech service; Changed: Settings cards, Recent activity, audit log, integrations; Changed **BREAKING**-flagged: quick add numeric order follows the date format). Verify: `make docs-check`
+- [ ] 8.2 Docs screenshots for Settings regenerated (`make docs-screenshots settings,settings-security,members,assistant-settings,…`). Verify: `make docs-check`
+- [ ] 8.3 Full checks. Verify: `go test ./...`, `cd web && npm run lint && npm test && npm run build`, `make ci-checks`, `make e2e`, `make openspec-validate`
