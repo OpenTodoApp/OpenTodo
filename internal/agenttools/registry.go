@@ -73,6 +73,9 @@ type Caller struct {
 	UserAllowsWrites  bool
 	// Encrypted is true for an account with end-to-end encryption.
 	Encrypted bool
+	// Relay reaches the account's opted-in devices (mcp-device-relay); nil when
+	// the account has none or the transport does not relay.
+	Relay Relay
 }
 
 // ScopeAgent is the token scope that may call write tools (auth.ScopeAgent).
@@ -177,6 +180,9 @@ type Registry struct {
 	log      *slog.Logger
 	// today is the calendar date of server-side completions (REST parity).
 	today0 func() string
+	// mark, set on the per-call copy of a relayed read, replaces loaded
+	// ciphertext by markers (relay.go).
+	mark *marker
 }
 
 // Options configure a Registry.
@@ -262,7 +268,7 @@ func (r *Registry) Definitions(c Caller) []Definition {
 		if d.Kind == KindWrite && !c.CanWrite() {
 			continue
 		}
-		if c.Encrypted && d.Kind == KindWrite {
+		if c.Encrypted && !c.relayed() && d.Kind == KindWrite {
 			d.InputSchema = ciphertextOnly(d.InputSchema, d.ContentFields)
 		}
 		out = append(out, d)
@@ -294,7 +300,7 @@ func (r *Registry) Plan(ctx context.Context, c Caller, name string, rawArgs json
 		res, err := t.read(r, ctx, c.UserID, a)
 		return Plan{Result: res}, err
 	}
-	if c.Encrypted {
+	if c.Encrypted && !c.relayed() {
 		for _, f := range d.ContentFields {
 			if a.plainContent(f) {
 				return Plan{}, encryptionErr()
@@ -328,7 +334,13 @@ func (r *Registry) Call(ctx context.Context, c Caller, name string, rawArgs json
 		return nil, argErr("unknown tool: " + name)
 	}
 	if d.Kind == KindRead {
-		p, err := r.Plan(ctx, c, name, rawArgs, nil)
+		var p Plan
+		var err error
+		if c.relayed() && r.mark == nil {
+			p, err = r.relayRead(ctx, c, name, rawArgs)
+		} else {
+			p, err = r.Plan(ctx, c, name, rawArgs, nil)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -353,6 +365,11 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 	p, err := r.Plan(ctx, c, name, rawArgs, nil)
 	if err != nil {
 		return nil, err
+	}
+	if c.relayed() {
+		if err := relayEncrypt(ctx, c, name, p.Changes); err != nil {
+			return nil, err
+		}
 	}
 	if ok, retry := r.limits.Reserve(c.TokenID, p.Count); !ok {
 		return nil, rateLimited(retry, fmt.Sprintf("at most %d changed items per UTC day for each token", PerDay))

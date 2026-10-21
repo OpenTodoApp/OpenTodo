@@ -176,6 +176,9 @@ var demoRules = []demoRule{
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},
 	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
+	// The device relay serves encrypted accounts' MCP calls (mcp-device-relay):
+	// every method, like /mcp itself.
+	{"AI assistants (MCP)", false, prefix("/api/v1/relay")},
 	// The in-app assistant would make outbound requests on the operator's key
 	// (in-app-assistant): every method, so the app sees it as unavailable.
 	{"The assistant", false, prefix("/api/v1/assistant")},

@@ -59,6 +59,15 @@ A passphrase change re-wraps the same account key, so relaying continues. Encryp
 - No new dependency; server image unchanged; runtime memory bounded by 4 queued requests × 2 MB per account plus streams (capped like sync streams: ten per account, oldest closed).
 - Interface: one switch and one option in Settings → Assistants, a small relay indicator in the sidebar footer next to the sync status while a request runs (no new row of chrome), the existing review sheet for D7. No new shortcut.
 
+### D11. Security review outcome (task 0.1)
+The review is in [security-review.md](security-review.md). It adds six requirements, now part of this design:
+- **R1. Payloads sealed per stream.** The device opens the stream with an ephemeral ECDH P-256 public key, the server replies with its own in the first event, and both derive an AES-256-GCM key with HKDF-SHA-256 (info `opentodo relay v1`, salt = stream id). Request and answer values are sealed with it, the request id as associated data, so a TLS-terminating proxy sees ciphertext on the relay leg and only the stream's holder can answer.
+- **R2. Opt-in bound to the session** that turned it on (`relay_devices.session_hash`); only that session opens the stream or answers; signing out removes the row.
+- **R3. The device checks requests:** only content fields of known entities, at most 2,000 values a request.
+- **R4. Device caps persist on the device** and cannot be reset by the server.
+- **R5. Encryptions count against the caps** like decryptions.
+- **R6. Only rendered values are decrypted:** the server marks ciphertext while loading, runs the tool, and asks the device only for the values whose markers appear in the result.
+
 ## Risks / Trade-offs
 
 - **The trust model changes while the relay is on.** A compromised server can fabricate tool calls and get the opted-in device to decrypt values, up to the device caps (D6), and can read what is relayed. That is why it is opt-in per device, off by default, capped locally, visible while active, and stopped by locking. The Settings copy and docs/e2ee.md must say this in plain words.
@@ -72,8 +81,4 @@ No data migration beyond creating the empty table. Ship behind the existing owne
 
 ## Open Questions
 
-1. Device caps (D6): are 5,000/hour and 20,000/day the right defaults, and should the user be able to raise them?
-2. Confirmation default (D7): off for usability, or on for safety on first use with "don't ask again for this connector"?
-3. Should the relay be limited to a subset of tools (for example reads only) by a per-device choice?
-4. `ot` as a relay target (a long-running `ot relay` on a home machine): in the first version or later?
-5. Security review before build: an external look at D1, D6 and D8, and at the wording of the trust model.
+Answered by the security review (D11): caps stay 5,000 an hour and 20,000 a day and cannot be raised in this version; write confirmation is off by default and recommended for unattended devices; no reads-only mode and no `ot` relay target in this version.

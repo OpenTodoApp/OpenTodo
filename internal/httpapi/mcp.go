@@ -168,7 +168,7 @@ func (s *Server) agentCaller(ctx context.Context, u *auth.User, tok auth.TokenIn
 	if c.Encrypted, err = s.keys().Enabled(ctx, u.ID); err != nil {
 		return c, err
 	}
-	return c, nil
+	return c, s.relayCaller(ctx, &c)
 }
 
 func (s *Server) mcpStatus(r *http.Request) map[string]any {

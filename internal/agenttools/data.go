@@ -44,13 +44,13 @@ type snapshot struct {
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
 	var err error
-	if snap.projList, err = r.sync.List(ctx, userID, "project", false); err != nil {
+	if snap.projList, err = r.list(ctx, userID, "project", false); err != nil {
 		return nil, err
 	}
 	for _, p := range snap.projList {
 		snap.projects[str(p, "id")] = p
 	}
-	labels, err := r.sync.List(ctx, userID, "label", false)
+	labels, err := r.list(ctx, userID, "label", false)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 	for _, l := range labels {
 		snap.labels[str(l, "id")] = str(l, "name")
 	}
-	sections, err := r.sync.List(ctx, userID, "section", false)
+	sections, err := r.list(ctx, userID, "section", false)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		snap.sections[str(sec, "id")] = str(sec, "name")
 		snap.sectionProject[str(sec, "id")] = rawStr(sec, "project_id")
 	}
-	defs, err := r.sync.List(ctx, userID, "field", false)
+	defs, err := r.list(ctx, userID, "field", false)
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +74,10 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		pid := rawStr(d, "project_id")
 		snap.fieldDefs[pid] = append(snap.fieldDefs[pid], d)
 	}
-	if snap.tasks, err = r.sync.List(ctx, userID, "task", false); err != nil {
+	if snap.tasks, err = r.list(ctx, userID, "task", false); err != nil {
 		return nil, err
 	}
-	entries, err := r.sync.List(ctx, userID, "time_entry", false)
+	entries, err := r.list(ctx, userID, "time_entry", false)
 	if err != nil {
 		return nil, err
 	}

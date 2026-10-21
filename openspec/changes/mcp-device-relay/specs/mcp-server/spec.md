@@ -1,19 +1,35 @@
 ## MODIFIED Requirements
 
 ### Requirement: Encrypted accounts and write tools
-For an account with end-to-end encryption and no device opted in to answer AI connectors, `tools/list` SHALL omit write tools whose required arguments are content fields and SHALL offer `update_tasks` without content fields. A call supplying a content field SHALL return the tool error `encryption_enabled` and change nothing. Structural changes (complete, reopen, schedule, move, priority, label ids, trash) SHALL work and converge with offline device edits by last-writer-wins. When at least one of the account's devices is opted in, `tools/list` SHALL list every tool as for an unencrypted account, and content SHALL be read and written through an opted-in device as described in "Content through an opted-in device".
+For an account with end-to-end encryption and no device opted in to answer AI connectors, `tools/list` SHALL list every write tool the caller may use with its content arguments (titles, descriptions, names, comment bodies) described as accepting ciphertext only and without plaintext length bounds, and SHALL leave out the arguments that cannot be sent as ciphertext (`origin_url`). A call supplying a content field as plaintext SHALL return the tool error `encryption_enabled` and change nothing; a content field supplied as a well-formed ciphertext envelope SHALL be stored unchanged. Structural changes (complete, reopen, schedule, move, priority, label ids, trash, and a project's or section's colour, icon, parent, position and Favourites entry) SHALL work and converge with offline device edits by last-writer-wins. When at least one of the account's devices is opted in, `tools/list` SHALL describe content arguments as plain text, plaintext content SHALL be encrypted through an opted-in device as described in "Content through an opted-in device", and envelopes SHALL still be stored as given.
 
 #### Scenario: Create refused for an encrypted account
-- **WHEN** an allowed assistant of an encrypted account with no opted-in device calls `create_tasks`
+- **WHEN** an allowed assistant of an encrypted account with no opted-in device calls `create_tasks` with a plaintext title
 - **THEN** the result is the tool error `encryption_enabled` and no op is written
+
+#### Scenario: Content tools are listed as ciphertext only
+- **WHEN** an allowed assistant of an encrypted account with no opted-in device lists the tools
+- **THEN** `create_tasks`, `update_tasks`, `create_project`, `update_project`, `create_label`, `add_comment`, `create_sections` and `update_sections` are listed, their text arguments say they accept ciphertext only, and no `origin_url` argument is offered
 
 #### Scenario: Rescheduling works for an encrypted account
 - **WHEN** the same assistant calls `schedule_tasks` for two tasks
 - **THEN** both get the new plaintext due date and every enrolled device shows it after sync with titles still encrypted
 
-#### Scenario: Opted-in device lists every tool
-- **WHEN** the user has opted in one device and an allowed `agent` token calls `tools/list`
-- **THEN** `create_tasks` and the other content tools are listed
+#### Scenario: Recolouring works for an encrypted account
+- **WHEN** the same assistant calls `update_project` with only `color` and `icon` for an encrypted project
+- **THEN** both are written in plaintext, every enrolled device shows them after sync, and the project's name stays the ciphertext it was
+
+#### Scenario: Ciphertext name is stored as given
+- **WHEN** a client of an encrypted account calls `update_sections` with a `name` that is a well-formed `enc:v1:` envelope
+- **THEN** the envelope is stored unchanged, and an unlocked device shows the decrypted name if the envelope was made with the account key for that section, or its "can't decrypt" placeholder otherwise
+
+#### Scenario: Plaintext name refused
+- **WHEN** a client of an encrypted account with no opted-in device calls `update_project` with `name: "Garden"`
+- **THEN** the result is the tool error `encryption_enabled` and nothing changes
+
+#### Scenario: Opted-in device takes plain text
+- **WHEN** the user has opted in one device and an allowed `agent` token lists the tools
+- **THEN** the text arguments of `create_tasks` and the other content tools are described as plain text, without the ciphertext-only note
 
 ## ADDED Requirements
 

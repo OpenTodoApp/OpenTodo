@@ -944,6 +944,8 @@ The server records security-relevant events in its own database (never synced to
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read`, `agent` or `admin`) |
 | `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
+| `relay.enabled` | success | actor = user | `relay_device_id`, `relay_device_label`. A device of an encrypted account opted in to answer AI connectors ([device relay](#device-relay)) |
+| `relay.disabled` | success | actor = user | `relay_device_id`, `relay_device_label`, `reason` (`user`, `locked`, `signed_out`, `encryption_off`). Relayed calls themselves are never relay events; relayed writes are `agent.write` |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
@@ -1497,6 +1499,20 @@ curl -X POST -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/e
 ```
 
 Replacing the record (passphrase change, recovery reset) and `DELETE` need a fresh re-authentication on cookie sessions (403 `reauth_required`). `GET /api/v1/me` and `GET /api/v1/auth/status` carry `"encryption":{"enabled":true,"keyVersion":2}` and `"minClientVersion":1`. The export adds `"encryption"`: the key record, or `null`. Refused for encrypted accounts with 409 `encryption_enabled`: the first share of a project (`POST /api/v1/projects/{id}/members` on an unshared project) and `POST /api/v1/app-passwords`; `/dav/` answers 403. `GET /api/v1/settings/caldav` adds `"encryption": true|false` for the caller.
+
+### Device relay
+
+For an account with end-to-end encryption, a device the user opted in answers the decrypt and encrypt steps of [MCP tool calls](mcp.md#encrypted-accounts) (OpenSpec `mcp-device-relay`). The server never holds the key; relayed text exists only in memory during the call and is never stored, logged or audited. Session cookies only (no API tokens); every route is refused on a demo instance.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/relay/devices` | `{devices: [{deviceId, label, enabledAt, online, thisSession}]}` |
+| PUT | `/api/v1/relay/devices/{device}` | `{label}` → 204. Needs a recently confirmed session; binds the opt-in to this session. 409 `not_encrypted` without encryption, 409 `mcp_disabled` while the owner has MCP off. Recorded as `relay.enabled` |
+| DELETE | `/api/v1/relay/devices/{device}?reason=user\|locked` | → 204; ends the device's stream. Recorded as `relay.disabled`. Signing out the session that opted in and turning encryption off also end it |
+| GET | `/api/v1/relay/events?device=&key=` | Server-sent events for the opted-in device of this session only (403 `not_opted_in` otherwise). `key` is the device's ephemeral ECDH P-256 public key (uncompressed, base64url). The first event, `hello`, carries `{stream, key}`: the stream id and the server's key. Both sides derive an AES-256-GCM key with HKDF-SHA-256 (salt = stream id, info `opentodo relay v1`). Each `request` event is `{id, box}`: `box` is base64url(nonce ‖ AES-GCM of `{op, items, call, deadline}`) with `id` as associated data |
+| POST | `/api/v1/relay/answers/{id}` | `{box}` sealed the same way, holding `{results: [{value} or {error}]}` or `{error: "device_limit"\|"declined_on_device"\|"locked"}` → 204; any other session, a second answer or a box that does not open → 404 `not_found` |
+
+Limits: 60 relayed calls a minute and 4 at once per account, 2,000 values and 2 MB per request, deadlines of 20 s (reads) and 30 s (writes). The MCP tool errors are listed under [relay errors](mcp.md#encrypted-accounts).
 
 ### In-app assistant
 
