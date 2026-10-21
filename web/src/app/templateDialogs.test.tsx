@@ -98,6 +98,10 @@ describe('From a template', () => {
     tasks: [{ id: 't1', title: 'Book flights', project_id: 'p1', section_id: 's1', due: { date: '2026-10-21', time: '10:00' }, labels: ['l1'], position: 1 }] })
 
   async function pick(text: string, name = 'trip-planning.json') {
+    // The dialog opens on the library; Upload a file… is the second way in (template-library).
+    await waitFor(() => !!document.querySelector('[data-template-upload], [data-testid="template-file"]'))
+    const upload = document.querySelector<HTMLElement>('[data-template-upload]')
+    if (upload) await click(upload)
     const input = document.querySelector<HTMLInputElement>('[data-testid="template-file"]')!
     Object.defineProperty(input, 'files', { value: [new File([text], name, { type: 'application/json' })], configurable: true })
     await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })) })
@@ -130,6 +134,100 @@ describe('From a template', () => {
     expect(await db.projects.count()).toBe(0)
   })
 })
+
+describe('From a template: the library (template-library)', () => {
+  const dialog = () => document.querySelector<HTMLElement>('[data-testid="template-dialog"]')!
+  const cards = () => [...document.querySelectorAll<HTMLButtonElement>('[data-template-card]')]
+  async function type(input: HTMLInputElement, text: string) {
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, text)
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+  }
+  async function open(onClose = vi.fn()) {
+    const r = await render(<TemplateDialog onClose={onClose} />)
+    mounted.push(r)
+    await waitFor(() => cards().length >= 10)
+    return onClose
+  }
+
+  it('opens on the library with the search focused, cards grouped under category headings', async () => {
+    await open()
+    await waitFor(() => document.activeElement === document.querySelector('[data-template-search]'))
+    const headings = [...dialog().querySelectorAll('h3')].map((h) => h.textContent)
+    expect(headings).toEqual(['Personal', 'Home', 'Work', 'Study', 'Method'])
+    const trip = cards().find((c) => c.dataset.templateCard === 'trip-planning')!
+    // The accessible name is the visible title and summary (label-in-name).
+    expect(trip.textContent).toBe('Trip planning: Bookings, documents and a packing list with subtasks, for a holiday or a work trip.')
+    expect(trip.hasAttribute('aria-label')).toBe(false)
+  })
+
+  it('searches tasks and labels and announces the count', async () => {
+    await open()
+    await type(document.querySelector<HTMLInputElement>('[data-template-search]')!, 'pack')
+    await waitFor(() => cards().length === 2)
+    expect(cards().map((c) => c.dataset.templateCard).sort()).toEqual(['moving-house', 'trip-planning'])
+    expect(document.querySelector('[data-template-count]')!.textContent).toBe('2 templates')
+  })
+
+  it('keyboard only: type, Down, Enter, Enter starts the template on today', async () => {
+    const onClose = await open()
+    const search = document.querySelector<HTMLInputElement>('[data-template-search]')!
+    await type(search, 'things done')
+    await waitFor(() => cards().length === 1)
+    await key(search, 'ArrowDown')
+    expect(document.activeElement).toBe(cards()[0])
+    await click(cards()[0])
+    await waitFor(() => document.activeElement === document.querySelector('[data-template-create]'))
+    expect(await db.projects.count()).toBe(0)
+    await act(async () => { (document.activeElement as HTMLButtonElement).click() })
+    await waitFor(() => onClose.mock.calls.length > 0)
+    const projects = await db.projects.toArray()
+    expect(projects.map((p) => p.name).sort()).toEqual(['GTD', 'Projects list'])
+    expect((await db.labels.toArray()).map((l) => l.name).sort()).toEqual(['computer', 'errand', 'home', 'phone', 'someday', 'waiting'])
+  })
+
+  it('arrows move between cards and Up from the first returns to the search', async () => {
+    await open()
+    const search = document.querySelector<HTMLInputElement>('[data-template-search]')!
+    await key(search, 'ArrowDown')
+    expect(document.activeElement).toBe(cards()[0])
+    await key(cards()[0], 'ArrowDown')
+    expect(document.activeElement).toBe(cards()[1])
+    await key(cards()[1], 'ArrowUp')
+    await key(cards()[0], 'ArrowUp')
+    expect(document.activeElement).toBe(search)
+  })
+
+  it('the detail previews without writing; Escape returns to the library, Escape again closes', async () => {
+    const onClose = await open()
+    await click(cards().find((c) => c.dataset.templateCard === 'moving-house')!)
+    await waitFor(() => !!document.querySelector('[data-template-detail="moving-house"]'))
+    const preview = document.querySelector('[data-template-preview]')!.textContent!
+    expect(preview).toContain('Give notice to the landlord')
+    expect(preview).toContain('day 1')
+    expect(preview).toContain('week')
+    expect(document.querySelector('[data-template-detail]')!.textContent).toContain('How to use it')
+    expect(await db.projects.count() + await db.tasks.count() + await db.labels.count()).toBe(0)
+    await key(document.activeElement as HTMLElement, 'Escape')
+    await waitFor(() => !!document.querySelector('[data-template-library]'))
+    expect(onClose).not.toHaveBeenCalled()
+    await key(document.querySelector('[data-template-search]')!, 'Escape')
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('the preview counts the labels already on this device', async () => {
+    await createLabelNamed('packing')
+    await open()
+    await click(cards().find((c) => c.dataset.templateCard === 'trip-planning')!)
+    await waitFor(() => /1 new, 1 already yours/.test(document.querySelector('[data-template-summary]')?.textContent ?? ''))
+  })
+})
+
+async function createLabelNamed(name: string) {
+  const { createLabel } = await import('../lib/labels')
+  await createLabel({ name })
+}
 
 describe('Shift+D', () => {
   it('copies a task with its three subtasks right below it and selects the copy', async () => {

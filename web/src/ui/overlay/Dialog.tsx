@@ -27,6 +27,11 @@ export interface DialogProps {
    * From 640 px up both are the same centred card.
    */
   placement?: 'center' | 'sheet'
+  /**
+   * What Escape does, when it is not closing: a dialog with a second view (the template
+   * library's detail) steps back first. The close button and a tap outside still close.
+   */
+  onEscape?: () => void
 }
 
 const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', xl: 'sm:max-w-5xl' }
@@ -46,10 +51,10 @@ const CARD = {
  * and the close button stays pinned. Mount it while open. `placement="sheet"` keeps
  * the page visible above a bottom sheet on phones instead (see the prop).
  */
-export function Dialog({ title, onClose, children, size = 'sm', dismissable = true, role = 'dialog', label, className = '', testId, placement = 'center' }: DialogProps) {
+export function Dialog({ title, onClose, children, size = 'sm', dismissable = true, role = 'dialog', label, className = '', testId, placement = 'center', onEscape }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  useOverlay({ panel, onClose })
+  useOverlay({ panel, onClose: onEscape ?? onClose })
   const tree = (
     <div className="fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim sm:p-4" data-overlay-root {...isolate}
       onClick={(e) => { if (dismissable && e.target === e.currentTarget) onClose() }}

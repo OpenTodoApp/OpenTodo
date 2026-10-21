@@ -1,0 +1,69 @@
+# Getting Things Done setup: a template of the OpenTodo library (templates/README.md). Licence: CC BY 4.0.
+title: Getting Things Done setup
+summary: Contexts, a waiting-for list and a someday list, ready for the GTD method in a few minutes.
+description: |
+  Getting Things Done works with any tool that has an inbox, contexts and lists. In OpenTodo, contexts are [labels](https://open-todo.app/docs/labels-and-filters/) and each list is a saved filter.
+
+  The template creates the [labels](https://open-todo.app/docs/labels-and-filters/) `@home`, `@computer`, `@phone`, `@errand`, `@waiting` and `@someday`, a GTD project with sections for next actions, waiting-for and someday, and a weekly reminder to check every project for a next action.
+
+  Create views like `@phone & !@waiting` for the moments you have only your phone. [Saved views](https://open-todo.app/docs/views/) can be pinned to the sidebar with live counts.
+howToUse:
+  - Start the template; it creates the labels, the GTD project and its sections.
+  - Save the views the guide suggests, such as `@phone & !@waiting`, and pin them to the sidebar.
+  - Every Friday, the review task asks you to check each project for a next action.
+makeItYours:
+  - "Rename the contexts to the places you actually work: `@office`, `@workshop`, `@town`."
+  - Delete the sections you do not use; a smaller system is one you keep.
+  - Give the review task a time that fits your week.
+category: method
+icon: lightbulb
+layout: list
+author: OpenTodo
+reviewed: 2026-10-15
+docs:
+  - labels-and-filters.md
+  - filters.md
+  - views.md
+labels:
+  - name: home
+  - name: computer
+  - name: phone
+  - name: errand
+  - name: waiting
+  - name: someday
+projects:
+  - name: GTD
+    color: "#2563eb"
+    sections:
+      - name: Next actions
+        tasks:
+          - title: Call the bank about the new card
+            labels: [phone]
+          - title: Update the budget spreadsheet
+            estimate: 30
+            labels: [computer]
+          - title: Pick up the dry cleaning
+            labels: [errand]
+          - title: Fix the squeaky door
+            labels: [home]
+      - name: Waiting for
+        tasks:
+          - title: Quote from the electrician
+            due: +1w
+            labels: [waiting]
+          - title: Reply from Sam about the venue
+            due: +3d
+            labels: [waiting]
+      - name: Someday / maybe
+        tasks:
+          - title: Learn to make sourdough
+            labels: [someday]
+          - title: Plan a trip to Japan
+            labels: [someday]
+  - name: Projects list
+    color: "#7c3aed"
+    tasks:
+      - title: Review every project for a next action
+        due: +0d
+        recurrence: every week
+        estimate: 15

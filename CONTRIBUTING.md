@@ -21,7 +21,8 @@ Thanks for helping build a task manager people can own. This document covers how
 7. Open a pull request. CI must be green. Link the change folder in the description.
 8. Update the documentation with the behaviour: user-visible changes go into the guides in `docs/` (front matter lists the capabilities a page covers in `specs` and the app screens it explains in `screens`). Run `make docs` and commit the regenerated `web/src/generated/help.json`; never edit it by hand. The docs website is built into `dist/docs-site` (not committed) and ships to the website repository in the site bundle (`make site-bundle`). After merging `main` into a branch, rerun `make docs` instead of resolving conflicts in generated files. `make check` runs `npm run docs:check`, which fails on broken links, missing alt text, uncovered capabilities or stale output. Screenshots are refreshed with `make docs-screenshots`; the docs site is checked in a browser with `make docs-site-check`.
 9. Text people read goes through the message layer (`t()` in `web/src/lib/i18n`) and into every catalog; `make check` runs the translation checks. See [Translating OpenTodo](docs/translating.md), also for adding a language.
-10. After merge, the change is archived with `openspec archive <name> -y`, which merges its deltas into `openspec/specs/`. Add a line to `CHANGELOG.md`.
+10. Project templates live in `templates/`, one folder per template; [`templates/README.md`](templates/README.md) is the format, the bar for the library and how to try one. `make templates` checks and compiles them; commit the regenerated `web/src/generated/templates.json` with the template.
+11. After merge, the change is archived with `openspec archive <name> -y`, which merges its deltas into `openspec/specs/`. Add a line to `CHANGELOG.md`.
 
 ## Development setup
 
@@ -49,7 +50,7 @@ Imperative mood, one logical change per commit, reference the OpenSpec change na
 
 ## License
 
-By contributing you agree that your contributions are licensed under the AGPL-3.0-only, like the rest of the project.
+By contributing you agree that your contributions are licensed under the AGPL-3.0-only, like the rest of the project. Project templates in `templates/` are content and are licensed under CC BY 4.0 (see `templates/README.md`).
 
 ## Code of conduct
 

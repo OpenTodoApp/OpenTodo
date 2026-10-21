@@ -1,0 +1,64 @@
+# Trip planning: a template of the OpenTodo library (templates/README.md). Licence: CC BY 4.0.
+title: Trip planning
+summary: Bookings, documents and a packing list with subtasks, for a holiday or a work trip.
+description: |
+  A trip has three phases: book, sort out the documents, pack. This template gives each a section and uses [subtasks](https://open-todo.app/docs/tasks-and-projects/) for the packing list, so you can tick items off on your phone while you pack.
+
+  Add a [reminder](https://open-todo.app/docs/reminders/) to the passport task if your trip is far away; renewals take time.
+howToUse:
+  - Start the template; the three sections are book, documents and pack.
+  - Add a reminder to the passport task if the trip is far away.
+  - Tick the packing subtasks off on your phone while you pack.
+makeItYours:
+  - Copy the packing list into a "Standard packing" project and reuse it for every trip.
+  - Share the project with your travel companions and split the bookings.
+  - "Add the dates: flights, check-in, the day the insurance must be sorted."
+category: personal
+icon: plane
+layout: list
+author: OpenTodo
+reviewed: 2026-10-15
+docs:
+  - tasks-and-projects.md
+  - reminders.md
+labels:
+  - name: booking
+  - name: packing
+projects:
+  - name: Trip
+    color: "#0891b2"
+    sections:
+      - name: Book
+        tasks:
+          - title: Flights or train tickets
+            priority: 1
+            due: +2d
+            labels: [booking]
+          - title: Accommodation
+            priority: 1
+            due: +3d
+            labels: [booking]
+          - title: Travel insurance
+            due: +1w
+            labels: [booking]
+      - name: Documents
+        tasks:
+          - title: Check passport expiry date
+            priority: 1
+            due: +0d
+          - title: Print or download tickets
+            due: +3w
+      - name: Pack
+        tasks:
+          - title: Clothes
+            due: +4w
+            labels: [packing]
+            subtasks:
+              - title: Rain jacket
+              - title: Comfortable shoes
+          - title: Toiletries
+            due: +4w
+            labels: [packing]
+          - title: Chargers and adapters
+            due: +4w
+            labels: [packing]

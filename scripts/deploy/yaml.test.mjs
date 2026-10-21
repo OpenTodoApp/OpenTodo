@@ -5,9 +5,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { ROOT } from './common.mjs'
-import { parseYaml, splitComment, YAML_CASAOS, YAML_COMPOSE, YAML_FULL, YAML_UMBREL_MANIFEST } from './yaml.mjs'
+import { parseYaml, splitComment, YAML_CASAOS, YAML_COMPOSE, YAML_FULL, YAML_TEMPLATE, YAML_UMBREL_MANIFEST } from './yaml.mjs'
 
-const PROFILES = { YAML_FULL, YAML_COMPOSE, YAML_CASAOS, YAML_UMBREL_MANIFEST }
+const PROFILES = { YAML_FULL, YAML_COMPOSE, YAML_CASAOS, YAML_UMBREL_MANIFEST, YAML_TEMPLATE }
 
 test('yaml: every profile refuses what the subset does not cover', () => {
   const refused = {
@@ -83,4 +83,43 @@ test('yaml: no template checker carries its own YAML parser', () => {
     const src = readFileSync(f, 'utf8')
     assert.doesNotMatch(src, /function (parseYaml|parseManifest|parseScalar|splitComment|blockScalar)\b|function (scalar|literal|fold)\(/, `${f} must use scripts/deploy/yaml.mjs`)
   }
+})
+
+test('yaml: a project template (template-library): nested lists of maps, block scalars inside items, offsets and times as text', () => {
+  const doc = parseYaml(`title: Trip planning
+description: |
+  A trip has three phases.
+
+  A second paragraph with [a link](https://open-todo.app/docs/).
+howToUse:
+  - "Import it; the sections are book, documents and pack."
+  - Add a reminder
+reviewed: 2026-10-15
+labels:
+  - name: booking
+    color: "#0891b2"
+projects:
+  - name: Trip
+    sections:
+      - name: Book
+        tasks:
+          - title: Flights
+            due: +2d
+            time: 09:30
+            priority: 1
+            estimate: 30
+            labels: [booking]
+            description: >-
+              Folded text
+              continues here.
+            subtasks:
+              - title: Rain jacket
+`, YAML_TEMPLATE)
+  assert.equal(doc.description, 'A trip has three phases.\n\nA second paragraph with [a link](https://open-todo.app/docs/).\n')
+  assert.deepEqual(doc.howToUse, ['Import it; the sections are book, documents and pack.', 'Add a reminder'])
+  assert.equal(doc.reviewed, '2026-10-15')
+  const task = doc.projects[0].sections[0].tasks[0]
+  assert.deepEqual(task, { title: 'Flights', due: '+2d', time: '09:30', priority: 1, estimate: 30, labels: ['booking'], description: 'Folded text continues here.', subtasks: [{ title: 'Rain jacket' }] })
+  // A translation overlay: dotted paths are plain keys.
+  assert.deepEqual(parseYaml('title: Viaggio\nprojects.0.sections.1.tasks.2.title: Passaporto\n', YAML_TEMPLATE), { title: 'Viaggio', 'projects.0.sections.1.tasks.2.title': 'Passaporto' })
 })

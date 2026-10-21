@@ -187,7 +187,7 @@ function screens(ids) {
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'public-list', path: `/public/${ids.publicLink}`, anon: true, ready: (p) => p.locator('[data-public-task]').first().waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog'] },
+    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog', 'template-detail'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
@@ -434,6 +434,16 @@ const OVERLAYS = {
     await p.locator('aside[data-sidebar]').getByRole('button', { name: 'Add or fold projects' }).click()
     await p.getByRole('menuitem', { name: 'From a template…' }).click()
     return { overlay: p.locator('[data-testid="template-dialog"]'), kind: 'dialog' }
+  },
+  // The library's detail (template-library): description, steps, the preview, start day and Create.
+  // Escape steps back to the library first, then closes.
+  async 'template-detail'(p) {
+    await openSidebar(p)
+    await p.locator('aside[data-sidebar]').getByRole('button', { name: 'Add or fold projects' }).click()
+    await p.getByRole('menuitem', { name: 'From a template…' }).click()
+    await p.locator('[data-template-card="moving-house"]').click()
+    await p.locator('[data-template-detail]').waitFor()
+    return { overlay: p.locator('[data-testid="template-dialog"]'), kind: 'dialog', escapes: 2 }
   },
   async 'section-menu'(p) {
     const trigger = p.getByRole('button', { name: 'Section menu for Planning' })

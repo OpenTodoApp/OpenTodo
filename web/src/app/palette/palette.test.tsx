@@ -161,6 +161,11 @@ describe('registry (4.1, 4.2)', () => {
     cmd.run()
     expect(sidebarFind.take('open')).toBe('open')
   })
+  it('New project from a template opens the template dialog (template-library 4.4)', async () => {
+    const before = (await import('../TemplateDialogs')).templateRequests()
+    commands(ctxFor()).find((c) => c.id === 'new:from-template')!.run()
+    expect((await import('../TemplateDialogs')).templateRequests()).toBe(before + 1)
+  })
   it('Vim keybindings toggles the preference', async () => {
     const { isVimEnabled } = await import('../vim/prefs')
     commands(ctxFor({ vimEnabled: false })).find((c) => c.id === 'app:vim')!.run()

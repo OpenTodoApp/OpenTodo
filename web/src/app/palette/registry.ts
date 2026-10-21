@@ -19,6 +19,7 @@ import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
+import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
@@ -217,6 +218,7 @@ export function commands(ctx: PaletteContext): Command[] {
   out.push(
     { id: 'new:task', label: t('Quick add a task'), icon: 'plus', shortcut: keysOf('list.quick-add'), keywords: 'new task add create', run: () => { if (!ctx.focusQuickAdd()) navigate({ view: 'inbox' }) } },
     { id: 'new:project', label: t('New project'), icon: 'plus', keywords: 'add create', run: () => prompt(t('New project'), t('Project name'), '', async (name) => navigate({ view: 'project', id: await createProject({ name }) })) },
+    { id: 'new:from-template', label: t('New project from a template'), icon: 'copy', keywords: t('template library add create'), run: () => requestTemplateDialog() },
     { id: 'new:label', label: t('New label'), icon: 'tag', keywords: 'add create', run: () => prompt(t('New label'), t('Label name'), '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
     { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),

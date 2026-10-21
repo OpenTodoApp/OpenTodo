@@ -10,3 +10,4 @@
 - [ ] New API routes use `requireAuth` (or the spec says why not)
 - [ ] No telemetry, no new third-party requests, no new mandatory env vars
 - [ ] Docs and `CHANGELOG.md` updated; size impact noted for new dependencies
+- [ ] Templates only: I wrote the template in `templates/` (or may license it) and agree to publish it under CC BY 4.0; `make templates` is committed

@@ -1229,6 +1229,10 @@
   "Back to the Inbox": [
     "web/src/app/TriageView.tsx"
   ],
+  "Back to the library": [
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
+  ],
   "Back to the list": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -2259,7 +2263,8 @@
     "web/src/app/NewBoardDialog.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Create a link…": [
     "web/src/app/InviteLinksSection.tsx"
@@ -4200,6 +4205,9 @@
   "History needs a connection to the server.": [
     "web/src/app/HistoryPanel.tsx"
   ],
+  "Home": [
+    "web/src/lib/templateLibrary.ts"
+  ],
   "Home SSO": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -4236,6 +4244,9 @@
   "How to install": [
     "web/src/app/CaptureSettings.tsx",
     "web/src/app/FirstRun.tsx"
+  ],
+  "How to use it": [
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "How you work": [
     "web/src/app/method/MethodModeChooser.tsx",
@@ -4825,6 +4836,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Labels: {names}": [
+    "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/ui/Chips.tsx"
   ],
   "Language": [
@@ -5096,6 +5108,9 @@
   "Loading task": [
     "web/src/app/TaskPage.tsx"
   ],
+  "Loading templates…": [
+    "web/src/app/TemplateDialogs.tsx"
+  ],
   "Loading the assistant": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
@@ -5203,6 +5218,9 @@
   "Make floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
+  "Make it yours": [
+    "web/src/app/templates/TemplateLibrary.tsx"
+  ],
   "Make member": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -5302,6 +5320,9 @@
   ],
   "Messages travel unencrypted to the mail server; use it only for a relay on your network.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Method": [
+    "web/src/lib/templateLibrary.ts"
   ],
   "Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.": [
     "web/src/lib/voice/dictation.ts"
@@ -5642,6 +5663,9 @@
   "New project": [
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
+  "New project from a template": [
     "web/src/app/palette/registry.ts"
   ],
   "New project: {name}": [
@@ -6017,6 +6041,9 @@
   ],
   "No task matches this view.": [
     "web/src/app/SavedViewView.tsx"
+  ],
+  "No template matches. Try another word, or upload a template file.": [
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "No thanks": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -6898,7 +6925,8 @@
   ],
   "Parent project": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Parent task": [
     "web/src/app/task-detail/Facets.tsx"
@@ -7058,6 +7086,9 @@
   "Person": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
+  ],
+  "Personal": [
+    "web/src/lib/templateLibrary.ts"
   ],
   "Pick a date and time.": [
     "web/src/app/RemindersField.tsx"
@@ -8378,6 +8409,12 @@
   "Search tasks, projects and commands": [
     "web/src/app/palette/CommandPalette.tsx"
   ],
+  "Search templates": [
+    "web/src/app/templates/TemplateLibrary.tsx"
+  ],
+  "Search templates…": [
+    "web/src/app/templates/TemplateLibrary.tsx"
+  ],
   "Second factor disabled": [
     "web/src/app/auditFormat.ts"
   ],
@@ -9171,7 +9208,8 @@
     "web/src/app/NewBoardDialog.tsx"
   ],
   "Start on": [
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Start on <span>(optional; dates move so the earliest lands on this day)</span>": [
     "web/src/app/TemplateDialogs.tsx"
@@ -9307,6 +9345,9 @@
   ],
   "Strikethrough": [
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Study": [
+    "web/src/lib/templateLibrary.ts"
   ],
   "Sub-projects": [
     "web/src/app/SubProjects.tsx"
@@ -10935,7 +10976,8 @@
   ],
   "Top level": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Total per account": [
     "web/src/lib/settingsCopy.ts"
@@ -11330,7 +11372,11 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Upload a file": [
-    "web/src/app/RestoreSection.tsx"
+    "web/src/app/RestoreSection.tsx",
+    "web/src/app/TemplateDialogs.tsx"
+  ],
+  "Upload a file…": [
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Upload progress": [
     "web/src/app/RestoreSection.tsx"
@@ -11693,6 +11739,9 @@
   ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Work": [
+    "web/src/lib/templateLibrary.ts"
   ],
   "Work done before this time counts for the previous day.": [
     "web/src/app/settingsIndex.ts",
@@ -12232,6 +12281,9 @@
   "cyan": [
     "web/src/lib/colourNames.ts"
   ],
+  "day {n}": [
+    "web/src/lib/templateLibrary.ts"
+  ],
   "day-month": [
     "web/src/app/QuickAddSettings.tsx"
   ],
@@ -12554,6 +12606,9 @@
   ],
   "missing pattern after \"every\"": [
     "web/src/lib/recurrence.ts"
+  ],
+  "month {n}": [
+    "web/src/lib/templateLibrary.ts"
   ],
   "month-day": [
     "web/src/app/QuickAddSettings.tsx"
@@ -12969,6 +13024,9 @@
   "teal": [
     "web/src/lib/colourNames.ts"
   ],
+  "template library add create": [
+    "web/src/app/palette/registry.ts"
+  ],
   "the Daily check is due": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -13180,6 +13238,9 @@
   "webhooks": [
     "web/src/app/settingsSections.ts"
   ],
+  "week {n}": [
+    "web/src/lib/templateLibrary.ts"
+  ],
   "weekday ordinal must be 1st to 4th or last": [
     "web/src/lib/recurrence.ts"
   ],
@@ -13218,6 +13279,9 @@
   ],
   "{actor} {action}": [
     "web/src/lib/activityRuns.ts"
+  ],
+  "{added} new, {reused} already yours": [
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{archivesError} You can still upload an archive.": [
     "web/src/app/RestoreSection.tsx"
@@ -13451,7 +13515,8 @@
     "web/src/lib/history.ts"
   ],
   "{n, plural, one {# label} other {# labels}}": [
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# minute left} other {# minutes left}}": [
     "web/src/lib/focus/timer.ts"
@@ -13503,7 +13568,8 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "{n, plural, one {# project} other {# projects}}": [
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# project} other {# projects}}, {k} need attention": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -13528,7 +13594,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "{n, plural, one {# section} other {# sections}}": [
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# session} other {# sessions}}": [
     "web/src/app/auditFormat.ts"
@@ -13538,6 +13605,9 @@
   ],
   "{n, plural, one {# stalled} other {# stalled}}": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "{n, plural, one {# subtask} other {# subtasks}}": [
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# task carried over} other {# tasks carried over}}": [
     "web/src/lib/review.ts"
@@ -13569,10 +13639,14 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/palette/filterEntries.ts",
-    "web/src/app/palette/registry.ts"
+    "web/src/app/palette/registry.ts",
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
     "web/src/lib/plan.ts"
+  ],
+  "{n, plural, one {# template} other {# templates}}": [
+    "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# token · this month {pct}% of your limit} other {# tokens · this month {pct}% of your limit}}": [
     "web/src/lib/assistant.ts"
