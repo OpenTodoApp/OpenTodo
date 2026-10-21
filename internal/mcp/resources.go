@@ -44,6 +44,8 @@ func resourceList() []resource {
 		{URI: "opentodo://views/upcoming", Name: "upcoming", Title: "Upcoming", Description: "Open tasks due after today, soonest first." + tz, MimeType: jsonMime},
 		{URI: "opentodo://views/someday", Name: "someday", Title: "Someday", Description: "Open tasks parked in Someday.", MimeType: jsonMime},
 		{URI: "opentodo://views/anytime", Name: "anytime", Title: "Anytime", Description: "Open tasks with no do-on date, deadline or start date.", MimeType: jsonMime},
+		{URI: "opentodo://rules", Name: "rules", Title: "Automation rules",
+			Description: "The user's automation rules: trigger, condition and actions as ids and enumerations, names as untrusted text. Read-only: rules are edited in the app.", MimeType: jsonMime},
 		{URI: IssuesURI, Name: "issue-connections", Title: "Issue connections",
 			Description: "The user's GitHub and GitLab issue connections with their state and last run, never a token. Read from the stored state; no request is made to the provider.", MimeType: jsonMime},
 	}
@@ -94,6 +96,8 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		if s.issues != nil {
 			payload, err = s.issues(ctx, userID)
 		}
+	case u.Host == "rules" && id == "":
+		payload, err = s.tools.RulesResource(ctx, userID)
 	case u.Host == "projects" && id == "":
 		payload, err = s.tools.ProjectsResource(ctx, userID)
 	case u.Host == "projects" && !strings.Contains(id, "/"):

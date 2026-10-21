@@ -2,8 +2,11 @@ package agenttools
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/pixari/opentodo/internal/e2ee"
 )
 
 // Resource payloads for the MCP server (mcp-server design D4): built from the
@@ -87,4 +90,33 @@ func (r *Registry) ViewResource(ctx context.Context, userID, view string, loc *t
 func noticed(m map[string]any) map[string]any {
 	m["_notice"] = Notice
 	return m
+}
+
+// RulesResource is opentodo://rules (automation-rules): the user's automation
+// rules, read-only. Names are user-written (untrusted, and a placeholder for an
+// encrypted account); triggers, conditions and actions are ids and enumerations.
+// There is no write tool for rules: an assistant reads them, the user edits them.
+func (r *Registry) RulesResource(ctx context.Context, userID string) (map[string]any, error) {
+	rows, err := r.list(ctx, userID, "rule", false)
+	if err != nil {
+		return nil, err
+	}
+	type ruleOut struct {
+		ID        string          `json:"id"`
+		Untrusted nameText        `json:"untrusted_text"`
+		Enabled   bool            `json:"enabled"`
+		Trigger   json.RawMessage `json:"trigger"`
+		Condition json.RawMessage `json:"condition"`
+		Actions   json.RawMessage `json:"actions"`
+	}
+	out := []ruleOut{}
+	for _, row := range rows {
+		cond := row["condition"]
+		if len(cond) == 0 {
+			cond = json.RawMessage("null")
+		}
+		out = append(out, ruleOut{ID: str(row, "id"), Untrusted: nameText{Name: e2ee.Display(str(row, "name"))}, Enabled: string(row["enabled"]) == "true",
+			Trigger: row["trigger"], Condition: cond, Actions: row["actions"]})
+	}
+	return noticed(map[string]any{"rules": out}), nil
 }
