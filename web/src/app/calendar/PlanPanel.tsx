@@ -10,7 +10,7 @@ import { Icon, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
 import { Menu } from '../../ui'
 import { PanelFrame } from '../PanelFrame'
 import { useToday } from '../useViews'
-import { isInboxTask } from '../../lib/inbox'
+import { inboxTasks } from '../../lib/inbox'
 
 const TRAY_KEY = 'opentodo.calendar.tray'
 
@@ -52,7 +52,7 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
     if (source === 'nodate') out = open.filter((tk) => !tk.due)
     else if (source === 'overdue') out = open.filter((item) => item.due && localDueOf(item.due).date < today)
     else if (source.startsWith('project:')) out = open.filter((task) => task.project_id === source.slice(8))
-    else out = open.filter(isInboxTask)
+    else out = inboxTasks(open, tasks)
     return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
   const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Overdue') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')

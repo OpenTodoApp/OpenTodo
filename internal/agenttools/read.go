@@ -140,6 +140,7 @@ type projectOut struct {
 // inboxCount counts the Inbox tasks (internal/inbox): open, no project, not scheduled.
 func (snap *snapshot) inboxCount() int {
 	n := 0
+	inInbox := snap.inboxRule()
 	for _, t := range snap.tasks {
 		if inInbox(t) {
 			n++
@@ -301,6 +302,7 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 		}
 	}
 	items := []keyed[taskOut]{}
+	inInbox := snap.inboxRule()
 	for _, t := range snap.tasks {
 		pid := str(t, "project_id")
 		if q.projectID != "" && pid != q.projectID {
@@ -586,6 +588,7 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 	var overdueItems, todayItems []keyed[taskOut]
 	inbox := 0
 	perProject := map[string]int{}
+	inInbox := snap.inboxRule()
 	for _, t := range snap.tasks {
 		if !isOpen(t) || !snap.visible(t, false) {
 			continue
