@@ -79,3 +79,13 @@ No schema change. Deploy the server; nothing changes for clients until they writ
 
 - Whether any target client rewrites alarm UIDs on save (risk above). Decided after the real-client run of task group 6; the second-key match is implemented only if a client needs it.
 - Whether Apple Reminders displays `RELATED=START` alarms on a deadline task correctly or needs the `DTSTART`-relative alarm converted; decided by the same run.
+
+## Implementation notes
+
+- **Marker only with alarms (D7).** `X-OPENTODO-ALARMS:<n>` is served only when the task has at least one reminder. With none there is nothing a missing alarm could delete, and leaving it out keeps the VTODO of every task without reminders byte-identical, so their ETags do not all change on upgrade.
+- **Kind marker on relative alarms of deadline tasks (D4).** A relative reminder of a task with a deadline is served `RELATED=START` and also carries `X-OPENTODO-KIND:RELATIVE`, so a client that drops `RELATED`, or a task with a deadline and no due date (no `DTSTART` to be relative to), still maps back to the same kind. Deadline reminders carry `X-OPENTODO-KIND:DEADLINE` as designed.
+- **Unchanged reminders are not rewritten (D3, "Dismissal stays local").** A matched alarm whose kind and offset are unchanged, on a PUT that does not move the due date or deadline, writes nothing, so a dismissal or delivery on a device is never reset by a calendar app's routine save. An absolute trigger counts as unchanged within a minute, because a VALARM carries no sub-minute precision once parsed.
+- **Reminder ids from alarm UIDs.** An alarm without a matching reminder creates one whose id is the alarm's UID when that is a usable id no entity has, so the next fetch serves the same UID; otherwise a fresh id.
+- **Mitra fixtures as one file per object.** A CalDAV resource holds one task, so the issue's shapes are `internal/caldav/testdata/mitra/*.ics` (one per row) rather than one `mitra.ics`; the round-trip test over `testdata/*.ics` stays meaningful.
+- **Invalid estimate status.** An out-of-range `ESTIMATED-DURATION` answers 403 `valid-calendar-data` (`caldav.ErrInvalidValue`) as the spec says; unparseable calendar data keeps its 415.
+- **History attribution (task 3.7).** Reminders do not produce activity-feed events (`internal/activity` derives events from task, project and comment ops only), so the attribution is checked where it shows: the task history labels every `caldav:` device "a calendar app (CalDAV)" (`web/src/lib/history.test.ts`).

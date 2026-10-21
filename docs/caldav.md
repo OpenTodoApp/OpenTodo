@@ -62,7 +62,10 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `DUE` (floating) | due date and time | `DUE:20261011T093000` shows 09:30 in every time zone. |
 | `DUE;TZID=…` | due fixed to a time zone | IANA zones and vendor paths ending in one (`/mozilla.org/…/Europe/Berlin`); a UTC time (`…Z`) becomes zone `UTC`; an unknown zone (Windows names) falls back to the floating wall time. Served with a matching `VTIMEZONE`. Seconds are dropped. |
 | `DUE;VALUE=DATE` with a deadline | [deadline](tasks-and-projects.md#deadlines) | A task with a deadline is served with `DUE` = the deadline (always a date: a deadline has no time) and, when it also has a due date, `DTSTART` = the due date in the forms above. A `DUE` alone sent back for such a task changes the deadline. |
-| `DTSTART` with a different `DUE` | due date, and deadline from `DUE` | A client that sends both dates sets the due date from `DTSTART` and the deadline from the day of `DUE` (a time on `DUE` is dropped, and the task is served back with `DUE;VALUE=DATE`). Equal `DTSTART` and `DUE` set the due date only. |
+| `DTSTART` with a different `DUE` | due date, and deadline from `DUE` | A client that sends both dates sets the due date from `DTSTART` and the deadline from the day of `DUE` (a time on `DUE` is dropped, and the task is served back with `DUE;VALUE=DATE`). Equal `DTSTART` and `DUE` set the due date only. See [Scheduled times and estimates](#scheduled-times-and-estimates) for every shape. |
+| `DTSTART` with a duration, no `DUE` | due date and time | A client that schedules a task as a start and a length (`ESTIMATED-DURATION` or `DURATION`) sets the due date from `DTSTART`; the deadline is kept. |
+| `ESTIMATED-DURATION` | duration estimate | Served in hours and minutes (`PT1H30M`). A client that never sends it leaves the estimate alone. At most one week; a longer, zero or negative value is refused with 403. |
+| `VALARM` | reminders | See [Alarms and reminders](#alarms-and-reminders). |
 | `X-OPENTODO-START` | [start date or Someday](tasks-and-projects.md#when-a-task-starts) | `SOMEDAY` or a date `YYYYMMDD`; iCalendar has no property for a deferral. A client that drops the property leaves the task as it is; an unknown value is kept as client data. |
 | `X-OPENTODO-EVENING` | This Evening | `TRUE` when set, absent otherwise. |
 | `PRIORITY` | priority | Out: 1→1, 2→5, 3→9, 4→none. In: 1–3→1, 4–6→2, 7–9→3, 0 or absent→4. |
@@ -73,9 +76,25 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `RRULE` | recurrence | See below. |
 | `CREATED` | creation time | Used when a task is created. |
 | `DTSTAMP`, `LAST-MODIFIED` | | Derived from the newest change to the task. `SEQUENCE` is ignored. |
-| everything else | `ical_extra` | Alarms (`VALARM`), `X-` properties, `URL`, `GEO`, `CLASS`, a `DTSTART` without a `DUE`, unsupported `RRULE`s… are stored verbatim in the task's opaque `ical_extra` field and returned unchanged, so a client never loses them when another device edits the task. |
+| everything else | `ical_extra` | Alarms the reminder model cannot express (sound or email alarms, repeating alarms, more than 20), `X-` properties, `URL`, `GEO`, `CLASS`, `DURATION`, a `DTSTART` that sets nothing, unsupported `RRULE`s… are stored verbatim in the task's opaque `ical_extra` field and returned unchanged, so a client never loses them when another device edits the task. |
 
-Fields without a VTODO counterpart (project section, assignee, duration estimate, position, comments, OpenTodo reminders) are left untouched by CalDAV writes. A task moved to another list loses its section, as in the app.
+Fields without a VTODO counterpart (project section, assignee, position, comments) are left untouched by CalDAV writes. A task moved to another list loses its section, as in the app.
+
+### Scheduled times and estimates
+
+What a VTODO does to the due date and the deadline depends only on which date properties it carries. A date the shape does not name is never cleared:
+
+| The client sends | Due date | Deadline |
+| --- | --- | --- |
+| `DUE` only, task without a deadline | from `DUE` | none |
+| `DUE` only, task with a deadline | cleared | from the day of `DUE` |
+| `DTSTART` and `DUE`, equal | from `DUE` | unchanged |
+| `DTSTART` and `DUE`, different | from `DTSTART` | from the day of `DUE` |
+| `DTSTART` and a duration, no `DUE` | from `DTSTART` | unchanged |
+| `DTSTART` alone | unchanged (`DTSTART` kept as client data) | unchanged |
+| neither, no duration | cleared | unchanged |
+
+So a scheduling client such as Mitra, which writes `DTSTART` and `ESTIMATED-DURATION` without `DUE`, moves a task with a deadline or a repeat rule without erasing either.
 
 ### Recurrence
 
@@ -85,9 +104,19 @@ Completing a recurring task in a calendar app does what completing it in OpenTod
 
 An `RRULE` the grammar cannot express (hourly rules, `BYHOUR`, several ordinals…) is kept in `ical_extra`: the calendar app keeps repeating the task, OpenTodo shows it as a plain task. Per-occurrence overrides (`RECURRENCE-ID`) are not modelled and are dropped.
 
-### Alarms
+### Alarms and reminders
 
-Alarms set in a calendar app stay in that app's data (`ical_extra`) and fire there; they are not converted into OpenTodo reminders, and OpenTodo reminders are not served as alarms. When two calendar apps change a task's alarms concurrently, the later write wins for the whole set of preserved properties.
+OpenTodo reminders are served as display alarms, one `VALARM` per reminder, with a `UID` (and Apple's `X-WR-ALARMUID`) that stays the same across fetches:
+
+- "30 minutes before" → `TRIGGER;RELATED=END:-PT30M`. On a task with a deadline, where `DUE` is the deadline, it is `RELATED=START` (the due date) with `X-OPENTODO-KIND:RELATIVE`.
+- A deadline reminder → `TRIGGER;RELATED=END:-P1D` with `X-OPENTODO-KIND:DEADLINE`.
+- A reminder at a time → `TRIGGER;VALUE=DATE-TIME:20261012T180000Z`.
+
+A display alarm a calendar app adds becomes a reminder: a relative trigger counts from the due date (from the deadline on a task that has one), a date-time trigger fires at that instant. Changing an alarm in the app changes the same reminder; removing it deletes the reminder, but only when the app had seen the task's alarms (it sent one back, or echoed the `X-OPENTODO-ALARMS` count the server adds), so an app that never shows alarms cannot delete reminders by accident. Reminders written by a calendar app follow every reminder rule: they move with the due date, are dismissed when the task is completed and show "a calendar app (CalDAV)" in the history.
+
+Kept as client data, never a reminder: sound, email and procedure alarms, `REPEAT`/`DURATION` snooze patterns, a `RELATED=START` alarm on a task with no start, an offset beyond one year, and any alarm past the 20th. Delivered and dismissed state is not exchanged: dismissing a reminder in OpenTodo leaves the calendar app's alarm as it is.
+
+Upgrading from a server without this mapping: alarms set earlier in a calendar app stay client data until the app saves the task again; from then on they are reminders.
 
 ## Lists, sharing and deletion
 
@@ -109,7 +138,18 @@ Alarms set in a calendar app stay in that app's data (`ical_extra`) and fire the
 
 Not supported: events (VEVENT; to see other calendars' events in Day and Week, or to subscribe to your tasks from a calendar app that has no CalDAV, see [Calendar feeds](calendar-feeds.md)), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, per-occurrence overrides, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.
 
-The three target clients were exercised only with recorded-style fixtures and protocol tests in this repository (`internal/caldav/testdata/`, `internal/httpapi/caldav_test.go`); a manual run against real Apple Reminders, Thunderbird and DAVx⁵ installations is still pending.
+The target clients were exercised only with recorded-style fixtures and protocol tests in this repository (`internal/caldav/testdata/`, `internal/httpapi/caldav_test.go`, `caldav_interop_test.go`); a manual run against real installations is still pending. What has been verified on real devices:
+
+| Client | Due forms | Deadline | Date shapes | Estimates | Alarms both ways | Recurrence completion | Moves | Deletion | Incremental sync |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Apple Reminders (iOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| Apple Reminders (macOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| Thunderbird | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| DAVx⁵ + Tasks.org | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| DAVx⁵ + jtx Board | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| Mitra | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+
+"Not verified" means the behaviour has not been tried on that client yet; the guide does not claim it works there. Testers are welcome: see issue #9.
 
 ## End-to-end encryption
 
