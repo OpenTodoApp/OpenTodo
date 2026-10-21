@@ -39,4 +39,5 @@
     <string name="widget_empty">Nothing left for today.</string>
     <string name="widget_untitled">Task</string>
     <string name="widget_more">+ %1$d more</string>
+    <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
 </resources>

@@ -154,7 +154,17 @@ Nineteen candidates for after the design refresh, in a suggested order: the firs
 | 19 | **Shipped.** **Habits with streaks and a month history**: recurring tasks that track streaks and allow a skip without breaking the chain | `habits` | An additive `habit` flag on a recurring task with a calendar rule; streaks and a month heat-map are computed on the device from the occurrence records the series already writes, and a skip of a habit leaves a record marked `skipped`, so "skip today" keeps the streak while missed days do not. A `habit` filter keyword lists them. TickTick's habit tracker without a second app |
 | 20 | **Shipped.** **Markdown vault**: a folder of Markdown files in two-way sync, one file per project, for Obsidian and plain-text people | `markdown-vault` | `ot vault` is a sync device (`vault:<id>`) with a three-way merge per field, the Obsidian Tasks line format (`📅`, `🔁`, `🆔`, `⛔` and Dataview inline fields), conflict files instead of silent loss, and encryption on the user's machine. CLI only: the server binary is unchanged. See [docs/vault.md](docs/vault.md) |
 
-Considered and set aside for now, so they are not forgotten: a desktop app for macOS and Windows (a thin shell around the embedded server, the single-person answer to "nothing to run"), phone apps from the same web app, a focus timer with time tracking, groups, custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, and scheduled assistant routines (an `assistant` action on an automation rule is the natural hook). Rules on events and timers shipped as `automation-rules`, after the drop rules of `rule-boards`. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
+Considered and set aside for now, so they are not forgotten: a focus timer with time tracking, groups, custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, and scheduled assistant routines (an `assistant` action on an automation rule is the natural hook). Rules on events and timers shipped as `automation-rules`, after the drop rules of `rule-boards`. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
+
+## Next: Native shells
+
+Phone and desktop apps as thin shells around the same web app, loaded from your own server (decided in `native-shells`, design D1 to D3). Each is an OpenSpec change.
+
+| # | Shell | Change | Notes |
+| --- | --- | --- | --- |
+| 1 | **In progress.** Android app: first-run server screen, reminders scheduled on the phone without a push service, the share menu, Today and quick-add widgets, fingerprint unlock of an encrypted account | `native-shells` | Hand-written Kotlin around a `WebView`, AndroidX only (APK about 1 MB). Open: Play and F-Droid listings and the signing key (owner), instrumented emulator tests, a real-device smoke test |
+| 2 | iOS app with the same bridge | `ios-shell` | Open: App Store review of a server-URL app, a Mac runner in CI, whether reminders can be refreshed in the background often enough without push |
+| 3 | Desktop app for macOS and Windows: the embedded server plus a window, a tray icon and native notifications | `desktop-shell` | Open: Wails v3 or the `webview/webview` binding (D2), code signing and notarisation, where the data directory lives |
 
 ## Future ideas
 

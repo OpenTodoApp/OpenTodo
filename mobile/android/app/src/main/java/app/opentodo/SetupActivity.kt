@@ -12,6 +12,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import java.util.concurrent.Executors
 
 /** First-run screen: the server address, its rules, and the health check with the reason when it fails. */
@@ -41,6 +43,16 @@ class SetupActivity : AppCompatActivity() {
         connect.setOnClickListener { submit() }
         address.setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_GO) { submit(); true } else false }
         Prefs(this).server?.let { address.setText(it) }
+        oldWebView()?.let { say(getString(R.string.setup_old_webview, it)) }
+    }
+
+    /** The WebView's version when it is older than the tested one or lacks the bridge's features (design risks). */
+    private fun oldWebView(): String? {
+        val version = WebViewCompat.getCurrentWebViewPackage(this)?.versionName ?: return null
+        val major = version.substringBefore('.').toIntOrNull() ?: return null
+        val features = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER) &&
+            WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+        return if (major < MIN_WEBVIEW_MAJOR || !features) version else null
     }
 
     override fun onDestroy() {
@@ -118,5 +130,10 @@ class SetupActivity : AppCompatActivity() {
         val cb = networkCallback ?: return
         networkCallback = null
         try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(cb) } catch (e: IllegalArgumentException) { /* already gone */ }
+    }
+
+    companion object {
+        /** The oldest WebView (Chromium) major version the shell is tested with. */
+        const val MIN_WEBVIEW_MAJOR = 100
     }
 }

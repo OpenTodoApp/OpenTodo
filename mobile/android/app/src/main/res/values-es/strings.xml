@@ -39,4 +39,5 @@
     <string name="widget_empty">No queda nada para hoy.</string>
     <string name="widget_untitled">Tarea</string>
     <string name="widget_more">+ %1$d más</string>
+    <string name="setup_old_webview">El Android System WebView de este teléfono es antiguo (versión %1$s). Actualízalo desde la tienda de apps para que OpenTodo funcione por completo.</string>
 </resources>

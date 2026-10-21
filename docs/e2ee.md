@@ -101,8 +101,13 @@ Content larger than 48,000 bytes (UTF-8) in one field is refused before an opera
 - **Lock this device** (Settings): forgets the key and pauses sync until unlocked.
 - **The command-line client**: `ot encryption unlock` unwraps the key with the passphrase (or `--recovery`) on your computer and keeps it in an owner-only file next to the CLI's configuration, so [`ot mcp --decrypt`](cli.md#mcp-bridge-and-encryption) can let a local AI assistant read and write your text. The passphrase and the key never reach the server; the assistant's AI provider does receive the plaintext it reads. `ot encryption lock` deletes the key file, and a passphrase change elsewhere makes it stale until you unlock again.
 - **Offline unlock** works once the device has seen the key record.
+- **Unlock with a fingerprint** (Android app): see [below](#unlock-with-a-fingerprint).
 - A device that did not know encryption had been enabled notices the first ciphertext it receives, checks the key record and locks itself without applying the batch.
 - **Key record missing**: only you can turn encryption off on a device, never an answer from the server. When the server says it has no key record while the device encrypts (the server was restored from an older backup, another device turned encryption off, or the server misbehaves), the device stops syncing and nothing leaves it, not even the re-send after a server restore. A screen explains it and offers three choices: **Restore the key record from this device** (uploads the copy the device kept; same passphrase and recovery key; a device without the key asks for the passphrase first), **Turn off encryption on this device** (your content is uploaded in plaintext again), or **Sign out**.
+
+### Unlock with a fingerprint
+
+In the [Android app](android-app.md), on a phone with a fingerprint or face unlock, the unlock screen offers **Unlock with fingerprint or face next time**. After you unlock with the passphrase, the app keeps a copy of the account key encrypted by Android's keystore under a key that opens only with your fingerprint or face; from then on the unlock screen shows **Unlock with fingerprint or face**, and the passphrase still works. The copy never leaves the phone. It is deleted when you sign out, change or reset the passphrase on this phone, turn encryption off, or when the account key changes; Android makes it unusable when fingerprints or faces are added or removed. **Lock this device** keeps it, so the next unlock can use the fingerprint.
 
 ## Passphrase change, recovery, losing both
 

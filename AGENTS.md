@@ -20,6 +20,7 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 - `web/` Vite + React 19 + Tailwind 4 + Dexie. `src/lib` data layer (db, ops, sync, hlc, api, dates), `src/app` UI, `src/ui` shared building blocks (Icon, Button, Field, Switch, Menu items, Combobox, Card, Badge, Avatar, Tabs, patterns; each with stories). Tests: `*.test.ts` with vitest + fake-indexeddb; interaction tests opt into `// @vitest-environment happy-dom`.
 - `internal/vault` the Markdown vault behind `ot vault` (CLI only, like `internal/e2ee/crypt`; a test keeps it out of the server): the Obsidian Tasks line grammar, the document parser and printer, the state file `<dir>/.opentodo/state.json`, the three-way merge per field and the sync loop over `POST /api/v1/sync` with device `vault:<id>`; fixture vault in `internal/vault/testdata/vault/`, pinned by `docs/vault.md`.
 - `extension/` browser capture extension (MV3, plain JS: a popup with Capture screen and Quick save modes; `api.js` is its only network code; `make extension` builds the Chrome and Firefox packages from `manifest.src.json`).
+- `mobile/` native shells (`native-shells`): `mobile/android` the Android app (Kotlin, one Gradle module, AndroidX only, loads the web app from the configured server and talks to it through the bridge in `web/src/lib/shell.ts`; `make android` runs its tests, lint and checks and builds a debug APK; needs a JDK and the Android SDK; `mobile/README.md`).
 - `docs/` architecture, sync protocol, API, self-hosting. `ROADMAP.md` maps features to change names.
 
 ## Commands
