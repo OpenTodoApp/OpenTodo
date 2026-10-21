@@ -58,7 +58,7 @@ The digest SHALL contain: completed, created, completed late and slipped for the
 - **THEN** the digest states those numbers, lists the 2 tasks and the project, says when the last review was, and ends with the review link
 
 ### Requirement: Digest numbers match the statistics
-The digest's numbers and lists SHALL follow the same definitions as `statistics`, including whose tasks count in shared projects and the exclusion of skipped habit occurrences, pinned by a fixture that the device and the server both evaluate.
+The digest's numbers and lists SHALL follow the same definitions as `statistics`, including whose tasks count in shared projects, the exclusion of skipped habit occurrences and the user's day start (the day a completion counts for begins at the user's `day_start` in the digest's time zone, midnight when unset or invalid), pinned by a fixture that the device and the server both evaluate.
 
 #### Scenario: Shared project tasks
 - **WHEN** an overdue task lives in a shared project and is assigned to another member
@@ -67,6 +67,14 @@ The digest's numbers and lists SHALL follow the same definitions as `statistics`
 #### Scenario: Same numbers as the screen
 - **WHEN** the shared fixture is evaluated by the device and by the server
 - **THEN** both produce the same completed, created, late and slipped counts
+
+#### Scenario: Night owl's week
+- **WHEN** a user with a day start of `04:00` completed a task at 01:30 on the Monday that starts a new week, and the digest for the previous week is built
+- **THEN** the completion counts in the previous week, as the Statistics screen shows it, and the fixture holds this case
+
+#### Scenario: No day start stored
+- **WHEN** the user's preferences row has no `day_start` or an invalid one
+- **THEN** the digest counts days from midnight in the digest's time zone, as before
 
 ### Requirement: Encryption turns the digest off
 Enabling end-to-end encryption SHALL disable the user's digest and SHALL be reported in the response; a digest is never built for an account with encryption on, and the server records `email.failed` with reason `encrypted_account` if a scheduled send meets such an account.

@@ -55,7 +55,7 @@ A skipped occurrence record SHALL NOT appear in Completed, SHALL NOT match `comp
 - **THEN** the skipped record is present as a task with `series_id`, `completed_at` and `skipped: true`
 
 ### Requirement: Streak derived from the schedule and the records
-A habit's scheduled dates SHALL be the dates its calendar rule matches plus any date with an occurrence record. The current streak SHALL count consecutive scheduled dates with a record (done or skipped), walking back from the date before the current occurrence. The current occurrence SHALL be pending, never missed; an earlier scheduled date without a record ends the streak. The best streak is the longest such run. Both SHALL be computed on the device only.
+A habit's scheduled dates SHALL be the dates its calendar rule matches plus any date with an occurrence record. The current streak SHALL count consecutive scheduled dates with a record (done or skipped), walking back from the date before the current occurrence. The current occurrence SHALL be pending, never missed; an earlier scheduled date without a record ends the streak. The best streak is the longest such run. Both SHALL be computed on the device only. Where the computation compares with "today" (the occurrence is at risk once its date is before today; the month grid marks today), today SHALL be the user's logical today (OpenSpec `date-time-preferences`, "Logical today"). A record's date stays the occurrence's due date, whatever the clock said when it was written.
 
 #### Scenario: Three days in a row
 - **WHEN** a habit with `every day` has records for the 11th, 12th and 13th and is due on the 14th, not yet done
@@ -76,6 +76,14 @@ A habit's scheduled dates SHALL be the dates its calendar rule matches plus any 
 #### Scenario: Same answer on every device
 - **WHEN** two devices hold the same series and records
 - **THEN** both show the same streak, since it is a function of the rule, the due date and the records alone
+
+#### Scenario: Done after midnight with a day start
+- **WHEN** the day start is `04:00`, a habit with `every day` is due on the 14th, and the user completes it at 01:30 on the 15th
+- **THEN** the record is for the 14th, the series is due on the 15th, the 14th shows as done, the streak counts it, and the 15th is pending and not at risk until 04:00 has passed on the 16th
+
+#### Scenario: Midnight default is unchanged
+- **WHEN** the day start is `00:00`
+- **THEN** "at risk" and the month grid's today are those of the calendar date, as before
 
 ### Requirement: Month history
 The detail panel of a habit SHALL show a grid of one month's days, starting with the current month, navigable to other months with buttons and the keyboard. Each scheduled day SHALL read as done, skipped, missed (scheduled before the current occurrence, no record), pending or upcoming; unscheduled days are blank. Colours SHALL come from the design tokens, states SHALL also differ by glyph, and each day's state SHALL be exposed to assistive technology. The grid is read-only and local.

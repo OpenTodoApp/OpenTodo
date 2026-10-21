@@ -27,7 +27,7 @@ OpenTodo is an open-source (AGPL-3.0), self-hosted, local-first task manager: on
 
 - **Upstream**: https://github.com/pixari/opentodo
 - **Documentation**: https://open-todo.app/docs/self-hosting/
-- **App Version**: 0.8.0
+- **App Version**: 0.9.0
 
 ## Testing
 

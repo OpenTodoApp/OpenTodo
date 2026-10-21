@@ -23,10 +23,10 @@ test('truenas: the committed app passes', () => {
 })
 
 test('truenas: image policy release, app_version follows the tag', () => {
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.8.0"', 'tag: "stable"'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.8.0"', 'tag: "latest"'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.8.0"', 'tag: "0.6.0"'), ctx), /app_version \(0\.8\.0\) must equal the image tag/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.8.0"', 'tag: 0.6'), ctx), /must be a quoted string/)
+  has(checkApp(edit('ix_values.yaml', 'tag: "0.9.0"', 'tag: "stable"'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0/)
+  has(checkApp(edit('ix_values.yaml', 'tag: "0.9.0"', 'tag: "latest"'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0/)
+  has(checkApp(edit('ix_values.yaml', 'tag: "0.9.0"', 'tag: "0.6.0"'), ctx), /app_version \(0\.9\.0\) must equal the image tag/)
+  has(checkApp(edit('ix_values.yaml', 'tag: "0.9.0"', 'tag: 0.6'), ctx), /must be a quoted string/)
   has(checkApp(edit('ix_values.yaml', 'repository: ghcr.io/pixari/opentodo', 'repository: pixari/opentodo'), ctx), /image must be/)
 })
 
@@ -80,7 +80,7 @@ test('truenas-yaml: the subset it reads, and what it refuses', () => {
   assert.deepEqual(parseYaml('a:\n  b: "x"\n  c: [1, "two", [three]]\nd:\n- e: 1\n  f: true\n- plain\ng: |\n  one\n  two\nh:\n  folded\n  text\n"null": {}\n'), {
     a: { b: 'x', c: [1, 'two', ['three']] }, d: [{ e: 1, f: true }, 'plain'], g: 'one\ntwo\n', h: 'folded text', null: {},
   })
-  assert.deepEqual(parseYaml("v: 0.8.0 # comment\nw: 'it''s'\nx: http://a/#b\n"), { v: '0.8.0', w: "it's", x: 'http://a/#b' })
+  assert.deepEqual(parseYaml("v: 0.9.0 # comment\nw: 'it''s'\nx: http://a/#b\n"), { v: '0.9.0', w: "it's", x: 'http://a/#b' })
   for (const bad of ['a: *x\n', 'a: {b: 1}\n', 'a:\n\tb: 1\n', 'a: 1\n  b: 2\n', 'a:\n  b: 1\n c: 2\n', 'a: "x\n', 'a: b: c\n']) {
     assert.throws(() => parseYaml(bad), undefined, JSON.stringify(bad))
   }

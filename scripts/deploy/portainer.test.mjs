@@ -30,7 +30,7 @@ test('portainer: list format', () => {
 
 test('portainer: image policy, port and data path', () => {
   has(edit((t) => { t.image = 'ghcr.io/pixari/opentodo:latest' }), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(edit((t) => { t.image = 'ghcr.io/pixari/opentodo:0.8.0' }), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(edit((t) => { t.image = 'ghcr.io/pixari/opentodo:0.9.0' }), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(edit((t) => { t.ports = ['3000:3000/tcp'] }), /port must be 8080/)
   has(edit((t) => { t.ports = ['8080:8080'] }), /host:container\/tcp/)
   has(edit((t) => { t.ports = ['127.0.0.1:8080:8080/tcp'] }), /without a host IP/)
@@ -62,7 +62,7 @@ test('portainer: description, categories, logo, note', () => {
 test('portainer: the sources.csv row', () => {
   const row = readText(ROW)
   assert.deepEqual(checkRow(row, ctx), [])
-  has(checkRow(row.replace('/main/', '/v0.8.0/'), ctx), /must be exactly/)
+  has(checkRow(row.replace('/main/', '/v0.9.0/'), ctx), /must be exactly/)
   has(checkRow(row.replace(', app', ', collection'), ctx), /must be exactly/)
   has(checkRow(null, ctx), /is missing/)
 })

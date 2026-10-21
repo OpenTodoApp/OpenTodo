@@ -15,7 +15,7 @@ const edit = (file, from, to) => {
   assert.ok(text.includes(from), `${file} does not contain ${from}`)
   return { ...files, [file]: Buffer.from(text.replace(from, to)) }
 }
-const IMAGE = 'default: ghcr.io/pixari/opentodo:0.8.0'
+const IMAGE = 'default: ghcr.io/pixari/opentodo:0.9.0'
 
 test('easypanel: the committed template passes', () => {
   assert.deepEqual(check(ctx), [])
@@ -24,9 +24,9 @@ test('easypanel: the committed template passes', () => {
 
 test('easypanel: image policy release (specific versions only)', () => {
   for (const tag of ['latest', 'stable', '0.6', '0.6.0']) {
-    has(checkTemplate(edit('meta.yaml', IMAGE, `default: ghcr.io/pixari/opentodo:${tag}`), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0/)
+    has(checkTemplate(edit('meta.yaml', IMAGE, `default: ghcr.io/pixari/opentodo:${tag}`), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0/)
   }
-  has(checkTemplate(edit('index.ts', 'image: input.appServiceImage', 'image: "ghcr.io/pixari/opentodo:0.8.0"'), ctx), /image source from input\.appServiceImage/)
+  has(checkTemplate(edit('index.ts', 'image: input.appServiceImage', 'image: "ghcr.io/pixari/opentodo:0.9.0"'), ctx), /image source from input\.appServiceImage/)
 })
 
 test('easypanel: port and volume', () => {

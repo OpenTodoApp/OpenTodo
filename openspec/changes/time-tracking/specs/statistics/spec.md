@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: What is counted
-For a period the device SHALL count: completed (live tasks, including recurring occurrence records and subtasks, with `completed_at` in the period), created (`created_at` in the period; occurrence records are not new tasks), completed late (completed on a local day after the task's due date), slipped (a due date in the period before today and not completed by the period's end), and time tracked (the minutes of the user's own live time entries whose `started_at` falls in the period, a running entry counted to now, an entry belonging to the local day it started on). Overdue now SHALL be open live tasks due before today.
+For a period the device SHALL count: completed (live tasks, including recurring occurrence records and subtasks, with `completed_at` in the period), created (`created_at` in the period; occurrence records are not new tasks), completed late (completed on a local day after the task's due date), slipped (a due date in the period before today and not completed by the period's end), and time tracked (the minutes of the user's own live time entries whose `started_at` falls in the period, a running entry counted to now, an entry belonging to the local day it started on). Overdue now SHALL be open live tasks due before today. The day an instant falls on, and "today", SHALL be the user's logical day.
 
 #### Scenario: Recurring occurrences count
 - **WHEN** an `every day` task was completed on five days of the week
@@ -20,6 +20,14 @@ For a period the device SHALL count: completed (live tasks, including recurring 
 #### Scenario: Entry across midnight
 - **WHEN** an entry started on Sunday at 23:30 and ended on Monday at 00:30, and the week starts on Monday
 - **THEN** its 60 minutes count for Sunday's week, not Monday's
+
+#### Scenario: Completed after midnight is not late
+- **WHEN** the day start is `04:00` and a task due Wednesday 14 October is completed at 01:30 on Thursday 15 October
+- **THEN** it counts as completed on Wednesday, not late, and the per-day chart adds it to Wednesday's bar
+
+#### Scenario: Same rows, same numbers
+- **WHEN** two synced devices of the same user open Statistics for last week
+- **THEN** they show identical numbers, because the day start is part of the synced row and the completions are the same instants
 
 ### Requirement: Breakdowns and charts
 The Statistics screen SHALL show completions per day of the period (up to 4 weeks), per week and per weekday (for 4 and 12 weeks) and per project (the five projects with most completions and "other"), and, when the period holds tracked time, time tracked per day (up to 4 weeks) and per project (the five projects with most time and "other", tasks without a project as "Inbox"), each as a chart with an accessible text alternative (a table or list carrying the same values) and no library-rendered image. The charts SHALL respect light and dark themes and SHALL use no colour alone to convey a value. Durations SHALL read as hours and minutes.

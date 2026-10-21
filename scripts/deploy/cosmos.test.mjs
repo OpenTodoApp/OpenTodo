@@ -25,7 +25,7 @@ test('cosmos: strict JSON', () => {
 })
 
 test('cosmos: image policy stable', () => {
-  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:0.8.0'), ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:0.9.0'), ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(checkCompose(compose.replace('opentodo:stable', 'opentodo:latest'), ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(checkDescription(description.replace('opentodo:stable', 'opentodo:latest'), ctx), /description\.json: image must be/)
 })
@@ -45,7 +45,7 @@ test('cosmos: variables, setup token and base URL', () => {
   has(checkCompose(compose.replace('"OPENTODO_SETUP_TOKEN={Passwords.0}"', '"OPENTODO_SETUP_TOKEN="'), ctx), /OPENTODO_SETUP_TOKEN must be \{Passwords\.0\}/)
   has(checkCompose(compose.replace('"OPENTODO_BASE_URL={RootProtocol}://', '"OPENTODO_BASE_URL=https://'), ctx), /OPENTODO_BASE_URL must be/)
   has(checkCompose(compose.replace('setup token: {Passwords.0}', 'setup token'), ctx), /post-install must show/)
-  has(checkCompose(compose.replace('"minVersion": "0.22.23"', '"minVersion": "0.8.0"'), ctx), /minVersion must be/)
+  has(checkCompose(compose.replace('"minVersion": "0.22.23"', '"minVersion": "0.9.0"'), ctx), /minVersion must be/)
 })
 
 test('cosmos: labels and description', () => {

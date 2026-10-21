@@ -37,7 +37,7 @@ What the compose file does for you:
 - The health check uses the binary itself, so Coolify shows the service as healthy or unhealthy correctly.
 - `ports:` is ignored by Coolify's proxy routing and only matters for plain Docker.
 
-The compose file pulls the published image `ghcr.io/pixari/opentodo:stable`, which every release moves. Use a release line (`:0.8`) to take only its fixes, or `:latest` to follow `main` with unreleased changes. To build from your fork instead, change `image:` to `build: .` in the compose file; Coolify will build the multi-stage Dockerfile on the server. A build from source reports version `dev`; with the Dockerfile build pack, set **Advanced → Source commit availability** to *Available during build* and it reports `dev+<commit>`.
+The compose file pulls the published image `ghcr.io/pixari/opentodo:stable`, which every release moves. Use a release line (`:0.9`) to take only its fixes, or `:latest` to follow `main` with unreleased changes. To build from your fork instead, change `image:` to `build: .` in the compose file; Coolify will build the multi-stage Dockerfile on the server. A build from source reports version `dev`; with the Dockerfile build pack, set **Advanced → Source commit availability** to *Available during build* and it reports `dev+<commit>`.
 
 ## Option B: Dockerfile build pack
 

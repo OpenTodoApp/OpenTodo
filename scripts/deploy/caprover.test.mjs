@@ -23,7 +23,7 @@ const withYml = (from, to) => {
 test('caprover: the committed app passes', () => {
   assert.deepEqual(check(ctx), [])
   const t = checkTemplate(yml, ctx)
-  assert.equal(t.image, 'ghcr.io/pixari/opentodo:0.8.0')
+  assert.equal(t.image, 'ghcr.io/pixari/opentodo:0.9.0')
   assert.equal(t.port, '8080')
   assert.equal(t.dataTarget, '/data')
   assert.deepEqual([...t.variables.keys()], ['OPENTODO_BASE_URL', 'OPENTODO_SETUP_TOKEN', 'OPENTODO_ALLOW_SIGNUP', 'OPENTODO_TRUSTED_PROXIES'])
@@ -37,10 +37,10 @@ test('caprover: validRegex is evaluated like CapRover', () => {
 })
 
 test('caprover: image policy and the version field', () => {
-  has(withYml("defaultValue: '0.8.0'", "defaultValue: '0.6.0'"), /image must be ghcr\.io\/pixari\/opentodo:0\.8\.0/)
+  has(withYml("defaultValue: '0.9.0'", "defaultValue: '0.6.0'"), /image must be ghcr\.io\/pixari\/opentodo:0\.9\.0/)
   has(withYml('opentodo:$$cap_opentodo_version', 'opentodo:stable'), /image must be ghcr\.io\/pixari\/opentodo:\$\$cap_opentodo_version/)
   has(withYml('/^[0-9]+\\.[0-9]+(\\.[0-9]+)?$/', '/.{1,}/'), /must refuse "latest"/)
-  has(withYml("defaultValue: '0.8.0'", 'defaultValue: 0.6'), /defaultValue must be a string/)
+  has(withYml("defaultValue: '0.9.0'", 'defaultValue: 0.6'), /defaultValue must be a string/)
 })
 
 test('caprover: port, volume and service keys', () => {

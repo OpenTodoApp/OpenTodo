@@ -95,7 +95,7 @@ Do not set an `https://` address while you open OpenTodo over plain http: the se
 
 The project uses the `stable` image, which every release moves. Container Manager shows no update notice for images from `ghcr.io`, so update by hand: **Project → opentodo → Action → Stop**, then **Action → Build**. Because of `pull_policy: always`, the build pulls the current `stable` image and recreates the container; the data folder is kept and migrations run on start. There are no down-migrations, so back up first. If the version at `http://<your-nas-address>:8080/healthz` did not change, stop the project, choose **Action → Clean**, delete the image under **Image**, and **Build** again.
 
-To stay on one release line, use `ghcr.io/pixari/opentodo:0.8` (or one version, `0.8.0`) as the image.
+To stay on one release line, use `ghcr.io/pixari/opentodo:0.9` (or one version, `0.9.0`) as the image.
 
 ## Backups
 

@@ -43,7 +43,7 @@ On the server's address (`http://192.168.1.10:8418`) tasks, projects, sync, shar
 
 ## Updates and backups
 
-The app store does not follow moving image tags: the app names one release (for example `ghcr.io/pixari/opentodo:0.8.0`), and the store offers an update once its entry moves to the next release (OpenTodo's maintainers send that change to the store after each release). Migrations run on start and there are no down-migrations, so back up first (see below). A custom install stays on the release it was installed with; to update it, edit the app, change the image tag to the new version and save.
+The app store does not follow moving image tags: the app names one release (for example `ghcr.io/pixari/opentodo:0.9.0`), and the store offers an update once its entry moves to the next release (OpenTodo's maintainers send that change to the store after each release). Migrations run on start and there are no down-migrations, so back up first (see below). A custom install stays on the release it was installed with; to update it, edit the app, change the image tag to the new version and save.
 
 Back up `/DATA/AppData/opentodo/data` with your usual backup tool (stop the app first for a consistent copy), or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
 

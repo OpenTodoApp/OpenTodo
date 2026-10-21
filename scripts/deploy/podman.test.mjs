@@ -32,7 +32,7 @@ test('podman: strict unit syntax', () => {
 
 test('podman: image policy and auto-update', () => {
   has(edit('Image=ghcr.io/pixari/opentodo:stable', 'Image=ghcr.io/pixari/opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(edit('Image=ghcr.io/pixari/opentodo:stable', 'Image=ghcr.io/pixari/opentodo:0.8.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(edit('Image=ghcr.io/pixari/opentodo:stable', 'Image=ghcr.io/pixari/opentodo:0.9.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
   has(edit('AutoUpdate=registry', 'AutoUpdate=local'), /AutoUpdate must be registry/)
   has(edit('AutoUpdate=registry\n', ''), /AutoUpdate must be registry/)
 })

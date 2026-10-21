@@ -135,7 +135,7 @@ The app SHALL offer a Daily check at `/review/daily`, reachable from the Review 
 - the overdue tasks
 - today's tasks, where `f` toggles a task in or out of today's focus, up to three tasks
 
-"Done for today" SHALL write the time of the daily check on the user's `review` entity. Today's focus SHALL be written there as the local date and the chosen task ids. Both sync to the user's devices only, are written offline, converge by last-writer-wins, are not content, are included in the export, and derive no activity event. A focus whose date is not today SHALL be shown as empty. Completed or deleted tasks SHALL drop out of the focus as it is shown, without a write. The note needs no write to show or to stop showing: it is shown while the latest close is from an earlier day and disappears once the day is closed again.
+"Done for today" SHALL write the time of the daily check on the user's `review` entity. Today's focus SHALL be written there as the local date and the chosen task ids. Both sync to the user's devices only, are written offline, converge by last-writer-wins, are not content, are included in the export, and derive no activity event. A focus whose date is not today SHALL be shown as empty. Completed or deleted tasks SHALL drop out of the focus as it is shown, without a write. "Today" and "the local date" here are the user's logical today (OpenSpec `date-time-preferences`, "Logical today"), so a check finished or a focus chosen after midnight but before the day start belongs to the day being lived. The note needs no write to show or to stop showing: it is shown while the latest close is from an earlier day and disappears once the day is closed again.
 
 #### Scenario: Pick a focus
 - **WHEN** the user presses `f` on three of today's tasks and then on a fourth
@@ -157,13 +157,17 @@ The app SHALL offer a Daily check at `/review/daily`, reachable from the Review 
 - **WHEN** the day was closed yesterday without a note, or never
 - **THEN** the Daily check shows no note line and nothing else changes
 
+#### Scenario: Focus kept past midnight
+- **WHEN** the day start is `04:00`, the focus was chosen on Wednesday evening and the user opens the Loop home at 01:00 on Thursday
+- **THEN** the focus is still shown, and it is empty once 04:00 has passed
+
 ### Requirement: Rhythm markers
 A rhythm SHALL be due as follows:
 - the weekly review, when its last finish is more than seven days ago or never
 - the Monthly look, when it is more than 30 days ago or never
-- the Daily check, when it was not done on the user's local date
+- the Daily check, when it was not done on the user's logical today (OpenSpec `date-time-preferences`, "Logical today")
 
-Close the day is never due and carries no marker of its own. When the day was closed on the user's local date, the sidebar Review entry SHALL show "Day closed" in place of its "last review" text for the rest of that local day, unless a rhythm is due, in which case the due marker wins; the text alternative SHALL name both. The sidebar Review entry SHALL carry the weekly marker in every mode. In `companion` and `first` modes it SHALL also carry the monthly marker. In `first` mode it SHALL also carry the daily marker. Each marker SHALL have a text alternative naming the rhythm. In `first` mode, the first time the app is opened on a day on which the Daily check is not done, a toast SHALL offer to start it, at most once per day per device.
+Close the day is never due and carries no marker of its own. When the day was closed on the user's local date, the sidebar Review entry SHALL show "Day closed" in place of its "last review" text for the rest of that local day, unless a rhythm is due, in which case the due marker wins; the text alternative SHALL name both. The sidebar Review entry SHALL carry the weekly marker in every mode. In `companion` and `first` modes it SHALL also carry the monthly marker. In `first` mode it SHALL also carry the daily marker. Each marker SHALL have a text alternative naming the rhythm. In `first` mode, the first time the app is opened on a logical day on which the Daily check is not done, a toast SHALL offer to start it, at most once per logical day per device.
 
 #### Scenario: Lists only
 - **WHEN** a user in `lists` mode has never done a Daily check or Monthly look and finished the weekly review yesterday
@@ -180,3 +184,8 @@ Close the day is never due and carries no marker of its own. When the day was cl
 #### Scenario: Day closed while the weekly review is due
 - **WHEN** the weekly review was finished nine days ago and the user closes the day
 - **THEN** the Review entry keeps its "due" marker and its text alternative also says the day is closed
+
+#### Scenario: Daily check done in the evening, app open after midnight
+- **WHEN** a user in `first` mode with a day start of `04:00` finished the Daily check on Wednesday evening and uses the app at 00:30 on Thursday
+- **THEN** the Review entry carries no daily marker and no toast is shown until 04:00 has passed
+
