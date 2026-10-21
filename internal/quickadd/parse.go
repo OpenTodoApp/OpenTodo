@@ -60,6 +60,21 @@ func newCtx(ctx Context) *dateCtx {
 
 // Parse reads a quick-add line. Pure: the result depends only on the line and ctx.
 func Parse(line string, ctx Context) Result {
+	r, _ := ParseMarked(line, ctx)
+	return r
+}
+
+// Mark is one recognised attribute and the span of the line it came from, in
+// line order: the chips a client previews (OpenSpec change extension-v2, D1).
+// Kind is date, time, deadline, evening, someday, project, label, priority,
+// estimate, recurrence or reminder.
+type Mark struct {
+	Kind string
+	Span Span
+}
+
+// ParseMarked is Parse plus the spans of what it recognised.
+func ParseMarked(line string, ctx Context) (Result, []Mark) {
 	p := &parser{line: line, ctx: ctx, dctx: newCtx(ctx)}
 	for _, v := range p.dctx.vocabs {
 		p.bareHourIsTime = p.bareHourIsTime || v.HourSuffixH
@@ -69,7 +84,40 @@ func Parse(line string, ctx Context) Result {
 	for i := 0; i < len(p.tokens); {
 		i = p.step(i)
 	}
-	return p.result(quotes)
+	r := p.result(quotes)
+	return r, p.marks(r)
+}
+
+// marks lists the recognised spans in line order; a literal recurrence (one that
+// sets nothing) and the Someday words of a dated task are not marks.
+func (p *parser) marks(r Result) []Mark {
+	var out []Mark
+	add := func(kind string, s Span, ok bool) {
+		if ok {
+			out = append(out, Mark{kind, s})
+		}
+	}
+	add("date", p.date.span, p.date.set && (p.evening == nil || p.date.span != *p.evening))
+	add("time", p.timeV.span, p.timeV.set)
+	add("deadline", p.deadline.span, p.deadline.set)
+	if p.evening != nil {
+		add("evening", *p.evening, true)
+	}
+	if p.someday != nil {
+		add("someday", *p.someday, r.Someday)
+	}
+	add("project", p.project.span, p.project.set)
+	for _, l := range p.labels {
+		add("label", l.span, true)
+	}
+	add("priority", p.priority.span, p.priority.value > 0)
+	add("estimate", p.estimate.span, p.estimate.value > 0)
+	add("recurrence", p.rec.span, p.rec.set)
+	for _, m := range p.reminders {
+		add("reminder", m.span, true)
+	}
+	sort.SliceStable(out, func(a, b int) bool { return out[a].Span.Start < out[b].Span.Start })
+	return out
 }
 
 // found is one recognised value and the span of the line it came from.

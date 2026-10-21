@@ -130,6 +130,9 @@ type Server struct {
 	// `task-locations`); see maps.go.
 	maps        *maps.Service
 	mapsLimiter *rateLimiter
+	// parseLimiter is the per-account quick-add parse limit (OpenSpec change
+	// extension-v2, design D1).
+	parseLimiter *rateLimiter
 	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings
