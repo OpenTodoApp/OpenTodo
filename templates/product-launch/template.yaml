@@ -1,0 +1,74 @@
+# Product launch: a template of the OpenTodo library (templates/README.md). Licence: CC BY 4.0.
+title: Product launch
+summary: A small team's launch plan on a board, from final checks to the announcement and the week after.
+description: |
+  A launch needs everyone to see the same plan. Start this template, [share the project](https://open-todo.app/docs/sharing/) with your team as editors, and show it as a [board](https://open-todo.app/docs/sections-and-boards/): Backlog, This week, Launch day, Week after.
+
+  Tasks carry estimates, so the [Week calendar](https://open-todo.app/docs/time-blocking/) shows whether the plan fits into the days you have.
+howToUse:
+  - Start the template, share the project with your team as editors, and show it as a board.
+  - Assign the tasks and give each an estimate; the Week calendar then shows whether the plan fits the days you have.
+  - Move cards across Backlog, This week, Launch day and Week after as the launch approaches.
+makeItYours:
+  - Rename the sections to your own stages, or add a "Blocked" column.
+  - Save a view `#Launch & due <= 7 days` for the stand-up.
+  - Add a label per workstream (`@marketing`, `@engineering`) and filter the board by it.
+category: work
+icon: rocket
+layout: board
+author: OpenTodo
+reviewed: 2026-10-15
+docs:
+  - sections-and-boards.md
+  - sharing.md
+  - time-blocking.md
+labels:
+  - name: marketing
+  - name: engineering
+  - name: support
+projects:
+  - name: Product launch
+    color: "#7c3aed"
+    sections:
+      - name: Backlog
+        tasks:
+          - title: Write the announcement post
+            estimate: 120
+            labels: [marketing]
+          - title: Record a two-minute demo video
+            estimate: 90
+            labels: [marketing]
+      - name: This week
+        tasks:
+          - title: Freeze features and cut the release candidate
+            priority: 1
+            due: +2d
+            labels: [engineering]
+          - title: Update the documentation
+            priority: 2
+            due: +3d
+            estimate: 180
+            labels: [engineering]
+          - title: Prepare support answers for the top ten questions
+            due: +4d
+            labels: [support]
+      - name: Launch day
+        tasks:
+          - title: Publish the release
+            priority: 1
+            due: +1w
+            time: 09:00
+            labels: [engineering]
+          - title: Send the announcement
+            priority: 1
+            due: +1w
+            time: 10:00
+            labels: [marketing]
+      - name: Week after
+        tasks:
+          - title: Collect feedback and file follow-ups
+            due: +2w
+            labels: [support]
+          - title: Write a short retrospective
+            due: +2w
+            estimate: 45

@@ -1,9 +1,9 @@
 // Project templates and duplication (OpenSpec change project-templates, design D6):
 // Duplicate… and Save as template… from the project menu, From a template… from
-// the sidebar. Everything happens on the device: a copy is one batch of ops, a
+// the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
@@ -13,9 +13,13 @@ import {
   treeFromFile, treeFromProject, type TemplateTree,
 } from '../lib/templates'
 import type { Project } from '../lib/types'
-import { Button, Field, Input, Notice, Dialog } from '../ui'
+import { Button, Field, IconButton, Input, Notice, Dialog } from '../ui'
 import { DateField } from './datetime/DateField'
 import { HelpLink } from './help/HelpLink'
+import { loadLibrary, startLibraryTemplate, type LibraryTemplate } from '../lib/templateLibrary'
+// The library's views load with the dialog, like its data (template-library D5): the first screen does not carry them.
+const LibraryList = lazy(() => import('./templates/TemplateLibrary').then((m) => ({ default: m.LibraryList })))
+const LibraryDetail = lazy(() => import('./templates/TemplateLibrary').then((m) => ({ default: m.LibraryDetail })))
 import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
@@ -28,6 +32,8 @@ export function requestTemplateDialog(): void {
   templateRequested++
   listeners.forEach((fn) => fn())
 }
+/** How many times the dialog was asked for (tests). */
+export const templateRequests = (): number => templateRequested
 export function useTemplateRequests(): number {
   return useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => templateRequested)
 }
@@ -120,9 +126,62 @@ export function SaveTemplateDialog({ project, onClose }: { project: Project; onC
   )
 }
 
-/** From a template… : a fresh copy of a template file, dates counted from a start day. */
+type View = { kind: 'library' } | { kind: 'detail'; tpl: LibraryTemplate } | { kind: 'file' }
+
+/**
+ * From a template… (template-library "Start a project from a template"): opens on the
+ * library of this release; Upload a file… keeps the file path. Escape steps back from the
+ * detail and the file view to the library, and closes from the library.
+ */
 export function TemplateDialog({ onClose }: { onClose: () => void }) {
   const projects = useProjects()
+  const [view, setView] = useState<View>({ kind: 'library' })
+  const [library, setLibrary] = useState<LibraryTemplate[] | null>(null)
+  const [query, setQuery] = useState('')
+  const [startDay, setStartDay] = useState<string | null>(logicalToday())
+  const [parentId, setParentId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    let live = true
+    loadLibrary().then((l) => { if (live) setLibrary(l.templates) }, (err: unknown) => { if (live) { setLibrary([]); setError(errorText(err)) } })
+    return () => { live = false }
+  }, [])
+  const back = () => { setError(null); setView({ kind: 'library' }) }
+  async function createFromLibrary(tpl: LibraryTemplate) {
+    setBusy(true)
+    setError(null)
+    try {
+      const plan = await startLibraryTemplate(tpl, { startDay, parentId })
+      onClose()
+      if (plan.projectIds[0]) navigate({ view: 'project', id: plan.projectIds[0] })
+    } catch (err) {
+      setError(errorText(err))
+      setBusy(false)
+    }
+  }
+  return (
+    <Dialog title={t('From a template')} onClose={onClose} onEscape={view.kind === 'library' ? onClose : back} size="lg" testId="template-dialog">
+      <Suspense fallback={<p className="text-body text-muted" role="status">{t('Loading templates…')}</p>}>
+        {view.kind === 'library' && (
+          library
+            ? <LibraryList templates={library} query={query} onQuery={setQuery} onOpen={(tpl) => setView({ kind: 'detail', tpl })} onUpload={() => setView({ kind: 'file' })} />
+            : <p className="text-body text-muted" role="status">{t('Loading templates…')}</p>
+        )}
+        {view.kind === 'detail' && (
+          <LibraryDetail tpl={view.tpl} projects={projects} startDay={startDay} onStartDay={setStartDay} parentId={parentId} onParent={setParentId}
+            busy={busy} onBack={back} onCreate={() => void createFromLibrary(view.tpl)} />
+        )}
+      </Suspense>
+      {view.kind === 'file' && <TemplateFileForm projects={projects} onBack={back} onClose={onClose} />}
+      {error && view.kind !== 'file' && <p role="alert" className="mt-3 text-body text-danger" data-template-error>{error}</p>}
+      <div className="mt-3 flex justify-end"><HelpLink screen="templates" topic={t('Templates')} /></div>
+    </Dialog>
+  )
+}
+
+/** Upload a file…: a template file (the own export format), dates counted from a start day. */
+function TemplateFileForm({ projects, onBack, onClose }: { projects: Project[]; onBack: () => void; onClose: () => void }) {
   const [tree, setTree] = useState<TemplateTree | null>(null)
   const [fileName, setFileName] = useState('')
   const [startDay, setStartDay] = useState<string | null>(logicalToday())
@@ -162,36 +221,37 @@ export function TemplateDialog({ onClose }: { onClose: () => void }) {
     }
   }
   return (
-    <Dialog title={t('From a template')} onClose={onClose} testId="template-dialog">
-      <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void create() }}>
-        <p className="text-body text-muted">{t('Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.')}</p>
-        <label className="block text-body">
-          <span className="mb-1 block text-muted">{t('Template file')}</span>
-          <input type="file" accept=".json,application/json" className="block w-full text-body" data-testid="template-file"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) void read(f) }} />
-        </label>
-        {tree && (
-          <>
-            <p className="text-body"><strong>{fileName}</strong></p>
-            <Summary tree={tree} />
-            <div className="text-body">
-              <span className="mb-1 block text-muted">{t('Start on')}</span>
-              <DateField label={t('Start on')} hideLabel value={startDay} onChange={setStartDay} />
-            </div>
-            <div className="text-body">
-              <span className="mb-1 block text-muted" aria-hidden>{t('Parent project')}</span>
-              <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId} inbox={false} noneLabel={t('Top level')} onChange={setParentId} rankContext="template.parent" />
-            </div>
-          </>
-        )}
-        {error && <p role="alert" className="text-body text-danger" data-template-error>{error}</p>}
-        <div className="flex items-center justify-end gap-2">
-          <HelpLink screen="templates" topic={t('Templates')} />
-          <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
-          <Button variant="primary" type="submit" disabled={!tree} busy={busy}>{t('Create')}</Button>
-        </div>
-      </form>
-    </Dialog>
+    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void create() }} data-template-file-form>
+      <div className="flex items-center gap-2">
+        <IconButton icon="chevron-left" size="sm" label={t('Back to the library')} onClick={onBack} data-template-back />
+        <h3 className="text-h3 font-semibold text-strong">{t('Upload a file')}</h3>
+      </div>
+      <p className="text-body text-muted">{t('Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.')}</p>
+      <label className="block text-body">
+        <span className="mb-1 block text-muted">{t('Template file')}</span>
+        <input type="file" accept=".json,application/json" className="block w-full text-body" data-testid="template-file"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void read(f) }} />
+      </label>
+      {tree && (
+        <>
+          <p className="text-body"><strong>{fileName}</strong></p>
+          <Summary tree={tree} />
+          <div className="text-body">
+            <span className="mb-1 block text-muted">{t('Start on')}</span>
+            <DateField label={t('Start on')} hideLabel value={startDay} onChange={setStartDay} />
+          </div>
+          <div className="text-body">
+            <span className="mb-1 block text-muted" aria-hidden>{t('Parent project')}</span>
+            <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId} inbox={false} noneLabel={t('Top level')} onChange={setParentId} rankContext="template.parent" />
+          </div>
+        </>
+      )}
+      {error && <p role="alert" className="text-body text-danger" data-template-error>{error}</p>}
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
+        <Button variant="primary" type="submit" disabled={!tree} busy={busy}>{t('Create')}</Button>
+      </div>
+    </form>
   )
 }
 

@@ -1,0 +1,54 @@
+# Meal planning: a template of the OpenTodo library (templates/README.md). Licence: CC BY 4.0.
+title: Meal planning
+summary: A weekly rhythm for choosing meals, writing the shopping list and prepping ahead.
+description: |
+  Planning meals once a week saves both money and evenings. This template sets a Sunday rhythm with [repeating tasks](https://open-todo.app/docs/recurrence/): choose, write the list, shop, prep.
+
+  Keep the shopping list in the same [shared project](https://open-todo.app/docs/sharing/) so whoever is in the shop sees it live.
+howToUse:
+  - "Start the template; the Sunday rhythm repeats every week: choose, write the list, shop, prep."
+  - Share the project so whoever is in the shop sees the list live.
+  - Add this week's groceries as subtasks of the shopping task and tick them off in the aisle.
+makeItYours:
+  - Move the planning day to whenever your week starts.
+  - Add a section per weekday with the dish as the task title, so the plan is visible on the phone.
+  - Keep a "Staples" section of things you always need and copy from it.
+category: home
+icon: shopping-cart
+layout: list
+author: OpenTodo
+reviewed: 2026-10-15
+docs:
+  - recurrence.md
+  - sharing.md
+labels:
+  - name: shopping
+projects:
+  - name: Meals
+    color: "#ea580c"
+    sections:
+      - name: Plan
+        tasks:
+          - title: Choose dinners for the week
+            due: +0d
+            recurrence: every sunday
+            estimate: 15
+          - title: Check the fridge and cupboards
+            due: +0d
+            recurrence: every sunday
+      - name: Shop
+        tasks:
+          - title: Write the shopping list
+            due: +0d
+            recurrence: every sunday
+            labels: [shopping]
+          - title: Big shop
+            due: +1d
+            recurrence: every monday
+            labels: [shopping]
+      - name: Prep
+        tasks:
+          - title: Cook a batch of grains and vegetables
+            due: +0d
+            recurrence: every sunday
+            estimate: 60

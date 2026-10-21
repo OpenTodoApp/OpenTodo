@@ -1,0 +1,53 @@
+# Home maintenance: a template of the OpenTodo library (templates/README.md). Licence: CC BY 4.0.
+title: Home maintenance
+summary: The yearly and seasonal jobs every home needs, repeating so you never have to remember them.
+description: |
+  Some jobs come round only once a season or once a year, which is exactly why they get forgotten. Every task here [repeats](https://open-todo.app/docs/recurrence/) at its own interval; add a [reminder](https://open-todo.app/docs/reminders/) to the ones that need booking a tradesperson.
+howToUse:
+  - Start the template; every task repeats at its own interval, from monthly to yearly.
+  - Open the ones that need booking a tradesperson and add a reminder a week ahead.
+  - Complete a task when it is done and the next occurrence appears.
+makeItYours:
+  - Delete what your home does not have (no chimney, no garden) and add what it does.
+  - "Adjust intervals to your climate: gutters more often under trees, less in a flat."
+  - Share it with whoever else looks after the house.
+category: home
+icon: wrench
+layout: list
+author: OpenTodo
+reviewed: 2026-10-15
+docs:
+  - recurrence.md
+  - reminders.md
+labels:
+  - name: outside
+  - name: inside
+projects:
+  - name: Home maintenance
+    color: "#64748b"
+    sections:
+      - name: Every season
+        tasks:
+          - title: Clean the gutters
+            due: +2w
+            recurrence: every 3 months
+            labels: [outside]
+          - title: Replace the cooker hood filter
+            due: +1m
+            recurrence: every 3 months
+            labels: [inside]
+      - name: Every year
+        tasks:
+          - title: Service the boiler
+            priority: 2
+            due: +1m
+            recurrence: every year
+            labels: [inside]
+          - title: Check the roof and chimney
+            due: +2m
+            recurrence: every year
+            labels: [outside]
+          - title: Bleed the radiators
+            due: +3w
+            recurrence: every year
+            labels: [inside]

@@ -50,6 +50,8 @@ export interface TSection {
 export interface TProject {
   name: string
   color: string
+  /** An icon from the project icons; absent or null shows the colour dot. */
+  icon?: string | null
   sections: TSection[]
   /** Tasks outside any section. */
   tasks: TTask[]
@@ -262,7 +264,9 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
   const addProject = (p: TProject, parentId: string | null, position: number, name?: string) => {
     const id = uuid()
     plan.projectIds.push(id)
-    changes.push({ entity: 'project', entityId: id, patch: { name: name ?? p.name, color: p.color, position, archived: false, parent_id: parentId, created_at: now, deleted_at: null } })
+    const patch: Record<string, unknown> = { name: name ?? p.name, color: p.color, position, archived: false, parent_id: parentId, created_at: now, deleted_at: null }
+    if (p.icon) patch.icon = p.icon
+    changes.push({ entity: 'project', entityId: id, patch })
     p.tasks.forEach((entry) => addTask(entry, { project_id: id, section_id: null, parent_id: null }, nextPos()))
     for (const s of p.sections) {
       const sid = uuid()

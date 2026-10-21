@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
-  buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, tokensCss, validateManifest,
+  buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -133,3 +133,28 @@ test('the manifest names the Open Loops features as a fact the website can gate 
   assert.deepEqual(validateManifest(m), [])
 })
 
+
+test('the template library is in the bundle: index.json, one file per template, the templates fact (template-library 5.1)', () => {
+  const { index, files, slugs } = templateLibraryFiles()
+  const compiled = JSON.parse(read('web/src/generated/templates.json'))
+  assert.equal(index.schema, TEMPLATES_SCHEMA)
+  assert.deepEqual(slugs, compiled.templates.map((t) => t.slug), 'the bundle ships exactly the library the app ships')
+  const trip = index.templates.find((t) => t.slug === 'trip-planning')
+  assert.equal(trip.title.en, 'Trip planning')
+  assert.equal(trip.title.it, 'Organizzare un viaggio')
+  assert.equal(trip.category, 'personal')
+  const file = Object.fromEntries(files)['trip-planning.json']
+  assert.equal(file.schema, TEMPLATES_SCHEMA)
+  assert.equal(file.projects[0].sections[1].tasks[0].due, '+0d', 'offsets stay relative')
+  assert.ok(file.text.description.en.length > 0)
+  const m = buildManifest({ version: 'v0.10.0', date: '2026-10-21', commit: 'abc', formats: ['opentodo'], docsPages: 40 })
+  assert.deepEqual(m.facts.templates, slugs)
+  assert.deepEqual(validateManifest(m), [])
+})
+
+test('an invalid template fails the bundle and names the template', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bundle-tpl-'))
+  mkdirSync(join(dir, 'broken'))
+  writeFileSync(join(dir, 'broken/template.yaml'), 'title: Broken\n')
+  assert.throws(() => templateLibraryFiles(repoRoot, { dir, icons: new Set(['leaf']), sectionStyle: false, languages: [] }), /template library: broken\/template\.yaml: summary: is required/)
+})

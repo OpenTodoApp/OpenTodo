@@ -10,6 +10,7 @@
 //                        (web/src/ui/icons/site-icons.json), plus names.json and the licence
 //     changelog.json     CHANGELOG.md as data
 //     method.json        the Open Loops vocabulary in every shipped language (open-loops-method D1)
+//     templates/         the template library: index.json and <slug>.json (template-library)
 //     README.md          this layout and the stability rule
 //
 //   node scripts/site-bundle.mjs [--version V] [--out DIR] [--bin PATH] [--no-archive]
@@ -24,6 +25,7 @@ import { execFileSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { compileLibrary } from './templates-build.mjs'
 
 const here = fileURLToPath(import.meta.url)
 export const repoRoot = resolve(dirname(here), '..')
@@ -50,6 +52,24 @@ export const SHOTS_DIR = 'docs/screenshots/site'
 export const METHOD_FEATURES = ['vocabulary', 'modes', 'loop-home', 'next', 'waiting', 'project-walk', 'daily-check', 'monthly-look']
 /** method.json schema; fields are only ever added. */
 export const METHOD_SCHEMA = 1
+/** templates/index.json and templates/<slug>.json schema (template-library); fields are only ever added. */
+export const TEMPLATES_SCHEMA = 1
+
+/**
+ * The template library of this version (template-library "Library templates reach the
+ * website"): checked and compiled from templates/ exactly as the app's copy is, so the two
+ * never differ. An invalid template fails the bundle and names itself.
+ */
+export function templateLibraryFiles(root = repoRoot, opts = {}) {
+  const { library, problems } = compileLibrary(root, opts)
+  if (!library) throw new Error(`template library: ${problems.join('; ')}`)
+  const index = {
+    schema: TEMPLATES_SCHEMA,
+    templates: library.templates.map((tpl) => ({ slug: tpl.slug, category: tpl.category, icon: tpl.icon, languages: tpl.languages, title: tpl.text.title, summary: tpl.text.summary })),
+  }
+  const files = library.templates.map((tpl) => [`${tpl.slug}.json`, { schema: TEMPLATES_SCHEMA, ...tpl }])
+  return { index, files, slugs: library.templates.map((tpl) => tpl.slug) }
+}
 
 /** The shipped interface languages, read from web/src/locales/index.ts (English first). */
 function shippedLanguages(root) {
@@ -195,7 +215,7 @@ export function serverFacts(root = repoRoot) {
   }
 }
 
-export function buildManifest({ version, date, commit, formats, binBytes, dockerMB, docsPages }) {
+export function buildManifest({ version, date, commit, formats, binBytes, dockerMB, docsPages, templates = templateLibraryFiles().slugs }) {
   const vocab = readdirSync(join(repoRoot, 'web/src/lib/nlp/vocab')).filter((n) => /^[a-z]{2}\.ts$/.test(n)).map((n) => n.slice(0, 2)).sort()
   const specs = readdirSync(join(repoRoot, 'openspec/specs')).filter((n) => statSync(join(repoRoot, 'openspec/specs', n)).isDirectory())
   const facts = {
@@ -204,6 +224,7 @@ export function buildManifest({ version, date, commit, formats, binBytes, docker
     docsPages,
     importFormatCount: formats.length,
     method: METHOD_FEATURES,
+    templates,
     ...serverFacts(),
   }
   if (binBytes) facts.binaryMB = mb(binBytes)
@@ -244,12 +265,13 @@ tagged commit. Layout version ${LAYOUT}.
 
 | Path | What it is |
 |---|---|
-| \`manifest.json\` | schema ${MANIFEST_SCHEMA}: \`version\`, \`date\`, \`commit\`, \`importFormats\` (formats this version imports), \`screenshots\`, \`facts\` (named values the website may show: \`quickAddLanguages\`, \`specCount\`, \`docsPages\`, \`importFormatCount\`, \`method\` (the Open Loops features this version ships: ${METHOD_FEATURES.join(', ')}), the server facts \`architectures\`, \`port\`, \`dataDir\`, \`database\`, \`license\`, \`exportFormat\` and \`exportFormatVersion\`, and \`binaryMB\` / \`dockerImageMB\` when measured) |
+| \`manifest.json\` | schema ${MANIFEST_SCHEMA}: \`version\`, \`date\`, \`commit\`, \`importFormats\` (formats this version imports), \`screenshots\`, \`facts\` (named values the website may show: \`quickAddLanguages\`, \`specCount\`, \`docsPages\`, \`importFormatCount\`, \`method\` (the Open Loops features this version ships: ${METHOD_FEATURES.join(', ')}), \`templates\` (the slugs of the template library), the server facts \`architectures\`, \`port\`, \`dataDir\`, \`database\`, \`license\`, \`exportFormat\` and \`exportFormatVersion\`, and \`binaryMB\` / \`dockerImageMB\` when measured) |
 | \`docs/\` | the documentation website, served under \`/docs/\` |
 | \`shots/\` | product screenshots, WebP; \`-dark\` names are the dark theme |
 | \`tokens/tokens.css\` | the \`--ot-*\` colour tokens for light and dark, standalone CSS |
 | \`icons/icons.svg\` | SVG sprite of the icon set (\`<use href="icons.svg#icon-inbox"/>\`), with \`names.json\` and \`LICENSE-lucide.txt\` (ISC) |
 | \`changelog.json\` | \`[{version, date, intro, sections: {Added: [markdown, ...]}}]\`, newest first |
+| \`templates/\` | schema ${TEMPLATES_SCHEMA}: \`index.json\` (\`{schema, templates: [{slug, category, icon, languages, title, summary}]}\`) and one \`<slug>.json\` per template (metadata, \`text\`, \`labels\`, \`projects\` with relative \`due\` offsets such as \`+2d\`, \`counts\`); every text is \`{en, <lang>: ...}\`, English where a language is missing; compiled from the repository's \`templates/\` folder |
 | \`method.json\` | schema ${METHOD_SCHEMA}: the Open Loops vocabulary, \`{name, languages, tagline, moves, principles, places, rhythms, horizons}\`, each term \`{id, name: {<lang>: text}, description: {<lang>: text}}\` (moves add \`route\` and \`keys\`), in the words the app of this version shows |
 
 ## Stability
@@ -308,13 +330,17 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
   const changelog = parseChangelog(readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8'))
   writeFileSync(join(dir, 'changelog.json'), JSON.stringify(changelog, null, 2) + '\n')
   writeFileSync(join(dir, 'method.json'), JSON.stringify(methodVocabulary(), null, 2) + '\n')
+  const library = templateLibraryFiles()
+  mkdirSync(join(dir, 'templates'))
+  writeFileSync(join(dir, 'templates/index.json'), JSON.stringify(library.index, null, 2) + '\n')
+  for (const [name, data] of library.files) writeFileSync(join(dir, 'templates', name), JSON.stringify(data, null, 2) + '\n')
   const released = changelog.find((c) => c.version === version.replace(/^v/, ''))
   const date = released?.date ?? (git('log', '-1', '--format=%cs') || new Date().toISOString().slice(0, 10))
   const binPath = bin ? resolve(repoRoot, bin) : undefined
   const manifest = buildManifest({
     version, date, commit: git('rev-parse', 'HEAD') || 'unknown', formats: importFormats(binPath),
     binBytes: binPath && existsSync(binPath) ? statSync(binPath).size : 0,
-    dockerMB: process.env.SITE_FACT_DOCKER_IMAGE_MB, docsPages: sorted.length,
+    dockerMB: process.env.SITE_FACT_DOCKER_IMAGE_MB, docsPages: sorted.length, templates: library.slugs,
   })
   const problemsM = validateManifest(manifest)
   if (problemsM.length) throw new Error(`manifest: ${problemsM.join('; ')}`)

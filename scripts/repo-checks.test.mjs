@@ -42,6 +42,8 @@ const table = [
   [['scripts/e2e-views.mjs'], { code: 'true', docs: 'false' }],
   [['.github/dependabot.yml'], { code: 'true', docs: 'false' }],
   [['.dockerignore'], { code: 'true', docs: 'false' }],
+  [['templates/trip-planning/template.yaml'], { code: 'true', docs: 'false' }],
+  [['scripts/templates-check.mjs'], { code: 'true', docs: 'false' }],
   [['docs/self-hosting/docker.md'], { code: 'false', docs: 'true' }],
   [['web/src/generated/help.json'], { code: 'false', docs: 'true' }],
   [['README.md'], { code: 'false', docs: 'true' }],

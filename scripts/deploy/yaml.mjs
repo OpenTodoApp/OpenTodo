@@ -24,6 +24,12 @@ export const YAML_COMPOSE = Object.freeze({ strings: true, blockScalars: Object.
 export const YAML_CASAOS = Object.freeze({ strings: false, blockScalars: Object.freeze(['|', '|-']), mapsInSequences: true, quoteDates: true })
 /** The Umbrel manifest (umbrel-app.yml): strings, folded `>-` text only. */
 export const YAML_UMBREL_MANIFEST = Object.freeze({ strings: true, blockScalars: Object.freeze(['>-']), mapsInSequences: true, quoteDates: false })
+/**
+ * Project templates (templates/<slug>/*.yaml, OpenSpec change template-library D2): typed
+ * scalars (priorities and estimates are numbers, `+2d` and `09:30` stay strings), every
+ * block scalar for the Markdown description, lists of maps for projects, sections and tasks.
+ */
+export const YAML_TEMPLATE = Object.freeze({ strings: false, blockScalars: Object.freeze(['|', '|-', '>', '>-']), mapsInSequences: true, quoteDates: false })
 
 const PLAIN_KEY = /^([A-Za-z0-9_$][A-Za-z0-9_$./-]*|"[^"\\]*"|'[^']*'):(?:[ ]+(.*))?$/
 

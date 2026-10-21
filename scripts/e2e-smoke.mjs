@@ -201,6 +201,30 @@ for (let i = 0; i < 75 && (await serverDue(p2, 'Get three quotes for the kitchen
 if ((await serverDue(p2, 'Get three quotes for the kitchen')) !== iso) throw new Error('reopen did not converge on the server')
 await page.locator('[data-close-day="open"]').waitFor({ timeout: 40000 })
 
+step('template library offline (template-library)')
+// The library is a lazy chunk the service worker precaches: once the page is controlled,
+// the dialog lists the templates and starts one with the network off; it syncs after.
+await p2.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 })
+await ctx2.setOffline(true)
+await p2.getByRole('button', { name: 'Add or fold projects' }).first().click()
+await p2.getByRole('menuitem', { name: 'From a template…' }).click()
+await p2.locator('[data-template-card="trip-planning"]').click()
+await p2.locator('[data-template-create]').click()
+await p2.getByRole('heading', { name: 'Trip', exact: true }).waitFor()
+await ctx2.setOffline(false)
+for (let i = 0; i < 75; i++) {
+  if (await p2.evaluate(async () => ((await (await fetch('/api/v1/projects')).json()).projects ?? []).some((x) => x.name === 'Trip'))) break
+  await p2.waitForTimeout(200)
+}
+const tripSynced = await p2.evaluate(async () => {
+  const projects = (await (await fetch('/api/v1/projects')).json()).projects ?? []
+  const trip = projects.find((x) => x.name === 'Trip')
+  const tasks = (await (await fetch('/api/v1/tasks')).json()).tasks ?? []
+  return trip ? tasks.filter((x) => x.project_id === trip.id).length : -1
+})
+console.log('  Trip tasks on the server after reconnecting:', tripSynced)
+if (tripSynced !== 10) throw new Error(`template started offline did not sync: ${tripSynced}`)
+
 step('PWA: manifest + service worker registered')
 const sw = await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)
 const manifest = await page.evaluate(async () => (await fetch('/manifest.webmanifest')).status)
