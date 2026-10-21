@@ -57,4 +57,14 @@ Ship web and server together; nothing to migrate. Rollback is a code revert with
 
 ## Open Questions
 
-- D1's definition of "scheduled" is the default agreed in exploration; the maintainer confirms it (especially "deadline alone stays in the Inbox") before `/opsx:apply`. A different answer changes only the predicate and its vectors, not the structure of this change.
+- ~~D1's definition of "scheduled"~~ **Confirmed by the maintainer (2026-10-21):** a do-on date, a start date (past or future) or Someday schedules a task; a deadline alone, a reminder or a label does not.
+
+## Notes from implementation
+
+- **One predicate, as planned.** `web/src/lib/inbox.ts` (`isInboxTask`, `isPlannedWithoutProject`) and `internal/inbox` (`IsTask`, `Scheduled`) read `internal/inbox/testdata/inbox_vectors.json`. `lib/triage.ts` `qualifies` (used by triage, the review, the Daily check, the Loop home and pulse) is `parent_id === null && isInboxTask`. The guards are `web/src/lib/inboxGuard.test.ts` (no unmarked `project_id` null test in the listed web files; a line with another reason carries `inbox-rule-ok`) and `internal/inbox/guard_test.go` (every filtering `case "inbox":` branch of `agenttools/read.go` and `cli/cmd_tasks.go` calls `inInbox`). The assistant (`internal/assistant/loop.go`) only names views and reads through `list_tasks`, so it needed no change; `list_projects`' `inbox_open_count` follows the rule too.
+- **Bottom sheet below 640 px, not 768.** The sheet is the dialog primitive with `placement="sheet"`, whose breakpoint is 640 px; between 640 and 768 px it is the centred card. Every choice is 44 px on touch (the relative row always, the reused quick choices through `touch-target`).
+- **Keys `1`–`6`** are the registry entry `triage.relative` (view `triage`, `dialog: true`, so they work inside the sheet and never in its date field). It declares `overrides: ['vim.priority']`, which binds `1`–`4` in Normal mode outside dialogs; the conflict test requires the override.
+- **The planned-tasks line** sits in the header's meta at 768 px and up, and in the page's wrapping action row below it (the phone bar has no meta), hidden at zero in both.
+- **"Added to …"** uses the existing undo toast, which gained an optional second control (`action`), shown until it is used or the toast times out.
+- **Empty Inbox sentence.** The empty Inbox view now reads "Inbox zero: every task has a place." with the illustration, like the end of Process the Inbox; "Your Inbox is empty." is gone. The empty-state pattern takes the illustration by name (`illustration="inbox-zero"`), so views still pass data, not nodes; its contract test allows only `data-illustration` drawings.
+- **Tests that relied on the old rule** were moved to a project (the inline editor's Date choice, the Someday keys and the Later group) or rewritten to the new scenarios; a recorded MCP client fixture (`desktop-assistant.json`) now expects `inbox: 0` for its overdue task without a project.

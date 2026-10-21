@@ -34,7 +34,7 @@ describe('ShareCapture', () => {
     expect(html).toContain('the quoted paragraph&lt;b&gt;')
     expect(html).toContain('https://example.org/post')
     expect(html).not.toContain('<b>')
-    expect(html).toContain('aria-label="Project: Inbox"')
+    expect(html).toContain('aria-label="Project: No project"')
     expect(pendingShare()).not.toBeNull()
   })
 

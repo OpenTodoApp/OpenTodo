@@ -7,6 +7,7 @@
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
 import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
@@ -21,7 +22,9 @@ import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
 import { Button, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
+import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
+import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
 import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
@@ -35,13 +38,14 @@ import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { requestQuickAddSheet } from './QuickAddSheet'
-import type { Route } from './router'
+import { navigate, type Route } from './router'
 import { AddSection } from './Sections'
+import { selectTask } from './signals'
 import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
-import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, placeholderFor, ReadOnlyQuickAdd, RowPickerDialogs } from './task-list/ListChrome'
+import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
@@ -182,6 +186,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         })
       }
     }
+    // A line that scheduled the task took it out of the Inbox: say where it went (inbox-means-unplaced D5).
+    if (route.view === 'inbox') {
+      const created = await getTask(id)
+      const where = created ? addedWhere(created, today, currentDateTime()) : null
+      if (where) showBulkToast(where.label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: () => { selectTask.set(id); navigate({ view: where.view }) } } })
+    }
   }, [route, today, userId, latestSectionMap])
 
   const { setPrompt } = ui
@@ -220,9 +230,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     inlineId: inline?.id ?? null, renderInline,
   })
 
+  // Planned tasks without a project (inbox-means-unplaced D4): in the Inbox header's meta, or its action row on phones.
+  const planned = usePlannedWithoutProject(route.view === 'inbox')
   const pageActions = (
     <ListPageActions route={route} userRole={userRole} rowCount={rows.length} topLevelCount={rows.filter((r) => r.depth === 0).length}
-      selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
+      selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} planned={planned} />
   )
   const { currentProject, currentLabel, currentPlace } = m
   // The Open Loops move this screen serves (open-loops "References to the method").
@@ -231,7 +243,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const listedTasks = useMemo(() => (route.view === 'today' ? rows.map((r) => r.task) : []), [route.view, rows])
   const totals = useDayTotals(listedTasks, today, route.view === 'today')
   const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
-  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : undefined)
+  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : planned > 0 ? <PlannedWithoutProject count={planned} /> : undefined)
   const methodSubtitle = useWithMethod(methodMove)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),

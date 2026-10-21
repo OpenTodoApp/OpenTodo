@@ -116,7 +116,7 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `list_projects` | `include_archived` (default false) | `{projects:[{id,untrusted_text:{name,description},encrypted,color,archived,parent_id?,shared,role?,open_count,fields:[{id,type,untrusted_text:{name,options?}}]}], inbox_open_count, server_time, _notice}`; `description` is the project's note in Markdown (the placeholder for an encrypted account, with `encrypted: true`); `fields` are the project's live [custom field](custom-fields.md) definitions in order (`options` for a choice field) |
-| `list_tasks` | `view` (`all` default, `inbox`, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `completed_after`, `completed_before` (YYYY-MM-DD at the start of that day in `timezone`, RFC 3339 or Unix ms; completed tasks in `[after, before)` only), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
+| `list_tasks` | `view` (`all` default, `inbox`: no project and not scheduled, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `completed_after`, `completed_before` (YYYY-MM-DD at the start of that day in `timezone`, RFC 3339 or Unix ms; completed tasks in `[after, before)` only), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
 | `get_task` | `id` (required), `timezone` | `{task, subtasks:[…], comments:[{id,parent_id?,author_id,author_is_you,untrusted_text:{body,author},created_at,edited_at?}], attachments:[{id,untrusted_text:{name,mime?,url?},size?,uploaded,comment_id?,created_at}], timezone, today, server_time, _notice}` |
 | `search_tasks` | `query` (required), `include_completed`, `timezone`, `limit`, `cursor` | like `list_tasks`; matches title or description, case-insensitive |
 | `today_summary` | `timezone` | `{overdue:[…], due_today:[…], counts:{overdue,due_today,inbox,per_project:[{id,untrusted_text:{name},open}]}, timezone, today, server_time, _notice}` |
@@ -174,7 +174,7 @@ Every write tool is annotated `readOnlyHint: false`, `openWorldHint: false`; `up
 | `update_tasks` | `updates` (1–50: `id` plus any of `title`, `description`, `priority`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin_url`) | Unknown fields are refused. `origin_url: null` removes the origin. Each `fields` value is one operation for that field only. |
 | `complete_tasks` | `ids` (1–50), `timezone` | A recurring task records the occurrence and moves to its next date, exactly like completing it in the app. |
 | `reopen_tasks` | `ids` | |
-| `move_tasks` | `ids`, `project_id` (null for the inbox), `section_id` | Tasks cannot move between projects that are shared differently (`scope_change`). A subtask whose parent stays behind becomes a top-level task. |
+| `move_tasks` | `ids`, `project_id` (null for no project: the Inbox while the task is not scheduled), `section_id` | Tasks cannot move between projects that are shared differently (`scope_change`). A subtask whose parent stays behind becomes a top-level task. |
 | `schedule_tasks` | `ids`, `due` (`{date, time?, tz?}` or null) | Keeps each task's time of day and time zone unless `time` is given; null removes the due date. Relative reminders follow. |
 | `create_project` | `name`, `color` (`#rrggbb`), `icon`, `parent_id`, `client_request_id`, `id` | |
 | `update_project` | `id` plus any of `name`, `color`, `icon` (a `list_icons` name, or null for the colour dot), `parent_id` (a project id, or null for the top level), `position` | Moving a project under itself or one of its sub-projects is refused with `invalid`. `archived`, `deleted` and `description` are unknown arguments (`-32602`): no tool archives, deletes or writes a project's note. |
@@ -271,7 +271,7 @@ call '{"name":"trash_tasks","arguments":{"ids":["<id>"]}}'
 | URI | Content |
 | --- | --- |
 | `opentodo://projects` | same as `list_projects` |
-| `opentodo://views/inbox` | open tasks without a project |
+| `opentodo://views/inbox` | open tasks without a project that are not scheduled (no due date, start date or Someday) |
 | `opentodo://views/today` | as `list_tasks` with `view: today` |
 | `opentodo://views/upcoming` | as `list_tasks` with `view: upcoming` |
 | `opentodo://projects/{id}` | the project, its sections and its open tasks |

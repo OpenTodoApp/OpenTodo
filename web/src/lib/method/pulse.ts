@@ -11,9 +11,9 @@ import type { MoveId } from './index'
 /** How many local days the pulse looks back, today included. */
 export const PULSE_DAYS = 14
 
-type PulseTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'created_at' | 'completed_at' | 'deleted_at'>
+type PulseTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'created_at' | 'completed_at' | 'deleted_at' | 'due'> & { start?: string | null }
 
-/** Inbox membership, as triage defines it (project_id null, top-level, open, live). */
+/** Inbox membership, as triage defines it (lib/inbox: no project, not scheduled; top-level, open, live). */
 const inInbox = (t: PulseTask): boolean => qualifies({ ...t, position: 0 })
 
 /** The logical day of an instant (day-boundary D4), as Statistics counts it. */
@@ -26,7 +26,7 @@ export function lastDays(today: string, days = PULSE_DAYS): Pick<Period, 'start'
 
 /**
  * Of the live tasks created in the last `days` days, how many no longer qualify
- * for the Inbox (a project, a parent, or completed). Deleted tasks count in neither.
+ * for the Inbox (a project, a date, a parent, or completed). Deleted tasks count in neither.
  */
 export function decided(tasks: readonly PulseTask[], today: string, days = PULSE_DAYS): { decided: number; caught: number } {
   const { start } = lastDays(today, days)

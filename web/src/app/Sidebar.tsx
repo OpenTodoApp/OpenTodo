@@ -41,6 +41,7 @@ import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { isInboxTask } from '../lib/inbox'
 
 
 /**
@@ -184,9 +185,10 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     // Deferred and parked tasks are not counted (someday-and-evening D2).
     const active = openTasks.filter((tk) => openCount(tk, today))
     for (const task of active) {
-      if (task.project_id === null) inbox++
       if (task.assignee_id === user.id) assigned++
     }
+    // The Inbox count follows the Inbox rule (lib/inbox): no project and not scheduled.
+    for (const task of openTasks) if (isInboxTask(task)) inbox++
     for (const item of openTasks) if (inToday(item, today)) due++
     return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)

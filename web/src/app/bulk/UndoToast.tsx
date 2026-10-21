@@ -29,6 +29,10 @@ export function UndoToast() {
     <ToastRegion label={t('Last action')}>
       <div className="pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2" data-bulk-toast>
         <p role="status" className="min-w-0 flex-1">{toast.result ?? toast.label}</p>
+        {toast.action && !toast.result && (
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-accent" data-toast-action
+            onClick={() => { toast.action!.run(); hideBulkToast(toast.key) }}>{toast.action.label}</button>
+        )}
         {toast.undoId && (
           <Tooltip label={t('Undo')} shortcut="Ctrl+Z">
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-accent" onClick={() => void undoToast(toast.undoId!)}>{t('Undo')}</button>

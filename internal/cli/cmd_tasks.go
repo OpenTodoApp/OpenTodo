@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/inbox"
 	"github.com/pixari/opentodo/internal/origin"
 	"github.com/pixari/opentodo/internal/quickadd"
 	"github.com/pixari/opentodo/internal/recurrence"
@@ -33,7 +34,7 @@ type listOptions struct {
 }
 
 func (o *listOptions) bind(fs *flag.FlagSet) {
-	fs.BoolVar(&o.inbox, "inbox", false, "tasks without a project")
+	fs.BoolVar(&o.inbox, "inbox", false, "the Inbox: tasks without a project that are not scheduled")
 	fs.BoolVar(&o.today, "today", false, "due today or earlier, overdue first")
 	fs.BoolVar(&o.upcoming, "upcoming", false, "due after today")
 	fs.BoolVar(&o.completed, "completed", false, "completed tasks, most recent first")
@@ -269,7 +270,7 @@ func filterTasks(all []task, projects []project, view string, selected *project,
 		open := t.CompletedAt == nil
 		switch view {
 		case "inbox":
-			if !open || t.ProjectID != nil {
+			if !inInbox(t) {
 				continue
 			}
 		case "today":
@@ -1034,4 +1035,17 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return a.printRawList(results)
 	}
 	return nil
+}
+
+// inInbox is the Inbox rule (internal/inbox, OpenSpec change inbox-means-unplaced):
+// open, live, without a project and not scheduled.
+func inInbox(t task) bool {
+	it := inbox.Task{HasDue: t.Due != nil, Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil}
+	if t.ProjectID != nil {
+		it.ProjectID = *t.ProjectID
+	}
+	if t.Start != nil {
+		it.Start = *t.Start
+	}
+	return inbox.IsTask(it)
 }

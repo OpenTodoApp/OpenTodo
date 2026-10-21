@@ -14,12 +14,12 @@ import { currentUserId } from '../lib/sharing'
 import { advance, advanceQueue, back, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
 import { useLiveTasks } from '../lib/liveTasks'
 import type { Membership, Project, Task } from '../lib/types'
-import { DateField } from './datetime/DateField'
 import { LabelPicker } from './LabelPicker'
 import { registerListState } from './listActions'
 import { Markdown } from './Markdown'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { ProjectPickerField } from './ProjectPickerField'
+import { ScheduleSheet } from './ScheduleSheet'
 import { navigate } from './router'
 import { useViewerZone } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
@@ -230,7 +230,7 @@ export function TriageView() {
       {notice && <div className="mb-3"><Notice>{notice}</Notice></div>}
       {!state ? null : !task ? (
         <div data-empty-state="triage">
-          <EmptyState title={t('Inbox zero: every task has a place.')} action={{ label: t('Back to the Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
+          <EmptyState illustration="inbox-zero" title={t('Inbox zero: every task has a place.')} action={{ label: t('Back to the Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
         </div>
       ) : (
         <>
@@ -260,10 +260,7 @@ export function TriageView() {
       )}
 
       {task && picker === 'schedule' && (
-        <Dialog title={t('Schedule')} onClose={() => setPicker(null)} size="sm">
-          <DateField label={t('Due date')} value={task.due?.date ?? null} autoFocus onChange={(iso) => void schedule(iso)} />
-          <p className="mt-2 text-meta text-faint">{t('Type a date such as fri or 3/11 and press Enter. Esc cancels.')}</p>
-        </Dialog>
+        <ScheduleSheet task={task} onPick={(iso) => void schedule(iso)} onClose={() => { setPicker(null); card.current?.focus() }} />
       )}
       {task && picker === 'move' && (
         <Dialog title={t('Move to a project')} onClose={() => setPicker(null)} size="sm">

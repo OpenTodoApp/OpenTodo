@@ -50,7 +50,8 @@ function expectContract(empty: Element, title: string, action: string) {
   expect(region.getAttribute('aria-labelledby')).toBe(region.querySelector('h2')!.id)
   expect(empty.querySelectorAll('.ui-btn')).toHaveLength(1)
   expect(empty.querySelector('[data-empty-action]')!.textContent).toBe(action)
-  expect(empty.querySelector('svg')).toBeNull()
+  // No icon; a decorative illustration (design-system "Illustrations") is the one drawing allowed.
+  expect(empty.querySelector('svg:not([data-illustration])')).toBeNull()
   expect(empty.querySelector('kbd')).toBeNull()
   expect(empty.querySelector('[data-empty-hint]')).toBeNull()
 }
@@ -127,7 +128,7 @@ describe('empty views', () => {
   it('every list view has its sentence and action', async () => {
     const pid = await createProject({ name: 'Home' })
     const cases = [
-      [{ view: 'inbox' }, 'Your Inbox is empty.', 'Add a task'],
+      [{ view: 'inbox' }, 'Inbox zero: every task has a place.', 'Add a task'],
       [{ view: 'upcoming' }, 'Nothing scheduled yet.', 'Add a task'],
       [{ view: 'anytime' }, 'Nothing waiting for a free moment.', 'Add a task'],
       [{ view: 'someday' }, 'Nothing parked for later.', 'Add a task'],

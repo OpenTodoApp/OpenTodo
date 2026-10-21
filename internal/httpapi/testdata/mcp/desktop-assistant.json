@@ -32,7 +32,7 @@
     "request": {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "today_summary", "arguments": {"timezone": "Europe/Berlin"}, "_meta": {"progressToken": 4}}},
     "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
     "status": 200,
-    "expect": {"id": 4, "result": {"content": [{"type": "text", "text": "*"}], "structuredContent": {"timezone": "Europe/Berlin", "overdue": [{"untrusted_text": {"title": "Fixture task"}, "overdue": true}], "_notice": "*", "counts": {"overdue": 1, "inbox": 1}}}}
+    "expect": {"id": 4, "result": {"content": [{"type": "text", "text": "*"}], "structuredContent": {"timezone": "Europe/Berlin", "overdue": [{"untrusted_text": {"title": "Fixture task"}, "overdue": true}], "_notice": "*", "counts": {"overdue": 1, "inbox": 0}}}}
   },
   {
     "request": {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 4, "reason": "user aborted"}},

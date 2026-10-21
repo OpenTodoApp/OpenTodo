@@ -105,9 +105,9 @@ describe('import route', () => {
   })
 
   it('picks the target project with the smart picker, showing the chosen project and its path (task-detail-redesign 3.5)', () => {
-    expect(render()).toContain('aria-label="Tasks without a project go to: Inbox"')
+    expect(render()).toContain('aria-label="Tasks without a project go to: No project"')
     expect(render({ options: { ...DEFAULT_OPTIONS, targetProject: 'p2' } })).toContain('aria-label="Tasks without a project go to: Work › Acme"')
-    expect(render({ offline: true })).toMatch(/<button type="button" class="ui-input[^"]*" disabled=""[^>]*aria-label="Tasks without a project go to: Inbox"/)
+    expect(render({ offline: true })).toMatch(/<button type="button" class="ui-input[^"]*" disabled=""[^>]*aria-label="Tasks without a project go to: No project"/)
   })
 
   it('offers the named app formats and shows archive entry names (named-importers)', () => {

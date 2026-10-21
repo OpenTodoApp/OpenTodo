@@ -5,9 +5,9 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
-import { applyOps, createTask, resetDeviceId } from '../lib/ops'
+import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { act } from 'react'
-import { flush, key, render, type, waitFor } from '../ui/test-utils'
+import { flush, key, mockFetch, noPublicLinks, render, type, waitFor } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
 import { PanelHost } from './PanelHost'
 import { resetPanel } from './panel'
@@ -70,11 +70,13 @@ describe('Today groups (2.3)', () => {
 })
 
 describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
-  it('deferred and parked Inbox tasks sit under Later with chips; Upcoming and the counts leave them out', async () => {
-    await createTask({ title: 'Renew passport', start: '2026-10-21', due: { date: '2026-10-24' } })
-    await createTask({ title: 'Learn Italian', start: 'someday' })
-    await createTask({ title: 'Buy milk' })
-    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+  it('deferred and parked tasks sit under Later in their project with chips; Upcoming and the counts leave them out', async () => {
+    mockFetch(noPublicLinks)
+    const home = await createProject({ name: 'Home' })
+    await createTask({ title: 'Renew passport', project_id: home, start: '2026-10-21', due: { date: '2026-10-24' } })
+    await createTask({ title: 'Learn Italian', project_id: home, start: 'someday' })
+    await createTask({ title: 'Buy milk', project_id: home })
+    const r = await render(<TaskListView route={{ view: 'project', id: home }} />)
     await waitFor(() => text(r.container).includes('Learn Italian'))
     const t = text(r.container)
     const later = t.indexOf('Later')
@@ -86,6 +88,24 @@ describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
     const up = await render(<TaskListView route={{ view: 'upcoming' }} />)
     await flush(200)
     expect(text(up.container)).not.toContain('Renew passport')
+    await up.unmount()
+  })
+
+  it('Deferred until next week (inbox-means-unplaced): a deferred or parked task without a project is not in the Inbox; a deferred one is in Upcoming on its start date', async () => {
+    await createTask({ title: 'Book flights', start: '2026-10-21' })
+    await createTask({ title: 'Learn Italian', start: 'someday' })
+    await createTask({ title: 'Buy milk' })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => text(r.container).includes('Buy milk'))
+    await flush(100)
+    expect(text(r.container)).not.toContain('Book flights')
+    expect(text(r.container)).not.toContain('Learn Italian')
+    expect(text(r.container)).not.toContain('Later')
+    await r.unmount()
+    const up = await render(<TaskListView route={{ view: 'upcoming' }} />)
+    await waitFor(() => text(up.container).includes('Book flights'))
+    expect(text(up.container)).toContain('Starts 21 Oct')
+    expect(text(up.container)).not.toContain('Learn Italian')
     await up.unmount()
     const side = await render(<Sidebar route={{ view: 'inbox' }} user={{ id: 'u1', email: 'u@example.com', name: 'U', role: 'owner' } as never} />)
     const inbox = () => [...side.container.querySelectorAll('a, button')].find((a) => text(a as HTMLElement).startsWith('Inbox')) as HTMLElement | undefined
@@ -131,8 +151,11 @@ describe('Someday and Anytime views (3.1)', () => {
 describe('keys (3.3)', () => {
   it('Shift+N, a date and Enter defer the selected task; n parks and un-parks', async () => {
     setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
-    const id = await createTask({ title: 'Renew passport' })
-    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost /></>)
+    // In a project, which keeps deferred and parked tasks in Later (in the Inbox they leave the list, inbox-means-unplaced).
+    mockFetch(noPublicLinks)
+    const home = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Renew passport', project_id: home })
+    const r = await render(<><TaskListView route={{ view: 'project', id: home }} /><PanelHost /></>)
     await waitFor(() => text(r.container).includes('Renew passport'))
     await key(document.body, 'j')
     await key(document.body, 'N', { shiftKey: true })

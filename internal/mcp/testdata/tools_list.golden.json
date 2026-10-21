@@ -31,7 +31,7 @@
         "readOnlyHint": true,
         "title": "List tasks"
       },
-      "description": "List tasks with filters. view: all (default), inbox (no project), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
+      "description": "List tasks with filters. view: all (default), inbox (open tasks without a project that are not scheduled: no do-on date, start date or Someday), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -184,7 +184,7 @@
         "readOnlyHint": true,
         "title": "Today summary"
       },
-      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the inbox and each project.",
+      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {

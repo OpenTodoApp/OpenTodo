@@ -55,10 +55,10 @@ export function groupToday(list: readonly Task[], today: string, blocked: { has(
 }
 
 /** Upcoming's list (already sorted) bucketed by its day, in date order. */
-export function groupUpcoming(list: readonly Task[]): { date: string; tasks: Task[] }[] {
+export function groupUpcoming(list: readonly Task[], today?: string): { date: string; tasks: Task[] }[] {
   const byDate = new Map<string, Task[]>()
   for (const t of list) {
-    const date = upcomingDate(t)
+    const date = upcomingDate(t, today)
     if (!date) continue
     const bucket = byDate.get(date)
     if (bucket) bucket.push(t)
@@ -72,7 +72,7 @@ export function groupUpcoming(list: readonly Task[]): { date: string; tasks: Tas
  * it (an empty list on a free day), for the display's columns.
  */
 export function nextDays(tasks: readonly Task[], today: string, days: number): { date: string; tasks: Task[] }[] {
-  const byDate = new Map(groupUpcoming(upcomingList(tasks, today)).map((g) => [g.date, g.tasks]))
+  const byDate = new Map(groupUpcoming(upcomingList(tasks, today), today).map((g) => [g.date, g.tasks]))
   return Array.from({ length: Math.max(0, days) }, (_, i) => {
     const date = addDaysISO(today, i + 1)
     return { date, tasks: byDate.get(date) ?? [] }

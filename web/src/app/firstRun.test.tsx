@@ -155,7 +155,7 @@ describe('three-step first run', () => {
     expect((await db.userPrefs.get(USER_PREFS_ID))?.first_run).toBe('done')
     // How you work was never written, so it reads as Lists only.
     expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('')
-    expect(q('[data-empty-state]')!.textContent).toContain('Your Inbox is empty.')
+    expect(q('[data-empty-state]')!.textContent).toContain('Inbox zero: every task has a place.')
     expect(q('[data-empty-action]')!.textContent).toBe('Add a task')
     await r.unmount()
     // It never returns on this account.

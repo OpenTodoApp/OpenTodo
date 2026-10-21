@@ -70,6 +70,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "1 day before": [
+    "web/src/lib/relativeDoOn.ts",
     "web/src/lib/reminderTime.ts"
   ],
   "1 day before the deadline": [
@@ -81,8 +82,14 @@
   "1 hour before": [
     "web/src/lib/reminderTime.ts"
   ],
+  "1 month before": [
+    "web/src/lib/relativeDoOn.ts"
+  ],
   "1 passkey": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "1 week before": [
+    "web/src/lib/relativeDoOn.ts"
   ],
   "10 minutes before": [
     "web/src/lib/reminderTime.ts"
@@ -93,8 +100,14 @@
   "12-hour or 24-hour": [
     "web/src/app/settingsIndex.ts"
   ],
+  "2 weeks before": [
+    "web/src/lib/relativeDoOn.ts"
+  ],
   "24-hour": [
     "web/src/app/DateTimeSettings.tsx"
+  ],
+  "3 days before": [
+    "web/src/lib/relativeDoOn.ts"
   ],
   "30 minutes before": [
     "web/src/lib/reminderTime.ts"
@@ -686,6 +699,18 @@
   ],
   "Added a next action to {name}.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Added to Someday": [
+    "web/src/app/addedWhere.ts"
+  ],
+  "Added to Today": [
+    "web/src/app/addedWhere.ts"
+  ],
+  "Added to Upcoming, starts {date}": [
+    "web/src/app/addedWhere.ts"
+  ],
+  "Added to {day}": [
+    "web/src/app/addedWhere.ts"
   ],
   "Added {label}": [
     "web/src/lib/undoActions.ts"
@@ -2598,7 +2623,8 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline {date}": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/ScheduleSheet.tsx"
   ],
   "Deadline {date}, {label}": [
     "web/src/app/TaskRow.tsx"
@@ -3015,7 +3041,7 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
     "web/src/app/SavedViewView.tsx",
-    "web/src/app/TriageView.tsx",
+    "web/src/app/ScheduleSheet.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due date and time (6 languages)": [
@@ -4546,6 +4572,9 @@
   "In the notes: heading 1–3 / normal text": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In today’s focus": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -4590,7 +4619,8 @@
     "web/src/lib/views.ts"
   ],
   "Inbox zero: every task has a place.": [
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageView.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Inbox, unlabelled, has a parent task": [
     "web/src/app/FilterView.tsx"
@@ -6119,6 +6149,9 @@
   "No passkeys yet": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "No project": [
+    "web/src/lib/pickerSources.ts"
+  ],
   "No project matches.": [
     "web/src/app/ProjectPickerField.tsx"
   ],
@@ -6332,6 +6365,7 @@
   ],
   "Not scheduled": [
     "web/src/app/RemindersField.tsx",
+    "web/src/app/ScheduleSheet.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -6677,6 +6711,7 @@
     "web/src/lib/push.ts"
   ],
   "On the deadline": [
+    "web/src/lib/relativeDoOn.ts",
     "web/src/lib/reminderTime.ts"
   ],
   "On the selected task: t tomorrow, p pick a day, y Someday, h keep in Today.": [
@@ -6761,6 +6796,7 @@
     "web/src/app/ConfigWarnings.tsx"
   ],
   "Open": [
+    "web/src/app/TaskListView.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/review/ProjectWalk.tsx"
@@ -8518,6 +8554,7 @@
   ],
   "Schedule": [
     "web/src/app/BackupsPanel.tsx",
+    "web/src/app/ScheduleSheet.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -8530,7 +8567,7 @@
   "Schedule:": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "Schedule: type a date (fri, 3/11) and press Enter, then the next task": [
+  "Schedule: pick a choice or a day, or type a date (fri, 3/11) and press Enter, then the next task": [
     "web/src/lib/shortcuts.ts"
   ],
   "Scheduled backups, destinations, recent runs and restore": [
@@ -11359,9 +11396,6 @@
   "Type RESTORE to confirm": [
     "web/src/app/RestoreSection.tsx"
   ],
-  "Type a date such as fri or 3/11 and press Enter. Esc cancels.": [
-    "web/src/app/TriageView.tsx"
-  ],
   "Type a date: fri, 3 days, {example}": [
     "web/src/app/datetime/DatePicker.tsx"
   ],
@@ -12202,9 +12236,6 @@
   "Your API key for {provider}": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Your Inbox is empty.": [
-    "web/src/app/task-list/ListChrome.tsx"
-  ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
   ],
@@ -12561,6 +12592,9 @@
   ],
   "deactivated": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "deadline": [
+    "web/src/app/ScheduleSheet.tsx"
   ],
   "deadline today": [
     "web/src/lib/facets.ts"
@@ -13564,6 +13598,9 @@
   "{browser} on {os}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{choice}, {date}": [
+    "web/src/app/ScheduleSheet.tsx"
+  ],
   "{completed} completed": [
     "web/src/app/Sections.tsx"
   ],
@@ -13843,6 +13880,9 @@
   ],
   "{n, plural, one {# person uses their own} other {# people use their own}}": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "{n, plural, one {# planned task without a project} other {# planned tasks without a project}}": [
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "{n, plural, one {# possible duplicate} other {# possible duplicates}}": [
     "web/src/app/ImportScreen.tsx"

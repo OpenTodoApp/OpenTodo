@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } 
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
 import { createProject, setRecurrence, unparkTask, updateTask } from '../../lib/ops'
-import { INBOX_KEY, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
+import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import { openOrigin, originOf } from '../../lib/taskOrigin'
@@ -173,7 +173,7 @@ function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }: {
         <div className="space-y-2">
           {childCount > 0 && <p className="text-meta text-muted">{t('{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}', { n: childCount })}</p>}
           <ComboboxPanel<PickerItem> label={t('Project')} placeholder={t('Find or create a project…')} source={m.projectItems}
-            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta}
+            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords}
             pinned={m.projectPins} selected={[m.currentProject?.key ?? INBOX_KEY]} rankContext="task.project"
             renderLeading={(i) => (i.key === INBOX_KEY ? <Icon name="inbox" className="text-faint" /> : <Dot color={i.color} />)}
             onPick={async (i) => { await m.moveTo(i.value); onClose() }}

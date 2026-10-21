@@ -254,6 +254,21 @@ func (h *harness) seedViews() {
 	h.put("task", "loft0001", map[string]any{"title": "In the attic", "project_id": "attic001", "due": map[string]any{"date": "2026-10-10"}})
 }
 
+// TestInboxRule: a start date, past or future, and Someday schedule a task; a
+// deadline alone does not (inbox-means-unplaced, cli-client "List tasks").
+func TestInboxRule(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	h.put("task", "undated1", map[string]any{"title": "Undated", "position": 1})
+	h.put("task", "dline001", map[string]any{"title": "Deadline only", "deadline": "2026-11-06", "position": 2})
+	h.put("task", "start001", map[string]any{"title": "Starts later", "start": "2030-01-05", "position": 3})
+	h.put("task", "start002", map[string]any{"title": "Started", "start": "2026-01-05", "position": 4})
+	h.put("task", "some0001", map[string]any{"title": "Someday", "start": "someday", "position": 5})
+	if got := idsOf(t, h.mustRun("inbox", "--json")); !equalStrings(got, []string{"undated1", "dline001"}) {
+		t.Fatalf("ot inbox = %v", got)
+	}
+}
+
 func idsOf(t *testing.T, jsonArray string) []string {
 	t.Helper()
 	var list []map[string]any
@@ -420,8 +435,10 @@ func TestListFiltersAndOrdering(t *testing.T) {
 		{[]string{"today", "--json"}, []string{"rent0001", "plum0001", "plant001"}},
 		{[]string{"list", "--today", "--json"}, []string{"rent0001", "plum0001", "plant001"}},
 		{[]string{"upcoming", "--json"}, []string{"dent0001"}},
-		// Inbox is "no project", dated or not, in position order (as in the web app).
-		{[]string{"inbox", "--json"}, []string{"book0001", "dent0001", "plum0001"}},
+		// Inbox leaves out planned tasks (inbox-means-unplaced): no project and not
+		// scheduled, so dent0001 and plum0001 (dated, without a project) are not in it.
+		{[]string{"inbox", "--json"}, []string{"book0001"}},
+		{[]string{"list", "--inbox", "--json"}, []string{"book0001"}},
 		{[]string{"list", "--project", "home", "--json"}, []string{"plant001", "rent0001"}},
 		{[]string{"list", "--project", "attic001", "--json"}, []string{"loft0001"}},
 		{[]string{"list", "--completed", "--json"}, []string{"done0001"}},

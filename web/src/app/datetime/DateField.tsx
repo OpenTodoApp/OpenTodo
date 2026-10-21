@@ -106,13 +106,15 @@ const fullDate = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long'
 const shortDay = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' })
 
 /** The month grid: six weeks starting on the preferred first day, one focusable day at a time. */
-export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), compact = false }: {
+export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), compact = false, marked }: {
   value: string | null
   prefs: ResolvedDateTime
   onPick: (iso: string) => void
   today?: string
   /** Inline in the When popover: smaller days and no hint line. */
   compact?: boolean
+  /** One day to mark with a dot and name in its label, such as the deadline (inbox-means-unplaced D8). */
+  marked?: { date: string; label: string }
 }) {
   const [cursor, setCursor] = useState(value ?? today)
   const grid = useRef<HTMLTableElement>(null)
@@ -180,18 +182,21 @@ export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), com
                 const outside = d.slice(0, 7) !== month.slice(0, 7)
                 const selected = d === value
                 const isToday = d === today
+                const isMarked = marked?.date === d
                 return (
                   <td key={d} role="gridcell" aria-selected={selected} className="p-0.5">
                     <button type="button" data-date={d} tabIndex={d === cursor ? 0 : -1} data-autofocus={d === cursor ? '' : undefined}
-                      aria-label={fullDate().format(dateOf(d))} aria-current={isToday ? 'date' : undefined}
+                      aria-label={isMarked ? `${fullDate().format(dateOf(d))}, ${marked.label}` : fullDate().format(dateOf(d))} aria-current={isToday ? 'date' : undefined}
+                      data-marked={isMarked || undefined}
                       onClick={() => onPick(d)}
                       className={[
-                        `touch-target flex ${compact ? 'h-7 text-meta' : 'h-9'} w-full items-center justify-center rounded-control tabular-nums transition duration-(--duration-ui)`,
+                        `touch-target relative flex ${compact ? 'h-7 text-meta' : 'h-9'} w-full items-center justify-center rounded-control tabular-nums transition duration-(--duration-ui)`,
                         'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
                         selected ? 'bg-accent font-semibold text-on-accent' : outside ? 'text-faint hover:bg-sunken' : 'text-default hover:bg-sunken',
                         isToday && !selected ? 'font-semibold text-accent ring-1 ring-inset ring-accent' : '',
                       ].join(' ')}>
                       {Number(d.slice(8))}
+                      {isMarked && <span aria-hidden="true" className={`absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full ${selected ? 'bg-on-accent' : 'bg-warning'}`} />}
                     </button>
                   </td>
                 )

@@ -25,7 +25,7 @@ describe('projectSource', () => {
   it('lists the Inbox first, then live projects in tree order with paths', () => {
     const items = projectSource(projects)
     expect(items.map((i) => i.key)).toEqual([INBOX_KEY, 'home', 'hi', 'work', 'wi'])
-    expect(items[0]).toMatchObject({ value: null, label: 'Inbox' })
+    expect(items[0]).toMatchObject({ value: null, label: 'No project', keywords: expect.stringContaining('inbox') })
   })
 
   it('tells same-name projects apart by path', () => {

@@ -151,7 +151,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   const layout = useProjectLayout(projectId)
   const { board, sections, liveSections, collapsedSections } = layout
 
-  // Project and Inbox lists keep deferred and parked tasks in a Later group at the
+  // Project lists keep deferred and parked tasks in a Later group at the
   // end (someday-and-evening D2); the board keeps every card in its column.
   const laterTasks = useMemo(() => (treeView && !board ? tasks.filter((task) => inLater(task, today)) : []), [treeView, board, tasks, today])
   const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((task) => !inLater(task, today)) : tasks), [laterTasks, tasks, today])

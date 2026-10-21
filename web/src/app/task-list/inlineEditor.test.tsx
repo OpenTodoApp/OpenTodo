@@ -6,7 +6,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
-import { createTask, resetDeviceId } from '../../lib/ops'
+import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { flush, mockFetch, noPublicLinks, render } from '../../ui/test-utils'
 import { panelTaskId, setPanelTaskId } from '../panel'
 import { setRowClick } from '../rowClick'
@@ -52,8 +52,8 @@ async function typeInto(input: HTMLInputElement, text: string) {
   })
 }
 
-async function list() {
-  const r = await render(<main><TaskListView route={{ view: 'inbox' }} /></main>)
+async function list(route: { view: 'inbox' } | { view: 'project'; id: string } = { view: 'inbox' }) {
+  const r = await render(<main><TaskListView route={route} /></main>)
   await waitFor(() => !!r.container.querySelector('[data-task-id]'))
   return r
 }
@@ -170,8 +170,10 @@ describe('the contextual bar', () => {
   })
 
   it('Date › Tomorrow sets the due without opening the panel, and the editor stays', async () => {
-    const id = await createTask({ title: 'Call the bank' })
-    const r = await list()
+    // In a project: in the Inbox a dated task leaves the list (inbox-means-unplaced), and its editor with it.
+    const home = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Call the bank', project_id: home })
+    const r = await list({ view: 'project', id: home })
     await clickTitle(r.container, 'Call the bank')
     await waitFor(() => !!r.container.querySelector('[data-edit-bar]'))
     await act(async () => { r.container.querySelector<HTMLButtonElement>('[data-edit-bar] button[aria-label^="Date"]')!.click() })
