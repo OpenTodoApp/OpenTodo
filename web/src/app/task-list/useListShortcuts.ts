@@ -64,6 +64,8 @@ export interface ShortcutContext {
   acceptPrompt: () => void
   moveToSection: (task: Task, key: string) => void
   toggleViewMode: () => void
+  /** F2: edit the selected task's title in place (inline-task-editing). */
+  editInline?: (id: string) => void
 }
 
 /** Selecting tasks moves keyboard attention to the list: a sidebar project left
@@ -212,6 +214,7 @@ export function useListShortcuts(c: ShortcutContext) {
     // Placement mode in the Day view (OpenSpec `time-blocking`).
     'list.schedule': () => { if (!row || !writable || row.task.completed_at) return false; placeInDay(row.task, c.today) },
     'list.estimate': () => { if (!row || !writable) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
+    'list.edit-inline': () => { if (!row || !writable || c.board || !c.editInline) return false; c.editInline(row.task.id) },
     // Start or stop tracking (time-tracking D5); a completed task offers no start.
     'list.track': () => { if (!row || !writable) return false; act(toggleTracking(row.task.id, { canStart: !row.task.completed_at })) },
     'list.deadline': openFor(deadlineFocus),

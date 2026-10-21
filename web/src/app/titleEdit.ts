@@ -6,7 +6,7 @@
 import { createLabel, LabelExistsError } from '../lib/labels'
 import { findLabel, type LabelRef } from '../lib/nlp'
 import type { EditPlan } from '../lib/nlp/edit'
-import { setRecurrence } from '../lib/ops'
+import { setRecurrence, updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { titleEditUndoable } from '../lib/undoActions'
 import { showUndoToast } from './bulk/toastStore'
@@ -45,3 +45,19 @@ export async function applyTitleEdit(task: Task, plan: EditPlan, labels: readonl
   if (r.entry) showUndoToast(r.label, r.entry.id)
   return id
 }
+
+/**
+ * Commits a title edit the way both title editors do: nothing for an unchanged title,
+ * a plain rename as one write, anything else through applyTitleEdit. Returns the id
+ * to follow (a copy's after a move across scopes).
+ */
+export async function commitTitleEdit(task: Task, plan: EditPlan, labels: readonly LabelRef[], projectName?: (id: string) => string): Promise<string> {
+  const fields = Object.keys(plan.patch)
+  if (!fields.length && !plan.labels.length && !plan.reminders.length) return task.id
+  if (fields.length === 1 && plan.patch.title && !plan.labels.length && !plan.reminders.length) {
+    await updateTask(task.id, { title: plan.patch.title })
+    return task.id
+  }
+  return applyTitleEdit(task, plan, labels, projectName)
+}
+

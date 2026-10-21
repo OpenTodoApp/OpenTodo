@@ -43,6 +43,9 @@ export interface RowContext {
   actions: RowActions
   addingUnder: string | null
   onCloseSubtask: () => void
+  /** The row being edited in place, and its editor (inline-task-editing). */
+  inlineId?: string | null
+  renderInline?: (task: Task) => ReactNode
 }
 
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
@@ -80,6 +83,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
         posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
         setSize={tree ? c.siblingPos.get(r.task.id)?.size : undefined}
         actions={c.actions}
+        inline={!c.board && c.inlineId === r.task.id ? c.renderInline?.(r.task) : undefined}
       />
       {c.addingUnder === r.task.id && !c.board && (
         <li>

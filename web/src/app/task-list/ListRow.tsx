@@ -10,7 +10,8 @@ import { MAX_INDENT, TaskRow, type TaskRowProps } from '../TaskRow'
 export interface RowActions {
   toggle: (task: Task) => void
   toggleCollapse: (id: string) => void
-  open: (id: string) => void
+  /** Opens the task: inline (a click, inline-task-editing) or in the panel. */
+  open: (id: string, e?: React.MouseEvent) => void
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
 }
@@ -40,7 +41,7 @@ export const ListRow = memo(function ListRow({ task, labelMap, draggable, collap
       dropKey={draggable ? `task:${task.id}` : undefined}
       onToggle={() => actions.toggle(task)}
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
-      onOpen={() => actions.open(task.id)}
+      onOpen={(e) => actions.open(task.id, e)}
       onTick={(range) => actions.tick(task.id, range)}
     />
   )

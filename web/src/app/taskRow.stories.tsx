@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { InlineEditor } from './task-list/InlineEditor'
 import type { ReactNode } from 'react'
 import { HEX, label, project, seedCounts, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
 import { TaskCard, TaskRow } from './TaskRow'
@@ -245,3 +246,18 @@ export const WithOrigins: StoryObj = {
     )
   },
 }
+
+/** A row edited in place (inline-task-editing): the title field and, under it, Date, Priority, Labels, Project and Open details. */
+export const EditingInline: StoryObj = {
+  render: () => {
+    const t2 = task({ id: 't2', title: 'Call the bank about the card limit', priority: 2, due: { date: TOMORROW } })
+    return (
+      <List>
+        <TaskRow {...base} task={task({ id: 't1', title: 'Renew passport' })} />
+        <TaskRow {...base} selected task={t2} inline={<InlineEditor task={t2} projects={[]} labelMap={new Map()} onDone={() => {}} />} />
+        <TaskRow {...base} task={task({ id: 't3', title: 'Plan the autumn trip' })} />
+      </List>
+    )
+  },
+}
+

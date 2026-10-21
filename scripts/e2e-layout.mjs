@@ -208,7 +208,7 @@ function screens(ids) {
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).
     { name: 'activity-redirect', path: '/activity', ready: heading('Updates') },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'when-popover', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'when-popover', 'inline-editor', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
     // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
@@ -477,6 +477,15 @@ const OVERLAYS = {
     await editor.getByRole('combobox').first().waitFor()
     return { overlay: editor, trigger, kind: 'popover' }
   }])),
+  // A row edited in place (inline-task-editing): a mouse click on the title, from 768 px.
+  async 'inline-editor'(p, ctx) {
+    if (ctx.width < 768) return null
+    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-title]').click()
+    const editor = p.locator('[data-inline-editor]').first()
+    // A touch screen opens the panel instead (coarse pointer): nothing inline to check there.
+    if (!(await editor.waitFor({ timeout: 3000 }).then(() => true, () => false))) { await p.keyboard.press('Escape'); return null }
+    return { overlay: editor, kind: 'inline', after: async () => p.keyboard.press('Escape') }
+  },
   // The When popover, one segment at a time (task-panel-facets D3).
   async 'when-popover'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()

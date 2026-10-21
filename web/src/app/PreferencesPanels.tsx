@@ -13,6 +13,7 @@ import type { View } from '../lib/types'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
+import { type RowClick, setRowClick, useRowClick } from './rowClick'
 import { Kbd } from './shortcuts/Kbd'
 import { resolveLanguage, t } from '../lib/i18n'
 import { act } from './actionError'
@@ -101,12 +102,24 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
 export function KeyboardSection() {
   const vim = useVimEnabled()
   const hints = useShortcutHints()
-  return <KeyboardView vim={vim} onVim={setVimEnabled} hints={hints} onHints={setShortcutHints} />
+  const click = useRowClick()
+  return <KeyboardView vim={vim} onVim={setVimEnabled} hints={hints} onHints={setShortcutHints} click={click} onClick={setRowClick} />
 }
 
-export function KeyboardView({ vim, onVim, hints = false, onHints = () => {} }: { vim: boolean; onVim: (on: boolean) => void; hints?: boolean; onHints?: (on: boolean) => void }) {
+export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, click = 'edit', onClick = () => {} }: {
+  vim: boolean; onVim: (on: boolean) => void; hints?: boolean; onHints?: (on: boolean) => void
+  /** "Click a task to" (inline-task-editing D6), this device only. */
+  click?: RowClick; onClick?: (v: RowClick) => void
+}) {
   return (
     <SettingsSection {...cardCopy('keyboard')}>
+      <SettingRow {...rowCopy('keyboard', 'rowClick')} id="row-click"
+        control={(
+          <Select id="row-click-select" className="sm:w-56" value={click} onChange={(e) => onClick(e.target.value as RowClick)} aria-label={t('Click a task to')} data-row-click>
+            <option value="edit">{t('Edit in place')}</option>
+            <option value="open">{t('Open details')}</option>
+          </Select>
+        )} />
       <SettingRow {...rowCopy('keyboard', 'hints')} id="shortcut-hints"
         control={<span data-hints-switch><Switch checked={hints} onChange={onHints} label={t('Show shortcut hints (this device)')} hideLabel /></span>} />
       <SettingRow label={rowCopy('keyboard', 'vim').label} description={

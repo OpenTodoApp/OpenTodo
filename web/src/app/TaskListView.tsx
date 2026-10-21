@@ -27,6 +27,8 @@ import { useCollapsedGroups } from './collapsedGroups'
 import { taskDefaults } from './listActions'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { useClickAway } from './task-list/useClickAway'
+import { InlineEditor } from './task-list/InlineEditor'
+import { useRowClick } from './rowClick'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
@@ -96,11 +98,36 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const fine = useFinePointer()
   const addFromEmpty = useCallback(() => { if (fine || !requestQuickAddSheet()) focusQuickAdd() }, [fine, focusQuickAdd])
   const listRoot = useRef<HTMLDivElement>(null)
+  // The row being edited in place and where its caret starts (inline-task-editing D1, D2).
+  const [inline, setInline] = useState<{ id: string; caret?: number } | null>(null)
+  const clickPref = useRowClick()
   // A press on empty space of the column clears the selection and closes the panel (inline-task-editing D4).
-  useClickAway(listRoot, !!selectedId || !!openId, () => {
+  useClickAway(listRoot, !!selectedId || !!openId || !!inline, () => {
+    setInline(null)
     setSelectedId(null)
     if (openId) setOpenId(null)
   })
+  // A click on a title edits it in place: a mouse click (not Enter) with a fine pointer from 768 px,
+  // the "Edit in place" preference, no panel open, a task the user may edit; otherwise the panel opens.
+  const startInline = useCallback((id: string, e?: React.MouseEvent) => {
+    const task = taskMap.get(id)
+    const fine = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
+    const wide = typeof window !== 'undefined' && window.innerWidth >= 768
+    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || openId || isReadOnly(task)) return false
+    setSelectedId(id)
+    setInline({ id, caret: caretFromClick(e) })
+    return true
+  }, [taskMap, board, clickPref, openId, isReadOnly])
+  const renderInline = useCallback((task: Task) => (
+    <InlineEditor key={task.id} task={task} caret={inline?.id === task.id ? inline.caret : undefined} projects={m.projects} labelMap={m.labelMap}
+      onFollow={(id) => setSelectedId(id)}
+      onDone={(details) => {
+        setInline(null)
+        if (details) setOpenId(task.id)
+        // Focus back on the row so the keyboard picks up where the editor was.
+        requestAnimationFrame(() => listRoot.current?.querySelector<HTMLButtonElement>(`[data-task-id="${CSS.escape(task.id)}"] [data-row-open]`)?.focus())
+      }} />
+  ), [inline, m.projects, m.labelMap])
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
 
@@ -177,14 +204,16 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   useListShortcuts({
     ...shared, projectId, tree: m.tree, tickRows, treeView: m.treeView, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
     today, userId, acceptPrompt, moveToSection, toggleViewMode,
+    editInline: (id) => { setSelectedId(id); setInline({ id }) },
   })
-  const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly })
+  const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline })
 
   const renderRow = rowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked,
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || selection.ticked.size > 0, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null),
+    inlineId: inline?.id ?? null, renderInline,
   })
 
   const pageActions = (
@@ -278,3 +307,20 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     </div>
   )
 }
+
+/** The caret offset in the row's title under a click, or undefined (the editor puts it at the end). */
+function caretFromClick(e: React.MouseEvent): number | undefined {
+  const title = (e.currentTarget as Element).querySelector?.('[data-row-title]')
+  const doc = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null }
+  const pos = doc.caretPositionFromPoint?.(e.clientX, e.clientY)
+  const range = !pos && document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null
+  const node = pos?.offsetNode ?? range?.startContainer
+  const offset = pos?.offset ?? range?.startOffset
+  if (!title || !node || offset === undefined || !title.contains(node)) return undefined
+  // Characters before the clicked text node within the title, plus the offset in it.
+  let before = 0
+  const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT)
+  for (let n = walker.nextNode(); n && n !== node; n = walker.nextNode()) before += n.textContent?.length ?? 0
+  return before + offset
+}
+

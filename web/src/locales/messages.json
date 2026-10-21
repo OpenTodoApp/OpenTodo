@@ -1770,6 +1770,10 @@
   "Clears your tasks from this device after uploading unsynced changes.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Click a task to": [
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Click to sync now": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -2435,6 +2439,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/review/CloseDay.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/lib/fields.ts"
   ],
   "Date and time": [
@@ -2824,7 +2829,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Do on": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Documentation": [
     "web/src/app/settingsIndex.ts",
@@ -3015,8 +3021,15 @@
   "Edit comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "Edit in place": [
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
   "Edit issue connection": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Edit its title in place, or open its details beside the list. This device only.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Edit label {name}": [
     "web/src/app/LabelsView.tsx"
@@ -3048,11 +3061,17 @@
   "Edit the query of a saved view; Enter saves it, Esc discards": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Edit the view": [
     "web/src/app/SavedViewView.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
+    "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Editor: adds, edits, completes and deletes tasks": [
     "web/src/app/ShareDialog.tsx"
@@ -4425,6 +4444,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/listGroups.ts",
@@ -4733,6 +4753,7 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/facets.ts",
     "web/src/lib/shortcuts.ts"
@@ -6542,6 +6563,10 @@
   "Open calendar": [
     "web/src/app/datetime/DateField.tsx"
   ],
+  "Open details": [
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/task-list/InlineEditor.tsx"
+  ],
   "Open in Filter view: {query}": [
     "web/src/app/palette/filterEntries.ts"
   ],
@@ -7151,7 +7176,8 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/task-detail/Facets.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Priority P{from} → P{to}": [
     "web/src/lib/assistant.ts"
@@ -7220,6 +7246,7 @@
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/lib/listGroups.ts",
     "web/src/lib/stats.ts"
   ],
@@ -9347,6 +9374,9 @@
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
+  "Task properties": [
+    "web/src/app/task-list/InlineEditor.tsx"
+  ],
   "Task reopened": [
     "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
@@ -10652,7 +10682,8 @@
   "Title": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/SavedViewView.tsx",
-    "web/src/app/task-detail/TaskDetail.tsx"
+    "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Title:": [
     "web/src/app/QuickAdd.tsx"
@@ -11159,6 +11190,7 @@
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
@@ -12898,6 +12930,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/titleEdit.ts"
   ],
   "the provider": [

@@ -4225,5 +4225,12 @@
   "Quick dates": "Schnelle Daten",
   "Remove time": "Uhrzeit entfernen",
   "This weekend": "Dieses Wochenende",
-  "Type a date: fri, 3 days, 22/10": "Datum eingeben: fr, 3 Tage, 22.10."
+  "Type a date: fri, 3 days, 22/10": "Datum eingeben: fr, 3 Tage, 22.10.",
+  "Click a task to": "Klick auf eine Aufgabe",
+  "Edit in place": "Direkt bearbeiten",
+  "Edit its title in place, or open its details beside the list. This device only.": "Den Titel direkt bearbeiten oder die Details neben der Liste öffnen. Nur dieses Gerät.",
+  "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": "Den Titel der ausgewählten Aufgabe direkt bearbeiten, mit Datum, Priorität, Labels und Projekt darunter; Enter speichert, Esc bricht ab, Umschalt+Enter öffnet die Details",
+  "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "Bearbeitung. Enter speichert, Escape bricht ab, Umschalt+Enter öffnet die Details.",
+  "Open details": "Details öffnen",
+  "Task properties": "Eigenschaften der Aufgabe"
 }
