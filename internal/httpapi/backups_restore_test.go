@@ -238,7 +238,7 @@ func TestRestorePrepareRoute(t *testing.T) {
 	// A damaged archive: 400 integrity.
 	plainName := re.archiveAt(time.Second, "")
 	raw, _ := os.ReadFile(filepath.Join(re.dir, "backups", plainName))
-	raw[len(raw)/2] ^= 0x40
+	raw = damageGzip(t, raw)
 	bad := "opentodo-20200101-000000-11111111.tar.gz"
 	os.WriteFile(filepath.Join(re.dir, "backups", bad), raw, 0o600)
 	resp, out = prep(map[string]any{"source": map[string]string{"archive": bad}})

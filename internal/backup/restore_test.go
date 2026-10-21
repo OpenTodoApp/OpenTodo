@@ -227,7 +227,7 @@ func TestRestoreTamperedArchiveFails(t *testing.T) {
 		archive := backupOnce(t, e, pass)
 		e.clock.Advance(time.Second)
 		raw, _ := os.ReadFile(archive)
-		raw[len(raw)/2] ^= 0x40
+		raw = tamper(t, raw)
 		bad := filepath.Join(t.TempDir(), "bad")
 		os.WriteFile(bad, raw, 0o600)
 		_, err := Restore(RestoreOptions{DataDir: e.dir + "-other", Archive: bad, Passphrase: pass})

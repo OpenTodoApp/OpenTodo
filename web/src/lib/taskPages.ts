@@ -15,6 +15,7 @@ import { locationOf } from './locations'
 import { mutate } from './ops'
 import { currentUserId } from './sharing'
 import { decryptReply, encryptSnapshot, generateShareKey, shareKeyFragment, unwrapShareKey, wrapShareKey } from './taskPageCrypto'
+import { setKnownTaskPages } from './taskPageStore'
 import type { PublishTaskPageInput, Task, TaskPageContent, TaskPageCreated, TaskPageRights } from './types'
 
 /** Is the task served from a snapshot: an encrypted account's task outside every shared project? */
@@ -135,10 +136,13 @@ export function maintainTaskPages(opts: { force?: boolean } = {}): Promise<void>
 
 async function maintain(): Promise<void> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+  const { pages } = await api.myTaskPages()
+  if (!Array.isArray(pages)) return
+  // The panel's "Published" marker reads these (lib/taskPageStore).
+  setKnownTaskPages(pages)
   if (!(await isEnabled())) return
   const account = await currentKey()
   if (!account) return
-  const { pages } = await api.myTaskPages()
   const encrypted = pages.filter((p) => p.encrypted && p.wrappedKey)
   if (encrypted.length === 0) return
   const me = await currentUserId()

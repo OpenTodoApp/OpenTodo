@@ -186,7 +186,7 @@ func TestPrepareErrors(t *testing.T) {
 	e.clock.Advance(time.Second)
 	plain := backupOnce(t, e, "")
 	raw, _ := os.ReadFile(plain)
-	raw[len(raw)/2] ^= 0x40
+	raw = tamper(t, raw)
 	bad := filepath.Join(e.dir, "backups", "opentodo-20200101-000000-00000000.tar.gz")
 	os.WriteFile(bad, raw, 0o600)
 	if _, err := e.svc.Prepare(ctx, PrepareSource{Archive: filepath.Base(bad)}, "", uid); !errors.Is(err, ErrIntegrity) || errors.Is(err, ErrPassphraseInvalid) {
