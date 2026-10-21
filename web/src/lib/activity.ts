@@ -25,6 +25,30 @@ export function isPublicEvent(ev: Pick<ActivityEvent, 'device'> | undefined): bo
   return !!ev?.device?.startsWith(PUBLIC_DEVICE_PREFIX)
 }
 
+/** Device prefix of a task page's guest ops (OpenSpec `task-pages` D5). */
+export const PAGE_DEVICE_PREFIX = 'page:'
+/** The actor shown for a task page's guest writes when the guest's name is not known here. */
+export const PAGE_ACTOR_LABEL = msg('Guest (task page)')
+
+/** True for an event a guest made through a task page (task-pages D5). */
+export function isPageEvent(ev: Pick<ActivityEvent, 'device'> | undefined): boolean {
+  return !!ev?.device?.startsWith(PAGE_DEVICE_PREFIX)
+}
+
+/**
+ * The actor shown for a guest's event, or null for a member's: "Public link" for a
+ * public link's tick, "<name> (guest, task page)" for a task page's write. The name
+ * comes from the reply itself, or from the server's label for a tick; without
+ * either it reads "Guest (task page)".
+ */
+export function guestActorLabel(ev: Pick<ActivityEvent, 'device' | 'changes' | 'actorName'> | undefined): string | null {
+  if (isPublicEvent(ev)) return t(PUBLIC_ACTOR_LABEL)
+  if (!isPageEvent(ev)) return null
+  const typed = ev?.changes.find((c) => c.field === 'guest_name')?.to
+  if (typeof typed === 'string' && typed) return t('{name} (guest, task page)', { name: typed })
+  return ev?.actorName || t(PAGE_ACTOR_LABEL)
+}
+
 /** Ops by one actor on one entity within this many ms of the group's first op fold into one event. */
 export const WINDOW_MS = 5000
 /** Local events kept per project (a constant, not a setting). */
@@ -82,8 +106,9 @@ export function deriveActivity(ops: ActivityOp[], prior?: Map<string, unknown>):
     else from = prior?.has(fk) ? prior.get(fk) : null
     last.set(fk, op.value)
     const actor = op.actor ?? ''
-    // A public link's ticks group apart and carry their device (public-links D6).
-    const pub = op.device?.startsWith(PUBLIC_DEVICE_PREFIX) ? op.device : ''
+    // A public link's ticks and a task page's guest writes group apart and carry
+    // their device (public-links D6, task-pages D5).
+    const pub = op.device?.startsWith(PUBLIC_DEVICE_PREFIX) || op.device?.startsWith(PAGE_DEVICE_PREFIX) ? op.device : ''
     const gk = `${actor}\u0000${op.entity}\u0000${op.entityId}${pub ? `\u0000${pub}` : ''}`
     let g = open.get(gk)
     if (!g || op.ts - g.ev.ts > WINDOW_MS) {

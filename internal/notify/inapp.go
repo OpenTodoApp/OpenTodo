@@ -77,6 +77,11 @@ func (n *InApp) Unblocked(ctx context.Context, e Unblocked) {
 	n.insert(ctx, e.AssigneeID, KindUnblocked, e)
 }
 
+// PageActivity stores a task page notification for its publisher (task-pages D9).
+func (n *InApp) PageActivity(ctx context.Context, e PageEvent) {
+	n.insert(ctx, e.PublisherID, e.Kind, e)
+}
+
 // List returns the user's notifications, newest first, and the number unread.
 func (n *InApp) List(ctx context.Context, userID string) ([]Notification, int, error) {
 	rows, err := n.db.QueryContext(ctx, `SELECT id, kind, payload, created_at, read_at FROM notifications

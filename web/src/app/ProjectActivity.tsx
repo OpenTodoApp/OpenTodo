@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Tooltip } from '../ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { describeEvent, fetchActivity, isPending, isPublicEvent, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity, PUBLIC_ACTOR_LABEL } from '../lib/activity'
+import { describeEvent, fetchActivity, guestActorLabel, isPending, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
 import { useAllProjects, useProjectTaskRows } from '../lib/localData'
 import { markSeen } from '../lib/feed'
@@ -110,7 +110,7 @@ function ActivityList({ project }: { project: Project }) {
           return (
             <li key={e.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={e.kind} data-actor={e.actor}>
               <span className="min-w-0 flex-1">
-                <strong className="font-medium text-muted">{isPublicEvent(e) ? t(PUBLIC_ACTOR_LABEL) : name(e.actor)}</strong>{' '}
+                <strong className="font-medium text-muted">{guestActorLabel(e) ?? name(e.actor)}</strong>{' '}
                 {describeEvent(e, name, projectName)}
                 {title && e.entity !== 'project' && (
                   <> {e.entity === 'comment' ? t('on', { context: 'comment' }) : '·'}{' '}

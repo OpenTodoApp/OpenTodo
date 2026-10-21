@@ -80,6 +80,7 @@ const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = {
 }
 const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
   task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
+  guest_name: null, page_id: null,
 }
 /** attachment (attachments D1): every field but name, uploaded_at and deleted_at is fixed at creation. */
 export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {

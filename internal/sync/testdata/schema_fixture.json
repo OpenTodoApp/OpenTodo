@@ -21,7 +21,9 @@
       "created_at",
       "deleted_at",
       "edited_at",
+      "guest_name",
       "mentions",
+      "page_id",
       "parent_id",
       "task_id"
     ],
@@ -186,7 +188,8 @@
       "url"
     ],
     "comment": [
-      "body"
+      "body",
+      "guest_name"
     ],
     "field": [
       "name",

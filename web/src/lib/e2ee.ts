@@ -34,7 +34,8 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   label: ['name'],
   section: ['name'],
   view: ['name', 'query'],
-  comment: ['body'],
+  // A guest's typed name on a task page reply (task-pages D6).
+  comment: ['body', 'guest_name'],
   // Attachments (OpenSpec attachments D8): the file bytes are an OTAT1 envelope too.
   attachment: ['name', 'mime', 'url'],
   // Custom field definitions (OpenSpec custom-fields, design D4).

@@ -49,6 +49,7 @@ func (s *Server) registerAccountRoutes(mux *routes) {
 	s.registerDigestRoutes(mux)
 	s.registerSignupRoutes(mux)
 	s.registerPublicLinkRoutes(mux)
+	s.registerTaskPageRoutes(mux)
 
 	mux.handle("GET /api/v1/me", signedIn, s.handleMe)
 	mux.handle("GET /api/v1/tokens", signedIn, s.handleListTokens)
@@ -176,6 +177,14 @@ func (s *Server) registerWebAppRoutes(mux *routes, web http.Handler) {
 			w.Header().Set("X-Robots-Tag", "noindex, nofollow")
 			w.Header().Set("Referrer-Policy", "no-referrer")
 			web.ServeHTTP(w, r)
+		})
+		// A task page (task-pages D8): its own small document, t.html, never the
+		// app; no indexing, no referrer, never stored by a cache, no cookie.
+		mux.handle("GET /t/", public("a task page; its data comes from the task page API"), func(w http.ResponseWriter, r *http.Request) {
+			publicHeaders(w)
+			r2 := r.Clone(r.Context())
+			r2.URL.Path = "/t.html"
+			web.ServeHTTP(noStoreWriter{w}, r2)
 		})
 	}
 }

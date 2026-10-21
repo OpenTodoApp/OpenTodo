@@ -373,6 +373,10 @@ export interface Comment {
   created_at: number
   edited_at: number | null
   deleted_at: number | null
+  /** The name a guest typed on a task page (task-pages D6); null for members' comments. */
+  guest_name: string | null
+  /** The task page a guest reply came through (task-pages D6); null otherwise. */
+  page_id: string | null
   _clock: Clock
 }
 

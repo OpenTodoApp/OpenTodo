@@ -353,8 +353,21 @@ func (s *Server) handlePutProjectInviteSettings(w http.ResponseWriter, r *http.R
 
 // redactPath keeps link secrets out of the request log: a path segment that
 // carries an invitation, project invite, sign-up verification or reset secret
-// is replaced.
+// is replaced, and so is a task page's secret, which is the segment after /t/ or
+// /api/v1/pages/ (task-pages).
 func redactPath(p string) string {
+	for _, prefix := range []string{"/t/", "/api/v1/pages/"} {
+		if rest, ok := strings.CutPrefix(p, prefix); ok && rest != "" {
+			_, tail, _ := strings.Cut(rest, "/")
+			if tail != "" {
+				tail = "/" + tail
+			}
+			if prefix == "/t/" {
+				tail = "" // the label after the secret says what the task is about
+			}
+			return prefix + "[redacted]" + tail
+		}
+	}
 	if !strings.Contains(p, "/ot") {
 		return p
 	}

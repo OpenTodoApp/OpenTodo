@@ -134,6 +134,16 @@ func projectPublicLinks(p string) bool {
 	return len(parts) >= 2 && parts[1] == "public-links"
 }
 
+// taskPage matches /api/v1/tasks/{id}/page[/...] (OpenSpec `task-pages`).
+func taskPage(p string) bool {
+	rest, ok := strings.CutPrefix(p, "/api/v1/tasks/")
+	if !ok {
+		return false
+	}
+	parts := strings.Split(rest, "/")
+	return len(parts) >= 2 && parts[1] == "page"
+}
+
 // demoRules is the lock-down list of design D4. Everything not listed (tasks,
 // projects, labels, views, sections, reminders, comments, sync, export, trash,
 // history, notifications) works as usual; rate limits stay in place.
@@ -163,6 +173,10 @@ var demoRules = []demoRule{
 	// Public links publish data to anyone (public-links D9): every method.
 	{"Public links", false, projectPublicLinks},
 	{"Public links", false, prefix("/api/v1/public")},
+	// Task pages publish a task to anyone (task-pages D7): every method.
+	{"Task pages", false, taskPage},
+	{"Task pages", false, prefix("/api/v1/task-pages")},
+	{"Task pages", false, prefix("/api/v1/pages")},
 	{"Server settings", true, prefix("/api/v1/settings")},
 	{"App passwords", true, prefix("/api/v1/app-passwords")},
 	{"Calendar feeds", false, prefix("/api/v1/calendar-feeds")},

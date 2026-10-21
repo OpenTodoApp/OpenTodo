@@ -131,3 +131,44 @@ func (m Multi) Unblocked(ctx context.Context, e Unblocked) {
 
 // Unblocked implements UnblockedSink.
 func (Nop) Unblocked(context.Context, Unblocked) {}
+
+// Task page notification kinds (OpenSpec `task-pages`, design D9).
+const (
+	// KindPageReplied: a guest replied on one of the recipient's task pages.
+	KindPageReplied = "page_replied"
+	// KindPageCompleted: a guest completed (or reopened) a published task.
+	KindPageCompleted = "page_completed"
+)
+
+// PageEvent is a guest's reply or completion on a task page, for its publisher.
+// For an encrypted task TaskTitle and GuestName are empty: the server cannot read
+// them, and the publisher's device fills in the title after decrypting.
+type PageEvent struct {
+	Kind        string `json:"-"`
+	PublisherID string `json:"publisherId"`
+	PageID      string `json:"pageId"`
+	TaskID      string `json:"taskId"`
+	TaskTitle   string `json:"taskTitle,omitempty"`
+	GuestName   string `json:"guestName,omitempty"`
+	Completed   bool   `json:"completed,omitempty"`
+	Encrypted   bool   `json:"encrypted,omitempty"`
+	At          int64  `json:"at"`
+}
+
+// PageSink is implemented by sinks that also handle task page events; like
+// MentionSink it is separate from Sink so existing sinks keep compiling.
+type PageSink interface {
+	PageActivity(ctx context.Context, e PageEvent)
+}
+
+// PageActivity fans the event out to every sink that implements PageSink.
+func (m Multi) PageActivity(ctx context.Context, e PageEvent) {
+	for _, s := range m {
+		if ps, ok := s.(PageSink); ok {
+			ps.PageActivity(ctx, e)
+		}
+	}
+}
+
+// PageActivity implements PageSink.
+func (Nop) PageActivity(context.Context, PageEvent) {}

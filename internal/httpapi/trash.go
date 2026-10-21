@@ -67,7 +67,7 @@ func (s *Server) labelAgentChanges(ctx context.Context, viewerID string, sets []
 	public := s.publicLabeler(viewerID)
 	for i := range sets {
 		// A guest's tick through a public link (public-links D6).
-		if l := public.label(ctx, sets[i].Device); l != "" {
+		if l := public.label(ctx, sets[i].Device, sets[i].TS); l != "" {
 			sets[i].DeviceLabel = l
 			continue
 		}

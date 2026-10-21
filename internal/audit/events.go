@@ -60,6 +60,9 @@ const (
 	// Public links (OpenSpec `public-links`).
 	PublicLinkCreatedName Name = "public_link.created"
 	PublicLinkRevokedName Name = "public_link.revoked"
+	// Task pages (OpenSpec `task-pages`).
+	TaskPagePublishedName Name = "task_page.published"
+	TaskPageRevokedName   Name = "task_page.revoked"
 	RoleChangedName       Name = "role.changed"
 	SettingsChangedName   Name = "settings.changed"
 	IdentityLinkedName    Name = "identity.linked"
@@ -109,6 +112,7 @@ var Names = []Name{
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
 	PublicLinkCreatedName, PublicLinkRevokedName,
+	TaskPagePublishedName, TaskPageRevokedName,
 	RoleChangedName, SettingsChangedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	ExportRequestedName, AuditExportedName,
@@ -205,7 +209,8 @@ var allowedDetailKeys = map[string]bool{
 	"reset_id":          true, // id of a password reset link (never its secret)
 	"email_kind":        true, // kind of an outgoing message: verify_signup, password_reset, invitation, project_invite, test
 	"public_link_id":    true, // id of a public link (never its secret)
-	"link_rights":       true, // view | tick
+	"link_rights":       true, // view | tick; view | reply | tick for a task page
+	"task_page_id":      true, // id of a task page (never its secret, label or share key)
 	// Sign out everywhere (route-authorization-policy): how much it ended.
 	"session_count":      true,
 	"device_count":       true,
@@ -587,4 +592,17 @@ func PublicLinkCreated(actorID, linkID, projectID, rights string) Event {
 // PublicLinkRevoked records a public link being revoked.
 func PublicLinkRevoked(actorID, linkID, projectID string) Event {
 	return ev(PublicLinkRevokedName, Success, actorID, "", "public_link_id", linkID, "shared_project_id", projectID)
+}
+
+// ---- task pages (task-pages) ----
+
+// TaskPagePublished records one task published as a page; never the secret, the
+// label, the task's content or a share key.
+func TaskPagePublished(actorID, pageID, rights string) Event {
+	return ev(TaskPagePublishedName, Success, actorID, "", "task_page_id", pageID, "link_rights", rights)
+}
+
+// TaskPageRevoked records a task page being revoked (or replaced by a new one).
+func TaskPageRevoked(actorID, pageID string) Event {
+	return ev(TaskPageRevokedName, Success, actorID, "", "task_page_id", pageID)
 }

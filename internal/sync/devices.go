@@ -37,6 +37,17 @@ func PublicDevice(linkID string) string { return PublicDevicePrefix + linkID }
 // IsPublicDevice reports whether device is a public link's.
 func IsPublicDevice(device string) bool { return strings.HasPrefix(device, PublicDevicePrefix) }
 
+// PageDevicePrefix marks ops a guest wrote through a task page (OpenSpec
+// task-pages, design D5): page:<page-id>, applied by the server as the page's
+// publisher. Reserved like public:.
+const PageDevicePrefix = "page:"
+
+// PageDevice is the device id of a task page's guest writes.
+func PageDevice(pageID string) string { return PageDevicePrefix + pageID }
+
+// IsPageDevice reports whether device is a task page's.
+func IsPageDevice(device string) bool { return strings.HasPrefix(device, PageDevicePrefix) }
+
 // AgentDevice is the device id of the ops an AI assistant's token writes.
 func AgentDevice(tokenID string) string { return AgentDevicePrefix + tokenID }
 
@@ -48,7 +59,8 @@ func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentD
 // trusted only from it) is reserved too (OpenSpec change attachments, design D3).
 func ReservedDevice(device string) bool {
 	return IsServerDevice(device) || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
-		strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, IssuesDevicePrefix)
+		strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, IssuesDevicePrefix) ||
+		strings.HasPrefix(device, PageDevicePrefix)
 }
 
 // CreatedBy returns the device of the first stored created_at op of an entity
