@@ -69,10 +69,12 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   useLayoutEffect(() => {
     if (!wide) return
     measure()
-    const onMove = () => measure()
+    // Scrolling inside the panel itself does not move its anchor: only outer scrolls re-place it
+    // (re-placing on its own scroll kept a tall panel from ever holding still).
+    const onMove = (e?: Event) => { if (e?.target instanceof Node && panel.current?.contains(e.target)) return; measure() }
     window.addEventListener('resize', onMove)
     window.addEventListener('scroll', onMove, true)
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onMove)
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure())
     if (ro && panel.current) ro.observe(panel.current)
     // Tap outside closes; the trigger toggles on its own. A tap inside an overlay opened
     // after this one (a calendar or zone picker nested in it) is not outside either.
