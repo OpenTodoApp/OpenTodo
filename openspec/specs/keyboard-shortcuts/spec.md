@@ -35,7 +35,7 @@ The registry SHALL resolve the conflicts of the previous flat list: `Shift+S` is
 - **THEN** the occurrence is skipped, and `Shift+S` in a project still opens Share
 
 ### Requirement: Cheat sheet
-`?` SHALL open a cheat sheet dialog that lists, first, the shortcuts of the scopes active right now, then "Everywhere" and "Go to", then the remaining sections, each as a titled group. Each shortcut SHALL be one row with its short label (or its description clamped to one line, with the full description in the row's accessible name and tooltip) and, aligned to the end of the row, its keys as separate keycaps: the chords of a sequence joined by "then", alternatives joined by "or", and a condition shown as muted text under the label, never inside a keycap. A keycap SHALL never wrap, and keys and text SHALL never overlap at any width from 360 px. Groups SHALL flow in one column below 768 px, two from 768 px and three from 1280 px. The sheet SHALL have a search field that stays visible while the list scrolls and filters by key, label or description, SHALL be at most 80 % of the viewport height with its own scroller, and SHALL render from the registry.
+`?` SHALL open a cheat sheet dialog that lists, first, the shortcuts of the scopes active right now, then "Everywhere" and "Go to", then the remaining sections, each as a titled group. Each shortcut SHALL be one row with its short label (or its description clamped to one line, with the full description in the row's accessible name and tooltip) and, aligned to the end of the row, its keys as separate keycaps: the chords of a sequence joined by "then", alternatives joined by "or", and a condition shown as muted text under the label, never inside a keycap. A keycap SHALL never wrap, and keys and text SHALL never overlap at any width from 360 px. Groups SHALL flow in one column below 768 px, two from 768 px and three from 1280 px. The sheet SHALL have a search field that stays visible while the list scrolls and filters by key, label or description, SHALL be at most 80 % of the viewport height with its own scroller, and SHALL render from the registry. After the shortcuts it SHALL list the quick add syntax, including a line for the `#` and `@` suggestions.
 
 #### Scenario: Context first
 - **WHEN** the user presses `?` while a board is shown
@@ -60,6 +60,10 @@ The registry SHALL resolve the conflicts of the previous flat list: `Shift+S` is
 #### Scenario: Conditions outside the keys
 - **WHEN** the sheet lists the shortcut that applies or discards proposed changes
 - **THEN** its keycaps read `Enter` or `Esc`, and "proposed changes" is muted text under the label, not inside a keycap
+
+#### Scenario: Suggestions are discoverable
+- **WHEN** the user opens the cheat sheet and searches for `@`
+- **THEN** a quick add row says that `#` or `@` followed by a few letters suggests projects or labels, that Enter or Tab picks, and that `#Home/Docs` picks a sub-project
 
 ### Requirement: Shortcut hints live in tooltips and menus
 Shortcut hints SHALL be shown in the tooltip of the control that runs the action, beside the item in menus and the palette, and in the cheat sheet. No key badge SHALL be printed in the chrome (headers, inputs, subtitles, prompts) unless the "Show shortcut hints" preference is on. The guide text that names a key SHALL name the action first.

@@ -51,47 +51,51 @@ export interface RowContext {
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
 export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
   const tree = c.treeView && !c.board
-  const line = (r: Row) => (
-    <Fragment key={r.task.id}>
-      <ListRow
-        task={r.task}
-        depth={r.depth}
-        breadcrumb={r.breadcrumb}
-        hasChildren={r.hasChildren}
-        collapsed={r.collapsed}
-        project={r.task.project_id ? c.projectMap.get(r.task.project_id) : undefined}
-        labelMap={c.labelMap}
-        assignee={r.task.assignee_id && r.task.project_id && c.memberMap.has(r.task.project_id)
-          ? (r.task.assignee_id === c.userId ? t('You') : memberName(r.task.assignee_id, c.memberMap) ?? t('Former member')) : null}
-        assignedToMe={!!c.userId && r.task.assignee_id === c.userId}
-        showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox'}
-        implied={r.implied}
-        omitLabel={c.view === 'label' ? c.labelId : undefined}
-        selected={r.task.id === c.selectedId}
-        progress={c.progress.get(r.task.id)}
-        blockedBy={c.blocked.get(r.task.id)}
-        habit={c.habits.get(r.task.id)}
-        readOnly={c.isReadOnly(r.task)}
-        card={c.board}
-        draggable={c.manual}
-        collapsible={tree}
-        dropIndicator={c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
-        dragging={c.draggingId === r.task.id}
-        ticked={c.ticked.has(r.task.id)}
-        showCheckbox={c.showCheckbox}
-        hideFieldBadges={c.fieldColumns}
-        posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
-        setSize={tree ? c.siblingPos.get(r.task.id)?.size : undefined}
-        actions={c.actions}
-        inline={!c.board && c.inlineId === r.task.id ? c.renderInline?.(r.task) : undefined}
-      />
-      {c.addingUnder === r.task.id && !c.board && (
-        <li>
-          <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
-        </li>
-      )}
-    </Fragment>
-  )
+  const line = (r: Row) => {
+    // The row being edited in place is not dragged: a press in its field selects text.
+    const editing = !c.board && c.inlineId === r.task.id
+    return (
+      <Fragment key={r.task.id}>
+        <ListRow
+          task={r.task}
+          depth={r.depth}
+          breadcrumb={r.breadcrumb}
+          hasChildren={r.hasChildren}
+          collapsed={r.collapsed}
+          project={r.task.project_id ? c.projectMap.get(r.task.project_id) : undefined}
+          labelMap={c.labelMap}
+          assignee={r.task.assignee_id && r.task.project_id && c.memberMap.has(r.task.project_id)
+            ? (r.task.assignee_id === c.userId ? t('You') : memberName(r.task.assignee_id, c.memberMap) ?? t('Former member')) : null}
+          assignedToMe={!!c.userId && r.task.assignee_id === c.userId}
+          showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox'}
+          implied={r.implied}
+          omitLabel={c.view === 'label' ? c.labelId : undefined}
+          selected={r.task.id === c.selectedId}
+          progress={c.progress.get(r.task.id)}
+          blockedBy={c.blocked.get(r.task.id)}
+          habit={c.habits.get(r.task.id)}
+          readOnly={c.isReadOnly(r.task)}
+          card={c.board}
+          draggable={c.manual && !editing}
+          collapsible={tree}
+          dropIndicator={c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
+          dragging={c.draggingId === r.task.id}
+          ticked={c.ticked.has(r.task.id)}
+          showCheckbox={c.showCheckbox}
+          hideFieldBadges={c.fieldColumns}
+          posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
+          setSize={tree ? c.siblingPos.get(r.task.id)?.size : undefined}
+          actions={c.actions}
+          inline={editing ? c.renderInline?.(r.task) : undefined}
+        />
+        {c.addingUnder === r.task.id && !c.board && (
+          <li>
+            <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
+          </li>
+        )}
+      </Fragment>
+    )
+  }
   return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
 }
 

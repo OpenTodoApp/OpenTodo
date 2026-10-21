@@ -98,6 +98,21 @@ describe('inline title editing', () => {
     await r.unmount()
   })
 
+  it('the row being edited is not draggable; the others still are', async () => {
+    const a = await createTask({ title: 'Edit me' })
+    const b = await createTask({ title: 'Leave me' })
+    const r = await list()
+    const row = (id: string) => r.container.querySelector(`[data-task-id="${id}"]`)!
+    await waitFor(() => row(a).hasAttribute('data-draggable'))
+    await clickTitle(r.container, 'Edit me')
+    await waitFor(() => !!editorTitle())
+    expect(row(a).hasAttribute('data-draggable')).toBe(false)
+    expect(row(b).hasAttribute('data-draggable')).toBe(true)
+    await key(editorTitle()!, 'Escape')
+    await waitFor(() => row(a).hasAttribute('data-draggable'))
+    await r.unmount()
+  })
+
   it('opens the panel instead with the panel already open, on a coarse pointer, or with "Open details"', async () => {
     const a = await createTask({ title: 'Alpha' })
     const b = await createTask({ title: 'Beta' })

@@ -4232,5 +4232,6 @@
   "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": "Den Titel der ausgewählten Aufgabe direkt bearbeiten, mit Datum, Priorität, Labels und Projekt darunter; Enter speichert, Esc bricht ab, Umschalt+Enter öffnet die Details",
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "Bearbeitung. Enter speichert, Escape bricht ab, Umschalt+Enter öffnet die Details.",
   "Open details": "Details öffnen",
-  "Task properties": "Eigenschaften der Aufgabe"
+  "Task properties": "Eigenschaften der Aufgabe",
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Schlägt Projekte oder Labels vor; Enter oder Tab wählt, #Zuhause/Dokumente wählt ein Unterprojekt"
 }

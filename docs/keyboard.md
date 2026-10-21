@@ -320,6 +320,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <code>tomorrow · next Wed · 3 Feb · at 3pm</code> | Due date and time (6 languages) |
 | <code>#project @label p1 +30m</code> | Project, label, priority, estimate |
+| <code># or @, then a few letters</code> | Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project |
 | <code>every Monday · remind me 30 min before</code> | Repeat and remind (6 languages) |
 | <code>"quoted text"</code> | Keep text literally |
 | <kbd>Backspace</kbd> then <kbd>×2</kbd> | End of line: highlight, then dismiss the last chip |

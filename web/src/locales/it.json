@@ -4232,5 +4232,6 @@
   "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": "Modifica sul posto il titolo dell’attività selezionata, con data, priorità, etichette e progetto sotto; Invio salva, Esc annulla, Maiusc+Invio apre i dettagli",
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "In modifica. Invio salva, Esc annulla, Maiusc+Invio apre i dettagli.",
   "Open details": "Apri i dettagli",
-  "Task properties": "Proprietà dell’attività"
+  "Task properties": "Proprietà dell’attività",
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Suggerisce progetti o etichette; Invio o Tab sceglie, #Casa/Documenti sceglie un sottoprogetto"
 }

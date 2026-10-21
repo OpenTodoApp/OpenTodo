@@ -381,6 +381,7 @@ export const SHORTCUTS: Shortcut[] = [
 export const QUICK_ADD_SYNTAX: [string, string][] = [
   ['tomorrow · next Wed · 3 Feb · at 3pm', 'Due date and time (6 languages)'],
   ['#project @label p1 +30m', 'Project, label, priority, estimate'],
+  ['# or @, then a few letters', 'Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project'],
   ['every Monday · remind me 30 min before', 'Repeat and remind (6 languages)'],
   ['"quoted text"', 'Keep text literally'],
   ['Backspace ×2 (end of line)', 'Highlight, then dismiss the last chip'],

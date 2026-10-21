@@ -88,6 +88,8 @@ const HIDE = `[data-testid="demo-banner"]{display:none!important} *,*::before,*:
 async function context(theme, opts = {}) {
   const c = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 1.25, colorScheme: theme, timezoneId: 'UTC', locale: 'en-GB', ...opts })
   await c.addInitScript((css) => { addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = css; document.head.append(s) }) }, HIDE)
+  // A click on a title edits it in place (inline-task-editing); the scenes open the panel.
+  await c.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch { /* no storage */ } })
   return c
 }
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
@@ -96,7 +98,12 @@ const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(tit
 const detail = (p) => p.locator('aside[data-detail-for]')
 const sidebar = (p) => p.locator('aside').first()
 async function go(p, base, path, ready) { await p.goto(base + path); if (ready) await ready(); await settle(p, 800) }
-async function openProject(p, name) { await sidebar(p).getByRole('button', { name: new RegExp('^' + esc(name)) }).first().click(); await p.getByRole('heading', { level: 1, name }).waitFor(); await settle(p) }
+async function unfold(p, button) { if ((await button.getAttribute('aria-expanded')) === 'false') { await button.click(); await settle(p, 300) } }
+async function openProject(p, name) {
+  const link = sidebar(p).getByRole('button', { name: new RegExp('^' + esc(name)) }).first()
+  if (!(await link.isVisible())) for (const b of await sidebar(p).getByRole('button', { name: /^Expand / }).all()) await b.click()
+  await link.click(); await p.getByRole('heading', { level: 1, name }).waitFor(); await settle(p)
+}
 async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }
 /** Clip around one element, with padding, clamped to the viewport. */
 async function clipOf(p, locator, pad = 12, extra = {}) {
@@ -274,15 +281,16 @@ const shots = [
     return clipOf(p, sidebar(p), 0)
   } },
   { name: 'labels', server: D, card: true, async run(p) {
-    await go(p, demoBase, '/today'); await sidebar(p).getByRole('button', { name: /^errand/ }).click(); await settle(p, 800)
+    await go(p, demoBase, '/today'); await unfold(p, sidebar(p).getByRole('button', { name: /^Labels/ }).first())
+    await sidebar(p).getByRole('button', { name: /^errand/ }).click(); await settle(p, 800)
   } },
   // labels-and-menus: the shared object menus.
   { name: 'label-menu', server: D, async run(p) {
-    await go(p, demoBase, '/labels', () => p.getByRole('heading', { name: 'Labels' }).waitFor())
+    await go(p, demoBase, '/labels', () => p.getByRole('heading', { level: 1, name: 'Labels' }).waitFor())
     await p.locator('main').getByRole('button', { name: 'Menu for label errand' }).click(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'view-menu', server: D, async run(p) {
-    await go(p, demoBase, '/views', () => p.getByRole('heading', { name: 'Views' }).waitFor())
+    await go(p, demoBase, '/views', () => p.getByRole('button', { name: 'New filter' }).waitFor())
     await p.locator('main').getByRole('button', { name: /^Menu for view Deep work/ }).first().click(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
   // Completed tasks kept in the project (project-completed-section): the switch is per device, so the scene turns it on and off again.
@@ -315,16 +323,16 @@ const shots = [
     await settle(p, 800)
   } },
   { name: 'repeat', server: D, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Run club')
-    const g = detail(p).getByRole('group', { name: 'Repeat' }); await scrollPanelTo(p, g, 60)
-    return clipOf(p, g, 16)
-  } },
+    await go(p, demoBase, '/inbox'); await openTask(p, 'Run club')
+    await detail(p).getByRole('button', { name: /^When: every/ }).click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor(); await settle(p, 400)
+    return clipOf(p, editor, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'reminders', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    const g = detail(p).getByRole('group', { name: 'Reminders' }); await scrollPanelTo(p, detail(p).getByRole('group', { name: 'Due' }), 40)
-    const due = await detail(p).getByRole('group', { name: 'Due' }).boundingBox(); const r = await g.boundingBox()
-    return { x: due.x - 16, y: due.y - 16, width: due.width + 32, height: r.y + r.height - due.y + 32 }
-  } },
+    await detail(p).getByRole('button', { name: /^When: / }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
+    await editor.getByRole('tab', { name: /^Reminders/ }).click(); await settle(p, 400)
+    return clipOf(p, editor, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
@@ -343,7 +351,7 @@ const shots = [
     const x = Math.max(0, b.x - 240)
     return { x, y: 0, width: vp.width - x, height: Math.min(vp.height, b.y + b.height + 24) }
   }, async after(p) { await p.keyboard.press('Escape') } },
-  { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { name: 'Activity' }).waitFor()) } },
+  { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { level: 1, name: 'Updates' }).waitFor()) } },
   { name: 'history', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Pick paint colours')
     // History is a tab of the panel (task-detail-redesign); expand the newest version.
@@ -356,11 +364,12 @@ const shots = [
   // The time-zone popover of a timed due (task-detail-redesign 5.4).
   { name: 'time-zone', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    const chip = detail(p).getByRole('button', { name: /^Time zone:/ }).first(); await scrollPanelTo(p, chip, 120); await chip.click()
+    await detail(p).getByRole('button', { name: /^When: / }).first().click(); await p.getByRole('dialog', { name: 'When' }).waitFor()
+    await p.getByRole('dialog', { name: 'When' }).getByRole('button', { name: /^Time zone/ }).first().click()
     const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
     return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
-  { name: 'trash', server: D, card: true, async run(p) { await go(p, demoBase, '/trash', () => p.getByRole('heading', { name: 'Trash' }).waitFor()) } },
+  { name: 'trash', server: D, card: true, async run(p) { await go(p, demoBase, '/trash', () => p.getByRole('heading', { level: 1, name: 'Trash' }).waitFor()) } },
   { name: 'shortcuts', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
     await p.keyboard.press('?'); await p.getByText('Keyboard shortcuts').first().waitFor(); await settle(p, 500)
@@ -389,17 +398,17 @@ const shots = [
     await d.getByRole('textbox').first().fill('chen@example.com').catch(() => {}); await settle(p, 500)
     return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
-  { name: 'settings', server: P, card: true, async run(p) { await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor()) } },
+  { name: 'settings', server: P, card: true, async run(p) { await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor()) } },
   { name: 'settings-security', card: true, server: P, async run(p) {
-    await go(p, plainBase, '/settings/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Two-factor authentication' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 350 }
   } },
   { name: 'settings-passkeys', server: P, async run(p) {
-    await go(p, plainBase, '/settings/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
-    const h = p.getByRole('heading', { level: 2, name: 'Passkeys' }); await h.waitFor()
+    await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())
+    const h = p.getByRole('heading', { level: 2, name: 'Passkeys', exact: true }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 270 }
@@ -411,17 +420,17 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 240 }
   } },
+  // Archived projects live at the bottom of the Projects page.
   { name: 'archived-projects', server: P, async run(p) {
-    await go(p, plainBase, '/settings/projects', () => p.getByRole('heading', { name: 'Projects', level: 1 }).waitFor())
-    const h = p.getByRole('heading', { level: 2, name: 'Projects' }); await h.waitFor()
-    await p.getByRole('heading', { name: 'Archived projects' }).waitFor()
-    await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
-    const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+    await go(p, plainBase, '/projects', () => p.locator('[data-archived-disclosure] summary').waitFor())
+    const summary = p.locator('[data-archived-disclosure] summary'); await summary.click(); await p.getByTestId('archived-projects').waitFor()
+    await summary.evaluate((el) => el.scrollIntoView({ block: 'center' })); await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const top = await summary.boundingBox()
     const list = await p.getByTestId('archived-projects').boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: list.y + list.height - top.y + 44 }
   } },
   { name: 'members', server: P, async run(p) {
-    await go(p, plainBase, '/settings/admin', () => p.getByRole('heading', { name: 'Administration', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/people', () => p.getByRole('heading', { name: 'People', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Members' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -451,7 +460,7 @@ const shots = [
     await ask(p, 'Move everything overdue to Friday', () => p.locator('[data-assistant-review]').waitFor({ timeout: 20000 }))
   }, async after(p) { await p.locator('[data-assistant-review]').getByRole('button', { name: 'Discard' }).click().catch(() => {}) } },
   { name: 'assistant-settings', server: 'assistant', async run(p) {
-    await go(p, assistantBase, '/settings/ai', () => p.getByRole('heading', { name: 'AI', level: 1 }).waitFor())
+    await go(p, assistantBase, '/settings/integrations', () => p.getByRole('heading', { name: 'Integrations', level: 1 }).waitFor())
     const h = p.locator('#assistant-settings-heading'); await h.waitFor(); await p.locator('[data-assistant-owner]').waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()

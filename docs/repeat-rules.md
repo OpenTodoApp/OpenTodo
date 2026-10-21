@@ -9,7 +9,7 @@ order: 51
 ---
 # Repeat rules
 
-<picture><source srcset="images/repeat-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/repeat-light.webp" alt="The Repeat field with the rule every monday, the next three dates below it, and the Skip and This occurrence only buttons."></picture>
+<picture><source srcset="images/repeat-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/repeat-light.webp" alt="The When editor on its Repeat tab: one-click rules, the rule every monday with its next three dates, the Skip and This occurrence only buttons, and Track as a habit."></picture>
 
 A repeat rule is typed into the **Repeat** field of a task, as described in [Recurring tasks and reminders](recurring-and-reminders.md#make-a-task-repeat). This page lists the rules and explains what happens to each occurrence.
 
