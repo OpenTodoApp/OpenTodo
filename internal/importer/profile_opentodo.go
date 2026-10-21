@@ -46,6 +46,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// TimeEntries are the entries the exporting account could read
 		// (time-tracking D11), its own and other members' on shared tasks.
 		TimeEntries []map[string]json.RawMessage `json:"time_entries"`
+		// Places are the exporting account's saved places (task-locations D1);
+		// tasks link to them by id in location.place_id.
+		Places []map[string]json.RawMessage `json:"places"`
 		// UserID is the exporting account.
 		UserID string `json:"userId"`
 		// UserPrefs is the exporting account's date and time preferences row
@@ -114,6 +117,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	}
 	// Dependency order so the preview reads top-down; the op log does not care.
 	add(KindLabel, "name", doc.Labels)
+	add(KindPlace, "name", doc.Places)
 	add(KindProject, "name", doc.Projects)
 	add(KindSection, "name", doc.Sections)
 	add(KindField, "name", doc.Fields)

@@ -384,6 +384,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewDot, note: reviewText, tip: reviewText },
     { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
     ...(sharedIds.size > 0 ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: unreadBadge, note: unread.total > 0 ? `${formatUnread(unread.total)} ${t('unread updates')}` : undefined }] : []),
+    // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
+    { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },
     { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
     { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
     ...(assistant?.available ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
@@ -570,7 +572,7 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
 // Each More destination once, as data: an item in the inline group, or a menu item.
-type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
+type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
 
 /**
  * The Review entry's marker (weekly-review "Rhythm markers", quiet-sidebar D4): the

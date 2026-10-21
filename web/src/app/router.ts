@@ -21,6 +21,9 @@ export type Route =
   | { view: 'task'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
+  // Saved locations (task-locations, the `place` entity): /locations, and /location/<id> lists the open tasks linked to one.
+  | { view: 'places' }
+  | { view: 'place'; id: string }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
@@ -118,6 +121,10 @@ export function parseRoute(pathname: string): Route {
       return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
+    case 'locations':
+      return { view: 'places' }
+    case 'location':
+      return parts[1] ? { view: 'place', id: parts[1] } : { view: 'places' }
     case 'projects':
       return hash === 'archived' ? { view: 'projects', archived: true } : { view: 'projects' }
     case 'filter': {
@@ -219,6 +226,10 @@ export function routePath(r: Route): string {
     case 'view':
     case 'task':
       return `/${r.view}/${r.id}`
+    case 'place':
+      return `/location/${r.id}`
+    case 'places':
+      return '/locations'
     case 'invite':
     case 'reset':
       return `/${r.view}/${encodeURIComponent(r.token)}`

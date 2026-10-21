@@ -39,7 +39,8 @@ const Placeholder = "Encrypted item"
 var ContentFields = map[string][]string{
 	// A task's origin (OpenSpec change task-origin, design D2) is an object;
 	// devices serialise it and encrypt it whole into one ciphertext string.
-	"task":    {"title", "description", "ical_extra", "notes_doc", "origin"},
+	// A task's location (OpenSpec task-locations, design D1) is an object too.
+	"task":    {"title", "description", "ical_extra", "notes_doc", "origin", "location"},
 	"project": {"name", "description", "notes_doc"},
 	"label":   {"name"},
 	"section": {"name"},
@@ -55,6 +56,9 @@ var ContentFields = map[string][]string{
 	// The review record's line for tomorrow (OpenSpec close-the-day, design D5);
 	// the close time and the other rhythm stamps stay plaintext.
 	"review": {"tomorrow_note"},
+	// A place (OpenSpec task-locations, design D1): its coordinates are one
+	// object, encrypted whole; its position and timestamps stay plaintext.
+	"place": {"name", "address", "geo"},
 }
 
 // ContentPrefixes are families of content fields named by a prefix: a task's

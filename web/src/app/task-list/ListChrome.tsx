@@ -6,7 +6,7 @@ import { DURATION_FILTERS, type DurationFilter } from '../../lib/filters'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
-import type { AccountRole, Label, Project, Task } from '../../lib/types'
+import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
 import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, IconButton, MenuItem, MenuSeparator, Tooltip } from '../../ui'
 import { TodayAskAction } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
@@ -105,7 +105,7 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
   )
 }
 
-export function placeholderFor(route: ListRoute, project?: Project, label?: Label): string {
+export function placeholderFor(route: ListRoute, project?: Project, label?: Label, place?: Place): string {
   switch (route.view) {
     case 'today':
       return t('Add a task for today…')
@@ -119,6 +119,8 @@ export function placeholderFor(route: ListRoute, project?: Project, label?: Labe
       return project?.name ? t('Add a task to {project}…', { project: project.name }) : t('Add a task to this project…')
     case 'label':
       return label?.name ? t('Add a task labelled {label}…', { label: label.name }) : t('Add a task with this label…')
+    case 'place':
+      return place?.name ? t('Add a task at {place}…', { place: place.name }) : t('Add a task at this location…')
     case 'assigned':
       return t('Add a task assigned to you…')
     default:
@@ -140,6 +142,7 @@ const EMPTY_COPY: Record<EmptyView, EmptyCopy> = {
   assigned: { get title() { return t('Nothing is assigned to you.') }, action: 'inbox' },
   project: { get title() { return t('This project has no open tasks.') }, action: 'add' },
   label: { get title() { return t('No open task carries this label.') }, action: 'add' },
+  place: { get title() { return t('No open task happens at this location.') }, action: 'add' },
   completed: { get title() { return t('Nothing completed yet.') }, action: 'today' },
 }
 
@@ -188,12 +191,14 @@ export function FilteredEmpty({ onClear }: { onClear: () => void }) {
 }
 
 /** A project or label route whose target is gone. */
-export function MissingTarget({ kind }: { kind: 'project' | 'label' }) {
+export function MissingTarget({ kind }: { kind: 'project' | 'label' | 'place' }) {
   return (
     <div className="p-6 text-body text-muted">
       {kind === 'project'
         ? <>{t('This project no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'inbox' })}>{t('Go to Inbox')}</button></>
-        : <>{t('This label no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'labels' })}>{t('All labels')}</button></>}
+        : kind === 'place'
+          ? <>{t('This saved location no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'places' })}>{t('All locations')}</button></>
+          : <>{t('This label no longer exists.')}{' '}<button className="underline" onClick={() => navigate({ view: 'labels' })}>{t('All labels')}</button></>}
     </div>
   )
 }

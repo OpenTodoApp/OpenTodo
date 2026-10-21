@@ -151,6 +151,34 @@ func TestArchiveExcludesSecrets(t *testing.T) {
 	}
 }
 
+// The map tile cache (task-locations D4) lives under <data>/cache/maps and is
+// never part of a backup: only the database, attachment files and the listed
+// extras are archived.
+func TestArchiveExcludesMapCache(t *testing.T) {
+	e := newTestEnv(t)
+	dir := filepath.Join(e.dir, "cache", "maps", "ab")
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "abcd.bin"), []byte("TILE"), 0o640); err != nil {
+		t.Fatal(err)
+	}
+	files, err := attachmentFiles(e.dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range files {
+		if strings.Contains(f.path, "cache") || strings.HasPrefix(f.name, "cache/") {
+			t.Fatalf("backup would include %s", f.path)
+		}
+	}
+	for _, p := range e.svc.extraFiles() {
+		if strings.Contains(p, "cache") {
+			t.Fatalf("backup would include %s", p)
+		}
+	}
+}
+
 func TestManifestDescribesContent(t *testing.T) {
 	e := newTestEnv(t)
 	snap, err := e.svc.snapshot(context.Background())

@@ -40,6 +40,23 @@ export class ApiError extends Error {
 
 /** Resolves true once the user re-authenticated, false when they cancelled. */
 export type ReauthHandler = () => Promise<boolean>
+
+/** One address the map proxy found (task-locations "Setting a location"). */
+export interface MapResult {
+  name: string
+  address: string
+  lat: number
+  lon: number
+}
+
+/** The owner's map switch and providers; `locked` names fields set by an OPENTODO_MAPS* variable. */
+export interface MapsSetting {
+  enabled: boolean
+  tiles_url: string
+  geocoder_url: string
+  locked: string[]
+  defaults: { tiles_url: string; geocoder_url: string }
+}
 let reauthHandler: ReauthHandler | null = null
 let reauthInFlight: Promise<boolean> | null = null
 const enrolmentListeners = new Set<() => void>()
@@ -220,7 +237,7 @@ export const api = {
   reauth: (input: { password: string } | { code: string }) =>
     request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
   /** `config_warnings` is present for the owner's session only (trusted-proxies-lenient). */
-  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits }>('GET', '/api/v1/me'),
+  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean }>('GET', '/api/v1/me'),
   mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
   enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
   confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),
@@ -437,6 +454,13 @@ export const api = {
   rotateCalendarFeed: () => request<{ feed: CalendarFeed; url: string }>('POST', '/api/v1/calendar-feeds/feed'),
   revokeCalendarFeed: () => request<void>('DELETE', '/api/v1/calendar-feeds/feed'),
   // Issue import (OpenSpec issue-connections): connections are server data, never ops.
+  /** Maps (task-locations): address search and reverse search through the server's map proxy. */
+  mapSearch: (q: string, lang: string) =>
+    request<{ results: MapResult[] }>('GET', `/api/v1/maps/search?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}&limit=5`),
+  mapReverse: (lat: number, lon: number, lang: string) =>
+    request<{ result: MapResult | null }>('GET', `/api/v1/maps/reverse?lat=${lat}&lon=${lon}&lang=${encodeURIComponent(lang)}`),
+  getMapsSetting: () => request<MapsSetting>('GET', '/api/v1/settings/maps'),
+  putMapsSetting: (s: { enabled: boolean; tiles_url?: string; geocoder_url?: string }) => request<MapsSetting>('PUT', '/api/v1/settings/maps', s),
   getIssuesSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/issues'),
   putIssuesSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/issues', { enabled }),
   listIssueConnections: () => request<{ connections: IssueConnection[] }>('GET', '/api/v1/issues/connections'),

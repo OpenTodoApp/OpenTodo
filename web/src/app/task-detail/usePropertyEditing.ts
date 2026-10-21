@@ -6,7 +6,7 @@ import { type RefObject, useEffect, useRef, useState } from 'react'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from '../signals'
 
 /** The properties the Add menu can offer, in its order. */
-export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section'
+export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section' | 'location'
 
 export interface ChipEditing {
   editing: boolean

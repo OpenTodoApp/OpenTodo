@@ -55,6 +55,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["time_entries"] = entries
+	// The caller's places (task-locations D1): personal like labels, deleted ones
+	// included; tasks link to them by id in location.place_id.
+	places, err := s.sync.List(r.Context(), uid, "place", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["places"] = places
 	// The caller's date and time preferences (date-time-preferences D1): personal,
 	// no REST collection, but part of what the user owns, so the export carries them.
 	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)

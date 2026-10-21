@@ -16,6 +16,7 @@ import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
+import { refreshMapsAvailable } from './locations'
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
@@ -594,6 +595,8 @@ export function startSync(): void {
   started = true
   onUploadRequest(() => requestSync(0))
   void refreshLimits()
+  // Whether the server shows maps (task-locations D6); offline keeps the last answer.
+  void refreshMapsAvailable()
   // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
   void sweepInbox().catch(() => undefined)
   const offMutation = onLocalMutation(() => {

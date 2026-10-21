@@ -2,6 +2,8 @@
 // lib/liveData and the shared task snapshot, turned into rows and groups by the
 // pure functions of lib/listGroups. One hook, so TaskListView only renders.
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../lib/db'
 import { blockedMap } from '../../lib/dependencies'
 import { liveFields } from '../../lib/fields'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
@@ -12,7 +14,7 @@ import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { buildTaskTree, progressMap } from '../../lib/subtasks'
-import type { Task } from '../../lib/types'
+import type { Place, Task } from '../../lib/types'
 import { inLater } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -175,10 +177,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
   const completedOpen = !!projectId && collapsed.has(completedOpenKey(projectId))
 
+  // A place's list (task-locations): undefined while loading, null when it does not exist.
+  const placeId = route.view === 'place' ? route.id : null
+  const currentPlace = useLiveQuery(async (): Promise<Place | null | undefined> => (placeId ? (await db.places.get(placeId)) ?? null : undefined), [placeId])
+
   return {
     dt, today, zone, projects, projectMap, labels, labelMap, memberMap, isReadOnly, treeView, projectId,
     currentProject: route.view === 'project' ? projectMap.get(route.id) : undefined,
     currentLabel: route.view === 'label' ? labelMap.get(route.id) : undefined,
+    currentPlace,
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,

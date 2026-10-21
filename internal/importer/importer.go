@@ -56,6 +56,9 @@ const (
 	KindProjectPrefs = "project_prefs"
 	// KindTimeEntry is a time entry on a task (OpenSpec change time-tracking).
 	KindTimeEntry = "time_entry"
+	// KindPlace is a saved place (OpenSpec change task-locations), restored
+	// verbatim from an own export like a label.
+	KindPlace = "place"
 	// KindAttachment is a file or link attachment (OpenSpec change attachments).
 	KindAttachment = "attachment"
 	// KindField is a custom field definition (OpenSpec change custom-fields),

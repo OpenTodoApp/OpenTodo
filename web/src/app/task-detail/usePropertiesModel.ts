@@ -92,6 +92,7 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
     'blocked-by': blockers.length > 0,
     parent: !!task.parent_id,
     section: !!shownSection,
+    location: task.location != null,
   }
   const editing = usePropertyEditing(task.id, has, section)
 

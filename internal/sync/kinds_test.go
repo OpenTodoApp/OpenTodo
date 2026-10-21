@@ -8,7 +8,7 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kRule; k++ {
+	for k := kString; k <= kGeo; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -76,6 +76,13 @@ func TestCheckKindTable(t *testing.T) {
 		{"instant", kInstant, `1700000000000`, ""},
 		{"instant null", kInstant, `null`, ""},
 		{"instant zero", kInstant, `0`, "positive unix millisecond"},
+		{"location", kLocation, `{"name":"Gym","lat":45.46,"lon":9.19}`, ""},
+		{"location null", kLocation, `null`, ""},
+		{"location ciphertext", kLocation, `"enc:v1:AAAA"`, ""},
+		{"location half coordinate", kLocation, `{"lat":45.46}`, "both"},
+		{"location empty", kLocation, `{}`, "needs a name"},
+		{"geo", kGeo, `{"lat":45.46,"lon":9.19}`, ""},
+		{"geo out of range", kGeo, `{"lat":91,"lon":9}`, "from -90 to 90"},
 		{"nullable text", kNullableText, `"x"`, ""},
 		{"nullable text null", kNullableText, `null`, ""},
 		{"nullable text number", kNullableText, `1`, "must be null or a string"},

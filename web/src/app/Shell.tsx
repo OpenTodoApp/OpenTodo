@@ -11,6 +11,7 @@ import { MonthView } from './MonthView'
 import { PlanView } from './PlanView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
+import { PlacesView } from './locations/PlacesView'
 import { ProjectsView } from './ProjectsView'
 import { SavedViewRoute } from './SavedViewView'
 import { ViewsView } from './ViewsView'
@@ -248,6 +249,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <ImportScreen />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
+          ) : route.view === 'places' ? (
+            <PlacesView />
           ) : route.view === 'projects' ? (
             <ProjectsView archived={route.archived} />
           ) : route.view === 'filter' ? (

@@ -785,3 +785,36 @@ describe('task origins (task-origin 1.3)', () => {
     expect((await db.tasks.get('t1'))!.origin).toEqual(ORIGIN)
   })
 })
+
+describe('locations and places (task-locations 1.4, "Encrypted locations and places")', () => {
+  const LOCATION = { name: "Mum's", address: 'Via Roma 1, Torino', lat: 45.07, lon: 7.68 }
+
+  it('a location leaves as one ciphertext string and another unlocked device reads it', async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    await mutate('task', 't1', { location: LOCATION })
+    await syncNow()
+    const sent = sentAfter(mark).filter((o) => o.field === 'location')
+    expect(sent).toHaveLength(1)
+    expect(isEnvelope(sent[0].value)).toBe(true)
+    expect(JSON.stringify(server.log)).not.toMatch(/Via Roma|Mum's|45\.07/)
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.location).toEqual(LOCATION)
+  })
+
+  it("a place's name, address and coordinates are ciphertext; its position is not", async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    await mutate('place', 'pl1', { name: 'Home', address: 'Via Po 2', geo: { lat: 45.07, lon: 7.69 }, position: 1024, created_at: 1, deleted_at: null })
+    await syncNow()
+    const sent = sentAfter(mark).filter((o) => o.entity === 'place')
+    for (const f of ['name', 'address', 'geo']) expect(isEnvelope(sent.find((o) => o.field === f)!.value)).toBe(true)
+    expect(sent.find((o) => o.field === 'position')!.value).toBe(1024)
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect(await db.places.get('pl1')).toMatchObject({ name: 'Home', address: 'Via Po 2', geo: { lat: 45.07, lon: 7.69 } })
+  })
+})
