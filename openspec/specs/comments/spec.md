@@ -110,7 +110,7 @@ The task detail panel SHALL show the comment threads in its Comments tab, oldest
 - **THEN** the tab reads "No comments yet" in one line and the composer is visible beneath it without scrolling
 
 ### Requirement: Readable comment presentation
-Each comment SHALL show the author's avatar initials and name, a relative time with the absolute time in the user's date and time format on hover and focus, an "edited" marker when edited, and the body with comfortable line length and spacing. Reply, Edit and Delete SHALL be visible on hover and focus and always on touch devices. Replies SHALL be indented under their comment with a connecting line.
+Each comment SHALL show the author's avatar initials and name, a relative time with the absolute time in the user's date and time format on hover and focus, an "edited" marker when edited, and the body with comfortable line length and spacing. Reply, Edit and Delete SHALL take no space at rest: on a fine pointer they SHALL appear on hover and focus at the end of the comment's header line; on touch devices they SHALL be reachable at all times from one "More actions" control on that line. Root comments SHALL be spaced as one thread, without empty rows between them. Replies SHALL be indented under their comment with a connecting line. A comment the user has just posted SHALL be scrolled into view.
 
 #### Scenario: Absolute time on focus
 - **WHEN** the user focuses the relative time "2 h ago" of a comment
@@ -118,15 +118,27 @@ Each comment SHALL show the author's avatar initials and name, a relative time w
 
 #### Scenario: Actions on touch
 - **WHEN** the user views a comment on a phone
-- **THEN** Reply is visible without hovering, and Edit and Delete are visible on the user's own comments
+- **THEN** a "More actions" control is visible on the comment's header line, and it offers Reply, and Edit and Delete on the user's own comments
+
+#### Scenario: No gaps in the thread
+- **WHEN** a task with 14 one-line comments is open on a 1280×800 screen and the pointer is not over the thread
+- **THEN** consecutive comments are at most 24 px apart, and hovering a comment does not change the position of any other comment
+
+#### Scenario: Posted comment in view
+- **WHEN** the user posts a comment on a task with 30 comments
+- **THEN** the new comment is visible above the composer without scrolling
 
 ### Requirement: Composer behaviour
-The composer SHALL grow with its content up to a limit, keep @-mention completion, show the submit key combination, keep an unsent draft per task on the device while the panel is closed, and show the reply target with a way to cancel it when replying.
+The composer SHALL rest as a single line and expand when focused, when it holds a draft or a reply target, or when its shortcut is pressed; expanded, it SHALL grow with its content up to a limit, keep @-mention completion, show the submit key combination, keep an unsent draft per task on the device while the panel is closed, and show the reply target with a way to cancel it when replying.
 
 #### Scenario: Draft survives closing the panel
 - **WHEN** the user types a comment, closes the panel without sending and reopens the task on the same device
-- **THEN** the draft is still in the composer, and it is not visible on other devices
+- **THEN** the draft is still in the expanded composer, and it is not visible on other devices
 
 #### Scenario: Cancel a reply
 - **WHEN** the user chooses Reply on a comment and then cancels the reply target
 - **THEN** the composer posts a new top-level comment instead
+
+#### Scenario: Collapses when left empty
+- **WHEN** the user focuses the composer, types nothing and moves focus elsewhere
+- **THEN** the composer returns to its single resting line

@@ -23,10 +23,12 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 ## 4. Docs and integration
 
 - [x] 4.1 Update `docs/task-panel.md`, `docs/dates-and-times.md`, `docs/deadlines-and-start-dates.md`, `docs/recurring-tasks.md` and the matching Help pages; verify with `npm run docs:check`.
-- [ ] 4.2 Run `make check`; verify it passes, and record the panel chunk size difference here.
+- [x] 4.2 Run `make check`; verify it passes, and record the panel chunk size difference here.
 - [x] 4.3 Run `make openspec-validate`; verify it passes.
 
 ## Implementation notes
 
 - Group 1 found a second cause of the jumping panel: `Tabs` revealed the selected tab with `scrollIntoView`, which also scrolled the panel vertically on every tab change. It now scrolls its own row sideways only (`ui/Tabs.tsx`).
 - Groups 2 and 3: the toggle (2.1) landed with `task-panel-facets` (a part toggles its popover; `Popover` already ignored its anchor). The month grid was already shared as `CalendarGrid` in `DateField.tsx`, so `DatePicker` composes it inline (`compact`) instead of a new `MonthGrid`; `DateField` keeps its popover for other screens. Repeat presets write the canonical rule `parseRule` gives for "every day", "every weekday", "every <weekday>", "every <nth>" and "every year". Visual: only Task/Panel "When popover" changed, plus two new Date picker stories.
+
+- Verified by CI on each merged pull request (#180, #181, #183–#189: Web, Server, Checks, Layout and UI checks). Entry chunk on main after the whole series: 323.79 KB gzipped (323.12 KB before `task-panel-facets`; facets alone −1.05 KB, the When editor, the title editors and inline editing together +1.72 KB).

@@ -40,19 +40,23 @@ Setting, moving or clearing the due date SHALL NOT change the deadline, and sett
 - **THEN** the change is accepted and the row shows the deadline countdown in the danger tone
 
 ### Requirement: Deadline entry
-The detail panel SHALL set the deadline inside the unified When control opened from the Do on chip, in a Deadline segment that reads the date in the user's date format and is edited with the same date field and calendar as the due date, including typed dates and relative words, and SHALL be clearable. A task with a deadline SHALL show a Deadline chip with its countdown beside the Do on chip. Every change SHALL apply locally at once.
+The detail panel SHALL set the deadline inside the When popover, in a Deadline segment that reads the date in the user's date format and is edited with the same date field and calendar as the due date, including typed dates and relative words, and SHALL be clearable from the popover's footer. A task with a deadline SHALL show it as a part of the When line reading "deadline" followed by the date and its countdown. Every change SHALL apply locally at once.
 
 #### Scenario: Set from the panel
-- **WHEN** the user opens a task, opens the When control, switches to Deadline, types `fri` and confirms
-- **THEN** the deadline is the next Friday, a Deadline chip shows it in the user's date format with its countdown, and the due date is unchanged
+- **WHEN** the user opens a task, opens the When popover, switches to Deadline, types `fri` and confirms
+- **THEN** the deadline is the next Friday, the When line gains "deadline" with the date in the user's format and its countdown, and the due date is unchanged
 
 #### Scenario: Viewer of a shared project
 - **WHEN** a viewer of a shared project opens one of its tasks
-- **THEN** the Deadline chip reads as text and cannot be changed
+- **THEN** the deadline part reads as text and cannot be changed
 
 #### Scenario: No deadline, no chip
 - **WHEN** a task has no deadline
-- **THEN** the panel shows no Deadline chip, and Deadline is offered in the Add menu and inside the When control
+- **THEN** the When line has no deadline part, and Deadline is offered in the Add menu under When and as a segment of the When popover
+
+#### Scenario: Overdue deadline tone
+- **WHEN** a task's deadline was three days ago
+- **THEN** the deadline part reads "deadline" with the date and "3 days over" in the danger tone, as the row does
 
 ### Requirement: Deadline entry from a list
 Pressing `d` on a selected task in a list SHALL open the same date field inline, so the deadline can be set without opening the panel. Every change SHALL apply locally at once.
@@ -101,3 +105,14 @@ Upcoming SHALL list an open task that has a future deadline and no due date unde
 #### Scenario: Both dates
 - **WHEN** a task is due 2026-10-15 with the deadline 2026-10-17
 - **THEN** Upcoming lists it under Tomorrow only, with the `3d` countdown on its row
+
+### Requirement: Deadline segment quick choices
+The Deadline segment of the When popover SHALL offer the quick choices End of week, End of month and In 2 weeks, each with the date it means, followed by the same worded date field and visible month calendar as the Do on segment. End of week SHALL be the last day of the user's week; End of month the last day of the current month.
+
+#### Scenario: End of month
+- **WHEN** today is 2026-10-21 and the user chooses End of month in the Deadline segment
+- **THEN** the deadline is 2026-10-31 and the due date is unchanged
+
+#### Scenario: Week setting respected
+- **WHEN** the user's week starts on Monday, today is Wednesday 2026-10-21 and the user chooses End of week
+- **THEN** the deadline is Sunday 2026-10-25

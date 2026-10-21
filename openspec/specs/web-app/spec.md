@@ -24,18 +24,22 @@ The client SHALL provide Inbox (open tasks without a project), Today (open tasks
 - **THEN** tasks are grouped by due date with "Tomorrow" and weekday headings in ascending order
 
 ### Requirement: Task detail panel
-Opening a task SHALL show a panel in the shell's panel slot (see `app-shell`) for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The panel SHALL show only the properties that have a value and offer the rest from an Add menu. On narrow screens the panel SHALL open as a full-screen sheet over the list.
+Opening a task SHALL show a panel in the shell's panel slot (see `app-shell`) for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The panel SHALL show only the properties that have a value and offer the rest from an Add menu. A task SHALL open in the panel from Enter on a selected row, from Open details or `Shift+Enter` in the inline editor, and from a click on a row's title when the inline editor does not apply (see `task-list-presentation` "Inline title editing"). On narrow screens the panel SHALL open as a full-screen sheet over the list.
 
 #### Scenario: Open from the list
-- **WHEN** the user clicks a task's title or presses Enter on a selected task
+- **WHEN** the user presses Enter on a selected task, or taps a task's title on a touch screen
 - **THEN** the detail panel opens with that task's fields and the address carries the task id
+
+#### Scenario: Click edits in place on a desktop
+- **WHEN** the panel is closed and the user clicks a task's title with a mouse on a 1280 px wide screen
+- **THEN** the title becomes editable in the list and the panel does not open
 
 #### Scenario: Empty task shows few things
 - **WHEN** the user opens a task with a title, a project and nothing else
-- **THEN** the panel shows the title, the notes placeholder, the project breadcrumb, the Do on and Priority chips, the subtask line and the Add menu, and no other property
+- **THEN** the panel shows the title, the notes placeholder, the project, the When and priority values, the subtask line and the Add menu, and no other property
 
 ### Requirement: Keyboard navigation
-Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k` (or arrows) move, Enter opens, `c` completes or reopens, `1`–`4` set priority, Delete deletes, `g` then `i`/`t`/`u`/`c`/`s` navigates, `g` then `p` opens Inbox triage, Escape closes the panel or clears the selection, `?` lists shortcuts, and `Ctrl`/`⌘`+`K` opens the palette. Shortcuts SHALL not fire while typing in a field, except `Ctrl`/`⌘`+`K` outside the notes editor.
+Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k` (or arrows) move, Enter opens, `F2` edits the selected task's title in place, `c` completes or reopens, `1`–`4` set priority, Delete deletes, `g` then `i`/`t`/`u`/`c`/`s` navigates, `g` then `p` opens Inbox triage, Escape closes the panel or clears the selection, `?` lists shortcuts, and `Ctrl`/`⌘`+`K` opens the palette. Shortcuts SHALL not fire while typing in a field, except `Ctrl`/`⌘`+`K` outside the notes editor.
 
 #### Scenario: Navigate with g then t
 - **WHEN** focus is not in a text field and the user presses `g` then `t`
@@ -56,6 +60,10 @@ Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k
 #### Scenario: Cheat sheet lists the context
 - **WHEN** the user presses `?` in a project list
 - **THEN** the cheat sheet opens with the list shortcuts first, as specified in `keyboard-shortcuts`
+
+#### Scenario: Rename in place from the keyboard
+- **WHEN** a task is selected and the user presses `F2`, types a new title and presses Enter
+- **THEN** the title is saved in the list without opening the panel
 
 ### Requirement: Keyboard navigation to the review and statistics
 Outside text fields, `g` then `r` SHALL open the weekly Review and `g` then `Shift+S` SHALL open Statistics, like the other `g` navigation keys (OpenSpec change `stats-and-review`).
@@ -281,7 +289,7 @@ CI SHALL open every screen and every overlay at 360, 390 and 768 px wide, in lig
 - **THEN** the layout job fails for WebKit
 
 ### Requirement: Task panel layout
-The panel SHALL show, top to bottom: a sticky header with the task's checkbox, the editable title, a menu holding Delete, Copy link, Expand and the less frequent actions, and Close; the notes (a single placeholder line until focused, the editor otherwise); the project breadcrumb (project and section); the property chips and the Add control; the subtasks as a checklist; and the tabbed area with Comments, Activity and History.
+The panel SHALL show, top to bottom: a sticky header with the task's checkbox, the editable title wrapping to at most two lines, a menu holding Delete, Copy link, Expand, Attach and the less frequent actions, and Close; the notes (a single placeholder line until focused, the editor otherwise, clamped at rest when long); the facet lines and the Add control; the subtasks as a checklist with its count; the attachments list only when there are attachments; and the tabbed area with Comments, Activity and History.
 
 #### Scenario: Delete from the header menu
 - **WHEN** the user opens the header menu and chooses Delete
@@ -291,23 +299,12 @@ The panel SHALL show, top to bottom: a sticky header with the task's checkbox, t
 - **WHEN** the user scrolls the panel down to the comments
 - **THEN** the checkbox and title stay visible at the top of the panel
 
-### Requirement: Task panel property chips
-The property chips SHALL be a wrapping row of chips for the properties that have a value, with Do on and Priority always present, followed by an Add control listing the remaining properties with their shortcuts. A chip SHALL read as its value and open its editor on click or Enter; Escape or a committed edit closes the editor with focus back on the chip.
-
-#### Scenario: Values read as values
-- **WHEN** the user opens a task due tomorrow at 09:00 with priority 2 in "Work"
-- **THEN** the breadcrumb reads "Work", the chips read "Tomorrow 09:00" and "P2", and no input box is visible
-
-#### Scenario: Add a property
-- **WHEN** the user opens the Add control and picks Estimate
-- **THEN** an Estimate chip appears with its editor open and focused, and leaves again if the editor closes without a value
-
-#### Scenario: Edit a row with the keyboard
-- **WHEN** the user tabs to the Do on chip and presses Enter
-- **THEN** the When control opens with focus in it, and Escape closes it with focus back on the chip
+#### Scenario: Long title
+- **WHEN** the user opens a task whose title is wider than the panel
+- **THEN** the title wraps onto a second line in the header and remains editable in place, and no subtask count is shown in the header
 
 ### Requirement: Task panel tabs
-The tabbed area SHALL offer Comments (with the comment count), Activity and History as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity.
+The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The tab bar SHALL follow "Conversation tabs stay reachable".
 
 #### Scenario: Remembered tab
 - **WHEN** the user opens the Activity tab, closes the panel and opens another task
@@ -318,15 +315,19 @@ The tabbed area SHALL offer Comments (with the comment count), Activity and Hist
 - **THEN** its created time and its completed time are the first entries
 
 ### Requirement: Task panel comment composer
-The comment composer SHALL be pinned to the bottom of the panel while Comments is shown, so it is reachable without scrolling. `Shift+C` SHALL switch to Comments and focus the composer.
+The comment composer SHALL be pinned to the bottom of the panel while Comments is shown, resting as a single line that expands to the full composer (attach, submit, the submit key hint) when focused, when it holds a draft or a reply target, or when `Shift+C` is pressed; `Shift+C` SHALL switch to Comments and focus the composer.
 
 #### Scenario: Shortcut to the composer
 - **WHEN** the History tab is open and the user presses `Shift+C` outside a text field
-- **THEN** the Comments tab is shown and the composer has focus
+- **THEN** the Comments tab is shown, the composer is expanded and has focus
 
 #### Scenario: Composer without scrolling
 - **WHEN** a task with thirty comments is opened
-- **THEN** the composer is visible at the bottom of the panel before the user scrolls
+- **THEN** the composer line is visible at the bottom of the panel before the user scrolls
+
+#### Scenario: At rest
+- **WHEN** a task without a draft is opened and nothing is focused
+- **THEN** the composer is one line reading "Write a comment…" with no buttons under it, and the Comments list has the space the full composer used
 
 ### Requirement: Task panel in viewer mode
 For a viewer of a shared project every property row SHALL render as read-only text without an editor, the header SHALL omit Complete and Delete, and the Comments tab SHALL remain writable because viewers may comment.
@@ -460,3 +461,134 @@ After sign-in the client SHALL ask the browser to keep its storage persistent, s
 #### Scenario: Persistent storage
 - **WHEN** the user signs in on a browser that supports persistent storage
 - **THEN** the app requests it once, and works the same whatever the answer
+
+### Requirement: Task panel facets
+The panel SHALL group the task's properties into four facet lines, each with a leading icon and parts separated by a middle dot: Where (project › section, the parent task, the origin), When (do on, repeat, deadline, start, evening, reminders, zone), How (priority, estimate, labels) and Who (assignee, blocked by, blocks). Where, When and How SHALL always be shown; Who SHALL be shown when any of its parts has a value. A part SHALL read with the words the list row uses for the same fact.
+
+#### Scenario: Full task reads as four lines
+- **WHEN** the user opens a task due tomorrow at 09:00 that repeats every 3 months, has a deadline in 9 days, a start two days ago, two reminders, priority 2, a 2 h estimate, three labels, is assigned to the user and waits for "Collect the numbers", in "Website launch › Doing"
+- **THEN** the panel shows exactly four facet lines: "Website launch › Doing"; "Tomorrow 09:00 · every 3 months · deadline Sun 25 Oct, 9 days · since Wed 14 Oct · 2 reminders"; "P2 · 2 h" followed by the three label chips; "You · waits for Collect the numbers"
+
+#### Scenario: Facet without values is hidden
+- **WHEN** a task has no assignee, no blockers and nothing waits for it
+- **THEN** no Who line is shown, and "Assignee" and "Blocked by" are offered in the Add menu
+
+#### Scenario: Same words as the row
+- **WHEN** a task is due today, repeats every day and is marked for the evening
+- **THEN** its When line starts "Today · evening · every day", in the date tone the row uses
+
+#### Scenario: Origin opens its source
+- **WHEN** the user presses Enter on the origin part of a task captured from `https://example.org/post`
+- **THEN** the page opens in a new tab, no editor opens, the panel stays as it was, and Remove origin in the panel's header menu clears the origin as one offline-capable write
+
+#### Scenario: Viewer reads the lines
+- **WHEN** a viewer of a shared project opens one of its tasks
+- **THEN** the facet lines render as text, no part opens an editor, and the Add menu is absent
+
+### Requirement: Facet editors are popovers
+Activating a part SHALL open its editor as a popover anchored to the part from 640 px and as a bottom sheet below, with the facet's name and icon as its title and a footer offering Clear (when the part has a value) and Done. The panel's content SHALL not move while a popover is open. Done, Escape or a committed single-value edit SHALL close the popover and return focus to the part; Clear SHALL remove the value and close it.
+
+#### Scenario: Clear from the footer
+- **WHEN** the user opens the deadline part and chooses Clear
+- **THEN** the deadline is removed, the popover closes, the When line no longer reads a deadline, and no "×" control is rendered on any line
+
+#### Scenario: Layout stays
+- **WHEN** the user opens the Do on part on a 1280×800 screen
+- **THEN** the subtasks and the tabs keep their position in the panel while the popover is open
+
+#### Scenario: Phone sheet
+- **WHEN** the user taps the labels part on a 390 px wide screen
+- **THEN** the labels editor opens as a bottom sheet with the facet's title and Done, and closing it returns to the panel scrolled where it was
+
+### Requirement: When popover shows one segment
+The When popover SHALL offer the segments Do on, Start, Deadline, Repeat and Reminders in a segmented control and show one at a time, starting on the segment of the part that opened it (Do on when opened from the Add menu or a shortcut that names no part). The Do on segment SHALL hold the date, the time, the Evening toggle and the zone control.
+
+#### Scenario: Open on the clicked part
+- **WHEN** the user activates the "2 reminders" part
+- **THEN** the When popover opens on its Reminders segment with the first reminder control focused, and switching to Deadline shows only the deadline field
+
+#### Scenario: Shortcut from the list
+- **WHEN** a task is selected in a list and the user presses the deadline shortcut
+- **THEN** the panel opens with the When popover on its Deadline segment and the date field focused
+
+### Requirement: Add menu grouped by facet
+The Add control SHALL list the properties that have no value under the headings Where, When, How and Who, each with its shortcut, omitting a heading with nothing under it. Picking an entry SHALL add the part to its facet line with its editor open and focused; closing the editor without a value SHALL remove the part again and focus the Add control.
+
+#### Scenario: Add an estimate
+- **WHEN** the user opens Add, picks Estimate under How, types `1h30` and presses Enter
+- **THEN** the How line reads "P4 · 1 h 30" and focus is on the new part
+
+#### Scenario: Cancel leaves no trace
+- **WHEN** the user picks Deadline from Add and presses Escape without a date
+- **THEN** the When line is unchanged and focus is on the Add control
+
+### Requirement: Facet keyboard operation
+Each part SHALL be in the tab order; Enter or Space SHALL open its editor; `1` to `4` SHALL keep setting the priority while focus is in the panel outside a text field. Viewers' parts SHALL not be focusable as controls.
+
+#### Scenario: Move between parts
+- **WHEN** the user tabs to the first part of the When line and presses Tab, then Enter
+- **THEN** focus moves to the next part of the same line and its editor opens; Escape closes it with focus back on that part
+
+### Requirement: Task panel notes clamp
+In the panel, notes that are not focused SHALL be clamped to about eight lines with a "Show all" control when they are longer; focusing the notes or choosing Show all SHALL expand them for the rest of the time the task is open. The task page SHALL never clamp.
+
+#### Scenario: Long note in the panel
+- **WHEN** the user opens a task whose notes are forty lines long on a 1280×800 screen
+- **THEN** the panel shows the first lines of the notes, a "Show all" line, and the facet lines below it without scrolling
+
+#### Scenario: Editing expands
+- **WHEN** the user clicks into the clamped notes
+- **THEN** the whole note is shown and stays shown after the editor loses focus, until another task is opened
+
+### Requirement: Popover triggers toggle
+Activating the control that opened an anchored popover (a facet part, a picker trigger, a menu button) while that popover is open SHALL close it in one step, and it SHALL NOT reopen. Activating it while closed SHALL open it. A click on the trigger SHALL never count as a click outside the popover.
+
+#### Scenario: Second click closes
+- **WHEN** the When popover was opened from the Do on part and the user clicks the Do on part again
+- **THEN** the popover closes, stays closed, and focus is on the Do on part
+
+#### Scenario: No flicker
+- **WHEN** the user clicks the Do on part ten times in a row
+- **THEN** the popover is open after every odd click and closed after every even click, and is never closed and reopened within one click
+
+#### Scenario: Keyboard toggle
+- **WHEN** focus is on a facet part whose popover is open and the user presses Enter on the part
+- **THEN** the popover closes and focus stays on the part
+
+### Requirement: Do on segment
+The Do on segment of the When popover SHALL show, in order: quick choices (Today, Tomorrow, This weekend, Next week, No date), each with the date it means; one date field that shows the chosen date in words in the user's date format, accepts typed dates and relative words, and previews what it understood before it is committed; a month calendar that is visible without opening anything; an "Add time" control that reveals a time field with suggested times; the Evening switch; and, only when a time is set, one line naming the time zone behaviour ("Floating time" or "Fixed to <city>") with a Change control. The segment SHALL NOT contain a clear button of its own (Clear is in the popover's footer), and SHALL NOT show the zone as a button-styled value.
+
+#### Scenario: Pick tomorrow in one click
+- **WHEN** the user opens the Do on part of an undated task and chooses Tomorrow
+- **THEN** the task is due tomorrow, and the When line reads "Tomorrow"
+
+#### Scenario: Typed date with a preview
+- **WHEN** the user types `fri` into the date field
+- **THEN** a line under the field reads the next Friday's date in words before Enter is pressed, and Enter sets it
+
+#### Scenario: Dates in words
+- **WHEN** the user's date format is day-month and the task is due 2026-10-22
+- **THEN** the date field reads "Thu 22 Oct" and no field shows `10/22/2026`
+
+#### Scenario: Adding a time
+- **WHEN** the user chooses "Add time" and then the suggestion 09:00
+- **THEN** the task is due at 09:00, the zone line "Floating time · Change" appears, and "Add time" is replaced by the time field and "Remove time"
+
+#### Scenario: No zone without a time
+- **WHEN** the task is due on a date with no time
+- **THEN** the segment shows no zone line and no hint about time zones
+
+### Requirement: Conversation tabs stay reachable
+The tab bar of Comments, Activity, History and Time SHALL stay pinned under the panel header once the user has scrolled down to it, so the tabs are reachable without scrolling back up. Switching tabs SHALL keep the tab bar at the same position on screen, show the new tab's content from its start under the bar, and SHALL NOT make the panel jump, even when the new tab is shorter than the old one. The panel SHALL remain one scroll region.
+
+#### Scenario: Switch while reading a long thread
+- **WHEN** the user has scrolled the panel to the 10th of 14 comments and chooses Activity
+- **THEN** the tab bar is still under the header at the same position, the Activity entries start right under it, and nothing else in the panel moves
+
+#### Scenario: Short tab does not pull the page
+- **WHEN** the user switches from Comments with 14 comments to Activity with 3 entries
+- **THEN** the tab bar does not move on screen and the space below the entries is empty panel, not a jump
+
+#### Scenario: Tabs pinned
+- **WHEN** the user scrolls the panel past the subtasks into the comments
+- **THEN** the tab bar stays visible directly under the sticky header
