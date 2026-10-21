@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rule",
+  "description": "An automation rule exactly as the REST API returns it (OpenSpec automation-rules). The name is ciphertext for an encrypted account.",
+  "type": "object",
+  "required": ["id", "name", "enabled", "trigger", "actions"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "enabled": {"type": "boolean"},
+    "trigger": {"type": "object", "required": ["kind"], "properties": {"kind": {"type": "string"}}},
+    "condition": {"type": ["object", "null"]},
+    "actions": {"type": "object"},
+    "position": {"type": "number"},
+    "created_at": {"type": "number"},
+    "deleted_at": {"type": ["number", "null"]}
+  }
+}

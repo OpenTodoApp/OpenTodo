@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rule_run",
+  "description": "One run of an automation rule, from GET /api/v1/rules/{id}/runs (OpenSpec automation-rules). Task titles are never stored: resolve task ids yourself.",
+  "type": "object",
+  "required": ["id", "rule_id", "occurrence", "at", "outcome", "changes", "depth"],
+  "properties": {
+    "id": {"type": "integer"},
+    "rule_id": {"type": "string"},
+    "occurrence": {"type": "string", "description": "the run's idempotency key"},
+    "task_id": {"type": "string"},
+    "at": {"type": "integer", "description": "Unix milliseconds"},
+    "outcome": {"enum": ["pending", "applied", "already_matched", "skipped", "stopped", "failed", "partial"]},
+    "reason": {"type": "string"},
+    "changes": {"type": "array", "items": {"type": "object", "properties": {"task_id": {"type": "string"}, "fields": {"type": "object"}}}},
+    "depth": {"type": "integer"}
+  }
+}

@@ -250,8 +250,12 @@ func (s *Server) handleRuleRuns(w http.ResponseWriter, r *http.Request) {
 	if ok, err := s.ownRule(r.Context(), uid, id); err != nil {
 		s.internal(w, err)
 		return
-	} else if !ok || s.rules == nil {
+	} else if !ok {
 		writeError(w, http.StatusNotFound, "not_found", "rule not found")
+		return
+	}
+	if s.rules == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"runs": []any{}})
 		return
 	}
 	runs, err := s.rules.Store.Runs(r.Context(), id, rules.KeepRuns)
