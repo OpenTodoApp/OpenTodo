@@ -9,6 +9,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Asana: a project's CSV export (project menu → Export → CSV; OpenSpec change
@@ -137,90 +138,12 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			yield(rc.get)
 		}
 	})
+	f := asanaFile{projSource: projSource, loc: loc, me: me, byName: byName, byID: byID, custom: custom, fieldTypes: fieldTypes}
 	otherProjects := false
 	for _, rc := range recs {
-		get := rc.get
-		row := Row{Line: rc.line, Kind: KindTask, ProjectSourceID: projSource, SectionName: get("Section/Column")}
-		if id := get("Task ID"); id != "" {
-			row.SourceID = "asana:" + id
-		} else {
-			row.SourceID = fmt.Sprintf("asana:line:%d", rc.line)
-		}
-		row.Origin = importedOrigin("asana", row.SourceID)
-		row.Title = get("Name")
-		if row.Title == "" {
-			row.fail("name is required")
-		}
-		row.Description = get("Notes")
-		row.Labels = splitList(get("Tags"))
-		if p := get("Parent task"); p != "" {
-			if src, ok := byName[strings.ToLower(p)]; ok && src != row.SourceID {
-				row.ParentSourceID = src
-			} else {
-				row.warn("parent task %q is not in this file; imported as a top-level task", p)
-			}
-		}
-		if d := get("Due Date"); d != "" {
-			if t := get("Due Time"); t != "" && len(d) == 10 {
-				d += " " + t
-			}
-			due, err := parseDue(d, loc)
-			if err != nil {
-				row.warn("due date %q not understood; imported without a due date", get("Due Date"))
-			} else {
-				row.Due = due
-			}
-		}
-		if s := get("Start Date"); s != "" {
-			if d, err := parseDue(s, loc); err == nil && d != nil {
-				row.Start = d.Date
-			} else {
-				row.warn("start date %q not understood; dropped", s)
-			}
-		}
-		if ts := get("Completed At"); ts != "" {
-			row.Completed = true
-			if at, err := parseTimestamp(ts, loc); err == nil {
-				row.CompletedAt = at
-			}
-		}
-		if at, err := parseTimestamp(get("Created At"), loc); err == nil {
-			row.CreatedAt = at
-		}
-		if p := get("Priority"); p != "" {
-			if v, ok := asanaPriority[strings.ToLower(p)]; ok {
-				row.Priority = v
-			} else {
-				row.warn("priority %q not recognised; imported as p4", p)
-			}
-		}
-		assignee, email := strings.ToLower(get("Assignee")), strings.ToLower(get("Assignee Email"))
-		if me != "" && (assignee == me || email == me) {
-			row.AssignSelf = true
-		} else if assignee != "" || email != "" {
-			row.warn("assignee dropped (only your own account can be assigned by an import)")
-		}
-		if get("Collaborators") != "" {
-			row.warn("collaborators dropped (an import cannot share a task)")
-		}
-		if get("Projects") != "" {
+		row := f.row(rc.line, rc.get)
+		if rc.get("Projects") != "" {
 			otherProjects = true
-		}
-		for _, ref := range splitList(get("Blocked By (Dependencies)")) {
-			if byID[ref] {
-				row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, "asana:"+ref)
-			} else if src, ok := byName[strings.ToLower(ref)]; ok {
-				row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, src)
-			} else {
-				row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, "asana:"+ref)
-			}
-		}
-		for _, c := range custom {
-			if v := get(c); v != "" {
-				if fv, ok := asanaFieldValue(c, fieldTypes[c], v); ok {
-					row.Fields = append(row.Fields, fv)
-				}
-			}
 		}
 		out.Rows = append(out.Rows, row)
 	}
@@ -229,6 +152,101 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		out.Notes = append(out.Notes, "the Projects column names other Asana projects; one file is imported as one project, so they are not created")
 	}
 	return out, nil
+}
+
+// asanaFile is what mapping one row needs from the whole file.
+type asanaFile struct {
+	projSource string
+	loc        *time.Location
+	me         string // the importing account's email, lower case
+	byName     map[string]string
+	byID       map[string]bool
+	custom     []string
+	fieldTypes map[string]string
+}
+
+// row maps one CSV record to a task row.
+func (f asanaFile) row(line int, get func(string) string) Row {
+	row := Row{Line: line, Kind: KindTask, ProjectSourceID: f.projSource, SectionName: get("Section/Column")}
+	if id := get("Task ID"); id != "" {
+		row.SourceID = "asana:" + id
+	} else {
+		row.SourceID = fmt.Sprintf("asana:line:%d", line)
+	}
+	row.Origin = importedOrigin("asana", row.SourceID)
+	row.Title = get("Name")
+	if row.Title == "" {
+		row.fail("name is required")
+	}
+	row.Description = get("Notes")
+	row.Labels = splitList(get("Tags"))
+	if p := get("Parent task"); p != "" {
+		if src, ok := f.byName[strings.ToLower(p)]; ok && src != row.SourceID {
+			row.ParentSourceID = src
+		} else {
+			row.warn("parent task %q is not in this file; imported as a top-level task", p)
+		}
+	}
+	if d := get("Due Date"); d != "" {
+		if t := get("Due Time"); t != "" && len(d) == 10 {
+			d += " " + t
+		}
+		due, err := parseDue(d, f.loc)
+		if err != nil {
+			row.warn("due date %q not understood; imported without a due date", get("Due Date"))
+		} else {
+			row.Due = due
+		}
+	}
+	if s := get("Start Date"); s != "" {
+		if d, err := parseDue(s, f.loc); err == nil && d != nil {
+			row.Start = d.Date
+		} else {
+			row.warn("start date %q not understood; dropped", s)
+		}
+	}
+	if ts := get("Completed At"); ts != "" {
+		row.Completed = true
+		if at, err := parseTimestamp(ts, f.loc); err == nil {
+			row.CompletedAt = at
+		}
+	}
+	if at, err := parseTimestamp(get("Created At"), f.loc); err == nil {
+		row.CreatedAt = at
+	}
+	if p := get("Priority"); p != "" {
+		if v, ok := asanaPriority[strings.ToLower(p)]; ok {
+			row.Priority = v
+		} else {
+			row.warn("priority %q not recognised; imported as p4", p)
+		}
+	}
+	assignee, email := strings.ToLower(get("Assignee")), strings.ToLower(get("Assignee Email"))
+	if f.me != "" && (assignee == f.me || email == f.me) {
+		row.AssignSelf = true
+	} else if assignee != "" || email != "" {
+		row.warn("assignee dropped (only your own account can be assigned by an import)")
+	}
+	if get("Collaborators") != "" {
+		row.warn("collaborators dropped (an import cannot share a task)")
+	}
+	for _, ref := range splitList(get("Blocked By (Dependencies)")) {
+		if f.byID[ref] {
+			row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, "asana:"+ref)
+		} else if src, ok := f.byName[strings.ToLower(ref)]; ok {
+			row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, src)
+		} else {
+			row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, "asana:"+ref)
+		}
+	}
+	for _, c := range f.custom {
+		if v := get(c); v != "" {
+			if fv, ok := asanaFieldValue(c, f.fieldTypes[c], v); ok {
+				row.Fields = append(row.Fields, fv)
+			}
+		}
+	}
+	return row
 }
 
 // asanaFieldTypes infers each custom column's type from all its values: numbers,
