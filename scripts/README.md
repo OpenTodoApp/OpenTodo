@@ -39,6 +39,15 @@ node scripts/e2e-views.mjs [screenshot-dir]
 CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ```
 
+## `e2e-network.mjs`
+
+Network audit for locations and maps (OpenSpec change `task-locations`, task 7.1), run by `make e2e`. It starts a fake tile and Photon provider on localhost and two fresh servers of its own (`OPENTODO_BIN`, default `bin/opentodo`), one with `OPENTODO_MAPS=off` and one with maps on, both pointed at the fake with `OPENTODO_MAPS_TILES_URL` and `OPENTODO_MAPS_GEOCODER_URL`, so nothing reaches OpenFreeMap or Photon. In each it opens a task with a location, its location editor (searching an address when maps are on) and the Locations page, and fails when the browser contacts any origin but the server's, when the server contacts the provider with maps off, or when a provider request with maps on lacks OpenTodo's User-Agent or carries the viewer's cookie, token or address. The map draws through SwiftShader WebGL, so tiles are really requested.
+
+```bash
+make web && go build -o bin/opentodo ./cmd/opentodo
+node scripts/e2e-network.mjs
+```
+
 ## `e2e-layout.mjs`
 
 Layout check (OpenSpec change `mobile-layout`), run by the `layout` CI job: seeds a fresh server through the API, then opens every screen (Inbox, Today, Upcoming, Assigned, Day, Week, Completed, Filter, Trash, Activity, a project in list and board layout, a saved view, a dashboard, a label, Labels, Views, Settings, Import, sign-in) and every overlay reachable from it (notifications, keyboard help, the sidebar drawer and its view menu, the task panel, the label, assignee and mention pickers, the reminder toast, the project, section, label and view menus, share, rename and new-dashboard prompts, voice consent, the delete-account confirmation) at 360, 390 and 768 px, light and dark, in Chromium and WebKit, with a touch screen. It fails when a page scrolls sideways outside a `data-scroll-x` region, an overlay or its close control is outside the viewport or covered, an overlay does not close with Escape, its close button or a tap outside, focus does not return to the trigger, scrolling inside an overlay moves the page behind (Chromium; mobile WebKit has no wheel events), or a control is smaller than 44 × 44 px or only visible on hover. Each failure names screen, overlay, viewport, theme and engine, with a screenshot in the report directory.

@@ -217,6 +217,7 @@ e2e: cli
 	  echo "== $$s"; OPENTODO_URL=http://127.0.0.1:18081 node scripts/$$s.mjs; st=$$?; kill $$pid; wait $$pid 2>/dev/null; \
 	  if [ $$st -ne 0 ]; then cat $$d/server.log; rm -rf $$d; exit $$st; fi; rm -rf $$d; \
 	done
+	@echo "== e2e-network"; OPENTODO_BIN=./bin/opentodo node scripts/e2e-network.mjs
 
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
