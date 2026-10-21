@@ -267,7 +267,7 @@ export function LineChart({ points, aName, bName, summary }: { points: readonly 
               </span>
             ))}
           </div>
-          <div {...grid.gridProps} aria-label={summary} className="absolute inset-0 flex" data-chart-grid>
+          <div {...grid.gridProps} role="grid" aria-label={summary} className="absolute inset-0 flex" data-chart-grid>
             <div role="row" className="flex h-full w-full">
               {points.map((_, i) => (
                 <div key={i} {...grid.cellProps(0, i)} className="h-full min-w-0 flex-1 cursor-default outline-none focus-visible:bg-sunken/60 focus-visible:outline-2 focus-visible:outline-focus" data-point={i} />
@@ -308,7 +308,7 @@ export function HBars({ bars, summary }: { bars: readonly HBar[]; summary: strin
   const grid = useChartGrid(bars.length, 1, label)
   return (
     <div ref={box} className="relative">
-      <div {...grid.gridProps} aria-label={summary} className="space-y-1.5" data-chart-grid data-hbars>
+      <div {...grid.gridProps} role="grid" aria-label={summary} className="space-y-1.5" data-chart-grid data-hbars>
         {bars.map((b, i) => (
           <div key={i} role="row" className="grid grid-cols-[minmax(0,7rem)_1fr] items-center gap-2">
             <span className="truncate text-meta text-default" aria-hidden="true">{b.label}</span>
@@ -366,7 +366,7 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
         <div className="grid grid-rows-7 gap-[2px] text-hint text-muted" aria-hidden="true">
           {rowLabels.map((l, i) => <span key={i} className="h-(--heat) leading-(--heat)">{i % 2 === 0 ? l : ''}</span>)}
         </div>
-        <div {...grid.gridProps} aria-label={summary} className="grid auto-cols-(--heat) grid-rows-7 gap-[2px]" data-chart-grid>
+        <div {...grid.gridProps} role="grid" aria-label={summary} className="grid auto-cols-(--heat) grid-rows-7 gap-[2px]" data-chart-grid>
           {Array.from({ length: 7 }, (_, r) => (
             <div key={r} role="row" className="contents">
               {weeks.map((col, c) => {
@@ -412,7 +412,7 @@ export function DotGrid({ counts, max, rowLabels, columnLabels, tip, summary }: 
         <span />
         {columnLabels.map((h, i) => <span key={i} className="text-center text-hint text-muted">{i % 6 === 0 ? h : ''}</span>)}
       </div>
-      <div {...grid.gridProps} aria-label={summary} className="grid" data-chart-grid>
+      <div {...grid.gridProps} role="grid" aria-label={summary} className="grid" data-chart-grid>
         {counts.map((row, r) => (
           <div key={r} role="row" className="inline-grid grid-cols-[2.5rem_repeat(24,var(--dot))] items-center [--dot:18px] pointer-coarse:[--dot:24px]">
             <span className="text-hint text-muted" aria-hidden="true">{rowLabels[r]}</span>
