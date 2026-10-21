@@ -15,7 +15,6 @@ import (
 type fake struct {
 	log      []Op
 	shared   []string
-	served   bool
 	received []Op
 	gen      string
 }

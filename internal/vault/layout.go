@@ -252,9 +252,7 @@ func (v *view) line(id string, labels map[string]string, extra string) Line {
 			l.Tags = append(l.Tags, sl)
 		}
 	}
-	for _, b := range r.Strs("blocked_by") {
-		l.Blocked = append(l.Blocked, b)
-	}
+	l.Blocked = append(l.Blocked, r.Strs("blocked_by")...)
 	for k, val := range v.readOnly(id) {
 		l.ReadOnly[k] = val
 	}

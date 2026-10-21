@@ -64,7 +64,7 @@ var (
 // Line is one parsed task line. Fields hold the text as written; Bad lists the
 // fields whose value did not parse (the task keeps its value for those).
 type Line struct {
-	// Depth is the nesting level from the indentation: two spaces or one tab per level.
+	// Indent is the line's indentation: two spaces or one tab per nesting level.
 	Indent string
 	Done   bool
 	Title  string
@@ -99,11 +99,6 @@ func isTaskLine(s string) (indent string, done bool, content string, ok bool) {
 		return "", false, "", false
 	}
 	return m[1], m[2] != " ", m[3], true
-}
-
-// depthOf is the nesting level of an indentation: a tab or two spaces per level.
-func depthOf(indent string) int {
-	return widthOf(indent) / 2
 }
 
 // widthOf is the indentation width with a tab counted as two spaces.
