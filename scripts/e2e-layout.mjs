@@ -102,6 +102,12 @@ async function seed() {
   // checked signed out and signed in, and the share dialog lists it.
   const { link: projectLink } = await A('POST', `/api/v1/projects/${home.id}/invites`, { role: 'editor', email: 'dora@example.com' })
   const { link: publicLink } = await A('POST', `/api/v1/projects/${home.id}/public-links`, { rights: 'tick', name: 'Family chat' })
+  // A task page with a long title, a checklist and a guest's reply (task-pages).
+  const fence = await A('POST', '/api/v1/tasks', { title: 'Paint the fence along the garden path before the neighbours come over', description: `Two coats. See ${LONG_URL}` })
+  for (const title of ['Buy primer', 'Sand the boards']) await A('POST', '/api/v1/tasks', { title, parent_id: fence.id })
+  const { link: pageLink } = await A('POST', `/api/v1/tasks/${fence.id}/page`, { rights: 'tick', label: 'paint-the-fence' })
+  const pageSecret = pageLink.split('/t/')[1].split('/')[0]
+  await A('POST', `/api/v1/pages/${pageSecret}/replies`, { name: 'Marco', body: 'Bought the primer.' })
   const sections = {}
   let i = 1
   for (const n of ['Planning', 'In progress', 'Waiting']) sections[n] = (await A('POST', '/api/v1/sections', { name: n, project_id: home.id, position: i++ })).id
@@ -175,7 +181,7 @@ async function seed() {
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
 }
 
 // ------------------------------------------------------------------ screens
@@ -188,6 +194,7 @@ function screens(ids) {
     // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'public-list', path: `/public/${ids.publicLink}`, anon: true, ready: (p) => p.locator('[data-public-task]').first().waitFor() },
+    { name: 'task-page', path: `/t/${ids.pageSecret}/paint-the-fence`, anon: true, ready: (p) => p.locator('[data-page-send]').waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
     { name: 'inbox', path: '/inbox', ready: row('Undated inbox task'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog', 'template-detail'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },

@@ -90,7 +90,8 @@ export function TaskPageScreen({ secret, fragment }: { secret: string; fragment:
     }
   }, [load])
 
-  if (state.kind === 'loading') return <Shell><p className="text-body text-muted">{t('Loading…')}</p></Shell>
+  // data-story-pending: the workbench waits for the first answer before capturing.
+  if (state.kind === 'loading') return <Shell><p className="text-body text-muted" data-story-pending>{t('Loading…')}</p></Shell>
   if (state.kind === 'gone') return <Shell><Ended title={t('This page is no longer available')} body={t('The link was revoked or has expired. Ask the person who sent it for a new one.')} /></Shell>
   if (state.kind === 'locked') return <Shell><Ended title={t('This page cannot be opened without the full link')} body={t('Part of the link is missing or changed. Open the complete link you were sent, including everything after the # sign.')} /></Shell>
 

@@ -98,6 +98,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | comment | `mentions` | array of strings (account ids; filtered to members at receipt) |
 | comment | `created_at` | number |
 | comment | `edited_at`, `deleted_at` | number or null |
+| comment | `guest_name` | string or null: the name a guest typed on a [task page](task-pages.md) (content: encrypted for an encrypted account) |
+| comment | `page_id` | string or null: the task page a guest's reply came through |
 | attachment | `task_id`, `author_id` | string (task id, account id; required, fixed at creation) |
 | attachment | `comment_id` | string (a comment of the same task by the same author) or null; fixed |
 | attachment | `name` | string, 1–255 characters without `/` or `\` (the author may rename) |
@@ -181,6 +183,7 @@ The editor saves a debounced full state (400 ms after the last keystroke, and on
 
 A `comment` is a threaded markdown note on a task (OpenSpec `comments-and-activity`). It is an ordinary entity, so comments are written offline, queue in the outbox and converge per field; the body is one LWW register like `description` (two offline edits of one comment keep the newer body).
 
+- **Guests.** A reply through a [task page](task-pages.md) is a comment by the page's publisher from the device `page:<page-id>`, with `guest_name` and `page_id` set. `page:` is reserved like `public:`: `/api/v1/sync` refuses it from devices. On an encrypted page the server keeps the reply as ciphertext; the publisher's device imports it as an ordinary comment whose id is derived from the reply's id, so two devices importing at once converge on one comment.
 - **Scope.** A comment lives in the scope of its task: the shared project's scope, or the author's personal scope for a task in the Inbox or an unshared project. A comment created in the same batch as its task follows that task's `project_id` like a new task does. Sharing a project later relabels its tasks' comments with them; purging a task purges its comments (and leaves markers for them).
 - **Authorship, checked per op at receipt.** On the op that creates a comment, `author_id` must equal the submitting account; `task_id` and `author_id` can never change afterwards. `body`, `mentions`, `edited_at`, `parent_id` and `created_at` are accepted only from the author. `deleted_at` is accepted from the author, a project admin and the owner. A violation is refused with reason `forbidden` and the server's value travels back in `ops`, like any refused field. A comment on a task the author cannot read, or on a task that does not exist, is refused; ops for a comment whose task was purged are discarded as duplicates.
 - **Viewers may comment.** Commenting is the one write a viewer of a shared project is expected to make, so a viewer may create comments and edit or delete their own. This is the only exception to "viewers write nothing".

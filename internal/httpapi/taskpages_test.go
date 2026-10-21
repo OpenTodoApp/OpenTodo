@@ -398,6 +398,76 @@ func TestTaskPageEncrypted(t *testing.T) {
 	}
 }
 
+// TestTaskPageModeSwitch: a page follows its task between an encrypted personal
+// scope and a readable one (lifecycle requirement, task 4.4).
+func TestTaskPageModeSwitch(t *testing.T) {
+	// Entering an encrypted scope: the owner turns encryption on; the live page is
+	// unavailable until a device uploads a snapshot with the wrapped key.
+	se := newShareEnv(t)
+	task := personalTask(t, se.alice, map[string]any{"title": "Water the plants"})
+	secret, _ := publishPage(t, se.alice, task, map[string]any{"rights": "reply"})
+	guest := newClientAt(se.alice, "10.7.5.1")
+	resp, out := guest.do("GET", "/api/v1/pages/"+secret, nil)
+	guest.mustStatus(resp, 200, out)
+	resp, out = se.alice.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 4))
+	se.alice.mustStatus(resp, 201, out)
+	if resp, out := guest.do("GET", "/api/v1/pages/"+secret, nil); resp.StatusCode != 404 || errCode(out) != "page_invalid" {
+		t.Fatalf("encrypted without snapshot = %d %v", resp.StatusCode, out)
+	}
+	p := "/api/v1/tasks/" + task + "/page/snapshot"
+	if resp, out := se.alice.do("PUT", p, map[string]any{"ciphertext": ct("first"), "version": 1}); resp.StatusCode != 400 {
+		t.Fatalf("first snapshot without a key = %d %v", resp.StatusCode, out)
+	}
+	resp, out = se.alice.do("PUT", p, map[string]any{"ciphertext": ct("first"), "version": 1, "wrappedKey": "wrapped"})
+	se.alice.mustStatus(resp, 200, out)
+	resp, out = guest.do("GET", "/api/v1/pages/"+secret, nil)
+	guest.mustStatus(resp, 200, out)
+	if out["mode"] != "encrypted" || out["snapshot"] != ct("first") {
+		t.Fatalf("after the snapshot = %v", out)
+	}
+
+	// Leaving it: encryption is turned off (the key record goes; an encrypted
+	// account cannot share a project), so the server reads the task again; the
+	// page is served live and the snapshot and key are dropped.
+	if _, err := se.alice.db.Exec(`DELETE FROM encryption_keys`); err != nil {
+		t.Fatal(err)
+	}
+	resp, out = se.alice.do("PATCH", "/api/v1/tasks/"+task, map[string]any{"title": "Water the plants on the balcony"})
+	se.alice.mustStatus(resp, 200, out)
+	resp, out = guest.do("GET", "/api/v1/pages/"+secret, nil)
+	guest.mustStatus(resp, 200, out)
+	if out["mode"] != "live" || out["title"] != "Water the plants on the balcony" {
+		t.Fatalf("after leaving = %v", out)
+	}
+	var snapshot, wrapped any
+	se.alice.db.QueryRow(`SELECT snapshot, wrapped_key FROM task_pages WHERE revoked_at IS NULL`).Scan(&snapshot, &wrapped)
+	if snapshot != nil || wrapped != nil {
+		t.Fatalf("snapshot kept: %v %v", snapshot, wrapped)
+	}
+}
+
+// TestTaskPageConcurrentEdit: a guest completes the task while its owner, offline,
+// changes the due date; both changes survive (last writer wins per field).
+func TestTaskPageConcurrentEdit(t *testing.T) {
+	se := newShareEnv(t)
+	task := personalTask(t, se.alice, map[string]any{"title": "Fix the gate", "due": map[string]any{"date": "2026-10-20"}})
+	secret, _ := publishPage(t, se.alice, task, map[string]any{"rights": "tick"})
+	// The owner's offline edit: after the task was created, before the guest's tick,
+	// and it reaches the server only after the tick.
+	time.Sleep(20 * time.Millisecond)
+	offlineTS := time.Now().UnixMilli()
+	time.Sleep(20 * time.Millisecond)
+	guest := newClientAt(se.alice, "10.7.6.1")
+	resp, out := guest.do("POST", "/api/v1/pages/"+secret+"/tick", map[string]any{"taskId": task, "completed": true, "name": "Marco"})
+	guest.mustStatus(resp, 200, out)
+	syncOnce(se.alice, "laptop", 0, []map[string]any{{"id": ids.New(), "entity": "task", "entityId": task, "field": "due", "value": map[string]any{"date": "2026-10-28"}, "ts": offlineTS, "device": "laptop"}})
+	resp, out = se.alice.do("GET", "/api/v1/tasks/"+task, nil)
+	se.alice.mustStatus(resp, 200, out)
+	if out["completed_at"] == nil || out["due"].(map[string]any)["date"] != "2026-10-28" {
+		t.Fatalf("converged = %v", out)
+	}
+}
+
 func TestTaskPageShellAndLog(t *testing.T) {
 	if got := redactPath("/t/abcdefghijklmnopqrstuv/paint-the-fence"); got != "/t/[redacted]" {
 		t.Fatalf("redact page = %q", got)

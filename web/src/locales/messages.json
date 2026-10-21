@@ -133,6 +133,15 @@
   "<b>{actor}</b> mentioned you on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{name}</b> replied on <b2>{task}</b2>": [
+    "web/src/app/NotificationBell.tsx"
+  ],
+  "<b>{task}</b> was marked done through its task page": [
+    "web/src/app/NotificationBell.tsx"
+  ],
+  "<b>{task}</b> was reopened through its task page": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<span>?</span>Help": [
     "web/src/app/help/HelpLink.tsx"
   ],
@@ -261,6 +270,9 @@
   ],
   "A notice on any screen after a long stretch of work without a break.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "A page anyone with the link can open, reply to and tick": [
+    "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "A part of life you keep up, made of projects.": [
     "web/src/lib/method/vocabulary.json"
@@ -953,6 +965,15 @@
   "Anyone with the link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx"
+  ],
+  "Anyone with the link can open the page, without an account.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Anyone with the link can open this page. It is read-only.": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Anyone with the link can open this page. Your replies are visible to everyone who has it.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Anyone with the link sees this project's open tasks without an account: no notes, labels or names. Use it for a shopping list in a group chat.": [
     "web/src/app/PublicLinksSection.tsx"
@@ -1773,6 +1794,9 @@
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Checklist": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "Choice": [
     "web/src/lib/fields.ts"
   ],
@@ -2280,6 +2304,9 @@
   "Copy URL": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Copy a new link": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Copy address": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -2291,6 +2318,9 @@
   ],
   "Copy configuration": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "Copy it now: it will not be shown again. Anyone with the link can open the page.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Copy link": [
     "web/src/app/InviteLinksSection.tsx",
@@ -2341,6 +2371,9 @@
   ],
   "Could not connect to the mail server": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Could not refresh. Replying and ticking are off until the connection is back.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.": [
     "web/src/app/PublicListScreen.tsx"
@@ -3682,6 +3715,9 @@
   "Expires {instant}": [
     "web/src/app/MembersPanel.tsx"
   ],
+  "Expires {time}": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Expires {when} · created by {name}": [
     "web/src/app/InviteLinksSection.tsx"
   ],
@@ -4272,6 +4308,24 @@
   "Group chat": [
     "web/src/app/PublicLinksSection.tsx"
   ],
+  "Guest (task page)": [
+    "web/src/lib/activity.ts"
+  ],
+  "Guests can": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Guests can read and reply.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Guests can read the task.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Guests can reply, tick subtasks and mark the task done.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Guests see where the task happens.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Has a day: Today and Upcoming.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -4502,6 +4556,15 @@
   ],
   "In 2 weeks": [
     "web/src/lib/dates.ts"
+  ],
+  "In 30 days": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "In 7 days": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "In 90 days": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "In Filter: jump from the query to the first result / back to the query": [
     "web/src/lib/shortcuts.ts"
@@ -4937,6 +5000,9 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TaskListView.tsx"
   ],
+  "Label (optional)": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Label menu": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -5174,6 +5240,9 @@
   ],
   "Link copied": [
     "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Link to share": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Link your {name} account to sign in with it.": [
     "web/src/app/SsoPanel.tsx"
@@ -5447,6 +5516,9 @@
   ],
   "Maps are turned off on this server.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "Mark as done": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Mark {title} for This Evening": [
     "web/src/app/palette/registry.ts"
@@ -5892,6 +5964,9 @@
   "New recovery codes": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "New reply on the page of <b>{task}</b>": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "New section name": [
     "web/src/app/Sections.tsx"
   ],
@@ -6227,6 +6302,9 @@
   ],
   "No remembered browsers.": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "No replies yet.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "No review finished yet": [
     "web/src/app/review/ReviewView.tsx"
@@ -7222,6 +7300,9 @@
   "Parse natural language in quick add": [
     "web/src/app/QuickAddSettings.tsx"
   ],
+  "Part of the link is missing or changed. Open the complete link you were sent, including everything after the # sign.": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "Passkey": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -7759,6 +7840,24 @@
   "Public link revoked": [
     "web/src/app/auditFormat.ts"
   ],
+  "Publish": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Publish task page": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Publish task page…": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Published": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Published {time}": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Publishing failed. Try again.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Purge history": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -7841,6 +7940,9 @@
   ],
   "Reactivate {name}?": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "Read": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Read the docs": [
     "web/src/app/AboutSection.tsx"
@@ -8177,6 +8279,12 @@
   ],
   "Reply": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Reply and tick": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Replying as {name}": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Replying to <strong>{name}</strong>": [
     "web/src/app/task-detail/CommentsTab.tsx"
@@ -8563,6 +8671,9 @@
   "Save my provider": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Save name": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "Save options": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -8850,6 +8961,9 @@
   "Sending ping…": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Sent. It appears here once the owner’s device picks it up.": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "Server": [
     "web/src/app/settingsSections.ts"
   ],
@@ -9107,6 +9221,9 @@
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": [
     "web/src/app/vim/commands.ts"
   ],
+  "Show the map": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Show the start guide again": [
     "web/src/app/method/HowYouWorkSection.tsx"
   ],
@@ -9122,6 +9239,12 @@
   "Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Shown after the link’s secret, to say what the page is about. Lowercase letters, digits and hyphens.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Shown after the link’s secret. The server can read it, so keep the task’s content out of it.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "Shown as \"Sign in with …\".": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -9133,6 +9256,9 @@
   ],
   "Shown at the top of tomorrow’s Daily check.": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Shown with your replies, followed by “(guest)”.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Sidebar": [
     "web/src/lib/settingsCopy.ts"
@@ -9806,6 +9932,18 @@
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
+  "Task page": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Task page published": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Task pages need a connection": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Task page…": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
   "Task properties": [
     "web/src/app/task-list/InlineEditor.tsx"
   ],
@@ -9922,6 +10060,9 @@
   ],
   "That code is not valid. Type the newest code from your app.": [
     "web/src/app/ReauthDialog.tsx"
+  ],
+  "That did not go through. Check the connection and try again.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "That identity is already linked to another account on this server.": [
     "web/src/app/sso.ts"
@@ -10166,6 +10307,9 @@
   ],
   "The link stops working. Nobody can create an account with it.": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "The link was revoked or has expired. Ask the person who sent it for a new one.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "The link was sent to {sentTo}.": [
     "web/src/app/InviteLinksSection.tsx"
@@ -10895,8 +11039,17 @@
   "This occurrence only: {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "This page cannot be opened without the full link": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "This page expired. Reload it and try again.": [
     "web/src/lib/demo.ts"
+  ],
+  "This page is no longer available": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
+  "This page is no longer available.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This page reloads when the server is back, usually within a few seconds.": [
     "web/src/app/RestoreSection.tsx"
@@ -11018,6 +11171,18 @@
   ],
   "This site may show notifications.": [
     "web/src/lib/push.ts"
+  ],
+  "This task has a page anyone with its link can open": [
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "This task is end-to-end encrypted: the part of the link after # opens it, and the server never receives it.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "This task is published: comments you write from now on are visible on its page.": [
+    "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "This task is shown live on its page; it needs no snapshot.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This task no longer exists.": [
     "web/src/app/TaskPage.tsx"
@@ -11174,6 +11339,9 @@
   "To answer, the assistant sends what you type and the task data it needs to <strong>{provider}</strong>{model}. Your server owner chose it. Nothing is sent before you accept.": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
+  "To do on {date}": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "To the bottom": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -11299,6 +11467,9 @@
   ],
   "Too many new sandboxes from your network. Try again in an hour.": [
     "web/src/lib/demo.ts"
+  ],
+  "Too many replies on this page for now. Try again later.": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Too many requests": [
     "web/src/app/EmailScreens.tsx"
@@ -11622,6 +11793,9 @@
   ],
   "Unlock encryption on this device to open this file.": [
     "web/src/lib/attachments.ts"
+  ],
+  "Unlock encryption on this device to publish this task.": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Unlock encryption on this device to rename it.": [
     "web/src/app/locations/PlacesView.tsx"
@@ -12179,6 +12353,9 @@
   "Write a reply": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "Write a reply…": [
+    "web/src/page/TaskPageScreen.tsx"
+  ],
   "XXXXX-XXXXX": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -12403,6 +12580,9 @@
   ],
   "Your loops, your server|method": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Your name": [
+    "web/src/page/TaskPageScreen.tsx"
   ],
   "Your name, email and role": [
     "web/src/app/settingsIndex.ts"
@@ -12968,6 +13148,9 @@
   "labels": [
     "web/src/lib/activityRuns.ts"
   ],
+  "last opened {time}": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "last sign-in {instant}": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -13520,6 +13703,9 @@
   "this is not a valid recovery key; check for typos": [
     "web/src/lib/crypto.ts"
   ],
+  "through the task page": [
+    "web/src/app/task-detail/CommentsTab.tsx"
+  ],
   "time tracked on the task: any, or compared with 30m, 1h30, 90": [
     "web/src/app/FilterView.tsx"
   ],
@@ -14016,6 +14202,9 @@
   "{n, plural, one {# reminder} other {# reminders}}": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "{n, plural, one {# reply} other {# replies}} from guests": [
+    "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
   "{n, plural, one {# repository} other {# repositories}}": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -14198,6 +14387,13 @@
   ],
   "{n, plural, one {task} other {tasks}}": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "{name} (guest)": [
+    "web/src/app/task-detail/CommentsTab.tsx",
+    "web/src/page/TaskPageScreen.tsx"
+  ],
+  "{name} (guest, task page)": [
+    "web/src/lib/activity.ts"
   ],
   "{name} (you)": [
     "web/src/app/ShareDialog.tsx"

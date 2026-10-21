@@ -158,6 +158,17 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/projects/{id}/public-links/{linkId}` | owner, admin of the project | revoke → 204 |
 | GET | `/api/v1/public/{token}` | none | a public list `{projectName, projectColor, rights, sections, tasks, serverTime}` |
 | POST | `/api/v1/public/{token}/tick` | none (a `tick` link) | `{taskId, completed}` → `{taskId, completed_at}` |
+| POST | `/api/v1/tasks/{id}/page` | the task's owner, owner or admin of its project; fresh; full token | `{rights, label?, expiresInDays?, includeMap?, snapshot?, wrappedKey?}` → 201 the page with `link` (shown once), see [Task pages](#task-pages) |
+| GET | `/api/v1/tasks/{id}/page` | the same | the active page's status (never the secret or a key) |
+| DELETE | `/api/v1/tasks/{id}/page` | the same | revoke → 204 |
+| GET | `/api/v1/task-pages` | signed in, full token | the caller's own active pages, with the wrapped share key of encrypted ones |
+| PUT | `/api/v1/tasks/{id}/page/snapshot` | the publisher, full token | `{ciphertext, version, wrappedKey?}` → 200; an older `version` changes nothing |
+| GET | `/api/v1/tasks/{id}/page/replies` | the publisher, full token | pending encrypted replies `{replies:[{id, ciphertext, createdAt}]}` |
+| DELETE | `/api/v1/tasks/{id}/page/replies/{replyId}` | the publisher, full token | confirm an imported reply → 204 |
+| GET | `/api/v1/pages/{secret}` | none | the page: `mode` `live` (the task's shown fields) or `encrypted` (`snapshot`) |
+| POST | `/api/v1/pages/{secret}/replies` | none (`reply` or `tick` page) | `{name, body}`, or `{ciphertext}` on an encrypted page → 201 |
+| POST | `/api/v1/pages/{secret}/tick` | none (a `tick` page) | `{taskId, completed, name}` → `{taskId, completed_at}` |
+| GET | `/api/v1/pages/{secret}/files/{fileId}`, `…/maps/…` | none | a file of the task, as a download; the page's map style, tiles, fonts and sprites |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
@@ -1621,6 +1632,16 @@ A tenant of a host (see [host mode](self-hosting/host-mode.md)) answers like any
 `GET /api/v1/export/archive` (owner, a session or an `admin` token, since the archive holds every account's credentials; a stale session gets `403 reauth_required`, a `full` token `403 insufficient_scope`) streams the whole server as a backup archive (`application/gzip`, the format `opentodo restore` reads) and records `export.requested` with format `archive`. Read and agent tokens get `403 insufficient_scope`. The route does not exist on a self-hosted server.
 
 A tenant's limits refuse changes one at a time. On `/api/v1/sync` a refused op appears in `rejected` with reason `limit_storage`, `limit_ops_hour` or `limit_ops_total`; the rest of the batch is applied, and the server does not send its own value back for it, so the device keeps the change and sends it again later. A REST write answers `403` with the reason as code.
+
+## Task pages
+
+One task published as a page people without an account open at `/t/<secret>[/<label>]` (OpenSpec `task-pages`). The secret is 22 characters (128 bits), stored as a hash; the label is decoration and never used to find the page. A task has at most one active page; publishing again revokes the previous one in the same request. Pages are server data, never ops.
+
+**Publish** — `POST /api/v1/tasks/{id}/page` with `{"rights": "reply", "label": "paint-the-fence", "expiresInDays": 30}`: `rights` is `view`, `reply` or `tick` (tick includes replying), `label` 1–40 lowercase letters, digits and hyphens, `expiresInDays` 1–90 or absent, `includeMap` (default true). For a task of an end-to-end encrypted personal scope the body must also carry `snapshot` (the page encrypted with a per-page share key, at most 256 KB) and `wrappedKey` (that key encrypted with the account key); the device appends the share key to the link after `#`, which browsers never send. A subtask answers 400; an editor or viewer 403 `forbidden`; a stranger 404; an account with 100 active pages 409 `limit_reached`; 20 publishes an hour per account, then 429.
+
+**The page** — `GET /api/v1/pages/{secret}` needs no authentication, ignores a session cookie and sets none. A live page returns `id`, `title`, `description`, `due`, `deadline`, `completed_at`, `subtasks` (three levels, with `depth`), `links`, `files`, `location` (when `includeMap` is set and maps are on) and the `comments` written since publishing (`name`, `guest`, `body`, `createdAt`); never labels, the project, notes, the assignee, emails or account ids. An encrypted page returns `snapshot` and `snapshotAt`. Every unusable page (unknown, revoked, expired, its task deleted, the publisher deactivated or no longer allowed, an encrypted page without a snapshot) answers the same 404 `page_invalid`.
+
+**Guests** — replies (`{name, body}`, 1–40 and 1–4000 characters) become comments by the publisher from the device `page:<page-id>` with `guest_name` and `page_id`; on an encrypted page they are `{ciphertext}` (16 KB at most) kept until a device imports and confirms them. Ticks complete or reopen the task or a subtask; reopening only within 24 hours. Limits per page: 120 reads and 60 ticks a minute, 20 replies an hour; 120 requests a minute per address; unknown secrets count against the address's sign-in limit. Responses carry `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`, and the request log redacts the secret.
 
 ## Examples
 
