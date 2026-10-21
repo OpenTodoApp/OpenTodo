@@ -33,6 +33,7 @@ func allConstructors() []Event {
 		EmailFailed("", "", "verify_signup", "x@example.com", "rate_limited"),
 		PublicLinkCreated("o", "pl1", "p1", "tick"),
 		PublicLinkRevoked("o", "pl1", "p1"),
+		ProjectAgentAccess("o", "p1", "allowed", "kept_away"),
 		TaskPagePublished("o", "tp1", "reply"),
 		TaskPageRevoked("o", "tp1"),
 		AgentWrite("u", "complete_tasks", "t", "Desk assistant", 3),

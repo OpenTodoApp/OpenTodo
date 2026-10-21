@@ -510,6 +510,14 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 	// CalDAV resource names of purged tasks go in the same transaction
 	// (harden-server-edges), unless the task id still lives in another scope.
 	for _, t := range all {
+		// A purged project's "Keep away from AI assistants" switch goes with it
+		// (agent-planning-fields D9).
+		if t.entity == "project" {
+			if _, err := tx.ExecContext(ctx, `DELETE FROM project_agent_exclusions WHERE project_id = ?
+				AND NOT EXISTS (SELECT 1 FROM scope_fields WHERE entity = 'project' AND entity_id = ?)`, t.id, t.id); err != nil {
+				return res, fmt.Errorf("purge agent exclusion: %w", err)
+			}
+		}
 		if t.entity != "task" {
 			continue
 		}

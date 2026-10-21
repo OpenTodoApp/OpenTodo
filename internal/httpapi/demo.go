@@ -134,6 +134,17 @@ func projectPublicLinks(p string) bool {
 	return len(parts) >= 2 && parts[1] == "public-links"
 }
 
+// projectAgentAccessPath matches /api/v1/projects/{id}/agent-access (OpenSpec
+// `agent-planning-fields`).
+func projectAgentAccessPath(p string) bool {
+	rest, ok := strings.CutPrefix(p, "/api/v1/projects/")
+	if !ok {
+		return false
+	}
+	parts := strings.Split(rest, "/")
+	return len(parts) == 2 && parts[1] == "agent-access"
+}
+
 // taskPage matches /api/v1/tasks/{id}/page[/...] (OpenSpec `task-pages`).
 func taskPage(p string) bool {
 	rest, ok := strings.CutPrefix(p, "/api/v1/tasks/")
@@ -190,6 +201,8 @@ var demoRules = []demoRule{
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},
 	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
+	// Keeping a project away from assistants (agent-planning-fields D9).
+	{"AI assistants (MCP)", true, projectAgentAccessPath},
 	// The device relay serves encrypted accounts' MCP calls (mcp-device-relay):
 	// every method, like /mcp itself.
 	{"AI assistants (MCP)", false, prefix("/api/v1/relay")},

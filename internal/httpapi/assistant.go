@@ -594,7 +594,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := time.Now()
 	res := s.assistant.Loop.Run(tctx, prov, assistant.TurnInput{
-		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: in.Selected, Skill: skill, Workday: in.Workday,
+		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: s.visibleToAssistants(ctx, u.ID, in.Selected), Skill: skill, Workday: in.Workday,
 	}, assistant.Events{
 		Text:   func(t string) { send("text", map[string]string{"text": t}) },
 		Status: func(t string) { send("status", map[string]string{"text": t}) },
