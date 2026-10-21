@@ -73,7 +73,7 @@ describe('WebhooksView', () => {
     const html = render({ draft: { ...emptyDraft(), url: 'http://192.168.1.10:8123/api/webhook/x' } })
     expect(html).toContain('role="dialog"')
     expect(html).toContain('New webhook')
-    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(11)
+    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(12)
     expect(html).toContain('<option value="p1">Garden</option>')
     expect(html).toContain('travels unencrypted')
     expect(render({ draft: { ...emptyDraft(), url: 'https://example.com/x' } })).not.toContain('travels unencrypted')

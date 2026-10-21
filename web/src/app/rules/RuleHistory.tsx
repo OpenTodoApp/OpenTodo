@@ -8,7 +8,7 @@ import { t, msg, translatedMap } from '../../lib/i18n'
 import { useOnline } from '../../lib/online'
 import { useTaskTitles } from '../../lib/rules/store'
 import type { Rule, RuleRun } from '../../lib/types'
-import { Dialog, Notice } from '../../ui'
+import { Dialog, Notice, Skeleton } from '../../ui'
 
 export const OUTCOME_LABEL = translatedMap<RuleRun['outcome']>({
   pending: msg('Running'),
@@ -65,7 +65,7 @@ export function RuleHistory({ rule, onClose }: { rule: Rule; onClose: () => void
       {!online || failed ? (
         <Notice tone="info">{t('The history is on the server: connect to see it.')}</Notice>
       ) : runs === null ? (
-        <p className="text-body text-muted" role="status">{t('Loading…')}</p>
+        <Skeleton shape="line" count={3} label={t('Loading runs')} />
       ) : (
         <RunList runs={runs} />
       )}

@@ -27,7 +27,7 @@ describe('ViewMenu call sites', () => {
   it('the sidebar (start-aligned) and a view header render the same items', async () => {
     const sidebar = await itemsFrom(<nav><ViewMenu view={view} align="start" className="hover-reveal" /></nav>)
     const header = await itemsFrom(<header><ViewMenu view={view} /></header>)
-    expect(sidebar).toEqual(['Rename', 'Pin to sidebar', 'Start view on this device', 'Display mode', 'Move up', 'Move down', 'Delete view…'])
+    expect(sidebar).toEqual(['Rename', 'Pin to sidebar', 'Start view on this device', 'Display mode', 'Make an automation rule', 'Move up', 'Move down', 'Delete view…'])
     expect(header).toEqual(sidebar)
   })
 
