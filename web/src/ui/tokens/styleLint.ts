@@ -5,7 +5,7 @@
 // functions, shared by the test and the seed script.
 
 const VARIANT = '(?:[\\w-]+:)*'
-/** Raw type sizes: the token scale is text-hint, text-meta, text-body, text-h3, text-h2, text-h1. */
+/** Raw type sizes: the token scale is text-hint, text-meta, text-body, text-h3, text-h2, text-h1, text-display. */
 const RAW_SIZE = new RegExp(`(?<![\\w-])${VARIANT}text-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|\\[\\d+(?:\\.\\d+)?(?:px|rem|em)\\])(?![\\w-])`, 'g')
 /** Raw radii: the tokens are rounded-chip, rounded-control and rounded-card (plus full and none). */
 const RAW_RADIUS = new RegExp(`(?<![\\w-])${VARIANT}rounded(?:-(?:t|b|l|r|tl|tr|bl|br|s|e|ss|se|es|ee))?(?:-(?:xs|sm|md|lg|xl|2xl|3xl))?(?!-(?:full|none|chip|control|card))(?![\\w-])`, 'g')

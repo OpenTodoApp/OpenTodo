@@ -2,10 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect } from 'react'
 import { ACCENTS } from '../tokens/accents'
 import { PAIRS } from '../tokens/pairs'
-import { ratio, Section, useTokenValues } from './tokens'
+import { hex, ratio, Section, useTokenValues } from './tokens'
 
 const SURFACES = ['canvas', 'surface', 'raised', 'sunken']
-const NAMES = [...new Set(PAIRS.flatMap((p) => [p.fg, p.bg]).filter((n) => !n.startsWith('hue-')).concat(SURFACES))]
+const TONES = ['text-strong', 'text', 'muted', 'faint']
+const EDGES = [['border', 'container edge'], ['border-soft', 'divider'], ['border-input', 'control edge']] as const
+const NAMES = [...new Set(PAIRS.flatMap((p) => [p.fg, p.bg]).filter((n) => !n.startsWith('hue-')).concat(SURFACES, TONES, EDGES.map(([e]) => e)))]
 
 function Colours() {
   const { ref, values } = useTokenValues(NAMES)
@@ -17,7 +19,29 @@ function Colours() {
           {SURFACES.map((s) => (
             <div key={s} className="rounded-card border border-default p-4 shadow-1" style={{ background: `var(--ot-${s})` }}>
               <div className="text-body font-medium">{s}</div>
-              <div className="font-mono text-meta text-muted">{values[s]}</div>
+              <div className="font-mono text-meta text-muted">{hex(values[s])}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+      <Section title="Tones">
+        <p className="text-meta text-muted">To make text or an icon quieter, step down one tone; never opacity or an alpha suffix (tokens-v2 D6).</p>
+        <ul className="grid gap-2 rounded-card border border-default bg-surface p-4 sm:grid-cols-4">
+          {TONES.map((tone) => (
+            <li key={tone} className="space-y-1">
+              <div className="text-body font-medium" style={{ color: `var(--ot-${tone})` }}>Renew passport</div>
+              <div className="font-mono text-meta text-muted">{tone} · {hex(values[tone])} · {ratio(values[tone], values.surface)}</div>
+            </li>
+          ))}
+        </ul>
+      </Section>
+      <Section title="Edges">
+        <p className="text-meta text-muted">A container edge, a softer divider between groups, a control edge; each stays visible on every surface.</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {EDGES.map(([edge, role]) => (
+            <div key={edge} className="rounded-card bg-surface p-3" style={{ border: `1px solid var(--ot-${edge})` }}>
+              <div className="text-body font-medium">{role}</div>
+              <div className="font-mono text-meta text-muted">{edge} · {hex(values[edge])}</div>
             </div>
           ))}
         </div>
@@ -35,7 +59,7 @@ function Colours() {
           {fgs.map((fg) => (
             <li key={fg} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <span className="w-40 font-mono text-meta">{fg}</span>
-              <span className="font-mono text-meta text-muted">{values[fg]}</span>
+              <span className="font-mono text-meta text-muted">{hex(values[fg])}</span>
               <span className="flex flex-wrap gap-2">
                 {PAIRS.filter((p) => p.fg === fg).map((p) =>
                   p.kind === 'ui' ? (
@@ -72,6 +96,11 @@ function Accents() {
                 <button type="button" className="ui-btn ui-btn--primary ui-btn--sm">Add task</button>
                 <p className="text-meta text-accent">Accent text on surface</p>
                 <p className="rounded-control bg-accent-soft px-2 py-1 text-meta text-on-accent-soft">Selected item</p>
+                <div className="flex gap-1" role="group" aria-label="Derived steps">
+                  {['accent', 'accent-hover', 'accent-soft', 'accent-soft-text', 'focus'].map((t) => (
+                    <span key={t} title={t} className="h-4 w-4 rounded-chip border border-default" style={{ background: `var(--ot-${t})` }} />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -109,7 +138,7 @@ function HighContrast() {
           {['text-strong', 'text', 'muted', 'faint', 'p1', 'p2', 'p3', 'p4'].map((fg) => (
             <li key={fg} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <span className="w-28 font-mono text-meta" style={{ color: `var(--ot-${fg})` }}>{fg}</span>
-              <span className="font-mono text-meta text-muted">{values[fg]} on {values.surface} · {ratio(values[fg], values.surface)}</span>
+              <span className="font-mono text-meta text-muted">{hex(values[fg])} on {hex(values.surface)} · {ratio(values[fg], values.surface)}</span>
             </li>
           ))}
         </ul>

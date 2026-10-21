@@ -19,7 +19,7 @@ export type AccentId = (typeof ACCENTS)[number]['id']
 export const DEFAULT_ACCENT: AccentId = 'emerald'
 
 /** The bar colour in dark mode: the dark canvas, whatever the accent. */
-export const DARK_BAR = '#020617'
+export const DARK_BAR = '#0c0f16'
 
 export function isAccent(v: unknown): v is AccentId {
   return typeof v === 'string' && ACCENTS.some((a) => a.id === v)

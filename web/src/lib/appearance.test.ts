@@ -64,7 +64,7 @@ describe('applyAppearance', () => {
     expect(root.getAttribute('data-theme')).toBe('dark')
     expect(root.getAttribute('data-accent')).toBe('orange')
     expect(document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!.content).toBe('dark')
-    expect(metas()).toEqual([['#020617', '']])
+    expect(metas()).toEqual([['#0c0f16', '']])
     expect(JSON.parse(localStorage.getItem(CACHE_KEY)!)).toEqual({ mode: 'dark', accent: 'orange', bar: '#c2410c' })
   })
 
@@ -75,6 +75,6 @@ describe('applyAppearance', () => {
     const root = document.documentElement
     expect(root.hasAttribute('data-theme')).toBe(false)
     expect(root.hasAttribute('data-accent')).toBe(false)
-    expect(metas()).toEqual([['#047857', '(prefers-color-scheme: light)'], ['#020617', '(prefers-color-scheme: dark)']])
+    expect(metas()).toEqual([['#047857', '(prefers-color-scheme: light)'], ['#0c0f16', '(prefers-color-scheme: dark)']])
   })
 })

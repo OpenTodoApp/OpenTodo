@@ -25,6 +25,9 @@ export const PAIRS: Pair[] = [
   // rhythm markers on the accent-soft card; the pulse's deltas on a plain card.
   ...text('text-strong', ['accent-soft']),
   ...text('success', ['accent-soft']),
+  // A selected row (task row, trash, pickers) keeps its metadata on accent-soft:
+  // the tones, overdue and due-soon dates, the danger action and links.
+  ...['text', 'muted', 'faint', 'danger', 'warning', 'info', 'accent-text'].flatMap((fg) => text(fg, ['accent-soft'])),
   ...text('warning-soft-text', ['surface']),
   ...text('success-soft-text', ['surface']),
   ...ui('warning', ['surface', 'accent-soft']),
@@ -34,6 +37,8 @@ export const PAIRS: Pair[] = [
   // an overlay keep their text pairs on `sunken` and `raised` in dark too (covered by
   // TEXT × SURFACES above); the hairline that separates them in dark only needs to be visible.
   ...['canvas', 'surface', 'sunken', 'raised'].map((bg): Pair => ({ fg: 'border', bg, min: 1.1, kind: 'ui' })),
+  // The softer divider (tokens-v2 D6) stays visible on every surface too.
+  ...['canvas', 'surface', 'sunken', 'raised'].map((bg): Pair => ({ fg: 'border-soft', bg, min: 1.1, kind: 'ui' })),
   ...ui('focus', ['canvas', 'surface', 'raised']),
   ...['p1', 'p2', 'p3', 'p4'].flatMap((p) => ui(p, ['canvas', 'surface'])),
   ...HUE_NAMES.flatMap((h): Pair[] => [

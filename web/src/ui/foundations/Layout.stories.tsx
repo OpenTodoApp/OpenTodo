@@ -47,10 +47,12 @@ function Elevation() {
 function Motion() {
   return (
     <Section title="Motion">
-      <p className="text-meta text-muted">UI 120 ms and emphasis 250 ms, eased with ease-calm. With reduced motion, movement and scaling become instant.</p>
+      <p className="text-meta text-muted">UI 120 ms and emphasis 250 ms, eased with ease-calm; the spring (a light overshoot) and the 400 ms moment for completion (tokens-v2 D9). With reduced motion, movement and scaling become instant; with data-motion="none" every duration, the moment too, is zero.</p>
       <div className="flex gap-4">
         <button type="button" className="btn-secondary transition duration-(--duration-ui) ease-calm hover:-translate-y-0.5">Hover: UI 120 ms</button>
         <button type="button" className="btn-secondary transition duration-(--duration-emphasis) ease-calm hover:scale-105">Hover: emphasis 250 ms</button>
+        <button type="button" className="btn-secondary transition duration-(--duration-emphasis) ease-spring hover:-translate-y-1">Hover: spring 250 ms</button>
+        <button type="button" className="btn-secondary transition duration-(--duration-moment) ease-spring hover:scale-110" data-moment>Hover: moment 400 ms</button>
       </div>
     </Section>
   )

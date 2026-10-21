@@ -9,7 +9,7 @@ order: 30
 ---
 # Design system
 
-OpenTodo's interface is friendly and roomy, in the spirit of TickTick, Todoist and Any.do, and keeps its own identity: the emerald accent, slate neutrals, white cards in light and a slate-950 canvas in dark. Every colour, size, radius, shadow and duration comes from a design token, and every shared building block is developed and checked in a workbench. The contract lives in the `design-system` OpenSpec capability; this page is the how-to. How a screen is put together (the page template, the panel, settings, rows and the interface budget) is in the [Interface guide](interface-guide.md).
+OpenTodo's interface is friendly and roomy, in the spirit of TickTick, Todoist and Any.do, and keeps its own identity: the emerald accent, calm slate neutrals, white cards in light and a dark slate canvas lifted off pure black, so dark surfaces separate by lightness. Every colour, size, radius, shadow and duration comes from a design token, and every shared building block is developed and checked in a workbench. The contract lives in the `design-system` OpenSpec capability; this page is the how-to. How a screen is put together (the page template, the panel, settings, rows and the interface budget) is in the [Interface guide](interface-guide.md).
 
 ## Principles
 
@@ -39,16 +39,16 @@ Tokens are defined once in `web/src/index.css`:
 | Group | Utilities | Notes |
 |---|---|---|
 | Surfaces | `bg-canvas`, `bg-surface`, `bg-raised`, `bg-sunken` | app background, cards and rows, popovers and dialogs, wells |
-| Text | `text-strong`, `text-default`, `text-muted`, `text-faint`, `text-accent`, `text-on-accent` | each meets 4.5:1 on every surface it is allowed on |
-| Borders | `border-default`, `border-input` | `input` meets 3:1 for control boundaries |
+| Text | `text-strong`, `text-default`, `text-muted`, `text-faint`, `text-accent`, `text-on-accent` | the four tones; each meets 4.5:1 on every surface it is allowed on |
+| Borders | `border-default`, `border-soft`, `border-input` | a container edge, a softer divider, a control edge (3:1); the first two stay at 1.1:1 or more on every surface |
 | Accent | `bg-accent`, `bg-accent-hover`, `bg-accent-soft`, `text-on-accent-soft`, `ring-focus`, `outline-focus` | emerald-700; focus ring 2 px with offset |
 | Priority | `border-p1` … `border-p4`, `bg-p1-soft` … `bg-p4-soft` | red, orange, blue, slate |
 | Status | `text-success`, `bg-warning-soft`, `text-on-danger-soft`, … | success, warning, danger, info, each with a soft step |
 | Palette | `bg-hue-solid`, `bg-hue-soft`, `text-hue` under `data-hue="<name>"` | 12 hues for projects and labels |
-| Type | `text-hint`, `text-meta`, `text-body`, `text-h3`, `text-h2`, `text-h1` | 11, 13, 15, 17, 20, 24 px; rem-based |
+| Type | `text-hint`, `text-meta`, `text-body`, `text-h3`, `text-h2`, `text-h1`, `text-display` | 11, 13, 15, 17, 20, 24, 28 px; rem-based; headings and display are weight 600 with tracking −0.01em (h2), −0.015em (h1) and −0.02em (display) |
 | Radius | `rounded-chip`, `rounded-control`, `rounded-card` | 6, 10, 14 px |
 | Elevation | `shadow-1`, `shadow-2`, `shadow-3` | cards, popovers, dialogs; pair with a border in dark |
-| Motion | `duration-(--duration-ui)`, `duration-(--duration-emphasis)`, `ease-calm` | 120 and 250 ms; reduced motion keeps only colour and opacity fades |
+| Motion | `duration-(--duration-ui)`, `duration-(--duration-emphasis)`, `duration-(--duration-moment)`, `ease-calm`, `ease-spring` | 120, 250 and 400 ms; the 400 ms moment is for the completion sequence only; `ease-spring` overshoots lightly and settles; reduced motion keeps only colour and opacity fades, `data-motion="none"` zeroes all three |
 
 Rules for code under `web/src/ui/`:
 
@@ -63,7 +63,7 @@ Rules for code under `web/src/ui/`:
 | Body text, headings | `text-default`, `text-strong` |
 | Secondary text | `text-muted` |
 | Hints, placeholders | `text-faint`, `placeholder-faint` |
-| Dividers and card borders, input borders | `border-default`, `border-input` |
+| Card and container edges, dividers between groups, input borders | `border-default`, `border-soft`, `border-input` |
 | Actions, links, selection, focus, current navigation | `bg-accent`, `text-accent`, `bg-accent-soft` with `text-on-accent-soft`, `ring-focus`, `text-on-accent` on the accent |
 | Done, saved, connected | `text-success`, `bg-success-soft` with `text-on-success-soft` |
 | Errors, destructive actions | `text-danger`, `border-danger`, `bg-danger-soft` with `text-on-danger-soft` |
@@ -73,7 +73,28 @@ Rules for code under `web/src/ui/`:
 | Overlay scrim, search highlight | `bg-scrim`, `bg-highlight` |
 
 A token switches between light and dark by itself, so a screen needs no `dark:` partner for colour.
-- Before using a new foreground and background combination, add it to `src/ui/tokens/pairs.ts`. `contrast.test.ts` recomputes every pair from `index.css` in both themes and fails with the pair, theme and ratio.
+- Before using a new foreground and background combination, add it to `src/ui/tokens/pairs.ts`. `contrast.test.ts` recomputes every pair from `index.css` in both themes and every accent and fails with the pair, theme and ratio.
+- **Tones, not opacity.** To make text or an icon quieter, step down one tone: `text-strong`, `text-default`, `text-muted`, `text-faint`. An icon takes the tone of its text (`currentColor`). An `opacity-*` utility or an alpha suffix (`text-default/70`, `border-soft/50`) on text or a border fails the lint; show and hide (`opacity-0`, `opacity-100`) and disabled states are fine, and a dragged ghost, a fading row or the scrim carry `tone-lint-allow` on the line with the reason. Every number (a time, a count, a duration) goes through a primitive that sets `tabular-nums`.
+
+### Colour in OKLCH
+
+Every colour token is written in OKLCH: an `oklch(L C H)` literal inside the sRGB gamut, or a `color-mix()` over other tokens. A hex, `rgb()`, `hsl()` or named colour inside a token block fails the lint with the stylesheet line. The browser resolves everything; the tests resolve the same values with `src/ui/tokens/resolve.ts` (OKLCH, mixes and alpha composited over the real surface) and measure what is drawn.
+
+- **Neutrals** are the slate family with low chroma, the same in every theme. Light: canvas `oklch(0.985 0.003 250)`, surfaces white, sunken `oklch(0.965 0.004 250)`. Dark: canvas `oklch(0.17 0.016 262)`, surface `oklch(0.22 0.018 262)`, raised `oklch(0.27 0.02 262)`, sunken `oklch(0.14 0.014 262)`; dark borders are translucent white (10 % for the edge, 6 % for the divider).
+- **An accent theme declares three values** in its `[data-accent]` block: `--ot-al-accent` (the light accent, also the browser bar colour), `--ot-ad-accent-text` (the bright accent for dark text, focus and the chart) and `--ot-a-on-accent` (text on the accent). Hover, soft, soft text and focus derive from them. A derived step that misses its minimum may be overridden in the accent block next to a comment naming the pair; `theme.test.ts` counts the overrides (today one: graphite's dark buttons).
+- **A palette hue declares one solid per mode**; its soft and text steps derive.
+- **The ratios** are `--ot-mix-*` custom properties in the `:root` block, read back by the tests:
+
+| Step | Light | Dark |
+| --- | --- | --- |
+| Accent hover | 86 % accent toward black | same |
+| Accent soft | 10 % accent into the surface | 14 % bright accent into the surface |
+| Accent soft text | 80 % accent toward black | 80 % bright accent toward white |
+| Focus | 85 % accent toward white | the bright accent |
+| Hue soft | 14 % solid into the surface | 22 % solid into the canvas |
+| Hue text | 68 % solid toward black | 78 % solid toward white |
+
+Steps toward black or white mix `in oklch`, which keeps the hue; steps into a surface mix `in oklab`, because the dark surfaces are slightly blue and an OKLCH mix would turn the hue toward them. A browser without OKLCH gets six plain surface and text values from an `@supports` fallback: readable, not themed.
 
 ### High contrast and no motion
 
@@ -92,15 +113,14 @@ Projects, labels and views store a free hex string in their ops. At render time 
 
 ## Typeface
 
-Inter 4.1 is bundled as `web/src/assets/fonts/InterVariable-latin.woff2` (54 KB, weight axis only, Latin subset, licence in `OFL.txt`). It is served from the app's own origin, hashed by Vite and precached by the service worker; no font is ever requested from another host. The family is named `OpenTodo Inter`, so a locally installed Inter is never used instead, and `font-display: swap` shows the system font until it loads.
+Inter 4.1 is bundled as `web/src/assets/fonts/InterVariable-latin.woff2` (84 KB, weight and optical-size axes, Latin subset, licence in `OFL.txt`). `font-optical-sizing: auto` lets text at the display size use Inter's Display cut. It is served from the app's own origin, hashed by Vite and precached by the service worker; no font is ever requested from another host. The family is named `OpenTodo Inter`, so a locally installed Inter is never used instead, and `font-display: swap` shows the system font until it loads.
 
 To regenerate it (fonttools 4.60.1):
 
 ```sh
 python3 -m venv venv && ./venv/bin/pip install fonttools==4.60.1 brotli==1.1.0
 curl -LO https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip && unzip Inter-4.1.zip
-./venv/bin/fonttools varLib.instancer InterVariable.ttf opsz=14 -o inter-wght.ttf
-./venv/bin/pyftsubset inter-wght.ttf \
+./venv/bin/pyftsubset InterVariable.ttf \
   --unicodes="U+0000-00FF,U+0100-017F,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20A0-20CF,U+2122,U+2190-21FF,U+2212,U+2215,U+FEFF,U+FFFD" \
   --layout-features='kern,liga,calt,ccmp,locl,mark,mkmk,tnum,cv11' \
   --flavor=woff2 --output-file=InterVariable-latin.woff2

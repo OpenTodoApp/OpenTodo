@@ -19,7 +19,7 @@ export function HourGutter() {
   return (
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
-        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
+        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint tabular-nums text-faint" data-hour-label style={{ top: h * 60 * PX_PER_MIN }}>
           {h === 0 ? '' : formatHour(h)}
         </div>
       ))}
@@ -189,6 +189,7 @@ function TaskBlock({ b, block, task, date, projectMap, selected, dragging, onSel
   const height = Math.max(SLOT_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
   // Project colours render through the palette hue (design-system "Stored colours render through the palette").
   const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
+  const ghost = dragging ? 'opacity-40' : '' // tone-lint-allow: the dragged block's ghost
   return (
     <div
       data-cal-id={b.id}
@@ -206,7 +207,7 @@ function TaskBlock({ b, block, task, date, projectMap, selected, dragging, onSel
       }}
       onClick={() => onSelect(b.id)}
       onDoubleClick={() => onOpen(b.id)}
-      className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-control border px-1.5 shadow-1 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${dragging ? 'opacity-40' : ''} border-hue-solid bg-surface`}
+      className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-control border px-1.5 shadow-1 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${ghost} border-hue-solid bg-surface`}
       style={{
         top, height,
         left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,

@@ -66,7 +66,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
                           <span className="sr-only">{`${PHASE_TITLES[phase]}: ${STEP_TITLES[s]}, ${status(s)}`}</span>
                         </button>
                       </div>
-                      {!last && <span aria-hidden="true" className={`mx-1 h-0.5 flex-1 rounded-full ${i < at || (done && steps.done[STEP_IDS[i + 1]]) ? 'bg-accent' : 'bg-faint opacity-30'}`} />}
+                      {!last && <span aria-hidden="true" className={`mx-1 h-0.5 flex-1 rounded-full ${i < at || (done && steps.done[STEP_IDS[i + 1]]) ? 'bg-accent' : 'bg-faint/30'}`} />}
                     </div>
                     <span aria-hidden="true" className={`mt-2 hidden truncate pr-2 text-hint sm:block ${current ? 'font-semibold text-strong' : done ? 'text-muted' : 'text-faint'}`}>{STEP_TITLES[s]}</span>
                   </li>

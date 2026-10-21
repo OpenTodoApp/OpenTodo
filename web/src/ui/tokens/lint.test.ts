@@ -58,6 +58,86 @@ function componentLayers(source: string): { text: string; line: number }[] {
   return out
 }
 
+/**
+ * The tone scale (OpenSpec change tokens-v2, design D6): text and icons get quieter by
+ * stepping down a tone (strong, default, muted, faint), never with an opacity utility
+ * or an alpha suffix on a text or border token. Opacity 0 and 100 (show and hide) and
+ * disabled states are not quieting; a dragged ghost, a fading row or the scrim carry a
+ * `tone-lint-allow` marker on the line.
+ */
+const OPACITY = /(?<![\w-])((?:[\w-]+:)*)opacity-(\d+)(?![\w-])/g
+const TONE_ALPHA = /(?<![\w-])(?:[\w-]+:)*(?:text-[a-z][\w-]*|border-(?:default|soft|input))\/\d+(?![\w-])/g
+
+export function toneProblems(path: string, source: string): string[] {
+  return source.split('\n').flatMap((line, i) => {
+    if (line.includes('tone-lint-allow')) return []
+    const out: string[] = []
+    for (const m of line.matchAll(OPACITY)) {
+      const variants = m[1].split(':')
+      if (m[2] === '0' || m[2] === '100' || variants.some((v) => /(?:^|-)disabled$/.test(v))) continue
+      out.push(`${path}:${i + 1}: ${m[0]}`)
+    }
+    for (const m of line.matchAll(TONE_ALPHA)) out.push(`${path}:${i + 1}: ${m[0]}`)
+    return out
+  })
+}
+
+/**
+ * Token blocks hold OKLCH only (tokens-v2 D10): inside the mode blocks, the accent and
+ * hue blocks, the ratios, the chart ramp and the high-contrast override, a colour is an
+ * `oklch()` literal, a `color-mix(in oklch | oklab, …)` over tokens or literals, a
+ * `var()` or `transparent`; lengths, times and percentages are fine. A hex, `rgb()`,
+ * `hsl()` or named colour fails, naming the stylesheet line.
+ */
+const NAMED = /(?<![\w-])(?:white|black|red|green|blue|gray|grey|silver|yellow|orange|purple|pink|navy|teal|olive|maroon|lime|aqua|fuchsia|currentcolor)(?![\w-])/i
+const FORBIDDEN = [/#[0-9a-fA-F]{3,8}\b/, /\b(?:rgba?|hsla?|hwb|lab|lch)\(/, /color-mix\(in (?!ok(?:lch|lab)\b)/, NAMED]
+
+export function tokenBlockSelectors(source: string): string[] {
+  return [
+    ':root, [data-theme="light"] {',
+    '@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"])',
+    ':root[data-theme="dark"], [data-theme="dark"] {',
+    ':root {\n  --duration-ui',
+    ':root[data-accent], [data-accent] {',
+    ':root[data-accent]:where(:not([data-theme="light"]))',
+    ':root[data-accent][data-theme="dark"],',
+    ':root, [data-theme], [data-accent] {',
+    'html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"] {',
+    'html:root[data-contrast="high"]:not([data-theme="light"]) {',
+    'html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [data-theme="dark"] {',
+    ...[...source.matchAll(/^\[data-(?:accent|hue)="[a-z]+"\] \{/gm)].map((m) => m[0]),
+  ]
+}
+
+export function tokenBlockProblems(source: string): string[] {
+  const out: string[] = []
+  for (const sel of tokenBlockSelectors(source)) {
+    const at = source.indexOf(sel)
+    if (at < 0) {
+      out.push(`src/index.css: token block not found: ${sel.split('\n').pop()}`)
+      continue
+    }
+    const open = source.indexOf('{', at)
+    let depth = 0
+    let end = open
+    for (let i = open; i < source.length; i++) {
+      if (source[i] === '{') depth++
+      else if (source[i] === '}' && --depth === 0) {
+        end = i
+        break
+      }
+    }
+    // Comments keep their line breaks so line numbers stay true.
+    const body = source.slice(open, end).replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
+    const firstLine = source.slice(0, open).split('\n').length
+    for (const m of body.matchAll(/(--[\w-]+):\s*([^;]+);/g)) {
+      const value = m[2].trim().replace(/var\(--[\w-]+/g, 'var(')
+      if (FORBIDDEN.some((re) => re.test(value))) out.push(`src/index.css:${firstLine + body.slice(0, m.index).split('\n').length - 1}: ${m[1]}: ${m[2].trim()}`)
+    }
+  }
+  return out
+}
+
 describe('token lint', () => {
   it('finds literal colour functions as well as hex (ui-correctness)', () => {
     const src = "a: 'rgb(148 163 184 / 0.35)'\nb: 'hsl(210 40% 50%)'\nc: 'oklch(0.7 0.1 250)'\nd: 'color-mix(in srgb, var(--ot-border) 45%, transparent)'"
@@ -173,5 +253,39 @@ describe('token lint', () => {
     expect(nativeTitles('x.tsx', '<button type="button" onClick={() => go(1)} title="Open">x</button>').map((f) => f.text)).toEqual(['<button title='])
     expect(nativeTitles('x.tsx', '<Dialog title="Labels" onClose={close}><p>title=</p></Dialog>')).toEqual([])
     expect(nativeTitles('x.tsx', '<span title="x" /> {/* tooltip-lint-allow */}')).toEqual([])
+  })
+
+  // tokens-v2 D6, D10
+  it('token blocks in index.css hold OKLCH only', () => {
+    expect(tokenBlockProblems(css)).toEqual([])
+  })
+
+  it('the token-block rule names a hex, an rgb() and a named colour with their line', () => {
+    const bad = css.replace('--ot-muted: oklch(0.47 0.028 262);', '--ot-muted: #526075;')
+      .replace('--ot-scrim: oklch(0.1288 0.0406 264.7 / 0.35);', '--ot-scrim: rgb(2 6 23 / 0.35);')
+      .replace('--ot-a-on-accent: oklch(1 0 0); }', '--ot-a-on-accent: white; }')
+    const found = tokenBlockProblems(bad)
+    expect(found).toHaveLength(3)
+    expect(found[0]).toMatch(/^src\/index\.css:\d+: --ot-muted: #526075$/)
+    const line = Number(/:(\d+):/.exec(found[0])![1])
+    expect(bad.split('\n')[line - 1]).toContain('--ot-muted: #526075;')
+    expect(found.some((f) => f.includes('rgb(2 6 23 / 0.35)'))).toBe(true)
+    expect(found.some((f) => f.includes(': white'))).toBe(true)
+  })
+
+  it('screens and shared UI quiet text with tones, not opacity or alpha', () => {
+    const found = [
+      ...uiCode.flatMap(([path, src]) => toneProblems(path.replace(/^\.\.\//, 'src/ui/'), src)),
+      ...appFiles.flatMap(([path, src]) => toneProblems(path, src)),
+    ]
+    expect(found).toEqual([])
+  })
+
+  it('the tone rule catches opacity and alpha on text, and lets show/hide, disabled and marked ghosts pass', () => {
+    expect(toneProblems('x.tsx', '<span className="text-meta opacity-60">a</span>\n<b className="text-default/70" />\n<i className="border-soft/50" />')).toEqual([
+      'x.tsx:1: opacity-60', 'x.tsx:2: text-default/70', 'x.tsx:3: border-soft/50',
+    ])
+    expect(toneProblems('x.tsx', '<button className="disabled:opacity-50 opacity-0 group-hover:opacity-100 bg-faint/30 border-accent/40" />')).toEqual([])
+    expect(toneProblems('x.tsx', "const ghost = 'opacity-40' // tone-lint-allow: a dragged ghost")).toEqual([])
   })
 })

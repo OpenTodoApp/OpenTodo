@@ -2,6 +2,7 @@
 // own theme (so side-by-side shows both), and show live contrast ratios.
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { contrast } from '../tokens/contrast'
+import { parseRgba, toHex } from '../tokens/resolve'
 
 export function useTokenValues(names: readonly string[]) {
   const ref = useRef<HTMLDivElement>(null)
@@ -20,6 +21,17 @@ export function ratio(fg?: string, bg?: string): string {
     return `${contrast(fg, bg).toFixed(2)}:1`
   } catch {
     return 'translucent'
+  }
+}
+
+/** A token's computed value as the sRGB hex it draws (OKLCH and mixes resolved, tokens-v2 D2). */
+export function hex(value?: string): string {
+  if (!value) return '–'
+  try {
+    const c = parseRgba(value)
+    return c.a < 1 ? `${toHex(c)} at ${Math.round(c.a * 100)}%` : toHex(c)
+  } catch {
+    return value
   }
 }
 
