@@ -114,6 +114,11 @@ func (d *davRequest) put() {
 	case errors.Is(err, caldav.ErrInvalidObject):
 		d.precondition(http.StatusForbidden, "c", "valid-calendar-object-resource")
 		return
+	case errors.Is(err, caldav.ErrInvalidValue):
+		// Well-formed calendar data with a value the task cannot hold (an
+		// estimate beyond a week): refused, nothing written (caldav-interop).
+		d.precondition(http.StatusForbidden, "c", "valid-calendar-data")
+		return
 	case err != nil:
 		d.precondition(http.StatusUnsupportedMediaType, "c", "valid-calendar-data")
 		return
