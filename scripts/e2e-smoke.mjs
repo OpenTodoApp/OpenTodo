@@ -11,6 +11,7 @@ const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const shots = process.argv[2]
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' })
+await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch {} })  // click opens the panel, as these flows expect (inline-task-editing)
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message))
@@ -149,6 +150,7 @@ if (failed.length) throw new Error('server state mismatch: ' + failed.join(', ')
 
 step('second device: fresh context sees the same data')
 const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+await ctx2.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch {} })  // click opens the panel, as these flows expect (inline-task-editing)
 const p2 = await ctx2.newPage()
 await p2.goto(base)
 await p2.getByLabel('Email').fill('ada@example.com')

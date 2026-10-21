@@ -115,7 +115,7 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
     <div className="mt-1 flex min-h-8 flex-wrap items-center gap-0.5" data-edit-bar role="group" aria-label={t('Task properties')}>
       <BarButton icon="calendar-days" label={t('Date')} text={due?.label ?? t('Date')} empty={!due} expanded={open === 'date'}
         buttonRef={(el) => { anchors.current.date = el }} onClick={() => setOpen(open === 'date' ? null : 'date')} />
-      <Menu kind="menu" label={t('Priority')} align="start"
+      <Menu kind="menu" label={`${t('Priority')}: ${PRIORITY_TEXT[task.priority]}`} align="start"
         trigger={<span className={`inline-flex items-center gap-1 text-meta ${task.priority === 4 ? 'text-faint' : 'text-muted'}`}><Icon name="flag" size="xs" />{PRIORITY_TEXT[task.priority]}</span>}
         triggerClassName="inline-flex min-h-7 items-center rounded-control px-1.5 hover:bg-sunken dark:hover:bg-raised">
         {([1, 2, 3, 4] as Priority[]).map((p) => (
