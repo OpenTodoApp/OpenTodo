@@ -329,7 +329,8 @@ const shots = [
     await settle(p, 800)
   } },
   { name: 'repeat', server: D, async run(p) {
-    await go(p, demoBase, '/inbox'); await openTask(p, 'Run club')
+    // Dated tasks are not in the Inbox (inbox-means-unplaced): Run club is in Today.
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Run club')
     await detail(p).getByRole('button', { name: /^When: every/ }).click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
@@ -377,7 +378,7 @@ const shots = [
   }, async after(p) { await p.keyboard.press('Escape') } },
   // A task's location editor (task-locations): coordinates typed into the field, set as the location.
   { name: 'locations', server: D, async run(p) {
-    await go(p, demoBase, '/inbox'); await openTask(p, 'Pick up groceries')
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Pick up groceries')
     const d = p.getByRole('dialog', { name: 'Location' })
     const part = detail(p).getByRole('button', { name: /^Where: .*45\.4642/ }).first()
     if (!(await part.count())) {

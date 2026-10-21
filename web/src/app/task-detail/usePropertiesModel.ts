@@ -14,6 +14,7 @@ import { effectiveSection } from '../../lib/sections'
 import { isSoloScope, memberName } from '../../lib/sharing'
 import type { Task } from '../../lib/types'
 import { moveWithUndo } from '../undoable'
+import { isInboxTask } from '../../lib/inbox'
 import { useViewerZone } from '../useViews'
 import type { PropertiesProps } from './Facets'
 import { type Optional, usePropertyEditing } from './usePropertyEditing'
@@ -47,7 +48,8 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   const blockers = useMemo(() => (task.blocked_by ?? []).map((id) => taskById.get(id)).filter((tk): tk is Task => !!tk), [task.blocked_by, taskById])
   const blocks = useMemo(() => dependents(task.id, allTasks).filter((tk) => !tk.completed_at), [task.id, allTasks])
   const blockerItems = useMemo(() => [...blockers, ...blockerCandidates(task, allTasks, memberships)], [blockers, task, allTasks, memberships])
-  const projectName = (tk: Task) => (tk.project_id ? projects.find((p) => p.id === tk.project_id)?.name ?? t('Project') : t('Inbox'))
+  // A task without a project is only "Inbox" while it is in the Inbox (inbox-means-unplaced): a dated one has no project.
+  const projectName = (tk: Task) => (tk.project_id ? projects.find((p) => p.id === tk.project_id)?.name ?? t('Project') : isInboxTask(tk, (id) => taskById.get(id)) ? t('Inbox') : t('No project'))
   const toggleBlocker = async (id: string) => {
     setBlockError(null)
     try {

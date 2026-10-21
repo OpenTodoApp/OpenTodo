@@ -237,6 +237,21 @@ describe('rescheduling in the plan', () => {
     await r.unmount()
   })
 
+  it('Click selects: focus moving to the day keeps the task selected, and Right moves it a day', async () => {
+    const id = await createTask({ title: 'Call the bank', due: { date: '2026-10-15', time: '11:00' } })
+    const r = await plan()
+    await waitFor(() => r.container.querySelector(`[data-plan-task="${id}"]`) !== null)
+    // A real browser focuses the button on click; the grid then moves focus to the task's day.
+    await act(async () => { row(r.container, id).focus() })
+    await click(row(r.container, id))
+    await waitFor(() => document.activeElement === day(r.container, '2026-10-15'))
+    expect(row(r.container, id).getAttribute('aria-pressed')).toBe('true')
+    await key(document.body, 'ArrowRight')
+    await waitFor(async () => (await db.tasks.get(id))!.due?.date === '2026-10-16')
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-16', time: '11:00' })
+    await r.unmount()
+  })
+
   it('Viewer of a shared project: shown read-only, not dragged or moved', async () => {
     await db.projects.put({ id: 'shared', name: 'Shared', color: null, parent_id: null, position: 1, archived: false, deleted_at: null, _clock: {} } as never)
     await db.memberships.put({ projectId: 'shared', role: 'viewer', ownerId: 'someone', members: [] })

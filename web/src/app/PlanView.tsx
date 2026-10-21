@@ -209,7 +209,7 @@ export function PlanView({ date, detail: detailProp }: { date?: string; detail?:
         </>} />
       {wide ? (
         <PlanGrid gridRef={gridRef} title={title} days={days} today={today} focused={focused} dayLength={prefs.dayLength} eventHue={eventHue}
-          onFocusDay={(d) => { setFocused(d); setSelectedId(null) }} onAdd={setAdding}
+          onFocusDay={(d, keepSelection) => { setFocused(d); if (!keepSelection) setSelectedId(null) }} onAdd={setAdding}
           rowProps={{ ...rowProps, onSelect: (id, d) => { setSelectedId(id); setFocused(d) } }} />
       ) : (
         <PlanAgenda days={days} today={today} dayLength={prefs.dayLength} eventHue={eventHue} onAdd={setAdding}
@@ -234,7 +234,8 @@ function PlanGrid({ gridRef, title, days, today, focused, dayLength, eventHue, o
   focused: string
   dayLength: number
   eventHue?: string
-  onFocusDay: (d: string) => void
+  /** A day was chosen; a click on the day clears the selection, focus arriving there (also from selecting one of its tasks) keeps it. */
+  onFocusDay: (d: string, keepSelection?: boolean) => void
   onAdd: (d: string) => void
   rowProps: PlanRowProps
 }) {
@@ -258,7 +259,7 @@ function PlanGrid({ gridRef, title, days, today, focused, dayLength, eventHue, o
               <div key={d} role="gridcell" tabIndex={isFocused ? 0 : -1} data-plan-day={d} data-drop-target={`day:${d}`}
                 aria-selected={isFocused} aria-current={d === today ? 'date' : undefined}
                 onClick={() => onFocusDay(d)}
-                onFocus={(e) => { if (e.target === e.currentTarget) onFocusDay(d) }}
+                onFocus={(e) => { if (e.target === e.currentTarget) onFocusDay(d, true) }}
                 className={`group relative flex min-h-36 min-w-0 flex-col gap-1 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${d < today ? 'bg-sunken' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
                 {/* Named by its content (WCAG 2.5.3 Label in Name): the date, the counts and the load first, then the rows' own names. */}
                 <span className="sr-only">{[formatShort(d), tasks ? t('{n, plural, one {# task} other {# tasks}}', { n: tasks }) : '', day.load.over ? t('over capacity') : ''].filter(Boolean).join(', ')}</span>

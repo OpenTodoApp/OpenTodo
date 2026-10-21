@@ -38,7 +38,7 @@
 - [x] 6.1 The page header and page body primitives render inside one frame (centred, at most 80 rem, same padding); content widths apply left-aligned inside it; verify with `pageTemplate.test.ts` asserting the frame on every view
 - [x] 6.2 Lists, columns layout, board, timeline, Plan and calendars use the body primitive; wide content scrolls sideways inside the frame; verify with `budget.test.tsx` (no new vertical scroll region) and the timeline/Plan stories
 - [x] 6.3 A frame check comparing the header's left and right edges and the content's left edge across Inbox, a project in list, board and timeline, Labels, Trash and Filter at 1280 and 1440 px (the layout check runs at phone widths, so the step lives in `scripts/e2e-views.mjs`); verify with `make e2e`
-- [ ] 6.4 Update `docs/interface-guide.md` (page frame) and regenerate the affected screenshots with `make docs-screenshots`; verify with `make docs-check` — the guide is updated and `make docs-check` passes; the screenshots are not regenerated yet (lists now start at the frame's left edge, so list screenshots are stale until `make docs-screenshots` runs)
+- [x] 6.4 Update `docs/interface-guide.md` (page frame) and regenerate the affected screenshots with `make docs-screenshots`; verify with `make docs-check` — the guide is updated and `make docs-check` passes; the screenshots are not regenerated yet (lists now start at the frame's left edge, so list screenshots are stale until `make docs-screenshots` runs) — Verified 2026-10-21: `make docs-screenshots` regenerated every guide image (the repeat and locations scenes now open their tasks from Today, since dated tasks are no longer in the Inbox); `make docs-check` passes.
 
 ## 7. Wrap-up
 
