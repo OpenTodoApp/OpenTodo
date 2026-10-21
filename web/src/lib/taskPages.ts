@@ -118,19 +118,43 @@ function rememberUploaded(pageId: string, hash: string): void {
 
 let running: Promise<void> | null = null
 let lastRun = 0
+let again = false
+let deferred: ReturnType<typeof setTimeout> | null = null
 /** At most one pass per this many ms (the spec allows a minute). */
 export const MAINTAIN_INTERVAL_MS = 30_000
 
 /**
  * One pass over the user's encrypted pages: upload a new snapshot when what the page
  * shows changed, import pending replies as comments and confirm them. Called after
- * every sync; skipped while locked or offline, never throws.
+ * every sync; skipped while locked or offline, never throws. A call that comes too
+ * soon, or while a pass runs, is not dropped: one more pass follows once the interval
+ * is over, because with the live stream the next sync can be minutes away.
  */
 export function maintainTaskPages(opts: { force?: boolean } = {}): Promise<void> {
-  if (running) return running
-  if (!opts.force && Date.now() - lastRun < MAINTAIN_INTERVAL_MS) return Promise.resolve()
+  if (running) {
+    again = true
+    return running
+  }
+  const wait = MAINTAIN_INTERVAL_MS - (Date.now() - lastRun)
+  if (!opts.force && wait > 0) {
+    deferred ??= setTimeout(() => {
+      deferred = null
+      void maintainTaskPages()
+    }, wait)
+    return Promise.resolve()
+  }
+  if (deferred) {
+    clearTimeout(deferred)
+    deferred = null
+  }
   lastRun = Date.now()
-  running = maintain().catch(() => undefined).finally(() => { running = null })
+  running = maintain().catch(() => undefined).finally(() => {
+    running = null
+    if (again) {
+      again = false
+      void maintainTaskPages()
+    }
+  })
   return running
 }
 
