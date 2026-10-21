@@ -24,6 +24,9 @@ import { TrackMenuItem } from './TimeTab'
 import { FieldsGroup } from './FieldsGroup'
 import { requestAttach } from './attachRequest'
 import { Facets } from './Facets'
+import { TitleField } from '../TitleField'
+import { applyTitleEdit } from '../titleEdit'
+import type { EditPlan } from '../../lib/nlp/edit'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { toggleTracking } from '../../lib/timeEntries'
@@ -72,7 +75,9 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   // change from another device does not overwrite a title being typed
   // (client-sync-robustness); the draft is committed on blur as usual.
   const titleBase = useRef('')
-  const titleField = useRef<HTMLTextAreaElement>(null)
+  const titleField = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  // Labels for `@` in the title (smart-title-tokens).
+  const labelList = useMemo(() => [...labelMap.values()], [labelMap])
   useEffect(() => {
     if (!task) return
     const focused = !!titleField.current && titleField.current === document.activeElement
@@ -125,11 +130,19 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
   const breakDown = () => openAssistantWith({ skill: 'break-down', text: t('Break down “{title}”', { title: task.title }), selected: [task.id] })
 
-  const commitTitle = () => {
-    const x1 = title.trim()
-    titleBase.current = x1 && x1 !== task.title ? x1 : task.title
-    if (x1 && x1 !== task.title) act(updateTask(task.id, { title: x1 }))
-    else setTitle(task.title)
+  // A committed title (smart-title-tokens D5): a plain rename as before; what the edit typed
+  // (a date, a priority, #project, @label…) applied as one undoable change.
+  const commitTitle = (plan: EditPlan) => {
+    const next = plan.patch.title ?? task.title
+    titleBase.current = next
+    setTitle(next)
+    const fields = Object.keys(plan.patch)
+    if (!fields.length && !plan.labels.length && !plan.reminders.length) return
+    if (fields.length === 1 && plan.patch.title && !plan.labels.length && !plan.reminders.length) {
+      act(updateTask(task.id, { title: plan.patch.title }))
+      return
+    }
+    act(applyTitleEdit(task, plan, labelList, (id) => projects.find((p) => p.id === id)?.name ?? t('the project')).then((id) => { if (id !== task.id) onOpen?.(id) }))
   }
   const toggle = (task: Task) => (onToggleComplete ? onToggleComplete(task) : act(completeWithUndo(task.id, !task.completed_at)))
   const remove = () => { act(deleteWithUndo(task.id)); onClose() }
@@ -161,19 +174,10 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           </span>
         </button>
         {/* The title wraps to at most two lines instead of truncating (task-panel-facets D4); Enter commits. */}
-        <textarea
-          rows={1}
-          className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent font-semibold leading-snug text-strong focus:outline-none ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
-          value={title}
-          readOnly={readOnly}
-          onChange={(e) => setTitle(e.target.value.replace(/\n/g, ' '))}
-          ref={titleField}
-          onBlur={commitTitle}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLTextAreaElement).blur() } }}
-          aria-label={t('Title')}
-          data-task-title
-          placeholder={t('Untitled')}
-        />
+        <TitleField multiline title={task.title} value={title} onChange={setTitle} onCommit={commitTitle}
+          projects={projects} labels={labelList} readOnly={readOnly} fieldRef={titleField}
+          className={`block w-full resize-none overflow-hidden bg-transparent font-semibold leading-snug text-strong focus:outline-none ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
+          ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-task-title': true }} />
         {copied && <span role="status" className="text-meta text-muted">{t('Link copied')}</span>}
         <Menu kind="menu" label={t('Task actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
           <MenuItem label={t('Copy link')} icon="link" onSelect={copyLink} />

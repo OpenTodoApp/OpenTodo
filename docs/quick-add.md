@@ -41,6 +41,8 @@ A dismissed chip stays dismissed while you keep typing; it comes back only if yo
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 | `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
 
+The same works when you edit a title in the task panel: type ` tomorrow p1` after the title and press <kbd>Enter</kbd>, and the date and priority are set with the title left as it was; only what you typed in this edit is read, and **Undo** takes it back.
+
 Type `#` or `@` and a list of your projects or labels opens under the field, narrowed as you type; arrows move, <kbd>Enter</kbd> or <kbd>Tab</kbd> picks, <kbd>Esc</kbd> closes it. When nothing has that name, the last entry creates it.
 
 Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when French, Spanish or Portuguese is active, because those languages write times as `15h`.

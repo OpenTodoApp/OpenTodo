@@ -2507,7 +2507,7 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Deadline": [
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/facets.ts"
@@ -2516,7 +2516,7 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline {date}": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Deadline {date}, {label}": [
     "web/src/app/TaskRow.tsx"
@@ -2921,7 +2921,7 @@
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Due": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
@@ -3262,7 +3262,7 @@
   ],
   "Estimate": [
     "web/src/app/EstimateField.tsx",
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -3291,7 +3291,7 @@
     "web/src/lib/filters.ts"
   ],
   "Evening": [
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Event": [
@@ -4394,6 +4394,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
@@ -4625,7 +4626,7 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Keep “{source}” as text": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Kept because they were changed again since: {items}.": [
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -4669,7 +4670,7 @@
   ],
   "Label": [
     "web/src/app/LabelPicker.tsx",
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TaskListView.tsx"
   ],
@@ -5520,7 +5521,7 @@
     "web/src/app/LabelsView.tsx"
   ],
   "New label “{name}”": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "New label: {name}": [
     "web/src/lib/assistant.ts"
@@ -5841,7 +5842,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "No project “{name}” · stays in the title": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "No projects yet.": [
     "web/src/app/ProjectsView.tsx",
@@ -7105,7 +7106,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Priority": [
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -7165,7 +7166,7 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/FilterView.tsx",
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ShareCapture.tsx",
@@ -7522,11 +7523,11 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Remind {date}, {time}": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Reminder": [
     "web/public/push-sw.js",
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/facets.ts"
@@ -7703,7 +7704,7 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Repeats": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Repeats {rule}": [
     "web/src/lib/assistant.ts"
@@ -8899,7 +8900,7 @@
   ],
   "Someday": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
@@ -8984,7 +8985,7 @@
     "web/src/app/VoiceSettings.tsx"
   ],
   "Spent {duration}": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Stalled": [
     "web/src/app/review/MonthlyLook.tsx",
@@ -9309,6 +9310,7 @@
     "web/src/app/focus/FocusParts.tsx"
   ],
   "Task updated": [
+    "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
   ],
   "Task {n} of {total}": [
@@ -10038,7 +10040,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "This Evening": [
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -10539,7 +10541,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Time spent": [
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Time tracked": [
@@ -10630,9 +10632,9 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/MonthView.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/QuickAdd.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
@@ -10690,7 +10692,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Tomorrow": [
-    "web/src/app/QuickAdd.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/review/CloseDay.tsx",
@@ -12394,7 +12396,7 @@
     "web/src/lib/recurrence.ts"
   ],
   "needs a due date": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "never": [
     "web/src/app/SecurityPanel.tsx",
@@ -12840,7 +12842,9 @@
   ],
   "the project": [
     "web/src/app/TriageView.tsx",
-    "web/src/app/task-detail/usePropertiesModel.ts"
+    "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/titleEdit.ts"
   ],
   "the provider": [
     "web/src/app/sso.ts"
@@ -13058,7 +13062,7 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "{count} projects match “{name}”": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "{count} reminder(s)": [
     "web/src/app/TriageView.tsx"
@@ -13140,7 +13144,7 @@
     "web/src/app/vim/VimLayer.tsx"
   ],
   "{kind} from “{source}”": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "{kind} to {email}": [
     "web/src/app/auditFormat.ts"
@@ -13537,7 +13541,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "{n} min": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "{n} min after": [
     "web/src/lib/nlp/reminders.ts"
