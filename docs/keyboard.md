@@ -223,7 +223,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Keys | What it does |
 | --- | --- |
 | <kbd>t</kbd> | Due today, then the next task |
-| <kbd>s</kbd> | Schedule: type a date (fri, 3/11) and press Enter, then the next task |
+| <kbd>s</kbd> | Schedule: pick a choice or a day, or type a date (fri, 3/11) and press Enter, then the next task |
+| <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd> / <kbd>5</kbd> / <kbd>6</kbd> | In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before |
 | <kbd>m</kbd> | Move to a project, then the next task |
 | <kbd>a</kbd> | Delegate: move into a shared project and assign it to someone there, then the next task |
 | <kbd>l</kbd> | Labels (does not move on, so you can add a label and then decide) |

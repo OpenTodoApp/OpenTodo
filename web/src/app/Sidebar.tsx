@@ -41,6 +41,7 @@ import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { countInbox } from '../lib/inbox'
 
 
 /**
@@ -178,17 +179,15 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   // Re-read every minute, so the counts move to the new day at midnight.
   const today = useToday()
   const counts = useMemo(() => {
-    let inbox = 0
     let due = 0
     let assigned = 0
     // Deferred and parked tasks are not counted (someday-and-evening D2).
     const active = openTasks.filter((tk) => openCount(tk, today))
     for (const task of active) {
-      if (task.project_id === null) inbox++
       if (task.assignee_id === user.id) assigned++
     }
     for (const item of openTasks) if (inToday(item, today)) due++
-    return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
+    return { inbox: countInbox(openTasks), today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }, [openTasks, tree, collapsed_, user.id, zone, today])
 

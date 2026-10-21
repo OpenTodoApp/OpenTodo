@@ -8,7 +8,8 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { formatTime, localDueOf, setDateTime } from '../lib/dates'
-import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { isInboxTask } from '../lib/inbox'
+import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { click, flush, key, render, type } from '../ui/test-utils'
 import { listState } from './listActions'
@@ -185,21 +186,140 @@ describe('entering', () => {
 describe('dates on the card (ux-feedback-2)', () => {
   afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
 
+  // Only a task decided this session can have a date on the card (a dated task is not an
+  // Inbox task, inbox-means-unplaced): skip it, come back with k, and date it elsewhere.
+  async function datedOnCard(title: string, due: { date: string; time: string; tz?: string }) {
+    const id = await createTask({ title })
+    await createTask({ title: 'Other' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === title)
+    await key(document.body, 'j')
+    await waitFor(() => cardTitle() === 'Other')
+    await key(document.body, 'k')
+    await waitFor(() => cardTitle() === title)
+    await act(async () => { await updateTask(id, { due }) })
+    await waitFor(() => (document.querySelector('[data-triage-card] p')?.textContent ?? '') !== '')
+    return r
+  }
+
   it('shows a due time in the 12-hour format and a zone-fixed due in the viewer\'s zone, never the raw HH:MM', async () => {
     setDateTime({ date_format: 'month-day', time_format: '12h', week_start: 'sun' }, { order: 'DM', hour12: false, weekStart: 1 })
-    await createTask({ title: 'Floating', due: { date: '2026-10-15', time: '15:00' } })
-    const r = await render(<TriageView />)
-    await waitFor(() => cardTitle() === 'Floating')
     const meta = () => document.querySelector('[data-triage-card] p')?.textContent ?? ''
+    const r = await datedOnCard('Floating', { date: '2026-10-15', time: '15:00' })
     expect(meta()).toMatch(/3:00\sPM/)
     expect(meta()).not.toContain('15:00')
     await r.unmount()
     await db.tasks.clear()
     const zoned = { date: '2026-10-15', time: '15:00', tz: 'Pacific/Auckland' }
-    await createTask({ title: 'Zoned', due: zoned })
-    const r2 = await render(<TriageView />)
-    await waitFor(() => cardTitle() === 'Zoned')
+    const r2 = await datedOnCard('Zoned', zoned)
     expect(meta()).toContain(formatTime(localDueOf(zoned).time!))
     await r2.unmount()
+  })
+})
+
+describe('the scheduling sheet (inbox-means-unplaced)', () => {
+  afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
+  const sheet = () => document.querySelector('[data-testid="schedule-sheet"]')
+  const relative = () => [...document.querySelectorAll<HTMLButtonElement>('[data-relative]')].map((b) => [b.getAttribute('aria-keyshortcuts'), b.dataset.relative])
+
+  it('A week before the deadline: s then 4 sets the do-on date, keeps the deadline, leaves the Inbox and moves on', async () => {
+    const id = await createTask({ title: 'Tax return', deadline: '2026-10-30' })
+    await createTask({ title: 'Next one' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Tax return')
+    await key(document.body, 's')
+    await waitFor(() => !!sheet())
+    expect(relative().map(([k]) => k)).toEqual(['1', '2', '3', '4', '5'])
+    await key(document.body, '4')
+    await waitFor(() => cardTitle() === 'Next one')
+    const task = (await db.tasks.get(id))!
+    expect(task.due).toEqual({ date: '2026-10-23' })
+    expect(task.deadline).toBe('2026-10-30')
+    expect(isInboxTask(task)).toBe(false)
+    expect(sheet()).toBeNull()
+    await r.unmount()
+  })
+
+  it('Choices in the past are left out and the others keep their keys', async () => {
+    await createTask({ title: 'Soon', deadline: '2026-10-17' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Soon')
+    await key(document.body, 's')
+    await waitFor(() => !!sheet())
+    expect(relative()).toEqual([['1', 'on'], ['2', 'day'], ['3', 'three-days']])
+    await r.unmount()
+  })
+
+  it('No deadline: the quick choices come first and there is no relative row nor "No date"', async () => {
+    await createTask({ title: 'Plain' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Plain')
+    await key(document.body, 's')
+    await waitFor(() => !!sheet())
+    expect(document.querySelector('[data-relative-choices]')).toBeNull()
+    expect([...document.querySelectorAll<HTMLElement>('[data-choice]')].map((b) => b.dataset.choice)).toEqual(['today', 'tomorrow', 'weekend', 'next-week'])
+    await r.unmount()
+  })
+
+  it("User's date format: every date in the sheet follows month-day order", async () => {
+    setDateTime({ date_format: 'month-day', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
+    await createTask({ title: 'Format', deadline: '2026-10-23' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Format')
+    await key(document.body, 's')
+    await waitFor(() => !!sheet())
+    const text = sheet()!.textContent ?? ''
+    expect(text).toContain('Oct 23')
+    expect(text).not.toContain('23 Oct')
+    await r.unmount()
+  })
+
+  it('Cancel: Escape writes nothing, closes the sheet and keeps the same task', async () => {
+    const id = await createTask({ title: 'Stay', deadline: '2026-10-30' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Stay')
+    const before = await db.outbox.count()
+    await key(document.body, 's')
+    await waitFor(() => !!sheet())
+    await key(sheet()!, 'Escape')
+    await waitFor(() => sheet() === null)
+    expect(cardTitle()).toBe('Stay')
+    expect(await db.outbox.count()).toBe(before)
+    expect((await db.tasks.get(id))!.due).toBeNull()
+    await r.unmount()
+  })
+
+  it('number keys do nothing while typing in the date field', async () => {
+    const id = await createTask({ title: 'Typing', deadline: '2026-10-30' })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Typing')
+    await key(document.body, 's')
+    await waitFor(() => !!document.querySelector('[data-date-words]'))
+    await key(document.querySelector('[data-date-words]')!, '4')
+    await flush(40)
+    expect(sheet()).not.toBeNull()
+    expect((await db.tasks.get(id))!.due).toBeNull()
+    await r.unmount()
+  })
+
+  it('Offline, and the count stays stable: three tasks scheduled from the sheet leave the Inbox and queue their operations', async () => {
+    const ids = await inbox('One', 'Two', 'Three')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'One')
+    const before = await db.outbox.count()
+    for (const next of ['Two', 'Three']) {
+      await key(document.body, 's')
+      await waitFor(() => !!document.querySelector('[data-choice="tomorrow"]'))
+      await click(document.querySelector('[data-choice="tomorrow"]')!)
+      await waitFor(() => cardTitle() === next)
+      expect(progressText()).toBe(`${next === 'Two' ? 2 : 3} of 3`)
+    }
+    await key(document.body, 's')
+    await waitFor(() => !!document.querySelector('[data-choice="tomorrow"]'))
+    await click(document.querySelector('[data-choice="tomorrow"]')!)
+    await waitFor(() => document.body.textContent!.includes('Inbox zero'))
+    for (const id of ids) expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
+    expect(await db.outbox.count()).toBeGreaterThan(before)
+    await r.unmount()
   })
 })

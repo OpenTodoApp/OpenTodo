@@ -64,6 +64,28 @@ export function rawDueTimeProblems(file, text) {
   return out
 }
 
+// Illustrations (OpenSpec change inbox-means-unplaced, design D9; design-system
+// "Illustrations") use the design tokens only: no hard-coded colour, no raster or
+// external image, no text, no gradient or filter, and at most 4 KB per file.
+export const ILLUSTRATION_MAX_BYTES = 4096
+const ILLUSTRATION_RULES = [
+  [/#[0-9a-fA-F]{3,8}\b/, 'a hard-coded hex colour (use a token: currentColor or var(--color-…))'],
+  [/\brgba?\(|\bhsla?\(|\boklch\(/, 'a hard-coded colour function (use a token)'],
+  [/<image\b|xlinkHref|xlink:href|\bhref=|\.png\b|\.jpe?g\b|\.webp\b|data:image/, 'a raster or external image'],
+  [/<text\b|<tspan\b/, 'text inside the drawing (the message belongs beside it)'],
+  [/Gradient\b|<filter\b|<feDropShadow\b/, 'a gradient, filter or shadow'],
+]
+
+export function illustrationProblems(file, text) {
+  const out = []
+  if (Buffer.byteLength(text, 'utf8') > ILLUSTRATION_MAX_BYTES) out.push(`${file}: over ${ILLUSTRATION_MAX_BYTES} bytes`)
+  text.split('\n').forEach((line, i) => {
+    const code = line.replace(/\/\/.*$/, '')
+    for (const [re, what] of ILLUSTRATION_RULES) if (re.test(code)) out.push(`${file}:${i + 1}: ${what}`)
+  })
+  return out
+}
+
 function storyProblems() {
   const ui = join(repo, 'web/src/ui')
   return walk(ui)
@@ -87,6 +109,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       .flatMap((f) => iconProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...[...walk(app), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => rawDueTimeProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
+      .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),
   ]
   if (problems.length) {

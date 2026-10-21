@@ -26,7 +26,7 @@ Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with
 Not every task is for now. **Start**, in the panel's **When** editor, says when a task becomes relevant:
 
 - **No start date**, the default: the task is in your lists as usual. **Clear** in the editor brings a task back to it.
-- **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project or Inbox lists it at the end under **Later**, with a **Starts 21 Oct** chip. On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
+- **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project lists it at the end under **Later**, with a **Starts 21 Oct** chip. A deferred task without a project leaves the Inbox; without a due date it is listed in Upcoming on its start day ([where planned tasks go](today-and-upcoming.md#where-planned-tasks-go)). On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
 - **Someday** parks the task: it moves to the [Someday view](views.md#park-ideas-in-someday) and its project's Later group, and its due date is cleared (a repeating task stops repeating). Giving it a due date or a start date brings it back.
 
 A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked.

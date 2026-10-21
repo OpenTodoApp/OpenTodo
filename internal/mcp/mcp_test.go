@@ -321,8 +321,9 @@ func TestListTasksTodayInTimezone(t *testing.T) {
 	if got := strings.Join(titles(ranged["tasks"]), ","); got != "Standup,Water plants,Call dentist" {
 		t.Fatalf("due range = %s", got)
 	}
+	// Inbox view leaves out planned tasks (inbox-means-unplaced): only the undated one is in it.
 	inbox := f.tool("u1", "list_tasks", map[string]any{"view": "inbox"})
-	if len(inbox["tasks"].([]any)) != 4 {
+	if got := strings.Join(titles(inbox["tasks"]), ","); got != "Someday" {
 		t.Fatalf("inbox = %v", titles(inbox["tasks"]))
 	}
 	if r := f.call("u1", "tools/call", map[string]any{"name": "list_tasks", "arguments": map[string]any{"timezone": "Mars/Olympus"}}); errCode(r) != CodeInvalidParams {
@@ -480,7 +481,8 @@ func TestTodaySummaryCounts(t *testing.T) {
 		t.Fatalf("due today = %s", got)
 	}
 	counts := res["counts"].(map[string]any)
-	if counts["overdue"].(float64) != 1 || counts["due_today"].(float64) != 1 || counts["inbox"].(float64) != 2 {
+	// The overdue task without a project is scheduled, so only "Inbox undated" counts (inbox-means-unplaced).
+	if counts["overdue"].(float64) != 1 || counts["due_today"].(float64) != 1 || counts["inbox"].(float64) != 1 {
 		t.Fatalf("counts = %v", counts)
 	}
 	per := counts["per_project"].([]any)

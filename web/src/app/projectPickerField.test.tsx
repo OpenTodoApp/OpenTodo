@@ -32,7 +32,7 @@ describe('ShareCapture project picker', () => {
     setPendingShare(parseShare('?title=Interesting%20article&url=https://example.org/post'))
     const view = await render(<ShareCapture />)
     await settle()
-    const button = document.querySelector<HTMLButtonElement>('button[aria-label="Project: Inbox"]')!
+    const button = document.querySelector<HTMLButtonElement>('button[aria-label="Project: No project"]')!
     expect(button).not.toBeNull()
     await click(button)
     await type(field(), 'read')
@@ -57,6 +57,7 @@ describe('ProjectPickerField', () => {
     const options = [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim())
     expect(options[0]).toContain('Top level')
     expect(options.join('|')).not.toContain('Inbox')
+    expect(options.join('|')).not.toContain('No project')
     expect(options.join('|')).not.toContain('Old')
     await type(field(), 'acme')
     expect(document.querySelector('[role="option"]')?.textContent).toContain('Work')

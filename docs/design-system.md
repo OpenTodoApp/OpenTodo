@@ -127,6 +127,18 @@ node scripts/icons-sync.mjs ./package
 
 The script is idempotent. A unit test fails when a vendored icon is used nowhere (or listed as reserved for a planned screen change), so the set doesn't grow unnoticed.
 
+### Illustrations
+
+Empty and finished states may show one calm line drawing above their sentence (the first is Inbox zero). Each lives in its own file in `web/src/ui/illustrations/` as inline SVG and follows one style, so later ones match:
+
+- strokes in `currentColor` (the wrapper sets the muted text colour), `strokeWidth="1.5"` at 160 × 120 px, round caps and joins;
+- the sunken surface (`var(--color-sunken)`) as the only shape fill, plus at most one accent shape at 15 % opacity (`var(--color-accent)`);
+- no hex or `rgb()` colours, gradients, filters, shadows, text, raster or external images, and no animation;
+- decorative: hidden from assistive technology, since the sentence beside it says everything;
+- at most 4 KB per file.
+
+Name it in `Illustration.tsx` and pass that name to the empty-state pattern (`<EmptyState illustration="inbox-zero" …/>`); add it to `Illustrations.stories.tsx` so the workbench checks it in light and dark. `make ui-lint` fails on a file that breaks the colour, image, text or size rules.
+
 ### Buttons
 
 `<Button variant size icon iconEnd>` with `primary`, `secondary`, `ghost` and `danger`, sizes `sm` (32 px), `md` (40 px) and `lg` (48 px). When `onClick` returns a promise, the button shows a spinner, sets `aria-busy` and ignores further clicks until it settles. `<IconButton icon label>` is the icon-only form; `label` is required and becomes the accessible name and the tooltip.

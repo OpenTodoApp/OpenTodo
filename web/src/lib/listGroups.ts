@@ -4,6 +4,7 @@
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
 import { formatDateHeading, type ResolvedDateTime } from './dates'
+import { isInboxTask } from './inbox'
 import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
@@ -97,7 +98,8 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
     case 'inbox':
-      return all.filter((task) => !task.completed_at && task.project_id === null)
+      // No project and not scheduled (lib/inbox, inbox-means-unplaced).
+      return all.filter(isInboxTask)
     case 'today':
       return todayList(all, today)
     case 'upcoming':
@@ -141,7 +143,7 @@ export interface GroupInput {
   view: ListScope['view']
   /** The view's tasks after filters; for tree views without the Later ones. */
   tasks: Task[]
-  /** Project and Inbox: deferred and parked tasks, shown in a Later group at the end. */
+  /** Project views: deferred and parked tasks, shown in a Later group at the end (Inbox tasks are never deferred or parked). */
   laterTasks: Task[]
   tree: Tree<Task> | null
   today: string
@@ -221,7 +223,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     }))
   }
   if (p.view === 'upcoming') {
-    return groupUpcoming(p.tasks).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
+    return groupUpcoming(p.tasks, p.today).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.

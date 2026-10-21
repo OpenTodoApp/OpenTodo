@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/inbox"
 	"github.com/pixari/opentodo/internal/origin"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/timetrack"
@@ -181,6 +182,18 @@ func plainOrEmpty(e opsync.Entity, field string) string {
 }
 
 func isOpen(t opsync.Entity) bool { return num(t, "completed_at") == 0 }
+
+// inInbox is the Inbox rule (internal/inbox, OpenSpec change inbox-means-unplaced):
+// open, live, without a project and not scheduled (no do-on date, start or Someday).
+func inInbox(t opsync.Entity) bool {
+	return inbox.IsTask(inbox.Task{
+		ProjectID: rawStr(t, "project_id"),
+		HasDue:    taskDue(t) != nil,
+		Start:     rawStr(t, "start"),
+		Completed: !isOpen(t),
+		Deleted:   num(t, "deleted_at") != 0,
+	})
+}
 
 func priority(t opsync.Entity) int {
 	p := int(num(t, "priority"))

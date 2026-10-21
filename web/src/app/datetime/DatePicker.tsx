@@ -26,9 +26,11 @@ export interface DatePickerProps {
   /** A message when a date is not allowed here (it is then not saved), else null. */
   validate?: (iso: string) => string | null
   autoFocus?: boolean
+  /** A day the calendar marks, such as the deadline. */
+  marked?: { date: string; label: string }
 }
 
-export function DatePicker({ value, onChange, label, choices, chosen, onChoice, emptyText, validate, autoFocus }: DatePickerProps) {
+export function DatePicker({ value, onChange, label, choices, chosen, onChoice, emptyText, validate, autoFocus, marked }: DatePickerProps) {
   const { resolved } = useDateTimeFormat()
   const today = logicalToday()
   const words = value ? formatDate(value, 'long', resolved) : ''
@@ -74,7 +76,7 @@ export function DatePicker({ value, onChange, label, choices, chosen, onChoice, 
       <div role="radiogroup" aria-label={t('Quick dates')} className="flex flex-wrap gap-1.5" data-quick-choices>
         {choices.map((c) => (
           <button key={c.id} type="button" role="radio" aria-checked={on === c.id} data-choice={c.id}
-            className={`inline-flex min-h-8 items-center gap-1.5 rounded-control border px-2.5 py-1 text-meta ${on === c.id ? 'border-accent bg-accent-soft text-on-accent-soft font-semibold' : 'border-default text-default hover:bg-sunken dark:hover:bg-raised'}`}
+            className={`touch-target inline-flex min-h-8 items-center gap-1.5 rounded-control border px-2.5 py-1 text-meta ${on === c.id ? 'border-accent bg-accent-soft text-on-accent-soft font-semibold' : 'border-default text-default hover:bg-sunken dark:hover:bg-raised'}`}
             onClick={() => {
               if (c.date === 'someday') { onChoice?.(c); return }
               if (onChoice && c.date === null) { onChoice(c); return }
@@ -100,7 +102,7 @@ export function DatePicker({ value, onChange, label, choices, chosen, onChoice, 
         </p>
       </div>
 
-      <CalendarGrid value={value} prefs={resolved} onPick={(iso) => { setEditing(false); set(iso) }} compact />
+      <CalendarGrid value={value} prefs={resolved} onPick={(iso) => { setEditing(false); set(iso) }} compact marked={marked} />
     </div>
   )
 }

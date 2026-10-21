@@ -308,7 +308,8 @@ export const SHORTCUTS: Shortcut[] = [
 
   // ---- Process the Inbox (inbox-triage): one Inbox task at a time, a key per decision; every decision but Labels moves on to the next task.
   { id: 'triage.today', keys: ['t'], description: 'Due today, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
-  { id: 'triage.schedule', keys: ['s'], description: 'Schedule: type a date (fri, 3/11) and press Enter, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.schedule', keys: ['s'], description: 'Schedule: pick a choice or a day, or type a date (fri, 3/11) and press Enter, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.relative', keys: ['1', '2', '3', '4', '5', '6'], description: 'In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before', section: 'triage', scope: 'view', views: ['triage'], dialog: true, overrides: ['vim.priority'] },
   { id: 'triage.move', keys: ['m'], description: 'Move to a project, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.delegate', keys: ['a'], description: 'Delegate: move into a shared project and assign it to someone there, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.labels', keys: ['l'], description: 'Labels (does not move on, so you can add a label and then decide)', section: 'triage', scope: 'view', views: ['triage'] },

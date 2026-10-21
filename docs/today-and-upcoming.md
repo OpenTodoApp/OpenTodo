@@ -33,7 +33,11 @@ A task you add here with [quick add](quick-add.md) is due tomorrow unless you ty
 
 <picture><source srcset="images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays."></picture>
 
-A task with a deadline but no due date is listed under its deadline day, after the tasks due that day, so you see it while there is still time to plan it. A task with both dates is listed under its due date only; its row shows the deadline countdown. Deferred and parked tasks are left out until they start.
+A task with a deadline but no due date is listed under its deadline day, after the tasks due that day, so you see it while there is still time to plan it. A task with both dates is listed under its due date only; its row shows the deadline countdown. Deferred and parked tasks are left out until they start, except one without a project or due date, listed under its start day.
+
+## Where planned tasks go
+
+The Inbox holds tasks with no project and no plan. A due date, a start date or Someday takes a task out, even without a project; clear the date and it comes back. A deadline alone doesn't. The Inbox header counts planned tasks without a project; select it to list them (`no project`).
 
 When you want to see the hours, switch to **Week**, which shows your timed tasks as blocks on a grid. See [Time blocking](time-blocking.md).
 

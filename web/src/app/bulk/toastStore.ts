@@ -11,6 +11,8 @@ export interface BulkToast {
   result?: string
   /** How long the offer stays, in milliseconds (the renderer's default otherwise). */
   ttl?: number
+  /** A second control, such as "Open" for where a new task went (inbox-means-unplaced D5). */
+  action?: { label: string; run: () => void }
 }
 
 let current: BulkToast | null = null
@@ -19,8 +21,8 @@ const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((fn) => fn())
 
 /** Show (or replace) the toast for a bulk action. */
-export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number } = {}): void {
-  current = { key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}) }
+export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number; action?: BulkToast['action'] } = {}): void {
+  current = { key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}), ...(opts.action ? { action: opts.action } : {}) }
   emit()
 }
 

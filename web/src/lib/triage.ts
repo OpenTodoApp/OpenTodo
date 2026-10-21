@@ -4,6 +4,7 @@
 // tasks and renders the current one.
 import type { Task } from './types'
 import { t } from './i18n'
+import { isInboxTask } from './inbox'
 
 export interface TriageState {
   /** The queue in order: the Inbox order when the mode opened, arrivals appended. */
@@ -14,11 +15,11 @@ export interface TriageState {
   handled: Set<string>
 }
 
-type QueueTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'completed_at' | 'deleted_at' | 'position'>
+type QueueTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'completed_at' | 'deleted_at' | 'position' | 'due'> & { start?: string | null }
 
-/** Whether a task belongs in the queue: an open, live, top-level Inbox task. */
+/** Whether a task belongs in the queue: a top-level Inbox task (lib/inbox, inbox-means-unplaced). */
 export function qualifies(item: QueueTask): boolean {
-  return item.project_id === null && item.parent_id === null && item.completed_at === null && !item.deleted_at
+  return item.parent_id === null && isInboxTask(item)
 }
 
 const byInboxOrder = (a: QueueTask, b: QueueTask) => a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)

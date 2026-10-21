@@ -56,7 +56,7 @@ func init() {
 	register(tool{def: func(Caller) Definition {
 		item := object([]string{"title"}, map[string]any{
 			"title": titleProp, "description": descProp,
-			"project_id":       map[string]any{"type": "string", "description": "Project id (see list_projects); omit for the inbox."},
+			"project_id":       map[string]any{"type": "string", "description": "Project id (see list_projects); omit for no project (the Inbox while the task is not scheduled)."},
 			"section_id":       map[string]any{"type": "string", "description": "Section id inside that project."},
 			"parent_id":        map[string]any{"type": "string", "description": "Parent task id to create a subtask; without project_id the subtask goes in the parent's project."},
 			"priority":         priorityProp,
@@ -112,10 +112,10 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		return writeDef("move_tasks", "Move tasks",
-			"Move tasks to another project (or the inbox with project_id null) and optionally a section. Tasks cannot move between projects that are shared differently.",
+			"Move tasks to another project (or to no project with project_id null: the Inbox while not scheduled) and optionally a section. Tasks cannot move between projects that are shared differently.",
 			object([]string{"ids", "project_id"}, map[string]any{
 				"ids":        idsProp,
-				"project_id": map[string]any{"type": []string{"string", "null"}, "description": "Target project id, or null for the inbox."},
+				"project_id": map[string]any{"type": []string{"string", "null"}, "description": "Target project id, or null for no project (the Inbox while the task is not scheduled)."},
 				"section_id": map[string]any{"type": []string{"string", "null"}, "description": "Section of the target project, or null for no section."},
 			}), true, true, nil, false)
 	}, plan: (*Registry).planMoveTasks})

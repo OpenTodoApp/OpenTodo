@@ -35,7 +35,12 @@ export interface PickerItem {
   color?: string
   /** Projects: shared with other people. */
   shared?: boolean
+  /** Extra words the search matches, not shown ("inbox" for "No project"). */
+  keywords?: string
 }
+
+/** The search words of an item, for a combobox's getKeywords. */
+export const itemKeywords = (i: PickerItem): string | undefined => i.keywords
 
 function pathOf<T>(tree: Tree<T>, id: string, label: (item: T) => string): string[] {
   const out: string[] = []
@@ -78,9 +83,10 @@ export interface ProjectSourceOptions {
 }
 
 /**
- * Project options: an archived or deleted current project (marked), the Inbox,
- * then every live project in sidebar tree order with its parent path, so two
- * projects with the same name are told apart.
+ * Project options: an archived or deleted current project (marked), "No project"
+ * (the Inbox icon, found by typing "inbox"; inbox-means-unplaced D6: a task there is
+ * an Inbox task only while it is not scheduled), then every live project in sidebar
+ * tree order with its parent path, so two projects with the same name are told apart.
  */
 export function projectSource(projects: readonly Project[], opts: ProjectSourceOptions = {}): PickerItem[] {
   const { current = null, inbox = true, memberships, exclude } = opts
@@ -91,7 +97,7 @@ export function projectSource(projects: readonly Project[], opts: ProjectSourceO
     const marker: PickerMarker = cur.deleted_at ? 'deleted' : 'archived'
     out.push({ key: cur.id, value: cur.id, label: cur.name, path: rawProjectPath(cur.id, byId), meta: marker, marker, color: cur.color, shared: memberships?.has(cur.id) })
   }
-  if (inbox) out.push({ key: INBOX_KEY, value: null, label: t('Inbox'), path: [] })
+  if (inbox) out.push({ key: INBOX_KEY, value: null, label: t('No project'), path: [], keywords: `inbox ${t('Inbox')}` })
   const tree = buildProjectTree(projects)
   for (const n of flattenTree(tree.roots)) {
     if (exclude?.has(n.id)) continue

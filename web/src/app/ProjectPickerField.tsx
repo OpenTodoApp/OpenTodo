@@ -2,7 +2,7 @@
 // entity-pickers): a button that shows the chosen project and opens the smart
 // picker over `projectSource`, ranked by this device's recent picks for its context.
 import { useMemo, useRef, useState } from 'react'
-import { INBOX_KEY, NONE_KEY, projectSource, type PickerItem } from '../lib/pickerSources'
+import { INBOX_KEY, itemKeywords, NONE_KEY, projectSource, type PickerItem } from '../lib/pickerSources'
 import type { Project } from '../lib/types'
 import { ComboboxPanel, Popover } from '../ui'
 import { Icon } from '../ui'
@@ -57,6 +57,7 @@ export function ProjectPickerField({ label, projects, value, onChange, rankConte
           getKey={(i) => i.key}
           getLabel={(i) => i.label}
           getPath={(i) => i.path}
+          getKeywords={itemKeywords}
           getSecondary={(i) => i.meta}
           pinned={[firstKey]}
           selected={[current.key]}
