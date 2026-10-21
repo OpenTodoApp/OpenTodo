@@ -73,7 +73,7 @@ type Engine struct {
 	kinds map[string]map[string]bool // user -> trigger kinds of their enabled rules
 	// changed is set when a rule op is observed: a host ticks the next minute.
 	changed bool
-	work  sync.Mutex                 // one pass at a time (the worker and a test route never overlap)
+	work    sync.Mutex // one pass at a time (the worker and a test route never overlap)
 }
 
 // New builds an engine on the tenant database.

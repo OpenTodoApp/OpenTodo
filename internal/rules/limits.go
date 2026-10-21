@@ -26,10 +26,10 @@ const (
 )
 
 type userCount struct {
-	minute    int64 // the minute (Unix) counted
-	inMinute  int
-	day       string // the UTC day counted
-	inDay     int
+	minute   int64 // the minute (Unix) counted
+	inMinute int
+	day      string // the UTC day counted
+	inDay    int
 }
 
 // limiter counts the runs that applied changes per account.

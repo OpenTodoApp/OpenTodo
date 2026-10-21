@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ruleval"
 	"github.com/pixari/opentodo/internal/rules"
+	"github.com/pixari/opentodo/internal/ruleval"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 

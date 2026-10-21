@@ -16,7 +16,9 @@ type depthKey struct{}
 
 // withDepth marks a write as a rule's batch at chain depth d: the observer runs
 // inside that write and gives the events it derives depth d (design D7).
-func withDepth(ctx context.Context, d int) context.Context { return context.WithValue(ctx, depthKey{}, d) }
+func withDepth(ctx context.Context, d int) context.Context {
+	return context.WithValue(ctx, depthKey{}, d)
+}
 
 func depthOf(ctx context.Context) int {
 	if d, ok := ctx.Value(depthKey{}).(int); ok && d > 0 {

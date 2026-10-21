@@ -195,7 +195,9 @@ func (e *Engine) run(ctx context.Context, w *world, r *rule, tasks []map[string]
 	if err != nil || !fresh {
 		return err
 	}
-	finish := func(outcome, reason string, changes any) error { return e.Store.Finish(ctx, id, outcome, reason, changes) }
+	finish := func(outcome, reason string, changes any) error {
+		return e.Store.Finish(ctx, id, outcome, reason, changes)
+	}
 	if depth > MaxChainDepth {
 		return finish(OutcomeStopped, "too many rules in a row", nil)
 	}

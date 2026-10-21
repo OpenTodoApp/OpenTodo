@@ -141,7 +141,7 @@ type Server struct {
 	// (automation-rules); rules is nil on a demo instance.
 	rules      *rules.Engine
 	ruleSwitch *rules.Switch
-	mcp         *mcp.Server
+	mcp        *mcp.Server
 	// agentTools is the AI agent tool registry behind /mcp and agentAccess the
 	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).
 	agentTools  *agenttools.Registry

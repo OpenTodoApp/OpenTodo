@@ -42,8 +42,8 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		Views     []map[string]json.RawMessage `json:"views"`
 		// Rules are automation rules (automation-rules); ids of labels,
 		// projects, sections and webhooks are kept as exported.
-		Rules []map[string]json.RawMessage `json:"rules"`
-		Comments  []json.RawMessage            `json:"comments"`
+		Rules    []map[string]json.RawMessage `json:"rules"`
+		Comments []json.RawMessage            `json:"comments"`
 		// Attachments are file and link metadata (OpenSpec attachments, design D12).
 		Attachments []map[string]json.RawMessage `json:"attachments"`
 		// TimeEntries are the entries the exporting account could read
