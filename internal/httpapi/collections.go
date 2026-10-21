@@ -142,6 +142,13 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if entity == "rule" {
+		applyRuleDefaults(body)
+		if err := s.checkRule(r.Context(), uid, body, nil); err != nil {
+			s.ruleError(w, err)
+			return
+		}
+	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
 		// Custom field values become fields.<id> keys before an idempotent
@@ -453,6 +460,12 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	if entity == "view" {
 		if err := s.checkView(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing); err != nil {
 			s.viewError(w, err)
+			return
+		}
+	}
+	if entity == "rule" {
+		if err := s.checkRule(r.Context(), userFrom(r.Context()).ID, body, existing); err != nil {
+			s.ruleError(w, err)
 			return
 		}
 	}

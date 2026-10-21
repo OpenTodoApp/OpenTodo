@@ -172,3 +172,47 @@ func (m Multi) PageActivity(ctx context.Context, e PageEvent) {
 
 // PageActivity implements PageSink.
 func (Nop) PageActivity(context.Context, PageEvent) {}
+
+// Automation rule notifications (OpenSpec change automation-rules, design D8):
+// rule_fired when a rule with the notify action ran on a task, rule_paused when
+// the server paused a rule that ran too often (once per pause).
+const (
+	KindRuleFired  = "rule_fired"
+	KindRulePaused = "rule_paused"
+)
+
+// RuleEvent names the rule and, for rule_fired, the task. Names and titles go
+// through e2ee.Display: an encrypted account's devices show their own text.
+type RuleEvent struct {
+	UserID    string `json:"-"`
+	RuleID    string `json:"ruleId"`
+	RuleName  string `json:"ruleName"`
+	TaskID    string `json:"taskId,omitempty"`
+	TaskTitle string `json:"taskTitle,omitempty"`
+	At        int64  `json:"at"`
+}
+
+// RuleSink is implemented by sinks that also handle rule events; like
+// MentionSink it is separate from Sink so existing sinks keep compiling.
+type RuleSink interface {
+	RuleFired(ctx context.Context, e RuleEvent)
+	RulePaused(ctx context.Context, e RuleEvent)
+}
+
+// RuleFired fans the event out to every sink that implements RuleSink.
+func (m Multi) RuleFired(ctx context.Context, e RuleEvent) {
+	for _, s := range m {
+		if rs, ok := s.(RuleSink); ok {
+			rs.RuleFired(ctx, e)
+		}
+	}
+}
+
+// RulePaused fans the event out to every sink that implements RuleSink.
+func (m Multi) RulePaused(ctx context.Context, e RuleEvent) {
+	for _, s := range m {
+		if rs, ok := s.(RuleSink); ok {
+			rs.RulePaused(ctx, e)
+		}
+	}
+}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -20,11 +21,11 @@ type sinkCall struct{ kind, rule, task string }
 
 type fakeSink struct{ calls []sinkCall }
 
-func (f *fakeSink) RuleFired(_ context.Context, _, ruleID, _, taskID string, _ int64) {
-	f.calls = append(f.calls, sinkCall{"fired", ruleID, taskID})
+func (f *fakeSink) RuleFired(_ context.Context, e notify.RuleEvent) {
+	f.calls = append(f.calls, sinkCall{"fired", e.RuleID, e.TaskID})
 }
-func (f *fakeSink) RulePaused(_ context.Context, _, ruleID, _ string, _ int64) {
-	f.calls = append(f.calls, sinkCall{"paused", ruleID, ""})
+func (f *fakeSink) RulePaused(_ context.Context, e notify.RuleEvent) {
+	f.calls = append(f.calls, sinkCall{"paused", e.RuleID, ""})
 }
 
 type harness struct {

@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/ruleval"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -264,11 +266,17 @@ func (e *Engine) applyTask(ctx context.Context, w *world, r *rule, t map[string]
 		if res.Applied > 0 {
 			e.Sync.NotifyApplied(res, Device(r.ID))
 		}
-		for f, v := range planned.Patch {
-			t[f] = v
-		}
 	}
-	e.after(ctx, w, r, strOf(t["id"]), planned.Patch, now)
+	fired := map[string]opsync.FieldChange{}
+	for f, v := range planned.Patch {
+		from := t[f]
+		if from == nil {
+			from = nullJSON
+		}
+		fired[f] = opsync.FieldChange{From: from, To: v}
+		t[f] = v
+	}
+	skipped = append(skipped, e.after(ctx, w, r, strOf(t["id"]), fired, now)...)
 	if len(changes) == 0 {
 		changes = []change{{TaskID: strOf(t["id"]), Fields: map[string]json.RawMessage{}}}
 	}
@@ -291,24 +299,25 @@ func (e *Engine) refused(ctx context.Context, uid string, r *rule, now time.Time
 		return
 	}
 	if paused && e.Notify != nil {
-		e.Notify.RulePaused(ctx, uid, r.ID, r.Name, now.UnixMilli())
+		e.Notify.RulePaused(ctx, notify.RuleEvent{UserID: uid, RuleID: r.ID, RuleName: e2ee.Display(r.Name), At: now.UnixMilli()})
 	}
 }
 
 // after sends the notification and the webhook of an applied run.
-func (e *Engine) after(ctx context.Context, w *world, r *rule, taskID string, patch map[string]json.RawMessage, now time.Time) {
+func (e *Engine) after(ctx context.Context, w *world, r *rule, taskID string, changes map[string]opsync.FieldChange, now time.Time) []string {
 	if r.Actions.Notify && e.Notify != nil {
-		e.Notify.RuleFired(ctx, w.uid, r.ID, r.Name, taskID, now.UnixMilli())
+		e.Notify.RuleFired(ctx, notify.RuleEvent{UserID: w.uid, RuleID: r.ID, RuleName: e2ee.Display(r.Name), TaskID: taskID,
+			TaskTitle: e2ee.Display(strOf(w.tasks[taskID]["title"])), At: now.UnixMilli()})
 	}
 	if r.Actions.WebhookID != "" && e.Webhook != nil {
-		f := Fired{RuleID: r.ID, RuleName: r.Name, TaskID: taskID, Changes: patch, At: now.UnixMilli()}
-		if f.Changes == nil {
-			f.Changes = map[string]json.RawMessage{}
-		}
-		if err := e.Webhook(ctx, w.uid, r.Actions.WebhookID, f); err != nil {
+		f := Fired{RuleID: r.ID, RuleName: r.Name, TaskID: taskID, Changes: changes, At: now.UnixMilli()}
+		if err := e.Webhook(ctx, w.uid, r.Actions.WebhookID, f); errors.Is(err, ErrWebhookMissing) {
+			return []string{"skipped: webhook missing"}
+		} else if err != nil {
 			e.Log.Warn("rules: queue webhook", "rule", r.ID, "err", err)
 		}
 	}
+	return nil
 }
 
 // opID derives an op id from the rule, the run key, the entity and the field,

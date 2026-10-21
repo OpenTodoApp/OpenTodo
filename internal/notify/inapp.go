@@ -82,6 +82,16 @@ func (n *InApp) PageActivity(ctx context.Context, e PageEvent) {
 	n.insert(ctx, e.PublisherID, e.Kind, e)
 }
 
+// RuleFired stores a rule_fired notification for the rule's author (automation-rules).
+func (n *InApp) RuleFired(ctx context.Context, e RuleEvent) {
+	n.insert(ctx, e.UserID, KindRuleFired, e)
+}
+
+// RulePaused stores a rule_paused notification for the rule's author.
+func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
+	n.insert(ctx, e.UserID, KindRulePaused, e)
+}
+
 // List returns the user's notifications, newest first, and the number unread.
 func (n *InApp) List(ctx context.Context, userID string) ([]Notification, int, error) {
 	rows, err := n.db.QueryContext(ctx, `SELECT id, kind, payload, created_at, read_at FROM notifications

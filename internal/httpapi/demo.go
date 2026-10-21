@@ -197,6 +197,11 @@ var demoRules = []demoRule{
 	// (issue-import D10): every method.
 	{"Issue connections", false, prefix("/api/v1/issues")},
 	{"Issue connections", false, exact("/api/v1/settings/issues")},
+	// Automation rules write on the server on a visitor's behalf and can send
+	// webhooks (automation-rules D9): every method; nothing runs on a demo.
+	{"Automations", false, prefix("/api/v1/rules")},
+	{"Automations", false, prefix("/api/v1/me/rules")},
+	{"Automations", false, exact("/api/v1/settings/automations")},
 	{"CalDAV", false, prefix("/dav")},
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},

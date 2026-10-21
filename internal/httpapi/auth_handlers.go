@@ -318,6 +318,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	// Projects kept away from AI assistants (agent-planning-fields D9), cached by
 	// the app like memberships.
 	out["agent_excluded_projects"] = s.agentExcludedProjects(r)
+	// Whether automation rules run on this server and whether this user paused
+	// theirs (automation-rules D9).
+	out["automations"] = s.automationsStatus(r.Context(), u.ID)
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {

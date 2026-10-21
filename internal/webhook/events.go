@@ -7,6 +7,7 @@ package webhook
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 
 	"github.com/pixari/opentodo/internal/importer"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -22,7 +23,7 @@ const EventPing = "ping"
 var Events = []string{
 	"task.created", "task.updated", "task.completed", "task.reopened", "task.deleted",
 	"project.created", "project.updated", "project.archived", "project.deleted",
-	importer.EventCompleted, importer.EventUndone,
+	importer.EventCompleted, importer.EventUndone, EventRuleFired,
 }
 
 // KnownEvent reports whether name is a subscribable event.
@@ -57,11 +58,15 @@ func EventFor(c opsync.Change) string {
 }
 
 // SourceFor names where a change came from: "server" (REST API), "import",
-// "caldav", or "device" for any syncing client (the device id is sent separately).
+// "caldav", "rule" (an automation rule's batch), or "device" for any syncing
+// client (the device id is sent separately).
 func SourceFor(origin string) string {
 	// The server's device carries a per-process suffix (server:<boot id>).
 	if opsync.IsServerDevice(origin) {
 		return "server"
+	}
+	if strings.HasPrefix(origin, opsync.RuleDevicePrefix) {
+		return "rule"
 	}
 	switch origin {
 	case "import", "caldav":

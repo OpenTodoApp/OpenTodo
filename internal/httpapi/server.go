@@ -32,6 +32,7 @@ import (
 	"github.com/pixari/opentodo/internal/oidc"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/relay"
+	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
@@ -136,6 +137,10 @@ type Server struct {
 	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings
+	// rules is the automation rules engine and ruleSwitch its owner switch
+	// (automation-rules); rules is nil on a demo instance.
+	rules      *rules.Engine
+	ruleSwitch *rules.Switch
 	mcp         *mcp.Server
 	// agentTools is the AI agent tool registry behind /mcp and agentAccess the
 	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).

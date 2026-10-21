@@ -197,3 +197,41 @@ func lastScheduled(tr ruleval.Trigger, zone *time.Location, from, to int64) (tim
 	}
 	return time.Time{}, false
 }
+
+// NextDue tells a host's shared scheduler when the engine next has work: now
+// while events wait, the next minute while any rule keeps a watermark or a rule
+// changed since the last tick (design D5).
+func (e *Engine) NextDue(ctx context.Context) (time.Time, bool, error) {
+	if !e.on(ctx) {
+		return time.Time{}, false, nil
+	}
+	n, err := e.Store.Pending(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	now := e.now()
+	if n > 0 {
+		return now, true, nil
+	}
+	var timed int
+	if err := e.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM rule_state WHERE paused_reason = '' AND watermark_ms > 0`).Scan(&timed); err != nil {
+		return time.Time{}, false, err
+	}
+	e.mu.Lock()
+	changed := e.changed
+	e.mu.Unlock()
+	if timed == 0 && !changed {
+		return time.Time{}, false, nil
+	}
+	return now.Truncate(TickInterval).Add(TickInterval), true, nil
+}
+
+// RunOnce is one pass for a host's shared scheduler: the time triggers, then
+// the queue.
+func (e *Engine) RunOnce(ctx context.Context) {
+	e.mu.Lock()
+	e.changed = false
+	e.mu.Unlock()
+	e.Tick(ctx)
+	e.Drain(ctx)
+}

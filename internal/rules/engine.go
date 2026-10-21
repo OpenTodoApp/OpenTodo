@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/ruleval"
 	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -34,22 +36,19 @@ func RuleID(device string) string {
 // (the REST PATCH's rule, injected by internal/httpapi).
 type ReminderOps func(ctx context.Context, uid, taskID string, patch map[string]json.RawMessage, ts int64, device string) ([]opsync.Op, error)
 
-// Sink tells a user about a rule in the app (notify.RuleSink).
-type Sink interface {
-	RuleFired(ctx context.Context, userID, ruleID, ruleName, taskID string, at int64)
-	RulePaused(ctx context.Context, userID, ruleID, ruleName string, at int64)
-}
-
 // Hook queues the `rule.fired` webhook delivery to the one webhook a rule names.
 type Hook func(ctx context.Context, userID, webhookID string, fired Fired) error
 
+// ErrWebhookMissing is the Hook's answer when the rule's webhook is gone.
+var ErrWebhookMissing = errors.New("webhook missing")
+
 // Fired describes one applied run for the `rule.fired` webhook.
 type Fired struct {
-	RuleID   string                     `json:"-"`
-	RuleName string                     `json:"-"`
-	TaskID   string                     `json:"task_id"`
-	Changes  map[string]json.RawMessage `json:"changes"`
-	At       int64                      `json:"-"`
+	RuleID   string
+	RuleName string // as stored (ciphertext for an encrypted account)
+	TaskID   string
+	Changes  map[string]opsync.FieldChange
+	At       int64
 }
 
 // Engine runs a tenant's automation rules: the observer queues events, the
@@ -60,7 +59,7 @@ type Engine struct {
 	// Enabled is the owner switch (automations.enabled or OPENTODO_AUTOMATIONS).
 	Enabled  func(ctx context.Context) bool
 	Reminder ReminderOps
-	Notify   Sink
+	Notify   notify.RuleSink
 	Webhook  Hook
 	Log      *slog.Logger
 
@@ -72,6 +71,8 @@ type Engine struct {
 
 	mu    sync.Mutex
 	kinds map[string]map[string]bool // user -> trigger kinds of their enabled rules
+	// changed is set when a rule op is observed: a host ticks the next minute.
+	changed bool
 	work  sync.Mutex                 // one pass at a time (the worker and a test route never overlap)
 }
 
@@ -163,6 +164,7 @@ func (e *Engine) ruleKinds(ctx context.Context, uid string) map[string]bool {
 func (e *Engine) forget(uid string) {
 	e.mu.Lock()
 	delete(e.kinds, uid)
+	e.changed = true
 	e.mu.Unlock()
 }
 
@@ -311,4 +313,51 @@ func (w *world) planContext(nowMs int64) PlanContext {
 		ProjectShared:  func(id string) bool { return w.shared[id] },
 		ProjectLive:    func(id string) bool { _, ok := w.parent[id]; return ok },
 	}
+}
+
+// ErrNotFound is DryRun's answer for a rule or task the user cannot see.
+var ErrNotFound = errors.New("not found")
+
+// DryRun is what a rule would do to one task now (POST /api/v1/rules/{id}/test).
+type DryRun struct {
+	Matches bool                       `json:"matches"`
+	Changes map[string]json.RawMessage `json:"changes"`
+	Skipped []string                   `json:"skipped"`
+}
+
+// Test evaluates a rule's condition and plans its actions on one task, writing
+// nothing.
+func (e *Engine) Test(ctx context.Context, uid, ruleID, taskID string) (DryRun, error) {
+	list, err := e.loadRules(ctx, uid)
+	if err != nil {
+		return DryRun{}, err
+	}
+	var r *rule
+	for i := range list {
+		if list[i].ID == ruleID {
+			r = &list[i]
+		}
+	}
+	if r == nil {
+		return DryRun{}, ErrNotFound
+	}
+	w, err := e.load(ctx, uid)
+	if err != nil {
+		return DryRun{}, err
+	}
+	t, ok := w.tasks[taskID]
+	if !ok {
+		return DryRun{}, ErrNotFound
+	}
+	out := DryRun{Changes: map[string]json.RawMessage{}, Skipped: []string{}}
+	if !e.matches(ctx, w, r, t) {
+		return out, nil
+	}
+	out.Matches = true
+	p := Plan(r.Actions, t, w.planContext(e.now().UnixMilli()))
+	out.Changes = p.Patch
+	if p.Skipped != nil {
+		out.Skipped = p.Skipped
+	}
+	return out, nil
 }
