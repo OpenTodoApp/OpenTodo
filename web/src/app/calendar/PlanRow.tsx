@@ -50,7 +50,7 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`flex w-full min-w-0 touch-manipulation items-center gap-x-1 rounded-chip border-l-3 border-l-hue-solid px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${selected ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised'} ${canEdit ? 'cursor-grab' : ''}`}>
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canEdit ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${timeTone(date, today)}`}>{formatTime(time)}</span>}
       {/* In a column the title takes the first line and the time, estimate and priority the second (seven columns are narrow). */}

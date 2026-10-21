@@ -4,7 +4,7 @@
 // its time and zone; `q` adds a task due on the focused day. Works offline.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, EmptyState, hueFor, PageBody, PageHeader, useMediaQuery } from '../ui'
-import { calendarTasks, dayLoad, formatLoad, nudgeDue } from '../lib/calendar'
+import { calendarTasks, dayLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, dueFromView, formatTime, viewedTask, dateLocaleOf } from '../lib/dates'
 import { getTask, useMembershipMap, useProjects } from '../lib/localData'
@@ -27,6 +27,7 @@ import { setDueWithUndo } from './undoable'
 import { useToday, useViewerZone } from './useViews'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
+import { CapacityLine } from './calendar/CapacityLine'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
@@ -175,12 +176,12 @@ export function MonthView({ date }: { date?: string }) {
         } : undefined}
         onClick={(e) => { e.stopPropagation(); setSelectedId(task.id); if (v?.due) setFocused(v.due.date) }}
         onDoubleClick={() => setPanelTaskId(task.id)}
-        className={`flex w-full min-w-0 touch-manipulation items-center gap-1 rounded-chip border-l-3 border-l-hue-solid px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${selected ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken hover:bg-sunken dark:bg-raised'} ${canEdit ? 'cursor-grab' : ''}`}>
+        className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${v?.due && v.due.date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canEdit ? 'cursor-grab' : ''}`}>
         {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
         <span className="sr-only">{[task.title || t('Untitled'), v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
-        {v?.due?.time && <span aria-hidden className="shrink-0 tabular-nums text-muted">{formatTime(v.due.time)}</span>}
+        {v?.due?.time && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(v.due.time)}</span>}
         <span aria-hidden className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
-        {task.priority < 4 && <span aria-hidden className="shrink-0 text-hint font-semibold text-muted" data-priority={task.priority}>P{task.priority}</span>}
+        {task.priority < 4 && <span aria-hidden className="shrink-0 text-hint font-semibold" data-priority={task.priority}>P{task.priority}</span>}
       </button>
     )
   }
@@ -221,10 +222,7 @@ export function MonthView({ date }: { date?: string }) {
                   <div aria-hidden className="mb-0.5 flex items-center justify-between gap-1">
                     <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-meta tabular-nums ${d === today ? 'bg-accent font-semibold text-on-accent' : ''}`}>{Number(d.slice(8))}</span>
                     {!narrow && load.planned > 0 && (
-                      <span data-capacity data-over={load.over || undefined}
-                        className={`whitespace-nowrap rounded-chip px-1 text-hint tabular-nums ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}>
-                        {formatLoad(load, prefs.dayLength)}
-                      </span>
+                      <CapacityLine load={load} dayLength={prefs.dayLength} sayOver={false} />
                     )}
                   </div>
                   {narrow ? (

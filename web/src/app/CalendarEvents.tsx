@@ -74,14 +74,14 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
         // Not a drag source: the grid's pointer handling never sees it.
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setOpen((o) => !o)}
-        className={`absolute z-10 overflow-hidden rounded-control border px-1.5 text-left text-hue ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'border-dashed border-hue-solid bg-transparent' : 'border-hue-solid bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`absolute z-10 overflow-hidden px-1.5 text-left ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
         style={{
           top: block.start * pxPerMinute, height,
           left: `calc(${(lane / lanes) * 100}% + 2px)`,
           width: `calc(${100 / lanes}% - 4px)`,
         }}
       >
-        <span className="block truncate font-medium">{ev.summary || t('Busy')}</span>
+        <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span className="truncate">{ev.summary || t('Busy')}</span></span>
         {height >= 30 && <span className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
       </button>
       </Tooltip>
@@ -108,9 +108,10 @@ export function EventChip({ ev, sub, zone }: { ev: CalendarEvent; sub?: Calendar
         aria-haspopup="dialog"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setOpen((o) => !o)}
-        className={`block w-full truncate rounded-chip px-1.5 py-0.5 text-left text-hint text-hue ${ev.free ? 'border border-dashed border-hue-solid' : 'bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`flex w-full min-w-0 items-center gap-1 px-1.5 py-0.5 text-left text-hint ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
-        {ev.summary || t('Busy')}
+        {!ev.free && <span aria-hidden className="ui-block-dot" />}
+        <span className="truncate">{ev.summary || t('Busy')}</span>
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
         <EventDetails ev={ev} sub={sub} zone={zone} />
@@ -140,9 +141,10 @@ export function EventRow({ ev, start, end, sub, zone }: { ev: CalendarEvent; sta
         aria-haspopup="dialog"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
-        className={`flex w-full min-w-0 items-center gap-1 rounded-chip px-1 py-0.5 text-left text-meta text-hue ${ev.free ? 'border border-dashed border-hue-solid' : 'bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`flex w-full min-w-0 items-center gap-1 px-1 py-0.5 text-left text-meta ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
+        {!ev.free && <span aria-hidden className="ui-block-dot" />}
         <span className="shrink-0 tabular-nums">{time}</span>
         <span className="min-w-0 flex-1 truncate font-medium">{ev.summary || t('Busy')}</span>
         <span className="shrink-0 text-hint tabular-nums">{length}</span>
