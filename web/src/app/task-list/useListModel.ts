@@ -2,6 +2,7 @@
 // lib/liveData and the shared task snapshot, turned into rows and groups by the
 // pure functions of lib/listGroups. One hook, so TaskListView only renders.
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
 import { liveFields } from '../../lib/fields'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
@@ -175,10 +176,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
   const completedOpen = !!projectId && collapsed.has(completedOpenKey(projectId))
 
+  // A place's list (task-locations): undefined while loading, null when it does not exist.
+  const placeId = route.view === 'place' ? route.id : null
+  const currentPlace = usePlace(placeId)
+
   return {
     dt, today, zone, projects, projectMap, labels, labelMap, memberMap, isReadOnly, treeView, projectId,
     currentProject: route.view === 'project' ? projectMap.get(route.id) : undefined,
     currentLabel: route.view === 'label' ? labelMap.get(route.id) : undefined,
+    currentPlace,
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,

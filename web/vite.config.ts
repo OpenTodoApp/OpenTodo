@@ -51,6 +51,9 @@ export default defineConfig({
         // caching: nothing under /api/ (in particular the live event stream
         // /api/v1/sync/events) may ever be served from or stored in a cache.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // The map (task-locations D5) is not precached: it needs the network for
+        // its tiles anyway, and a device with maps off should never download it.
+        globIgnores: ['**/MapView-*', '**/maplibre-gl-worker-*'],
         // A classic worker, so importScripts('push-sw.js') keeps working.
         rollupFormat: 'iife',
       },

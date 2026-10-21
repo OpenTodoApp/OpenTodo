@@ -149,6 +149,13 @@ const (
 	// rule.go (closed key set, enumerations, bounded label lists). Sync checks
 	// the shape only; REST resolves the ids.
 	kRule
+	// kLocation is a task's location (OpenSpec change task-locations, design
+	// D1): null, an encrypted account's ciphertext string, or the object
+	// {name?, address?, lat?, lon?, place_id?} validated by internal/location.
+	kLocation
+	// kGeo is a place's coordinate pair (task-locations D1): null, a ciphertext
+	// string, or {lat, lon} validated by internal/location.
+	kGeo
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -328,6 +335,9 @@ var Schema = map[string]map[string]kind{
 		// Where the task came from (OpenSpec change task-origin): one whole-value
 		// register like due, so concurrent origins never mix; additive.
 		"origin": kOrigin,
+		// Where the task happens (OpenSpec change task-locations): one whole-value
+		// register like origin, so concurrent locations never mix; additive.
+		"location": kLocation,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -453,6 +463,19 @@ var Schema = map[string]map[string]kind{
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// place: a location the user keeps for reuse (OpenSpec change task-locations,
+	// design D1). Like a label it is personal: it resolves to the author's
+	// personal scope and never reaches other members. geo is the coordinate
+	// pair as one value, so an encrypted account encrypts it whole; name,
+	// address and geo are content fields.
+	"place": {
+		"name":       kString,
+		"address":    kString,
+		"geo":        kGeo,
+		"position":   kNumber,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 	// project_prefs: one user's personal preferences for a project, keyed by the
 	// project id (OpenSpec change `activity-feed`, design D1). It always resolves
 	// to the author's personal scope, even for a shared project, so it syncs to
@@ -536,6 +559,9 @@ var Schema = map[string]map[string]kind{
 		"focus_long_break_minutes":  kNumber,
 		"focus_long_break_every":    kNumber,
 		"focus_break_after_minutes": kNumber,
+		// Maps on this user's devices (OpenSpec change task-locations, design
+		// D6): "on" or "off"; clients read an empty or unknown value as "on".
+		"maps": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

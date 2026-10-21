@@ -350,6 +350,17 @@ export const SETTINGS_COPY = {
       titlesEncrypted: msg('Titles appear as “Encrypted item” in calendar apps: the server cannot read them.'),
     },
   },
+  // Task locations (task-locations D6): the owner's switch and providers, and each user's own switch.
+  'maps-server': {
+    title: msg('Maps'),
+    description: msg('Maps and address search from the provider below, always through this server.'),
+    learnMore: 'locations',
+  },
+  'maps-user': {
+    title: msg('Maps'),
+    description: msg('Off: no maps or address search on your devices; locations still work.'),
+    learnMore: 'locations',
+  },
   issues: {
     title: msg('Issues'),
     description: msg('Open GitHub and GitLab issues assigned to you become tasks that follow them.'),

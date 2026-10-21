@@ -14,11 +14,12 @@ import { breadcrumbOf } from './subtasks'
 import { flattenTree, type Tree, type TreeNode } from './tree'
 import type { Project, Section, Task } from './types'
 import { inAnytime, isSomeday } from './views'
+import { linkedPlaceId } from './locations'
 
 /** The list views TaskListView renders, as the router names them. */
 export type ListScope =
   | { view: 'inbox' | 'today' | 'upcoming' | 'someday' | 'anytime' | 'completed' | 'assigned' }
-  | { view: 'project' | 'label'; id: string }
+  | { view: 'project' | 'label' | 'place'; id: string }
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 export interface ListRow {
@@ -114,6 +115,9 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       return projectOpenList(all, scope.id)
     case 'label':
       return all.filter((task) => !task.completed_at && task.labels.includes(scope.id)).sort(byPosition)
+    // A place's open tasks (task-locations "Places page"): those whose location links to it.
+    case 'place':
+      return all.filter((task) => !task.completed_at && linkedPlaceId(task) === scope.id).sort(byPosition)
     case 'assigned':
       return all.filter((task) => !task.completed_at && !!userId && task.assignee_id === userId).sort(compareDueThenPriority)
   }

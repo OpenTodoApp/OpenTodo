@@ -36,6 +36,7 @@ import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
+import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { useDemo } from '../lib/demo'
@@ -297,6 +298,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <CalendarSettingsSection />
           <KeyboardSection />
           <FocusSection />
+          <MapsUserSection />
         </>
       )
     case 'notifications':
@@ -373,6 +375,8 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
               <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
             </>
           )}
+          {/* Maps (task-locations D6): the owner's switch and providers; off on a demo unless OPENTODO_MAPS=on. */}
+          {isOwner && <DemoDisabled on={demo}><MapsServerPanel /></DemoDisabled>}
           <Anchor id="audit-log"><AuditPanel /></Anchor>
         </>
       )

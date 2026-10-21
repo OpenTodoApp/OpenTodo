@@ -47,6 +47,8 @@ export interface FacetContext {
   originText?: string | null
   originTitle?: string | null
   originLinked?: boolean
+  /** Where the task happens, as one line (task-locations), when it has a location. */
+  locationText?: string | null
   labels: Label[]
   reminders: number
   blockerTitles: string[]
@@ -84,6 +86,8 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   if (ctx.parentTitle != null) where.push({ id: 'parent', text: t('under {title}', { title: ctx.parentTitle || t('Untitled') }) })
   else if (revealed.has('parent')) where.push({ id: 'parent', text: t('No parent'), empty: true })
   if (ctx.originText) where.push({ id: 'origin', text: ctx.originText, tip: ctx.originTitle || undefined, fixed: !ctx.originLinked })
+  if (ctx.locationText) where.push({ id: 'location', text: ctx.locationText })
+  else if (revealed.has('location')) where.push({ id: 'location', text: t('Location'), empty: true })
 
   // When: do on (with evening and the zone), repeat, deadline, start, reminders.
   const when: FacetPart[] = []

@@ -4,7 +4,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **Maps are on by default.** Task locations show OpenStreetMap maps and search addresses through your server, which fetches from OpenFreeMap (tiles) and Photon (search) with no account data. Set `OPENTODO_MAPS=off`, or switch off **Settings → Server → Maps**, to keep the server from making those requests. Tiles are cached under `<data>/cache/maps` (at most 200 MB, not backed up). ([Maps](docs/self-hosting/maps.md))
+
 ### Added
+
+- **Task locations.** A task can say where it happens: search an address, type coordinates, pick a point on the map or use your current position, from the task panel's **Where** line. A small map and **Open in maps** (your phone's maps app, or openstreetmap.org) show it. **Save for reuse** keeps a location under a name; **Locations** in the sidebar's **More** lists them with their open tasks and a map, and a task linked to one follows it when you rename or move it. Locations sync as one additive `task.location` value and a new `place` entity, work offline (except the address search), are in the export, and are encrypted for end-to-end encrypted accounts. Each user can turn maps off in **Settings → General → Maps**. The map code (MapLibre GL, about 280 KB gzipped plus its worker) loads only where a map is shown; the main bundle grows by about 2 KB. ([Locations](docs/locations-and-places.md))
 
 - **Reopen the day.** Closed the day too early? Until your day ends, **Reopen the day** next to **Day closed** (or at the top of the Close the day screen) puts the carried-over tasks back where they were and clears the close, on any of your devices, offline too; the line for tomorrow is kept, a task you moved again by hand after closing stays where you put it and is named, and **Undo** takes the reopen back. The carry-over is recorded in an additive synced field, `review.carry_over` (task ids, fields and dates, never content). ([Rhythms](docs/method/rhythms.md#close-the-day))
 - **Drop a task on the sidebar.** From any list or board, drag a task onto a project or **Inbox** to move it there, or onto a label to add that label; ticked tasks go along as one change with **Undo**, and projects you can only view don't accept drops. ([Change several tasks at once](docs/bulk-actions.md#drop-on-the-sidebar))

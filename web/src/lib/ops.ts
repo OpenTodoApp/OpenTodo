@@ -10,7 +10,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -57,7 +57,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null,
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -90,16 +90,18 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '',
-  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0 }
+  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '' }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', carry_over: '' }
 /** A time entry row before its ops arrive (time-tracking D1); `ended_at` null reads as running. */
 export const TIME_ENTRY_DEFAULTS: Omit<TimeEntry, 'id' | '_clock'> = { task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null }
+/** A place (task-locations D1): `geo` null until it has a position. */
+export const PLACE_DEFAULTS: Omit<Place, 'id' | '_clock'> = { name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null }
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS,
 }
 
 /**
@@ -595,6 +597,8 @@ export type NewTaskInput = {
   section_id?: string | null
   /** Where the task came from (task-origin); only sent when set. */
   origin?: Origin | null
+  /** Where the task happens (task-locations); only sent when set. */
+  location?: TaskLocation | null
   /**
    * Reminders typed in quick add (quick-add-recurrence D3), resolved against the
    * task's final due and written in the same batch as the task.
@@ -625,6 +629,7 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   if (input.evening) extra.evening = true
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
+  if (input.location) extra.location = input.location
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,

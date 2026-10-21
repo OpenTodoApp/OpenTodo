@@ -369,6 +369,19 @@ const shots = [
     const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
     return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
+  // A task's location editor (task-locations): coordinates typed into the field, set as the location.
+  { name: 'locations', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openTask(p, 'Pick up groceries')
+    const d = p.getByRole('dialog', { name: 'Location' })
+    const part = detail(p).getByRole('button', { name: /^Where: .*45\.4642/ }).first()
+    if (!(await part.count())) {
+      // The first theme sets it; the second finds it set (one sandbox for both).
+      await detail(p).getByRole('button', { name: 'Add a property' }).click(); await p.getByRole('menuitem', { name: 'Location' }).click(); await d.waitFor()
+      await d.getByRole('combobox').fill('45.4642, 9.19'); await d.getByRole('option').first().waitFor(); await p.keyboard.press('Enter'); await settle(p, 400)
+    }
+    await part.click(); await d.waitFor(); await settle(p, 400)
+    return clipOf(p, d, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'trash', server: D, card: true, async run(p) { await go(p, demoBase, '/trash', () => p.getByRole('heading', { level: 1, name: 'Trash' }).waitFor()) } },
   { name: 'shortcuts', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())

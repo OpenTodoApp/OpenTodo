@@ -13,6 +13,7 @@ import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
 import { createTask } from '../lib/ops'
+import { getPlace, locationFromPlace } from '../lib/locations'
 import { dayTotalsText } from '../lib/time'
 import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
@@ -159,9 +160,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
     // In Someday a line with a date is scheduled, not parked (someday-and-evening).
     if (rest.due || rest.deadline) delete defaults.start
+    const place = route.view === 'place' ? await getPlace(route.id) : undefined
     const id = await createTask({
       ...defaults,
       ...rest,
+      // In a place's list a new task happens there (task-locations).
+      ...(place && !place.deleted_at ? { location: locationFromPlace(place) } : {}),
       // Labels are multi-valued: a label view's label is kept alongside typed @labels.
       labels: [...new Set([...viewLabels, ...(typed ?? [])])],
     })
@@ -220,7 +224,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <ListPageActions route={route} userRole={userRole} rowCount={rows.length} topLevelCount={rows.filter((r) => r.depth === 0).length}
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
   )
-  const { currentProject, currentLabel } = m
+  const { currentProject, currentLabel, currentPlace } = m
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
   // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
@@ -231,10 +235,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const methodSubtitle = useWithMethod(methodMove)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),
+    place: currentPlace?.name ?? t('Location'),
   }[route.view]
 
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
+  if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
@@ -254,7 +260,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-default pb-2">
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
-                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined)} voiceShortcut />
               )}
             </div>
           )}

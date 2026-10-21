@@ -8,7 +8,8 @@ context: |
   - Local-first: the client is the source of truth and works fully offline;
     the server exists to sync, back up, and share.
   - Data ownership: everything lives under one data directory, exports are
-    always available, no telemetry, no phone-home, no paid tier.
+    always available, no telemetry, no phone-home (the only default outbound
+    destination is the map provider, which the owner can change or turn off), no paid tier.
   - Zero-bloat self-hosting: one container, one volume, runs on a Raspberry Pi,
     deployable on Coolify from docker-compose.yml with no mandatory env vars.
   - Convergent sync: every mutation is an idempotent op in an append-only log;

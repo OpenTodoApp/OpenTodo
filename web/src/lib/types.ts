@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place']
 
 export interface Op {
   id: string
@@ -162,8 +162,51 @@ export interface Task {
    * `lib/taskOrigin.ts`.
    */
   origin?: Origin | string | null
+  /**
+   * Where the task happens (OpenSpec change `task-locations`), or null. One
+   * last-writer-wins value like `origin`; with `place_id` it shows the place's
+   * current members while the place exists. Rows stored before the field read
+   * as undefined, and a value this device could not decrypt is the placeholder
+   * string: read it with `locationOf(task)` from `lib/locations.ts`.
+   */
+  location?: TaskLocation | string | null
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A task's location (task-locations D1): at least a name, an address or a
+ * coordinate pair; `lat` and `lon` both present or both absent.
+ */
+export interface TaskLocation {
+  name?: string
+  address?: string
+  lat?: number
+  lon?: number
+  place_id?: string
+}
+
+/** A coordinate pair (a place's `geo`). */
+export interface Geo {
+  lat: number
+  lon: number
+}
+
+/**
+ * A saved place (OpenSpec change `task-locations`): personal like a label.
+ * `geo` is one value, so an encrypted account encrypts it whole; a value this
+ * device could not decrypt is the placeholder string.
+ */
+export interface Place {
+  id: string
+  name: string
+  address: string
+  geo: Geo | string | null
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
   _e2ee?: RowEncryption
 }
 
@@ -447,6 +490,8 @@ export interface UserPrefs {
   focus_long_break_minutes: number
   focus_long_break_every: number
   focus_break_after_minutes: number
+  /** Maps on this user's devices (task-locations D6): 'off' turns them off; '' and anything else read as on. */
+  maps?: string
   _clock: Clock
 }
 

@@ -48,6 +48,17 @@ The `openspec/config.yaml` context line "no telemetry, no phone-home" becomes "n
 
 **D10. Spec placement.** E2EE behaviour is an ADDED requirement ("Encrypted locations and places") rather than a change to "Encrypted and plaintext fields", which `close-the-day` and `time-tracking` already modify; the Places sidebar entry is stated in `task-locations` rather than in app-shell "Sidebar structure", which `quiet-sidebar` and `sidebar-favourites` modify. When those changes archive, a follow-up edit adds Places to the More list in "Sidebar structure" (task 7.4).
 
+## Implementation notes
+
+Recorded while implementing; they adjust the decisions above.
+
+- **Coordinates of a place are one value, `geo: {lat, lon}`** (not `lat` and `lon` fields). The web client encrypts strings and whole objects; a pair of numbers as one object is encrypted whole like `task.location`, so an encrypted account's place position stays unreadable to the server (D1).
+- **No migration.** Entities and fields are materialized generically from the op log (`scope_fields`), so the schema entries are all the server needs; old rows read `location: null` from the client defaults (task 1.2).
+- **"Locations" in the interface.** Open Loops already names its seven task homes "Places" (docs/method/places.md) and has a "Place" move. To avoid two meanings, the page, the sidebar entry and the commands say **Locations** / **saved locations** ("Save for reuse"), the user's own word for them; the entity and the code stay `place`, and the routes are `/locations` and `/location/<id>`. The specs keep their requirement names and use the new words in their text.
+- **Demo instances.** The map routes are not on the demo deny list: a demo's maps are off through the switch's default, and `OPENTODO_MAPS=on` really turns them on there as "Map switches" says. The settings route follows the deny list's "Server settings" rule (writes refused) (D4).
+- **Map library.** MapLibre GL 6.12.0 (exact version, released 2026-10-03). Its ES module worker is built by Vite as a same-origin file (`?worker&url`) and handed to `setWorkerUrl`, so `worker-src 'self'` holds with no blob worker. Measured: the lazy map chunk is 1,038 KB raw / 281 KB gzipped plus 83 KB of CSS (11 KB gzipped), the worker 510 KB raw / 145 KB gzipped; the main bundle grows from 321.0 to 323.4 KB gzipped (the editor, the Locations page and the data layer). The map chunks are left out of the service worker's precache, so a device that never shows a map never downloads them. The embedded web app, and so the binary, grows by about 1.6 MB raw (D5, task 4.6).
+- **Palette commands, no registry entries.** "Go to Locations" and "Set the location of …" are command palette entries without keys; the shortcut registry lists keyed shortcuts only, so nothing can conflict (task 3.4).
+
 ## Risks / Trade-offs
 
 - [The public Photon instance is fair-use and may throttle or disappear] → the geocoder URL is configurable, errors degrade to coordinates and places, and the self-hosting guide shows how to run Photon next to OpenTodo.

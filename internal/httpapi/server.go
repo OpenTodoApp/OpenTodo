@@ -26,6 +26,7 @@ import (
 	"github.com/pixari/opentodo/internal/importer"
 	"github.com/pixari/opentodo/internal/issues"
 	"github.com/pixari/opentodo/internal/mail"
+	"github.com/pixari/opentodo/internal/maps"
 	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/oidc"
@@ -122,6 +123,10 @@ type Server struct {
 	issuesOn     caldavState
 	issueWorker  *issues.Worker
 	issueLimiter *rateLimiter
+	// maps is the map proxy and mapsLimiter the per-user search limit (OpenSpec
+	// `task-locations`); see maps.go.
+	maps        *maps.Service
+	mapsLimiter *rateLimiter
 	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings

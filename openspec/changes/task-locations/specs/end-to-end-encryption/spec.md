@@ -12,7 +12,7 @@ For an encrypted account the device SHALL encrypt a task's `location` as one who
 - **THEN** the `name`, `address` and coordinate operations carry ciphertext and the place's `position` is plaintext
 
 #### Scenario: Locked device
-- **WHEN** a device of an encrypted account is locked and shows the Places page
+- **WHEN** a device of an encrypted account is locked and shows the Locations page
 - **THEN** each place reads "Encrypted" with no map pin, and no request reaches a map route for it
 
 #### Scenario: Offline on an encrypted account

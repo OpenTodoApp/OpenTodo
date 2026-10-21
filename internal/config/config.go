@@ -70,6 +70,9 @@ type Config struct {
 	// SMTP holds the optional OPENTODO_SMTP_* overrides of outgoing email
 	// (OpenSpec `outgoing-email`, see smtp.go).
 	SMTP SMTPConfig
+	// Maps holds the optional OPENTODO_MAPS* overrides of the map provider and
+	// switch (OpenSpec `task-locations`, see maps.go).
+	Maps MapsConfig
 	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
 	// OpenSpec `demo-mode`): a private, short-lived sandbox per visitor
 	// (`demo-sandboxes`), a nightly reset, sign-up and every abusable feature
@@ -173,6 +176,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if err := c.loadDemo(); err != nil {
+		return c, err
+	}
+	if err := c.loadMaps(); err != nil {
 		return c, err
 	}
 	if raw := strings.TrimSpace(os.Getenv("OPENTODO_TRUSTED_PROXIES")); raw != "" {

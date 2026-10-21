@@ -169,4 +169,4 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 
 - The client is the source of truth; the server syncs. Nothing should require the network to work.
 - One container, one volume, no mandatory configuration.
-- No telemetry. No paid tier. AGPL forever.
+- No telemetry. No paid tier. AGPL forever. The only default outbound destination is the map provider (OpenStreetMap-based), which the owner can change or turn off.

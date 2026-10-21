@@ -47,7 +47,7 @@ The sync and API write paths SHALL accept a location only when it has at least o
 - **THEN** the location is removed and the task's other fields are untouched
 
 ### Requirement: Setting a location
-The task panel SHALL show the location on its Where line and open an editor that offers: searching an address (as the user types, when maps are on), typing coordinates (`45.4642, 9.1900`), picking a point on a map (when maps are on), "Use my location" (the browser's position, after the browser's own permission prompt), choosing a saved place, "Save as a place", and Clear. A chosen search result or map point SHALL fill the name and address from the provider's reverse search when maps are on. Every choice SHALL apply locally at once as one undoable edit. With a coordinate pair, the panel SHALL show a small map with a pin under the facet lines when maps are on, and an "Open in maps" link in every case.
+The task panel SHALL show the location on its Where line and open an editor that offers: searching an address (as the user types, when maps are on), typing coordinates (`45.4642, 9.1900`), picking a point on a map (when maps are on), "Use my location" (the browser's position, after the browser's own permission prompt), choosing a saved place, "Save for reuse", and Clear. A chosen search result or map point SHALL fill the name and address from the provider's reverse search when maps are on. Every choice SHALL apply locally at once as one undoable edit. With a coordinate pair, the panel SHALL show a small map with a pin under the facet lines when maps are on, and an "Open in maps" link in every case.
 
 #### Scenario: Search an address
 - **WHEN** the user opens the location editor, types "Piazza del Duomo Milano" and picks the first result
@@ -70,10 +70,10 @@ The task panel SHALL show the location on its Where line and open an editor that
 - **THEN** a phone opens its maps app through a `geo:` link and a computer opens the position on openstreetmap.org in a new tab, both as a navigation the user chose
 
 ### Requirement: Places
-A user SHALL be able to keep places: a `place` entity with `name` (required, at most 200 characters), `address` (at most 500), a coordinate pair, `position`, `created_at` and `deleted_at`, private to the user. Places SHALL be created, edited, reordered and deleted offline as operations, converge per field by last-writer-wins, be deleted as tombstones, and be included in the export and restored by importing it. A place SHALL be created from the Places page or with "Save as a place" in a task's location editor.
+A user SHALL be able to keep places: a `place` entity with `name` (required, at most 200 characters), `address` (at most 500), a coordinate pair stored as one `geo` value, `position`, `created_at` and `deleted_at`, private to the user. Places SHALL be created, edited, reordered and deleted offline as operations, converge per field by last-writer-wins, be deleted as tombstones, and be included in the export and restored by importing it. A place SHALL be created from the Locations page or with "Save for reuse" in a task's location editor.
 
 #### Scenario: Save as a place
-- **WHEN** a task's location is a searched address and the user chooses "Save as a place" and names it "Mum's"
+- **WHEN** a task's location is a searched address and the user chooses "Save for reuse" and names it "Mum's"
 - **THEN** a place "Mum's" with that address and position exists on every device after sync, and the task's location links to it
 
 #### Scenario: Concurrent edits to a place
@@ -85,18 +85,18 @@ A user SHALL be able to keep places: a `place` entity with `name` (required, at 
 - **THEN** the places and the tasks' links to them are restored
 
 ### Requirement: Places page
-A Places page SHALL list the user's places in their order, each with its address and its number of open tasks, with a map showing every place that has coordinates when maps are on. Opening a place SHALL list its open tasks like any task list. The page SHALL be reachable at its own address, from the command palette, and from the sidebar's More group in every "How you work" mode; it SHALL never become a primary destination unless the user promotes it.
+A Locations page SHALL list the user's places (shown as saved locations) in their order, each with its address and its number of open tasks, with a map showing every place that has coordinates when maps are on. Opening a place SHALL list its open tasks like any task list. The page SHALL be reachable at its own address, from the command palette, and from the sidebar's More group in every "How you work" mode; it SHALL never become a primary destination unless the user promotes it.
 
 #### Scenario: Open a place
-- **WHEN** the user opens Places and selects "Office"
+- **WHEN** the user opens Locations and selects "Office"
 - **THEN** the open tasks whose location links to "Office" are listed, and they can be completed, opened and reordered like in any list
 
 #### Scenario: Sidebar budget kept
 - **WHEN** a user in Companion mode opens the sidebar
-- **THEN** Places is in the More group, and the primary destinations are unchanged
+- **THEN** Locations is in the More group, and the primary destinations are unchanged
 
 #### Scenario: Maps off
-- **WHEN** maps are off for the user and they open Places
+- **WHEN** maps are off for the user and they open Locations
 - **THEN** the page lists the places with their addresses and counts, and shows no map and no request to a map route
 
 ### Requirement: Map proxy

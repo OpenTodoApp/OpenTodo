@@ -52,6 +52,9 @@ export const estimateFocus = channel()
 /** `d` on a selected row: the detail panel for that task opens its deadline field (deadlines). */
 export const deadlineFocus = channel()
 
+/** "Set the location of …" in the command palette: the panel opens its location editor (task-locations). */
+export const locationFocus = channel()
+
 /** `Shift+N` on a selected row: the detail panel opens its start date field (someday-and-evening). */
 export const deferFocus = channel()
 

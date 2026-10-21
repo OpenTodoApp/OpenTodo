@@ -222,7 +222,9 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "same-origin")
-		h.Set("Permissions-Policy", "camera=(), geolocation=()")
+		// Geolocation for the app's own pages only: "Use my location" in the
+		// location editor (task-locations D8).
+		h.Set("Permissions-Policy", "camera=(), geolocation=(self)")
 		if s.cfg.SecureCookies() {
 			// The base URL is https: browsers keep to it for a year
 			// (trusted-client-identity); no includeSubDomains, no preload.

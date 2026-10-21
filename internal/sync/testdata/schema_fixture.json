@@ -41,6 +41,14 @@
       "name",
       "position"
     ],
+    "place": [
+      "address",
+      "created_at",
+      "deleted_at",
+      "geo",
+      "name",
+      "position"
+    ],
     "project": [
       "archived",
       "color",
@@ -101,6 +109,7 @@
       "habit",
       "ical_extra",
       "labels",
+      "location",
       "notes_doc",
       "origin",
       "parent_id",
@@ -139,6 +148,7 @@
       "focus_sound",
       "focus_work_minutes",
       "language",
+      "maps",
       "method_mode",
       "row_detail",
       "sidebar_destinations",
@@ -185,6 +195,11 @@
     "label": [
       "name"
     ],
+    "place": [
+      "name",
+      "address",
+      "geo"
+    ],
     "project": [
       "description",
       "name",
@@ -201,7 +216,8 @@
       "ical_extra",
       "notes_doc",
       "origin",
-      "title"
+      "title",
+      "location"
     ],
     "time_entry": [
       "note"

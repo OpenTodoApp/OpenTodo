@@ -308,6 +308,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	if info, err := s.attachmentInfo(r.Context(), u.ID); err == nil {
 		out["attachments"] = info
 	}
+	// Whether maps are on for the server (task-locations D6); each user's own
+	// switch is the synced user_prefs.maps.
+	out["maps"] = s.mapsAvailable(r.Context())
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {

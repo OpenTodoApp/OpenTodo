@@ -86,8 +86,7 @@ export function listState(): ListState | null {
  * project view, today / tomorrow in Today / Upcoming, the label of a label view,
  * yourself in Assigned to me. Typed attributes override them.
  */
-export function taskDefaults(route: Route, today: string, userId?: string): { project_id: string | null; due: Task['due']; labels: string[]; assignee_id?: string; start?: string } {
-  return {
+export function taskDefaults(route: Route, today: string, userId?: string): { project_id: string | null; due: Task['due']; labels: string[]; assignee_id?: string; start?: string } {  return {
     // A task added in Someday is parked (someday-and-evening D5).
     ...(route.view === 'someday' ? { start: 'someday' } : {}),
     project_id: route.view === 'project' ? route.id : null,

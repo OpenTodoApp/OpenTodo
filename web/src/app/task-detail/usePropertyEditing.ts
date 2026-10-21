@@ -3,10 +3,10 @@
 // Properties (web-component-structure). List keys (`b`, `Shift+N`, `d`, `e`) open
 // the panel with an editor through the focus signals handled here.
 import { type RefObject, useEffect, useRef, useState } from 'react'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus } from '../signals'
 
 /** The properties the Add menu can offer, in its order. */
-export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section'
+export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section' | 'location'
 
 export interface ChipEditing {
   editing: boolean
@@ -28,7 +28,7 @@ export function usePropertyEditing(taskId: string, has: Record<Optional, boolean
   // someday-and-evening 3.3, deadlines 3.2, time-blocking).
   useEffect(() => {
     const subs = [
-      [blockedByFocus, 'blocked-by'], [deferFocus, 'when'], [deadlineFocus, 'deadline'],
+      [blockedByFocus, 'blocked-by'], [deferFocus, 'when'], [deadlineFocus, 'deadline'], [locationFocus, 'location'],
     ] as const
     for (const [ch, id] of subs) if (ch.take(taskId)) reveal(id)
     if (estimateFocus.take(taskId)) { estimateFocus.set(taskId); reveal('estimate') }
