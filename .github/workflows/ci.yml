@@ -135,14 +135,26 @@ jobs:
   # under 44 px (OpenSpec change mobile-layout). Every screen and overlay, in
   # light and dark, and the docs website are also checked with axe-core
   # (serious and critical issues fail). Screenshots of failures are uploaded as the
-  # layout-report artifact. Then the browser end-to-end checks: two devices, an
-  # offline edit converging, the PWA, inbox triage and saved views (`make e2e`).
+  # layout-report-<engine>-<n> artifact. Then, on the Chromium leg, the browser end-to-end
+  # checks: two devices, an offline edit converging, the PWA, inbox triage and saved
+  # views (`make e2e`). One job for Chromium and one per width for WebKit, side by
+  # side; each builds its own server binary and only needs the web build.
   layout:
-    name: Layout check (Chromium, WebKit)
+    name: Layout check (${{ matrix.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    needs: [changes, server]
+    needs: [changes, web]
     if: needs.changes.outputs.code == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The script seeds its data through Chromium, so every leg installs it.
+          # WebKit is about twice as slow on the runner, so it is split by width.
+          - { engine: chromium, name: Chromium, browsers: chromium, widths: '360,390,768' }
+          - { engine: webkit, name: WebKit 360 px, browsers: chromium webkit, widths: '360' }
+          - { engine: webkit, name: WebKit 390 px, browsers: chromium webkit, widths: '390' }
+          - { engine: webkit, name: WebKit 768 px, browsers: chromium webkit, widths: '768' }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -161,21 +173,25 @@ jobs:
       # axe-core for the accessibility checks (web devDependency).
       - run: npm ci --no-audit --no-fund
         working-directory: web
-      - name: Install Playwright with Chromium and WebKit
+      - name: Install Playwright with ${{ matrix.name }}
         run: |
           npm i -g playwright@1.56.1
-          playwright install --with-deps chromium webkit
+          playwright install --with-deps ${{ matrix.browsers }}
       - name: Run the layout check against a fresh server
+        env:
+          ENGINES: ${{ matrix.engine }}
+          WIDTHS: ${{ matrix.widths }}
         run: |
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
       - name: End-to-end (two devices, offline sync, inbox triage, saved views)
+        if: matrix.engine == 'chromium'
         run: make e2e
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: layout-report
+          name: layout-report-${{ matrix.engine }}-${{ strategy.job-index }}
           path: layout-report
 
   # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
@@ -260,16 +276,39 @@ jobs:
   # and dark is checked with axe-core (WCAG 2.2 AA, serious and critical fail) and
   # compared with the committed baselines in web/src/ui/__screenshots__ (375 and
   # 1280 px). Baselines come from the pinned Playwright image: `make ui-baselines`
-  # or the "UI baselines" workflow. Diffs are uploaded as the ui-check-report artifact.
-  ui-check:
-    name: UI check (workbench a11y, visual regression)
+  # or the "UI baselines" workflow. The two gates run as separate jobs, and the
+  # visual comparison is split into three shards (Playwright --shard) that run side
+  # by side; every part must pass. Diffs are uploaded as ui-check-report-<shard>.
+  ui-a11y:
+    name: UI check (workbench a11y)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: npm i -g --no-audit --no-fund playwright@1.56.1
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run build-storybook
+        working-directory: web
+      - name: Accessibility (axe-core on every story, light and dark)
+        run: node scripts/ui-check/a11y.mjs
+
+  ui-visual:
+    name: UI check (visual regression ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     # The same image `make ui-baselines` uses, so screenshots match the baselines
     # pixel for pixel. A missing baseline is written and the job fails; the
-    # ui-check-report artifact then carries it (web/src/ui/__screenshots__) to commit.
+    # ui-check-report-<shard> artifact then carries it (web/src/ui/__screenshots__) to commit.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -278,15 +317,13 @@ jobs:
         working-directory: web
       - run: npm run build-storybook
         working-directory: web
-      - name: Accessibility (axe-core on every story, light and dark)
-        run: node scripts/ui-check/a11y.mjs
       - name: Visual regression
         working-directory: scripts/ui-check
-        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: ui-check-report
+          name: ui-check-report-${{ matrix.shard }}
           path: |
             web/test-results/ui-visual
             web/playwright-report/ui-visual
@@ -446,7 +483,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web, server, layout, docs-site, site-bundle, ui-check, cli, extension, skill, checks, image]
+    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -509,7 +546,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web, server, layout, docs-site, site-bundle, ui-check, cli, extension, skill, checks, image, docker]
+    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
