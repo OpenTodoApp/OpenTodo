@@ -3,7 +3,7 @@
     "message": "OpenTodo Capture"
   },
   "extDescription": {
-    "message": "Adicione a página, um link, uma imagem, um e-mail ou o texto selecionado ao seu próprio servidor OpenTodo, a partir de uma pequena janela. Comunica apenas com o endereço do servidor que indicar.",
+    "message": "Adicione a página, um link, uma imagem, um e-mail ou o texto selecionado ao seu próprio servidor OpenTodo, a partir de uma pequena janela. Ela se comunica apenas com o endereço do servidor que você informar.",
     "description": "The description in the browser’s extension list."
   },
   "actionTitle": {
@@ -19,7 +19,7 @@
     "message": "Configurações do OpenTodo Capture"
   },
   "optionsIntro": {
-    "message": "Introduza o endereço do seu servidor OpenTodo. A extensão guarda apenas este endereço e, no modo Gravação direta, o token que colar abaixo; não comunica com nenhum outro endereço.",
+    "message": "Informe o endereço do seu servidor OpenTodo. A extensão guarda apenas esse endereço e, no modo Salvamento direto, o token que você colar abaixo; ela não se comunica com nenhum outro endereço.",
     "description": "Options page introduction."
   },
   "pendingNote": {
@@ -112,19 +112,19 @@
     "description": "Accessible name of the button that removes the page link."
   },
   "popupOptions": {
-    "message": "Definições",
+    "message": "Configurações",
     "description": "Link from the popup to the options page."
   },
   "popupOpenCapture": {
-    "message": "Abrir o ecrã de captura",
+    "message": "Abrir a tela de captura",
     "description": "Button that opens the server’s capture screen instead."
   },
   "popupSaving": {
-    "message": "A gravar…",
+    "message": "Salvando…",
     "description": "Status while the task is being saved."
   },
   "popupSaved": {
-    "message": "Gravada",
+    "message": "Salva",
     "description": "Status once the task was saved."
   },
   "popupOpenTask": {
@@ -132,23 +132,23 @@
     "description": "Link to the saved task."
   },
   "popupUnreachable": {
-    "message": "Não foi possível contactar o servidor. O seu texto continua aqui.",
+    "message": "Não foi possível conectar ao servidor. Seu texto continua aqui.",
     "description": "The server did not answer a save."
   },
   "popupTokenRefused": {
-    "message": "O token já não funciona. Verifique-o nas definições.",
+    "message": "O token não funciona mais. Verifique-o nas configurações.",
     "description": "The token was refused by the server."
   },
   "popupEncrypted": {
-    "message": "Esta conta tem encriptação ponto a ponto: grave a partir do ecrã de captura, que encripta no seu dispositivo.",
+    "message": "Esta conta tem criptografia de ponta a ponta: salve pela tela de captura, que criptografa no seu dispositivo.",
     "description": "Quick save on an end-to-end encrypted account."
   },
   "popupRateLimited": {
-    "message": "Demasiados pedidos. Tente novamente dentro de um minuto.",
+    "message": "Solicitações demais. Tente de novo em um minuto.",
     "description": "Too many requests."
   },
   "popupFailed": {
-    "message": "Não foi possível gravar a tarefa: $MESSAGE$",
+    "message": "Não foi possível salvar a tarefa: $MESSAGE$",
     "description": "A save failed; $MESSAGE$ is the server’s reason.",
     "placeholders": {
       "message": {
@@ -158,31 +158,31 @@
     }
   },
   "popupNoServer": {
-    "message": "Defina primeiro o endereço do servidor nas definições; Gravar leva-o até lá.",
+    "message": "Defina primeiro o endereço do servidor nas configurações; Salvar leva você até lá.",
     "description": "The popup before a server address is set."
   },
   "modeHeading": {
-    "message": "Como funciona Gravar",
+    "message": "Como Salvar funciona",
     "description": "Options page heading of the save modes."
   },
   "modeCapture": {
-    "message": "Ecrã de captura",
+    "message": "Tela de captura",
     "description": "The Capture screen mode."
   },
   "modeCaptureHelp": {
-    "message": "Gravar abre o ecrã de captura do seu servidor, onde verifica a tarefa e a grava. A extensão não tem token e não envia nada por si.",
+    "message": "Salvar abre a tela de captura do seu servidor, onde você confere a tarefa e a salva. A extensão não guarda token e não envia nada por conta própria.",
     "description": "What the Capture screen mode does."
   },
   "modeQuick": {
-    "message": "Gravação direta",
+    "message": "Salvamento direto",
     "description": "The Quick save mode."
   },
   "modeQuickHelp": {
-    "message": "Gravar cria a tarefa de imediato através da API do seu servidor, com o token abaixo. A extensão envia a linha, o texto selecionado e o endereço da página ao seu servidor, e a mais ninguém.",
+    "message": "Salvar cria a tarefa na hora pela API do seu servidor, com o token abaixo. A extensão envia a linha, o texto selecionado e o endereço da página para o seu servidor, e para mais ninguém.",
     "description": "What the Quick save mode does."
   },
   "modeNeedsToken": {
-    "message": "A gravação direta precisa de um token de acesso total: até lá, Gravar abre o ecrã de captura.",
+    "message": "O salvamento direto precisa de um token de acesso total: até lá, Salvar abre a tela de captura.",
     "description": "Quick save chosen without a token that can save."
   },
   "tokenLabel": {
@@ -190,11 +190,11 @@
     "description": "Label of the token field."
   },
   "tokenHelp": {
-    "message": "Crie um token de acesso total no OpenTodo em Definições, Integrações, Tokens da API, e dê-lhe o nome deste navegador para o poder revogar à parte. Fica neste dispositivo: os navegadores nunca o sincronizam.",
+    "message": "Crie um token de acesso total no OpenTodo em Configurações, Integrações, Tokens da API, e dê a ele o nome deste navegador para poder revogá-lo separadamente. Ele fica neste dispositivo: os navegadores nunca o sincronizam.",
     "description": "Help under the token field."
   },
   "tokenSave": {
-    "message": "Verificar e gravar o token",
+    "message": "Verificar e salvar o token",
     "description": "Button that checks and saves the token."
   },
   "tokenForget": {
@@ -206,11 +206,11 @@
     "description": "Status after the token was removed."
   },
   "tokenChecking": {
-    "message": "A verificar o token…",
+    "message": "Verificando o token…",
     "description": "Status while the token is checked."
   },
   "tokenOk": {
-    "message": "Token de $NAME$ ($SCOPE$): a gravação direta está pronta.",
+    "message": "Token de $NAME$ ($SCOPE$): o salvamento direto está pronto.",
     "description": "The token works; $NAME$ is the account, $SCOPE$ its scope.",
     "placeholders": {
       "name": {
@@ -224,11 +224,11 @@
     }
   },
   "tokenRead": {
-    "message": "Este token só de leitura pode pré-visualizar uma linha mas não gravar: Gravar continua a abrir o ecrã de captura.",
+    "message": "Este token somente leitura pode pré-visualizar uma linha, mas não salvar: Salvar continua abrindo a tela de captura.",
     "description": "A read token was given."
   },
   "tokenAgent": {
-    "message": "Este token é para assistentes de IA e não pode gravar aqui; crie antes um token de acesso total.",
+    "message": "Este token é para assistentes de IA e não pode salvar aqui; crie um token de acesso total.",
     "description": "An AI assistant token was given."
   },
   "tokenRejected": {
@@ -242,19 +242,19 @@
     }
   },
   "tokenUnreachable": {
-    "message": "Não foi possível contactar o servidor.",
+    "message": "Não foi possível conectar ao servidor.",
     "description": "The server did not answer the token check."
   },
   "tokenNoServer": {
-    "message": "Grave primeiro o endereço do servidor.",
+    "message": "Salve primeiro o endereço do servidor.",
     "description": "A token was given before a server address."
   },
   "tokenHttp": {
-    "message": "Os tokens só circulam por https. Use um endereço https (ou localhost); o ecrã de captura continua a funcionar.",
+    "message": "Tokens só trafegam por https. Use um endereço https (ou localhost); a tela de captura continua funcionando.",
     "description": "A token for a plain http address."
   },
   "tokenAccess": {
-    "message": "A gravação direta precisa de acesso ao endereço do seu servidor; o navegador não o concedeu.",
+    "message": "O salvamento direto precisa de acesso ao endereço do seu servidor; o navegador não o concedeu.",
     "description": "The browser did not grant access to the server address."
   }
 }
