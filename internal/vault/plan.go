@@ -28,7 +28,13 @@ func (e *engine) build() []Op {
 		for _, f := range sortedKeys(b) {
 			raw := jsonOf(b[f])
 			base := e.base.Get(entity, id)[f]
-			oid := opID(e.st.Device, entity, id, f, string(base.V)+"@"+strconv.FormatInt(base.TS, 10)+"@"+base.D, raw)
+			idValue := []byte(raw)
+			if e.fresh[key] {
+				// A new entity's id already names the run that made it; its
+				// values (created_at) may differ on a retry.
+				idValue = nil
+			}
+			oid := opID(e.st.Device, entity, id, f, string(base.V)+"@"+strconv.FormatInt(base.TS, 10)+"@"+base.D, idValue)
 			if s, ok := b[f].(string); ok && e.sealing(entity, id, f, b) {
 				sealed, err := e.o.Crypter.Seal(entity, id, f, s)
 				if err != nil {
