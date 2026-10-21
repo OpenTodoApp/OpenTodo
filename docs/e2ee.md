@@ -13,6 +13,8 @@ Optional, per account, off by default (OpenSpec change `e2ee`). When it is on, y
 
 Turn it on in **Settings → Account → Encryption**.
 
+[Automation rules](automations.md) work with encryption: their conditions and actions use ids and dates. Only the comment action is unavailable.
+
 ## What is encrypted, what is not
 
 Encrypted, in your personal data (Inbox, your own projects, labels, saved views):

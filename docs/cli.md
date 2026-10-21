@@ -13,6 +13,8 @@ order: 20
 
 It is an **online** client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. The one exception is [`ot vault`](vault.md), which keeps a folder of Markdown files and its own sync state. Every write goes through the REST API, which records it in the operation log, so changes made with `ot` reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.
 
+`ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. Rules are built in the app. A read token lists but cannot switch (exit 5).
+
 ## Install
 
 Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):

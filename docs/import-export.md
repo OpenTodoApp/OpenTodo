@@ -14,6 +14,8 @@ card: import
 
 Your tasks are yours. You can download all of them at any time, and bring tasks in from other places. Nothing is locked in.
 
+The export includes your [automation rules](automations.md) (`rules`), and importing your own export restores them with their ids.
+
 ## Download everything
 
 Open **Settings → Data** and select **Download export (JSON)** in the **Export** row. You get one file with all your projects, sections, tasks and subtasks, labels, reminders, saved views, [saved locations](locations-and-places.md) and [time entries](time-tracking.md), including completed tasks and items in the Trash. Shared projects you're a member of are included too.

@@ -26,6 +26,7 @@ OpenTodo can notify other systems when your tasks and projects change: switch on
 | `project.deleted` | the project gets a tombstone |
 | `import.completed` | an [import](import.md) job finished (done or failed): one summary for the whole job, see [Imports](#imports) |
 | `import.undone` | an import was undone: one summary, see [Imports](#imports) |
+| `rule.fired` | an [automation rule](automations.md) with a webhook action changed a task: sent only to the webhook the rule names, with `data.task`, `data.rule` (`id`, `name` as stored, ciphertext for an encrypted account) and the rule's changes |
 | `ping` | you pressed **Send test** (not subscribable, always sent on request) |
 
 Task and project events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST API, the `ot` CLI and CalDAV. Imports are the exception: they are reported once per job (see [Imports](#imports)). Rules:
@@ -69,7 +70,7 @@ Every delivery is a `POST` with a JSON body:
 | `event` | event name, also in `X-OpenTodo-Event` |
 | `time` | when the server derived the event, Unix milliseconds |
 | `webhook_id` | the webhook that matched, also in `X-OpenTodo-Webhook` |
-| `source` | `device` (a syncing app), `server` (REST API / CLI), `import` or `caldav`. Lets a receiver ignore changes it caused itself |
+| `source` | `device` (a syncing app), `server` (REST API / CLI), `import`, `caldav` or `rule` (an [automation rule](automations.md)). Lets a receiver ignore changes it caused itself |
 | `device` | the device id when `source` is `device` |
 | `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). `ping` carries `data: {}` |
 | `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before. `notes_doc` is never listed, and a change that only touched it (a merged note republished with the same text) sends no event |

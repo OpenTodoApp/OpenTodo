@@ -11,7 +11,7 @@ order: 23
 
 <picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The Filter view with the query (@call | @errand) & due <= 7 days and the matching tasks below."></picture>
 
-When the built-in views aren't enough, describe the tasks you want with a filter query and save the result as a view of your own. Saved views sync to all your devices, and a dashboard shows several of them at once.
+When the built-in views aren't enough, describe the tasks you want with a filter query and save the result as a view of your own. Saved views sync to your devices; a view's menu can [make an automation rule](automations.md#turn-a-filter-into-a-rule) from it.
 
 ## Save your own views
 

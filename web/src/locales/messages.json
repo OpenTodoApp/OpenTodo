@@ -322,6 +322,9 @@
   "A saved location needs a name": [
     "web/src/lib/locations.ts"
   ],
+  "A server variable sets this; change it in the server configuration.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "A session is running": [
     "web/src/app/focus/FocusView.tsx"
   ],

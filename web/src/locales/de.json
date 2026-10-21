@@ -4649,5 +4649,6 @@
   "{n, plural, one {due in # day} other {due in # days}}": "{n, plural, one {Datum in # Tag} other {Datum in # Tagen}}",
   "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {innerhalb von # Tag} other {innerhalb von # Tagen}}",
   "{name} (copy)": "{name} (Kopie)",
-  "{term} cannot be used in a rule": "{term} kann nicht in einer Regel verwendet werden"
+  "{term} cannot be used in a rule": "{term} kann nicht in einer Regel verwendet werden",
+  "A server variable sets this; change it in the server configuration.": "Eine Servervariable legt das fest; ändere es in der Serverkonfiguration."
 }

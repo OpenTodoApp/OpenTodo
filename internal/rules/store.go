@@ -66,7 +66,7 @@ type State struct {
 	Refusals     []int64
 }
 
-// Store is the engine's tables (migration 0042_rules_engine.sql).
+// Store is the engine's tables (migration 0043_rules_engine.sql).
 type Store struct {
 	db  *sql.DB
 	now func() time.Time

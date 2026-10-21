@@ -95,6 +95,7 @@
   "scope_change",
   "self_action",
   "session_required",
+  "set_by_environment",
   "setup_code_invalid",
   "setup_token_invalid",
   "signup_closed",
