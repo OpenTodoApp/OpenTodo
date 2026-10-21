@@ -169,7 +169,7 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
           emptyText={mapsOn ? t('Type an address, a saved location or coordinates such as 45.4642, 9.19.') : t('No saved location matches. Type coordinates such as 45.4642, 9.19.')}
           onPick={pick} onClose={onClose} />
         {mapsOn && <p className="text-meta text-faint" data-privacy-line>{t('What you type here is sent to the map provider through this server.')}</p>}
-        {message && <p role="status" className="text-meta text-danger">{message}</p>}
+        {message && <p role="status" className="text-meta text-danger" data-location-message>{message}</p>}
       </div>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="secondary" icon="locate-fixed" onClick={useMyLocation}>{t('Use my location')}</Button>
