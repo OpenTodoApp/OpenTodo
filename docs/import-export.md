@@ -24,6 +24,8 @@ The JSON file lists your [attachments](attachments.md) but doesn't contain the f
 
 The person who runs your server can also set up automatic [backups](backups.md) of the whole server.
 
+A [Markdown vault](vault.md) is not an export: it keeps your projects as files in two-way sync, but leaves out comments, attachments and time entries. Use the JSON file to keep everything.
+
 ## Import from another app
 
 Open **Settings → Data**, select **Import data…** (or press <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>I</kbd>) and choose a file: an **OpenTodo export**, a **CSV file** with a `title` column, or a **JSON export from another task app**. Nothing is written straight away. You check the format OpenTodo detected, choose the options, read a preview that says what will happen to each row, and then import. The tasks reach all your devices on their next sync.

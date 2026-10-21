@@ -138,6 +138,7 @@ The server cannot decrypt. Each feature that needs content degrades explicitly:
 | Revision history, activity | Served as stored; the web app decrypts values for display. |
 | Sharing | First share of a project refused with 409 `encryption_enabled`. |
 | Filters | Evaluated on the device on plaintext; nothing server-side. |
+| Markdown vault | [`ot vault`](vault.md) decrypts on your computer with the key stored by `ot encryption unlock` and encrypts what it sends, so the server sees ciphertext; the vault's files hold plaintext. It refuses to sync without the key (`encryption_enabled`). |
 
 ## API
 

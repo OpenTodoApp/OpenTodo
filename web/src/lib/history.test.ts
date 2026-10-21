@@ -50,6 +50,8 @@ describe('history', () => {
     expect(deviceLabel({ device: 'agent:t1', userId: 'u' }, 'mine')).toBe('AI assistant')
     // A reminder or task change from a calendar app (caldav-interop "Reminders written by calendar clients").
     expect(deviceLabel({ device: 'caldav:ap1', userId: 'u' }, 'mine')).toBe('a calendar app (CalDAV)')
+    // Edits from a file of `ot vault` (markdown-vault).
+    expect(deviceLabel({ device: 'vault:0123abcd', userId: 'u' }, 'mine')).toBe('a Markdown vault')
     expect(deviceLabel({ device: 'abcdef', userId: 'u' }, 'mine')).toBe('another device (abcd)')
     expect(deviceLabel({ device: 'abcdef', userId: 'bob' }, 'mine', 'me', [
       { projectId: 'p', role: 'owner', ownerId: 'me', members: [{ userId: 'bob', name: 'Bob', email: 'b@x', role: 'editor' }] },

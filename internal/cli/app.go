@@ -90,12 +90,16 @@ func (a *App) sleep(d time.Duration) {
 }
 
 // Main runs the CLI and returns the process exit code.
-func (a *App) Main(args []string) int {
+func (a *App) Main(args []string) int { return a.MainContext(context.Background(), args) }
+
+// MainContext is Main with a context that ends long-running commands
+// (`ot vault watch`).
+func (a *App) MainContext(ctx context.Context, args []string) int {
 	a.init()
 	a.out = a.Stdout
 	a.gate = &writeGate{}
 	g := &globalFlags{}
-	err := a.run(context.Background(), g, args)
+	err := a.run(ctx, g, args)
 	a.Stdout = a.out
 	if err == nil {
 		if a.gate.dry != nil {
@@ -169,6 +173,7 @@ func init() {
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name> [--yes]", cmdToken},
 		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token] [--decrypt]", cmdMCP},
 		{"encryption", "end-to-end encryption on this machine: unlock, lock, status", "ot encryption unlock [--recovery] [--passphrase-file <path>]\not encryption lock\not encryption status", cmdEncryption},
+		{"vault", "Markdown vault: a folder of project files in two-way sync", "ot vault init <dir> [--adopt]\not vault sync [<dir>]\not vault status [<dir>]\not vault watch [<dir>]", cmdVault},
 		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
 		{"time", "track time: start, stop, log, list, export", "ot time start <ref> [--note <text>]\not time stop\not time log <ref> <duration> [--on <day>] [--note <text>]\not time log <ref> --from HH:MM --to HH:MM [--on <day>] [--note <text>]\not time list [--task <ref>] [--from <day>] [--to <day>] [--running] [--limit <n>]\not time export [--from <day>] [--to <day>] [-o <file>]", cmdTime},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},

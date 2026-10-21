@@ -132,6 +132,7 @@ The highlights: the app in six languages, quick add in plain language, projects 
 - **Webhooks** on task and project events for Home Assistant, n8n or a Telegram relay: signed, retried, logged, with private-network protection. [Webhooks](docs/webhooks.md)
 - **Import** the app's own export, CSV or other task managers' JSON exports, with a preview, duplicate detection and undo. [Import](docs/import.md)
 - **Export** everything as JSON from Settings or `GET /api/v1/export`.
+- **Markdown vault**: `ot vault` keeps a folder of Markdown files in two-way sync, one file per project in the Obsidian Tasks format. [Vault](docs/vault.md)
 - **Scheduled backups** of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption and `opentodo restore`. [Backups](docs/backups.md)
 
 ### Security and privacy

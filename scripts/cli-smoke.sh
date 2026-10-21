@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # End-to-end smoke test of the `ot` CLI against a freshly started local server:
 # owner setup -> login -> add -> list --json -> done (dry run first) -> exit codes
-# -> schema -> export -> logout. Prints "CLI OK".
+# -> schema -> vault -> export -> logout. Prints "CLI OK".
 #
 # Usage: scripts/cli-smoke.sh            (expects bin/opentodo and bin/ot; see `make cli-smoke`)
 # Env:   OPENTODO_BIN, OT_BIN            override the binaries
@@ -79,12 +79,28 @@ OPENTODO_TOKEN=ot_wrong "$OT" list >/dev/null 2>&1; [ $? -eq 3 ] || fail "bad to
 set -e
 OPENTODO_URL= OPENTODO_CONFIG=/nonexistent/config.json "$OT" schema | grep -q '"output_version": 1' || fail "ot schema offline"
 
-# 7. Export includes the task.
+# 7. Markdown vault: a line added to a file becomes a task, a completion in the
+#    app becomes `- [x]` in the file.
+VAULT="$WORK/vault"
+"$OT" vault init "$VAULT" >/dev/null || fail "ot vault init"
+[ -f "$VAULT/.opentodo/state.json" ] || fail "vault state not written"
+[ -f "$VAULT/Smoke.md" ] || fail "vault project file not written"
+printf -- '- [ ] Vault smoke line\n' >> "$VAULT/Inbox.md"
+"$OT" vault sync "$VAULT" --json | grep -q '"created":1' || fail "ot vault sync did not create the task"
+VID=$(sed -n 's/^- \[ \] Vault smoke line 🆔 \([A-Za-z0-9_-]*\)$/\1/p' "$VAULT/Inbox.md")
+[ -n "$VID" ] || fail "the line did not get its id"
+"$OT" list --inbox --json | grep -q "\"id\":\"$VID\"" || fail "the vault's task is not in ot list"
+"$OT" done "$VID" >/dev/null || fail "ot done (vault task)"
+"$OT" vault sync "$VAULT" >/dev/null || fail "second ot vault sync"
+grep -q -- "- \[x\] Vault smoke line" "$VAULT/Inbox.md" || fail "the completion did not reach the file"
+"$OT" vault status "$VAULT" --json | grep -q '"changed":\[\]' || fail "ot vault status"
+
+# 8. Export includes the task.
 "$OT" export --out "$WORK/export.json" >/dev/null || fail "ot export"
 grep -q '"format":"opentodo-export"' "$WORK/export.json" || fail "export format"
 grep -q "$ID" "$WORK/export.json" || fail "export content"
 
-# 8. Logout revokes the token.
+# 9. Logout revokes the token.
 "$OT" auth logout --yes >/dev/null || fail "ot auth logout"
 set +e
 "$OT" list >/dev/null 2>&1; [ $? -eq 2 ] || fail "after logout the CLI should ask to sign in (exit 2)"

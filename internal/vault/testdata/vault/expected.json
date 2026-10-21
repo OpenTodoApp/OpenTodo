@@ -1,0 +1,37 @@
+{
+  "project": {
+    "p-home": {"name": "Home", "color": "#22c55e", "icon": "house", "position": 1000, "archived": false, "parent_id": null, "deleted_at": null},
+    "p-work": {"name": "Work", "color": "#3b82f6", "icon": null, "position": 2000, "archived": false, "parent_id": null, "deleted_at": null},
+    "p-launch": {"name": "Launch", "color": "#8b5cf6", "icon": null, "position": 1000, "archived": false, "parent_id": "p-work", "deleted_at": null},
+    "p-hiring": {"name": "Hiring", "color": "#ec4899", "icon": null, "position": 2000, "archived": false, "parent_id": "p-work", "deleted_at": null}
+  },
+  "section": {
+    "s-weekend": {"name": "Weekend", "project_id": "p-home", "position": 1000, "deleted_at": null},
+    "s-next": {"name": "Next week", "project_id": "p-launch", "position": 1000, "deleted_at": null}
+  },
+  "label": {
+    "l-errands": {"name": "errands", "position": 1000, "deleted_at": null},
+    "l-family": {"name": "Family", "position": 2000, "deleted_at": null},
+    "l-bills": {"name": "bills", "position": 3000, "deleted_at": null},
+    "l-deep": {"name": "Deep work", "position": 4000, "deleted_at": null}
+  },
+  "field": {
+    "f-stage": {"name": "Stage", "project_id": "p-launch", "type": "text", "deleted_at": null}
+  },
+  "time_entry": {
+    "e-1": {"task_id": "t-home2", "started_at": 1792400000000, "ended_at": 1792404800000, "deleted_at": null}
+  },
+  "task": {
+    "t-inbox1": {"title": "Call mum", "project_id": null, "priority": 2, "due": {"date": "2026-10-26"}, "labels": ["l-family"], "position": 1000},
+    "t-inbox2": {"title": "Water the plants", "project_id": null, "priority": 4, "position": 2000},
+    "t-home1": {"title": "Book the plumber", "project_id": "p-home", "priority": 2, "due": {"date": "2026-10-25", "time": "09:00"}, "deadline": "2026-10-30", "estimate_minutes": 45, "labels": ["l-errands"], "blocked_by": ["t-home2"], "position": 1000},
+    "t-home2": {"title": "Fix the boiler", "description": "Call before 9.\n\n- [ ] find the manual", "project_id": "p-home", "priority": 1, "origin": {"url": "https://github.com/acme/flat/issues/7"}, "position": 2000},
+    "t-home3": {"title": "Order the part", "project_id": "p-home", "parent_id": "t-home2", "priority": 4, "start": "2026-10-22", "position": 1000},
+    "t-home4": {"title": "Pay rent", "project_id": "p-home", "priority": 4, "due": {"date": "2026-11-01"}, "recurrence": "every month", "labels": ["l-bills"], "position": 3000},
+    "t-home5": {"title": "Return the drill", "project_id": "p-home", "priority": 4, "completed_at": 1792411200000, "position": 4000},
+    "t-home6": {"title": "Clean the windows", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "start": "someday", "evening": true, "position": 1000},
+    "t-work1": {"title": "Weekly report", "project_id": "p-work", "priority": 4, "due": {"date": "2026-10-23"}, "recurrence": "every week after completion", "labels": ["l-deep"], "position": 1000},
+    "t-launch1": {"title": "Ship the beta", "project_id": "p-launch", "section_id": "s-next", "priority": 4, "due": {"date": "2026-10-28", "time": "14:00", "tz": "Europe/Rome"}, "fields.f-stage": "beta", "position": 1000},
+    "t-hire1": {"title": "Interview Ada", "project_id": "p-hiring", "priority": 4, "position": 1000}
+  }
+}

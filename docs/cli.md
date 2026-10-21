@@ -11,7 +11,7 @@ order: 20
 
 `ot` is a small, statically linked client for the OpenTodo REST API. It is built for two audiences: people who live in a terminal (`ot add "Call the plumber" --due tomorrow`, `ot today`) and scripts, cron jobs and editor integrations that want stable JSON output and exit codes instead of hand-written `curl`.
 
-It is an **online** client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. Every write goes through the REST API, which records it in the operation log, so changes made with `ot` reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.
+It is an **online** client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. The one exception is [`ot vault`](vault.md), which keeps a folder of Markdown files and its own sync state. Every write goes through the REST API, which records it in the operation log, so changes made with `ot` reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.
 
 ## Install
 
@@ -215,6 +215,17 @@ ot mcp --decrypt                           # the bridge, decrypting on this mach
 
 `ot mcp --decrypt` refuses to start, without prompting, when no key is stored or the stored one is out of date (`stale`: the passphrase or key changed on another device); run `ot encryption unlock` again. Custom field text and task origins are not encrypted by the bridge: the server refuses them for an encrypted account.
 
+## Markdown vault
+
+`ot vault` keeps a folder of Markdown files, one per project, in two-way sync with the account; it is the one command group that keeps local state (the files and `<dir>/.opentodo/`). It is a sync device of its own and needs a `full` token; with `--read-only` it pulls and writes the files but sends nothing. See [Markdown vault](vault.md).
+
+```bash
+ot vault init ~/Notes/Tasks [--adopt]
+ot vault sync [<dir>] [--dry-run] [--read-only] [--json]
+ot vault status [<dir>] [--json]
+ot vault watch [<dir>]
+```
+
 ## Scripting: JSON output and exit codes
 
 Every command accepts `--json`. Stdout then holds only JSON, with the same field names as the [REST API](api.md): an array for lists, the entity for single results, and the error envelope on failure. The shapes are documented as JSON Schemas with an **`output_version`** (currently `1`, reported by `ot version --json` and `ot schema`). Within a version fields are only added; a breaking change would need a new version you opt into.
@@ -302,7 +313,7 @@ Or add a reminder task every Monday morning:
 
 ## Limits
 
-- Online only: no offline queue, no local cache. Offline capture is what the web app and PWA are for.
+- Online only, apart from `ot vault`: no offline queue, no local cache. Offline capture is what the web app and PWA are for.
 - `--due` understands a fixed set of words; the natural-language quick-add grammar lives in the web client.
 - Rate limits on `auth/login` apply (10 per minute per address); `ot auth set-token` avoids them entirely.
 - No shell completion scripts yet (`ot schema` has everything a completion script needs).
