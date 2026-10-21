@@ -758,6 +758,52 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 }
 
+/* Surfaces (OpenSpec change surfaces-v2): structure felt through soft fills and
+   sunken areas instead of outlines. One block recipe for every task block, month and
+   plan row and timeline bar (D1); events are neutral with a hatched edge (D2); the
+   past is dimmed by mixing, never by opacity (D3); a board column is a sunken surface
+   (D6) with a drop placeholder sized to the dragged card (D7); board cards lift on
+   hover (D8); secondary settings cards and statistics panels are flat sections (D9). */
+@layer components {
+.ui-block {
+  background: var(--hue-soft);
+  border-inline-start: 3px solid var(--hue-solid);
+  border-radius: var(--radius-control);
+  color: var(--ot-text-strong);
+}
+.ui-block--row { border-radius: var(--radius-chip); }
+.ui-block--dashed { border-inline-start-style: dashed; }
+.ui-block--past {
+  background: color-mix(in oklab, var(--hue-soft) 55%, var(--ot-surface));
+  border-inline-start-color: color-mix(in oklab, var(--hue-solid) 60%, var(--ot-surface));
+  color: var(--ot-faint);
+}
+.ui-block--late {
+  background: var(--ot-danger-soft);
+  border-inline-start-color: var(--ot-danger);
+  color: var(--ot-danger-soft-text);
+}
+.ui-block--event {
+  background:
+    repeating-linear-gradient(45deg, var(--ot-border-input) 0 2px, transparent 2px 4px) left / 3px 100% no-repeat,
+    var(--ot-sunken);
+  border-inline-start: 0;
+  padding-inline-start: calc(3px + 0.375rem);
+  color: var(--ot-muted);
+}
+.ui-block-dot { @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-hue-solid; }
+.ui-column { @apply rounded-card bg-sunken p-1.5 dark:border dark:border-default; }
+.ui-drop-placeholder {
+  border: 2px dashed var(--ot-border-input);
+  border-radius: var(--radius-control);
+  background: var(--ot-accent-soft);
+}
+.ui-card--lift { @apply transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2; }
+.ui-section-flat { @apply py-5; }
+.ui-section-flat + .ui-section-flat,
+.surface-card + .ui-section-flat { @apply border-t border-default; }
+}
+
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
 @layer components {
 /* Row density (OpenSpec change ux-overhaul, appearance-preferences "Density

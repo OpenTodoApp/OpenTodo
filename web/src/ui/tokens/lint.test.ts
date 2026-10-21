@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import css from '../../index.css?raw'
 import { STYLE_NOT_YET_MIGRATED, STYLE_NOT_YET_MIGRATED_MAX, TITLE_NOT_YET_MIGRATED, TITLE_NOT_YET_MIGRATED_MAX } from './notYetMigrated'
-import { format, nativeTitles, rawStyles } from './styleLint'
+import { format, handMadeSurfaces, nativeTitles, rawStyles } from './styleLint'
 
 // OpenSpec design-system "Semantic design tokens": shared UI, screens and the
 // component style classes colour through tokens, never raw Tailwind palette
@@ -218,6 +218,16 @@ describe('token lint', () => {
     const skip = new Set(STYLE_NOT_YET_MIGRATED)
     const found = appFiles.filter(([path]) => !skip.has(path)).flatMap(([path, src]) => rawStyles(path, src)).map(format)
     expect(found).toEqual([])
+  })
+
+  it('settings panels take their card or flat section from SettingsSection (surfaces-v2 card tiers)', () => {
+    const found = appFiles.flatMap(([path, src]) => handMadeSurfaces(path, src)).map(format)
+    expect(found).toEqual([])
+    // The rule itself: a hand-made card in a panel fails with file and line; the allowed classes do not.
+    const panel = 'import { SettingsSection } from "../ui"\n<div className="space-y-2">\n<div className="rounded-card border border-default bg-surface p-4 shadow-1" />'
+    expect(handMadeSurfaces('Fixture.tsx', panel).map(format)).toEqual(['Fixture.tsx:3: rounded-card border border-default bg-surface p-4 shadow-1'])
+    expect(handMadeSurfaces('Fixture.tsx', 'import { SettingsSection } from "../ui"\n<div className="ui-section-flat" /><div className="ui-column" />')).toEqual([])
+    expect(handMadeSurfaces('Board.tsx', '<div className="rounded-card shadow-1" />')).toEqual([])
   })
 
   it('screens off the not-yet list use the Tooltip primitive, not the native title', () => {

@@ -344,7 +344,7 @@ export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEn
   const online = useOnline()
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-lg space-y-4 rounded-card border border-default bg-surface p-6 shadow-1" data-testid="enrolment-gate">
+      <div className="w-full max-w-lg space-y-4 rounded-card border border-default bg-surface p-6 shadow-1" data-testid="enrolment-gate">{/* surface-lint-allow: the enrolment gate replaces the page */}
         <div>
           <h1 className="text-h3 font-semibold">{t('Set up two-factor authentication')}</h1>
           <p className="mt-1 text-body text-muted">
