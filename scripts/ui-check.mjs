@@ -44,6 +44,26 @@ export function iconProblems(file, text) {
   return out
 }
 
+// A due's wall time joined into text ("`${due.time}`", "{task.due.time}") skips the
+// user's time format and the viewer's zone (OpenSpec change ux-feedback-2, D3): go
+// through formatDueLong/describeDue/formatTime in lib/dates.ts instead.
+const RAW_DUE_TIME = [
+  /\$\{[^}]*\bdue\??\.time\b[^}]*\}/, // a template literal: `${task.due.time}`
+  />\s*\{\s*[\w.?]*\bdue\??\.time\s*\}/, // JSX text: >{task.due.time}<
+  /\+\s*[\w.?]*\bdue\??\.time\b|\bdue\??\.time\s*\+/, // string concatenation
+]
+
+export function rawDueTimeProblems(file, text) {
+  const out = []
+  text.split('\n').forEach((line, i) => {
+    // A due time given to formatTime, or only tested (`due.time ?`, `due.time &&`), is not raw text.
+    const code = line.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '')
+      .replace(/formatTime\(\s*[\w.?]*\bdue\??\.time\b/g, 'formatTime(t').replace(/\bdue\??\.time\s*(\?(?!\.)|&&)/g, 'cond $1')
+    if (RAW_DUE_TIME.some((re) => re.test(code))) out.push(`${file}:${i + 1}: raw due time in text (use formatDueLong or formatTime): ${line.trim().slice(0, 100)}`)
+  })
+  return out
+}
+
 function storyProblems() {
   const ui = join(repo, 'web/src/ui')
   return walk(ui)
@@ -65,6 +85,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     ...storyProblems(),
     ...walk(app).filter((f) => f.endsWith('.tsx') && !/\.test\.tsx$/.test(f))
       .flatMap((f) => iconProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...[...walk(app), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
+      .flatMap((f) => rawDueTimeProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),
   ]
   if (problems.length) {

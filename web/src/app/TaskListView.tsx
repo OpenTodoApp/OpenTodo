@@ -18,7 +18,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, PageHeader, useFinePointer } from '../ui'
+import { Button, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { BoardView } from './BoardView'
@@ -150,7 +150,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // and above) and the Inbox. Date and filter views keep their own sort.
   const manual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox'
   const sectionOfRow = useMemo(() => sectionOfRows(board, columns, groups), [board, columns, groups])
-  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap }, moveToSection, onDropped: setSelectedId })
+  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked }, moveToSection, onDropped: setSelectedId })
   const { latestSectionMap } = drag
 
   // The view supplies defaults; attributes typed in the quick-add line override them.
@@ -238,7 +238,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
-        <div className={board || timeline ? 'mx-auto' : m.fieldColumns ? 'mx-auto max-w-6xl' : 'mx-auto max-w-3xl'} data-list-page>
+        <div className={PAGE_FRAME} data-page-body={board || timeline ? 'full' : m.fieldColumns ? 'wide' : 'list'} data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />

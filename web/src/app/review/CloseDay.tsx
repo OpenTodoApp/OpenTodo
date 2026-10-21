@@ -27,6 +27,7 @@ import { navigate } from '../router'
 import { useShortcutScope } from '../shortcuts'
 import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
+import { reopenDayAction } from '../reopenDay'
 import { ReviewProgress } from './ReviewProgress'
 import { StepCard } from './StepCard'
 
@@ -114,6 +115,7 @@ export function CloseDay({ initialStep = 'summary' }: { initialStep?: CloseStepI
   return (
     <PageBody width="list">
       <PageHeader title={t('Close the day')} icon="moon" meta={meta} help="review/close"
+        actions={closedToday && input ? <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(input.today)} data-reopen-day>{t('Reopen the day')}</Button> : undefined}
         back={{ label: t('Today'), onClick: () => navigate({ view: 'today' }), hideFrom: 'lg' }} />
       {!summary ? <Skeleton shape="row" count={4} /> : (
         <>

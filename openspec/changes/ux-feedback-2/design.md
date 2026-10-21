@@ -43,7 +43,7 @@ The row at the end of Today shows "Day closed, 18:42" with two actions: "Reopen 
 
 ### D3. One formatter call for every due shown while scheduling
 
-Process the Inbox and Focus switch to `describeDue(localDueOf(task.due, zone))` (the row's own formatter), which already applies the time format and the viewer's zone. The DatePicker's placeholder builds its example from `formatDate(addDaysISO(today, 1), 'numeric', resolved)` and the error message already does the same. A unit test renders both views with `time_format: '12h'` and a `month-day` order; a source check (`grep` in the existing `ui-lint` style) forbids appending `due.time` to text without `formatTime`.
+Process the Inbox and Focus switch to `formatDueLong(task.due, zone)`, a helper next to `describeDue` in `lib/dates.ts` that reads the due through `localDueOf` and writes it with `formatDate(…, 'long')` and `formatTime`, so it applies the date and time formats and the viewer's zone while keeping the long date these cards showed before (`describeDue` would have turned "Wed 21 Oct" into "Tomorrow"). The DatePicker's placeholder builds its example from `formatDate(addDaysISO(today, 1), 'numeric', resolved)` and the error message already does the same. A unit test renders both views with `time_format: '12h'` and a `month-day` order; a source check (`grep` in the existing `ui-lint` style) forbids appending `due.time` to text without `formatTime`.
 
 ### D4. Sidebar drops go through the list's drag controller
 
@@ -64,9 +64,11 @@ The guide line is a `::before` on the children's group, positioned at the parent
 The page header primitive renders inside a frame `mx-auto w-full max-w-[80rem] px-4 md:px-8`; the page body primitive renders inside the same frame and applies the content width (48, 42 rem or the whole frame) left-aligned within it. Alternatives:
 - **Keep content centred and centre the header over the widest frame**: the title would sit far left of a centred list on wide screens.
 - **Header follows the content (today)**: the problem being fixed.
-- **Chosen: left-aligned content in a shared frame.** At 1280 px the frame is the whole column, so lists move left by the difference between the column and 48 rem only on screens wider than the frame plus the sidebar; on a 1440 px screen with the panel closed, a list starts about 120 px further left than today. The layout check's same-left-edge scenario now also checks the header's right edge across Inbox, a project in list, board and timeline, Labels and Settings.
+- **Chosen: left-aligned content in a shared frame.** A list now starts at the frame's left edge instead of being centred in the column: wherever the column is wider than 48 rem (a 1280 px window with the sidebar open and the panel closed), the list starts at the header's left edge, up to about 130 px further left than before. The new `make e2e` step ("one page frame") measures the header's left and right edges and the content's left edge across Inbox, Labels, Trash, Filter and a project in list, board and timeline at 1280 and 1440 px; the layout check runs at phone widths only, so the frame check lives with the desktop flows.
 
-Boards, timelines and calendars are capped at 80 rem and scroll sideways inside the frame (the board already has its own horizontal scroller; the timeline and the Plan view gain one). This is the budget-relevant part: no new vertical scroll region (horizontal scrollers do not count), no new chrome row.
+As built: `PageBody` is the frame (`PAGE_FRAME`: `page-frame mx-auto w-full max-w-[80rem]` plus the padding) and marks the page type in `data-page-body`; one CSS rule gives every direct child except the header its width (`list` 48, `form` 42, a new `wide` 72 rem for the field columns layout, `full` none). The task lists use the same `PAGE_FRAME` (their padding is on the scroller around them). Settings section pages keep their two-column layout (section list beside the page) in the same 80 rem frame; their header is in the right column, so the "same left edge" check covers single-column pages only.
+
+Boards, timelines and calendars are capped at 80 rem and scroll sideways inside the frame (the board and the timeline already have their own horizontal scroller; Plan and the calendar grids shrink their columns). This is the budget-relevant part: no new vertical scroll region (horizontal scrollers do not count), no new chrome row.
 
 ### Interface budget
 
@@ -74,7 +76,7 @@ Boards, timelines and calendars are capped at 80 rem and scroll sideways inside 
 - Task properties visible by default: unchanged.
 - Primary sidebar destinations: unchanged; drops add no item.
 - Vertical scroll regions: unchanged (the frame adds only horizontal scrolling inside boards, timelines and Plan).
-- Shortcuts: none added; the cheat sheet's `m` and `l` entries gain "or drag onto a project / label" in their description.
+- Shortcuts: none added; the cheat sheet's `Shift+L` (labels) entry gains "or drag the task onto a label in the sidebar". Lists have no `m`: moving is **Move to project** in the `.` menu, which the docs name next to dragging.
 
 ### Size
 

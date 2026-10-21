@@ -1358,7 +1358,6 @@
   "Labels for {tasks}": "Étiquettes pour {tasks}",
   "Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.": "Les étiquettes regroupent des tâches de plusieurs projets. Ajoutez-en une à une tâche sélectionnée avec {kbd}, ou créez-en une ici.",
   "Labels group tasks across projects: press L to add one": "Les étiquettes regroupent des tâches de plusieurs projets : appuyez sur L pour en ajouter une",
-  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)": "Étiquettes de la tâche sélectionnée ou des tâches cochées (tapez pour rechercher, Entrée ajoute ou crée)",
   "Labels: {labels}": "Étiquettes : {labels}",
   "Language": "Langue",
   "Language, start view, date and time, calendar and keyboard": "Langue, vue de démarrage, date et heure, calendrier et clavier",
@@ -4225,7 +4224,6 @@
   "Quick dates": "Dates rapides",
   "Remove time": "Retirer l’heure",
   "This weekend": "Ce week-end",
-  "Type a date: fri, 3 days, 22/10": "Saisir une date : ven, 3 jours, 22/10",
   "Click a task to": "Un clic sur une tâche",
   "Edit in place": "Modifier sur place",
   "Edit its title in place, or open its details beside the list. This device only.": "Modifier son titre sur place, ou ouvrir ses détails à côté de la liste. Cet appareil seulement.",
@@ -4233,5 +4231,14 @@
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "Modification. Entrée enregistre, Échap annule, Maj+Entrée ouvre les détails.",
   "Open details": "Ouvrir les détails",
   "Task properties": "Propriétés de la tâche",
-  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Suggère des projets ou des étiquettes ; Entrée ou Tab choisit, #Maison/Docs choisit un sous-projet"
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Suggère des projets ou des étiquettes ; Entrée ou Tab choisit, #Maison/Docs choisit un sous-projet",
+  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": "Étiquettes de la tâche sélectionnée ou des tâches cochées (tapez pour rechercher, Entrée ajoute ou crée) ; ou faites glisser la tâche sur une étiquette de la barre latérale",
+  "Type a date: fri, 3 days, {example}": "Saisir une date : ven, 3 jours, {example}",
+  "Reopen the day": "Rouvrir la journée",
+  "Day reopened": "Journée rouverte",
+  "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": "{n, plural, one {Journée rouverte, # tâche revenue dans Aujourd’hui} other {Journée rouverte, # tâches revenues dans Aujourd’hui}}",
+  "Changed since, left as is: {titles}": "Modifiées depuis, laissées telles quelles : {titles}",
+  "Added {label}": "{label} ajoutée",
+  "Already has {label}": "A déjà {label}",
+  "These tasks already have {label}": "Ces tâches ont déjà {label}"
 }

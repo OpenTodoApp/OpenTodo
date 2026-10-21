@@ -1358,7 +1358,6 @@
   "Labels for {tasks}": "Etiquetas para {tasks}",
   "Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.": "Las etiquetas agrupan tareas de distintos proyectos. Añade una a una tarea seleccionada con {kbd} o crea una aquí.",
   "Labels group tasks across projects: press L to add one": "Las etiquetas agrupan tareas de distintos proyectos: pulsa L para añadir una",
-  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)": "Etiquetas de la tarea seleccionada o de las marcadas (escribe para buscar, Intro añade o crea)",
   "Labels: {labels}": "Etiquetas: {labels}",
   "Language": "Idioma",
   "Language, start view, date and time, calendar and keyboard": "Idioma, vista inicial, fecha y hora, calendario y teclado",
@@ -4225,7 +4224,6 @@
   "Quick dates": "Fechas rápidas",
   "Remove time": "Quitar la hora",
   "This weekend": "Este fin de semana",
-  "Type a date: fri, 3 days, 22/10": "Escribe una fecha: vie, 3 días, 22/10",
   "Click a task to": "Al hacer clic en una tarea",
   "Edit in place": "Editar en el sitio",
   "Edit its title in place, or open its details beside the list. This device only.": "Editar su título en el sitio o abrir sus detalles junto a la lista. Solo este dispositivo.",
@@ -4233,5 +4231,14 @@
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "Editando. Intro guarda, Escape cancela, Mayús+Intro abre los detalles.",
   "Open details": "Abrir detalles",
   "Task properties": "Propiedades de la tarea",
-  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Sugiere proyectos o etiquetas; Intro o Tab elige, #Casa/Documentos elige un subproyecto"
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Sugiere proyectos o etiquetas; Intro o Tab elige, #Casa/Documentos elige un subproyecto",
+  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": "Etiquetas de la tarea seleccionada o de las marcadas (escribe para buscar, Intro añade o crea); o arrastra la tarea a una etiqueta de la barra lateral",
+  "Type a date: fri, 3 days, {example}": "Escribe una fecha: vie, 3 días, {example}",
+  "Reopen the day": "Reabrir el día",
+  "Day reopened": "Día reabierto",
+  "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": "{n, plural, one {Día reabierto, # tarea de vuelta en Hoy} other {Día reabierto, # tareas de vuelta en Hoy}}",
+  "Changed since, left as is: {titles}": "Cambiadas desde entonces, se dejan como están: {titles}",
+  "Added {label}": "{label} añadida",
+  "Already has {label}": "Ya tiene {label}",
+  "These tasks already have {label}": "Estas tareas ya tienen {label}"
 }

@@ -1358,7 +1358,6 @@
   "Labels for {tasks}": "Etichette per {tasks}",
   "Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.": "Le etichette raggruppano attività di progetti diversi. Aggiungine una a un’attività selezionata con {kbd} o creane una qui.",
   "Labels group tasks across projects: press L to add one": "Le etichette raggruppano attività di progetti diversi: premi L per aggiungerne una",
-  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)": "Etichette dell’attività selezionata o di quelle spuntate (digita per cercare, Invio aggiunge o crea)",
   "Labels: {labels}": "Etichette: {labels}",
   "Language": "Lingua",
   "Language, start view, date and time, calendar and keyboard": "Lingua, vista iniziale, data e ora, calendario e tastiera",
@@ -4225,7 +4224,6 @@
   "Quick dates": "Date rapide",
   "Remove time": "Togli l’ora",
   "This weekend": "Questo weekend",
-  "Type a date: fri, 3 days, 22/10": "Scrivi una data: ven, 3 giorni, 22/10",
   "Click a task to": "Clic su un’attività",
   "Edit in place": "Modifica sul posto",
   "Edit its title in place, or open its details beside the list. This device only.": "Modifica il titolo sul posto, oppure apri i dettagli accanto all’elenco. Solo questo dispositivo.",
@@ -4233,5 +4231,14 @@
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "In modifica. Invio salva, Esc annulla, Maiusc+Invio apre i dettagli.",
   "Open details": "Apri i dettagli",
   "Task properties": "Proprietà dell’attività",
-  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Suggerisce progetti o etichette; Invio o Tab sceglie, #Casa/Documenti sceglie un sottoprogetto"
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Suggerisce progetti o etichette; Invio o Tab sceglie, #Casa/Documenti sceglie un sottoprogetto",
+  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": "Etichette dell’attività selezionata o di quelle spuntate (digita per cercare, Invio aggiunge o crea); oppure trascina l’attività su un’etichetta nella barra laterale",
+  "Type a date: fri, 3 days, {example}": "Scrivi una data: ven, 3 giorni, {example}",
+  "Reopen the day": "Riapri la giornata",
+  "Day reopened": "Giornata riaperta",
+  "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": "{n, plural, one {Giornata riaperta, # attività di nuovo in Oggi} other {Giornata riaperta, # attività di nuovo in Oggi}}",
+  "Changed since, left as is: {titles}": "Modificate nel frattempo, lasciate così: {titles}",
+  "Added {label}": "{label} aggiunta",
+  "Already has {label}": "Ha già {label}",
+  "These tasks already have {label}": "Queste attività hanno già {label}"
 }

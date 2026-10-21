@@ -150,3 +150,17 @@ export async function expandAncestorsOf(id: string, projects: Project[]): Promis
   }
   if (changed) await setCollapsedProjects(set)
 }
+
+/**
+ * A sub-project's full path ("Work › Client A › Q4 launch") for its tooltip in the
+ * sidebar and in Favourites; undefined for a top-level project. Cycles stop the walk.
+ */
+export function projectPath(p: Pick<Project, 'name' | 'parent_id'>, byId: ReadonlyMap<string, Pick<Project, 'id' | 'name' | 'parent_id'>>): string | undefined {
+  const names: string[] = []
+  const seen = new Set<string>()
+  for (let cur = p.parent_id ? byId.get(p.parent_id) : undefined; cur && !seen.has(cur.id); cur = cur.parent_id ? byId.get(cur.parent_id) : undefined) {
+    seen.add(cur.id)
+    names.unshift(cur.name)
+  }
+  return names.length ? [...names, p.name].join(' › ') : undefined
+}

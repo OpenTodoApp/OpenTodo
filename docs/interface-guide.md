@@ -39,7 +39,10 @@ The [design system](design-system.md) says which tokens and building blocks exis
 | --- | --- | --- |
 | `list` | Inbox, Today, Upcoming, projects, labels, filters, Trash, Updates, Help | 48 rem |
 | `form` | Settings pages, Import, Ask | 42 rem |
-| `full` | Board, Day and Week | the whole column |
+| `wide` | a project's list with field columns | 72 rem |
+| `full` | Board, timeline, Day, Week, Month and Plan | the whole frame |
+
+**One page frame.** Every page sits in the same frame: centred in the content column, at most 80 rem wide, with the same side padding (`PageBody`, or `PAGE_FRAME` for the task lists). The header spans the whole frame; the content takes its width from the table and starts at the frame's left edge, so the title and the last header action never move when you go from a list to a board, a timeline or Settings. Content wider than the frame (a board with many columns, a long timeline) scrolls sideways inside it. Enforced by `pageTemplate.test.ts` and the frame step of `make e2e`.
 
 The header is sticky inside the content column. A string title is truncated; pass a node for an inline rename field. `back` adds a back action for nested pages and phones. `children` is a second row (a segmented control, tabs) and counts against the budget. Below 768 px the shell's bar shows the title and the first two actions, so a view declares its header once.
 

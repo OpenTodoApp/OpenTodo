@@ -2,7 +2,10 @@
 // primitives", app-shell "Page template"): every view renders a PageHeader (one
 // title size, optional meta, at most two visible actions, an overflow menu and the
 // Help action) inside a PageBody whose width is fixed per page type. The header
-// stays visible while the content column scrolls.
+// stays visible while the content column scrolls. Every page shares one frame
+// (ux-feedback-2 D7): centred, at most 80 rem, the same padding; the header spans
+// it and the content's width applies left-aligned inside it (index.css
+// `.page-frame`), so the title and actions never move between page types.
 import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
@@ -12,26 +15,23 @@ import { setPageBar } from './pageBar'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
 import { t } from '../../lib/i18n'
 
-export type PageWidth = 'list' | 'form' | 'full'
+export type PageWidth = 'list' | 'form' | 'wide' | 'full'
 
-const WIDTH: Record<PageWidth, string> = {
-  list: 'max-w-3xl',
-  form: 'max-w-2xl',
-  full: '',
-}
+/** The page frame (app-shell "Page template"): centred, at most 80 rem; `data-page-body` picks the content width. */
+export const PAGE_FRAME = 'page-frame mx-auto min-w-0 w-full max-w-[80rem]'
 
 export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
-  /** list: 48 rem (lists and feeds); form: 42 rem (settings and forms); full: the whole column (boards, calendars). */
+  /** list: 48 rem (lists and feeds); form: 42 rem (settings and forms); wide: 72 rem (a list with field columns); full: the whole frame (boards, calendars). */
   width?: PageWidth
   /** No bottom padding: the page's own scroller (a board, the calendar grid) fills the column. */
   flush?: boolean
   children: ReactNode
 }
 
-/** The content column of a page: horizontal padding and one width per page type. */
+/** A page: the shared frame with its padding; the content inside takes the page type's width, left-aligned. */
 export function PageBody({ width = 'list', flush = false, className, children, ...rest }: PageBodyProps) {
   return (
-    <div {...rest} data-page-body={width} className={`mx-auto min-w-0 w-full px-4 md:px-8 ${flush ? '' : 'pb-6 '}${WIDTH[width]}${className ? ` ${className}` : ''}`}>
+    <div {...rest} data-page-body={width} className={`${PAGE_FRAME} px-4 md:px-8 ${flush ? '' : 'pb-6'}${className ? ` ${className}` : ''}`}>
       {children}
     </div>
   )

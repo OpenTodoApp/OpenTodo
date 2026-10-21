@@ -35,6 +35,8 @@ A few minutes in the evening: open it from the end of the Today list, the Review
 
 **Close the day** records the close and returns to Today, which then ends with **Day closed** and the time; so does the Review entry in the sidebar. You can close again later the same day. Close the day is never due: nothing reminds you of it.
 
+Changed your mind? Until your day ends, **Reopen the day** (next to **Day closed**, or at the top of the Close the day screen) puts the carried-over tasks back where they were and clears the close, on any of your devices; your line for tomorrow is kept. A task you moved again by hand after closing stays where you put it, and the message names it. **Undo** takes the reopen back.
+
 ## Weekly review
 
 Thirty minutes, on a day that suits you (<kbd>g</kbd> <kbd>r</kbd>). Seven steps in three phases: Get clear (Inbox, Mind sweep), Get current (Look back, Waiting, Projects, Look ahead) and Get creative (Someday). See [Weekly review](../review-and-statistics.md).

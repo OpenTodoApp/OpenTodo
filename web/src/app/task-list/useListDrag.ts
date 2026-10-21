@@ -1,5 +1,7 @@
 // Pointer drag of list rows and board cards (OpenSpec `manual-ordering`, board-view;
-// task-list-presentation "Drag feedback"), split out of TaskListView.
+// task-list-presentation "Drag feedback"), split out of TaskListView. A row can also
+// be dropped on a sidebar project, the Inbox or a label (ux-feedback-2 D4), in every
+// list; placing it among other rows needs a manually ordered list.
 import { useCallback, useRef, useState } from 'react'
 import { beginDrag } from '../../lib/dnd'
 import type { ListRow } from '../../lib/listGroups'
@@ -8,6 +10,7 @@ import type { Section, Task } from '../../lib/types'
 import { flattenTree, type Tree } from '../../lib/tree'
 import { act } from '../actionError'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from '../listDrop'
+import { dropTasks } from '../taskDrop'
 
 /** What a drag session reads at drop time; the latest render's values. */
 export interface DragSource {
@@ -16,12 +19,15 @@ export interface DragSource {
   tree: Tree<Task> | null
   board: boolean
   sectionMap: Map<string, Section>
+  /** The bulk selection: a dragged row that is part of it carries every selected task to a sidebar target. */
+  ticked?: ReadonlySet<string>
 }
 
 /**
  * Onto another row a drag places the task before, after or (list only) inside it;
- * onto a section heading or column it moves the task to the end of that section.
- * Escape or a drop outside any list changes nothing.
+ * onto a section heading or column it moves the task to the end of that section;
+ * onto a sidebar project, the Inbox or a label it moves or labels the task (and the
+ * rest of the bulk selection with it). Escape or a drop elsewhere changes nothing.
  */
 export function useListDrag({ manual, source, moveToSection, onDropped }: {
   manual: boolean
@@ -39,7 +45,6 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
   dragState.current = source
 
   const startDrag = useCallback((e: React.PointerEvent, task: Task) => {
-    if (!manual) return
     const st = dragState.current
     const node = st.tree?.nodes.get(task.id)
     const own = new Set(node ? flattenTree([node]).map((n) => n.id) : [task.id])
@@ -51,14 +56,22 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
     }
     beginDrag(e, {
       label: task.title,
+      taskDrops: true,
       onStart: () => setDraggingId(task.id),
       onMove: (target, _x, y) => {
-        const id = target?.startsWith('task:') ? target.slice('task:'.length) : null
+        // Over a sidebar target the list shows no drop line (the target shows its ring).
+        const id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !dragState.current.board) : null
         show(id && zone ? { id, zone } : null)
       },
       onDrop: (target) => {
-        const { rows: rs, sectionOfRow: secs, board: b } = dragState.current
+        const { rows: rs, sectionOfRow: secs, board: b, ticked } = dragState.current
+        if (target.startsWith('drop:')) {
+          const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
+          act(dropTasks(target.slice('drop:'.length), ids))
+          return
+        }
+        if (!manual) return
         if (target.startsWith('task:')) {
           const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
           if (!r || !current) return

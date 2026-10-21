@@ -666,6 +666,9 @@
   "Added a next action to {name}.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Added {label}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -790,6 +793,9 @@
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
+  ],
+  "Already has {label}": [
+    "web/src/lib/undoActions.ts"
   ],
   "Already have an account here? <a>Sign in to join</a> instead.": [
     "web/src/app/AuthScreen.tsx"
@@ -1587,6 +1593,9 @@
   ],
   "Change your password in Settings → Account → Password. To reset the password of another account, sign out first.": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "Changed since, left as is: {titles}": [
+    "web/src/app/reopenDay.ts"
   ],
   "Changes": [
     "web/src/app/HistoryPanel.tsx"
@@ -2479,6 +2488,9 @@
   "Day length": [
     "web/src/app/CalendarSettings.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Day reopened": [
+    "web/src/lib/review.ts"
   ],
   "Day, Week, Month and Plan calendar": [
     "web/src/lib/shortcuts.ts"
@@ -4445,6 +4457,7 @@
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/taskDrop.ts",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/listGroups.ts",
@@ -4781,7 +4794,7 @@
   "Labels group tasks across projects: press L to add one": [
     "web/src/app/FirstRun.tsx"
   ],
-  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)": [
+  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": [
     "web/src/lib/shortcuts.ts"
   ],
   "Labels: {labels}": [
@@ -7746,6 +7759,10 @@
   "Reopen task": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Reopen the day": [
+    "web/src/app/CloseDayRow.tsx",
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "Reopen {title}": [
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/TaskRow.tsx",
@@ -10099,6 +10116,9 @@
   "These fields go back to this version’s values:": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "These tasks already have {label}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -10998,7 +11018,7 @@
   "Type a date such as fri or 3/11 and press Enter. Esc cancels.": [
     "web/src/app/TriageView.tsx"
   ],
-  "Type a date: fri, 3 days, 22/10": [
+  "Type a date: fri, 3 days, {example}": [
     "web/src/app/datetime/DatePicker.tsx"
   ],
   "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": [
@@ -13502,6 +13522,9 @@
   ],
   "{n, plural, one {Date removed from # task} other {Date removed from # tasks}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": [
+    "web/src/lib/review.ts"
   ],
   "{n, plural, one {It is deleted for every member. A copy of its # open task goes to your Inbox.} other {It is deleted for every member. Copies of its # open tasks go to your Inbox.}}": [
     "web/src/app/ProjectHeader.tsx"

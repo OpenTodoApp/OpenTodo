@@ -90,11 +90,12 @@ export async function undoBatch(id: string): Promise<UndoResult> {
         patch[f] = v
       }
     }
-    if (skippedHere) skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
+    if (skippedHere && inv.entity !== 'review') skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
     if (Object.keys(patch).length) batch.push({ entity: inv.entity as Entity, entityId: inv.entityId, patch })
   }
   const assistant = (entry.source ?? 'assistant') === 'assistant'
   if (batch.length) await mutateMany(batch, assistant ? { origin: 'assistant' } : undefined)
   await db.assistantUndo.update(id, { undone_at: Date.now() })
-  return { restored: batch.length, skipped }
+  // The review row in a Close/Reopen the day batch is bookkeeping, not an item the person changed.
+  return { restored: batch.filter((c) => c.entity !== 'review').length, skipped }
 }

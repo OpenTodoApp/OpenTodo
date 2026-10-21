@@ -7,8 +7,9 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask, resetDeviceId, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
-import { closeDay } from '../../lib/review'
+import { applyCarryOver, canReopenDay, carryOverOf, closeDay, reopenDay } from '../../lib/review'
 import { SHORTCUTS } from '../../lib/shortcuts'
+import { undoBatch } from '../../lib/undo'
 import type { Task, User } from '../../lib/types'
 import { click, flush, key, render, type } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
@@ -89,7 +90,8 @@ describe('Close the day is reachable', () => {
     await waitFor(() => document.querySelector('[data-close-day]')?.getAttribute('data-close-day') === 'closed')
     const row = document.querySelector('[data-close-day]')!
     expect(row.textContent).toMatch(/Day closed, (18:42|6:42\sPM)/)
-    await click(row.querySelector('button')!)
+    expect(row.querySelector('[data-reopen-day]')).not.toBeNull()
+    await click([...row.querySelectorAll('button')].find((b) => b.textContent?.includes('Close again'))!)
     await waitFor(() => location.pathname === '/review/close')
     await r.unmount()
   })
@@ -254,6 +256,78 @@ describe('the morning note', () => {
     await act(async () => { await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', closed_at: NOW.getTime(), tomorrow_note: '', _clock: {} }) })
     await flush(100)
     expect(document.querySelector('[data-daily-note]')).toBeNull()
+    await r.unmount()
+  })
+})
+
+describe('Reopen the day (ux-feedback-2)', () => {
+  const carry = async (ids: string[]) => {
+    const tasks = await Promise.all(ids.map(task))
+    return applyCarryOver(new Map(), tasks.map((x) => ({ task: x, editable: true })), TODAY)
+  }
+
+  it('Apply records what it changed on the review row, and its Undo empties the record again', async () => {
+    const timed = await createTask({ title: 'Timed', due: { date: TODAY, time: '14:00' } })
+    const started = await createTask({ title: 'Started' })
+    await db.tasks.update(started, { start: '2026-10-13' })
+    const r = await carry([timed, started])
+    const record = carryOverOf(await db.review.get('me'))!
+    expect(record.date).toBe(TODAY)
+    expect(record.items).toEqual(expect.arrayContaining([
+      { id: timed, field: 'due', before: { date: TODAY, time: '14:00' }, after: { date: '2026-10-15', time: '14:00' } },
+      { id: started, field: 'start', before: '2026-10-13', after: null },
+    ]))
+    const u = await undoBatch(r.entry!.id)
+    expect(u.restored).toBe(2)
+    expect((await db.review.get('me'))?.carry_over).toBe('')
+  })
+
+  it('Reopen after the toast is gone: tasks back in Today, the row offers Close the day, the note is kept', async () => {
+    const ids = await Promise.all(['One', 'Two', 'Three', 'Four'].map((title) => createTask({ title, due: { date: TODAY } })))
+    await carry(ids)
+    await closeDay('Start with the invoice')
+    hideBulkToast()
+    const r = await shell({ view: 'today' })
+    await waitFor(() => !!document.querySelector('[data-reopen-day]'))
+    await click(document.querySelector('[data-reopen-day]')!)
+    await waitFor(() => toast().includes('Day reopened, 4 tasks back in Today'))
+    expect(toast()).toContain('Undo')
+    for (const id of ids) expect((await task(id)).due).toEqual({ date: TODAY })
+    const row = await db.review.get('me')
+    expect([row?.closed_at, row?.carry_over, row?.tomorrow_note]).toEqual([0, '', 'Start with the invoice'])
+    await waitFor(() => document.querySelector('[data-close-day]')?.getAttribute('data-close-day') === 'open')
+    expect(document.querySelector('[data-reopen-day]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('A task changed since the close stays where it is and is named', async () => {
+    const ids = await Promise.all(['A1', 'A2', 'A3', 'A4', 'Moved by hand'].map((title) => createTask({ title, due: { date: TODAY } })))
+    await carry(ids)
+    await closeDay('')
+    await db.tasks.update(ids[4], { due: { date: '2026-10-16' } })
+    const result = await reopenDay(TODAY)
+    expect([result.restored, result.skipped]).toEqual([4, ['Moved by hand']])
+    expect((await task(ids[4])).due).toEqual({ date: '2026-10-16' })
+    expect((await task(ids[0])).due).toEqual({ date: TODAY })
+  })
+
+  it('Next morning: no Reopen for yesterday, and the row offers Close the day', async () => {
+    await closeDay('', new Date(2026, 9, 13, 21, 0).getTime())
+    expect(canReopenDay(await db.review.get('me'), TODAY)).toBe(false)
+    expect((await reopenDay(TODAY)).entry).toBeNull()
+    const r = await shell({ view: 'today' })
+    await waitFor(() => document.querySelector('[data-close-day]')?.getAttribute('data-close-day') === 'open')
+    expect(document.querySelector('[data-reopen-day]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('The Close the day screen offers Reopen while the day is closed', async () => {
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', closed_at: NOW.getTime() - 60_000, _clock: {} })
+    const r = await shell({ view: 'review', step: 'close' })
+    await waitFor(() => !!document.querySelector('[data-reopen-day]'))
+    await click(document.querySelector('[data-reopen-day]')!)
+    await waitFor(() => toast().includes('Day reopened'))
+    expect((await db.review.get('me'))?.closed_at).toBe(0)
     await r.unmount()
   })
 })

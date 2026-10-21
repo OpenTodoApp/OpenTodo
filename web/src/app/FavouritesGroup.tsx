@@ -5,12 +5,15 @@
 // and no actions; Alt+↑ / Alt+↓ on a row moves it among the favourites.
 import { type KeyboardEvent, useEffect, useMemo, useRef } from 'react'
 import { moveFavourite, type Favourite } from '../lib/favourites'
-import { subtreeOpenCounts, type ProjectTree } from '../lib/projects'
+import { projectPath, subtreeOpenCounts, type ProjectTree } from '../lib/projects'
 import type { Project, Task } from '../lib/types'
 import { isDashboard, openCount, type ViewSummary } from '../lib/views'
 import { t } from '../lib/i18n'
 import { hueFor, Icon, ReadAs, SidebarGroup, SidebarItem } from '../ui'
 import { act } from './actionError'
+import { taskDrop } from './taskDrop'
+import { useMembershipMap } from '../lib/localData'
+import { canEditTasks, roleOf } from '../lib/sharing'
 import { LabelMenu } from './LabelsView'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { navigate, type Route } from './router'
@@ -35,21 +38,14 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
   /** `always` where there is no hover (a coarse pointer). */
   projectCountMode?: 'always' | 'hover'
 }) {
+  const memberships = useMembershipMap()
   const pinsProject = favourites.some((f) => f.kind === 'project')
   const projectCounts = useMemo(
     () => (pinsProject ? subtreeOpenCounts(openTasks.filter((tk) => openCount(tk, today)), tree) : new Map<string, number>()),
     [pinsProject, openTasks, tree, today],
   )
   const byId = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
-  const pathOf = (p: Project): string | undefined => {
-    const names: string[] = []
-    const seen = new Set<string>()
-    for (let cur = p.parent_id ? byId.get(p.parent_id) : undefined; cur && !seen.has(cur.id); cur = cur.parent_id ? byId.get(cur.parent_id) : undefined) {
-      seen.add(cur.id)
-      names.unshift(cur.name)
-    }
-    return names.length ? [...names, p.name].join(' › ') : undefined
-  }
+  const pathOf = (p: Project) => projectPath(p, byId)
   // A moved row is re-rendered in its new place: keep the keyboard focus on it.
   const refocus = useRef<string | null>(null)
   useEffect(() => {
@@ -95,7 +91,8 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
           menu = <ViewMenu view={f.item} within="favourites" className="hover-reveal" />
         }
         return (
-          <div key={keyOf(f)} className="group flex items-center" data-favourite-row={keyOf(f)}>
+          <div key={keyOf(f)} className="group flex items-center rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-favourite-row={keyOf(f)}
+            data-task-drop={f.kind === 'project' ? (canEditTasks(roleOf(f.id, memberships)) ? taskDrop.project(f.id) : undefined) : f.kind === 'label' ? taskDrop.label(f.id) : undefined}>
             {item}
             {!collapsed && menu}
           </div>

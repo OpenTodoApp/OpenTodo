@@ -76,7 +76,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           habit={c.habits.get(r.task.id)}
           readOnly={c.isReadOnly(r.task)}
           card={c.board}
-          draggable={c.manual && !editing}
+          draggable={!editing && !c.isReadOnly(r.task)}
+          reorderable={c.manual}
           collapsible={tree}
           dropIndicator={c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
           dragging={c.draggingId === r.task.id}

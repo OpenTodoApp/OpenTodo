@@ -1358,7 +1358,6 @@
   "Labels for {tasks}": "Labels für {tasks}",
   "Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.": "Labels gruppieren Aufgaben projektübergreifend. Füge einer ausgewählten Aufgabe mit {kbd} eines hinzu oder erstelle hier eines.",
   "Labels group tasks across projects: press L to add one": "Labels gruppieren Aufgaben projektübergreifend: Drücke L, um eines hinzuzufügen",
-  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)": "Labels der ausgewählten oder angehakten Aufgaben (tippen zum Suchen, Enter fügt hinzu oder erstellt)",
   "Labels: {labels}": "Labels: {labels}",
   "Language": "Sprache",
   "Language, start view, date and time, calendar and keyboard": "Sprache, Startansicht, Datum und Uhrzeit, Kalender und Tastatur",
@@ -4225,7 +4224,6 @@
   "Quick dates": "Schnelle Daten",
   "Remove time": "Uhrzeit entfernen",
   "This weekend": "Dieses Wochenende",
-  "Type a date: fri, 3 days, 22/10": "Datum eingeben: fr, 3 Tage, 22.10.",
   "Click a task to": "Klick auf eine Aufgabe",
   "Edit in place": "Direkt bearbeiten",
   "Edit its title in place, or open its details beside the list. This device only.": "Den Titel direkt bearbeiten oder die Details neben der Liste öffnen. Nur dieses Gerät.",
@@ -4233,5 +4231,14 @@
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "Bearbeitung. Enter speichert, Escape bricht ab, Umschalt+Enter öffnet die Details.",
   "Open details": "Details öffnen",
   "Task properties": "Eigenschaften der Aufgabe",
-  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Schlägt Projekte oder Labels vor; Enter oder Tab wählt, #Zuhause/Dokumente wählt ein Unterprojekt"
+  "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": "Schlägt Projekte oder Labels vor; Enter oder Tab wählt, #Zuhause/Dokumente wählt ein Unterprojekt",
+  "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": "Labels der ausgewählten oder angehakten Aufgaben (tippen zum Suchen, Enter fügt hinzu oder erstellt); oder die Aufgabe in der Seitenleiste auf ein Label ziehen",
+  "Type a date: fri, 3 days, {example}": "Datum eingeben: fr, 3 Tage, {example}",
+  "Reopen the day": "Tag wieder öffnen",
+  "Day reopened": "Tag wieder geöffnet",
+  "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": "{n, plural, one {Tag wieder geöffnet, # Aufgabe zurück in Heute} other {Tag wieder geöffnet, # Aufgaben zurück in Heute}}",
+  "Changed since, left as is: {titles}": "Seitdem geändert, unverändert gelassen: {titles}",
+  "Added {label}": "{label} hinzugefügt",
+  "Already has {label}": "Hat {label} bereits",
+  "These tasks already have {label}": "Diese Aufgaben haben {label} bereits"
 }

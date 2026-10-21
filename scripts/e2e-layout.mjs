@@ -94,6 +94,9 @@ async function seed() {
   for (const [name, color] of [['errand', '#f59e0b'], ['waiting', '#64748b'], ['deep-work', '#8b5cf6']]) L[name] = (await A('POST', '/api/v1/labels', { name, color })).id
   const home = await A('POST', '/api/v1/projects', { name: 'Home renovation with a rather long project name', color: '#f59e0b' })
   const work = await A('POST', '/api/v1/projects', { name: 'Work', color: '#38bdf8' })
+  // Four levels under Work (ux-feedback-2 D6): the sidebar's guide lines and capped indentation at 360 px.
+  let nested = work.id
+  for (const name of ['Clients', 'Acme Corporation international', 'Q4 launch campaign', 'Press kit']) nested = (await A('POST', '/api/v1/projects', { name, parent_id: nested })).id
   await A('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
   // A pending project invite link (project-invite-links): its acceptance screen is
   // checked signed out and signed in, and the share dialog lists it.
@@ -356,7 +359,12 @@ const OVERLAYS = {
   async sidebar(p, ctx) {
     if (ctx.width >= 768) return null
     await openSidebar(p)
-    return { overlay: p.locator('aside[data-sidebar]'), kind: 'drawer' }
+    // The whole tree open (ux-feedback-2 D6): five levels under Work with guide lines at the capped indentation.
+    const aside = p.locator('aside[data-sidebar]')
+    await aside.getByRole('button', { name: 'Add or fold projects' }).click()
+    await p.getByRole('menuitem', { name: 'Expand all' }).click()
+    await aside.locator('[data-guide-line]').first().waitFor()
+    return { overlay: aside, kind: 'drawer' }
   },
   async 'sidebar-view-menu'(p) {
     await openSidebar(p)

@@ -4,7 +4,7 @@
 // way bulk actions are (bulk-edit D5). The inverse is stored with the clocks each
 // field got; undo writes ordinary ops, locally first, so it works offline and
 // every device converges by last-writer-wins.
-import { planComplete, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
+import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
 import { getDeviceId, planReminders, type Change } from './ops'
@@ -59,6 +59,48 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
   const copy = changes.find((c) => c.entity === 'task' && c.entityId !== id && c.patch.title !== undefined && !c.patch.deleted_at && c.patch.parent_id === (task.parent_id ?? null))
   const r = await apply(changes, t('Moved to {target}', { target: targetName }))
   return { ...r, newId: copy?.entityId ?? id }
+}
+
+/**
+ * Move tasks dropped on a sidebar project or the Inbox (OpenSpec change
+ * ux-feedback-2, project-organization "Drop a task on a project"): as the Move
+ * action does, as one batch; tasks already in that project are left alone.
+ */
+export async function moveManyUndoable(ids: readonly string[], projectId: string | null, targetName: string, now = Date.now()): Promise<UndoableResult> {
+  const { tasks, all } = await readTicked(ids)
+  const moving = tasks.filter((task) => (task.project_id ?? null) !== projectId)
+  if (!moving.length) return { entry: null, label: '' }
+  const changes = planMove(moving, all, { projectId }, await membershipMap(), await currentUserId(), now)
+  return apply(changes, t('Moved to {target}', { target: targetName }))
+}
+
+/**
+ * Add a label to tasks dropped on it (labels "Drop a task on a label"): one batch,
+ * the other labels kept; when every task already has it, nothing is written and
+ * the label says so.
+ */
+export async function addLabelUndoable(ids: readonly string[], labelId: string, labelName: string): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const changes = planLabels(tasks, labelId, true)
+  if (!changes.length) return { entry: null, label: tasks.length === 1 ? t('Already has {label}', { label: labelName }) : t('These tasks already have {label}', { label: labelName }) }
+  return apply(changes, t('Added {label}', { label: labelName }))
+}
+
+/**
+ * A drop on a sidebar target (ux-feedback-2 D4): `project:<id>` and `inbox` move,
+ * `label:<id>` adds the label. Null when the target no longer exists.
+ */
+export async function dropUndoable(target: string, ids: readonly string[]): Promise<UndoableResult | null> {
+  if (target === 'inbox') return moveManyUndoable(ids, null, t('Inbox'))
+  if (target.startsWith('project:')) {
+    const project = await db.projects.get(target.slice('project:'.length))
+    return project && !project.deleted_at ? moveManyUndoable(ids, project.id, project.name) : null
+  }
+  if (target.startsWith('label:')) {
+    const label = await db.labels.get(target.slice('label:'.length))
+    return label && !label.deleted_at ? addLabelUndoable(ids, label.id, label.name) : null
+  }
+  return null
 }
 
 /** Set or clear the due of one task (the value is already in the task's own zone). */

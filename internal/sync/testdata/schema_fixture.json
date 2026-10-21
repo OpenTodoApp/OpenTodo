@@ -68,6 +68,7 @@
       "task_id"
     ],
     "review": [
+      "carry_over",
       "closed_at",
       "completed_at",
       "daily_at",

@@ -323,6 +323,16 @@ export function describeDue(due: Due | null, today = logicalToday(), zone?: stri
   return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later', time: at }
 }
 
+/**
+ * A due as one phrase in the long style ("Wed 21 Oct 3:00 PM"), in the
+ * viewer's zone and the user's date and time formats (ux-feedback-2 D3): the one
+ * way a scheduling surface shows a due with its time, never `due.time` raw.
+ */
+export function formatDueLong(due: Due, zone?: string, p: ResolvedDateTime = current): string {
+  const local = localDueOf(due, zone)
+  return local.time ? `${formatDate(local.date, 'long', p)} ${formatTime(local.time, p)}` : formatDate(local.date, 'long', p)
+}
+
 /** Whole days from calendar date `from` to `to` (both `YYYY-MM-DD`; negative when `to` is earlier). */
 export function daysBetweenISO(from: string, to: string): number {
   const utc = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d) }

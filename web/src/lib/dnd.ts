@@ -19,6 +19,12 @@ export interface DragOptions {
   onStart?: () => void
   /** Called after a drop or a cancel; the drag is over. */
   onEnd?: () => void
+  /**
+   * Also resolve `data-task-drop` targets (OpenSpec change ux-feedback-2, D4: a
+   * task dropped on a sidebar project, the Inbox or a label), reported as
+   * `drop:<value>` and preferred over a `data-drop-target` on the same element.
+   */
+  taskDrops?: boolean
 }
 
 /** Pixels a mouse or pen must travel before a press becomes a drag. */
@@ -28,20 +34,26 @@ export const TOUCH_HOLD_MS = 350
 
 const ACTIVE = 'data-drop-active'
 
-/** The drop target key at a point: the nearest ancestor with `data-drop-target`. */
-export function dropTargetAt(x: number, y: number, doc: Document = document): string | null {
+/** The drop target key at a point: the nearest ancestor with `data-drop-target` (or `data-task-drop`, as `drop:<value>`). */
+export function dropTargetAt(x: number, y: number, doc: Document = document, taskDrops = false): string | null {
   const el = doc.elementFromPoint?.(x, y)
-  const hit = el instanceof Element ? el.closest('[data-drop-target]') : null
+  if (!(el instanceof Element)) return null
+  const task = taskDrops ? el.closest('[data-task-drop]') : null
+  if (task) return `drop:${task.getAttribute('data-task-drop')}`
+  const hit = el.closest('[data-drop-target]')
   return hit ? hit.getAttribute('data-drop-target') : null
 }
 
+/** The key an element answers to: its `data-drop-target`, or `drop:` and its `data-task-drop`. */
+const keysOf = (el: Element) => [el.getAttribute('data-drop-target'), el.hasAttribute('data-task-drop') ? `drop:${el.getAttribute('data-task-drop')}` : null]
+
 function markActive(key: string | null): void {
   for (const el of document.querySelectorAll(`[${ACTIVE}]`)) {
-    if (el.getAttribute('data-drop-target') !== key) el.removeAttribute(ACTIVE)
+    if (!keysOf(el).includes(key)) el.removeAttribute(ACTIVE)
   }
   if (key === null) return
-  for (const el of document.querySelectorAll('[data-drop-target]')) {
-    if (el.getAttribute('data-drop-target') === key) el.setAttribute(ACTIVE, '')
+  for (const el of document.querySelectorAll('[data-drop-target], [data-task-drop]')) {
+    if (keysOf(el).includes(key)) el.setAttribute(ACTIVE, '')
   }
 }
 
@@ -89,7 +101,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   }
   const place = (x: number, y: number) => {
     if (ghost) ghost.style.transform = `translate(${x + 12}px, ${y + 8}px)`
-    const next = dropTargetAt(x, y)
+    const next = dropTargetAt(x, y, document, opts.taskDrops)
     if (next !== target) {
       target = next
       markActive(target)
@@ -125,7 +137,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const up = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return
     const wasLifted = lifted
-    const at = wasLifted ? dropTargetAt(ev.clientX, ev.clientY) ?? target : null
+    const at = wasLifted ? dropTargetAt(ev.clientX, ev.clientY, document, opts.taskDrops) ?? target : null
     cleanup()
     if (!wasLifted) return
     swallowNextClick()

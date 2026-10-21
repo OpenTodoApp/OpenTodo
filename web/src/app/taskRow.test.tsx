@@ -377,3 +377,26 @@ describe('origin chip', () => {
     await r.unmount()
   })
 })
+
+describe('calmer hover and selection (ux-feedback-2 D5)', () => {
+  const twoLine = task({ estimate_minutes: 30, due: { date: '2026-10-22', time: '09:00' }, priority: 2 })
+
+  it('Hover over a two-line row: only the row\'s neutral tint; nothing in the metadata line reacts to hover', async () => {
+    const r = await render(<ul><TaskRow task={twoLine} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    const li = r.container.querySelector('[data-task-id]')!
+    expect(li.className).toContain('row-hover')
+    expect(li.className).not.toMatch(/\bhover:(bg|ring|border|shadow)/)
+    const meta = r.container.querySelector('[data-row-meta]')!
+    for (const el of [meta, ...meta.querySelectorAll('*')]) expect(String(el.getAttribute('class') ?? '')).not.toMatch(/(^|\s)(group-)?hover:/)
+    await r.unmount()
+  })
+
+  it('Hover over the selected row adds nothing: the selected row has no hover style of its own', async () => {
+    const r = await render(<ul><TaskRow task={twoLine} selected showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    const li = r.container.querySelector('[data-task-id]')!
+    expect(li.className).toContain('row-selected')
+    expect(li.className).not.toContain('row-hover')
+    expect(li.className).not.toMatch(/\bhover:/)
+    await r.unmount()
+  })
+})
