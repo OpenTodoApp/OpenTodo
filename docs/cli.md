@@ -80,9 +80,12 @@ ot list --project Home         # one project (name or id)
 ot list --completed            # most recently completed first
 ot list --all --limit 20       # open and completed
 ot list --completed-after 2026-10-05 --completed-before 2026-10-12   # completed that week
+ot list --someday              # parked in Someday
+ot list --anytime              # no due date, deadline or start
+ot list --blocked --project Home   # waiting for an open task
 ```
 
-Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from). Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
+Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue). The due cell adds `(someday)`, `starts <date>`, `evening` and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
 
 ```
 ID        P   DUE                 PROJECT  TITLE
@@ -102,6 +105,10 @@ ot edit 8c2a --repeat none                           # stop repeating, keep the 
 ot add --natural "Water plants every Monday remind me at 8 #home"
 ot add "Fix the login timeout" --origin-url https://github.com/o/r/issues/7
 ot edit 8c2a --origin-url none                       # forget where it came from
+ot add "Quarterly report" --start monday --deadline 2026-11-06
+ot edit 8c2a --start someday                         # park it, keep the due date
+ot add "Install shelves" --blocked-by 91f0 --location Home
+ot edit 8c2a --evening=false --blocked-by none --location none
 ```
 
 | Flag | Meaning |
@@ -115,6 +122,11 @@ ot edit 8c2a --origin-url none                       # forget where it came from
 | `--title <text>` | New title (`ot edit` only) |
 | `--repeat <rule>` | Recurrence rule in any spelling of the [rule grammar](recurrence.md) (`"Every Week"`, `"every mon, wed"`), checked locally and sent in canonical form; `none` (edit) clears the rule and keeps the date |
 | `--origin-url <url>` | Where the task comes from: an `http` or `https` URL, sent as the task's [origin](capture.md#where-a-task-came-from). A GitHub, GitLab, Jira or Linear issue link becomes `{kind: "issue", provider, id}` (`o/r#7`, `ENG-123`), derived on your machine with the same table as the web app; any other link is a `url` origin. `ot` never requests the URL. Another scheme (`ftp:`, `file:`) exits 2 before any request; `none` (edit) clears the origin |
+| `--deadline <when>` | The day the task must be finished by, separate from the due date; same words as `--due`; `none` (edit) clears it |
+| `--start <when>` | `someday` parks the task; a date (same words as `--due`) defers it until that day; `none` (edit) clears it. The due date is kept |
+| `--evening` | Put the task in This Evening; `--evening=false` takes it out |
+| `--blocked-by <ref>` | Repeatable: a task this one waits for, by id or unique id prefix (an ambiguous prefix exits 1 listing the candidates, before any write). With `ot edit` the list is replaced; `none` clears it |
+| `--location <where>` | A saved location's name (case-insensitive) or id, sent with its current name, address and coordinates; or `lat,lon`; `none` (edit) clears it. An unknown name exits 1 before any write |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
 | `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
 | `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |

@@ -73,6 +73,11 @@ var (
 		{Name: "note", Type: "string", Description: "description"},
 		{Name: "repeat", Type: "string", Description: "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"},
 		{Name: "origin-url", Type: "string", Description: "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"},
+		{Name: "deadline", Type: "string", Description: "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"},
+		{Name: "start", Type: "string", Description: "someday parks the task; a date (YYYY-MM-DD, today, tomorrow or a weekday) defers it; the due date is kept (edit: none clears)"},
+		{Name: "evening", Type: "bool", Description: "put the task in This Evening (edit: --evening=false takes it out)"},
+		{Name: "blocked-by", Type: "string_list", Description: "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"},
+		{Name: "location", Type: "string", Description: "a saved location's name or id, or lat,lon (edit: none clears)"},
 	}
 	// addOnlyFields are the quick-add flags of `ot add` (quick-add-recurrence D6).
 	addOnlyFields = []flagSpec{
@@ -96,6 +101,9 @@ var cmdSpecs = []cmdSpec{
 		{Name: "completed", Type: "bool", Description: "completed tasks, most recent first"},
 		{Name: "all", Type: "bool", Description: "open and completed tasks"},
 		{Name: "project", Type: "string", Description: "tasks of one project (name or id)"},
+		{Name: "someday", Type: "bool", Description: "open tasks parked in Someday (combines with --project)"},
+		{Name: "anytime", Type: "bool", Description: "open tasks with no due date, deadline or start (combines with --project)"},
+		{Name: "blocked", Type: "bool", Description: "open tasks waiting for an open task (combines with --project)"},
 		{Name: "completed-after", Type: "string", Description: "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		limitFlag,

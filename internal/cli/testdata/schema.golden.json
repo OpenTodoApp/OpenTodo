@@ -59,6 +59,31 @@
           "description": "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"
         },
         {
+          "name": "deadline",
+          "type": "string",
+          "description": "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "description": "someday parks the task; a date (YYYY-MM-DD, today, tomorrow or a weekday) defers it; the due date is kept (edit: none clears)"
+        },
+        {
+          "name": "evening",
+          "type": "bool",
+          "description": "put the task in This Evening (edit: --evening=false takes it out)"
+        },
+        {
+          "name": "blocked-by",
+          "type": "string_list",
+          "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "description": "a saved location's name or id, or lat,lon (edit: none clears)"
+        },
+        {
           "name": "remind",
           "type": "string_list",
           "description": "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"
@@ -229,6 +254,31 @@
           "name": "origin-url",
           "type": "string",
           "description": "http(s) URL the task comes from, sent as its origin; GitHub, GitLab, Jira and Linear issue links give the provider and issue id, derived locally (edit: none clears)"
+        },
+        {
+          "name": "deadline",
+          "type": "string",
+          "description": "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "description": "someday parks the task; a date (YYYY-MM-DD, today, tomorrow or a weekday) defers it; the due date is kept (edit: none clears)"
+        },
+        {
+          "name": "evening",
+          "type": "bool",
+          "description": "put the task in This Evening (edit: --evening=false takes it out)"
+        },
+        {
+          "name": "blocked-by",
+          "type": "string_list",
+          "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "description": "a saved location's name or id, or lat,lon (edit: none clears)"
         }
       ],
       "writes": true,
@@ -434,6 +484,21 @@
           "name": "project",
           "type": "string",
           "description": "tasks of one project (name or id)"
+        },
+        {
+          "name": "someday",
+          "type": "bool",
+          "description": "open tasks parked in Someday (combines with --project)"
+        },
+        {
+          "name": "anytime",
+          "type": "bool",
+          "description": "open tasks with no due date, deadline or start (combines with --project)"
+        },
+        {
+          "name": "blocked",
+          "type": "bool",
+          "description": "open tasks waiting for an open task (combines with --project)"
         },
         {
           "name": "completed-after",
@@ -2062,6 +2127,57 @@
             "string",
             "null"
           ]
+        },
+        "deadline": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD: the day the task must be finished by, separate from due"
+        },
+        "start": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "\"someday\" (parked) or YYYY-MM-DD (deferred until that day)"
+        },
+        "evening": {
+          "type": "boolean",
+          "description": "in This Evening"
+        },
+        "blocked_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ids of the tasks this one waits for"
+        },
+        "location": {
+          "type": [
+            "object",
+            "string",
+            "null"
+          ],
+          "description": "where the task happens; a string only for an end-to-end encrypted account (ciphertext). name and address are user-written",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "address": {
+              "type": "string"
+            },
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "place_id": {
+              "type": "string",
+              "description": "the saved location it links to"
+            }
+          }
         },
         "origin": {
           "type": [

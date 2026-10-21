@@ -310,7 +310,7 @@ func TestMCPBridgeDecrypts(t *testing.T) {
 	h.put("field", "f1", map[string]any{"name": s("field", "f1", "name", "Supplier"), "type": "choice", "options": s("field", "f1", "options", "Acme\nGlobex"), "project_id": "p1"})
 	h.put("task", "t1", map[string]any{"title": s("task", "t1", "title", "Plant tomatoes"), "description": s("task", "t1", "description", "Before the rain"),
 		"project_id": "p1", "section_id": "s1", "labels": []string{"l1"}, "fields.f1": s("task", "t1", "fields.f1", "Acme"),
-		"due": map[string]any{"date": "2026-10-10"}})
+		"due": map[string]any{"date": "2026-10-10"}, "location": s("task", "t1", "location", `{"name":"Allotment","address":"Via Po 3","lat":45.1,"lon":7.7}`)})
 	h.putExact("comment", "c1", map[string]any{"created_at": fixedNow.UnixMilli(), "task_id": "t1", "body": s("comment", "c1", "body", "Use the blue pots"), "author_id": h.ownerID(), "parent_id": nil, "mentions": []string{}, "edited_at": nil, "deleted_at": nil})
 	h.putExact("time_entry", "e1", map[string]any{"created_at": fixedNow.UnixMilli(), "task_id": "t1", "user_id": h.ownerID(), "started_at": fixedNow.Add(-time.Hour).UnixMilli(), "ended_at": fixedNow.Add(-30 * time.Minute).UnixMilli(),
 		"device_id": "seed", "note": s("time_entry", "e1", "note", "Dug the bed"), "deleted_at": nil})
@@ -335,7 +335,7 @@ func TestMCPBridgeDecrypts(t *testing.T) {
 	if bytes.Contains(all, []byte(e2ee.Placeholder)) || bytes.Contains(all, []byte("[encrypted]")) || bytes.Contains(all, []byte("enc:v1:")) || bytes.Contains(all, []byte("ciphertext only")) {
 		t.Fatalf("placeholder or ciphertext left: %s", all)
 	}
-	for _, want := range []string{"Plant tomatoes", "Before the rain", "Garden", "Gate code 4711", "To plant", "outdoors", "Supplier", "Globex", "Acme", "Use the blue pots", "Dug the bed"} {
+	for _, want := range []string{"Plant tomatoes", "Before the rain", "Garden", "Gate code 4711", "To plant", "outdoors", "Supplier", "Globex", "Acme", "Use the blue pots", "Dug the bed", "Allotment", "Via Po 3"} {
 		if !bytes.Contains(all, []byte(want)) {
 			t.Fatalf("%q not decrypted: %s", want, all)
 		}
@@ -343,7 +343,7 @@ func TestMCPBridgeDecrypts(t *testing.T) {
 
 	// Writes: titles and names reach the server as envelopes for the right ids.
 	code, lines, errb = h.bridge([]string{"--decrypt"},
-		toolCall("create_tasks", map[string]any{"items": []any{map[string]any{"title": "Book the plumber", "project_id": "p1"}}}),
+		toolCall("create_tasks", map[string]any{"items": []any{map[string]any{"title": "Book the plumber", "project_id": "p1", "location": map[string]any{"name": "Shed", "lat": 45.2, "lon": 7.6}}}}),
 		toolCall("update_sections", map[string]any{"updates": []any{map[string]any{"id": "s1", "name": "Planted"}}}),
 		toolCall("create_sections", map[string]any{"project_id": "p1", "items": []any{map[string]any{"name": "Harvest", "icon": "sprout"}}}),
 		toolCall("add_comment", map[string]any{"task_id": "t1", "body": "Done by Friday"}),
@@ -356,6 +356,9 @@ func TestMCPBridgeDecrypts(t *testing.T) {
 	stored := h.task(tid)["title"].(string)
 	if pt, err := crypt.Open(dek, "task", tid, "title", stored); err != nil || pt != "Book the plumber" {
 		t.Fatalf("stored title %q opens to %q, %v", stored, pt, err)
+	}
+	if pt, err := crypt.Open(dek, "task", tid, "location", h.task(tid)["location"].(string)); err != nil || !strings.Contains(pt, `"name":"Shed"`) {
+		t.Fatalf("stored location opens to %q, %v", pt, err)
 	}
 	sec := h.apiJSON("GET", "/api/v1/sections/s1", nil)
 	if pt, err := crypt.Open(dek, "section", "s1", "name", sec["name"].(string)); err != nil || pt != "Planted" {

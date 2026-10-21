@@ -497,6 +497,8 @@ A `location` is `{name?, address?, lat?, lon?, place_id?}` with at least one key
 
 Every other write route (tokens, settings, sync, sharing and members, invitations, project invite links, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
 
+`GET /api/v1/places` lists your saved locations (`{places:[{id, name, address, geo:{lat, lon}, position, created_at}]}`), any token scope, so a client can set a task's location by name; saved locations are written through sync.
+
 ### Keeping a project away from assistants
 
 The owner of a project, or an admin of a shared one, can keep it and its sub-projects away from every AI assistant surface: MCP (whatever the token's scope), the agent content routes above and the in-app assistant then act as if it did not exist. Ordinary REST with a session, a `full` or an `admin` token, sync, CalDAV, feeds and the export are unaffected. It is server access state like membership: never an operation, never exported.

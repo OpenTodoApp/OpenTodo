@@ -31,6 +31,21 @@
     "recurrence": {"type": ["string", "null"]},
     "series_id": {"type": ["string", "null"]},
     "assignee_id": {"type": ["string", "null"]},
+    "deadline": {"type": ["string", "null"], "description": "YYYY-MM-DD: the day the task must be finished by, separate from due"},
+    "start": {"type": ["string", "null"], "description": "\"someday\" (parked) or YYYY-MM-DD (deferred until that day)"},
+    "evening": {"type": "boolean", "description": "in This Evening"},
+    "blocked_by": {"type": "array", "items": {"type": "string"}, "description": "ids of the tasks this one waits for"},
+    "location": {
+      "type": ["object", "string", "null"],
+      "description": "where the task happens; a string only for an end-to-end encrypted account (ciphertext). name and address are user-written",
+      "properties": {
+        "name": {"type": "string"},
+        "address": {"type": "string"},
+        "lat": {"type": "number"},
+        "lon": {"type": "number"},
+        "place_id": {"type": "string", "description": "the saved location it links to"}
+      }
+    },
     "origin": {
       "type": ["object", "string", "null"],
       "description": "where the task came from; a string only for an end-to-end encrypted account (ciphertext). title and url are user-written",

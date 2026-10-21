@@ -39,8 +39,8 @@ var contentArgs = map[string]struct {
 	fields []string
 	create bool
 }{
-	"create_tasks":    {list: "items", entity: "task", fields: []string{"title", "description"}, create: true},
-	"update_tasks":    {list: "updates", entity: "task", fields: []string{"title", "description"}},
+	"create_tasks":    {list: "items", entity: "task", fields: []string{"title", "description", "location"}, create: true},
+	"update_tasks":    {list: "updates", entity: "task", fields: []string{"title", "description", "location"}},
 	"create_project":  {entity: "project", fields: []string{"name"}, create: true},
 	"update_project":  {entity: "project", fields: []string{"name"}},
 	"create_label":    {entity: "label", fields: []string{"name"}, create: true},
@@ -197,6 +197,15 @@ func (d *decrypter) encryptCall(params map[string]any) error {
 		}
 		for _, f := range spec.fields {
 			s, ok := it[f].(string)
+			if obj, isObj := it[f].(map[string]any); isObj {
+				// An object value (a task's location) is sealed whole as its JSON,
+				// as the app does (task-locations D1).
+				raw, err := json.Marshal(obj)
+				if err != nil {
+					return err
+				}
+				s, ok = string(raw), true
+			}
 			if !ok {
 				continue
 			}
@@ -429,6 +438,9 @@ func (d *decrypter) fix(ctx context.Context, obj, u map[string]any, key string) 
 				}
 			}
 		}
+		if obj["encrypted"] == true && obj["location"] == nil {
+			d.openLocation(ctx, obj, u, id)
+		}
 	case u["body"] != nil: // a comment
 		all = d.replace(ctx, u, "body", "comment", id, "body") && all
 	case u["note"] != nil: // a time entry
@@ -460,5 +472,36 @@ func (d *decrypter) fix(ctx context.Context, obj, u map[string]any, key string) 
 		if _, ok := obj["encrypted"]; ok {
 			obj["encrypted"] = false
 		}
+	}
+}
+
+// openLocation puts an encrypted task's location back: coordinates and the
+// saved location id on the task, name and address in untrusted_text
+// (agent-planning-fields D8). Nothing changes when there is none.
+func (d *decrypter) openLocation(ctx context.Context, obj, u map[string]any, id string) {
+	pt, ok := d.open(ctx, "task", id, "location")
+	if !ok {
+		return
+	}
+	var l struct {
+		Name    string   `json:"name"`
+		Address string   `json:"address"`
+		Lat     *float64 `json:"lat"`
+		Lon     *float64 `json:"lon"`
+		PlaceID string   `json:"place_id"`
+	}
+	if json.Unmarshal([]byte(pt), &l) != nil {
+		return
+	}
+	loc := map[string]any{}
+	if l.Lat != nil && l.Lon != nil {
+		loc["lat"], loc["lon"] = *l.Lat, *l.Lon
+	}
+	if l.PlaceID != "" {
+		loc["place_id"] = l.PlaceID
+	}
+	obj["location"] = loc
+	if l.Name != "" || l.Address != "" {
+		u["location"] = map[string]any{"name": l.Name, "address": l.Address}
 	}
 }
