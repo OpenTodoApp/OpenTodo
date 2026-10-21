@@ -100,7 +100,7 @@ type Stream struct {
 }
 
 // Events delivers the stream's events; Done is closed when the stream ends.
-func (s *Stream) Events() <-chan Event { return s.events }
+func (s *Stream) Events() <-chan Event  { return s.events }
 func (s *Stream) Done() <-chan struct{} { return s.done }
 
 // ServerKey is the server's public key for this stream, base64url.
