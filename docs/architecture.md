@@ -132,6 +132,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `ids` | UUID v4, name-based ids (SHA-256, version 8 UUIDs, for recurring occurrences and tasks created from email) and random secrets |
 | `iconset` | The icon catalogue's names, categories and keywords, generated from `web/src/ui/icons/catalogue.json` and checked against it by a test; `Valid` checks an icon name in REST and MCP writes, `Search` orders matches as the app's icon picker does |
 | `cli` | The `ot` command-line client (`cmd/ot`): profiles, REST calls, table and `--json` output. See [cli.md](cli.md) |
+| `vault` | The Markdown vault behind `ot vault`, for the client only (a test keeps it out of the server): the Obsidian Tasks line grammar, the document parser and printer, the state file, the three-way merge per field and the sync loop over `POST /api/v1/sync` as device `vault:<id>`. See [vault.md](vault.md) |
 
 ### Tables
 
