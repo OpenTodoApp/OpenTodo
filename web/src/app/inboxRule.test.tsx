@@ -145,7 +145,7 @@ describe('project pickers', () => {
   it('No project found by typing inbox: the "No project" option is offered first', async () => {
     const home = await createProject({ name: 'Home' })
     const projects = await db.projects.toArray()
-    const r = await render(<ProjectPickerField label="Project" projects={projects} value={home} onChange={() => {}} />)
+    const r = await render(<ProjectPickerField label="Project" projects={projects} value={home} rankContext="task.project" onChange={() => {}} />)
     await click(r.container.querySelector('button')!)
     await waitFor(() => !!document.querySelector('[role="dialog"] input'))
     await type(document.querySelector<HTMLInputElement>('[role="dialog"] input')!, 'inb')
