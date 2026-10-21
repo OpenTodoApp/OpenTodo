@@ -38,7 +38,7 @@ When the owner allows it, **Settings → Integrations → Assistant** lets you c
 
 ## Ask and review
 
-Type a question and press <kbd>Enter</kbd>. When you ask for changes, the answer ends with **Proposed changes**: every item is checked, you uncheck what you don't want, then **Apply** or **Discard**. One proposal holds at most 50 changes. Besides dates it can propose a deadline, a start date, Someday, This Evening, what a task waits for and a location. See [Ask and review](assistant-ask.md#ask-and-review).
+Type a question and press <kbd>Enter</kbd>. When you ask for changes, the answer ends with **Proposed changes**: every item is checked, you uncheck what you don't want, then **Apply** or **Discard**. One proposal holds at most 50 changes. See [Ask and review](assistant-ask.md#ask-and-review).
 
 ## Undo
 
@@ -58,7 +58,7 @@ Each answer shows its tokens and its share of your monthly allowance; answers on
 
 ## Safety
 
-You confirm every change, the assistant cannot touch sharing, members, settings or tokens, and text in tasks is treated as data, not instructions. It never sees a project kept away from AI assistants. See [Safety](assistant-skills.md#safety).
+You confirm every change, the assistant cannot touch sharing, members, settings or tokens, and text in tasks is treated as data, not instructions. See [Safety](assistant-skills.md#safety).
 
 ## End-to-end encrypted accounts
 

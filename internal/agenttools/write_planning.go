@@ -19,9 +19,6 @@ import (
 // (blockers in scope and acyclic, a saved location that exists) so a planned
 // batch never fails late.
 
-// planningFields are the item keys this file reads.
-var planningFields = []string{"deadline", "start", "evening", "blocked_by", "location"}
-
 // planningProps are the schema properties of the five fields.
 func planningProps() map[string]any {
 	return map[string]any{
@@ -301,4 +298,16 @@ func (snap *snapshot) blockedNow(t opsync.Entity) bool {
 		}
 	}
 	return false
+}
+
+// withBlockers adds the patch's blocked_by list, when it has one, to the
+// entries checkBlockers validates once per call.
+func withBlockers(entries []blockerEntry, patch map[string]json.RawMessage, prefix, taskID, project string) []blockerEntry {
+	v, ok := patch["blocked_by"]
+	if !ok {
+		return entries
+	}
+	var l []string
+	_ = json.Unmarshal(v, &l)
+	return append(entries, blockerEntry{prefix: prefix, taskID: taskID, project: project, list: l})
 }

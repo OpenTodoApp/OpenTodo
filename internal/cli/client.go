@@ -293,18 +293,18 @@ type task struct {
 	Priority int     `json:"priority"`
 	Due      *due    `json:"due"`
 	// Start is a date, "someday" or null (start-dates); it decides Inbox membership.
-	Start       *string  `json:"start"`
+	Start *string `json:"start"`
 	// Planning fields (agent-planning-fields): deadline, This Evening, the tasks
 	// it waits for and the location as stored.
-	Deadline  *string         `json:"deadline"`
-	Evening   bool            `json:"evening"`
-	BlockedBy []string        `json:"blocked_by"`
-	Location  json.RawMessage `json:"location"`
-	Labels      []string `json:"labels"`
-	Position    float64  `json:"position"`
-	CreatedAt   float64  `json:"created_at"`
-	CompletedAt *float64 `json:"completed_at"`
-	DeletedAt   *float64 `json:"deleted_at"`
+	Deadline    *string         `json:"deadline"`
+	Evening     bool            `json:"evening"`
+	BlockedBy   []string        `json:"blocked_by"`
+	Location    json.RawMessage `json:"location"`
+	Labels      []string        `json:"labels"`
+	Position    float64         `json:"position"`
+	CreatedAt   float64         `json:"created_at"`
+	CompletedAt *float64        `json:"completed_at"`
+	DeletedAt   *float64        `json:"deleted_at"`
 	// Origin is null, the object or an encrypted account's ciphertext (task-origin).
 	Origin json.RawMessage `json:"origin"`
 	Raw    json.RawMessage `json:"-"`

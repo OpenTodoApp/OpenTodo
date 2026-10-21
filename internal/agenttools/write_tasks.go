@@ -148,11 +148,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 			return Plan{}, err
 		}
 		created[id] = pid
-		if v, ok := patch["blocked_by"]; ok {
-			var l []string
-			_ = json.Unmarshal(v, &l)
-			blockers = append(blockers, blockerEntry{prefix: p, taskID: id, project: pid, list: l})
-		}
+		blockers = withBlockers(blockers, patch, p, id, pid)
 		cs = append(cs, Change{Entity: "task", EntityID: id, Create: true, Patch: patch, opSeed: seed})
 		out = append(out, map[string]any{"id": id, "status": "created"})
 	}
@@ -269,11 +265,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
-		if v, ok := patch["blocked_by"]; ok {
-			var l []string
-			_ = json.Unmarshal(v, &l)
-			blockers = append(blockers, blockerEntry{prefix: p, taskID: id, project: rawStr(t, "project_id"), list: l})
-		}
+		blockers = withBlockers(blockers, patch, p, id, rawStr(t, "project_id"))
 		role := snap.role(rawStr(t, "project_id"))
 		for f := range patch {
 			if !opsync.CanWrite(role, "task", f) {
