@@ -51,7 +51,7 @@ In host mode, a tenant SHALL be opened on its first request, running any pending
 - **THEN** that tenant answers 503 and the failure is reported to the operator, every other tenant keeps working, and the tenant opens again once the cause is fixed
 
 ### Requirement: Background work scales with due work
-In host mode, reminders, scheduled backups, trash retention, audit and delivery-log pruning, webhook deliveries, calendar subscription fetches and weekly digest emails SHALL be run for a tenant only when that tenant has work due, recorded in a host-level index that each open tenant keeps current, without polling every tenant. Reminders SHALL be delivered no later than they would be on a self-hosted server.
+In host mode, reminders, scheduled backups, trash retention, audit and delivery-log pruning, webhook deliveries, calendar subscription fetches, issue connection polls and weekly digest emails SHALL be run for a tenant only when that tenant has work due, recorded in a host-level index that each open tenant keeps current, without polling every tenant. Reminders SHALL be delivered no later than they would be on a self-hosted server. Issue polls SHALL be due only while the tenant's owner switch for issue connections is on and an enabled connection's next poll time has passed.
 
 #### Scenario: Reminder in a closed tenant
 - **WHEN** a reminder is due in a tenant that is currently closed
@@ -60,6 +60,10 @@ In host mode, reminders, scheduled backups, trash retention, audit and delivery-
 #### Scenario: Thousands of idle tenants
 - **WHEN** the host has 10,000 tenants and none has work due in the next hour
 - **THEN** no tenant is opened during that hour
+
+#### Scenario: Issue poll in a closed tenant
+- **WHEN** an issue connection's poll is due in a tenant that is currently closed
+- **THEN** the host opens that tenant, runs the poll under the tenant's operation limits, and may close the tenant again; a tenant whose owner switch is off is never opened for it
 
 ### Requirement: One process runs the background work
 In host mode, the shared background work SHALL run in one host process at a time, like a self-hosted server's background jobs: during a rolling update the new process serves requests beside the old one and takes the work over when the old one stops. Work that is still due after it ran (a transient failure) SHALL be retried on a later pass, never in a tight loop.

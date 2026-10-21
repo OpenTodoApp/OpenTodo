@@ -92,7 +92,7 @@ From the history timeline the user SHALL be able to restore an earlier value of 
 - **THEN** both devices end with the title written with the greater timestamp, and the restored due date is kept
 
 ### Requirement: Permanent purge
-The user SHALL be able to permanently delete one trashed item or empty the Trash, after confirmation. The API SHALL expose `DELETE /api/v1/{tasks|projects}/{id}/purge` and `POST /api/v1/trash/purge`, requiring authentication, accepting only entities whose deletion time is set, removing their operations and current values, and recording a purge marker. Purging a project SHALL purge the tasks referencing it. Purging a task SHALL purge its attachments and delete their stored files.
+The user SHALL be able to permanently delete one trashed item or empty the Trash, after confirmation. The API SHALL expose `DELETE /api/v1/{tasks|projects}/{id}/purge` and `POST /api/v1/trash/purge`, requiring authentication, accepting only entities whose deletion time is set, removing their operations and current values, and recording a purge marker. Purging a project SHALL purge the tasks referencing it. Purging a task SHALL purge its attachments and delete their stored files, and SHALL purge its time entries with markers, so they leave every device, total and export.
 
 #### Scenario: Purge one task
 - **WHEN** the user permanently deletes a trashed task and confirms
@@ -109,6 +109,10 @@ The user SHALL be able to permanently delete one trashed item or empty the Trash
 #### Scenario: Attachments go with the task
 - **WHEN** a trashed task with three attachments is purged
 - **THEN** the three attachments are purged with markers, their files are deleted from the data directory, the account's usage drops accordingly, and devices drop the attachments on their next sync
+
+#### Scenario: Time entries go with the task
+- **WHEN** a trashed task with four time entries, one of them another member's, is purged
+- **THEN** the four entries are purged with markers, the purge counts report `timeEntries: 4`, the entries are absent from the export and the CSV, and devices drop them on their next sync
 
 ### Requirement: Purged entities never return
 A sync response SHALL include the ids of entities purged since the client's cursor, and clients SHALL delete those entities locally. Operations received for a purged entity SHALL be discarded by the server and reported as duplicates, so a device that edited the entity offline cannot resurrect it. Purge markers SHALL be kept so this holds for any later arrival. The client SHALL request a purge only when online and SHALL show it as pending otherwise.

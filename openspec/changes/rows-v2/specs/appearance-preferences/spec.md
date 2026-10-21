@@ -1,8 +1,18 @@
 # Spec Delta
 
-## MODIFIED Requirements
+## REMOVED Requirements
 
 ### Requirement: Row detail preference
+**Reason**: Calm becomes the only row (rows-v2), so the Calm/Detailed choice no longer changes anything; its scenarios about choosing Detailed no longer apply.
+**Migration**: The synced `row_detail` field stays in the schema and is accepted, stored, synced and exported unchanged ("Retired row detail preference"); nothing is rewritten.
+
+### Requirement: Appearance in Settings
+**Reason**: Settings → Appearance loses the Rows choice, so "Pick Detailed by keyboard" no longer applies.
+**Migration**: The rest of the requirement is unchanged and restated as "Appearance in Settings without a Rows choice".
+
+## ADDED Requirements
+
+### Requirement: Retired row detail preference
 The `row_detail` field of the user's appearance preferences SHALL remain in the operation schema and the client defaults as a retired field: it is accepted, stored, synced and exported exactly as before, converges by last-writer-wins on the field, and SHALL have no effect on how rows render. No client SHALL write it, and no client SHALL remove or rename it; an older client that still writes `detailed` SHALL cause no change on a current client.
 
 #### Scenario: Older client writes Detailed
@@ -17,7 +27,7 @@ The `row_detail` field of the user's appearance preferences SHALL remain in the 
 - **WHEN** a user opens Settings → Appearance and changes the density
 - **THEN** one op for `density` is queued and none for `row_detail`
 
-### Requirement: Appearance in Settings
+### Requirement: Appearance in Settings without a Rows choice
 Settings → Appearance SHALL be its own section offering a mode control, one tile per theme (a horizontal row of swatches below 640 px), the density choice and the sidebar destination switches. Each tile SHALL preview its theme's accent on the current mode and name the theme in text. A choice SHALL apply at once, without a reload. Every control SHALL be operable by keyboard alone, and the current mode, theme and density SHALL be announced to assistive technology. The section SHALL NOT offer a row detail choice.
 
 #### Scenario: Pick a theme by keyboard

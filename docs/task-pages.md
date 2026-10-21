@@ -3,7 +3,7 @@ title: Task pages
 summary: Publish one task as a page anyone with the link can open, reply to and tick, without an account. Works for end-to-end encrypted tasks too.
 audience: user
 section: Guides
-specs: [public-links, comments]
+specs: [public-links, comments, task-pages]
 screens: []
 order: 75
 ---

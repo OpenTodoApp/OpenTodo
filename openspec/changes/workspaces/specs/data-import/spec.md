@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Own export completeness
-Importing an own export SHALL also recreate its sections, reminders, saved views and attachments with their original ids, store recurrence canonical and carry every other schema field, and SHALL place every project, label, view and task in a workspace: an exported workspace the importing account owns (matched by id, then by name ignoring case) keeps its items; any other exported workspace is created for the importing account when it was the exporter's own and the account has room under its workspace limit, and otherwise its items go to the importing account's default workspace with a note naming the workspace. Members and groups are never imported; the preview notes their count. File attachments SHALL come with their bytes from the ZIP export, within the account's limits, and be counted in a note for the JSON export alone. Comments SHALL NOT be imported; the preview notes their count. Another account as assignee SHALL be dropped with a warning. Writes are ops.
+Importing an own export SHALL also recreate its sections, reminders, saved views, attachments and time entries with their original ids, store recurrence canonical and carry every other schema field, and SHALL place every project, label, view and task in a workspace: an exported workspace the importing account owns (matched by id, then by name ignoring case) keeps its items; any other exported workspace is created for the importing account when it was the exporter's own and the account has room under its workspace limit, and otherwise its items go to the importing account's default workspace with a note naming the workspace. Members and groups are never imported; the preview notes their count. Time entries whose `user_id` is not the importing account SHALL be dropped with a warning that counts them, like another account as assignee; a running entry SHALL be imported as it is. File attachments SHALL come with their bytes from the ZIP export, within the account's limits, and be counted in a note for the JSON export alone. Comments SHALL NOT be imported; the preview notes their count. Another account as assignee SHALL be dropped with a warning. Writes are ops.
 
 #### Scenario: Round trip keeps sections, series and reminders
 - **WHEN** an export holding sections, a recurring task with occurrence records and future reminders is imported into an empty account
@@ -23,6 +23,10 @@ Importing an own export SHALL also recreate its sections, reminders, saved views
 - **WHEN** the JSON export of an account with 5 file attachments and 2 link attachments is imported
 - **THEN** the 2 link attachments are recreated, the preview notes that 5 files need the ZIP export, and no file attachment is written
 
+#### Scenario: Round trip keeps time entries
+- **WHEN** an export holding 40 time entries of the exporting account (one deleted) and 3 entries another member wrote on a shared task is imported into an empty account
+- **THEN** a fresh export lists the 40 entries with their ids, times, notes and deletion state under the importing account's `user_id`, the preview counts them as "time entries" and warns that 3 entries of another account were dropped, and the row chips read the same tracked totals once a device syncs
+
 #### Scenario: Workspaces restored
 - **WHEN** an export with the workspaces "Personal" (default) and "Work" (owned by the exporter, with two members) is imported into a fresh account
 - **THEN** the default workspace's items go to the importing account's default workspace, a "Work" workspace is created with the account as its only member, Work's projects, labels and views carry its new id, and the preview notes that 2 members are not imported
@@ -30,3 +34,4 @@ Importing an own export SHALL also recreate its sections, reminders, saved views
 #### Scenario: Workspace the account cannot create
 - **WHEN** the export holds a workspace the exporter was only a member of, or the importing account already owns 20 workspaces
 - **THEN** that workspace's items are imported into the default workspace and the preview notes the workspace by name
+

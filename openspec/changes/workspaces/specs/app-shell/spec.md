@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the workspace control (the current workspace's icon or colour and name, opening the workspace switcher; the app name is shown beside it only while the account has one workspace) with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything in the current workspace, then Projects, Labels and Filters, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. Every group, row and count SHALL be those of the current workspace. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Filters SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Filters group SHALL be shown only once the user has a saved filter in the current workspace and the Labels group only once the user has a label there; an empty group shows nothing, not a placeholder sentence.
+The sidebar SHALL show, top to bottom: the workspace control (the current workspace's icon or colour and name, opening the workspace switcher; the app name is shown beside it only while the account has one workspace) with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything in the current workspace, then Projects, Labels and Filters, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. Every group, row and count SHALL be those of the current workspace. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Filters SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Filters group SHALL be shown only once the user has a saved filter in the current workspace and the Labels group only once the user has a label there; an empty group shows nothing, not a placeholder sentence.
 
 Counts SHALL be visible at all times on Inbox, Today and collapsed group headers only. A project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer; favourites follow the rule of their own kind. Filter rows and label rows SHALL show no count. Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged. The workspace control SHALL carry one accent dot while another workspace has unread updates, with the workspace names in its tooltip and accessible name.
 
@@ -9,8 +9,8 @@ The primary destinations and the More group SHALL depend on the user's "How you 
 
 | Preference | Primary destinations | More group |
 | --- | --- | --- |
-| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Review, Statistics, Ask when available |
-| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Statistics, Ask when available |
+| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Review, Statistics, Ask when available |
+| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Statistics, Ask when available |
 
 In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged. The workspace control is not a destination and SHALL not count against the six.
 
@@ -77,3 +77,8 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 #### Scenario: Unread in another workspace
 - **WHEN** the user is in "Personal" and a shared project in "Work" receives activity the user has not seen
 - **THEN** the workspace control shows one accent dot, its tooltip reads "Updates in Work", and the dot leaves once the user has seen the updates
+
+#### Scenario: Locations in More
+- **WHEN** the user opens the More group, in any "How you work" mode
+- **THEN** Locations is listed after Updates and before Trash, and it is never a primary destination
+

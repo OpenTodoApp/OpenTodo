@@ -62,7 +62,7 @@ A row SHALL never omit a value because of what it is, only because the heading o
 - **WHEN** a task is due today at 10:00
 - **THEN** its Today row shows "10:00" in the accent colour in the time column and no "Today" in the line, while the same task in its project shows "10:00" in the column and "Today" in the accent colour in the line
 
-#### Scenario: Overdue stays loud, and only the date
+#### Scenario: Overdue stays loud
 - **WHEN** a task was due three days ago with an estimate and two labels
 - **THEN** its row in Today's Overdue group and in its project shows the date in the danger colour, and the estimate and the label names in the muted colour
 
@@ -70,7 +70,7 @@ A row SHALL never omit a value because of what it is, only because the heading o
 - **WHEN** a task in Upcoming's Friday group is due at 14:00 with a 45-minute estimate, repeats weekly and has the label "work"
 - **THEN** the column shows "14:00", the line reads "repeats · 45m" in one muted run with the repeat icon, and "work" follows as a chip with its dot, with no grey pill around the estimate
 
-#### Scenario: Tracked time stays one item
+#### Scenario: Tracked time stays one chip
 - **WHEN** a task estimated at one hour has 35 minutes tracked
 - **THEN** its line reads `35m / 1h` as one item, with no second item and no glyph, and the number of visible properties is unchanged
 

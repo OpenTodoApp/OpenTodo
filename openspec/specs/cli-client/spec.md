@@ -36,7 +36,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the command exits with code 3 and suggests `ot login`
 
 ### Requirement: List tasks
-`ot list` SHALL print open tasks sorted like the web views, with `--inbox`, `--today` (due today or earlier, overdue first), `--upcoming`, `--project <name-or-id>`, `--completed` and `--all` filters, plus `--limit`. Human output SHALL show an id prefix, priority, due date and time, project and title; dates SHALL be evaluated in the local time zone. Aliases `ot today`, `ot inbox` and `ot upcoming` SHALL exist.
+`ot list` SHALL print open tasks sorted like the web views, with `--inbox` (the Inbox tasks of OpenSpec `project-organization`: no project and not scheduled), `--today` (due today or earlier, overdue first), `--upcoming`, `--project <name-or-id>`, `--completed` and `--all` filters, plus `--limit`. Human output SHALL show an id prefix, priority, due date and time, project and title; dates SHALL be evaluated in the local time zone. Aliases `ot today`, `ot inbox` and `ot upcoming` SHALL exist.
 
 #### Scenario: Today view
 - **WHEN** the user runs `ot today` with one overdue and one task due today
@@ -45,6 +45,10 @@ The client SHALL read a configuration file from the platform's user configuratio
 #### Scenario: Unknown project
 - **WHEN** `--project` names no existing project
 - **THEN** the command exits with code 2 and lists the available project names
+
+#### Scenario: Inbox leaves out planned tasks
+- **WHEN** the user has two tasks without a project, one undated and one due Friday, and runs `ot inbox`
+- **THEN** only the undated task is printed
 
 ### Requirement: Add and edit tasks
 `ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>`, repeatable `--remind <phrase>` and `--origin-url <url>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`) clears one. `--due` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date. `--origin-url` SHALL accept only an `http` or `https` URL, derive the provider and issue id for a recognised host on the client, and send the origin with the task; `ot list` and its siblings SHALL carry `origin` in `--json` output and print the origin's id or host as a column of the table when any listed task has one.
@@ -236,7 +240,7 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 - **THEN** its assets include `opentodo-agent-skill.zip` next to the `ot-<os>-<arch>` binaries
 
 ### Requirement: Natural-language line in `ot add`
-`ot add --natural <line>` SHALL parse the line with the quick-add grammar (dates, times, ordinal weekdays, `#project`, `@label`, priority, estimate, recurrence, reminders) and create the task and its reminders from the result. Languages come from `--lang`, else the process locale, with English always active; numeric dates follow the first language and weeks start on Monday. For every line in the shared quick-add vectors the result SHALL equal the web parser's. Without `--natural` the title is taken verbatim.
+`ot add --natural <line>` SHALL parse the line with the quick-add grammar (dates, times, ordinal weekdays, `#project`, `@label`, priority, estimate, time spent, recurrence, reminders) and create the task, its reminders and, for a `<spent>/<estimate>` token, one closed time entry from the result. Languages come from `--lang`, else the process locale, with English always active; numeric dates follow the first language and weeks start on Monday. For every line in the shared quick-add vectors the result SHALL equal the web parser's. Without `--natural` the title is taken verbatim.
 
 #### Scenario: Line with a rule and a reminder
 - **WHEN** the user runs `ot add --natural "Water plants every Monday remind me at 8 #home"` on Friday 2026-10-09 with a project named Home
@@ -245,10 +249,6 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 #### Scenario: German line
 - **WHEN** the user runs `ot add --natural --lang de "Zahnarzt nächsten Mittwoch um 15 Uhr erinnere mich 30 Minuten vorher"`
 - **THEN** the task is due next Wednesday at `15:00` with a relative reminder of −30 minutes and the title `Zahnarzt`
-
-#### Scenario: Ordinal weekday line
-- **WHEN** the user runs `ot add --natural "Board every 2nd Tuesday of the month at 10:00"` on Saturday 2026-10-10
-- **THEN** the created task has title `Board`, rule `every 2nd tuesday`, due `{date: "2026-10-13", time: "10:00"}`, and the task id is printed
 
 #### Scenario: Dry run shows every request
 - **WHEN** the user runs `ot add --natural "Flight 3 Nov at 06:00 remind me 1 day before" --dry-run --json`
@@ -266,6 +266,14 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 - **WHEN** the stored token has scope `read` and the user runs `ot add --natural "Call mum remind me at 9"`
 - **THEN** no request is sent, the exit code is 5 and the error code is `insufficient_scope`
 
+#### Scenario: Spent and estimate from the line
+- **WHEN** the user runs `ot add --natural "Draft the offer 30m/2h" --dry-run --json`
+- **THEN** stdout lists a planned `POST /api/v1/tasks` with `estimate_minutes: 120` and a planned `POST /api/v1/time-entries` with the task's placeholder, a `startedAt` 30 minutes before `endedAt`, and nothing is created
+
+#### Scenario: Ordinal weekday line
+- **WHEN** the user runs `ot add --natural "Board every 2nd Tuesday of the month at 10:00"` on Saturday 2026-10-10
+- **THEN** the created task has title `Board`, rule `every 2nd tuesday`, due `{date: "2026-10-13", time: "10:00"}`, and the task id is printed
+
 ### Requirement: List by completion date
 `ot list` SHALL accept `--completed-after` and `--completed-before`, each a `YYYY-MM-DD` date (the start of that day in the local time zone), an RFC 3339 time or Unix milliseconds. With either, it SHALL list only completed tasks whose completion time falls in `[after, before)`, most recent first, combinable with `--project` and `--limit`. Like every command it needs a connection and the stored token, and it shows only what devices have synced.
 
@@ -276,3 +284,71 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 #### Scenario: Invalid date
 - **WHEN** the user runs `ot list --completed-after lastweek`
 - **THEN** the command exits with code 2 and names the flag and the accepted forms
+
+### Requirement: Issue connection commands
+`ot issues list` SHALL print the signed-in account's issue connections (OpenSpec `issue-connections`) with id, name, provider, host, state, last poll and task count, never a token, as a table or with `--json`. `ot issues sync [<id>]` SHALL run one poll now for the named connection, or every enabled connection of the account, and print the counts of tasks created, completed, reopened and renamed. Both SHALL appear in `ot schema` and `ot help --json`.
+
+#### Scenario: List without secrets
+- **WHEN** the user runs `ot issues list --json`
+- **THEN** the output lists each connection with `token_set: true` and no token value
+
+#### Scenario: Sync one connection
+- **WHEN** the user runs `ot issues sync 7f3a`
+- **THEN** the poll runs, the command prints `created 3, completed 1, reopened 0, renamed 2` and exits 0
+
+#### Scenario: Help and schema list the commands
+- **WHEN** an agent runs `ot schema` without a profile
+- **THEN** the JSON lists `issues list` and `issues sync` with `writes: true` and `dry_run: true` on `sync`
+
+### Requirement: Issue sync is a write command
+`ot issues sync` SHALL support `--dry-run`, SHALL be refused in read-only mode and with a `read` or `agent` token before any poll runs, and SHALL exit non-zero with the server's message when the feature is off, the connection is stopped or the rate limit is reached.
+
+#### Scenario: Feature off
+- **WHEN** the owner has not enabled issue connections and the user runs `ot issues sync`
+- **THEN** the command exits non-zero with a message saying the owner has not enabled issue connections
+
+#### Scenario: Dry run
+- **WHEN** the user runs `ot issues sync 7f3a --dry-run`
+- **THEN** the request that would be sent is printed and no poll runs
+
+#### Scenario: Read-only mode
+- **WHEN** the user runs `ot issues sync` with `--read-only`
+- **THEN** the command exits with code 5 (`read_only`, as for every write command) before any request is sent
+
+### Requirement: Time commands
+`ot time start <ref> [--note]` SHALL start an entry (stopping the running one), `ot time stop` SHALL stop it, and `ot time log <ref> <duration> [--on <date>] [--note]` or `ot time log <ref> --from <time> --to <time>` SHALL add a closed entry. They SHALL respect `--dry-run`, `--read-only` and token scope like every write command, and `--json` SHALL print the documented `time_entry` schema.
+
+#### Scenario: Start then stop
+- **WHEN** the user runs `ot time start 8c2a` and, 25 minutes later, `ot time stop`
+- **THEN** the first prints the running entry's id and the task's title, the second prints the closed entry with `25m`, and both exit 0
+
+#### Scenario: Log past work
+- **WHEN** the user runs `ot time log 8c2a 1h30 --on yesterday --note "review"`
+- **THEN** one closed entry of 90 minutes ending at 17:00 local time yesterday (the placement every duration-only entry on a past day gets) with the note "review" is created, and its id is printed
+
+#### Scenario: Nothing running
+- **WHEN** the user runs `ot time stop` with no running entry
+- **THEN** the command exits with code 1 and prints the server's message that no entry is running
+
+#### Scenario: Read token
+- **WHEN** the stored token has scope `read` and the user runs `ot time start 8c2a`
+- **THEN** no request is sent, the exit code is 5 and the error code is `insufficient_scope`, while `ot time list` and `ot time export` succeed
+
+#### Scenario: Invalid duration
+- **WHEN** the user runs `ot time log 8c2a soon`
+- **THEN** the command exits with code 2 before any request, naming the accepted forms (`45m`, `1h30`, `90`)
+
+### Requirement: Time listing and export commands
+`ot time list [--task <ref>] [--from <date>] [--to <date>] [--running] [--limit n]` SHALL print entries with day, start, end, duration, task and project, newest first, and `ot time export [--from <date>] [--to <date>] [-o file]` SHALL download the server's CSV in the local time zone. Both are read commands that work with a `read` token; `--json` SHALL print an array of `time_entry` or the `export_file` schema.
+
+#### Scenario: List this week
+- **WHEN** the user runs `ot time list --from 2026-10-12 --to 2026-10-18`
+- **THEN** the entries that started in those local days are printed newest first with an id prefix, day, `09:00–09:25`, `25m`, task title and project
+
+#### Scenario: Running entry
+- **WHEN** the user runs `ot time list --running` while an entry runs
+- **THEN** exactly that entry is printed with an empty end and its elapsed minutes, and `--json` prints it with `endedAt: null`
+
+#### Scenario: Export to a file
+- **WHEN** the user runs `ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv`
+- **THEN** `week.csv` holds the server's CSV for that range in the local time zone and `--json` reports the file and row count

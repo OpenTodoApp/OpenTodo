@@ -13,7 +13,7 @@ The client SHALL ship a web app manifest and a service worker that precaches the
 - **THEN** the shell loads and shows locally stored tasks
 
 ### Requirement: Standard views
-The client SHALL provide Inbox (open tasks without a project), Today (open tasks due today or earlier, with overdue tasks grouped first), Upcoming (open tasks due after today grouped by date), Completed (completed tasks newest first, grouped by the day they were completed), and one view per project (its open tasks). "Today" in these views is the user's logical today (OpenSpec `date-time-preferences`, "Logical today"): the calendar date, or the previous one while the local time is before the user's day start.
+The client SHALL provide Inbox (the Inbox tasks of OpenSpec `project-organization`, "Inbox is the default container": open, without a project and not scheduled), Today (open tasks due today or earlier, with overdue tasks grouped first), Upcoming (open tasks due after today grouped by date), Completed (completed tasks newest first, grouped by the day they were completed), and one view per project (its open tasks). Under its header the Inbox SHALL show one quiet line "N planned tasks without a project" while at least one open scheduled task without a project exists; activating it SHALL open the Filter view with the query `no project`. When quick add in the Inbox creates a task that is scheduled (its line sets a date, a start or Someday), the client SHALL announce where it went (for example "Added to Friday") with a control that opens that view, instead of leaving the user to wonder why it did not appear. "Today" in these views is the user's logical today (OpenSpec `date-time-preferences`, "Logical today"): the calendar date, or the previous one while the local time is before the user's day start.
 
 #### Scenario: Overdue grouping
 - **WHEN** Today is opened and there are tasks due before today
@@ -26,6 +26,14 @@ The client SHALL provide Inbox (open tasks without a project), Today (open tasks
 #### Scenario: Today after midnight with a day start
 - **WHEN** the user's day start is `04:00`, it is 01:30 on Thursday, and tasks are due on Wednesday and on Thursday
 - **THEN** Today lists Wednesday's tasks under "Today" and none under "Overdue", and Upcoming lists Thursday's under "Tomorrow"
+
+#### Scenario: Where planned tasks went
+- **WHEN** the user has 3 tasks without a project that are due later this week and opens the Inbox
+- **THEN** the Inbox does not list them, the line "3 planned tasks without a project" is shown under the header, and activating it opens Filter with `no project` listing them
+
+#### Scenario: Quick add with a date in the Inbox
+- **WHEN** the user types `Call the bank friday` in the Inbox quick add and presses Enter
+- **THEN** the task is created due Friday without a project, it is not listed in the Inbox, and an announcement reads "Added to Friday" with a control that opens Upcoming at Friday
 
 ### Requirement: Task detail panel
 Opening a task SHALL show a panel in the shell's panel slot (see `app-shell`) for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The panel SHALL show only the properties that have a value and offer the rest from an Add menu. A task SHALL open in the panel from Enter on a selected row, from Open details or `Shift+Enter` in the inline editor, and from a click on a row's title when the inline editor does not apply (see `task-list-presentation` "Inline title editing"). On narrow screens the panel SHALL open as a full-screen sheet over the list.
@@ -308,7 +316,7 @@ The panel SHALL show, top to bottom: a sticky header with the task's checkbox, t
 - **THEN** the title wraps onto a second line in the header and remains editable in place, and no subtask count is shown in the header
 
 ### Requirement: Task panel tabs
-The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The tab bar SHALL follow "Conversation tabs stay reachable".
+The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time (with the tracked total when there is one) as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The Time tab SHALL hold the task's time entries as the time-tracking capability defines them.
 
 #### Scenario: Remembered tab
 - **WHEN** the user opens the Activity tab, closes the panel and opens another task
@@ -317,6 +325,10 @@ The tabbed area SHALL offer Comments (with the comment count), Activity, History
 #### Scenario: Activity starts with the lifecycle
 - **WHEN** the user opens the Activity tab of a completed task
 - **THEN** its created time and its completed time are the first entries
+
+#### Scenario: Time tab by keyboard
+- **WHEN** the panel is open on a task with 35 minutes tracked and the user moves to the tabs and presses the right arrow until "Time · 35m"
+- **THEN** the Time tab shows the entries, Tab reaches Start tracking first, and Enter starts an entry whose row appears at the top with a ticking duration
 
 ### Requirement: Task panel comment composer
 The comment composer SHALL be pinned to the bottom of the panel while Comments is shown, resting as a single line that expands to the full composer (attach, submit, the submit key hint) when focused, when it holds a draft or a reply target, or when `Shift+C` is pressed; `Shift+C` SHALL switch to Comments and focus the composer.
@@ -608,3 +620,14 @@ The tab bar of Comments, Activity, History and Time SHALL stay pinned under the 
 #### Scenario: Tabs pinned
 - **WHEN** the user scrolls the panel past the subtasks into the comments
 - **THEN** the tab bar stays visible directly under the sticky header
+
+### Requirement: Keyboard navigation to Focus
+Outside text fields, `g` then `Shift+F` SHALL open the Focus screen (OpenSpec change `focus-mode`), like the other `g` navigation keys, and the `?` cheat sheet SHALL list it under "Go to a view". On the Focus screen itself Space, Enter, Esc, `b` and `n` SHALL be the view's own keys and SHALL not run any list or panel shortcut.
+
+#### Scenario: Navigate to Focus
+- **WHEN** focus is not in a text field and the user presses `g` then `Shift+F`
+- **THEN** the Focus screen opens on the first task of today's focus, or on its task picker when there is none
+
+#### Scenario: No list keys on the Focus screen
+- **WHEN** the Focus screen is shown and the user presses `c` or `j`
+- **THEN** nothing happens, because the screen hosts no task list

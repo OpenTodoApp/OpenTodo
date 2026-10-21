@@ -3,7 +3,7 @@ title: Project templates
 summary: Start a project from the template library or from a template file, with dates counted from your start day; save your own templates; contribute one to the library.
 audience: user
 section: Guides
-specs: [project-templates]
+specs: [project-templates, template-library]
 screens: [templates#save-a-template]
 order: 122
 ---

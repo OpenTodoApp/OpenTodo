@@ -25,11 +25,11 @@ A task SHALL have an optional `start`, which is null (default), a floating calen
 - **THEN** after sync the task is still in Someday with the new title on every device
 
 ### Requirement: Deferred tasks
-A task whose start is a date after the viewer's local date SHALL be deferred: absent from Today, Upcoming, Anytime and the sidebar counts, and listed in its project or Inbox view in a **Later** group after the other tasks with a "Starts" chip showing the date. A task due or with a deadline today or earlier SHALL be in Today regardless of its start. Deferral SHALL be computed on the device from local data and SHALL change on the start day without any write.
+A task whose start is a date after the viewer's local date SHALL be deferred: absent from Today, Upcoming, Anytime and the sidebar counts, and listed in its project view in a **Later** group after the other tasks with a "Starts" chip showing the date. A deferred task without a project is not an Inbox task (OpenSpec `project-organization`); when it also has no do-on date it SHALL be listed in Upcoming under its start date with the "Starts" chip, so it is always reachable. A task due or with a deadline today or earlier SHALL be in Today regardless of its start. Deferral SHALL be computed on the device from local data and SHALL change on the start day without any write.
 
 #### Scenario: Deferred until next week
-- **WHEN** today is 2026-10-14 and an open Inbox task has the start `2026-10-21` and no due date
-- **THEN** it is absent from Today, Upcoming and Anytime, the Inbox count does not include it, and the Inbox view lists it under Later with `Starts 21 Oct`
+- **WHEN** today is 2026-10-14 and an open task without a project has the start `2026-10-21` and no due date
+- **THEN** it is absent from Today, Anytime and the Inbox, the Inbox count does not include it, and Upcoming lists it under 21 October with `Starts 21 Oct`
 
 #### Scenario: Deferred with a later due date
 - **WHEN** a task is due 2026-10-24 with the start `2026-10-21` and today is 2026-10-14
@@ -59,7 +59,7 @@ A task whose start is a date on or before the viewer's local date SHALL be activ
 - **THEN** it is listed in Today and under 24 October in Upcoming
 
 ### Requirement: Someday
-A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, Anytime and the sidebar counts, listed in the Someday view and in its project's or the Inbox's Later group with a "Someday" chip. Parking from the app SHALL clear the due date in the same batch; giving a parked task a due or start date from the app SHALL un-park it in the same batch. A parked task dated by another client SHALL stay parked, except that a due date or deadline today or earlier puts it in Today.
+A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, Anytime and the sidebar counts, listed in the Someday view and in its project's Later group with a "Someday" chip; a parked task without a project is not an Inbox task (OpenSpec `project-organization`). Parking from the app SHALL clear the due date in the same batch; giving a parked task a due or start date from the app SHALL un-park it in the same batch. A parked task dated by another client SHALL stay parked, except that a due date or deadline today or earlier puts it in Today.
 
 #### Scenario: Park a scheduled task
 - **WHEN** the user parks a task due 2026-10-16 with `every week` in Someday

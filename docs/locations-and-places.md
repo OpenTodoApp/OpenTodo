@@ -3,7 +3,7 @@ title: Locations
 summary: Give a task a location by address, coordinates, a point on the map or your current position, keep the locations you use often, and see them on OpenStreetMap maps you can turn off.
 audience: user
 section: Guides
-specs: [task-management]
+specs: [task-management, task-locations]
 screens: [locations]
 order: 44
 ---
