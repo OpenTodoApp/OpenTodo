@@ -1,7 +1,7 @@
 // Views overview (`g v`) and the per-view menu shared with the sidebar and the view
 // headers (OpenSpec `custom-views`). Every action is an op through lib/views, except
 // the start view, which is a per-device preference in local meta.
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import type { View } from '../lib/types'
 import { deleteView, evaluateViews, isDashboard, reorderView, setStartView, updateView } from '../lib/views'
 import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
@@ -14,9 +14,16 @@ import { useStartView, useViewData, useViews } from './useViews'
 import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import type { RuleDraft } from './rules/RuleDialog'
+import { useLabels, useProjects } from '../lib/localData'
+import { ruleDraftFromView } from './rules/convertDraft'
+import { useMe } from '../lib/timeEntries'
 import { pinItem } from './menus/pinItem'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+
+// The rule editor is its own chunk with the Rules page (automation-rules D11).
+const RuleDialog = lazy(() => import('./rules/RuleDialog').then((m) => ({ default: m.RuleDialog })))
 
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
 
@@ -28,6 +35,8 @@ export interface ViewMenuActions {
   remove: () => unknown
   /** Opens the view in display mode (display-mode); offered for list views only. */
   display?: () => unknown
+  /** Opens the rule editor prefilled from the view (automation-rules); list views only. */
+  rule?: () => unknown
 }
 
 /**
@@ -48,6 +57,7 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
         reason: t('This view opens when the app starts'), onSelect: a.startView },
     ] },
     ...(a.display && !isDashboard(view) ? [{ items: [{ kind: 'action' as const, id: 'display', label: t('Display mode'), icon: 'monitor' as const, onSelect: a.display }] }] : []),
+    ...(a.rule && !isDashboard(view) ? [{ items: [{ kind: 'action' as const, id: 'rule', label: t('Make an automation rule'), icon: 'zap' as const, onSelect: a.rule }] }] : []),
     { items: [
       { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', disabled: first, reason: t('Already first'), onSelect: () => a.move(-1) },
       { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', disabled: last, reason: t('Already last'), onSelect: () => a.move(1) },
@@ -71,6 +81,10 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
   const favourites = useFavourites()
   const isStart = start === `view:${view.id}`
   const [renaming, setRenaming] = useState(false)
+  const [ruleDraft, setRuleDraft] = useState<RuleDraft | null>(null)
+  const labels = useLabels()
+  const projects = useProjects()
+  const me = useMe() ?? ''
   const inFavourites = within === 'favourites'
   const groups = viewMenuGroups(view, views, isStart, {
     rename: () => setRenaming(true),
@@ -79,6 +93,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
     display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
+    rule: () => setRuleDraft(ruleDraftFromView(view, { labels, projects })),
   }, inFavourites ? favouriteEdges(favourites, 'view', view.id) : undefined)
   return (
     <>
@@ -88,6 +103,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
         <NamePrompt title={t('Rename view')} label={t('View name')} initial={view.name} onCancel={() => setRenaming(false)}
           onSubmit={async (name) => { await updateView(view.id, { name }); setRenaming(false) }} />
       )}
+      {ruleDraft && <Suspense fallback={null}><RuleDialog draft={ruleDraft} me={me} onClose={() => setRuleDraft(null)} /></Suspense>}
     </>
   )
 }

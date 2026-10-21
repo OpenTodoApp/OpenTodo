@@ -56,6 +56,7 @@ const VimLayer = lazy(() => import('./vim/VimLayer'))
 const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
+const RulesView = lazy(() => import('./rules/RulesView').then((m) => ({ default: m.RulesView })))
 const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
 const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpPanel })))
 // In-app assistant (in-app-assistant D9): its own chunk, fetched on first open;
@@ -85,13 +86,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).
   const { rejected } = useSyncStatus()
-
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
   // Two devices started tracking while offline: keep one running entry (time-tracking D2).
   useRunningRepair()
-
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
   useEffect(() => {
@@ -251,6 +250,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <LabelsView route={route} />
           ) : route.view === 'places' ? (
             <PlacesView />
+          ) : route.view === 'rules' ? (
+            <Suspense fallback={null}><RulesView create={route.create} /></Suspense>
           ) : route.view === 'projects' ? (
             <ProjectsView archived={route.archived} />
           ) : route.view === 'filter' ? (

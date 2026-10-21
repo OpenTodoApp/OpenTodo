@@ -356,6 +356,12 @@ export const SETTINGS_COPY = {
     description: msg('Maps and address search from the provider below, always through this server.'),
     learnMore: 'locations',
   },
+  // Automation rules (automation-rules D9): the owner's switch for every account.
+  'automations-server': {
+    title: msg('Automations'),
+    description: msg('Off: no account’s rules run on this server. Rules stay and run again when turned back on.'),
+    learnMore: 'rules',
+  },
   'maps-user': {
     title: msg('Maps'),
     description: msg('Off: no maps or address search on your devices; locations still work.'),

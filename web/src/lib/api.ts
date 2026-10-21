@@ -14,6 +14,7 @@ import type {
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
+  AutomationsSetting, RuleRun, RulesStatus,
 } from './types'
 
 export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
@@ -483,6 +484,12 @@ export const api = {
     request<{ result: MapResult | null }>('GET', `/api/v1/maps/reverse?lat=${lat}&lon=${lon}&lang=${encodeURIComponent(lang)}`),
   getMapsSetting: () => request<MapsSetting>('GET', '/api/v1/settings/maps'),
   putMapsSetting: (s: { enabled: boolean; tiles_url?: string; geocoder_url?: string }) => request<MapsSetting>('PUT', '/api/v1/settings/maps', s),
+  /** Automation rules (automation-rules): the server's state, run log and switches; the rules themselves sync. */
+  myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
+  ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
+  pauseRules: (paused: boolean) => request<{ enabled: boolean; paused: boolean }>('PUT', '/api/v1/me/rules/paused', { paused }),
+  getAutomationsSetting: () => request<AutomationsSetting>('GET', '/api/v1/settings/automations'),
+  putAutomationsSetting: (enabled: boolean) => request<AutomationsSetting>('PUT', '/api/v1/settings/automations', { enabled }),
   getIssuesSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/issues'),
   putIssuesSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/issues', { enabled }),
   listIssueConnections: () => request<{ connections: IssueConnection[] }>('GET', '/api/v1/issues/connections'),

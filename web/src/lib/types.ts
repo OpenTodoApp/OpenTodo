@@ -380,6 +380,33 @@ export interface RuleActions extends Omit<OnDropRule, 'due'> {
   webhook?: { webhook_id: string }
 }
 
+/** One run of an automation rule (GET /api/v1/rules/{id}/runs); titles are never stored. */
+export interface RuleRun {
+  id: number
+  rule_id: string
+  occurrence: string
+  task_id?: string
+  at: number
+  outcome: 'pending' | 'applied' | 'already_matched' | 'skipped' | 'stopped' | 'failed' | 'partial'
+  reason?: string
+  changes: { task_id: string; fields: Record<string, unknown> }[]
+  depth: number
+}
+
+/** The Rules page's server state (GET /api/v1/me/rules). */
+export interface RulesStatus {
+  enabled: boolean
+  paused: boolean
+  rules: Record<string, { last_run?: number; runs_7d?: number; paused_reason?: string }>
+}
+
+/** The owner's automations switch (GET /api/v1/settings/automations). */
+export interface AutomationsSetting {
+  enabled: boolean
+  locked: boolean
+  locked_by: string
+}
+
 /**
  * An automation rule (OpenSpec change `automation-rules`): personal like a label,
  * run by the server for its author. `trigger`, `condition` and `actions` are each

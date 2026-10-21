@@ -2,6 +2,7 @@
 // write is an op through mutate, so a rule saved offline is listed at once and
 // reaches the server on the next sync. The server runs rules; the device only
 // lists and edits them.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { t } from '../i18n'
 import { uuid } from '../ids'
@@ -124,4 +125,17 @@ export async function reorderRule(id: string, delta: -1 | 1): Promise<void> {
 /** Tombstone a rule; its run log stays on the server until pruned. */
 export async function deleteRule(id: string): Promise<void> {
   await mutate('rule', id, { deleted_at: Date.now() })
+}
+
+const NO_RULES: Rule[] = []
+const NO_TITLES = new Map<string, string>()
+
+/** The live rules of this device, in order (the Rules page). */
+export function useRules(): Rule[] {
+  return useLiveQuery(async () => activeRules(await db.rules.toArray()), [], NO_RULES)
+}
+
+/** Titles of the live tasks among ids (a rule's history): a deleted task has none. */
+export function useTaskTitles(ids: readonly string[]): Map<string, string> {
+  return useLiveQuery(async () => new Map((await db.tasks.bulkGet([...ids])).flatMap((x) => (x && !x.deleted_at ? [[x.id, x.title] as const] : []))), [ids.join()], NO_TITLES)
 }
