@@ -4713,5 +4713,6 @@
   "sign in to react": "zum Reagieren anmelden",
   "{name}: uploading": "{name}: wird hochgeladen",
   "{name}: waiting to upload": "{name}: wartet auf das Hochladen",
-  "{reaction}: {count} ({names})": "{reaction}: {count} ({names})"
+  "{reaction}: {count} ({names})": "{reaction}: {count} ({names})",
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "„{name}“ wird in den Notizen von „{task}“ gezeigt und auch dort entfernt. Du kannst es gleich danach rückgängig machen."
 }

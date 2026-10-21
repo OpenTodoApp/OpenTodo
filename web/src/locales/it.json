@@ -4713,5 +4713,6 @@
   "sign in to react": "accedi per reagire",
   "{name}: uploading": "{name}: caricamento in corso",
   "{name}: waiting to upload": "{name}: in attesa di caricamento",
-  "{reaction}: {count} ({names})": "{reaction}: {count} ({names})"
+  "{reaction}: {count} ({names})": "{reaction}: {count} ({names})",
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "«{name}» è mostrato nelle note di «{task}» e viene rimosso anche da lì. Puoi annullare subito dopo."
 }

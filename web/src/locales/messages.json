@@ -15473,6 +15473,9 @@
   "“{name}” is removed from this task. You can undo right after.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
   "“{name}” is too large once encrypted; files may be at most {max} on this server.": [
     "web/src/lib/attachments.ts"
   ],

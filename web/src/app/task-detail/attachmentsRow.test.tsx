@@ -6,7 +6,7 @@ import { act, createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, setMeta, useDatabase } from '../../lib/db'
 import { setDemo } from '../../lib/demo'
-import { applyOps, createTask, resetDeviceId } from '../../lib/ops'
+import { applyOps, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import type { Op } from '../../lib/types'
 import { click, flush, key, render, spokenText, visibleText } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
@@ -138,6 +138,19 @@ describe('AttachmentsRow', () => {
     await click(confirm)
     await waitFor(() => names().length === 0)
     expect((await db.attachments.toArray())[0].deleted_at).not.toBeNull()
+  })
+
+  it('Remove an embedded image: the confirmation names the note that shows it (editor-everywhere 4.4)', async () => {
+    await remoteFile('att-wall', 'wall.png', 'image/png')
+    await updateTask(task, { description: 'Before:\n\n![wall](attachment:att-wall)' })
+    await mount()
+    await waitFor(() => names().includes('wall.png'))
+    await key(item('wall.png'), 'Delete')
+    const dialog = () => document.querySelector('[data-testid="confirm-dialog"]')
+    await waitFor(() => !!dialog())
+    expect(dialog()!.textContent).toContain('“wall.png” is shown in the notes of “Report” and is removed from them too.')
+    await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Remove')!)
+    await waitFor(() => names().length === 0)
   })
 
   it('lists but offers no Add when attachments are off, and nothing for a viewer of someone else’s file to remove', async () => {

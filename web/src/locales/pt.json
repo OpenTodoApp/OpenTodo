@@ -4713,5 +4713,6 @@
   "sign in to react": "inicia sessão para reagir",
   "{name}: uploading": "{name}: a enviar",
   "{name}: waiting to upload": "{name}: à espera de envio",
-  "{reaction}: {count} ({names})": "{reaction}: {count} ({names})"
+  "{reaction}: {count} ({names})": "{reaction}: {count} ({names})",
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "«{name}» aparece nas notas de «{task}» e também é removido delas. Podes desfazer logo a seguir."
 }
