@@ -5263,6 +5263,9 @@
     "web/src/app/review/StatsView.tsx",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
+  "More actions for this comment": [
+    "web/src/app/task-detail/CommentsTab.tsx"
+  ],
   "Move": [
     "web/src/app/TriageView.tsx"
   ],

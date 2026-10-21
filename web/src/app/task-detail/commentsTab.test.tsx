@@ -76,16 +76,35 @@ describe('CommentsView', () => {
     await v.unmount()
   })
 
-  it('shows Reply always on touch, and Edit and Delete on own comments', async () => {
+  it('on touch, one visible "More actions" menu offers Reply, and Edit and Delete on own comments', async () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(pointer: coarse)', media: q, addEventListener() {}, removeEventListener() {} }))
     const v = await render(<CommentsView {...props()} />)
-    const actions = v.container.querySelector('[data-thread="c2"] [data-comment-actions]')!
-    expect(actions.className).not.toContain('hover-reveal')
-    const names = [...actions.querySelectorAll('button')].map((b) => b.textContent)
-    expect(names).toEqual(['Reply', 'Edit', 'Delete'])
-    const others = [...v.container.querySelector('[data-thread="c3"] [data-comment-actions]')!.querySelectorAll('button')].map((b) => b.textContent)
+    const menuItems = async (thread: string) => {
+      const actions = v.container.querySelector(`[data-thread="${thread}"] [data-comment-actions]`)!
+      expect(actions.className).not.toContain('hover-reveal')
+      const trigger = actions.querySelector<HTMLButtonElement>('button[aria-haspopup]')!
+      expect(trigger.getAttribute('aria-label') ?? trigger.textContent).toContain('More actions')
+      await click(trigger)
+      await flush()
+      const items = [...document.querySelectorAll('[role="menuitem"]')].map((b) => b.textContent)
+      await key(document.activeElement ?? document.body, 'Escape')
+      await flush()
+      return items
+    }
+    expect(await menuItems('c2')).toEqual(['Reply', 'Edit', 'Delete'])
+    const others = await menuItems('c3')
     expect(others).toContain('Reply')
     expect(others).not.toContain('Edit')
+    await v.unmount()
+  })
+
+  it('actions sit on the header line and reserve no row of their own', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }))
+    const v = await render(<CommentsView {...props()} />)
+    const actions = v.container.querySelector('[data-thread="c2"] [data-comment-actions]')!
+    // Inside the author line, not a block after the body.
+    expect(actions.parentElement!.textContent).toContain('You')
+    expect(actions.parentElement!.querySelector('time, [datetime]') ?? actions.parentElement!.textContent).toBeTruthy()
     await v.unmount()
   })
 

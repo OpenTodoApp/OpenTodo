@@ -129,6 +129,11 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
   const page = variant === 'page'
+  // The page's sticky header height, so the conversation's tab bar pins just under it (task-panel-polish D5).
+  const measureHeader = (el: HTMLDivElement | null) => {
+    const host = el?.closest<HTMLElement>('[data-detail-for]')
+    if (el && host) host.style.setProperty('--panel-header-h', `${el.offsetHeight}px`)
+  }
   const done = !!task.completed_at
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }[task.priority] ?? 'border-p4'
   return (
@@ -137,7 +142,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
         : 'fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
-      <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
+      <div data-panel-header ref={page ? measureHeader : undefined} className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
         onTouchStart={page ? undefined : onSwipeStart} onTouchEnd={page ? undefined : onSwipeEnd}>
         {/* Below 768 px the panel is a full-screen sheet (app-shell "Panel width and expansion"): Back, or a swipe down on the header, closes it. */}
         {(page || phone) && <IconButton icon="arrow-left" label={t('Back to the list')} onClick={onClose} data-task-back className="touch-target" />}
@@ -241,7 +246,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 
           <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, memberships ?? new Map())} dropTarget={panel} />
         </div>
-        <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} />
+        <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} page={page} />
       </div>
       <div ref={setFooter} data-panel-footer className={`shrink-0 border-t border-default px-4 py-3 empty:hidden ${page ? 'sticky bottom-0 bg-canvas/95 backdrop-blur-sm' : 'bg-surface'}`} />
     </aside>

@@ -4,7 +4,7 @@
 // newest one. Built from local storage, so it reads and writes offline. Viewers
 // may comment, so it ignores the panel's read-only mode.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { forwardRef, useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { forwardRef, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
 import {
@@ -15,7 +15,7 @@ import { useDemo } from '../../lib/demo'
 import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
 import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task } from '../../lib/types'
 import { Avatar } from '../../ui'
-import { Button, IconButton } from '../../ui'
+import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
@@ -84,6 +84,17 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
 
   const replyTarget = replyTo ? threads.find((item) => item.root.id === replyTo)?.root : undefined
 
+  // A comment just posted comes into view above the composer (comments "Readable comment presentation").
+  const posted = useRef(false)
+  useEffect(() => {
+    if (!posted.current || !me) return
+    let newest: Comment | undefined
+    for (const th of threads) for (const c of [th.root, ...th.replies]) if (c.author_id === me && (!newest || c.created_at > newest.created_at)) newest = c
+    if (!newest) return
+    posted.current = false
+    document.getElementById(`comment-${newest.id}`)?.scrollIntoView?.({ block: 'nearest' })
+  }, [threads, me])
+
   const startReply = (id: string) => {
     setReplyTo(id)
     requestAnimationFrame(() => {
@@ -92,17 +103,45 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
     })
   }
 
+  // Reply, Edit and Delete take no space at rest (task-panel-polish D6): at the end of the
+  // header line, shown on hover and focus with a fine pointer; one "More actions" menu on touch.
+  const actions = (c: Comment, isReply: boolean) => {
+    const reply = !isReply
+    const edit = canEditComment(c, me)
+    const del = canDeleteComment(c, me, role)
+    if (!reply && !edit && !del) return null
+    if (coarse) {
+      return (
+        <span className="absolute -top-1 right-0" data-comment-actions>
+          <Menu kind="menu" label={t('More actions for this comment')} trigger={<Icon name="ellipsis" size="sm" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2">
+            {reply && <MenuItem label={t('Reply')} icon="corner-down-right" onSelect={() => startReply(c.id)} />}
+            {edit && <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(c.id)} />}
+            {del && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={() => setDeleting(c.id)} />}
+          </Menu>
+        </span>
+      )
+    }
+    return (
+      <span className="hover-reveal absolute -top-1 right-0 flex gap-0.5 rounded-control bg-surface" data-comment-actions>
+        {reply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>{t('Reply')}</Button>}
+        {edit && <Button variant="ghost" size="sm" onClick={() => setEditing(c.id)}>{t('Edit')}</Button>}
+        {del && <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeleting(c.id)}>{t('Delete')}</Button>}
+      </span>
+    )
+  }
+
   const renderComment = (c: Comment, isReply: boolean) => {
     if (c.deleted_at) return <p className="py-1 text-meta italic text-faint" data-comment-deleted>{t('Comment deleted')}</p>
     const author = name(c.author_id)
     return (
-      <article className="group flex gap-3" aria-label={t('Comment by {author}', { author })}>
+      <article className="group relative flex gap-3" aria-label={t('Comment by {author}', { author })}>
         <Avatar id={c.author_id || 'unknown'} name={author} size={isReply ? 'sm' : 'md'} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2">
+          <div className="flex flex-wrap items-center gap-x-2">
             <span className="text-body font-semibold text-default">{author}</span>
             <RelativeTime ts={c.created_at} now={now} className="text-meta" />
             {c.edited_at && <span className="text-meta text-faint">{t('edited')}</span>}
+            {editing !== c.id && actions(c, isReply)}
           </div>
           {editing === c.id ? (
             <div className="mt-1">
@@ -114,11 +153,6 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
             <>
               {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
               <CommentAttachments list={attachments?.get(c.id) ?? []} />
-              <div className={`mt-1 flex flex-wrap gap-1 ${coarse ? '' : 'hover-reveal'}`} data-comment-actions>
-                {!isReply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>{t('Reply')}</Button>}
-                {canEditComment(c, me) && <Button variant="ghost" size="sm" onClick={() => setEditing(c.id)}>{t('Edit')}</Button>}
-                {canDeleteComment(c, me, role) && <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeleting(c.id)}>{t('Delete')}</Button>}
-              </div>
             </>
           )}
         </div>
@@ -138,7 +172,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
       )}
       <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
         submitLabel={replyTarget ? t('Reply') : t('Comment')} label={replyTarget ? t('Write a reply') : t('Write a comment')} attach={canAttach}
-        onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) setReplyTo(null); return ok })} />
+        onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) { setReplyTo(null); posted.current = true } return ok })} />
     </div>
   ) : (
     <p className="text-meta text-faint">{t('Sign in to comment.')}</p>
@@ -149,7 +183,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
       {threads.length === 0 ? (
         <p className="text-meta text-faint" data-comments-empty>{t('No comments yet. Ask a question or leave a note; comments work offline.')}</p>
       ) : (
-        <ol className="space-y-5" aria-label={t('Comments')}>
+        <ol className="space-y-4" aria-label={t('Comments')}>
           {threads.map((entry) => (
             <li key={entry.root.id} id={`comment-${entry.root.id}`} tabIndex={-1} data-thread={entry.root.id}
               className={`rounded-control focus-visible:outline-2 focus-visible:outline-focus ${focusComment === entry.root.id ? 'bg-accent-soft' : ''}`}>

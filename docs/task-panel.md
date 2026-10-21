@@ -31,7 +31,7 @@ Then come the task's properties as chips. A chip reads its value ("Thu 15 Oct ·
 
 A chip with a value has an **×** that clears it without opening the editor.
 
-Below the chips: subtasks, attachments and the Comments, Activity and History tabs, described in [Notes, subtasks and dependencies](notes-and-subtasks.md), and **Time**, the task's time entries (see [Time tracking](time-tracking.md)).
+Below the chips: subtasks, attachments and the Comments, Activity and History tabs, described in [Notes, subtasks and dependencies](notes-and-subtasks.md), and **Time**, the task's time entries (see [Time tracking](time-tracking.md)). The tabs stay in view while you read a long thread.
 
 ## Viewers
 
