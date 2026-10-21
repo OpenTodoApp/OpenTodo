@@ -60,3 +60,36 @@ func TestVectors(t *testing.T) {
 		}
 	}
 }
+
+// TestLabelVectors runs the "labels" list of the shared vectors (extension-v2):
+// web mail origins are valid and read as their provider, on both sides
+// (web/src/lib/taskOrigin.test.ts runs the same list through originLabel).
+func TestLabelVectors(t *testing.T) {
+	t.Parallel()
+	raw, err := os.ReadFile("testdata/origin_vectors.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		Labels []struct {
+			Name   string  `json:"name"`
+			Origin Origin  `json:"origin"`
+			Valid  bool    `json:"valid"`
+			Label  *string `json:"label"`
+		} `json:"labels"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Labels) < 4 {
+		t.Fatalf("only %d label vectors", len(f.Labels))
+	}
+	for _, c := range f.Labels {
+		if err := c.Origin.Validate(); (err == nil) != c.Valid {
+			t.Errorf("%s: Validate() = %v, want valid %v", c.Name, err, c.Valid)
+		}
+		if c.Label != nil && c.Origin.Label() != *c.Label {
+			t.Errorf("%s: Label() = %q, want %q", c.Name, c.Origin.Label(), *c.Label)
+		}
+	}
+}

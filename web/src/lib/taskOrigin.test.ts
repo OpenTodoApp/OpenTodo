@@ -15,6 +15,18 @@ describe('originFromUrl (shared vectors with internal/origin)', () => {
   }
 })
 
+describe('web mail origins (shared label vectors with internal/origin)', () => {
+  for (const c of vectors.labels) {
+    if (c.label === null) continue
+    it(c.name, () => {
+      expect(originLabel(c.origin as Origin)).toBe(c.label)
+    })
+  }
+  it('an email origin without a link still reads as nothing (callers show "Email")', () => {
+    expect(originLabel({ kind: 'email', provider: 'gmail', id: '1' })).toBe('')
+  })
+})
+
 describe('origin readers', () => {
   const issue: Origin = { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
   const page: Origin = { kind: 'url', url: 'https://www.example.org/post', title: 'Interesting article' }
