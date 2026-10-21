@@ -149,8 +149,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { engine: chromium, name: Chromium }
-          - { engine: webkit, name: WebKit }
+          # The script seeds its data through Chromium, so every leg installs it.
+          - { engine: chromium, name: Chromium, browsers: chromium }
+          - { engine: webkit, name: WebKit, browsers: chromium webkit }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -172,7 +173,7 @@ jobs:
       - name: Install Playwright with ${{ matrix.name }}
         run: |
           npm i -g playwright@1.56.1
-          playwright install --with-deps ${{ matrix.engine }}
+          playwright install --with-deps ${{ matrix.browsers }}
       - name: Run the layout check against a fresh server
         env:
           ENGINES: ${{ matrix.engine }}
