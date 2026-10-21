@@ -3336,7 +3336,6 @@
   "needs a due date": "braucht ein Fälligkeitsdatum",
   "never": "nie",
   "never refreshed": "nie aktualisiert",
-  "new": "neu",
   "new account": "neues Konto",
   "new tasks": "neue Aufgaben",
   "next try {instant}": "nächster Versuch {instant}",
@@ -4206,5 +4205,10 @@
   "since {date}": "seit {date}",
   "under {title}": "unter {title}",
   "waits for {n, plural, one {# task} other {# tasks}}": "wartet auf {n, plural, one {# Aufgabe} other {# Aufgaben}}",
-  "waits for {title}": "wartet auf {title}"
+  "waits for {title}": "wartet auf {title}",
+  "Create label “{name}”": "Label „{name}“ erstellen",
+  "Create project “{name}”": "Projekt „{name}“ erstellen",
+  "New label “{name}”": "Neues Label „{name}“",
+  "No project “{name}” · stays in the title": "Kein Projekt „{name}“ · bleibt im Titel",
+  "{count} projects match “{name}”": "{count} Projekte passen zu „{name}“"
 }

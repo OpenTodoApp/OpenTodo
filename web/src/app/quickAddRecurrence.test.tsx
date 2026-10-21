@@ -80,7 +80,7 @@ describe('the share screen', () => {
     setPendingShare(parseShare('?title=Read%20this&url=https://example.org/post'))
     await render(<ShareCapture />)
     await flush(80)
-    const input = document.querySelector<HTMLInputElement>('#share-capture input:not([role="combobox"])')!
+    const input = document.querySelector<HTMLInputElement>('#share-capture input[aria-label="Task title"]')!
     await act(async () => {
       const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
       set.call(input, '')

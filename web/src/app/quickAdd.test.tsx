@@ -59,3 +59,70 @@ describe('spent and estimate (OpenSpec time-tracking 8.2)', () => {
     await r.unmount()
   })
 })
+
+// Token suggestions and explained misses (OpenSpec change smart-title-tokens,
+// natural-language-capture "Token suggestions" and "Unmatched tokens are explained").
+describe('# and @ suggestions', () => {
+  const projects = [{ id: 'p-home', name: 'Home' }, { id: 'p-homework', name: 'Homework' }, { id: 'p-reno', name: 'Home renovation' }]
+  const labels = [{ id: 'l-errand', name: 'errand' }, { id: 'l-deep', name: 'deep-work' }]
+  /** Types `text` with the caret at its end, as a person would. */
+  async function typeAtEnd(input: HTMLInputElement, text: string) {
+    await type(input, text)
+    await act(async () => { input.setSelectionRange(text.length, text.length); input.dispatchEvent(new Event('select', { bubbles: true })) })
+    await flush()
+  }
+  const key = (input: HTMLInputElement, k: string) => act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })) })
+  const options = () => [...document.querySelectorAll('[role="listbox"] [role="option"]')].map((o) => o.textContent ?? '')
+
+  it('#ren lists "Home renovation"; Enter inserts a token that resolves to it and shows its chip', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" projects={projects} onAdd={async (i) => { added.push(i as never) }} />)
+    const input = r.container.querySelector('input')!
+    await typeAtEnd(input, 'Paint the hall #ren')
+    expect(input.getAttribute('aria-expanded')).toBe('true')
+    expect(options()[0]).toContain('Home renovation')
+    await key(input, 'Enter')
+    await flush(30)
+    expect(input.value).toBe('Paint the hall #Homerenovation ')
+    expect(r.container.querySelector('[data-chip="project"]')!.textContent).toContain('Home renovation')
+    // Enter now submits: the list is closed.
+    await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await flush(30)
+    expect(added[0]).toMatchObject({ title: 'Paint the hall', project_id: 'p-reno' })
+    await r.unmount()
+  })
+
+  it('@d lists deep-work and offers Create last', async () => {
+    const r = await render(<QuickAdd placeholder="Add a task" labels={labels} onAdd={() => {}} />)
+    const input = r.container.querySelector('input')!
+    await typeAtEnd(input, 'Focus @d')
+    expect(options()[0]).toContain('deep-work')
+    expect(options().at(-1)).toContain('Create label “d”')
+    await r.unmount()
+  })
+
+  it('Esc closes the list and keeps the text, without leaving quick add', async () => {
+    const r = await render(<QuickAdd placeholder="Add a task" projects={projects} onAdd={() => {}} />)
+    const input = r.container.querySelector('input')!
+    input.focus()
+    await typeAtEnd(input, 'Fix #ho')
+    expect(options().length).toBeGreaterThan(0)
+    await key(input, 'Escape')
+    await flush()
+    expect(document.querySelector('[role="listbox"]')).toBeNull()
+    expect(input.value).toBe('Fix #ho')
+    expect(document.activeElement).toBe(input)
+    await r.unmount()
+  })
+
+  it('explains an unknown and an ambiguous #token, and names a new label', async () => {
+    const r = await render(<QuickAdd placeholder="Add a task" projects={projects} labels={labels} onAdd={() => {}} />)
+    const input = r.container.querySelector('input')!
+    await typeAtEnd(input, 'Rake leaves #gardn @urgent')
+    expect(r.container.querySelector('[data-unmatched="none"]')!.textContent).toContain('No project “gardn” · stays in the title')
+    expect(r.container.querySelector('[data-new-label]')!.textContent).toBe('New label “urgent”')
+    await typeAtEnd(input, 'Fix sink #hom now')
+    expect(r.container.querySelector('[data-unmatched="ambiguous"]')!.textContent).toContain('3 projects match “hom”')
+    await r.unmount()
+  })
+})

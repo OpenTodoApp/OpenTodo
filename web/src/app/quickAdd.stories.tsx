@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { QuickAdd } from './QuickAdd'
 import { HEX, label, withClock } from './stories/fixtures'
 
@@ -43,6 +43,38 @@ export const NewLabel: StoryObj = {
   render: () => (
     <Frame>
       <QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint initialValue="Book the dentist @health" />
+    </Frame>
+  ),
+}
+
+/** Typing `#web`: the project list under the field, Create last (smart-title-tokens). */
+function Suggesting({ line }: { line: string }) {
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(line.length, line.length)
+    el.dispatchEvent(new Event('select', { bubbles: true }))
+    el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }))
+  }, [line])
+  return (
+    <Frame>
+      <div className="pb-48">
+        <QuickAdd ref={ref} placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint initialValue={line} />
+      </div>
+    </Frame>
+  )
+}
+
+export const ProjectSuggestions: StoryObj = { render: () => <Suggesting line="Plan the launch #web" /> }
+
+/** A #token that names no project stays in the title, and a grey chip says so; a new label is named. */
+export const UnmatchedToken: StoryObj = {
+  render: () => (
+    <Frame>
+      <QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint
+        initialValue="Rake leaves #gardn @urgent tomorrow" />
     </Frame>
   ),
 }

@@ -10,7 +10,7 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 
 ## 2. Quick add
 
-- [ ] 2.1 Add the suggestion list to `QuickAdd.tsx` (listbox semantics, Enter or Tab picks, Esc keeps the text, Create entries, create project offline through `createProject`) and the unmatched chip; verify with `quickAdd.test.tsx` (pick "Home renovation" from `#ren`, Esc keeps `#ho` and does not close quick add, unknown and ambiguous chips, "New label" chip) and the `Capture/Quick add` story baselines via `make ui-check` (axe clean).
+- [x] 2.1 Add the suggestion list to `QuickAdd.tsx` (listbox semantics, Enter or Tab picks, Esc keeps the text, Create entries, create project offline through `createProject`) and the unmatched chip; verify with `quickAdd.test.tsx` (pick "Home renovation" from `#ren`, Esc keeps `#ho` and does not close quick add, unknown and ambiguous chips, "New label" chip) and the `Capture/Quick add` story baselines via `make ui-check` (axe clean).
 
 ## 3. Title editors
 
