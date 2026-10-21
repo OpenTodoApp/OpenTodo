@@ -6,6 +6,7 @@ import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
+import type { RelayDevice } from './relay'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   ConfigWarning,
@@ -316,6 +317,11 @@ export const api = {
   /** The user's own "Allow AI assistants to make changes" switch. */
   getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
   setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),
+  // Device relay for encrypted accounts' AI connectors (mcp-device-relay).
+  relayDevices: () => request<{ devices: RelayDevice[] }>('GET', '/api/v1/relay/devices'),
+  relayOptIn: (device: string, label: string) => request<void>('PUT', `/api/v1/relay/devices/${encodeURIComponent(device)}`, { label }),
+  relayOptOut: (device: string, reason: 'user' | 'locked' = 'user') => request<void>('DELETE', `/api/v1/relay/devices/${encodeURIComponent(device)}?reason=${reason}`),
+  relayAnswer: (id: string, box: string) => request<void>('POST', `/api/v1/relay/answers/${encodeURIComponent(id)}`, { box }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
   // End-to-end encryption (OpenSpec `e2ee`): only wrapped key material ever goes here.

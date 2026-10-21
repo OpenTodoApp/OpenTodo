@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { AssistantStatus } from '../lib/assistantStatus'
 import type { AssistantOwnerSettings } from '../lib/assistantTypes'
 import { AssistantsView, type AssistantsViewProps } from './AssistantsPanel'
+import { RelayConfirmView } from './RelayConfirm'
+import { RelayIndicatorView, RelayView, type RelayViewProps } from './RelaySettings'
 import { draftFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
 
 const noop = () => {}
@@ -56,3 +58,27 @@ export const AssistantsMcpOff: StoryObj = { render: () => assistants({ status: {
 export const AssistantsMcpMember: StoryObj = { render: () => assistants({ isOwner: false, status: { enabled: true, endpoint }, access: { allow_writes: false, owner_allows_writes: false } }) }
 export const AssistantsMcpOffline: StoryObj = { render: () => assistants({ connected: false }) }
 export const AssistantsMcpToken: StoryObj = { render: () => assistants({ secret: 'ot_assistant123', secretScope: 'read', error: null }) }
+
+// Device relay for encrypted accounts (mcp-device-relay).
+const at = Date.UTC(2026, 9, 21, 9, 30)
+const relay = (over: Partial<RelayViewProps> = {}) => card(
+  <RelayView unlocked optedIn={false} connected={false} confirmWrites={false} devices={[]} recent={[]} busy={false} error={null}
+    onToggle={noop} onConfirmWrites={noop} {...over} />,
+)
+export const RelayOff: StoryObj = { render: () => relay() }
+export const RelayLocked: StoryObj = { render: () => relay({ unlocked: false }) }
+export const RelayOn: StoryObj = {
+  render: () => relay({
+    optedIn: true, connected: true, confirmWrites: true,
+    devices: [{ deviceId: 'a', label: 'Firefox on Linux', enabledAt: at, online: true, thisSession: true }, { deviceId: 'b', label: 'Safari on macOS', enabledAt: at, online: true, thisSession: false }],
+    recent: [
+      { at, tool: 'list_tasks', op: 'decrypt', count: 24, outcome: 'answered' },
+      { at: at - 60_000, tool: 'create_tasks', op: 'encrypt', count: 1, outcome: 'declined_on_device' },
+    ],
+  }),
+}
+export const RelayConfirmSheet: StoryObj = {
+  render: () => <RelayConfirmView tool="create_tasks" token="Claude.ai" onApply={noop} onDecline={noop}
+    items={[{ entity: 'task', id: 't1', field: 'title', value: 'Call the plumber about the leak' }, { entity: 'task', id: 't1', field: 'description', value: 'Ask whether the boiler can be checked on the same visit.' }]} />,
+}
+export const RelayIndicatorBusy: StoryObj = { render: () => <div className="flex items-center gap-1 p-2"><RelayIndicatorView busy /></div> }

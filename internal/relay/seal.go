@@ -33,14 +33,19 @@ type streamKey struct {
 // newStreamKey derives the stream's AEAD from the device's public key
 // (uncompressed P-256 point, as WebCrypto exports it) and the stream id (salt).
 func newStreamKey(devicePub []byte, streamID string) (*streamKey, error) {
-	curve := ecdh.P256()
-	peer, err := curve.NewPublicKey(devicePub)
-	if err != nil {
-		return nil, fmt.Errorf("relay: device key: %w", err)
-	}
-	priv, err := curve.GenerateKey(rand.Reader)
+	priv, err := ecdh.P256().GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("relay: server key: %w", err)
+	}
+	return deriveFrom(priv, devicePub, streamID)
+}
+
+// deriveFrom is the key agreement and derivation with a given server key
+// (fixed in the shared test vector).
+func deriveFrom(priv *ecdh.PrivateKey, devicePub []byte, streamID string) (*streamKey, error) {
+	peer, err := ecdh.P256().NewPublicKey(devicePub)
+	if err != nil {
+		return nil, fmt.Errorf("relay: device key: %w", err)
 	}
 	shared, err := priv.ECDH(peer)
 	if err != nil {

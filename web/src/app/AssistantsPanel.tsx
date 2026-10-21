@@ -6,6 +6,7 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
+import { RelaySettings } from './RelaySettings'
 import { api, isNetworkError } from '../lib/api'
 import {
   cacheAccess, cacheStatus, connectionSnippet, describeAssistantsError, loadCachedAccess, loadCachedStatus, writesAllowed,
@@ -123,6 +124,8 @@ export function AssistantsView(p: AssistantsViewProps) {
           })}
         </Notice></div>
       )}
+
+      {p.encrypted && p.status?.enabled && <RelaySettings />}
 
       {p.status && (
         <details className="py-3 text-body">

@@ -12,6 +12,8 @@ import { clearInbox } from '../lib/shareInbox'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
 import { unsubscribeOnSignOut } from '../lib/push'
 import { announceSignOut, onSignOutElsewhere, startSync, stopSync, stopSyncAndWait, syncNow, useSyncStatus, withSyncLock } from '../lib/sync'
+import { startRelay } from '../lib/relay'
+import { RelayConfirm } from './RelayConfirm'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
@@ -133,6 +135,9 @@ export function App() {
     if (syncWanted) startSync()
     else stopSync()
   }, [syncWanted])
+  // The device relay answers AI connectors from the syncing tab while this
+  // device is opted in and unlocked (mcp-device-relay).
+  useEffect(() => (syncWanted ? startRelay() : undefined), [syncWanted])
 
   // Another tab signed out and cleared the local data: this one reloads to the sign-in screen.
   useEffect(() => onSignOutElsewhere(() => window.location.reload()), [])
@@ -299,6 +304,7 @@ export function App() {
         ) : (
           <Shell user={phase.user} onLogout={() => void logout()} />
         )}
+        <RelayConfirm />
       </>
     )
   }

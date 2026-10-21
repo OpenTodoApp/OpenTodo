@@ -312,6 +312,34 @@ func TestRelayAnswerFromAnotherSession(t *testing.T) {
 	}
 }
 
+func TestRelayEndsWithEncryptionAndOnLock(t *testing.T) {
+	e, _, _ := encryptedOwner(t)
+	for _, d := range []string{"laptop", "phone"} {
+		resp, out := e.do("PUT", "/api/v1/relay/devices/"+d, map[string]any{"label": d})
+		e.mustStatus(resp, 204, out)
+	}
+	resp, out := e.do("DELETE", "/api/v1/relay/devices/phone?reason=locked", nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("DELETE", "/api/v1/relay/devices/phone?reason=bogus", nil)
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("DELETE", "/api/v1/encryption/keys", nil)
+	if resp.StatusCode >= 300 {
+		t.Fatalf("turn encryption off: %v", out)
+	}
+	reasons := map[string]string{}
+	for _, ev := range e.events(audit.RelayDisabledName) {
+		reasons[ev.Details["relay_device_id"]] = ev.Details["reason"]
+	}
+	if reasons["phone"] != "locked" || reasons["laptop"] != "encryption_off" {
+		t.Fatalf("relay.disabled reasons = %v", reasons)
+	}
+	resp, out = e.do("GET", "/api/v1/relay/devices", nil)
+	e.mustStatus(resp, 200, out)
+	if len(out["devices"].([]any)) != 0 {
+		t.Fatalf("devices after encryption off: %v", out)
+	}
+}
+
 func toJSON(v any) string {
 	raw, _ := json.Marshal(v)
 	return string(raw)
