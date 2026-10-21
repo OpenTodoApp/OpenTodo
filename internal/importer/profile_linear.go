@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/pixari/opentodo/internal/origin"
@@ -41,7 +42,7 @@ var linearPriority = map[string]int{"urgent": 1, "high": 2, "medium": 3, "low": 
 
 // linearDropped are columns that carry data the importer cannot hold.
 var linearDropped = []struct{ col, what string }{
-	{"Estimate", "estimate (points)"}, {"Cycle Number", "cycle"}, {"Project Milestone", "milestone"},
+	{"Cycle Number", "cycle"}, {"Project Milestone", "milestone"},
 	{"Initiatives", "initiatives"}, {"SLA Status", "SLA"}, {"Related to", "relations"},
 	{"Duplicate of", "duplicate link"},
 }
@@ -167,6 +168,15 @@ func (linearProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 				row.AssignSelf = true
 			} else {
 				row.warn("assignee dropped (only your own account can be assigned by an import)")
+			}
+		}
+		// The estimate (points) becomes a number field "Estimate" on the issue's
+		// project (more-importers D4).
+		if e := get("Estimate"); e != "" {
+			if n, err := strconv.ParseFloat(e, 64); err == nil {
+				row.Fields = append(row.Fields, FieldValue{Name: "Estimate", Type: FieldNumber, Value: n})
+			} else {
+				row.warn("estimate %q not understood; dropped", e)
 			}
 		}
 		for _, d := range linearDropped {
