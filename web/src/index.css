@@ -91,13 +91,17 @@
   --color-hue-soft: var(--hue-soft);
   --text-color-hue: var(--hue-text);
   --border-color-default: var(--ot-border);
+  /* The softer divider (tokens-v2 D6): a hairline between groups; `border-default` is a container edge. */
+  --border-color-soft: var(--ot-border-soft);
   --border-color-input: var(--ot-border-input);
   --text-hint: 0.6875rem; --text-hint--line-height: 0.875rem;
   --text-meta: 0.8125rem; --text-meta--line-height: 1.125rem;
   --text-body: 0.9375rem; --text-body--line-height: 1.375rem;
-  --text-h3: 1.0625rem; --text-h3--line-height: 1.5rem;
-  --text-h2: 1.25rem; --text-h2--line-height: 1.75rem;
-  --text-h1: 1.5rem; --text-h1--line-height: 2rem;
+  /* Headings and the display step (tokens-v2 D7): weight 600, tighter tracking as the size grows. */
+  --text-h3: 1.0625rem; --text-h3--line-height: 1.5rem; --text-h3--font-weight: 600;
+  --text-h2: 1.25rem; --text-h2--line-height: 1.75rem; --text-h2--font-weight: 600; --text-h2--letter-spacing: -0.01em;
+  --text-h1: 1.5rem; --text-h1--line-height: 2rem; --text-h1--font-weight: 600; --text-h1--letter-spacing: -0.015em;
+  --text-display: 1.75rem; --text-display--line-height: 2.125rem; --text-display--font-weight: 600; --text-display--letter-spacing: -0.02em;
   --radius-chip: 6px;
   --radius-control: 10px;
   --radius-card: 14px;
@@ -105,236 +109,267 @@
   --shadow-2: 0 4px 12px rgb(15 23 42 / 0.10);
   --shadow-3: 0 12px 32px rgb(15 23 42 / 0.16);
   --ease-calm: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* A light overshoot that settles (tokens-v2 D9), for sheets, popovers and moments. */
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 
 :root, [data-theme="light"] {
-  --ot-canvas: #f8fafc;
-  --ot-coffee: #ffdd00;
-  --ot-on-coffee: #0d0c22;
-  --ot-surface: #ffffff;
-  --ot-raised: #ffffff;
-  --ot-sunken: #f1f5f9;
-  --ot-text-strong: #020617;
-  --ot-text: #0f172a;
-  --ot-muted: #526075;
-  --ot-faint: #5f6e82;
-  --ot-border: #e2e8f0;
-  --ot-border-input: #7c8aa0;
-  --ot-accent: #047857;
-  --ot-accent-hover: #065f46;
-  --ot-on-accent: #ffffff;
-  --ot-accent-text: #047857;
-  --ot-accent-soft: #ecfdf5;
-  --ot-accent-soft-text: #065f46;
+  --ot-canvas: oklch(0.985 0.003 250);
+  --ot-coffee: oklch(0.9 0.19 100);
+  --ot-on-coffee: oklch(0.1701 0.0447 282.6);
+  --ot-surface: oklch(1 0 0);
+  --ot-raised: oklch(1 0 0);
+  --ot-sunken: oklch(0.965 0.004 250);
+  /* The tone scale (tokens-v2 D6): to make text quieter, step down one tone. */
+  --ot-text-strong: oklch(0.15 0.02 260);
+  --ot-text: oklch(0.24 0.025 262);
+  --ot-muted: oklch(0.47 0.028 262);
+  --ot-faint: oklch(0.52 0.026 262);
+  /* Edges: a container, a softer divider, a control. */
+  --ot-border: oklch(0.91 0.008 255);
+  --ot-border-soft: oklch(0.93 0.006 255);
+  --ot-border-input: oklch(0.62 0.03 262);
+  /* Accent (tokens-v2 D4): derived from the theme's three values, emerald by default. */
+  --ot-accent: var(--ot-al-accent, oklch(0.5081 0.1049 165.61));
+  --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));
+  --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
+  --ot-accent-text: var(--ot-accent);
+  --ot-accent-soft: color-mix(in oklab, var(--ot-accent) var(--ot-mix-accent-soft-light), var(--ot-surface));
+  --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-soft-text-light), oklch(0 0 0));
   --ot-chart-base: var(--ot-accent);
-  --ot-focus: #059669;
-  --ot-p1: #dc2626;
-  --ot-p2: #ea580c;
-  --ot-p3: #2563eb;
-  --ot-p4: #64748b;
-  --ot-p1-soft: #fef2f2;
-  --ot-p2-soft: #fff7ed;
-  --ot-p3-soft: #eff6ff;
-  --ot-p4-soft: #f8fafc;
-  --ot-success: #047857;
-  --ot-success-soft: #ecfdf5;
-  --ot-success-soft-text: #065f46;
-  --ot-warning: #b45309;
-  --ot-warning-soft: #fffbeb;
-  --ot-warning-soft-text: #92400e;
-  --ot-danger: #dc2626;
-  --ot-danger-soft: #fef2f2;
-  --ot-danger-soft-text: #991b1b;
-  --ot-info: #0369a1;
-  --ot-info-soft: #f0f9ff;
-  --ot-info-soft-text: #075985;
-  --ot-scrim: rgb(2 6 23 / 0.35);
-  --ot-highlight: #fde68a;
-  --ot-highlight-text: #0f172a;
-  --ot-hue-red-solid: #dc2626; --ot-hue-red-soft: #fee2e2; --ot-hue-red-text: #991b1b;
-  --ot-hue-orange-solid: #ea580c; --ot-hue-orange-soft: #ffedd5; --ot-hue-orange-text: #9a3412;
-  --ot-hue-yellow-solid: #d97706; --ot-hue-yellow-soft: #fef3c7; --ot-hue-yellow-text: #92400e;
-  --ot-hue-lime-solid: #4d7c0f; --ot-hue-lime-soft: #ecfccb; --ot-hue-lime-text: #3f6212;
-  --ot-hue-green-solid: #16a34a; --ot-hue-green-soft: #dcfce7; --ot-hue-green-text: #166534;
-  --ot-hue-teal-solid: #0d9488; --ot-hue-teal-soft: #ccfbf1; --ot-hue-teal-text: #115e59;
-  --ot-hue-cyan-solid: #0891b2; --ot-hue-cyan-soft: #cffafe; --ot-hue-cyan-text: #155e75;
-  --ot-hue-blue-solid: #2563eb; --ot-hue-blue-soft: #dbeafe; --ot-hue-blue-text: #1e40af;
-  --ot-hue-indigo-solid: #4f46e5; --ot-hue-indigo-soft: #e0e7ff; --ot-hue-indigo-text: #3730a3;
-  --ot-hue-violet-solid: #7c3aed; --ot-hue-violet-soft: #ede9fe; --ot-hue-violet-text: #5b21b6;
-  --ot-hue-pink-solid: #db2777; --ot-hue-pink-soft: #fce7f3; --ot-hue-pink-text: #9d174d;
-  --ot-hue-slate-solid: #64748b; --ot-hue-slate-soft: #f1f5f9; --ot-hue-slate-text: #334155;
+  --ot-focus: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-focus-light), oklch(1 0 0));
+  --ot-p1: oklch(0.5771 0.2152 27.33);
+  --ot-p2: oklch(0.6461 0.1943 41.12);
+  --ot-p3: oklch(0.5461 0.2152 262.88);
+  --ot-p4: oklch(0.5544 0.0407 257.42);
+  --ot-p1-soft: oklch(0.9705 0.0129 17.38);
+  --ot-p2-soft: oklch(0.9796 0.0158 73.68);
+  --ot-p3-soft: oklch(0.9705 0.0142 254.6);
+  --ot-p4-soft: oklch(0.9842 0.0034 247.86);
+  --ot-success: oklch(0.5081 0.1049 165.61);
+  --ot-success-soft: oklch(0.9793 0.0207 166.11);
+  --ot-success-soft-text: oklch(0.4318 0.0865 166.91);
+  --ot-warning: oklch(0.5553 0.1455 49);
+  --ot-warning-soft: oklch(0.9869 0.0214 95.28);
+  --ot-warning-soft-text: oklch(0.4732 0.1247 46.2);
+  --ot-danger: oklch(0.5771 0.2152 27.33);
+  --ot-danger-soft: oklch(0.9705 0.0129 17.38);
+  --ot-danger-soft-text: oklch(0.4437 0.1613 26.9);
+  --ot-info: oklch(0.5 0.1193 242.75);
+  --ot-info-soft: oklch(0.9771 0.0125 236.62);
+  --ot-info-soft-text: oklch(0.4434 0.1 240.79);
+  --ot-scrim: oklch(0.1288 0.0406 264.7 / 0.35);
+  --ot-highlight: oklch(0.9243 0.1151 95.75);
+  --ot-highlight-text: oklch(0.2077 0.0398 265.75);
+  /* Palette (tokens-v2 D5): one solid per hue; the soft step is mixed into the surface, the text step toward black. */
+  --ot-hue-red-solid: oklch(0.5771 0.2152 27.33); --ot-hue-red-soft: color-mix(in oklab, var(--ot-hue-red-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-red-text: color-mix(in oklch, var(--ot-hue-red-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-orange-solid: oklch(0.6461 0.1943 41.12); --ot-hue-orange-soft: color-mix(in oklab, var(--ot-hue-orange-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-orange-text: color-mix(in oklch, var(--ot-hue-orange-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-yellow-solid: oklch(0.6658 0.1574 58.32); --ot-hue-yellow-soft: color-mix(in oklab, var(--ot-hue-yellow-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-yellow-text: color-mix(in oklch, var(--ot-hue-yellow-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-lime-solid: oklch(0.5322 0.1405 131.59); --ot-hue-lime-soft: color-mix(in oklab, var(--ot-hue-lime-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-lime-text: color-mix(in oklch, var(--ot-hue-lime-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-green-solid: oklch(0.6271 0.1699 149.21); --ot-hue-green-soft: color-mix(in oklab, var(--ot-hue-green-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-green-text: color-mix(in oklch, var(--ot-hue-green-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-teal-solid: oklch(0.6002 0.1038 184.7); --ot-hue-teal-soft: color-mix(in oklab, var(--ot-hue-teal-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-teal-text: color-mix(in oklch, var(--ot-hue-teal-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-cyan-solid: oklch(0.6089 0.1109 221.72); --ot-hue-cyan-soft: color-mix(in oklab, var(--ot-hue-cyan-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-cyan-text: color-mix(in oklch, var(--ot-hue-cyan-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-blue-solid: oklch(0.5461 0.2152 262.88); --ot-hue-blue-soft: color-mix(in oklab, var(--ot-hue-blue-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-blue-text: color-mix(in oklch, var(--ot-hue-blue-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-indigo-solid: oklch(0.5106 0.2301 276.97); --ot-hue-indigo-soft: color-mix(in oklab, var(--ot-hue-indigo-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-indigo-text: color-mix(in oklch, var(--ot-hue-indigo-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-violet-solid: oklch(0.5413 0.2466 293.01); --ot-hue-violet-soft: color-mix(in oklab, var(--ot-hue-violet-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-violet-text: color-mix(in oklch, var(--ot-hue-violet-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-pink-solid: oklch(0.5916 0.218 0.58); --ot-hue-pink-soft: color-mix(in oklab, var(--ot-hue-pink-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-pink-text: color-mix(in oklch, var(--ot-hue-pink-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-slate-solid: oklch(0.5544 0.0407 257.42); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
 }
 :root {
   --duration-ui: 120ms;
   --duration-emphasis: 250ms;
+  /* Moments (tokens-v2 D9): the one longer duration, for the completion sequence only. */
+  --duration-moment: 400ms;
   --size-row: 44px;
+  /* Derivation ratios (tokens-v2 D4, D5): every accent and hue step is one of these
+     mixes, so a theme or a hue is declared once. The contrast check reads them back.
+     Soft steps mix into the surface in OKLab (a tinted dark surface would turn the
+     hue in OKLCH); steps toward black or white mix in OKLCH, which keeps the hue. */
+  --ot-mix-accent-hover: 86%;
+  --ot-mix-accent-soft-light: 10%;
+  --ot-mix-accent-soft-text-light: 80%;
+  --ot-mix-accent-focus-light: 85%;
+  --ot-mix-accent-soft-dark: 14%;
+  --ot-mix-accent-soft-text-dark: 80%;
+  --ot-mix-hue-soft-light: 14%;
+  --ot-mix-hue-text-light: 68%;
+  --ot-mix-hue-soft-dark: 22%;
+  --ot-mix-hue-text-dark: 78%;
 }
 @media (pointer: coarse) {
   :root { --size-row: 48px; }
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ot-canvas: #020617;
-    --ot-coffee: #ffdd00;
-    --ot-on-coffee: #0d0c22;
-    --ot-surface: #0f172a;
-    --ot-raised: #1e293b;
-    --ot-sunken: #020617;
-    --ot-text-strong: #ffffff;
-    --ot-text: #f1f5f9;
-    --ot-muted: #94a3b8;
-    --ot-faint: #8695aa;
-    --ot-border: #334155;
-    --ot-border-input: #64748b;
-    --ot-accent: #047857;
-    --ot-accent-hover: #065f46;
-    --ot-on-accent: #ffffff;
-    --ot-accent-text: #34d399;
-    --ot-accent-soft: #022c22;
-    --ot-accent-soft-text: #6ee7b7;
+    --ot-canvas: oklch(0.17 0.016 262);
+    --ot-coffee: oklch(0.9 0.19 100);
+    --ot-on-coffee: oklch(0.1701 0.0447 282.6);
+    --ot-surface: oklch(0.22 0.018 262);
+    --ot-raised: oklch(0.27 0.02 262);
+    --ot-sunken: oklch(0.14 0.014 262);
+    --ot-text-strong: oklch(1 0 0);
+    --ot-text: oklch(0.95 0.008 262);
+    --ot-muted: oklch(0.74 0.02 262);
+    --ot-faint: oklch(0.68 0.022 262);
+    --ot-border: oklch(1 0 0 / 0.1);
+    --ot-border-soft: oklch(1 0 0 / 0.06);
+    --ot-border-input: oklch(0.6 0.02 262);
+    /* Accent (tokens-v2 D4): buttons keep the light accent (or the theme's dark override); text, focus and soft steps use the bright accent. */
+    --ot-accent: var(--ot-ad-accent, var(--ot-al-accent, oklch(0.5081 0.1049 165.61)));
+    --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));
+    --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
+    --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
+    --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+    --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
     --ot-chart-base: var(--ot-accent-text);
-    --ot-focus: #34d399;
-    --ot-p1: #f87171;
-    --ot-p2: #fb923c;
-    --ot-p3: #60a5fa;
-    --ot-p4: #64748b;
-    --ot-p1-soft: rgb(69 10 10 / 0.4);
-    --ot-p2-soft: rgb(67 20 7 / 0.4);
-    --ot-p3-soft: rgb(23 37 84 / 0.4);
-    --ot-p4-soft: rgb(30 41 59 / 0.4);
-    --ot-success: #34d399;
-    --ot-success-soft: #022c22;
-    --ot-success-soft-text: #6ee7b7;
-    --ot-warning: #fbbf24;
-    --ot-warning-soft: #451a03;
-    --ot-warning-soft-text: #fcd34d;
-    --ot-danger: #f87171;
-    --ot-danger-soft: #450a0a;
-    --ot-danger-soft-text: #fca5a5;
-    --ot-info: #38bdf8;
-    --ot-info-soft: #082f49;
-    --ot-info-soft-text: #7dd3fc;
-    --ot-scrim: rgb(0 0 0 / 0.55);
-    --ot-highlight: #854d0e;
-    --ot-highlight-text: #fef3c7;
-    --ot-hue-red-solid: #f87171; --ot-hue-red-soft: #450a0a; --ot-hue-red-text: #fca5a5;
-    --ot-hue-orange-solid: #fb923c; --ot-hue-orange-soft: #431407; --ot-hue-orange-text: #fdba74;
-    --ot-hue-yellow-solid: #fbbf24; --ot-hue-yellow-soft: #451a03; --ot-hue-yellow-text: #fcd34d;
-    --ot-hue-lime-solid: #a3e635; --ot-hue-lime-soft: #1a2e05; --ot-hue-lime-text: #bef264;
-    --ot-hue-green-solid: #4ade80; --ot-hue-green-soft: #052e16; --ot-hue-green-text: #86efac;
-    --ot-hue-teal-solid: #2dd4bf; --ot-hue-teal-soft: #042f2e; --ot-hue-teal-text: #5eead4;
-    --ot-hue-cyan-solid: #22d3ee; --ot-hue-cyan-soft: #083344; --ot-hue-cyan-text: #67e8f9;
-    --ot-hue-blue-solid: #60a5fa; --ot-hue-blue-soft: #172554; --ot-hue-blue-text: #93c5fd;
-    --ot-hue-indigo-solid: #818cf8; --ot-hue-indigo-soft: #1e1b4b; --ot-hue-indigo-text: #a5b4fc;
-    --ot-hue-violet-solid: #a78bfa; --ot-hue-violet-soft: #2e1065; --ot-hue-violet-text: #c4b5fd;
-    --ot-hue-pink-solid: #f472b6; --ot-hue-pink-soft: #500724; --ot-hue-pink-text: #f9a8d4;
-    --ot-hue-slate-solid: #94a3b8; --ot-hue-slate-soft: #1e293b; --ot-hue-slate-text: #cbd5e1;
+    --ot-focus: var(--ot-accent-text);
+    --ot-p1: oklch(0.7106 0.1661 22.22);
+    --ot-p2: oklch(0.7576 0.159 55.93);
+    --ot-p3: oklch(0.7137 0.1434 254.62);
+    --ot-p4: oklch(0.5544 0.0407 257.42);
+    --ot-p1-soft: oklch(0.2575 0.0886 26.04 / 0.4);
+    --ot-p2-soft: oklch(0.2659 0.0762 36.26 / 0.4);
+    --ot-p3-soft: oklch(0.2823 0.0874 267.94 / 0.4);
+    --ot-p4-soft: oklch(0.2795 0.0368 260.03 / 0.4);
+    --ot-success: oklch(0.7729 0.1535 163.22);
+    --ot-success-soft: oklch(0.2621 0.0487 172.55);
+    --ot-success-soft-text: oklch(0.8452 0.1299 164.98);
+    --ot-warning: oklch(0.8369 0.1644 84.43);
+    --ot-warning-soft: oklch(0.2791 0.0742 45.64);
+    --ot-warning-soft-text: oklch(0.879 0.1534 91.61);
+    --ot-danger: oklch(0.7106 0.1661 22.22);
+    --ot-danger-soft: oklch(0.2575 0.0886 26.04);
+    --ot-danger-soft-text: oklch(0.8077 0.1035 19.57);
+    --ot-info: oklch(0.7535 0.139 232.66);
+    --ot-info-soft: oklch(0.2935 0.0632 243.16);
+    --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
+    --ot-scrim: oklch(0 0 0 / 0.55);
+    --ot-highlight: oklch(0.4762 0.1034 61.91);
+    --ot-highlight-text: oklch(0.9619 0.058 95.62);
+    /* Palette (tokens-v2 D5): one solid per hue; the soft step is mixed into the canvas, the text step toward white. */
+    --ot-hue-red-solid: oklch(0.7106 0.1661 22.22); --ot-hue-red-soft: color-mix(in oklab, var(--ot-hue-red-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-red-text: color-mix(in oklch, var(--ot-hue-red-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-orange-solid: oklch(0.7576 0.159 55.93); --ot-hue-orange-soft: color-mix(in oklab, var(--ot-hue-orange-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-orange-text: color-mix(in oklch, var(--ot-hue-orange-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-yellow-solid: oklch(0.8369 0.1644 84.43); --ot-hue-yellow-soft: color-mix(in oklab, var(--ot-hue-yellow-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-yellow-text: color-mix(in oklch, var(--ot-hue-yellow-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-lime-solid: oklch(0.8493 0.2073 128.85); --ot-hue-lime-soft: color-mix(in oklab, var(--ot-hue-lime-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-lime-text: color-mix(in oklch, var(--ot-hue-lime-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-green-solid: oklch(0.8003 0.1821 151.71); --ot-hue-green-soft: color-mix(in oklab, var(--ot-hue-green-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-green-text: color-mix(in oklch, var(--ot-hue-green-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-teal-solid: oklch(0.7845 0.1325 181.91); --ot-hue-teal-soft: color-mix(in oklab, var(--ot-hue-teal-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-teal-text: color-mix(in oklch, var(--ot-hue-teal-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-cyan-solid: oklch(0.7971 0.1339 211.53); --ot-hue-cyan-soft: color-mix(in oklab, var(--ot-hue-cyan-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-cyan-text: color-mix(in oklch, var(--ot-hue-cyan-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-blue-solid: oklch(0.7137 0.1434 254.62); --ot-hue-blue-soft: color-mix(in oklab, var(--ot-hue-blue-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-blue-text: color-mix(in oklch, var(--ot-hue-blue-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-indigo-solid: oklch(0.6801 0.1583 276.93); --ot-hue-indigo-soft: color-mix(in oklab, var(--ot-hue-indigo-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-indigo-text: color-mix(in oklch, var(--ot-hue-indigo-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-violet-solid: oklch(0.709 0.1592 293.54); --ot-hue-violet-soft: color-mix(in oklab, var(--ot-hue-violet-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-violet-text: color-mix(in oklch, var(--ot-hue-violet-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-pink-solid: oklch(0.7253 0.1752 349.76); --ot-hue-pink-soft: color-mix(in oklab, var(--ot-hue-pink-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-pink-text: color-mix(in oklch, var(--ot-hue-pink-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+    --ot-hue-slate-solid: oklch(0.7107 0.0351 256.79); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
   }
 }
 :root[data-theme="dark"], [data-theme="dark"] {
-  --ot-canvas: #020617;
-  --ot-coffee: #ffdd00;
-  --ot-on-coffee: #0d0c22;
-  --ot-surface: #0f172a;
-  --ot-raised: #1e293b;
-  --ot-sunken: #020617;
-  --ot-text-strong: #ffffff;
-  --ot-text: #f1f5f9;
-  --ot-muted: #94a3b8;
-  --ot-faint: #8695aa;
-  --ot-border: #334155;
-  --ot-border-input: #64748b;
-  --ot-accent: #047857;
-  --ot-accent-hover: #065f46;
-  --ot-on-accent: #ffffff;
-  --ot-accent-text: #34d399;
-  --ot-accent-soft: #022c22;
-  --ot-accent-soft-text: #6ee7b7;
+  --ot-canvas: oklch(0.17 0.016 262);
+  --ot-coffee: oklch(0.9 0.19 100);
+  --ot-on-coffee: oklch(0.1701 0.0447 282.6);
+  --ot-surface: oklch(0.22 0.018 262);
+  --ot-raised: oklch(0.27 0.02 262);
+  --ot-sunken: oklch(0.14 0.014 262);
+  --ot-text-strong: oklch(1 0 0);
+  --ot-text: oklch(0.95 0.008 262);
+  --ot-muted: oklch(0.74 0.02 262);
+  --ot-faint: oklch(0.68 0.022 262);
+  --ot-border: oklch(1 0 0 / 0.1);
+  --ot-border-soft: oklch(1 0 0 / 0.06);
+  --ot-border-input: oklch(0.6 0.02 262);
+  /* Accent (tokens-v2 D4): buttons keep the light accent (or the theme's dark override); text, focus and soft steps use the bright accent. */
+  --ot-accent: var(--ot-ad-accent, var(--ot-al-accent, oklch(0.5081 0.1049 165.61)));
+  --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));
+  --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
+  --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
+  --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+  --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
   --ot-chart-base: var(--ot-accent-text);
-  --ot-focus: #34d399;
-  --ot-p1: #f87171;
-  --ot-p2: #fb923c;
-  --ot-p3: #60a5fa;
-  --ot-p4: #64748b;
-  --ot-p1-soft: rgb(69 10 10 / 0.4);
-  --ot-p2-soft: rgb(67 20 7 / 0.4);
-  --ot-p3-soft: rgb(23 37 84 / 0.4);
-  --ot-p4-soft: rgb(30 41 59 / 0.4);
-  --ot-success: #34d399;
-  --ot-success-soft: #022c22;
-  --ot-success-soft-text: #6ee7b7;
-  --ot-warning: #fbbf24;
-  --ot-warning-soft: #451a03;
-  --ot-warning-soft-text: #fcd34d;
-  --ot-danger: #f87171;
-  --ot-danger-soft: #450a0a;
-  --ot-danger-soft-text: #fca5a5;
-  --ot-info: #38bdf8;
-  --ot-info-soft: #082f49;
-  --ot-info-soft-text: #7dd3fc;
-  --ot-scrim: rgb(0 0 0 / 0.55);
-  --ot-highlight: #854d0e;
-  --ot-highlight-text: #fef3c7;
-  --ot-hue-red-solid: #f87171; --ot-hue-red-soft: #450a0a; --ot-hue-red-text: #fca5a5;
-  --ot-hue-orange-solid: #fb923c; --ot-hue-orange-soft: #431407; --ot-hue-orange-text: #fdba74;
-  --ot-hue-yellow-solid: #fbbf24; --ot-hue-yellow-soft: #451a03; --ot-hue-yellow-text: #fcd34d;
-  --ot-hue-lime-solid: #a3e635; --ot-hue-lime-soft: #1a2e05; --ot-hue-lime-text: #bef264;
-  --ot-hue-green-solid: #4ade80; --ot-hue-green-soft: #052e16; --ot-hue-green-text: #86efac;
-  --ot-hue-teal-solid: #2dd4bf; --ot-hue-teal-soft: #042f2e; --ot-hue-teal-text: #5eead4;
-  --ot-hue-cyan-solid: #22d3ee; --ot-hue-cyan-soft: #083344; --ot-hue-cyan-text: #67e8f9;
-  --ot-hue-blue-solid: #60a5fa; --ot-hue-blue-soft: #172554; --ot-hue-blue-text: #93c5fd;
-  --ot-hue-indigo-solid: #818cf8; --ot-hue-indigo-soft: #1e1b4b; --ot-hue-indigo-text: #a5b4fc;
-  --ot-hue-violet-solid: #a78bfa; --ot-hue-violet-soft: #2e1065; --ot-hue-violet-text: #c4b5fd;
-  --ot-hue-pink-solid: #f472b6; --ot-hue-pink-soft: #500724; --ot-hue-pink-text: #f9a8d4;
-  --ot-hue-slate-solid: #94a3b8; --ot-hue-slate-soft: #1e293b; --ot-hue-slate-text: #cbd5e1;
+  --ot-focus: var(--ot-accent-text);
+  --ot-p1: oklch(0.7106 0.1661 22.22);
+  --ot-p2: oklch(0.7576 0.159 55.93);
+  --ot-p3: oklch(0.7137 0.1434 254.62);
+  --ot-p4: oklch(0.5544 0.0407 257.42);
+  --ot-p1-soft: oklch(0.2575 0.0886 26.04 / 0.4);
+  --ot-p2-soft: oklch(0.2659 0.0762 36.26 / 0.4);
+  --ot-p3-soft: oklch(0.2823 0.0874 267.94 / 0.4);
+  --ot-p4-soft: oklch(0.2795 0.0368 260.03 / 0.4);
+  --ot-success: oklch(0.7729 0.1535 163.22);
+  --ot-success-soft: oklch(0.2621 0.0487 172.55);
+  --ot-success-soft-text: oklch(0.8452 0.1299 164.98);
+  --ot-warning: oklch(0.8369 0.1644 84.43);
+  --ot-warning-soft: oklch(0.2791 0.0742 45.64);
+  --ot-warning-soft-text: oklch(0.879 0.1534 91.61);
+  --ot-danger: oklch(0.7106 0.1661 22.22);
+  --ot-danger-soft: oklch(0.2575 0.0886 26.04);
+  --ot-danger-soft-text: oklch(0.8077 0.1035 19.57);
+  --ot-info: oklch(0.7535 0.139 232.66);
+  --ot-info-soft: oklch(0.2935 0.0632 243.16);
+  --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
+  --ot-scrim: oklch(0 0 0 / 0.55);
+  --ot-highlight: oklch(0.4762 0.1034 61.91);
+  --ot-highlight-text: oklch(0.9619 0.058 95.62);
+  /* Palette (tokens-v2 D5): one solid per hue; the soft step is mixed into the canvas, the text step toward white. */
+  --ot-hue-red-solid: oklch(0.7106 0.1661 22.22); --ot-hue-red-soft: color-mix(in oklab, var(--ot-hue-red-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-red-text: color-mix(in oklch, var(--ot-hue-red-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-orange-solid: oklch(0.7576 0.159 55.93); --ot-hue-orange-soft: color-mix(in oklab, var(--ot-hue-orange-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-orange-text: color-mix(in oklch, var(--ot-hue-orange-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-yellow-solid: oklch(0.8369 0.1644 84.43); --ot-hue-yellow-soft: color-mix(in oklab, var(--ot-hue-yellow-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-yellow-text: color-mix(in oklch, var(--ot-hue-yellow-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-lime-solid: oklch(0.8493 0.2073 128.85); --ot-hue-lime-soft: color-mix(in oklab, var(--ot-hue-lime-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-lime-text: color-mix(in oklch, var(--ot-hue-lime-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-green-solid: oklch(0.8003 0.1821 151.71); --ot-hue-green-soft: color-mix(in oklab, var(--ot-hue-green-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-green-text: color-mix(in oklch, var(--ot-hue-green-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-teal-solid: oklch(0.7845 0.1325 181.91); --ot-hue-teal-soft: color-mix(in oklab, var(--ot-hue-teal-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-teal-text: color-mix(in oklch, var(--ot-hue-teal-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-cyan-solid: oklch(0.7971 0.1339 211.53); --ot-hue-cyan-soft: color-mix(in oklab, var(--ot-hue-cyan-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-cyan-text: color-mix(in oklch, var(--ot-hue-cyan-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-blue-solid: oklch(0.7137 0.1434 254.62); --ot-hue-blue-soft: color-mix(in oklab, var(--ot-hue-blue-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-blue-text: color-mix(in oklch, var(--ot-hue-blue-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-indigo-solid: oklch(0.6801 0.1583 276.93); --ot-hue-indigo-soft: color-mix(in oklab, var(--ot-hue-indigo-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-indigo-text: color-mix(in oklch, var(--ot-hue-indigo-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-violet-solid: oklch(0.709 0.1592 293.54); --ot-hue-violet-soft: color-mix(in oklab, var(--ot-hue-violet-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-violet-text: color-mix(in oklch, var(--ot-hue-violet-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-pink-solid: oklch(0.7253 0.1752 349.76); --ot-hue-pink-soft: color-mix(in oklab, var(--ot-hue-pink-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-pink-text: color-mix(in oklch, var(--ot-hue-pink-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
+  --ot-hue-slate-solid: oklch(0.7107 0.0351 256.79); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
 }
 
-/* Accents (OpenSpec change theming, design D3, D4): raw values per accent for
-   light (--ot-al-*) and dark (--ot-ad-*), then the public accent tokens mapped from
-   them on any [data-accent] element: the document root for the user's theme, or a
-   subtree such as a theme tile. Without data-accent the blocks above apply, which
-   is emerald. Every accent is listed, emerald too, so a nested tile is never
-   overridden by the page's accent. A light container inside a dark page keeps the
-   light mapping. The :root variants match the specificity of the mode blocks above
-   (:root[data-theme="dark"], :root:not(...)) and come later, so they win on <html>.
-   Values pass contrast.test.ts in both modes. */
-[data-accent="emerald"] { --ot-al-accent: #047857; --ot-al-accent-hover: #065f46; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #047857; --ot-al-accent-soft: #ecfdf5; --ot-al-accent-soft-text: #065f46; --ot-al-focus: #059669; --ot-ad-accent: #047857; --ot-ad-accent-hover: #065f46; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #34d399; --ot-ad-accent-soft: #022c22; --ot-ad-accent-soft-text: #6ee7b7; --ot-ad-focus: #34d399; }
-[data-accent="blue"] { --ot-al-accent: #1d4ed8; --ot-al-accent-hover: #1e40af; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #1d4ed8; --ot-al-accent-soft: #eff6ff; --ot-al-accent-soft-text: #1e40af; --ot-al-focus: #2563eb; --ot-ad-accent: #1d4ed8; --ot-ad-accent-hover: #1e40af; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #60a5fa; --ot-ad-accent-soft: #172554; --ot-ad-accent-soft-text: #93c5fd; --ot-ad-focus: #60a5fa; }
-[data-accent="indigo"] { --ot-al-accent: #4338ca; --ot-al-accent-hover: #3730a3; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #4338ca; --ot-al-accent-soft: #eef2ff; --ot-al-accent-soft-text: #3730a3; --ot-al-focus: #4f46e5; --ot-ad-accent: #4338ca; --ot-ad-accent-hover: #3730a3; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #818cf8; --ot-ad-accent-soft: #1e1b4b; --ot-ad-accent-soft-text: #a5b4fc; --ot-ad-focus: #818cf8; }
-[data-accent="violet"] { --ot-al-accent: #6d28d9; --ot-al-accent-hover: #5b21b6; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #6d28d9; --ot-al-accent-soft: #f5f3ff; --ot-al-accent-soft-text: #5b21b6; --ot-al-focus: #7c3aed; --ot-ad-accent: #6d28d9; --ot-ad-accent-hover: #5b21b6; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #a78bfa; --ot-ad-accent-soft: #2e1065; --ot-ad-accent-soft-text: #c4b5fd; --ot-ad-focus: #a78bfa; }
-[data-accent="rose"] { --ot-al-accent: #be123c; --ot-al-accent-hover: #9f1239; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #be123c; --ot-al-accent-soft: #fff1f2; --ot-al-accent-soft-text: #9f1239; --ot-al-focus: #e11d48; --ot-ad-accent: #be123c; --ot-ad-accent-hover: #9f1239; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #fb7185; --ot-ad-accent-soft: #4c0519; --ot-ad-accent-soft-text: #fda4af; --ot-ad-focus: #fb7185; }
-[data-accent="orange"] { --ot-al-accent: #c2410c; --ot-al-accent-hover: #9a3412; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #c2410c; --ot-al-accent-soft: #fff7ed; --ot-al-accent-soft-text: #9a3412; --ot-al-focus: #ea580c; --ot-ad-accent: #c2410c; --ot-ad-accent-hover: #9a3412; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #fb923c; --ot-ad-accent-soft: #431407; --ot-ad-accent-soft-text: #fdba74; --ot-ad-focus: #fb923c; }
-[data-accent="teal"] { --ot-al-accent: #0f766e; --ot-al-accent-hover: #115e59; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #0f766e; --ot-al-accent-soft: #f0fdfa; --ot-al-accent-soft-text: #115e59; --ot-al-focus: #0d9488; --ot-ad-accent: #0f766e; --ot-ad-accent-hover: #115e59; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #2dd4bf; --ot-ad-accent-soft: #042f2e; --ot-ad-accent-soft-text: #5eead4; --ot-ad-focus: #2dd4bf; }
-[data-accent="graphite"] { --ot-al-accent: #334155; --ot-al-accent-hover: #1e293b; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #334155; --ot-al-accent-soft: #f1f5f9; --ot-al-accent-soft-text: #1e293b; --ot-al-focus: #475569; --ot-ad-accent: #475569; --ot-ad-accent-hover: #334155; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #cbd5e1; --ot-ad-accent-soft: #1e293b; --ot-ad-accent-soft-text: #e2e8f0; --ot-ad-focus: #94a3b8; }
+/* Accents (OpenSpec change theming, design D3, D4; tokens-v2 D4): a theme declares
+   three values: its light accent (also the browser bar colour), its bright dark-mode
+   accent for text, focus and the chart, and the colour of text on the accent. Every
+   other accent step is derived from them with the --ot-mix-* ratios, in the mode
+   blocks above and again on any [data-accent] element (a theme tile in Settings),
+   so a nested tile gets its own steps. A derived step that misses its contrast
+   minimum may be overridden here next to a comment naming the pair; theme.test.ts
+   counts the overrides. */
+[data-accent="emerald"] { --ot-al-accent: oklch(0.5081 0.1049 165.61); --ot-ad-accent-text: oklch(0.7729 0.1535 163.22); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="blue"] { --ot-al-accent: oklch(0.4882 0.2172 264.38); --ot-ad-accent-text: oklch(0.7137 0.1434 254.62); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="indigo"] { --ot-al-accent: oklch(0.4568 0.2146 277.02); --ot-ad-accent-text: oklch(0.6801 0.1583 276.93); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="violet"] { --ot-al-accent: oklch(0.4907 0.2412 292.58); --ot-ad-accent-text: oklch(0.709 0.1592 293.54); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="rose"] { --ot-al-accent: oklch(0.5143 0.1978 16.93); --ot-ad-accent-text: oklch(0.7192 0.169 13.43); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="orange"] { --ot-al-accent: oklch(0.5534 0.1739 38.4); --ot-ad-accent-text: oklch(0.7576 0.159 55.93); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="teal"] { --ot-al-accent: oklch(0.5109 0.0861 186.39); --ot-ad-accent-text: oklch(0.7845 0.1325 181.91); --ot-a-on-accent: oklch(1 0 0); }
+[data-accent="graphite"] { --ot-al-accent: oklch(0.3717 0.0392 257.29); --ot-ad-accent-text: oklch(0.869 0.0198 252.89); --ot-a-on-accent: oklch(1 0 0); /* override: dark buttons a step lighter than the light accent, so on-accent text on the dark canvas keeps its edge */ --ot-ad-accent: oklch(0.4455 0.0374 257.28); }
 :root[data-accent], [data-accent] {
-  --ot-accent: var(--ot-al-accent, #047857);
-  --ot-accent-hover: var(--ot-al-accent-hover, #065f46);
-  --ot-on-accent: var(--ot-al-on-accent, #ffffff);
-  --ot-accent-text: var(--ot-al-accent-text, #047857);
-  --ot-accent-soft: var(--ot-al-accent-soft, #ecfdf5);
-  --ot-accent-soft-text: var(--ot-al-accent-soft-text, #065f46);
-  --ot-focus: var(--ot-al-focus, #059669);
+  --ot-accent: var(--ot-al-accent, oklch(0.5081 0.1049 165.61));
+  --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));
+  --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
+  --ot-accent-text: var(--ot-accent);
+  --ot-accent-soft: color-mix(in oklab, var(--ot-accent) var(--ot-mix-accent-soft-light), var(--ot-surface));
+  --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-soft-text-light), oklch(0 0 0));
+  --ot-chart-base: var(--ot-accent);
+  --ot-focus: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-focus-light), oklch(1 0 0));
 }
 @media (prefers-color-scheme: dark) {
   :root[data-accent]:where(:not([data-theme="light"])), [data-accent]:where(:not([data-theme="light"], [data-theme="light"] *)) {
-    --ot-accent: var(--ot-ad-accent, #047857);
-    --ot-accent-hover: var(--ot-ad-accent-hover, #065f46);
-    --ot-on-accent: var(--ot-ad-on-accent, #ffffff);
-    --ot-accent-text: var(--ot-ad-accent-text, #34d399);
-    --ot-accent-soft: var(--ot-ad-accent-soft, #022c22);
-    --ot-accent-soft-text: var(--ot-ad-accent-soft-text, #6ee7b7);
-    --ot-focus: var(--ot-ad-focus, #34d399);
+    --ot-accent: var(--ot-ad-accent, var(--ot-al-accent, oklch(0.5081 0.1049 165.61)));
+    --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));
+    --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
+    --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
+    --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+    --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
+    --ot-chart-base: var(--ot-accent-text);
+    --ot-focus: var(--ot-accent-text);
   }
 }
 :root[data-accent][data-theme="dark"],
 [data-accent]:where([data-theme="dark"], [data-theme="dark"] *):where(:not([data-theme="dark"] [data-theme="light"], [data-theme="dark"] [data-theme="light"] *)) {
-  --ot-accent: var(--ot-ad-accent, #047857);
-  --ot-accent-hover: var(--ot-ad-accent-hover, #065f46);
-  --ot-on-accent: var(--ot-ad-on-accent, #ffffff);
-  --ot-accent-text: var(--ot-ad-accent-text, #34d399);
-  --ot-accent-soft: var(--ot-ad-accent-soft, #022c22);
-  --ot-accent-soft-text: var(--ot-ad-accent-soft-text, #6ee7b7);
-  --ot-focus: var(--ot-ad-focus, #34d399);
+  --ot-accent: var(--ot-ad-accent, var(--ot-al-accent, oklch(0.5081 0.1049 165.61)));
+  --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));
+  --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
+  --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
+  --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+  --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
+  --ot-chart-base: var(--ot-accent-text);
+  --ot-focus: var(--ot-accent-text);
 }
 
 /* Chart ramp (OpenSpec change stats-dashboard, design D2): five steps of one hue for
@@ -362,168 +397,171 @@
    reach [data-theme] subtrees (the workbench frame). The two dark blocks must stay
    identical; contrast.test.ts measures every pair of the override at 7:1 for text. */
 html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"] {
-  --ot-canvas: #ffffff;
-  --ot-surface: #ffffff;
-  --ot-raised: #ffffff;
-  --ot-sunken: #ffffff;
-  --ot-text-strong: #000000;
-  --ot-text: #000000;
-  --ot-muted: #262626;
-  --ot-faint: #3d3d3d;
-  --ot-border: #000000;
-  --ot-border-input: #000000;
-  --ot-accent: #000000;
-  --ot-accent-hover: #262626;
-  --ot-on-accent: #ffffff;
-  --ot-accent-text: #000000;
-  --ot-accent-soft: #ffffff;
-  --ot-accent-soft-text: #000000;
-  --ot-focus: #000000;
-  --ot-p1: #991b1b;
-  --ot-p2: #9a3412;
-  --ot-p3: #1e40af;
-  --ot-p4: #334155;
-  --ot-p1-soft: #ffffff;
-  --ot-p2-soft: #ffffff;
-  --ot-p3-soft: #ffffff;
-  --ot-p4-soft: #ffffff;
-  --ot-success: #065f46;
-  --ot-success-soft: #ffffff;
-  --ot-success-soft-text: #065f46;
-  --ot-warning: #78350f;
-  --ot-warning-soft: #ffffff;
-  --ot-warning-soft-text: #78350f;
-  --ot-danger: #991b1b;
-  --ot-danger-soft: #ffffff;
-  --ot-danger-soft-text: #991b1b;
-  --ot-info: #0c4a6e;
-  --ot-info-soft: #ffffff;
-  --ot-info-soft-text: #0c4a6e;
-  --ot-scrim: rgb(0 0 0 / 0.6);
-  --ot-highlight: #fde68a;
-  --ot-highlight-text: #000000;
-  --ot-hue-red-soft: #ffffff; --ot-hue-red-text: #991b1b;
-  --ot-hue-orange-soft: #ffffff; --ot-hue-orange-text: #9a3412;
-  --ot-hue-yellow-soft: #ffffff; --ot-hue-yellow-text: #78350f;
-  --ot-hue-lime-soft: #ffffff; --ot-hue-lime-text: #365314;
-  --ot-hue-green-soft: #ffffff; --ot-hue-green-text: #14532d;
-  --ot-hue-teal-soft: #ffffff; --ot-hue-teal-text: #134e4a;
-  --ot-hue-cyan-soft: #ffffff; --ot-hue-cyan-text: #164e63;
-  --ot-hue-blue-soft: #ffffff; --ot-hue-blue-text: #1e3a8a;
-  --ot-hue-indigo-soft: #ffffff; --ot-hue-indigo-text: #312e81;
-  --ot-hue-violet-soft: #ffffff; --ot-hue-violet-text: #4c1d95;
-  --ot-hue-pink-soft: #ffffff; --ot-hue-pink-text: #831843;
-  --ot-hue-slate-soft: #ffffff; --ot-hue-slate-text: #1e293b;
+  --ot-canvas: oklch(1 0 0);
+  --ot-surface: oklch(1 0 0);
+  --ot-raised: oklch(1 0 0);
+  --ot-sunken: oklch(1 0 0);
+  --ot-text-strong: oklch(0 0 0);
+  --ot-text: oklch(0 0 0);
+  --ot-muted: oklch(0.2686 0 0);
+  --ot-faint: oklch(0.36 0 0);
+  --ot-border: oklch(0 0 0);
+  --ot-border-soft: oklch(0 0 0);
+  --ot-border-input: oklch(0 0 0);
+  --ot-accent: oklch(0 0 0);
+  --ot-accent-hover: oklch(0.2686 0 0);
+  --ot-on-accent: oklch(1 0 0);
+  --ot-accent-text: oklch(0 0 0);
+  --ot-accent-soft: oklch(1 0 0);
+  --ot-accent-soft-text: oklch(0 0 0);
+  --ot-focus: oklch(0 0 0);
+  --ot-p1: oklch(0.4437 0.1613 26.9);
+  --ot-p2: oklch(0.4698 0.143 37.3);
+  --ot-p3: oklch(0.4244 0.1809 265.64);
+  --ot-p4: oklch(0.3717 0.0392 257.29);
+  --ot-p1-soft: oklch(1 0 0);
+  --ot-p2-soft: oklch(1 0 0);
+  --ot-p3-soft: oklch(1 0 0);
+  --ot-p4-soft: oklch(1 0 0);
+  --ot-success: oklch(0.4318 0.0865 166.91);
+  --ot-success-soft: oklch(1 0 0);
+  --ot-success-soft-text: oklch(0.4318 0.0865 166.91);
+  --ot-warning: oklch(0.4137 0.1054 45.9);
+  --ot-warning-soft: oklch(1 0 0);
+  --ot-warning-soft-text: oklch(0.4137 0.1054 45.9);
+  --ot-danger: oklch(0.4437 0.1613 26.9);
+  --ot-danger-soft: oklch(1 0 0);
+  --ot-danger-soft-text: oklch(0.4437 0.1613 26.9);
+  --ot-info: oklch(0.3912 0.0845 240.88);
+  --ot-info-soft: oklch(1 0 0);
+  --ot-info-soft-text: oklch(0.3912 0.0845 240.88);
+  --ot-scrim: oklch(0 0 0 / 0.6);
+  --ot-highlight: oklch(0.9243 0.1151 95.75);
+  --ot-highlight-text: oklch(0 0 0);
+  --ot-hue-red-soft: oklch(1 0 0); --ot-hue-red-text: oklch(0.4437 0.1613 26.9);
+  --ot-hue-orange-soft: oklch(1 0 0); --ot-hue-orange-text: oklch(0.4698 0.143 37.3);
+  --ot-hue-yellow-soft: oklch(1 0 0); --ot-hue-yellow-text: oklch(0.4137 0.1054 45.9);
+  --ot-hue-lime-soft: oklch(1 0 0); --ot-hue-lime-text: oklch(0.405 0.0956 131.06);
+  --ot-hue-green-soft: oklch(1 0 0); --ot-hue-green-text: oklch(0.3925 0.0896 152.54);
+  --ot-hue-teal-soft: oklch(1 0 0); --ot-hue-teal-text: oklch(0.3861 0.059 188.42);
+  --ot-hue-cyan-soft: oklch(1 0 0); --ot-hue-cyan-text: oklch(0.3982 0.0664 227.39);
+  --ot-hue-blue-soft: oklch(1 0 0); --ot-hue-blue-text: oklch(0.3791 0.1378 265.52);
+  --ot-hue-indigo-soft: oklch(1 0 0); --ot-hue-indigo-text: oklch(0.3588 0.1354 278.7);
+  --ot-hue-violet-soft: oklch(1 0 0); --ot-hue-violet-text: oklch(0.3796 0.1783 293.74);
+  --ot-hue-pink-soft: oklch(1 0 0); --ot-hue-pink-text: oklch(0.4078 0.1442 2.43);
+  --ot-hue-slate-soft: oklch(1 0 0); --ot-hue-slate-text: oklch(0.2795 0.0368 260.03);
 }
 @media (prefers-color-scheme: dark) {
   html:root[data-contrast="high"]:not([data-theme="light"]) {
-    --ot-canvas: #000000;
-    --ot-surface: #000000;
-    --ot-raised: #000000;
-    --ot-sunken: #000000;
-    --ot-text-strong: #ffffff;
-    --ot-text: #ffffff;
-    --ot-muted: #e5e5e5;
-    --ot-faint: #d4d4d4;
-    --ot-border: #ffffff;
-    --ot-border-input: #ffffff;
-    --ot-accent: #ffffff;
-    --ot-accent-hover: #e5e5e5;
-    --ot-on-accent: #000000;
-    --ot-accent-text: #ffffff;
-    --ot-accent-soft: #000000;
-    --ot-accent-soft-text: #ffffff;
-    --ot-focus: #ffffff;
-    --ot-p1: #fca5a5;
-    --ot-p2: #fdba74;
-    --ot-p3: #93c5fd;
-    --ot-p4: #cbd5e1;
-    --ot-p1-soft: #000000;
-    --ot-p2-soft: #000000;
-    --ot-p3-soft: #000000;
-    --ot-p4-soft: #000000;
-    --ot-success: #6ee7b7;
-    --ot-success-soft: #000000;
-    --ot-success-soft-text: #6ee7b7;
-    --ot-warning: #fcd34d;
-    --ot-warning-soft: #000000;
-    --ot-warning-soft-text: #fcd34d;
-    --ot-danger: #fca5a5;
-    --ot-danger-soft: #000000;
-    --ot-danger-soft-text: #fca5a5;
-    --ot-info: #7dd3fc;
-    --ot-info-soft: #000000;
-    --ot-info-soft-text: #7dd3fc;
-    --ot-scrim: rgb(0 0 0 / 0.7);
-    --ot-highlight: #fde68a;
-    --ot-highlight-text: #000000;
-    --ot-hue-red-soft: #000000; --ot-hue-red-text: #fca5a5;
-    --ot-hue-orange-soft: #000000; --ot-hue-orange-text: #fdba74;
-    --ot-hue-yellow-soft: #000000; --ot-hue-yellow-text: #fcd34d;
-    --ot-hue-lime-soft: #000000; --ot-hue-lime-text: #bef264;
-    --ot-hue-green-soft: #000000; --ot-hue-green-text: #86efac;
-    --ot-hue-teal-soft: #000000; --ot-hue-teal-text: #5eead4;
-    --ot-hue-cyan-soft: #000000; --ot-hue-cyan-text: #67e8f9;
-    --ot-hue-blue-soft: #000000; --ot-hue-blue-text: #93c5fd;
-    --ot-hue-indigo-soft: #000000; --ot-hue-indigo-text: #a5b4fc;
-    --ot-hue-violet-soft: #000000; --ot-hue-violet-text: #c4b5fd;
-    --ot-hue-pink-soft: #000000; --ot-hue-pink-text: #f9a8d4;
-    --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #cbd5e1;
+    --ot-canvas: oklch(0 0 0);
+    --ot-surface: oklch(0 0 0);
+    --ot-raised: oklch(0 0 0);
+    --ot-sunken: oklch(0 0 0);
+    --ot-text-strong: oklch(1 0 0);
+    --ot-text: oklch(1 0 0);
+    --ot-muted: oklch(0.9219 0 0);
+    --ot-faint: oklch(0.8699 0 0);
+    --ot-border: oklch(1 0 0);
+    --ot-border-soft: oklch(1 0 0);
+    --ot-border-input: oklch(1 0 0);
+    --ot-accent: oklch(1 0 0);
+    --ot-accent-hover: oklch(0.9219 0 0);
+    --ot-on-accent: oklch(0 0 0);
+    --ot-accent-text: oklch(1 0 0);
+    --ot-accent-soft: oklch(0 0 0);
+    --ot-accent-soft-text: oklch(1 0 0);
+    --ot-focus: oklch(1 0 0);
+    --ot-p1: oklch(0.8077 0.1035 19.57);
+    --ot-p2: oklch(0.8366 0.1165 66.29);
+    --ot-p3: oklch(0.8091 0.0956 251.81);
+    --ot-p4: oklch(0.869 0.0198 252.89);
+    --ot-p1-soft: oklch(0 0 0);
+    --ot-p2-soft: oklch(0 0 0);
+    --ot-p3-soft: oklch(0 0 0);
+    --ot-p4-soft: oklch(0 0 0);
+    --ot-success: oklch(0.8452 0.1299 164.98);
+    --ot-success-soft: oklch(0 0 0);
+    --ot-success-soft-text: oklch(0.8452 0.1299 164.98);
+    --ot-warning: oklch(0.879 0.1534 91.61);
+    --ot-warning-soft: oklch(0 0 0);
+    --ot-warning-soft-text: oklch(0.879 0.1534 91.61);
+    --ot-danger: oklch(0.8077 0.1035 19.57);
+    --ot-danger-soft: oklch(0 0 0);
+    --ot-danger-soft-text: oklch(0.8077 0.1035 19.57);
+    --ot-info: oklch(0.8276 0.1013 230.32);
+    --ot-info-soft: oklch(0 0 0);
+    --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
+    --ot-scrim: oklch(0 0 0 / 0.7);
+    --ot-highlight: oklch(0.9243 0.1151 95.75);
+    --ot-highlight-text: oklch(0 0 0);
+    --ot-hue-red-soft: oklch(0 0 0); --ot-hue-red-text: oklch(0.8077 0.1035 19.57);
+    --ot-hue-orange-soft: oklch(0 0 0); --ot-hue-orange-text: oklch(0.8366 0.1165 66.29);
+    --ot-hue-yellow-soft: oklch(0 0 0); --ot-hue-yellow-text: oklch(0.879 0.1534 91.61);
+    --ot-hue-lime-soft: oklch(0 0 0); --ot-hue-lime-text: oklch(0.8972 0.1786 126.67);
+    --ot-hue-green-soft: oklch(0 0 0); --ot-hue-green-text: oklch(0.8712 0.1363 154.45);
+    --ot-hue-teal-soft: oklch(0 0 0); --ot-hue-teal-text: oklch(0.8549 0.1251 181.07);
+    --ot-hue-cyan-soft: oklch(0 0 0); --ot-hue-cyan-text: oklch(0.8651 0.1153 207.08);
+    --ot-hue-blue-soft: oklch(0 0 0); --ot-hue-blue-text: oklch(0.8091 0.0956 251.81);
+    --ot-hue-indigo-soft: oklch(0 0 0); --ot-hue-indigo-text: oklch(0.7853 0.1041 274.71);
+    --ot-hue-violet-soft: oklch(0 0 0); --ot-hue-violet-text: oklch(0.8112 0.1013 293.57);
+    --ot-hue-pink-soft: oklch(0 0 0); --ot-hue-pink-text: oklch(0.8228 0.1095 346.02);
+    --ot-hue-slate-soft: oklch(0 0 0); --ot-hue-slate-text: oklch(0.869 0.0198 252.89);
   }
 }
 html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [data-theme="dark"] {
-  --ot-canvas: #000000;
-  --ot-surface: #000000;
-  --ot-raised: #000000;
-  --ot-sunken: #000000;
-  --ot-text-strong: #ffffff;
-  --ot-text: #ffffff;
-  --ot-muted: #e5e5e5;
-  --ot-faint: #d4d4d4;
-  --ot-border: #ffffff;
-  --ot-border-input: #ffffff;
-  --ot-accent: #ffffff;
-  --ot-accent-hover: #e5e5e5;
-  --ot-on-accent: #000000;
-  --ot-accent-text: #ffffff;
-  --ot-accent-soft: #000000;
-  --ot-accent-soft-text: #ffffff;
-  --ot-focus: #ffffff;
-  --ot-p1: #fca5a5;
-  --ot-p2: #fdba74;
-  --ot-p3: #93c5fd;
-  --ot-p4: #cbd5e1;
-  --ot-p1-soft: #000000;
-  --ot-p2-soft: #000000;
-  --ot-p3-soft: #000000;
-  --ot-p4-soft: #000000;
-  --ot-success: #6ee7b7;
-  --ot-success-soft: #000000;
-  --ot-success-soft-text: #6ee7b7;
-  --ot-warning: #fcd34d;
-  --ot-warning-soft: #000000;
-  --ot-warning-soft-text: #fcd34d;
-  --ot-danger: #fca5a5;
-  --ot-danger-soft: #000000;
-  --ot-danger-soft-text: #fca5a5;
-  --ot-info: #7dd3fc;
-  --ot-info-soft: #000000;
-  --ot-info-soft-text: #7dd3fc;
-  --ot-scrim: rgb(0 0 0 / 0.7);
-  --ot-highlight: #fde68a;
-  --ot-highlight-text: #000000;
-  --ot-hue-red-soft: #000000; --ot-hue-red-text: #fca5a5;
-  --ot-hue-orange-soft: #000000; --ot-hue-orange-text: #fdba74;
-  --ot-hue-yellow-soft: #000000; --ot-hue-yellow-text: #fcd34d;
-  --ot-hue-lime-soft: #000000; --ot-hue-lime-text: #bef264;
-  --ot-hue-green-soft: #000000; --ot-hue-green-text: #86efac;
-  --ot-hue-teal-soft: #000000; --ot-hue-teal-text: #5eead4;
-  --ot-hue-cyan-soft: #000000; --ot-hue-cyan-text: #67e8f9;
-  --ot-hue-blue-soft: #000000; --ot-hue-blue-text: #93c5fd;
-  --ot-hue-indigo-soft: #000000; --ot-hue-indigo-text: #a5b4fc;
-  --ot-hue-violet-soft: #000000; --ot-hue-violet-text: #c4b5fd;
-  --ot-hue-pink-soft: #000000; --ot-hue-pink-text: #f9a8d4;
-  --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #cbd5e1;
+  --ot-canvas: oklch(0 0 0);
+  --ot-surface: oklch(0 0 0);
+  --ot-raised: oklch(0 0 0);
+  --ot-sunken: oklch(0 0 0);
+  --ot-text-strong: oklch(1 0 0);
+  --ot-text: oklch(1 0 0);
+  --ot-muted: oklch(0.9219 0 0);
+  --ot-faint: oklch(0.8699 0 0);
+  --ot-border: oklch(1 0 0);
+  --ot-border-soft: oklch(1 0 0);
+  --ot-border-input: oklch(1 0 0);
+  --ot-accent: oklch(1 0 0);
+  --ot-accent-hover: oklch(0.9219 0 0);
+  --ot-on-accent: oklch(0 0 0);
+  --ot-accent-text: oklch(1 0 0);
+  --ot-accent-soft: oklch(0 0 0);
+  --ot-accent-soft-text: oklch(1 0 0);
+  --ot-focus: oklch(1 0 0);
+  --ot-p1: oklch(0.8077 0.1035 19.57);
+  --ot-p2: oklch(0.8366 0.1165 66.29);
+  --ot-p3: oklch(0.8091 0.0956 251.81);
+  --ot-p4: oklch(0.869 0.0198 252.89);
+  --ot-p1-soft: oklch(0 0 0);
+  --ot-p2-soft: oklch(0 0 0);
+  --ot-p3-soft: oklch(0 0 0);
+  --ot-p4-soft: oklch(0 0 0);
+  --ot-success: oklch(0.8452 0.1299 164.98);
+  --ot-success-soft: oklch(0 0 0);
+  --ot-success-soft-text: oklch(0.8452 0.1299 164.98);
+  --ot-warning: oklch(0.879 0.1534 91.61);
+  --ot-warning-soft: oklch(0 0 0);
+  --ot-warning-soft-text: oklch(0.879 0.1534 91.61);
+  --ot-danger: oklch(0.8077 0.1035 19.57);
+  --ot-danger-soft: oklch(0 0 0);
+  --ot-danger-soft-text: oklch(0.8077 0.1035 19.57);
+  --ot-info: oklch(0.8276 0.1013 230.32);
+  --ot-info-soft: oklch(0 0 0);
+  --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
+  --ot-scrim: oklch(0 0 0 / 0.7);
+  --ot-highlight: oklch(0.9243 0.1151 95.75);
+  --ot-highlight-text: oklch(0 0 0);
+  --ot-hue-red-soft: oklch(0 0 0); --ot-hue-red-text: oklch(0.8077 0.1035 19.57);
+  --ot-hue-orange-soft: oklch(0 0 0); --ot-hue-orange-text: oklch(0.8366 0.1165 66.29);
+  --ot-hue-yellow-soft: oklch(0 0 0); --ot-hue-yellow-text: oklch(0.879 0.1534 91.61);
+  --ot-hue-lime-soft: oklch(0 0 0); --ot-hue-lime-text: oklch(0.8972 0.1786 126.67);
+  --ot-hue-green-soft: oklch(0 0 0); --ot-hue-green-text: oklch(0.8712 0.1363 154.45);
+  --ot-hue-teal-soft: oklch(0 0 0); --ot-hue-teal-text: oklch(0.8549 0.1251 181.07);
+  --ot-hue-cyan-soft: oklch(0 0 0); --ot-hue-cyan-text: oklch(0.8651 0.1153 207.08);
+  --ot-hue-blue-soft: oklch(0 0 0); --ot-hue-blue-text: oklch(0.8091 0.0956 251.81);
+  --ot-hue-indigo-soft: oklch(0 0 0); --ot-hue-indigo-text: oklch(0.7853 0.1041 274.71);
+  --ot-hue-violet-soft: oklch(0 0 0); --ot-hue-violet-text: oklch(0.8112 0.1013 293.57);
+  --ot-hue-pink-soft: oklch(0 0 0); --ot-hue-pink-text: oklch(0.8228 0.1095 346.02);
+  --ot-hue-slate-soft: oklch(0 0 0); --ot-hue-slate-text: oklch(0.869 0.0198 252.89);
 }
 /* Soft tints read as the surface in high contrast; an outline keeps the shape. */
 html:root[data-contrast="high"] :is(.bg-accent-soft, .bg-success-soft, .bg-warning-soft, .bg-danger-soft, .bg-info-soft, .bg-hue-soft, .bg-p1-soft, .bg-p2-soft, .bg-p3-soft, .bg-p4-soft) {
@@ -539,6 +577,7 @@ html:root[data-contrast="high"] :focus-visible {
 :root[data-motion="none"] {
   --duration-ui: 0ms;
   --duration-emphasis: 0ms;
+  --duration-moment: 0ms;
 }
 :root[data-motion="none"] *, :root[data-motion="none"] *::before, :root[data-motion="none"] *::after {
   animation-duration: 0s !important;
