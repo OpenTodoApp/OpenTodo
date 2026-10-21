@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -24,6 +25,8 @@ func (s *Server) registerCommentRoutes(mux *routes) {
 	mux.handle("POST /api/v1/tasks/{id}/comments", signedIn, s.handleCreateComment)
 	mux.handle("PATCH /api/v1/comments/{id}", signedIn, s.handlePatchComment)
 	mux.handle("DELETE /api/v1/comments/{id}", signedIn, s.handleDeleteComment)
+	// Reactions (editor-everywhere D8): the caller replaces their own list only.
+	mux.handle("PUT /api/v1/comments/{id}/reactions", signedIn.fullTokens(), s.handlePutReactions)
 	mux.handle("GET /api/v1/tasks/{id}/activity", signedIn, s.activityHandler("task"))
 	mux.handle("GET /api/v1/projects/{id}/activity", signedIn, s.activityHandler("project"))
 	// Cross-project feed (OpenSpec change `activity-feed`).
@@ -40,7 +43,7 @@ func (s *Server) handleListComments(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"comments": list})
+	writeJSON(w, http.StatusOK, map[string]any{"comments": opsync.FoldAllReactions(list, userFrom(r.Context()).ID)})
 }
 
 // commentInput is the body of POST and PATCH. Fields not listed are refused so a
@@ -167,6 +170,38 @@ func (s *Server) handlePatchComment(w http.ResponseWriter, r *http.Request) {
 	s.writeComment(w, r, r.PathValue("id"), body, http.StatusOK)
 }
 
+// handlePutReactions replaces the caller's reactions on a comment with
+// {reactions: [names]} (editor-everywhere D8): an empty list removes them.
+func (s *Server) handlePutReactions(w http.ResponseWriter, r *http.Request) {
+	if _, ok := s.existingComment(w, r); !ok {
+		return
+	}
+	var in struct {
+		Reactions *[]string `json:"reactions"`
+	}
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&in); err != nil || in.Reactions == nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", "send {\"reactions\": [names]}")
+		return
+	}
+	seen := map[string]bool{}
+	for _, name := range *in.Reactions {
+		if !slices.Contains(opsync.ReactionNames, name) {
+			writeError(w, http.StatusBadRequest, "invalid_input", fmt.Sprintf("%q is not a reaction (one of %s)", name, strings.Join(opsync.ReactionNames, ", ")))
+			return
+		}
+		if seen[name] {
+			writeError(w, http.StatusBadRequest, "invalid_input", fmt.Sprintf("%q is listed twice", name))
+			return
+		}
+		seen[name] = true
+	}
+	body := map[string]json.RawMessage{}
+	body[opsync.ReactionPrefix+userFrom(r.Context()).ID], _ = json.Marshal(*in.Reactions)
+	s.writeComment(w, r, r.PathValue("id"), body, http.StatusOK)
+}
+
 func (s *Server) handleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.existingComment(w, r); !ok {
 		return
@@ -208,7 +243,7 @@ func (s *Server) writeComment(w http.ResponseWriter, r *http.Request, id string,
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, status, c)
+	writeJSON(w, status, opsync.FoldReactions(c, uid))
 }
 
 // ---- activity ----

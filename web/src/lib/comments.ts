@@ -113,6 +113,63 @@ export async function commentCounts(): Promise<Map<string, number>> {
   return out
 }
 
+// ---- reactions (editor-everywhere D8) ----
+
+/** The closed set of reactions, in display order (same list as sync.ReactionNames). */
+export const REACTION_NAMES = ['thumbs_up', 'heart', 'check', 'eyes', 'party', 'question'] as const
+export type ReactionName = (typeof REACTION_NAMES)[number]
+
+/** One reaction under a comment: its name and who chose it, in account id order. */
+export interface ReactionCount {
+  name: ReactionName
+  accounts: string[]
+}
+
+/** The reactions on a comment by name, only those someone chose, in REACTION_NAMES order. */
+export function reactionCounts(c: Pick<Comment, 'reactions'>): ReactionCount[] {
+  const byName = new Map<ReactionName, string[]>()
+  for (const [account, names] of Object.entries(c.reactions ?? {})) {
+    for (const name of Array.isArray(names) ? names : []) {
+      if (!(REACTION_NAMES as readonly string[]).includes(name)) continue
+      const list = byName.get(name as ReactionName) ?? []
+      list.push(account)
+      byName.set(name as ReactionName, list)
+    }
+  }
+  return REACTION_NAMES.filter((n) => byName.has(n)).map((name) => ({ name, accounts: byName.get(name)!.sort() }))
+}
+
+/** The account's own reactions on a comment. */
+export function myReactions(c: Pick<Comment, 'reactions'>, me: string | null): ReactionName[] {
+  const mine = me ? c.reactions?.[me] : undefined
+  return (Array.isArray(mine) ? mine : []).filter((n): n is ReactionName => (REACTION_NAMES as readonly string[]).includes(n))
+}
+
+/**
+ * Replace the account's own reactions on a comment: one `reactions.<account>` op,
+ * applied locally and queued, so it works offline and never touches another
+ * account's reactions. An unchanged list writes nothing.
+ */
+export async function setMyReactions(commentId: string, names: ReactionName[]): Promise<void> {
+  const me = await currentUserId()
+  if (!me) throw new Error(t('sign in to react'))
+  const c = await db.comments.get(commentId)
+  if (!c || c.deleted_at) return
+  const next = REACTION_NAMES.filter((n) => names.includes(n))
+  const before = myReactions(c, me)
+  if (before.length === next.length && before.every((n, i) => n === next[i])) return
+  await mutate('comment', commentId, { [`reactions.${me}`]: next })
+}
+
+/** Add or remove one of the account's reactions on a comment. */
+export async function toggleReaction(commentId: string, name: ReactionName): Promise<void> {
+  const me = await currentUserId()
+  const c = await db.comments.get(commentId)
+  if (!c) return
+  const mine = myReactions(c, me)
+  await setMyReactions(commentId, mine.includes(name) ? mine.filter((n) => n !== name) : [...mine, name])
+}
+
 // ---- mentions ----
 
 /** The @word being typed at the caret, or null: `{ query, start }` with start at the `@`. */

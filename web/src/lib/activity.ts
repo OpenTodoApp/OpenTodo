@@ -70,7 +70,14 @@ const COUNTED = new Set(['task', 'project', 'comment'])
  * Same list as `Opaque` in internal/activity.
  */
 export const OPAQUE = new Set(['task.notes_doc', 'project.notes_doc'])
-const counts = (op: { entity: string; field: string }) => COUNTED.has(op.entity) && !OPAQUE.has(`${op.entity}.${op.field}`)
+/**
+ * Ops that never form or join an event (editor-everywhere): a comment's reactions,
+ * and a task's note_mentions, which travel with the note edit. Same as `quiet` in
+ * internal/activity.
+ */
+const quiet = (op: { entity: string; field: string }) =>
+  OPAQUE.has(`${op.entity}.${op.field}`) || (op.entity === 'task' && op.field === 'note_mentions') || (op.entity === 'comment' && op.field.startsWith('reactions.'))
+const counts = (op: { entity: string; field: string }) => COUNTED.has(op.entity) && !quiet(op)
 
 /** An op as the rule needs it; `from` is an optional known old value (local rows). */
 export type ActivityOp = Pick<Op, 'id' | 'entity' | 'entityId' | 'field' | 'value' | 'ts' | 'device'> & {

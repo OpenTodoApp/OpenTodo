@@ -38,7 +38,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	out["comments"] = comments
+	out["comments"] = opsync.FoldAllReactions(comments, uid)
 	// Attachment metadata (attachments D12), removed ones included; the files
 	// themselves are in the ZIP export only.
 	attachments, err := s.sync.List(r.Context(), uid, "attachment", true)

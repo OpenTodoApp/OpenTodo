@@ -724,6 +724,25 @@
         {"id":"ru1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":500000,"opIds":["ru1"],"changes":[{"field":"title","from":null,"to":"Call Ana"}]},
         {"id":"ru2","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":501000,"opIds":["ru2"],"changes":[{"field":"priority","from":null,"to":1}],"device":"rule:r1"}
       ]
+    },
+    {
+      "name": "reaction ops derive no event (editor-everywhere)",
+      "ops": [
+        {"id":"x1","seq":1,"actor":"bob","entity":"comment","entityId":"c7","field":"reactions.bob","value":["heart"],"ts":1000,"device":"db"},
+        {"id":"x2","seq":2,"actor":"carol","entity":"comment","entityId":"c7","field":"reactions.carol","value":["thumbs_up","check"],"ts":2000,"device":"dc"}
+      ],
+      "events": []
+    },
+    {
+      "name": "note mentions fold into the note edit (editor-everywhere)",
+      "ops": [
+        {"id":"y1","seq":1,"actor":"alice","entity":"task","entityId":"t9","field":"description","value":"Ask @bob about the tiles","ts":1000,"device":"da"},
+        {"id":"y2","seq":2,"actor":"alice","entity":"task","entityId":"t9","field":"notes_doc","value":"ydoc:v1:AQLBlvjtAgAHAQ==","ts":1000,"device":"da"},
+        {"id":"y3","seq":3,"actor":"alice","entity":"task","entityId":"t9","field":"note_mentions","value":["bob"],"ts":1000,"device":"da"}
+      ],
+      "events": [
+        {"id":"y1","kind":"edited","actor":"alice","entity":"task","entityId":"t9","taskId":"t9","ts":1000,"opIds":["y1"],"changes":[{"field":"description","from":null,"to":"Ask @bob about the tiles"}]}
+      ]
     }
   ]
 }
