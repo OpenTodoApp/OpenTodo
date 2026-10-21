@@ -97,6 +97,14 @@ func ciphertextOnly(schema map[string]any, fields []string) map[string]any {
 						}
 						desc, _ := cp["description"].(string)
 						cp["description"] = desc + CiphertextOnlyNote
+						// An object-valued content field (a task's location) travels
+						// as one envelope string (agent-planning-fields D8).
+						if _, isObj := cp["properties"]; isObj {
+							for _, k := range []string{"properties", "additionalProperties", "required"} {
+								delete(cp, k)
+							}
+							cp["type"] = []string{"string", "null"}
+						}
 						np[name] = cp
 					default:
 						np[name] = p

@@ -35,6 +35,7 @@ func (r *Registry) loadFor(ctx context.Context, c Caller, overlay ChangeSet) (*s
 
 // apply lays planned changes over the snapshot (in-app assistant turns).
 func (snap *snapshot) apply(cs ChangeSet) {
+	snap.idx = nil
 	for _, ch := range cs {
 		switch ch.Entity {
 		case "task":
@@ -96,12 +97,13 @@ func deleted(e opsync.Entity) bool {
 }
 
 func (snap *snapshot) task(id string) opsync.Entity {
-	for _, t := range snap.tasks {
-		if str(t, "id") == id {
-			return t
+	if snap.idx == nil {
+		snap.idx = make(map[string]opsync.Entity, len(snap.tasks))
+		for _, t := range snap.tasks {
+			snap.idx[str(t, "id")] = t
 		}
 	}
-	return nil
+	return snap.idx[id]
 }
 
 // role is the caller's role for a task in project pid ("owner" for personal).
