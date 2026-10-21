@@ -4,13 +4,13 @@ Frontend tasks are verified with `npm test` and `npm run build` in `web/` unless
 
 ## 1. Parser and helpers
 
-- [ ] 1.1 Teach `attributes.ts` the `#Parent/Child` path form and fold label names in `findLabel`, and return unmatched `#tokens` as `unmatched-project` chips with a reason; verify with `nlp.test.ts` (path form resolves, `#hom` with Home and Homework yields an ambiguous chip with count 2, every existing vector in `quickadd.vectors.json` parses unchanged via `vectors.test.ts`).
-- [ ] 1.2 Add `suggest.ts` (`tokenAtCaret`, `projectSuggestions`, `labelSuggestions`, the inserted token form); verify with `suggest.test.ts` (any-word match, accents, nested paths, no list inside quotes, duplicate names insert the path form).
-- [ ] 1.3 Add `edit.ts` (`parseEdit(base, draft)`, `applyParsed(task, result)`); verify with `edit.test.ts` (only the inserted span parses, "Review may report" + " draft" yields no chip, labels union, project overwrite, reminders added in the same batch).
+- [x] 1.1 Teach `attributes.ts` the `#Parent/Child` path form and fold label names in `findLabel`, and return unmatched `#tokens` as `unmatched-project` chips with a reason; verify with `nlp.test.ts` (path form resolves, `#hom` with Home and Homework yields an ambiguous chip with count 2, every existing vector in `quickadd.vectors.json` parses unchanged via `vectors.test.ts`).
+- [x] 1.2 Add `suggest.ts` (`tokenAtCaret`, `projectSuggestions`, `labelSuggestions`, the inserted token form); verify with `suggest.test.ts` (any-word match, accents, nested paths, no list inside quotes, duplicate names insert the path form).
+- [x] 1.3 Add `edit.ts` (`parseEdit(base, draft)`, `applyParsed(task, result)`); verify with `edit.test.ts` (only the inserted span parses, "Review may report" + " draft" yields no chip, labels union, project overwrite, reminders added in the same batch).
 
 ## 2. Quick add
 
-- [ ] 2.1 Add the suggestion list to `QuickAdd.tsx` (listbox semantics, Enter or Tab picks, Esc keeps the text, Create entries, create project offline through `createProject`) and the unmatched chip; verify with `quickAdd.test.tsx` (pick "Home renovation" from `#ren`, Esc keeps `#ho` and does not close quick add, unknown and ambiguous chips, "New label" chip) and the `Capture/Quick add` story baselines via `make ui-check` (axe clean).
+- [x] 2.1 Add the suggestion list to `QuickAdd.tsx` (listbox semantics, Enter or Tab picks, Esc keeps the text, Create entries, create project offline through `createProject`) and the unmatched chip; verify with `quickAdd.test.tsx` (pick "Home renovation" from `#ren`, Esc keeps `#ho` and does not close quick add, unknown and ambiguous chips, "New label" chip) and the `Capture/Quick add` story baselines via `make ui-check` (axe clean).
 
 ## 3. Title editors
 

@@ -14,7 +14,7 @@ import { ProjectPickerField } from './ProjectPickerField'
 import { ShareCapture, setPendingShare } from './ShareCapture'
 
 const settle = () => act(async () => { for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 20)) })
-const field = () => document.querySelector<HTMLInputElement>('input[role="combobox"]')!
+const field = () => document.querySelector<HTMLInputElement>('[data-overlay] input[role="combobox"]') ?? document.querySelectorAll<HTMLInputElement>('input[role="combobox"]:not([aria-label="Task title"])')[0]!
 const project = (id: string, name: string, parent_id: string | null = null): Project =>
   ({ id, name, color: '#16a34a', position: 1, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {} })
 

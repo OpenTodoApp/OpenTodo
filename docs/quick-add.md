@@ -35,11 +35,13 @@ A dismissed chip stays dismissed while you keep typing; it comes back only if yo
 
 | Token | Meaning | Examples |
 | --- | --- | --- |
-| `#name` | Project, including sub-projects at any depth. Case-insensitive; spaces, `-` and `_` in project names are ignored. An exact name wins, otherwise a unique prefix. If several projects have exactly that name (say *Docs* under both *Work* and *Home*), the shallowest one in the tree wins (a fixed tie-break by id decides between equals, so every device picks the same one); the chip shows the path (`#Work › Docs`) so you can see which. Archived and deleted projects are skipped. If nothing matches, or a prefix fits more than one project, the token stays in the title. | `#work`, `#trav` (Travel), `#sideproject` (Side Project), `#q4` (Work › Docs › Q4 launch) |
-| `@name` | Label, matched to an existing label ignoring case. A name with no label yet creates one when you press Enter, with the next free colour, exactly like creating it from the label picker; its chip says *new* until then. Use as many as you like. | `@call`, `@waiting-for` |
+| `#name` | Project, including sub-projects. Case-insensitive; spaces, `-` and `_` are ignored. An exact name wins, otherwise a unique prefix; `#Home/Docs` picks *Docs* under *Home*. If nothing matches, or a prefix fits several projects, the token stays in the title and a grey chip says so. | `#work`, `#trav` (Travel), `#sideproject` (Side Project), `#Home/Docs` |
+| `@name` | Label, matched ignoring case. A name with no label yet creates one when you press Enter; its chip says *New label* until then. Use as many as you like. | `@call`, `@waiting-for` |
 | `p1`–`p4` | Priority, 1 highest, 4 default. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 | `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
+
+Type `#` or `@` and a list of your projects or labels opens under the field, narrowed as you type; arrows move, <kbd>Enter</kbd> or <kbd>Tab</kbd> picks, <kbd>Esc</kbd> closes it. When nothing has that name, the last entry creates it.
 
 Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when French, Spanish or Portuguese is active, because those languages write times as `15h`.
 
@@ -173,7 +175,7 @@ Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, 
 
 ## Not understood
 
-Quick add does not create a project from an unknown `#name`. The server and the REST API do not parse lines; the [`ot` CLI](cli.md) does with `ot add --natural`. Some ideas are listed under [future ideas](../ROADMAP.md#future-ideas).
+An unknown `#name` stays in the title unless you pick **Create project** from the list. The server and the REST API do not parse lines; the [`ot` CLI](cli.md) does with `ot add --natural`. Some ideas are listed under [future ideas](../ROADMAP.md#future-ideas).
 
 ## Data
 

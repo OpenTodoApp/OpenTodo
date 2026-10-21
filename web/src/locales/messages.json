@@ -2277,6 +2277,9 @@
   "Create invitation": [
     "web/src/app/MembersPanel.tsx"
   ],
+  "Create label “{name}”": [
+    "web/src/app/TokenSuggest.tsx"
+  ],
   "Create link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/UsersPanel.tsx"
@@ -2295,6 +2298,9 @@
   ],
   "Create owner account": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Create project “{name}”": [
+    "web/src/app/TokenSuggest.tsx"
   ],
   "Create public link": [
     "web/src/app/PublicLinksSection.tsx"
@@ -4685,6 +4691,7 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/TokenSuggest.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/method/MethodListView.tsx",
@@ -5512,6 +5519,9 @@
   "New label name": [
     "web/src/app/LabelsView.tsx"
   ],
+  "New label “{name}”": [
+    "web/src/app/QuickAdd.tsx"
+  ],
   "New label: {name}": [
     "web/src/lib/assistant.ts"
   ],
@@ -5829,6 +5839,9 @@
   ],
   "No project to walk": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "No project “{name}” · stays in the title": [
+    "web/src/app/QuickAdd.tsx"
   ],
   "No projects yet.": [
     "web/src/app/ProjectsView.tsx",
@@ -7244,6 +7257,7 @@
   "Projects": [
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/TokenSuggest.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/lib/review.ts",
@@ -12392,9 +12406,6 @@
   "never succeeded": [
     "web/src/app/IssuesPanel.tsx"
   ],
-  "new": [
-    "web/src/app/QuickAdd.tsx"
-  ],
   "new account": [
     "web/src/app/auditFormat.ts"
   ],
@@ -13045,6 +13056,9 @@
   ],
   "{count} passkeys": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "{count} projects match “{name}”": [
+    "web/src/app/QuickAdd.tsx"
   ],
   "{count} reminder(s)": [
     "web/src/app/TriageView.tsx"

@@ -13,6 +13,7 @@ import {
 } from '../lib/nlp'
 import type { Due } from '../lib/types'
 import { useDictation } from './useDictation'
+import { useTokenSuggest } from './TokenSuggest'
 import { t, msg, translatedMap, preferredLanguages } from '../lib/i18n'
 
 export type { QuickAddInput }
@@ -30,6 +31,12 @@ const CHIP_HUE: Record<Chip['kind'], HueName> = {
   spent: 'lime',
   recurrence: 'teal',
   reminder: 'yellow',
+}
+
+/** Whether the field's caret is outside `span` (an unmatched token is explained only then). */
+function caretOutside(el: HTMLInputElement | null, span: Span): boolean {
+  const c = el?.selectionStart ?? -1
+  return c < span.start || c > span.end
 }
 
 function nowHHMM(d = new Date()): string {
@@ -164,6 +171,11 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     setHighlight(null)
   }
 
+  // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled })
+  // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
+  const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
+
   const voice = useDictation({
     inputRef, getText: () => valueRef.current, setText: change, settings, projects, labels, shortcut: voiceShortcut,
   })
@@ -191,7 +203,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
 
   return (
     <form id={formId} onSubmit={(e) => void submit(e)}>
-      <div className="flex items-center gap-2">
+      <div className="relative flex items-center gap-2">
         <span className="text-h2 leading-none text-accent">+</span>
         <input
           ref={inputRef}
@@ -199,7 +211,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           placeholder={placeholder}
           value={value}
           onChange={(e) => change(e.target.value)}
+          {...suggest.fieldProps}
           onKeyDown={(e) => {
+            if (suggest.onKeyDown(e)) return
             if (e.key === 'Escape') {
               if (highlight !== null) {
                 e.stopPropagation()
@@ -245,6 +259,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           </Tooltip>
         )}
         {!hideHint && hints && <span className="ui-kbd hidden sm:inline" data-quick-add-hint>{keysOf('list.quick-add')}</span>}
+        {suggest.list}
       </div>
       {voice.enabled && (
         <>
@@ -258,7 +273,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         </>
       )}
       <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
-        {chips.length > 0 && (
+        {(chips.length > 0 || misses.length > 0) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-meta">
             {chips.map((c, i) => {
               const text = chipText(c, projects, labels, parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined)
@@ -276,8 +291,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   {c.kind === 'deadline' && <Icon name="hourglass" size="xs" />}
                   {c.kind === 'someday' && <Icon name="archive" size="xs" />}
                   {c.kind === 'evening' && <Icon name="moon" size="xs" />}
-                  {text}
-                  {c.kind === 'label' && !label && <span className="text-muted" data-new-label>{t('new')}</span>}
+                  {c.kind === 'label' && !label ? <span data-new-label>{t('New label “{name}”', { name: String(c.value) })}</span> : text}
                   <button
                     type="button"
                     className="-my-1 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-muted hover:bg-sunken hover:text-default"
@@ -290,6 +304,17 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                 </Tooltip>
               )
             })}
+            {misses.map((m) => (
+              // A #token that names no project stays in the title; the chip says why and reopens the list (smart-title-tokens D4).
+              <button key={`miss-${m.span.start}`} type="button" data-unmatched={m.reason}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-input px-2 py-0.5 text-muted hover:bg-sunken dark:hover:bg-raised"
+                onClick={() => suggest.openAt(m.span.end)}>
+                <Icon name="folder" size="xs" className="text-faint" />
+                {m.reason === 'ambiguous'
+                  ? t('{count} projects match “{name}”', { count: m.count, name: m.span.text.slice(1) })
+                  : t('No project “{name}” · stays in the title', { name: m.span.text.slice(1) })}
+              </button>
+            ))}
             <span className="text-muted" data-testid="quick-add-title">
               <span className="sr-only">{t('Title:')}{' '}</span>
               {emptyTitle ? <em>{t('Type a title')}</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}

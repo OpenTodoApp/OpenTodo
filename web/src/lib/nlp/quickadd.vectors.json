@@ -2824,6 +2824,48 @@
     "recurrence": null,
     "reminders": []
    }
+  },
+  {
+   "name": "Write #Home/Docs picks Docs under Home",
+   "line": "Write #Home/Docs",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     },
+     {
+      "id": "p-home",
+      "name": "Home"
+     },
+     {
+      "id": "p-work-docs",
+      "name": "Docs",
+      "parent_id": "p-work"
+     },
+     {
+      "id": "p-home-docs",
+      "name": "Docs",
+      "parent_id": "p-home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Write",
+    "due": null,
+    "projectId": "p-home-docs",
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
   }
  ]
 }
