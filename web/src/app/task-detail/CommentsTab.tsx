@@ -8,7 +8,8 @@ import { forwardRef, useCallback, useEffect, useRef, useState, useSyncExternalSt
 import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
 import {
-  canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, type Thread, threadOrder, threadVisible,
+  canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, mentionToken, type ReactionName, type Thread, threadOrder,
+  threadVisible, toggleReaction,
 } from '../../lib/comments'
 import { useCommentAttachments, useCommentRows } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
@@ -21,6 +22,7 @@ import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
 import { Composer, readDraft, type ComposedExtras } from './Composer'
+import { ReactionBar, ReactionMenuItems } from './ReactionBar'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
 
@@ -53,6 +55,8 @@ export interface CommentsViewProps {
   canAttach?: boolean
   onEdit: (id: string, body: string, mentions: string[]) => Promise<boolean>
   onDelete: (id: string) => Promise<unknown>
+  /** Toggle the viewer's reaction (editor-everywhere D8); no reactions without it. */
+  onReact?: (id: string, reaction: ReactionName) => void
   error?: string | null
   /** Comment to scroll to and highlight (from the Activity tab). */
   focusComment?: string | null
@@ -65,8 +69,10 @@ export interface CommentsViewProps {
 }
 
 export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(function CommentsView(
-  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0 }, composerRef,
+  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, onReact, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0 }, composerRef,
 ) {
+  // Mention tokens of the members, shown as chips in the bodies.
+  const mentionChips = new Map(members.map((m) => [mentionToken(m), m.name || m.email]))
   const coarse = useCoarsePointer()
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -123,7 +129,8 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
     const reply = !isReply
     const edit = canEditComment(c, me)
     const del = canDeleteComment(c, me, role)
-    if (!reply && !edit && !del) return null
+    const react = !!onReact && !!me
+    if (!reply && !edit && !del && !(coarse && react)) return null
     if (coarse) {
       return (
         <span className="absolute -top-1 right-0" data-comment-actions>
@@ -131,6 +138,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
             {reply && <MenuItem label={t('Reply')} icon="corner-down-right" onSelect={() => startReply(c.id)} />}
             {edit && <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(c.id)} />}
             {del && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={() => setDeleting(c.id)} />}
+            {react && <ReactionMenuItems comment={c} me={me} onReact={onReact} />}
           </Menu>
         </span>
       )
@@ -165,12 +173,20 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
             <div className="mt-1">
               <Composer id={`edit-${c.id}`} initial={c.body} members={members} me={me} autoFocus submitLabel={t('Save')} label={t('Edit comment')}
                 onCancel={() => setEditing(null)}
-                onSubmit={(body, mentions) => onEdit(c.id, body, mentions).then((ok) => { if (ok) setEditing(null); return ok })} />
+                onSubmit={(body, mentions) => {
+                  // Submitted unchanged: nothing to write (comments "Unchanged edit is byte-identical").
+                  if (body === c.body) {
+                    setEditing(null)
+                    return Promise.resolve(true)
+                  }
+                  return onEdit(c.id, body, mentions).then((ok) => { if (ok) setEditing(null); return ok })
+                }} />
             </div>
           ) : (
             <>
-              {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
+              {c.body && <Markdown source={c.body} taskId={taskId} mentions={mentionChips} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
               <CommentAttachments list={attachments?.get(c.id) ?? []} />
+              {onReact && <ReactionBar comment={c} me={me} name={name} onReact={onReact} coarse={coarse} />}
             </>
           )}
         </div>
@@ -279,6 +295,7 @@ export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(func
       focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost} expand={expand}
       onCreate={(body, mentions, parentId, files, extras) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files, id: extras?.id, embeds: extras?.embeds }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}
-      onDelete={(id) => deleteComment(id)} />
+      onDelete={(id) => deleteComment(id)}
+      onReact={(id, reaction) => void run(() => toggleReaction(id, reaction))} />
   )
 })

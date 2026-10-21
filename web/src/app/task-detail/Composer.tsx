@@ -107,7 +107,11 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
   const options = at && !closed ? mentionCandidates(members, at.query, me) : []
   const listId = `${id}-mentions`
 
+  // The latest text, also before React renders it (Ctrl+Enter right after a keystroke).
+  const bodyRef = useRef(body)
+  bodyRef.current = body
   const setBody = (next: string) => {
+    bodyRef.current = next
     setBodyState(next)
     if (draftTaskId) writeDraft(draftTaskId, next)
   }
@@ -141,10 +145,11 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
 
   const canSend = !!body.trim() || files.length > 0
   async function submit() {
-    if (!canSend || busy) return
+    const text = bodyRef.current
+    if ((!text.trim() && files.length === 0) || busy) return
     setBusy(true)
-    const mentions = richMentions.current ?? mentionsInBody(body, picked)
-    const ok = await onSubmit(body, mentions, files, { id: commentId.current, embeds: embeds.current })
+    const mentions = richMentions.current ?? mentionsInBody(text, picked)
+    const ok = await onSubmit(text, mentions, files, { id: commentId.current, embeds: embeds.current })
     setBusy(false)
     if (ok !== false && !onCancel) {
       setBody('')
@@ -225,7 +230,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
       {rich ? (
         <Suspense fallback={plain}>
           <RichComposerField id={id} value={body} members={members} me={me} label={label} placeholder={placeholder} describedBy={`${id}-hint`}
-            autoFocus={autoFocus || document.activeElement === area.current} taskId={taskId ?? null} fieldRef={richField}
+            autoFocus={autoFocus || (!!area.current && document.activeElement === area.current)} taskId={taskId ?? null} fieldRef={richField}
             onChange={(next, ids) => { richMentions.current = ids; setBody(next) }}
             onSubmit={() => void submit()}
             onEscape={() => { if (onCancel) onCancel(); else (document.activeElement as HTMLElement | null)?.blur() }}

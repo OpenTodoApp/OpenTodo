@@ -40,6 +40,12 @@ export interface RichComposerFieldProps {
   fieldRef: Ref<{ focus: () => void } | null>
 }
 
+/** The editor behind a composer element (tests drive it like a person would). */
+const views = new WeakMap<Element, EditorView>()
+export function composerViewOf(el: Element): EditorView | undefined {
+  return views.get(el)
+}
+
 const canon = (nodes: RNode[]) => JSON.stringify(pmToModel(modelToPm(nodes)))
 
 export default function RichComposerField(p: RichComposerFieldProps) {
@@ -142,6 +148,7 @@ export default function RichComposerField(p: RichComposerFieldProps) {
       },
     })
     view.current = v
+    views.set(v.dom, v)
     if (p.autoFocus) v.focus()
     return () => {
       v.destroy()
