@@ -25,7 +25,7 @@ import { FieldsGroup } from './FieldsGroup'
 import { requestAttach } from './attachRequest'
 import { Facets } from './Facets'
 import { TitleField } from '../TitleField'
-import { applyTitleEdit } from '../titleEdit'
+import { commitTitleEdit } from '../titleEdit'
 import type { EditPlan } from '../../lib/nlp/edit'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -136,13 +136,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     const next = plan.patch.title ?? task.title
     titleBase.current = next
     setTitle(next)
-    const fields = Object.keys(plan.patch)
-    if (!fields.length && !plan.labels.length && !plan.reminders.length) return
-    if (fields.length === 1 && plan.patch.title && !plan.labels.length && !plan.reminders.length) {
-      act(updateTask(task.id, { title: plan.patch.title }))
-      return
-    }
-    act(applyTitleEdit(task, plan, labelList, (id) => projects.find((p) => p.id === id)?.name ?? t('the project')).then((id) => { if (id !== task.id) onOpen?.(id) }))
+    act(commitTitleEdit(task, plan, labelList, (id) => projects.find((p) => p.id === id)?.name ?? t('the project')).then((id) => { if (id !== task.id) onOpen?.(id) }))
   }
   const toggle = (task: Task) => (onToggleComplete ? onToggleComplete(task) : act(completeWithUndo(task.id, !task.completed_at)))
   const remove = () => { act(deleteWithUndo(task.id)); onClose() }

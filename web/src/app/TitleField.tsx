@@ -35,13 +35,17 @@ export interface TitleFieldProps {
   fieldRef?: Ref<HTMLInputElement | HTMLTextAreaElement | null>
   /** Extra attributes for the field (data-task-title). */
   dataAttrs?: Record<string, string | boolean>
+  /** Where the caret starts when the field mounts focused (the inline editor puts it where the click was). */
+  initialCaret?: number
+  /** Runs first on every key; true when the caller handled it (Shift+Enter in the inline editor). */
+  onKeyDownFirst?: (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => boolean
 }
 
 function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {} }: TitleFieldProps) {
+export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {}, initialCaret, onKeyDownFirst }: TitleFieldProps) {
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   useImperativeHandle(fieldRef, () => input.current as HTMLInputElement | HTMLTextAreaElement, [])
   const [focused, setFocused] = useState(false)
@@ -78,8 +82,18 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     onCommit(plan)
   }
 
+  // A field that mounts focused starts with the caret where the caller asked (the click's place).
+  useEffect(() => {
+    const el = input.current
+    if (!el || initialCaret === undefined || document.activeElement !== el) return
+    const at = Math.max(0, Math.min(initialCaret, el.value.length))
+    el.setSelectionRange(at, at)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- on mount only
+  }, [])
+
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (suggest.onKeyDown(e)) return
+    if (onKeyDownFirst?.(e)) return
     if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur() }
     else if (e.key === 'Escape' && onCancel) { e.preventDefault(); e.stopPropagation(); onCancel() }
   }

@@ -38,6 +38,8 @@ export interface BindingContext {
   insertAfter: RefObject<string | null>
   listRoot: RefObject<HTMLDivElement | null>
   projectReadOnly: boolean
+  /** A click on a row's title edits it in place when it applies (inline-task-editing D1); true when it did. */
+  startInline?: (id: string, e?: React.MouseEvent) => boolean
 }
 
 export function useListBindings(c: BindingContext): RowActions {
@@ -138,7 +140,8 @@ export function useListBindings(c: BindingContext): RowActions {
   return useMemo<RowActions>(() => ({
     toggle: (task) => act(live.current.toggleComplete(task.id, !task.completed_at)),
     toggleCollapse: (id) => live.current.toggleCollapsed(id),
-    open: (id) => {
+    open: (id, e) => {
+      if (live.current.startInline?.(id, e)) return
       setSelectedId(id)
       setOpenId(id)
     },

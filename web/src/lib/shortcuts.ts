@@ -189,6 +189,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'project.note', keys: ['Shift+P'], description: 'Edit the current project’s note (Esc saves and closes it)', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'list.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the selected task, or of the ticked tasks', section: 'tasks', scope: 'list' },
   { id: 'list.labels', keys: ['Shift+L'], description: 'Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates)', section: 'tasks', scope: 'list' },
+  { id: 'list.edit-inline', keys: ['F2'], label: 'Edit in place', description: 'Edit the selected task\'s title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details', section: 'tasks', scope: 'list' },
   { id: 'list.estimate', keys: ['e'], description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks', scope: 'list' },
   // Time tracking (time-tracking D5): `y` is free in the list scope; the Inbox
   // triage's `y` is a view entry on a route without a task list.

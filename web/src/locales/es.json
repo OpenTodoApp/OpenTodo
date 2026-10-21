@@ -4225,5 +4225,12 @@
   "Quick dates": "Fechas rápidas",
   "Remove time": "Quitar la hora",
   "This weekend": "Este fin de semana",
-  "Type a date: fri, 3 days, 22/10": "Escribe una fecha: vie, 3 días, 22/10"
+  "Type a date: fri, 3 days, 22/10": "Escribe una fecha: vie, 3 días, 22/10",
+  "Click a task to": "Al hacer clic en una tarea",
+  "Edit in place": "Editar en el sitio",
+  "Edit its title in place, or open its details beside the list. This device only.": "Editar su título en el sitio o abrir sus detalles junto a la lista. Solo este dispositivo.",
+  "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": "Editar en el sitio el título de la tarea seleccionada, con su fecha, prioridad, etiquetas y proyecto debajo; Intro guarda, Esc cancela, Mayús+Intro abre los detalles",
+  "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": "Editando. Intro guarda, Escape cancela, Mayús+Intro abre los detalles.",
+  "Open details": "Abrir detalles",
+  "Task properties": "Propiedades de la tarea"
 }

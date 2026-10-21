@@ -122,6 +122,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+P</kbd> | Edit the current project’s note (Esc saves and closes it) |
 | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd> | Set the priority of the selected task, or of the ticked tasks |
 | <kbd>Shift+L</kbd> | Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates) |
+| <kbd>F2</kbd> | Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details |
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |
 | <kbd>y</kbd> | Start or stop tracking time on the selected task |
 | <kbd>d</kbd> | Set the deadline of the selected task (type fri, 2026-11-06; Enter) |

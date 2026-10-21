@@ -13,7 +13,7 @@
 // says (`implied`, `omitLabel`), colours only what needs attention, shows labels as
 // dots (LabelDots) and moves the counts into a quiet trailing group (`rowCounts`).
 import { Icon, LabelChip, LabelDots, NeutralChip, ReadAs, ToneText, type IconName, type Tone } from '../ui'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useRowDetail, type RowDetail } from '../lib/appearance'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, localDueOf, logicalToday, zoneHint } from '../lib/dates'
@@ -189,6 +189,8 @@ export interface TaskRowProps {
   omitLabel?: string
   /** Every member's tracked minutes on the task, when it has entries (time-tracking D4); a running entry counts to the minute. */
   tracked?: number
+  /** The inline editor in place of the title and metadata (inline-task-editing). */
+  inline?: ReactNode
 }
 
 /**
@@ -196,7 +198,7 @@ export interface TaskRowProps {
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
  */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, detail: detailProp, implied, omitLabel, tracked: trackedProp }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, detail: detailProp, implied, omitLabel, tracked: trackedProp, inline }: TaskRowProps) {
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
   const tracked = trackedProp ?? trackedLive
@@ -377,7 +379,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           </label>
         )}
       </span>
-      <button type="button" className="min-w-0 flex-1 text-left" data-row-open
+      {inline ?? <button type="button" className="min-w-0 flex-1 text-left" data-row-open
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
@@ -393,7 +395,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           )}
         </div>
         {meta}
-      </button>
+      </button>}
       {originChip
         ? <span className="ml-auto flex shrink-0 items-start gap-2" data-row-trailing>{originChip}{!card && quiet}</span>
         : !card && quiet}
