@@ -109,10 +109,10 @@ type Totals struct {
 	// TimeEntries counts created time entries (time-tracking); additive.
 	TimeEntries int `json:"timeEntries"`
 	// Places counts created live places (task-locations); additive.
-	Places int `json:"places"`
-	Entities    int `json:"entities"`
-	Written     int `json:"written"`
-	Ops         int `json:"ops"`
+	Places   int `json:"places"`
+	Entities int `json:"entities"`
+	Written  int `json:"written"`
+	Ops      int `json:"ops"`
 	// Refused counts ops the sync engine refused for authorization reasons (for
 	// example a shared project whose role changed during the import); additive.
 	Refused int `json:"refused,omitempty"`

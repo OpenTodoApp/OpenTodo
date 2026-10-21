@@ -16,7 +16,7 @@ Your tasks are yours. You can download all of them at any time, and bring tasks 
 
 ## Download everything
 
-Open **Settings → Data** and select **Download export (JSON)** in the **Export** row. You get one file with all your projects, sections, tasks and subtasks, labels, reminders, saved views and [time entries](time-tracking.md), including completed tasks and items in the Trash. Shared projects you're a member of are included too.
+Open **Settings → Data** and select **Download export (JSON)** in the **Export** row. You get one file with all your projects, sections, tasks and subtasks, labels, reminders, saved views, [saved locations](locations-and-places.md) and [time entries](time-tracking.md), including completed tasks and items in the Trash. Shared projects you're a member of are included too.
 
 The file is plain JSON, so you can open it in any text editor, keep it as a backup, or load it into another OpenTodo server.
 
