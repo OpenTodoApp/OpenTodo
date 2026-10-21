@@ -18,8 +18,10 @@ export interface RowActions {
 
 type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey'> & {
   labelMap: Map<string, Label>
-  /** Manually ordered view: the row drags and accepts drops. */
+  /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
+  /** Other rows can be dropped on it (a manually ordered list). */
+  reorderable: boolean
   /** Tree list: rows with children get the collapse chevron. */
   collapsible: boolean
   actions: RowActions
@@ -30,7 +32,7 @@ type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTic
  * list's maps, or the stable `actions`, so moving the cursor re-renders only the
  * rows whose `selected` changed.
  */
-export const ListRow = memo(function ListRow({ task, labelMap, draggable, collapsible, actions, ...rest }: ListRowProps) {
+export const ListRow = memo(function ListRow({ task, labelMap, draggable, reorderable, collapsible, actions, ...rest }: ListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   return (
     <TaskRow
@@ -38,7 +40,7 @@ export const ListRow = memo(function ListRow({ task, labelMap, draggable, collap
       task={task}
       labels={labels}
       onPointerDown={draggable ? (e) => actions.drag(e, task) : undefined}
-      dropKey={draggable ? `task:${task.id}` : undefined}
+      dropKey={reorderable ? `task:${task.id}` : undefined}
       onToggle={() => actions.toggle(task)}
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
       onOpen={(e) => actions.open(task.id, e)}

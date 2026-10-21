@@ -209,6 +209,7 @@ e2e:
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
 ui-lint:
+	node --test scripts/ui-check.test.mjs
 	node scripts/ui-check.mjs
 
 ## React hooks lint (web-lint-and-test-hygiene): Rules of Hooks and effect

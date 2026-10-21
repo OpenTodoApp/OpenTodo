@@ -7,6 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
+import { formatTime, localDueOf, setDateTime } from '../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { click, flush, key, render, type } from '../ui/test-utils'
@@ -178,5 +179,27 @@ describe('entering', () => {
     await click(document.querySelector('[data-triage-start]')!)
     expect(location.pathname).toBe('/triage')
     await r.unmount()
+  })
+})
+
+describe('dates on the card (ux-feedback-2)', () => {
+  afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
+
+  it('shows a due time in the 12-hour format and a zone-fixed due in the viewer\'s zone, never the raw HH:MM', async () => {
+    setDateTime({ date_format: 'month-day', time_format: '12h', week_start: 'sun' }, { order: 'DM', hour12: false, weekStart: 1 })
+    await createTask({ title: 'Floating', due: { date: '2026-10-15', time: '15:00' } })
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Floating')
+    const meta = () => document.querySelector('[data-triage-card] p')?.textContent ?? ''
+    expect(meta()).toMatch(/3:00\sPM/)
+    expect(meta()).not.toContain('15:00')
+    await r.unmount()
+    await db.tasks.clear()
+    const zoned = { date: '2026-10-15', time: '15:00', tz: 'Pacific/Auckland' }
+    await createTask({ title: 'Zoned', due: zoned })
+    const r2 = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Zoned')
+    expect(meta()).toContain(formatTime(localDueOf(zoned).time!))
+    await r2.unmount()
   })
 })

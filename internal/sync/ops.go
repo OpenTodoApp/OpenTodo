@@ -552,6 +552,10 @@ var Schema = map[string]map[string]kind{
 		// with it. The note is user-written content (e2ee.ContentFields).
 		"closed_at":     kNumber,
 		"tomorrow_note": kString,
+		// The latest carry-over (ux-feedback-2 D1): JSON {date, items:[{id, field,
+		// before, after}]} so Reopen the day can put it back on any device; "" =
+		// none. Task ids, field names and dates only, never user-written text.
+		"carry_over": kString,
 	},
 }
 

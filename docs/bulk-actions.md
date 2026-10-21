@@ -26,3 +26,7 @@ While tasks are ticked, a bar above the list says how many and offers **Actions*
 ## Preview and undo
 
 Moving and assigning show the changes first, task by task, because they can change who sees a task or notify someone: <kbd>Enter</kbd> applies the checked ones, <kbd>Esc</kbd> changes nothing. Everything else applies at once, and a notice with **Undo** stays for ten seconds (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> works too). Undo puts every task back in one step, except a task someone changed again since, which keeps the newer value and is named. See also [Undo a bulk action](trash-and-history.md#undo-a-bulk-action).
+
+## Drop on the sidebar
+
+From any list or board, drag a task onto a project in the sidebar (or onto **Inbox**) to move it there, or onto a label to add that label. If the task is ticked, every ticked task goes along, as one change that **Undo** takes back. A project you can only view doesn't accept drops, and dropping a task on the label it already has changes nothing. Without a mouse, use **Move to project** in the task's menu (<kbd>.</kbd>) and <kbd>Shift</kbd>+<kbd>L</kbd> for labels.

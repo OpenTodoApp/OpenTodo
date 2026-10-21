@@ -4,6 +4,21 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Reopen the day.** Closed the day too early? Until your day ends, **Reopen the day** next to **Day closed** (or at the top of the Close the day screen) puts the carried-over tasks back where they were and clears the close, on any of your devices, offline too; the line for tomorrow is kept, a task you moved again by hand after closing stays where you put it and is named, and **Undo** takes the reopen back. The carry-over is recorded in an additive synced field, `review.carry_over` (task ids, fields and dates, never content). ([Rhythms](docs/method/rhythms.md#close-the-day))
+- **Drop a task on the sidebar.** From any list or board, drag a task onto a project or **Inbox** to move it there, or onto a label to add that label; ticked tasks go along as one change with **Undo**, and projects you can only view don't accept drops. ([Change several tasks at once](docs/bulk-actions.md#drop-on-the-sidebar))
+
+### Changed
+
+- **Calmer rows.** Hovering a row gives it a faint neutral tint and nothing else; the selected row is marked by a thinner bar and a lighter tint, and hovering it adds nothing.
+- **Sub-projects read as children.** The sidebar indents each level by 16 px, joins a project's open sub-projects to it with a thin guide line, leaves a little space between rows and after an expanded project's subtree, and shows a sub-project's full path as its tooltip.
+- **One page frame.** Every page uses the same frame, at most 80 rem wide: the title and the header's actions stay in the same place when you switch a project between list, board and timeline or go to Labels, Trash or Filter, and lists start at the frame's left edge instead of being centred. Wide boards and timelines scroll sideways inside the frame. ([Interface guide](docs/interface-guide.md#the-page-template))
+
+### Fixed
+
+- **Scheduling shows your date and time formats.** Process the Inbox and Focus showed a due time as `15:00` even with the 12-hour clock, and a time-zone-fixed due in its own zone; they now follow your formats and your zone. The date field's hint now gives an example in your date order instead of `22/10`.
+
 ## [0.9.0] - 2026-10-21
 
 OpenTodo 0.9.0 is about the time you spend in a task, not only the list of them. **Time tracking** and a **Focus** timer log where the hours go, the new **Plan** view lays out the next two weeks against your day length, and **Close the day** wraps up today in one batch. Tasks remember **where they came from** (a page, an email, a GitHub, GitLab, Jira or Linear issue), and assigned **GitHub and GitLab issues** can arrive as tasks by themselves. Everyday editing got calmer: press <kbd>g</kbd> and pause to see where you can go, type `#` or `@` for suggestions, click a title to edit it in place, and read the task panel as four short lines with a When editor in plain words.

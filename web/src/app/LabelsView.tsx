@@ -22,6 +22,7 @@ import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { navigate, type Route } from './router'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { taskDrop } from './taskDrop'
 import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
 import { useFavourites, useIsFavourite } from './useFavourites'
 import { NamePrompt } from './NamePrompt'
@@ -313,8 +314,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move, pin: { checked: pinned, toggle: () => setFavourite('label', label.id, !pinned) } })
 
   return (
-    <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-active={active || undefined} data-find-active={findActive || undefined}
-      className={`group relative rounded-control ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}${findActive ? ' ring-2 ring-focus' : ''}`}>
+    <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
+      className={`group relative rounded-control data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}${findActive ? ' ring-2 ring-focus' : ''}`}>
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (

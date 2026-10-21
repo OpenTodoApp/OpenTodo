@@ -4,7 +4,7 @@
 // understood previewed under it, and the month calendar, always visible. Every pick
 // commits at once; nothing hides behind an icon.
 import { type KeyboardEvent, useEffect, useId, useState } from 'react'
-import { formatDate, logicalToday, type QuickChoice } from '../../lib/dates'
+import { addDaysISO, formatDate, logicalToday, type QuickChoice } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { CalendarGrid, inputLanguages } from './DateField'
@@ -89,7 +89,7 @@ export function DatePicker({ value, onChange, label, choices, chosen, onChoice, 
       <div>
         <label htmlFor={fieldId} className="sr-only">{label}</label>
         <input id={fieldId} className="ui-input w-full" autoComplete="off" spellCheck={false} autoFocus={autoFocus}
-          value={editing ? draft : words} placeholder={emptyText ?? t('Type a date: fri, 3 days, 22/10')}
+          value={editing ? draft : words} placeholder={emptyText ?? t('Type a date: fri, 3 days, {example}', { example: formatDate(addDaysISO(today, 1), 'numeric', resolved) })}
           aria-describedby={previewId} aria-invalid={!!error}
           onFocus={(e) => { setEditing(true); setDraft(words); e.currentTarget.select() }}
           onChange={(e) => { setEditing(true); setDraft(e.target.value); setError(null) }}

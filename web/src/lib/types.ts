@@ -467,6 +467,8 @@ export interface Review {
   closed_at: number
   /** The one-line note for tomorrow written at that close; content (encrypted for encrypted accounts). */
   tomorrow_note: string
+  /** The latest carry-over as JSON (ux-feedback-2 D1), "" = none: what Reopen the day puts back. Not content. */
+  carry_over: string
   _clock: Clock
 }
 

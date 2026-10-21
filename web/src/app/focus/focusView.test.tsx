@@ -13,6 +13,8 @@ import { click, flush, key, render, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate, parseRoute, routePath } from '../router'
 import { Shell } from '../Shell'
+import { setDateTime } from '../../lib/dates'
+import { FocusTask } from './FocusParts'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const T0 = new Date(2026, 9, 14, 9, 0).getTime()
@@ -284,6 +286,20 @@ describe('accessibility', () => {
     await waitFor(() => (document.activeElement as HTMLElement | null)?.dataset.doneAction === 'break', 'focus on Start the break')
     expect([...document.querySelectorAll('[data-done-action]')].map((b) => b.textContent)).toEqual(['Start the break', 'Complete the task', 'Next task'])
     expect(q('[data-focus-worked]')?.textContent).toBe('25:00 worked')
+    await r.unmount()
+  })
+})
+
+describe('the task\'s due (ux-feedback-2)', () => {
+  afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
+
+  it('follows the 12-hour format instead of showing 15:00', async () => {
+    setDateTime({ date_format: 'day-month', time_format: '12h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
+    const id = await createTask({ title: 'Call the bank', due: { date: TODAY, time: '15:00' } })
+    const r = await render(<FocusTask task={(await db.tasks.get(id))!} />)
+    const text = r.container.querySelector('[data-focus-task] p')?.textContent ?? ''
+    expect(text).toMatch(/3:00\sPM/)
+    expect(text).not.toContain('15:00')
     await r.unmount()
   })
 })

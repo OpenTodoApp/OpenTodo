@@ -344,6 +344,43 @@ describe('resize and collapse (ux-overhaul 4.9)', () => {
   })
 })
 
+describe('children read as children (ux-feedback-2 D6)', () => {
+  it('16 px per level, guide lines beside every descendant (decoration only), 6 px after an expanded root, the path as a tooltip', async () => {
+    const work = await createProject({ name: 'Work' })
+    const client = await createProject({ name: 'Client A', parent_id: work })
+    const q4 = await createProject({ name: 'Q4 launch', parent_id: client })
+    const hiring = await createProject({ name: 'Hiring', parent_id: work })
+    const home = await createProject({ name: 'Home' })
+    await setCollapsedProjects(new Set())
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
+    await waitFor(() => !!r.container.querySelector(`[data-project-row="${q4}"]`))
+    const rowOf = (id: string) => r.container.querySelector<HTMLElement>(`[data-project-row="${id}"]`)!
+    expect([work, client, q4, hiring, home].map((id) => rowOf(id).style.paddingLeft)).toEqual(['0rem', '1rem', '2rem', '1rem', '0rem'])
+    expect([work, client, q4, hiring, home].map((id) => rowOf(id).querySelectorAll('[data-guide-line]').length)).toEqual([0, 1, 2, 1, 0])
+    for (const line of r.container.querySelectorAll('[data-guide-line]')) expect(line.getAttribute('aria-hidden')).toBe('true')
+    // Hiring ends Work's subtree: 6 px before Home; other rows are 2 px apart.
+    expect(rowOf(hiring).className).toContain('mb-1.5')
+    expect(rowOf(client).className).toContain('mb-0.5')
+    expect(r.container.querySelector(`[data-project-id="${q4}"]`)!.getAttribute('title')).toBe('Work › Client A › Q4 launch')
+    expect(r.container.querySelector(`[data-project-id="${work}"]`)!.hasAttribute('title')).toBe(false)
+    await r.unmount()
+  })
+
+  it('Guide lines stop at the capped indentation on a deep tree', async () => {
+    let parent: string | null = null
+    const ids: string[] = []
+    for (const name of ['L0', 'L1', 'L2', 'L3', 'L4']) { parent = await createProject({ name, parent_id: parent }); ids.push(parent) }
+    await setCollapsedProjects(new Set())
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
+    await waitFor(() => !!r.container.querySelector(`[data-project-row="${ids[4]}"]`))
+    const deepest = r.container.querySelector<HTMLElement>(`[data-project-row="${ids[4]}"]`)!
+    expect(deepest.querySelectorAll('[data-guide-line]').length).toBe(3)
+    expect(deepest.style.paddingLeft).toBe('3rem')
+    expect(r.container.querySelector(`[data-project-id="${ids[4]}"]`)!.getAttribute('title')).toBe('L0 › L1 › L2 › L3 › L4')
+    await r.unmount()
+  })
+})
+
 // ---- sidebar-groups: collapsible groups, tree defaults, find in the sidebar ----
 
 /** Thirty projects in nine roots, as the exploration seeded them. */

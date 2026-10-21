@@ -19,6 +19,8 @@ func TestOpenLoopsFieldsValidate(t *testing.T) {
 		{"review", "monthly_at", `1700000000000`, `true`},
 		{"review", "focus_date", `"2026-10-18"`, `20261018`},
 		{"review", "focus", `"t1,t2,t3"`, `["t1"]`},
+		// ux-feedback-2 D1: the latest carry-over as a JSON string.
+		{"review", "carry_over", `"{\"date\":\"2026-10-21\",\"items\":[]}"`, `{"date":"2026-10-21"}`},
 	}
 	for _, c := range cases {
 		op := Op{ID: "o", Entity: c.entity, EntityID: "me", Field: c.field, TS: 1, Device: "D"}
@@ -60,5 +62,22 @@ func TestReviewStampIsPersonal(t *testing.T) {
 	}
 	if got := stamps("bob", "B2"); !slices.Equal(got, []string{"4000"}) {
 		t.Fatalf("bob's other device got %v", got)
+	}
+}
+
+// TestCarryOverUnknownToOlderSchema (ux-feedback-2, weekly-review "Reopen the
+// day", scenario "Older server"): a server whose schema lacks carry_over rejects
+// that op as an unknown field, while the close stamp is still accepted.
+func TestCarryOverUnknownToOlderSchema(t *testing.T) {
+	saved := Schema["review"]["carry_over"]
+	delete(Schema["review"], "carry_over")
+	defer func() { Schema["review"]["carry_over"] = saved }()
+	op := Op{ID: "o", Entity: "review", EntityID: "me", Field: "carry_over", Value: []byte(`""`), TS: 1, Device: "D"}
+	if err := Validate(op); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("carry_over on an older schema: err %v, want ErrInvalidOp", err)
+	}
+	op.Field, op.Value = "closed_at", []byte(`0`)
+	if err := Validate(op); err != nil {
+		t.Fatalf("closed_at refused: %v", err)
 	}
 }

@@ -3,7 +3,7 @@
 // subtasks) and the two dialogs (the task picker and the Countdown length).
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Button, ComboboxPanel, Dialog, Field, Icon, Input } from '../../ui'
-import { formatDate } from '../../lib/dates'
+import { formatDueLong } from '../../lib/dates'
 import { useProjects, useSubtasks } from '../../lib/localData'
 import { COUNTDOWN_BOUNDS, modeName, type FocusMode, type FocusPrefs } from '../../lib/focus/prefs'
 import { clockText, displayMs, inRun, isRunning, type FocusState } from '../../lib/focus/timer'
@@ -14,6 +14,7 @@ import { Markdown } from '../Markdown'
 import { openTaskPanel } from '../panel'
 import { AddSubtask } from '../task-detail/TaskDetail'
 import { completeWithUndo } from '../undoable'
+import { useViewerZone } from '../useViews'
 import { act } from '../actionError'
 
 export { modeName } from '../../lib/focus/prefs'
@@ -88,6 +89,7 @@ export function DoneState({ session, title, heading, actions, first }: { session
 
 /** The task: title, project, due, notes (read-only here; a click opens the panel to edit) and the subtasks as a checklist. */
 export function FocusTask({ task }: { task: Task }) {
+  const zone = useViewerZone()
   const projects = useProjects()
   const subtasks = useSubtasks(task.id)
   const project = task.project_id ? projects.find((p) => p.id === task.project_id) : null
@@ -98,7 +100,7 @@ export function FocusTask({ task }: { task: Task }) {
       {(project || task.due) && (
         <p className="flex flex-wrap gap-2 text-meta text-muted">
           {project && <span className="rounded-chip bg-sunken px-1.5" data-focus-project>{project.name}</span>}
-          {task.due && <span>{t('Due {date}', { date: formatDate(task.due.date, 'long') })}{task.due.time ? ` ${task.due.time}` : ''}</span>}
+          {task.due && <span>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</span>}
         </p>
       )}
       {task.description?.trim()

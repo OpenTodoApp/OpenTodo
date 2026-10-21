@@ -11,7 +11,7 @@ import { mutate, type Change } from './ops'
 import { canEditProject, canEditTasks, roleOf } from './sharing'
 import { compute, countedTasks, overdueOf, sharedIds, type StatsInput } from './stats'
 import { applyBatch } from './undo'
-import type { AssistantUndo } from './db'
+import { db, type AssistantUndo } from './db'
 import { MethodRules, waitingTasks, type MethodInput } from './method/rules'
 import { qualifies } from './triage'
 import type { Membership, Project, Review, Task } from './types'
@@ -325,11 +325,99 @@ export function carryOverLabel(decisions: readonly CarryDecision[]): string {
     : t('{n, plural, one {# task carried over} other {# tasks carried over}}', { n })
 }
 
-/** Applies the carry-over as ONE undoable batch through the bulk path; null when nothing is written. */
+/** One field the carry-over changed (ux-feedback-2 D1): the task, the field and its value before and after. */
+export interface CarryOverItem {
+  id: string
+  field: string
+  before: unknown
+  after: unknown
+}
+
+/** What the latest carry-over changed, stored on the review row as `carry_over` so Reopen works on every device. */
+export interface CarryOverRecord {
+  date: string
+  items: CarryOverItem[]
+}
+
+/** The stored carry-over, or null when there is none or it does not parse. */
+export function carryOverOf(review: Pick<Review, 'carry_over'> | null | undefined): CarryOverRecord | null {
+  if (!review?.carry_over) return null
+  try {
+    const r = JSON.parse(review.carry_over) as CarryOverRecord
+    return typeof r?.date === 'string' && Array.isArray(r.items) ? r : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Applies the carry-over as ONE undoable batch through the bulk path; null when
+ * nothing is written. The same batch records what it changed on the review row
+ * (weekly-review "Reopen the day"), so its Undo also restores the previous record.
+ */
 export async function applyCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string): Promise<{ entry: AssistantUndo | null; label: string; count: number }> {
   const changes = planCarryOver(decisions, tasks, today)
   const applied = tasks.filter((x) => changes.some((c) => c.entityId === x.task.id)).map((x) => decisions.get(x.task.id) ?? { kind: 'tomorrow' as const })
   const label = carryOverLabel(applied)
-  const entry = await applyBatch(await toProposed(changes), { source: 'bulk', label })
+  const proposed = await toProposed(changes)
+  if (proposed.length === 0) return { entry: null, label, count: 0 }
+  const items: CarryOverItem[] = proposed.flatMap((c) => Object.entries(c.patch).map(([field, after]) => ({ id: c.entityId, field, before: c.base?.[field] ?? null, after: after ?? null })))
+  const current = await db.review.get(REVIEW_ID)
+  const record: CarryOverRecord = { date: today, items }
+  proposed.push({ entity: 'review', entityId: REVIEW_ID, patch: { carry_over: JSON.stringify(record) }, base: { carry_over: current?.carry_over ?? '' } })
+  const entry = await applyBatch(proposed, { source: 'bulk', label })
   return { entry, label, count: changes.length }
+}
+
+/** Whether "Reopen the day" is offered: the day was closed on the user's logical `today`. */
+export function canReopenDay(review: Pick<Review, 'closed_at'> | null | undefined, today: string): boolean {
+  return dayClosed(review?.closed_at, today)
+}
+
+export interface ReopenResult {
+  entry: AssistantUndo | null
+  label: string
+  /** Tasks put back. */
+  restored: number
+  /** Titles of tasks left alone because they changed after the close. */
+  skipped: string[]
+}
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+
+/**
+ * Reopens a day closed today (weekly-review "Reopen the day", ux-feedback-2 D1):
+ * ONE undoable batch writes each recorded field back to its value before the
+ * carry-over where the task still holds the value the carry-over wrote (others
+ * are left alone and named), clears `closed_at` and empties `carry_over`, and
+ * keeps the line for tomorrow. A record from another day restores only the stamp.
+ */
+export async function reopenDay(today: string): Promise<ReopenResult> {
+  const review = await db.review.get(REVIEW_ID)
+  if (!canReopenDay(review, today)) return { entry: null, label: '', restored: 0, skipped: [] }
+  const record = carryOverOf(review)
+  const changes: Change[] = []
+  const skipped: string[] = []
+  if (record && record.date === today) {
+    const byTask = new Map<string, CarryOverItem[]>()
+    for (const it of record.items) byTask.set(it.id, [...(byTask.get(it.id) ?? []), it])
+    for (const [id, items] of byTask) {
+      const task = await db.tasks.get(id)
+      if (!task || task.deleted_at) continue
+      const row = task as unknown as Record<string, unknown>
+      if (items.some((it) => !same(row[it.field], it.after))) {
+        skipped.push(task.title)
+        continue
+      }
+      changes.push({ entity: 'task', entityId: id, patch: Object.fromEntries(items.map((it) => [it.field, it.before])) })
+    }
+  }
+  const restored = changes.length
+  const label = restored
+    ? t('{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}', { n: restored })
+    : t('Day reopened')
+  const proposed = await toProposed(changes)
+  proposed.push({ entity: 'review', entityId: REVIEW_ID, patch: { closed_at: 0, carry_over: '' }, base: { closed_at: review?.closed_at ?? 0, carry_over: review?.carry_over ?? '' } })
+  const entry = await applyBatch(proposed, { source: 'bulk', label })
+  return { entry, label, restored, skipped }
 }

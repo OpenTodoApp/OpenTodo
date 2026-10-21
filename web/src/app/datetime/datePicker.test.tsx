@@ -41,6 +41,14 @@ describe('DatePicker', () => {
     await r.unmount()
   })
 
+  it('the placeholder example follows the date format: month-day shows 10/22/2026, never 22/10 (ux-feedback-2)', async () => {
+    setDateTime({ date_format: 'month-day', time_format: '12h', week_start: 'sun' }, SYS)
+    const r = await render(<DatePicker label="Due date" value={null} choices={quickChoices('due')} onChange={() => {}} />)
+    expect(field(r.container).placeholder).toContain('10/22/2026')
+    expect(field(r.container).placeholder).not.toContain('22/10')
+    await r.unmount()
+  })
+
   it('previews a typed phrase before Enter, then sets it', async () => {
     const onChange = vi.fn()
     const r = await render(<DatePicker label="Due date" value={null} choices={quickChoices('due')} onChange={onChange} />)
