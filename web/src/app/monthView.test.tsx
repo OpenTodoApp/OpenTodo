@@ -91,6 +91,18 @@ describe('month grid', () => {
     await r.unmount()
   })
 
+  it('fills rows in the project hue and dims the ones of days before today (surfaces-v2)', async () => {
+    const old = await createTask({ title: 'Old', due: { date: '2026-11-10' } })
+    const soon = await createTask({ title: 'Soon', due: { date: '2026-11-20' } })
+    const r = await render(<MonthView />)
+    await waitFor(() => r.container.querySelector(`[data-month-task="${soon}"]`) !== null)
+    expect(r.container.querySelector(`[data-month-task="${old}"]`)!.className).toContain('ui-block--past')
+    const row = r.container.querySelector(`[data-month-task="${soon}"]`)!
+    expect(row.className).toContain('ui-block')
+    expect(row.className).not.toContain('ui-block--past')
+    await r.unmount()
+  })
+
   it('dropping a task on another day keeps its time', async () => {
     const id = await createTask({ title: 'Call', due: { date: '2026-11-17', time: '14:30' } })
     const r = await render(<MonthView />)

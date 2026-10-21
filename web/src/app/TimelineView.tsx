@@ -44,7 +44,7 @@ export function deadlineStep(task: Pick<Task, 'due' | 'deadline'>, days: number,
   return base ? addDaysISO(base, days) : null
 }
 
-export function TimelineView({ groups, today, zone, editable, selectedId, onSelect, onOpen, byId }: {
+export function TimelineView({ groups, today, zone, editable, selectedId, onSelect, onOpen, byId, hue }: {
   groups: readonly TimelineGroup[]
   today: string
   zone?: string
@@ -54,6 +54,8 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   onOpen: (id: string) => void
   /** Every live task, for the blocked state of a row. */
   byId: ReadonlyMap<string, Task>
+  /** The project's hue for the bars (surfaces-v2 D1); undefined draws them in the neutral hue. */
+  hue?: string
 }) {
   const { resolved } = useDateTimeFormat()
   const [zoom, setZoom] = useState<Zoom>(readZoom)
@@ -204,12 +206,16 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     }
     const clippedLeft = dayOffset(ax.from, s.from) < 0
     const clippedRight = dayOffset(ax.from, s.to) > totalDays - 1
+    // The part before today is dimmed (surfaces-v2 D3): the whole bar when it ended, a second segment when it crosses today.
+    const allPast = !s.late && s.to < today
+    const pastDays = !s.late && !allPast && s.from < today ? Math.min(to + 1, dayOffset(ax.from, today)) - from : 0
     return (
-      <div data-bar={task.id} data-late={s.late || undefined}
+      <div data-bar={task.id} data-late={s.late || undefined} data-hue={hue}
         onPointerDown={(e) => startDrag(e, task, 'move')}
         onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
-        className={`absolute top-1.5 flex h-5 items-center rounded-chip border ${s.late ? 'border-danger bg-danger-soft' : 'border-accent bg-accent-soft'} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : ''}`}
+        className={`ui-block ui-block--row absolute top-1.5 flex h-5 items-center ${s.late ? 'ui-block--late' : ''} ${allPast ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : ''}`}
         style={{ left: from * px, width: Math.max(px, (to - from + 1) * px) }}>
+        {pastDays > 0 && <span data-bar-past aria-hidden className="ui-block ui-block--row ui-block--past pointer-events-none absolute inset-y-0 rounded-e-none" style={{ insetInlineStart: -3, width: pastDays * px }} />}
         {clippedLeft && <Icon name="chevron-left" size="xs" className="text-muted" />}
         {editable && !clippedLeft && <span data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, task, 'start')} />}
         {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(ax.from, s.dueAt) >= 0 && (
