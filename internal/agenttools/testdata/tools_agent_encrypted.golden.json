@@ -377,7 +377,7 @@
                   "type": "integer"
                 },
                 "project_id": {
-                  "description": "Project id (see list_projects); omit for the inbox.",
+                  "description": "Project id (see list_projects); omit for no project (the Inbox while the task is not scheduled).",
                   "type": "string"
                 },
                 "recurrence": {
