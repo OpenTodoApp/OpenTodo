@@ -1,11 +1,15 @@
 ## MODIFIED Requirements
 
 ### Requirement: Inbox is the default container
-A task SHALL be an Inbox task while it is open, not deleted, has no project and is not scheduled. A task SHALL be scheduled when it has a do-on date (`due`), a start date (`start` set to a date) or is parked in Someday (`start` set to `someday`). A deadline, a reminder, a repeat rule without a do-on date, a label or an assignee SHALL NOT make a task scheduled. Membership SHALL be computed on every device from the task's own fields, with no operation written, so it works offline and changes exactly when those fields converge. Every place that lists or counts the Inbox (the Inbox view and its counts, the Process control and the triage queue, the weekly review, the Daily check, the Open Loops pulse, the command-line client, the assistant tools and resources) SHALL use this one rule. The Inbox SHALL always exist and SHALL not be deletable or renamable.
+A task SHALL be an Inbox task while it is open, not deleted, has no project, is not scheduled, and no task above it (its parent, that parent's parent and so on) has a project or is scheduled: a subtask is part of its parent's plan and follows it out of the Inbox. Whether such a parent is open, completed or deleted SHALL NOT matter; a parent the device or server does not know ends the check. A task SHALL be scheduled when it has a do-on date (`due`), a start date (`start` set to a date) or is parked in Someday (`start` set to `someday`). A deadline, a reminder, a repeat rule without a do-on date, a label or an assignee SHALL NOT make a task scheduled. Membership SHALL be computed on every device from the task's own fields, with no operation written, so it works offline and changes exactly when those fields converge. Every place that lists or counts the Inbox (the Inbox view and its counts, the Process control and the triage queue, the weekly review, the Daily check, the Open Loops pulse, the command-line client, the assistant tools and resources) SHALL use this one rule. The Inbox SHALL always exist and SHALL not be deletable or renamable.
 
 #### Scenario: Task without project
 - **WHEN** a task is created outside any project view or its project is cleared
 - **THEN** it is listed in the Inbox while it has no do-on date, no start and is not in Someday
+
+#### Scenario: Subtask of a scheduled parent
+- **WHEN** a task without a project has a do-on date and two subtasks without a project or any date
+- **THEN** neither the task nor its subtasks are in the Inbox or its count, and when the parent's date is removed all three are back in the Inbox
 
 #### Scenario: Scheduling takes a task out of the Inbox
 - **WHEN** an Inbox task without a project is given the do-on date Friday

@@ -37,7 +37,7 @@ A task with a deadline but no due date is listed under its deadline day, after t
 
 ## Where planned tasks go
 
-The Inbox holds tasks with no project and no plan. A due date, a start date or Someday takes a task out, even without a project; clear the date and it comes back. A deadline alone doesn't. The Inbox header counts planned tasks without a project; select it to list them (`no project`).
+The Inbox holds tasks with no project and no plan. A due date, a start date or Someday takes a task out; clear it and the task comes back. Subtasks leave with their parent. A deadline alone doesn't. The Inbox header counts planned tasks without a project; select it to list them (`no project`).
 
 When you want to see the hours, switch to **Week**, which shows your timed tasks as blocks on a grid. See [Time blocking](time-blocking.md).
 

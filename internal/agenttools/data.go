@@ -183,16 +183,34 @@ func plainOrEmpty(e opsync.Entity, field string) string {
 
 func isOpen(t opsync.Entity) bool { return num(t, "completed_at") == 0 }
 
-// inInbox is the Inbox rule (internal/inbox, OpenSpec change inbox-means-unplaced):
-// open, live, without a project and not scheduled (no do-on date, start or Someday).
-func inInbox(t opsync.Entity) bool {
-	return inbox.IsTask(inbox.Task{
+// inboxTask is the part of a task the Inbox rule reads (internal/inbox).
+func inboxTask(t opsync.Entity) inbox.Task {
+	return inbox.Task{
 		ProjectID: rawStr(t, "project_id"),
 		HasDue:    taskDue(t) != nil,
 		Start:     rawStr(t, "start"),
 		Completed: !isOpen(t),
 		Deleted:   num(t, "deleted_at") != 0,
-	})
+		ParentID:  rawStr(t, "parent_id"),
+	}
+}
+
+// inboxRule returns the Inbox rule (internal/inbox, OpenSpec change inbox-means-unplaced)
+// over this snapshot: open, live, not placed, and no placed parent. Build it once per
+// pass; it indexes the snapshot's tasks.
+func (snap *snapshot) inboxRule() func(opsync.Entity) bool {
+	byID := make(map[string]opsync.Entity, len(snap.tasks))
+	for _, t := range snap.tasks {
+		byID[str(t, "id")] = t
+	}
+	parentOf := func(id string) (inbox.Task, bool) {
+		p, ok := byID[id]
+		if !ok {
+			return inbox.Task{}, false
+		}
+		return inboxTask(p), true
+	}
+	return func(t opsync.Entity) bool { return inbox.IsTask(inboxTask(t), parentOf) }
 }
 
 func priority(t opsync.Entity) int {

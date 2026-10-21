@@ -4,7 +4,7 @@
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
 import { formatDateHeading, type ResolvedDateTime } from './dates'
-import { isInboxTask } from './inbox'
+import { inboxTasks } from './inbox'
 import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
@@ -98,8 +98,8 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
     case 'inbox':
-      // No project and not scheduled (lib/inbox, inbox-means-unplaced).
-      return all.filter(isInboxTask)
+      // Not placed, and no placed parent (lib/inbox, inbox-means-unplaced).
+      return inboxTasks(all, allTasks)
     case 'today':
       return todayList(all, today)
     case 'upcoming':

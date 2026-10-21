@@ -253,6 +253,7 @@ func filterTasks(all []task, projects []project, view string, selected *project,
 		visible[p.ID] = !p.Archived && p.DeletedAt == nil
 	}
 	out := make([]task, 0, len(all))
+	inInbox := inboxRule(all)
 	for _, t := range all {
 		if t.DeletedAt != nil {
 			continue
@@ -1037,9 +1038,8 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	return nil
 }
 
-// inInbox is the Inbox rule (internal/inbox, OpenSpec change inbox-means-unplaced):
-// open, live, without a project and not scheduled.
-func inInbox(t task) bool {
+// inboxTask is the part of a task the Inbox rule reads (internal/inbox).
+func inboxTask(t task) inbox.Task {
 	it := inbox.Task{HasDue: t.Due != nil, Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil}
 	if t.ProjectID != nil {
 		it.ProjectID = *t.ProjectID
@@ -1047,5 +1047,25 @@ func inInbox(t task) bool {
 	if t.Start != nil {
 		it.Start = *t.Start
 	}
-	return inbox.IsTask(it)
+	if t.ParentID != nil {
+		it.ParentID = *t.ParentID
+	}
+	return it
+}
+
+// inboxRule returns the Inbox rule (internal/inbox, OpenSpec change inbox-means-unplaced)
+// over all: open, live, not placed, and no placed parent.
+func inboxRule(all []task) func(task) bool {
+	byID := make(map[string]task, len(all))
+	for _, t := range all {
+		byID[t.ID] = t
+	}
+	parentOf := func(id string) (inbox.Task, bool) {
+		p, ok := byID[id]
+		if !ok {
+			return inbox.Task{}, false
+		}
+		return inboxTask(p), true
+	}
+	return func(t task) bool { return inbox.IsTask(inboxTask(t), parentOf) }
 }

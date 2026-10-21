@@ -288,8 +288,10 @@ type task struct {
 	Title       string  `json:"title"`
 	Description string  `json:"description"`
 	ProjectID   *string `json:"project_id"`
-	Priority    int     `json:"priority"`
-	Due         *due    `json:"due"`
+	// ParentID is the parent task for a subtask; it decides Inbox membership too.
+	ParentID *string `json:"parent_id"`
+	Priority int     `json:"priority"`
+	Due      *due    `json:"due"`
 	// Start is a date, "someday" or null (start-dates); it decides Inbox membership.
 	Start       *string  `json:"start"`
 	Labels      []string `json:"labels"`

@@ -68,3 +68,7 @@ Ship web and server together; nothing to migrate. Rollback is a code revert with
 - **"Added to …"** uses the existing undo toast, which gained an optional second control (`action`), shown until it is used or the toast times out.
 - **Empty Inbox sentence.** The empty Inbox view now reads "Inbox zero: every task has a place." with the illustration, like the end of Process the Inbox; "Your Inbox is empty." is gone. The empty-state pattern takes the illustration by name (`illustration="inbox-zero"`), so views still pass data, not nodes; its contract test allows only `data-illustration` drawings.
 - **Tests that relied on the old rule** were moved to a project (the inline editor's Date choice, the Someday keys and the Later group) or rewritten to the new scenarios; a recorded MCP client fixture (`desktop-assistant.json`) now expects `inbox: 0` for its overdue task without a project.
+
+### Follow-up: subtasks follow their parent
+
+After release, a scheduled parent left the Inbox while its subtasks, which had no project or date of their own, stayed in it. A subtask is part of its parent's plan, so the rule now also looks up the parents: a task is in the Inbox only while neither it nor any task above it is placed. The parent's own state (open, completed, deleted) does not matter, only whether it is placed, so an open subtask of a completed, unplaced parent stays visible. Every reader already has all tasks at hand, so each builds one id lookup per pass; the walk stops after 64 levels to survive a cycle in synced data.

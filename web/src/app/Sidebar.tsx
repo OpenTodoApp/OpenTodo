@@ -30,7 +30,7 @@ import { useFavourites } from './useFavourites'
 import { useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
-import { useOpenTasks } from '../lib/liveTasks'
+import { useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { beginDrag } from '../lib/dnd'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
@@ -175,6 +175,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
 
   const openTasks = useOpenTasks()
+  const liveTasks = useLiveTasks()
   const zone = useViewerZone()
   // Re-read every minute, so the counts move to the new day at midnight.
   const today = useToday()
@@ -187,9 +188,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
       if (task.assignee_id === user.id) assigned++
     }
     for (const item of openTasks) if (inToday(item, today)) due++
-    return { inbox: countInbox(openTasks), today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
+    return { inbox: countInbox(openTasks, liveTasks ?? openTasks), today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [openTasks, tree, collapsed_, user.id, zone, today])
+  }, [openTasks, liveTasks, tree, collapsed_, user.id, zone, today])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
   // Only on a real route change, not on mount or on project edits, so a reload (or a
