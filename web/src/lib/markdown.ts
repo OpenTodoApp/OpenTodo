@@ -273,3 +273,10 @@ export function parseInline(s: string, depth = 0, opts: MarkdownOptions = {}): I
   flush()
   return out
 }
+
+/** The attachment ids a Markdown text embeds (`![…](attachment:<id>)` lines). */
+export function embeddedIds(markdown: string): string[] {
+  const out = new Set<string>()
+  for (const m of markdown.matchAll(/!\[(?:\\.|[^\]\\])*\]\(attachment:([A-Za-z0-9_-]+)\)/g)) out.add(m[1])
+  return [...out]
+}

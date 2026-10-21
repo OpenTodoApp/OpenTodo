@@ -14,6 +14,7 @@ import type { ProjectMember } from '../../lib/types'
 import { EditorToolbar, useEditorChrome } from '../EditorChrome'
 import type { CommandEnv } from '../editorCommands'
 import { imageViews } from '../editorImage'
+import { LinkDialog } from '../LinkDialog'
 import { filesFrom } from './AttachmentsRow'
 import { t } from '../../lib/i18n'
 import { isImage } from '../../lib/attachments'
@@ -36,7 +37,6 @@ export interface RichComposerFieldProps {
   onFiles?: (files: File[]) => void
   /** Plan images for embedding: their attachment ids, written with the comment. */
   onImages?: (files: File[]) => Promise<{ id: string; name: string }[]>
-  askLink: (current: string) => Promise<string | null>
   fieldRef: Ref<{ focus: () => void } | null>
 }
 
@@ -70,8 +70,9 @@ export default function RichComposerField(p: RichComposerFieldProps) {
     for (const f of [...planned].reverse()) tr = tr.replaceSelectionWith(schema.nodes.image.create({ id: f.id, alt: f.name.replace(/\.[a-z0-9]+$/i, '') }))
     v.dispatch(tr.scrollIntoView())
   }
+  const [linkAsk, setLinkAsk] = useState<{ current: string; answer: (href: string | null) => void } | null>(null)
   const env: CommandEnv = {
-    notes: false, members: p.members.length > 0, askLink: p.askLink, notify: (m) => chrome.notify(m),
+    notes: false, members: p.members.length > 0, askLink: (current) => new Promise<string | null>((answer) => setLinkAsk({ current, answer })), notify: (m) => chrome.notify(m),
     pickImage: p.onImages ? () => picker.current?.click() : undefined,
   }
   const chrome = useEditorChrome({ id: `${useId()}-composer`, env, members: p.members, me: p.me })
@@ -166,6 +167,11 @@ export default function RichComposerField(p: RichComposerFieldProps) {
       <EditorToolbar view={view.current} env={env} visible={focused || menuOpen} onMenu={setMenuOpen} />
       <div ref={host} className="ui-input min-h-16 max-h-60 overflow-y-auto p-0" data-rich-composer />
       {chrome.overlays}
+      {linkAsk && (
+        <LinkDialog current={linkAsk.current}
+          onSubmit={(href) => { linkAsk.answer(href); setLinkAsk(null) }}
+          onCancel={() => { linkAsk.answer(null); setLinkAsk(null) }} />
+      )}
       {p.onImages && (
         <input ref={picker} type="file" accept="image/*" multiple hidden aria-label={t('Choose an image for the comment')}
           onChange={(e) => {

@@ -227,8 +227,8 @@ describe('images', () => {
     const att = (await db.attachments.where('task_id').equals(id).first())!
     expect(att.name).toMatch(/^Pasted image \d{4}-\d{2}-\d{2} .*\.png$/)
     expect(md(v)).toBe(`![${att.name.replace(/\.png$/, '')}](attachment:${att.id})`)
-    vi.restoreAllMocks()
     await unmount()
+    vi.restoreAllMocks()
   })
 
   it('Web image stays a link: a pasted image address becomes a link', async () => {

@@ -4,7 +4,8 @@
 // below mirror those rules so the UI only offers what will be accepted.
 import { db } from './db'
 import { mutate } from './ops'
-import { commitFiles, planFiles } from './attachments'
+import { commitFiles, planFiles, type PlannedFile } from './attachments'
+import { embeddedIds } from './markdown'
 import { currentUserId } from './sharing'
 import type { Comment, Membership, ProjectMember, ProjectRole } from './types'
 import { t } from './i18n'
@@ -15,24 +16,31 @@ import { uuid } from './ids'
  * Files become attachments of the comment, written in the same batch
  * (OpenSpec attachments); a comment with files may have no text.
  */
-export async function createComment(input: { taskId: string; body: string; parentId?: string | null; mentions?: string[]; files?: File[] }): Promise<string> {
+export async function createComment(input: {
+  taskId: string; body: string; parentId?: string | null; mentions?: string[]; files?: File[]
+  /** The id the composer planned images under (editor-everywhere D5), with those images. */
+  id?: string; embeds?: PlannedFile[]
+}): Promise<string> {
   const body = input.body.trim()
   const files = input.files ?? []
   if (!body && files.length === 0) throw new Error(t('a comment needs some text'))
   const author = await currentUserId()
   if (!author) throw new Error(t('sign in to comment'))
-  const id = uuid()
+  const id = input.id ?? uuid()
+  // Images embedded in the body are written with the comment; ones deleted from the text are dropped.
+  const used = new Set(embeddedIds(body))
+  const embeds = (input.embeds ?? []).filter((e) => used.has(e.blob.id))
   // task_id and author_id first: they place and authorize the comment.
   const patch = {
     task_id: input.taskId, author_id: author, body, parent_id: input.parentId ?? null,
     mentions: [...new Set(input.mentions ?? [])], created_at: Date.now(), edited_at: null, deleted_at: null,
   }
-  if (files.length === 0) {
+  if (files.length === 0 && embeds.length === 0) {
     await mutate('comment', id, patch)
     return id
   }
   // Limits are checked before anything is written.
-  const planned = await planFiles(input.taskId, files, { commentId: id })
+  const planned = [...embeds, ...(files.length ? await planFiles(input.taskId, files, { commentId: id }) : [])]
   await commitFiles(planned, [{ entity: 'comment', entityId: id, patch }])
   return id
 }

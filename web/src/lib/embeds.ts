@@ -98,10 +98,3 @@ function useObjectUrl(blob: Blob | undefined): string | null {
   }, [blob])
   return url
 }
-
-/** The attachment ids a Markdown text embeds (`![…](attachment:<id>)` lines). */
-export function embeddedIds(markdown: string): string[] {
-  const out = new Set<string>()
-  for (const m of markdown.matchAll(/!\[(?:\\.|[^\]\\])*\]\(attachment:([A-Za-z0-9_-]+)\)/g)) out.add(m[1])
-  return [...out]
-}

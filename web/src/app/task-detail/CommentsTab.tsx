@@ -20,7 +20,7 @@ import { ConfirmDialog } from '../../ui'
 import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
-import { Composer, readDraft } from './Composer'
+import { Composer, readDraft, type ComposedExtras } from './Composer'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
 
@@ -46,7 +46,7 @@ export interface CommentsViewProps {
   members: ProjectMember[]
   name: (id: string) => string
   /** Resolve true when stored. */
-  onCreate: (body: string, mentions: string[], parentId: string | null, files: File[]) => Promise<boolean>
+  onCreate: (body: string, mentions: string[], parentId: string | null, files: File[], extras?: ComposedExtras) => Promise<boolean>
   /** Attachments by comment id (OpenSpec attachments), shown under each comment. */
   attachments?: Map<string, Attachment[]>
   /** Offer the composer's attach button. */
@@ -64,7 +64,7 @@ export interface CommentsViewProps {
   expand?: number
 }
 
-export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewProps>(function CommentsView(
+export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(function CommentsView(
   { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0 }, composerRef,
 ) {
   const coarse = useCoarsePointer()
@@ -202,7 +202,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
       )}
       <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
         submitLabel={replyTarget ? t('Reply') : t('Comment')} label={replyTarget ? t('Write a reply') : t('Write a comment')} attach={canAttach}
-        onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) { setReplyTo(null); posted.current = true } return ok })} />
+        taskId={taskId} onSubmit={(body, mentions, files, extras) => onCreate(body, mentions, replyTarget?.id ?? null, files, extras).then((ok) => { if (ok) { setReplyTo(null); posted.current = true } return ok })} />
     </div>
   ) : (
     <p className="text-meta text-faint">{t('Sign in to comment.')}</p>
@@ -249,7 +249,7 @@ export interface CommentsTabProps {
 }
 
 /** Container: reads comments, members and the signed-in user from local storage. */
-export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
+export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
@@ -277,7 +277,7 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}
       role={roleOf(task.project_id, memberships)} members={mentionableMembers(task.project_id, memberships)} name={name} error={error}
       focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost} expand={expand}
-      onCreate={(body, mentions, parentId, files) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files }))}
+      onCreate={(body, mentions, parentId, files, extras) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files, id: extras?.id, embeds: extras?.embeds }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}
       onDelete={(id) => deleteComment(id)} />
   )
