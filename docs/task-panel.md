@@ -11,7 +11,7 @@ order: 11
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right: the checkbox and title at the top, the notes, then four short lines for where the task lives, when it is due, its priority and labels, and who it waits for, with Add under them."></picture>
 
-Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel. Every change is saved as you make it; there is no Save button. Click empty space in the list, or press <kbd>Esc</kbd>, to let go of it.
+Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel. Every change is saved as you make it; there is no Save button. Click empty space or press <kbd>Esc</kbd> to let go.
 
 ## The top of the panel
 
