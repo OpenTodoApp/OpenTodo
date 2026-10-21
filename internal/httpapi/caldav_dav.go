@@ -178,6 +178,10 @@ type davView struct {
 	byCal   map[string][]opsync.Entity
 	byRes   map[string]opsync.Entity
 	uidToID map[string]string
+	// The user's live reminders by task id, and each reminder's task, loaded
+	// once per request (caldav-interop D5): they are served as VALARMs.
+	reminders map[string][]opsync.Entity
+	remTask   map[string]string
 }
 
 func (d *davRequest) load() (*davView, error) {
@@ -216,6 +220,18 @@ func (d *davRequest) load() (*davView, error) {
 	labels, err := d.s.sync.List(ctx, uid, "label", false)
 	if err != nil {
 		return nil, err
+	}
+	reminders, err := d.s.sync.List(ctx, uid, "reminder", false)
+	if err != nil {
+		return nil, err
+	}
+	v.reminders, v.remTask = map[string][]opsync.Entity{}, map[string]string{}
+	for _, r := range reminders {
+		tid := idOf(r["task_id"])
+		v.remTask[idOf(r["id"])] = tid
+		if _, live := v.byID[tid]; live && isNullish(r["deleted_at"]) {
+			v.reminders[tid] = append(v.reminders[tid], r)
+		}
 	}
 	for _, l := range labels {
 		id, name := idOf(l["id"]), idOf(l["name"])
@@ -367,6 +383,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 		UID: v.uidOf(id), Title: idOf(t["title"]), Description: idOf(t["description"]),
 		Priority: int(numberOf(t["priority"])), CreatedAt: int64(numberOf(t["created_at"])),
 		Recurrence: idOf(t["recurrence"]), Extra: idOf(t["ical_extra"]), Modified: v.modified[id],
+		EstimateMinutes: int(numberOf(t["estimate_minutes"])), Reminders: v.remindersFor(id),
 	}
 	if ct.Priority == 0 {
 		ct.Priority = 4
@@ -819,6 +836,14 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 	}
 	for id := range delta.Purged["task"] {
 		candidates[id] = true
+	}
+	// A reminder change changes its task's VALARMs and ETag (caldav-interop).
+	for rid := range delta.Fields["reminder"] {
+		if tid, ok := v.remTask[rid]; ok {
+			candidates[tid] = true
+		} else if r, err := d.s.sync.Get(d.ctx(), uid, "reminder", rid); err == nil && r != nil {
+			candidates[idOf(r["task_id"])] = true
+		}
 	}
 	// A renamed label changes CATEGORIES of every task that carries it.
 	if changed := delta.Fields["label"]; len(changed) > 0 {

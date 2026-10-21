@@ -24,6 +24,9 @@ func Decode(body []byte) (*Inbound, error) {
 	for i := range master.Props {
 		d.prop(master, i)
 	}
+	if d.err != nil {
+		return nil, d.err
+	}
 	in := d.in
 	in.Completed = d.status == "COMPLETED" || d.status == "CANCELLED" || (d.status == "" && in.CompletedAt != nil)
 	if !in.Completed {
@@ -31,6 +34,12 @@ func Decode(body []byte) (*Inbound, error) {
 	}
 	d.dates()
 	for _, ch := range master.Children {
+		if ch.Name == "VALARM" {
+			// Alarms are decided by the caller (caldav-interop D4): a mapped
+			// one becomes a reminder, any other is kept as client data there.
+			in.Alarms = append(in.Alarms, decodeAlarm(ch))
+			continue
+		}
 		d.extra = append(d.extra, ch.Lines()...)
 	}
 	in.Extra = strings.Join(d.extra, "\r\n")
@@ -82,6 +91,7 @@ type decoder struct {
 	dtstart *Prop
 	rrule   *Prop
 	status  string
+	err     error
 }
 
 // keep stores a property the task fields do not model as client data.
@@ -145,6 +155,18 @@ func (d *decoder) prop(master *Component, i int) {
 		}
 	case "X-OPENTODO-START", "X-OPENTODO-EVENING":
 		d.opentodoProp(p)
+	case "ESTIMATED-DURATION":
+		d.estimate(p)
+	case "DURATION":
+		// A scheduled block: it makes a DTSTART without DUE a due time, and is
+		// kept as client data (caldav-interop D2).
+		d.in.HasDuration = true
+		d.keep(p)
+	case "X-OPENTODO-ALARMS":
+		// The count this server served, echoed back; consumed, never stored.
+		if n, err := strconv.Atoi(strings.TrimSpace(p.Value)); err == nil && n >= 0 {
+			d.in.ServedAlarms = &n
+		}
 	default:
 		d.keep(p)
 	}
@@ -164,6 +186,20 @@ func (d *decoder) relatedTo(p Prop) {
 		return
 	}
 	d.keep(p)
+}
+
+// estimate reads ESTIMATED-DURATION (RFC 9253) into whole minutes, rounding
+// seconds up; a negative, zero, unparseable or too long value refuses the
+// whole object (caldav-interop "Estimate mapping").
+func (d *decoder) estimate(p Prop) {
+	sec, err := ParseDuration(p.Value)
+	minutes := int((sec + 59) / 60)
+	if err != nil || sec <= 0 || minutes > MaxEstimateMinutes {
+		d.err = fmt.Errorf("%w: ESTIMATED-DURATION %q", ErrInvalidValue, p.Value)
+		return
+	}
+	d.in.EstimateMinutes = &minutes
+	d.in.HasDuration = true
 }
 
 // opentodoProp reads this server's own X-OPENTODO-START and X-OPENTODO-EVENING.
@@ -193,24 +229,37 @@ func (d *decoder) opentodoProp(p Prop) {
 	}
 }
 
-// dates maps DTSTART, DUE and RRULE (design D6): differing DTSTART and DUE are
-// the planned day and the deadline (the date of DUE, any time dropped). Equal
-// ones set the due date only; the DTSTART is the anchor this server writes on
-// recurring tasks (Encode) and is kept as client data only when the rule stays
-// unmapped. A DTSTART without a DUE, or one that does not parse, is client data.
+// dates maps DTSTART, DUE and RRULE to a shape (design D6, caldav-interop
+// D1): differing DTSTART and DUE are the planned day and the deadline (the date
+// of DUE, any time dropped). Equal ones set the due date only; the DTSTART is
+// the anchor this server writes on recurring tasks (Encode) and is kept as
+// client data only when the rule stays unmapped. A DTSTART with a duration and
+// no DUE is a scheduled time: Due is the DTSTART. A DTSTART without a DUE and
+// without a duration, or one that does not parse, is client data.
 func (d *decoder) dates() {
 	in, dtstart, rrule := d.in, d.dtstart, d.rrule
-	in.DueOnly = in.Due != nil && dtstart == nil
-	startEqual := false
-	if dtstart != nil && in.Due != nil {
-		if start, err := parseDue(*dtstart); err == nil {
-			if sameDue(start, in.Due) {
-				startEqual = true
-			} else {
-				in.Deadline = in.Due.Date
-				in.Due = start
-			}
+	var start *Due
+	if dtstart != nil {
+		if st, err := parseDue(*dtstart); err == nil {
+			start = st
 		}
+	}
+	switch {
+	case in.Due != nil && start != nil && sameDue(start, in.Due):
+		in.Shape = ShapeStartDueEqual
+	case in.Due != nil && start != nil:
+		in.Deadline = in.Due.Date
+		in.Due = start
+		in.Shape = ShapeStartDue
+	case in.Due != nil:
+		in.Shape = ShapeDueOnly
+	case start != nil && in.HasDuration:
+		in.Due = start
+		in.Shape = ShapeStartDuration
+	case start != nil:
+		in.Shape = ShapeStartAlone
+	default:
+		in.Shape = ShapeNone
 	}
 	if rrule != nil {
 		in.RRULE = strings.TrimSpace(rrule.Value)
@@ -224,7 +273,9 @@ func (d *decoder) dates() {
 			d.extra = append(d.extra, rrule.Line())
 		}
 	}
-	if dtstart != nil && in.Deadline == "" && !(startEqual && in.Rule != "") {
+	keepStart := in.Shape == ShapeStartAlone || (dtstart != nil && start == nil) ||
+		(in.Shape == ShapeStartDueEqual && in.Rule == "") || (in.Shape == ShapeDueOnly && dtstart != nil)
+	if keepStart {
 		d.extra = append([]string{dtstart.Line()}, d.extra...)
 	}
 }

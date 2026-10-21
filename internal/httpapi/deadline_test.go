@@ -149,9 +149,10 @@ func TestCaldavDeadlineRoundTrip(t *testing.T) {
 	if got := e.task(id); got["deadline"] != "2026-11-20" || got["due"] != nil || got["title"] != "Renew passports" {
 		t.Fatalf("after client edit: %v", got)
 	}
-	// Equal DTSTART and DUE set the due date only and clear the deadline.
+	// Equal DTSTART and DUE set the due date only; the deadline, which the
+	// shape does not name, is kept (caldav-interop "Inbound date shapes").
 	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Renew passports", "DTSTART;VALUE=DATE:20261101", "DUE;VALUE=DATE:20261101"), 204)
-	if got := e.task(id); got["deadline"] != nil || got["due"].(map[string]any)["date"] != "2026-11-01" {
+	if got := e.task(id); got["deadline"] != "2026-11-20" || got["due"].(map[string]any)["date"] != "2026-11-01" {
 		t.Fatalf("equal pair: %v", got)
 	}
 }
