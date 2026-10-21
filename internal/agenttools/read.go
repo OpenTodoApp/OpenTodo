@@ -452,7 +452,7 @@ func (r *Registry) taskDetail(ctx context.Context, userID, id string, loc *time.
 	}
 	subtasks, _, _ := page(subs, "", MaxItems)
 	comments := []commentOut{}
-	list, err := r.sync.TaskComments(ctx, userID, id)
+	list, err := r.taskComments(ctx, userID, id)
 	if errors.Is(err, opsync.ErrNotFound) {
 		return nil, ErrTaskNotFound
 	}
@@ -473,7 +473,7 @@ func (r *Registry) taskDetail(ctx context.Context, userID, id string, loc *time.
 		shown[c.ID] = true
 	}
 	attachments := []attachmentOut{}
-	all, err := r.sync.List(ctx, userID, "attachment", false)
+	all, err := r.list(ctx, userID, "attachment", false)
 	if err != nil {
 		return nil, err
 	}

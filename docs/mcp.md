@@ -235,7 +235,26 @@ The bridge then encrypts every title, name and comment body an assistant writes 
 
 > When it starts, the bridge writes: *The assistant will read your encrypted tasks in plain text; your AI provider receives them.* End-to-end encryption keeps your content from the server, not from the model you choose to give it to.
 
-It refuses to start, without prompting, when the key isn't stored (`ot encryption unlock`), or when your passphrase or key changed on another device; a change during a session makes every later request fail with a stale-key error until you unlock again. `ot encryption lock` deletes the key. A remote assistant (a cloud connector) still can't read encrypted content.
+It refuses to start, without prompting, when the key isn't stored (`ot encryption unlock`), or when your passphrase or key changed on another device; a change during a session makes every later request fail with a stale-key error until you unlock again. `ot encryption lock` deletes the key.
+
+#### Cloud connectors through your device
+
+A remote assistant (a cloud connector such as Claude.ai) talks to your server, not to your computer. To let it work on encrypted content, turn on **Settings → Integrations → AI assistants → Answer AI connectors here** on an unlocked device (the web app or the installed app, after confirming your password). While that device is online, the server sends it, sealed for that device only, the values a tool call needs: it decrypts what the result shows and encrypts what a write adds, with the account key that never leaves it. Every tool then works as for an unencrypted account, through the same switches, limits and audit.
+
+> **What this means.** The server never gets your key and keeps nothing it relays, but the text an assistant asks for passes through your server's memory on its way to the assistant, because the connector reads results from the server. Turn it on only for a server you run or trust. The device decrypts at most 5,000 values an hour and 20,000 a day, whatever the server asks, lists recent requests (without their text) and shows a key in the sidebar while it answers. **Confirm changes first** shows every change on the device before anything is written.
+
+It ends when you turn it off, lock the device or sign out there, and when encryption is turned off. Errors an assistant can get:
+
+| Error | When |
+| --- | --- |
+| `device_unavailable` | No opted-in device is online and unlocked; open OpenTodo on one. Calls that need no text (scheduling, completing, moving) work anyway. |
+| `device_timeout` | The device did not answer within 20 s (reads) or 30 s (writes); nothing was written and no other device is asked. |
+| `device_busy` | Four calls already wait for the device. |
+| `device_limit` | The device reached its hourly or daily limit. |
+| `declined_on_device` | You declined the change on the device. |
+| `rate_limited` | More than 60 relayed calls in a minute (`retry_after_seconds`). |
+
+Encrypted text is not searchable even then, and a task's origin, notes documents and custom field values stay "Encrypted item".
 
 ### Prompt injection
 

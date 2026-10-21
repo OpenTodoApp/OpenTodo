@@ -636,9 +636,26 @@ export function startSync(): void {
 }
 
 /** This tab runs the sync loop now: the timer, the live channel, the first exchange. */
+const leaderListeners = new Set<(leading: boolean) => void>()
+
+/**
+ * Follows whether this tab runs the sync loop (the device relay answers from it
+ * only, mcp-device-relay D5). Called at once with the current state.
+ */
+export function onLeadership(fn: (leading: boolean) => void): () => void {
+  leaderListeners.add(fn)
+  fn(leader && started)
+  return () => leaderListeners.delete(fn)
+}
+
+function tellLeadership(): void {
+  for (const fn of leaderListeners) fn(leader && started)
+}
+
 function lead(): void {
   if (!started) return
   leader = true
+  tellLeadership()
   armTimer()
   requestSync(0)
   connectLive()
@@ -663,6 +680,7 @@ export function stopSync(): void {
   removeListeners?.()
   removeListeners = null
   started = false
+  tellLeadership()
   needNotifications = true
   clearLiveTimers()
   closeSource()
@@ -773,6 +791,7 @@ function electLeader(): void {
 /** Gives up leadership and the channel; the lock is released once the running exchange stopped. */
 function resign(): void {
   leader = false
+  tellLeadership()
   lockAbort?.abort()
   lockAbort = null
   const release = releaseLock

@@ -92,10 +92,10 @@ func (r *Registry) listTimeEntries(ctx context.Context, userID string, a args) (
 	if q.Task != "" && tasks[q.Task] == nil {
 		return nil, ErrTaskNotFound
 	}
-	if prefs, err := r.sync.Get(ctx, userID, "user_prefs", "me"); err == nil && prefs != nil {
+	if prefs, err := r.get(ctx, userID, "user_prefs", "me"); err == nil && prefs != nil {
 		q.DayStart = digest.DayStart(rawStr(prefs, "day_start"))
 	}
-	rows, err := r.sync.List(ctx, userID, "time_entry", false)
+	rows, err := r.list(ctx, userID, "time_entry", false)
 	if err != nil {
 		return nil, err
 	}

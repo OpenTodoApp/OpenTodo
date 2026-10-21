@@ -89,6 +89,10 @@ const (
 	// Outgoing email (OpenSpec `outgoing-email`): a message sent or refused.
 	EmailSentName   Name = "email.sent"
 	EmailFailedName Name = "email.failed"
+	// A device of an encrypted account opted in to answer AI connectors, and
+	// opted out (mcp-device-relay): never a relayed value.
+	RelayEnabledName  Name = "relay.enabled"
+	RelayDisabledName Name = "relay.disabled"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -116,6 +120,7 @@ var Names = []Name{
 	OwnerTransferredName,
 	AgentWriteName,
 	EmailSentName, EmailFailedName,
+	RelayEnabledName, RelayDisabledName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -133,6 +138,7 @@ var PersonalNames = []Name{
 	PasswordResetCompletedName, PasswordChangedName,
 	SignedOutEverywhereName,
 	AgentWriteName,
+	RelayEnabledName, RelayDisabledName,
 }
 
 // Known reports whether n is in the catalogue.
@@ -205,6 +211,10 @@ var allowedDetailKeys = map[string]bool{
 	"device_count":       true,
 	"token_count":        true,
 	"app_password_count": true,
+	// Device relay (mcp-device-relay): the device that answers AI connectors.
+	// Not "device_id", which is an op field name.
+	"relay_device_id":    true,
+	"relay_device_label": true,
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -317,6 +327,18 @@ func TokenCreatedScoped(userID, tokenID, name, scope string) Event {
 // Failed(reason) and count 0.
 func AgentWrite(userID, tool, tokenID, tokenName string, count int) Event {
 	return ev(AgentWriteName, Success, userID, "", "tool", tool, "token_id", tokenID, "token_name", tokenName, "count", strconv.Itoa(count))
+}
+
+// RelayEnabled records that a device of an encrypted account opted in to
+// answer AI connectors (mcp-device-relay D3); never a relayed value.
+func RelayEnabled(userID, deviceID, label string) Event {
+	return ev(RelayEnabledName, Success, userID, "", "relay_device_id", deviceID, "relay_device_label", label)
+}
+
+// RelayDisabled records the end of a device's opt-in and why: user, locked,
+// signed_out or encryption_off.
+func RelayDisabled(userID, deviceID, label, reason string) Event {
+	return ev(RelayDisabledName, Success, userID, "", "relay_device_id", deviceID, "relay_device_label", label, "reason", reason)
 }
 
 // TokenRevoked records a revoked API token.

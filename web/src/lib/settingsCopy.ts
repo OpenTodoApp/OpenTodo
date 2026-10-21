@@ -449,6 +449,14 @@ export const SETTINGS_COPY = {
       },
       url: { label: msg('Endpoint') },
       token: { label: msg('Token for an assistant'), description: msg('Creates an API token to paste into the assistant. Read-only is the safe default.') },
+      // Device relay (mcp-device-relay): the trust model in plain words.
+      relay: {
+        label: msg('Answer AI connectors here'),
+        description: msg('Lets connectors such as Claude.ai read and write your encrypted text through this device.'),
+      },
+      relayConfirm: { label: msg('Confirm changes first'), description: msg('Each change an AI connector asks for shows here before it is written.') },
+      relayDevices: { label: msg('Devices that answer') },
+      relayRecent: { label: msg('Recent requests'), description: msg('What this device answered, without the text.') },
     },
     notices: { offline: msg('Offline: these settings live on the server; this is the last state fetched.') },
   },

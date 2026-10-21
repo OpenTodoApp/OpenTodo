@@ -266,6 +266,10 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		// The identity-token hint is read before the session (and the hint with
 		// it) is deleted; only sessions that started through the provider have one.
 		idToken, viaProvider, _ := s.auth.SessionIDToken(r.Context(), c.Value)
+		// Devices this session opted in stop answering AI connectors (mcp-device-relay).
+		if sess, err := s.auth.LookupSession(r.Context(), c.Value); err == nil && sess.User != nil {
+			s.relayEndSession(r.Context(), sess.User.ID, sess.TokenHash)
+		}
 		if err := s.auth.DeleteSession(r.Context(), c.Value); err == nil && lookupErr == nil {
 			s.audit.Record(r.Context(), audit.Logout(u.ID))
 			if viaProvider {

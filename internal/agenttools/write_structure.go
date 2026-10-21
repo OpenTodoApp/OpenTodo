@@ -299,7 +299,7 @@ func (r *Registry) planSetFavourite(ctx context.Context, c Caller, a args, overl
 	if _, ok := snap.projects[id]; !ok {
 		return Plan{}, notFound("project", []string{id})
 	}
-	prefs, err := r.sync.Get(ctx, c.UserID, "user_prefs", "me")
+	prefs, err := r.get(ctx, c.UserID, "user_prefs", "me")
 	if err != nil {
 		return Plan{}, err
 	}
@@ -354,7 +354,7 @@ func FavouriteEntries(s string) []string {
 
 // liveSections lists a project's live sections in position order.
 func (r *Registry) liveSections(ctx context.Context, uid, projectID string) ([]opsync.Entity, error) {
-	all, err := r.sync.List(ctx, uid, "section", false)
+	all, err := r.list(ctx, uid, "section", false)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +547,7 @@ func (r *Registry) planUpdateSections(ctx context.Context, c Caller, a args, ove
 		if err := checkPatch(p, "section", id, patch); err != nil {
 			return Plan{}, err
 		}
-		cur, err := r.sync.Get(ctx, c.UserID, "section", id)
+		cur, err := r.get(ctx, c.UserID, "section", id)
 		if err != nil {
 			return Plan{}, err
 		}

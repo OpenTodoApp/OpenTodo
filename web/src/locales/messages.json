@@ -877,6 +877,9 @@
   "Am I keeping up?": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "An AI connector wants to make a change": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "An OpenTodo export, a CSV file or another app’s JSON export; open it with {kbd}.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -891,6 +894,9 @@
   ],
   "An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "An assistant asks to run {tool} with this text:": [
+    "web/src/app/RelayConfirm.tsx"
   ],
   "An assistant with a token for changes can edit your tasks; you can undo each one.": [
     "web/src/lib/settingsCopy.ts"
@@ -922,6 +928,15 @@
   ],
   "Another label has this name. Merge them from the menu or the banner on the labels page.": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "Answer AI connectors here": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Answered": [
+    "web/src/app/RelaySettings.tsx"
+  ],
+  "Answering an AI connector": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -984,6 +999,7 @@
     "web/src/app/review/CloseDay.tsx"
   ],
   "Apply": [
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/review/CloseDay.tsx"
   ],
   "Apply all": [
@@ -2006,6 +2022,7 @@
     "web/src/app/palette/entries.ts"
   ],
   "Comment": [
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "Comment by {author}": [
@@ -2162,6 +2179,9 @@
   "Configured": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "Confirm changes first": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Confirm deleting permanently": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2203,6 +2223,9 @@
   ],
   "Connect to the internet to open this file.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Connecting…": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Connection instructions": [
     "web/src/app/AssistantsPanel.tsx"
@@ -2639,6 +2662,12 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "Decline": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
+  "Declined": [
+    "web/src/app/RelaySettings.tsx"
+  ],
   "Defer the selected task: type its start date, Enter": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2827,6 +2856,7 @@
     "web/src/app/SavedViewView.tsx"
   ],
   "Description": [
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/ShareCapture.tsx"
   ],
   "Description changed": [
@@ -2856,14 +2886,26 @@
   "Development builds have no service worker, so push cannot work here. Use the production build (make run, http://localhost:8080) or the installed app. In-app reminders still work.": [
     "web/src/lib/push.ts"
   ],
+  "Device": [
+    "web/src/app/RelaySettings.tsx"
+  ],
+  "Device answers AI connectors": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Device name": [
     "web/src/app/CaldavPanel.tsx"
   ],
   "Device name (e.g. Work laptop)": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "Device stopped answering AI connectors": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Devices sync again. A device that changed something after the backup sends those newer changes back, so they are not lost.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Devices that answer": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Dictate a task": [
     "web/src/app/QuickAdd.tsx"
@@ -3085,6 +3127,9 @@
   ],
   "Duplicate…": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "Each change an AI connector asks for shows here before it is written.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Each code signs you in once if you lose your phone. Keep them somewhere safe, away from this device.": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -4897,6 +4942,7 @@
   ],
   "Label name": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Label name must not be empty": [
@@ -5095,6 +5141,9 @@
   "Let members bring their own key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Lets connectors such as Claude.ai read and write your encrypted text through this device.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Lets this server mail password resets, confirmations and invitations.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -5280,6 +5329,7 @@
   ],
   "Locked": [
     "web/src/app/DataSettings.tsx",
+    "web/src/app/RelaySettings.tsx",
     "web/src/app/SyncStatus.tsx"
   ],
   "Locked on this device": [
@@ -5730,6 +5780,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LabelsView.tsx",
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/locations/PlacesView.tsx"
@@ -6393,6 +6444,7 @@
     "web/src/app/ProjectInviteScreen.tsx"
   ],
   "Note": [
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Notes": [
@@ -6768,6 +6820,9 @@
   "Only accept mail from (optional)": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "Only an account with end-to-end encryption answers AI connectors from a device.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Only for project": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -7111,6 +7166,9 @@
   "Over capacity.": [
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/lib/plan.ts"
+  ],
+  "Over the limit": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Overdue": [
     "web/src/app/calendar/PlanPanel.tsx",
@@ -7588,6 +7646,7 @@
   "Project name": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ProjectsView.tsx",
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/palette/registry.ts"
   ],
@@ -7808,6 +7867,9 @@
   "Read-only: you are a viewer of this shared project. You can still comment.": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Ready": [
+    "web/src/app/RelaySettings.tsx"
+  ],
   "Ready: {mode}": [
     "web/src/app/focus/FocusParts.tsx"
   ],
@@ -7824,6 +7886,9 @@
   "Recent activity": [
     "web/src/app/ActivityPanel.tsx",
     "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Recent requests": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Recent runs": [
@@ -7866,6 +7931,9 @@
   ],
   "Refreshed {ago}": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Refused": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Region": [
     "web/src/app/BackupsPanel.tsx"
@@ -8671,6 +8739,7 @@
     "web/src/app/Sections.tsx"
   ],
   "Section name": [
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/palette/registry.ts"
   ],
@@ -9836,6 +9905,9 @@
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts"
   ],
+  "Text to write": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "Thanks for installing OpenTodo": [
     "web/src/app/WelcomeDialog.tsx"
   ],
@@ -10332,6 +10404,9 @@
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "The server owner has turned AI assistants off.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The server owner requires two-factor authentication for this account.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -10617,7 +10692,11 @@
     "web/src/lib/demo.ts"
   ],
   "This device": [
+    "web/src/app/RelaySettings.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "This device does not answer AI connectors from this session.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This device encrypts your content, but the server says it has no encryption key record. This happens when the server was restored from an older backup or another device turned encryption off. Sync is paused, so nothing is uploaded unencrypted. Choose how to continue.": [
     "web/src/app/UnlockScreen.tsx"
@@ -11075,6 +11154,7 @@
   ],
   "Title": [
     "web/src/app/ImportScreen.tsx",
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-list/InlineEditor.tsx"
@@ -11549,6 +11629,9 @@
   "Unlock this device first: content can only be decrypted with the key.": [
     "web/src/lib/e2ee.ts"
   ],
+  "Unlock this device to turn it on.": [
+    "web/src/app/RelaySettings.tsx"
+  ],
   "Unlock your tasks": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -11969,6 +12052,9 @@
   "What may be sent": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
+  "What this device answered, without the text.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "What will happen": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -12016,6 +12102,9 @@
   ],
   "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "While this is on, text an assistant asks for passes through your server to reach the assistant; the server never gets your key and keeps nothing. This device decrypts at most {hour} values an hour and {day} a day, and stops when you lock it or sign out.": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Who": [
     "web/src/app/task-detail/Facets.tsx"
@@ -12602,6 +12691,9 @@
   "deadline {date}, {count}": [
     "web/src/lib/facets.ts"
   ],
+  "declined on the device": [
+    "web/src/app/auditFormat.ts"
+  ],
   "deleted": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -12624,6 +12716,9 @@
   ],
   "deleted|version": [
     "web/src/lib/historyVersions.ts"
+  ],
+  "device locked": [
+    "web/src/app/auditFormat.ts"
   ],
   "dismissed": [
     "web/src/app/RemindersField.tsx"
@@ -12710,6 +12805,9 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "encrypted account": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "encryption turned off": [
     "web/src/app/auditFormat.ts"
   ],
   "end-to-end encryption": [
@@ -12959,6 +13057,9 @@
   ],
   "no deadline": [
     "web/src/app/RemindersField.tsx"
+  ],
+  "no device online to answer": [
+    "web/src/app/auditFormat.ts"
   ],
   "no due date": [
     "web/src/app/RemindersField.tsx"
@@ -13282,6 +13383,9 @@
   "sign in to comment": [
     "web/src/lib/comments.ts"
   ],
+  "signed out": [
+    "web/src/app/auditFormat.ts"
+  ],
   "signing secret": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -13339,6 +13443,12 @@
   "the deadline": [
     "web/src/app/RemindersField.tsx",
     "web/src/lib/activity.ts"
+  ],
+  "the device did not answer in time": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "the device reached its limit": [
+    "web/src/app/auditFormat.ts"
   ],
   "the estimate": [
     "web/src/lib/activity.ts"
@@ -13433,6 +13543,9 @@
     "web/src/app/AssistantsPanel.tsx"
   ],
   "too many attempts": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "turned off": [
     "web/src/app/auditFormat.ts"
   ],
   "unarchived the project": [
@@ -13987,6 +14100,12 @@
   "{n, plural, one {# tracked task has no estimate} other {# tracked tasks have no estimate}}": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "{n, plural, one {# value read} other {# values read}}": [
+    "web/src/app/RelaySettings.tsx"
+  ],
+  "{n, plural, one {# value written} other {# values written}}": [
+    "web/src/app/RelaySettings.tsx"
+  ],
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -14298,6 +14417,9 @@
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "{token} asks to run {tool} with this text:": [
+    "web/src/app/RelayConfirm.tsx"
   ],
   "{total} completed in the last 53 weeks; busiest day {date} with {n}; current streak {streak, plural, one {# day} other {# days}}.": [
     "web/src/app/review/StatsView.tsx"
