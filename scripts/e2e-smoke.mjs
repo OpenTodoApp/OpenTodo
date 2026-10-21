@@ -74,7 +74,9 @@ await quick.fill('Water the plants tomorrow p2')
 await page.locator('[data-chip="priority"]').filter({ hasText: 'P2' }).waitFor() // the preview chip
 await page.locator('[data-chip="due"]').waitFor()
 await quick.press('Enter')
-await row(page, 'Water the plants').waitFor()
+// A dated task is not an Inbox task (inbox-means-unplaced): quick add says where it went.
+await page.locator('[data-bulk-toast]', { hasText: 'Added to Tomorrow' }).locator('[data-toast-action]').waitFor()
+if (await row(page, 'Water the plants').count()) throw new Error('a dated task stayed in the Inbox')
 
 step('project via sidebar')
 // The sidebar's + is a menu (ux-overhaul); its first item adds a project.
@@ -117,6 +119,7 @@ await snap(page, 'today')
 step('upcoming view')
 await page.keyboard.press('g'); await page.keyboard.press('u')
 await row(page, 'Pick paint colours').waitFor()
+await row(page, 'Water the plants').waitFor() // dated without a project: in Upcoming, not the Inbox
 
 step('wait for sync, verify server state via REST')
 // The sync indicator is an icon since ux-overhaul: poll the server until the edits arrived.
@@ -300,7 +303,8 @@ await mp.goto(base)
 await mp.getByLabel('Email').fill('ada@example.com')
 await mp.getByLabel(/Password/).fill('correct horse battery staple')
 await mp.getByRole('button', { name: 'Sign in', exact: true }).click()
-await row(mp, 'Write the OpenTodo README').waitFor({ timeout: 10000 })
+// Triage's t dated the README task, so it is in Today now, not the Inbox (inbox-means-unplaced): any row will do.
+await mp.locator('[data-task-id]').first().waitFor({ timeout: 10000 })
 await snap(mp, 'mobile-dark')
 
 await browser.close()

@@ -108,6 +108,8 @@ async function seed() {
   const today = new Date().toISOString().slice(0, 10)
   const T = (b) => A('POST', '/api/v1/tasks', b)
   await T({ title: 'Inbox task with a deliberately long title that has to wrap or truncate on a narrow phone screen', priority: 1, due: { date: today }, labels: [L.errand, L.waiting] })
+  // Undated and without a project: an Inbox task (inbox-means-unplaced); dated tasks without a project are not.
+  await T({ title: 'Undated inbox task with a long title that has to wrap or truncate on a narrow phone screen', labels: [L.errand] })
   await T({ title: 'Renew passport', priority: 2, due: { date: today }, labels: [L.errand], estimate_minutes: 30 })
   await T({ title: 'Read ' + LONG_URL, description: 'See ' + LONG_URL })
   const quotes = await T({ title: 'Get three quotes for the kitchen', project_id: home.id, section_id: sections['In progress'], due: { date: today, time: '10:00' }, estimate_minutes: 60 })
@@ -187,7 +189,7 @@ function screens(ids) {
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'public-list', path: `/public/${ids.publicLink}`, anon: true, ready: (p) => p.locator('[data-public-task]').first().waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog', 'template-detail'] },
+    { name: 'inbox', path: '/inbox', ready: row('Undated inbox task'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog', 'template-detail'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
@@ -196,7 +198,7 @@ function screens(ids) {
     { name: 'display-project', path: `/display/project/${ids.home}?size=xl`, ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
     { name: 'display-view', path: `/display/view/${ids.view}?contrast=high`, ready: (p) => p.locator('[data-screen="display"] h1').waitFor() },
     { name: 'public-display', path: `/public/${ids.publicLink}?display=1&eink=1`, anon: true, ready: (p) => p.locator('[data-screen="public/display"] [data-display-row]').first().waitFor() },
-    { name: 'triage', path: '/triage', ready: (p) => p.locator('[data-triage-card]').waitFor() },
+    { name: 'triage', path: '/triage', ready: (p) => p.locator('[data-triage-card]').waitFor(), overlays: ['schedule-sheet'] },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
     { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
@@ -376,11 +378,17 @@ const OVERLAYS = {
     return { overlay: overlayLoc(p), trigger, kind: 'popover', after: async () => p.keyboard.press('Escape') }
   },
   async 'task-detail'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Renew passport' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().getByRole('button').nth(1).click()
     return { overlay: p.locator('aside[data-detail-for]'), kind: 'panel' }
   },
+  // Process the Inbox's scheduling sheet (inbox-means-unplaced): a bottom sheet on phones.
+  async 'schedule-sheet'(p) {
+    await p.locator('[data-triage-card]').focus()
+    await p.keyboard.press('s')
+    return { overlay: p.getByRole('dialog', { name: 'Schedule' }), kind: 'dialog' }
+  },
   async 'label-picker'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Renew passport' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().getByRole('button').nth(1).click()
     await p.locator('aside[data-detail-for]').waitFor()
     await p.keyboard.press('Escape')
     await p.keyboard.press('L')
