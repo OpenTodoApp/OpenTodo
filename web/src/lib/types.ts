@@ -1538,11 +1538,29 @@ export interface UnblockedPayload {
 export interface AppNotification {
   id: string
   kind: string
-  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`. */
-  payload: AssignedPayload | MentionedPayload | UnblockedPayload
+  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`. */
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload
   createdAt: number
   readAt: number | null
   readPending?: boolean
+}
+
+/**
+ * A guest's reply or completion on one of the user's task pages (OpenSpec task-pages D9).
+ * For an encrypted task the title and the guest's name are absent: the device shows
+ * the title from its own copy.
+ */
+export interface PagePayload {
+  pageId: string
+  taskId: string
+  taskTitle?: string
+  guestName?: string
+  completed?: boolean
+  encrypted?: boolean
+  at: number
+  projectId?: undefined
+  projectName?: undefined
+  actorName?: undefined
 }
 
 /** A public link as its managers see it (OpenSpec `public-links`); never the secret. */

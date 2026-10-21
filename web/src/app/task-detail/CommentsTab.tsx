@@ -17,6 +17,7 @@ import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task 
 import { Avatar } from '../../ui'
 import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
+import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
 import { Composer, readDraft } from './Composer'
@@ -101,6 +102,8 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
   // collapses again when left empty.
   const [open, setOpen] = useState(() => !!readDraft(taskId))
   useEffect(() => { setOpen(!!readDraft(taskId)) }, [taskId])
+  // A published task's comments appear on its page (task-pages, "Composer notice").
+  const published = useTaskPublished(taskId)
   const focusComposer = () => requestAnimationFrame(() => (typeof composerRef === 'object' ? composerRef?.current : null)?.focus())
   useEffect(() => { if (expand) { setOpen(true); focusComposer() } }, [expand]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the request only
   const resting = !!composerHost && !open && !replyTarget
@@ -143,13 +146,17 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
 
   const renderComment = (c: Comment, isReply: boolean) => {
     if (c.deleted_at) return <p className="py-1 text-meta italic text-faint" data-comment-deleted>{t('Comment deleted')}</p>
-    const author = name(c.author_id)
+    // A guest's reply through a task page (task-pages): the name they typed, marked as a guest.
+    const author = c.guest_name ? t('{name} (guest)', { name: c.guest_name }) : name(c.author_id)
     return (
-      <article className="group relative flex gap-3" aria-label={t('Comment by {author}', { author })}>
-        <Avatar id={c.author_id || 'unknown'} name={author} size={isReply ? 'sm' : 'md'} />
+      <article className="group relative flex gap-3" aria-label={t('Comment by {author}', { author })} data-guest-comment={c.guest_name ? '' : undefined}>
+        <Avatar id={c.guest_name ? `guest:${c.guest_name}` : c.author_id || 'unknown'} name={c.guest_name || author} size={isReply ? 'sm' : 'md'} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <span className="text-body font-semibold text-default">{author}</span>
+            {c.guest_name && (
+              <span className="inline-flex items-center gap-1 text-meta text-faint"><Icon name="globe" size="xs" />{t('through the task page')}</span>
+            )}
             <RelativeTime ts={c.created_at} now={now} className="text-meta" />
             {c.edited_at && <span className="text-meta text-faint">{t('edited')}</span>}
             {editing !== c.id && actions(c, isReply)}
@@ -186,6 +193,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
         if (!composerHost || (next && e.currentTarget.contains(next)) || replyTarget) return
         if (!readDraft(taskId).trim()) setOpen(false)
       }}>
+      {published && <p className="text-meta text-muted" data-page-composer-notice><Icon name="globe" size="xs" /> {t('This task is published: comments you write from now on are visible on its page.')}</p>}
       {replyTarget && (
         <div className="flex items-center gap-1 text-meta text-muted" data-reply-target>
           <span className="min-w-0 truncate">{t.rich('Replying to <strong>{name}</strong>', { name: name(replyTarget.author_id), strong: (chunks) => <strong className="font-medium text-default">{chunks}</strong> })}</span>

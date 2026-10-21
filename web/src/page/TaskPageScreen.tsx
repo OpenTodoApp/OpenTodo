@@ -128,7 +128,22 @@ export function TaskPageScreen({ secret, fragment }: { secret: string; fragment:
     setDraft('')
   })
 
-  const tick = (taskId: string, completed: boolean) => withName(async (n) => { await pageApi.tick(secret, taskId, completed, encrypted ? '' : n) })()
+  // A tick shows at once; the refresh after the request brings the server's answer
+  // (and undoes the mark if the request failed).
+  const tick = (taskId: string, completed: boolean) => withName(async (n) => {
+    const at = completed ? Date.now() : null
+    setState((s) => s.kind !== 'ready' ? s : {
+      ...s, content: taskId === s.content.id
+        ? { ...s.content, completed_at: at }
+        : { ...s.content, subtasks: s.content.subtasks.map((x) => (x.id === taskId ? { ...x, completed_at: at } : x)) },
+    })
+    try {
+      await pageApi.tick(secret, taskId, completed, encrypted ? '' : n)
+    } catch (err) {
+      await load()
+      throw err
+    }
+  })()
 
   const saveName = (e: FormEvent) => {
     e.preventDefault()
