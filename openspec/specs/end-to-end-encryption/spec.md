@@ -21,7 +21,7 @@ A signed-in user SHALL be able to enable encryption from Settings. The device SH
 - **THEN** the response is a 401 `unauthorized` error for the anonymous request and a 409 `encryption_conflict` error for the second device, whose client then prompts for the existing passphrase instead
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links) and the bytes of its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links) and the bytes of its attachment files before they leave the device. A task's `origin` SHALL be encrypted as one whole value (the object serialised, then encrypted into one ciphertext string), because its `title`, `url` and `id` name the page, mail or issue; the server accepts that string wherever it accepts the object. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`
@@ -30,6 +30,10 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Title is ciphertext, due date is not
 - **WHEN** an encrypted account creates a task "Dentist" due tomorrow
 - **THEN** the operations sent to the server carry a ciphertext string for `title` and the plaintext `{date}` object for `due`
+
+#### Scenario: Origin is one ciphertext
+- **WHEN** an encrypted account captures `https://example.org/post` from the share sheet
+- **THEN** the `origin` operation carries one ciphertext string, the server stores and serves it unchanged, another unlocked device shows the chip with the host and opens the page, and `origin: url` matches on both devices
 
 #### Scenario: Label names encrypted, label assignments plaintext
 - **WHEN** an encrypted account has labels `home` and `errand` and a task carries both

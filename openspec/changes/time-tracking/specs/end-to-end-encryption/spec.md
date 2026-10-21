@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; time entry notes; attachment names, types and links) and the bytes of its attachment files before they leave the device. Scheduling, ordering and structure fields, including a time entry's `task_id`, `user_id`, `started_at`, `ended_at`, `device_id`, `created_at` and `deleted_at`, SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; time entry notes; attachment names, types and links) and the bytes of its attachment files before they leave the device. A task's `origin` SHALL be encrypted as one whole value (the object serialised, then encrypted into one ciphertext string), because its `title`, `url` and `id` name the page, mail or issue; the server accepts that string wherever it accepts the object. Scheduling, ordering and structure fields, including a time entry's `task_id`, `user_id`, `started_at`, `ended_at`, `device_id`, `created_at` and `deleted_at`, SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, a project's `color` or `archived`, or a time entry's `started_at` or `ended_at`
@@ -40,3 +40,8 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Time entry note in the personal scope
 - **WHEN** an encrypted account logs 30 minutes on an Inbox task with the note "call with the client"
 - **THEN** the `note` operation carries ciphertext while `started_at` and `ended_at` are plaintext, so the server's CSV and the MCP tool show the minutes and "[encrypted]" for the note, and another unlocked device shows the note in the Time tab
+
+#### Scenario: Origin is one ciphertext
+- **WHEN** an encrypted account captures `https://example.org/post` from the share sheet
+- **THEN** the `origin` operation carries one ciphertext string, the server stores and serves it unchanged, another unlocked device shows the chip with the host and opens the page, and `origin: url` matches on both devices
+

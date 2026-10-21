@@ -47,11 +47,27 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the command exits with code 2 and lists the available project names
 
 ### Requirement: Add and edit tasks
-`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>` and repeatable `--remind <phrase>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`) clears one. `--due` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date.
+`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>`, repeatable `--remind <phrase>` and `--origin-url <url>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`) clears one. `--due` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date. `--origin-url` SHALL accept only an `http` or `https` URL, derive the provider and issue id for a recognised host on the client, and send the origin with the task; `ot list` and its siblings SHALL carry `origin` in `--json` output and print the origin's id or host as a column of the table when any listed task has one.
 
 #### Scenario: Add with attributes
 - **WHEN** the user runs `ot add "Call the plumber" --project Home --due tomorrow --time 09:00 --priority 2`
 - **THEN** the created task has that title, project, tomorrow's date, time `09:00`, priority 2, and its id is printed
+
+#### Scenario: Add from an issue
+- **WHEN** the user runs `ot add "Fix the login timeout" --origin-url https://github.com/o/r/issues/7 --json`
+- **THEN** the created task's origin is `{kind: "issue", provider: "github", id: "o/r#7", url: "https://github.com/o/r/issues/7"}`, the JSON output carries it, and no request went to that host
+
+#### Scenario: Add from any page
+- **WHEN** the user runs `ot add "Read this" --origin-url https://example.org/post`
+- **THEN** the task's origin is `{kind: "url", url: "https://example.org/post"}`
+
+#### Scenario: Unsafe origin URL
+- **WHEN** `--origin-url ftp://files.example/x` is given
+- **THEN** the command exits with code 2 before any request is sent
+
+#### Scenario: Clear the origin
+- **WHEN** the user runs `ot edit 8c2a --origin-url none`
+- **THEN** the task's origin is removed and its other fields are kept
 
 #### Scenario: Invalid priority
 - **WHEN** `--priority 7` is given
