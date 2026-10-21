@@ -204,6 +204,9 @@ function screens(ids) {
     { name: 'month', path: '/month', ready: (p) => p.locator('[data-month-grid]').waitFor() },
     // The Plan (planner-view 4.2): seven columns per row from 640 px, the agenda below it.
     { name: 'plan', path: '/plan', ready: (p) => p.locator('[data-plan-grid], [data-plan-agenda]').first().waitFor() },
+    // The Statistics dashboard (stats-dashboard 5.1): tiles and panels; the heatmap and
+    // the dot grid scroll sideways inside their figures, never the page.
+    { name: 'stats', path: '/stats', ready: (p) => p.locator('[data-testid="stats-panels"]').waitFor() },
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import fixture from '../../../internal/digest/testdata/stats_fixture.json'
 import { runFilter } from './filter'
-import { compute, dayInZone, periodFor, type PeriodKind } from './stats'
+import { comparisonOf, compute, dayInZone, periodFor, type PeriodKind } from './stats'
 import type { Project, Task } from './types'
 import { logicalToday, setDayStart } from './dates'
 import { readDayStart } from './userPrefs'
@@ -51,13 +51,39 @@ describe('periods and week start', () => {
     }
   })
 
-  it('twelve weeks: eleven full weeks before the current one plus the current week, twelve week bars', () => {
-    const p = periodFor('12-weeks', TODAY, 1)
-    expect(p).toMatchObject({ start: '2026-07-27', end: TODAY, weeks: 12 })
-    const s = run([], { kind: '12-weeks' })
-    expect(s.perWeek).toHaveLength(12)
-    expect(s.perWeek[11].start).toBe('2026-10-12')
-    expect(periodFor('4-weeks', TODAY, 1)).toMatchObject({ start: '2026-09-21', weeks: 4 })
+  it('four weeks (the Monthly look): three full weeks before the current one plus the current week', () => {
+    expect(periodFor('4-weeks', TODAY, 1)).toMatchObject({ start: '2026-09-21', end: TODAY, weeks: 4 })
+    expect(comparisonOf(periodFor('4-weeks', TODAY, 1), 1)).toEqual({ start: '2026-08-24', end: '2026-09-20' })
+  })
+
+  it('Month to date: 1–10 October against 1–10 September', () => {
+    const p = periodFor('this-month', '2026-10-10', 1)
+    expect(p).toMatchObject({ start: '2026-10-01', end: '2026-10-10', unit: 'day' })
+    expect(comparisonOf(p, 1)).toEqual({ start: '2026-09-01', end: '2026-09-10' })
+  })
+
+  it('a month to date longer than the previous month stops at its end', () => {
+    expect(comparisonOf(periodFor('this-month', '2026-03-31', 1), 1)).toEqual({ start: '2026-02-01', end: '2026-02-28' })
+  })
+
+  it('this quarter: calendar quarter to date, weekly, against the same days of the previous quarter', () => {
+    const p = periodFor('this-quarter', '2026-11-04', 1)
+    expect(p).toMatchObject({ start: '2026-10-01', end: '2026-11-04', unit: 'week' })
+    expect(comparisonOf(p, 1)).toEqual({ start: '2026-07-01', end: '2026-08-04' })
+    expect(periodFor('this-quarter', '2026-01-01', 1)).toMatchObject({ start: '2026-01-01', end: '2026-01-01' })
+    expect(comparisonOf(periodFor('this-quarter', '2026-01-01', 1), 1)).toEqual({ start: '2025-10-01', end: '2025-10-01' })
+  })
+
+  it('this year: from 1 January, monthly, against the same days of the previous year', () => {
+    const p = periodFor('this-year', TODAY, 1)
+    expect(p).toMatchObject({ start: '2026-01-01', end: TODAY, unit: 'month' })
+    expect(comparisonOf(p, 1)).toEqual({ start: '2025-01-01', end: '2025-10-14' })
+  })
+
+  it('this week to date against the same days of last week; last week against the full week before', () => {
+    expect(comparisonOf(periodFor('this-week', TODAY, 1), 1)).toEqual({ start: '2026-10-05', end: '2026-10-07' })
+    expect(comparisonOf(periodFor('last-week', TODAY, 1), 1)).toEqual({ start: '2026-09-28', end: '2026-10-04' })
+    expect(comparisonOf(periodFor('this-week', TODAY, 0), 0)).toEqual({ start: '2026-10-04', end: '2026-10-07' })
   })
 
   it('per-day chart of this week has one bar per day from the week start to today', () => {

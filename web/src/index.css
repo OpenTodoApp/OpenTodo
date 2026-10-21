@@ -45,6 +45,13 @@
   --color-accent: var(--ot-accent);
   --color-accent-hover: var(--ot-accent-hover);
   --color-accent-soft: var(--ot-accent-soft);
+  /* Chart marks (stats-dashboard D2): the series hue and the five-step magnitude ramp. */
+  --color-chart-base: var(--ot-chart-base);
+  --color-chart-seq-1: var(--ot-chart-seq-1);
+  --color-chart-seq-2: var(--ot-chart-seq-2);
+  --color-chart-seq-3: var(--ot-chart-seq-3);
+  --color-chart-seq-4: var(--ot-chart-seq-4);
+  --color-chart-seq-5: var(--ot-chart-seq-5);
   --color-focus: var(--ot-focus);
   --color-p1: var(--ot-p1);
   --color-p2: var(--ot-p2);
@@ -119,6 +126,7 @@
   --ot-accent-text: #047857;
   --ot-accent-soft: #ecfdf5;
   --ot-accent-soft-text: #065f46;
+  --ot-chart-base: var(--ot-accent);
   --ot-focus: #059669;
   --ot-p1: #dc2626;
   --ot-p2: #ea580c;
@@ -184,6 +192,7 @@
     --ot-accent-text: #34d399;
     --ot-accent-soft: #022c22;
     --ot-accent-soft-text: #6ee7b7;
+    --ot-chart-base: var(--ot-accent-text);
     --ot-focus: #34d399;
     --ot-p1: #f87171;
     --ot-p2: #fb923c;
@@ -241,6 +250,7 @@
   --ot-accent-text: #34d399;
   --ot-accent-soft: #022c22;
   --ot-accent-soft-text: #6ee7b7;
+  --ot-chart-base: var(--ot-accent-text);
   --ot-focus: #34d399;
   --ot-p1: #f87171;
   --ot-p2: #fb923c;
@@ -325,6 +335,20 @@
   --ot-accent-soft: var(--ot-ad-accent-soft, #022c22);
   --ot-accent-soft-text: var(--ot-ad-accent-soft-text, #6ee7b7);
   --ot-focus: var(--ot-ad-focus, #34d399);
+}
+
+/* Chart ramp (OpenSpec change stats-dashboard, design D2): five steps of one hue for
+   magnitude (the year heatmap), mixed from the chart base (the accent in light, the
+   brighter accent text in dark) into the surface, so every accent and theme gets its
+   own ramp. Step 1 is "none": a quiet neutral that still reads on the surface.
+   Declared on every theme and accent root so a nested theme gets its own steps;
+   web/src/lib/chartRamp.test.ts checks each built-in accent in light and dark. */
+:root, [data-theme], [data-accent] {
+  --ot-chart-seq-1: color-mix(in oklab, var(--ot-faint) 16%, var(--ot-surface));
+  --ot-chart-seq-2: color-mix(in oklab, var(--ot-chart-base) 49%, var(--ot-surface));
+  --ot-chart-seq-3: color-mix(in oklab, var(--ot-chart-base) 66%, var(--ot-surface));
+  --ot-chart-seq-4: color-mix(in oklab, var(--ot-chart-base) 82%, var(--ot-surface));
+  --ot-chart-seq-5: var(--ot-chart-base);
 }
 
 

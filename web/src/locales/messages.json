@@ -330,6 +330,9 @@
   "A view needs a name": [
     "web/src/lib/views.ts"
   ],
+  "A year of done tasks": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "AI assistant": [
     "web/src/lib/history.ts"
   ],
@@ -731,6 +734,9 @@
   "All subtasks done. Complete <b>{title}</b> too?": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "All tasks": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
@@ -808,6 +814,9 @@
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
+  ],
+  "Am I keeping up?": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "An OpenTodo export, a CSV file or another app’s JSON export; open it with {kbd}.": [
     "web/src/lib/settingsCopy.ts"
@@ -1288,6 +1297,9 @@
   "Base URL": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Based on this device's history": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "Before or after": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -1302,6 +1314,9 @@
   ],
   "Before you start": [
     "web/src/app/assistant/AssistantConsent.tsx"
+  ],
+  "Best: {n, plural, one {# day} other {# days}} in the last 53 weeks": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "Between 7 and 3650 days. Older events are deleted.": [
     "web/src/lib/settingsCopy.ts"
@@ -1999,6 +2014,9 @@
   "Complete / reopen the selected task (same as c); Space ticks": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Complete a few tasks in this period to see when you work best.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "Complete or reopen the focused task (only where you may edit it)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2045,26 +2063,16 @@
   "Completed / reopened": [
     "web/src/lib/activity.ts"
   ],
-  "Completed late": [
-    "web/src/app/review/StatsView.tsx"
-  ],
   "Completed occurrence of {title}": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "Completed per day": [
-    "web/src/app/method/LoopHome.tsx",
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Completed per day, last {n} days": [
     "web/src/app/method/LoopHome.tsx"
   ],
-  "Completed per project": [
-    "web/src/app/review/StatsView.tsx"
-  ],
-  "Completed per week": [
-    "web/src/app/review/StatsView.tsx"
-  ],
-  "Completed per weekday": [
+  "Completed tasks per project: {values}.": [
     "web/src/app/review/StatsView.tsx"
   ],
   "Completed {instant}": [
@@ -2488,6 +2496,7 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarRange.tsx",
     "web/src/app/DigestCard.tsx",
+    "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -2882,6 +2891,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/ReviewView.tsx",
+    "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/ListChrome.tsx"
@@ -3609,6 +3619,9 @@
   "Few recovery codes left. Generate a new set and store it safely.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Fewer": [
+    "web/src/app/review/charts.tsx"
+  ],
   "Field names": [
     "web/src/app/FilterView.tsx"
   ],
@@ -3925,6 +3938,9 @@
   "Full quick add syntax": [
     "web/src/app/ShortcutHelp.tsx"
   ],
+  "Furthest from the estimate: {values}.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "General": [
     "web/src/app/settingsSections.ts"
   ],
@@ -4118,7 +4134,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Group": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/SavedViewView.tsx",
+    "web/src/app/review/StatsView.tsx"
   ],
   "Group by": [
     "web/src/app/SavedViewView.tsx"
@@ -4176,6 +4193,9 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "Hide table": [
+    "web/src/app/review/charts.tsx"
+  ],
   "Hide text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -4228,6 +4248,9 @@
   ],
   "How do you want to work?": [
     "web/src/app/FirstRun.tsx"
+  ],
+  "How good are my estimates?": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "How much the app shows its method, Open Loops. Synced; never changes a task.": [
     "web/src/lib/settingsCopy.ts"
@@ -4494,6 +4517,7 @@
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
+    "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/review.ts",
@@ -4851,9 +4875,6 @@
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
-  ],
-  "Last 12 weeks": [
-    "web/src/lib/stats.ts"
   ],
   "Last 24 hours": [
     "web/src/app/AuditPanel.tsx"
@@ -5364,6 +5385,7 @@
   ],
   "Month": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/review/StatsView.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Month-day": [
@@ -5386,7 +5408,8 @@
   ],
   "More": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TabBar.tsx"
+    "web/src/app/TabBar.tsx",
+    "web/src/app/review/charts.tsx"
   ],
   "More actions": [
     "web/src/app/review/StatsView.tsx",
@@ -5394,6 +5417,9 @@
   ],
   "More actions for this comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Most tasks take {ratio} their estimate ({n} tasks).": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "Move": [
     "web/src/app/TriageView.tsx"
@@ -5593,6 +5619,9 @@
   ],
   "Needs a subscription first.": [
     "web/src/lib/push.ts"
+  ],
+  "Needs at least three completed tasks with an estimate and tracked time; {n} so far.": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "Needs outgoing email, set up by the server owner under Settings → Server.": [
     "web/src/lib/settingsCopy.ts"
@@ -5808,6 +5837,9 @@
   "No calendars yet.": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "No change {vs}": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "No changes": [
     "web/src/lib/historyVersions.ts"
   ],
@@ -5838,6 +5870,9 @@
   ],
   "No deliveries yet.": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "No due dates in this period": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.": [
     "web/src/app/RemindersField.tsx"
@@ -5947,6 +5982,9 @@
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
+  "No open task was moved later three times or more in the last 90 days, on this device.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "No open tasks in this project.": [
     "web/src/app/TimelineView.tsx"
   ],
@@ -6048,8 +6086,14 @@
   "No thanks": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
+  "No time tracked and nothing completed in this period.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "No time tracked yet.": [
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "No time tracked: completed tasks per project": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "No token is stored, for example after a restore. Enter it again.": [
     "web/src/app/IssuesPanel.tsx"
@@ -6210,7 +6254,10 @@
   "Nothing changes until you apply: apply the checked items with {enter}, discard with {esc}.": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
-  "Nothing completed or created in this period yet. Tasks you complete, including each day of a recurring task, are counted here.": [
+  "Nothing completed in the last 53 weeks.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "Nothing completed or created in this period yet.": [
     "web/src/app/review/StatsView.tsx"
   ],
   "Nothing completed yet.": [
@@ -6306,14 +6353,8 @@
   "Nothing scheduled yet.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
-  "Nothing slipped.": [
-    "web/src/app/review/StatsView.tsx"
-  ],
   "Nothing waiting for a free moment.": [
     "web/src/app/task-list/ListChrome.tsx"
-  ],
-  "Nothing was completed late.": [
-    "web/src/app/review/StatsView.tsx"
   ],
   "Nothing was planned for today and nothing was completed.": [
     "web/src/app/review/CloseDay.tsx"
@@ -6523,6 +6564,9 @@
   ],
   "On this server": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "On time": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "On, can make changes": [
     "web/src/app/AssistantsPanel.tsx"
@@ -6843,6 +6887,7 @@
     "web/src/app/FilterView.tsx"
   ],
   "Other": [
+    "web/src/lib/dashboard.ts",
     "web/src/lib/feed.ts",
     "web/src/lib/views.ts"
   ],
@@ -6906,9 +6951,6 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/lib/listGroups.ts",
     "web/src/lib/views.ts"
-  ],
-  "Overdue now": [
-    "web/src/app/review/StatsView.tsx"
   ],
   "Overwrite changed fields": [
     "web/src/app/ImportScreen.tsx"
@@ -7341,6 +7383,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/stats.ts"
   ],
@@ -8753,6 +8796,9 @@
   "Show archived projects": [
     "web/src/app/ProjectsSettings.tsx"
   ],
+  "Show as table": [
+    "web/src/app/review/charts.tsx"
+  ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -9056,8 +9102,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "Slipped": [
-    "web/src/app/review/MonthlyLook.tsx",
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/review/MonthlyLook.tsx"
   ],
   "Slowed down": [
     "web/src/app/DataSettings.tsx"
@@ -9337,6 +9382,9 @@
   "Stored. Leave empty to keep it.": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Streak": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "Streak {current} · Best {best}": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -9515,7 +9563,8 @@
   "Tasks": [
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/display/DisplayColumn.tsx",
-    "web/src/app/palette/entries.ts"
+    "web/src/app/palette/entries.ts",
+    "web/src/app/review/StatsView.tsx"
   ],
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"
@@ -10537,6 +10586,9 @@
   "This message will not appear again. You can open it from Settings → About.": [
     "web/src/app/WelcomeDialog.tsx"
   ],
+  "This month": [
+    "web/src/lib/stats.ts"
+  ],
   "This needs a signed-in browser session, not an API token.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -10585,6 +10637,9 @@
   "This project no longer exists.": [
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "This quarter": [
+    "web/src/lib/stats.ts"
   ],
   "This request is not allowed here.": [
     "web/src/lib/i18n/errors.ts"
@@ -10713,6 +10768,9 @@
   "This weekend": [
     "web/src/lib/dates.ts"
   ],
+  "This year": [
+    "web/src/lib/stats.ts"
+  ],
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -10748,9 +10806,6 @@
   "Time spent": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
-  ],
-  "Time tracked": [
-    "web/src/app/review/StatsView.tsx"
   ],
   "Time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -10988,10 +11043,13 @@
   "Track as a habit": [
     "web/src/app/RecurrenceField.tsx"
   ],
-  "Tracked per day": [
+  "Tracked": [
     "web/src/app/review/StatsView.tsx"
   ],
-  "Tracked per project": [
+  "Tracked time per project: {values}.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "Tracked ÷ estimate": [
     "web/src/app/review/StatsView.tsx"
   ],
   "Tracking stopped": [
@@ -11674,6 +11732,9 @@
   "What is the next step?": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "What keeps slipping?": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "What may be sent": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
@@ -11689,6 +11750,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "When do I get things done?": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "When off, nobody can add files or links; existing ones stay and can still be opened.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -11697,6 +11761,9 @@
   ],
   "Where": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Where does my time go?": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "Where the Week view and calendars start": [
     "web/src/app/settingsIndex.ts"
@@ -12157,7 +12224,7 @@
   "after": [
     "web/src/app/RemindersField.tsx"
   ],
-  "after their due day": [
+  "against {time} estimated": [
     "web/src/app/review/StatsView.tsx"
   ],
   "all day": [
@@ -12255,7 +12322,6 @@
     "web/src/lib/activityRuns.ts"
   ],
   "completed": [
-    "web/src/app/review/Bars.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/activity.ts"
   ],
@@ -12348,9 +12414,6 @@
   ],
   "due dates, priority, completion and deletion times, ordering, project and parent links, project colours, archived state, label assignments and counts": [
     "web/src/app/EncryptionPanel.tsx"
-  ],
-  "due in the period, not done by its end": [
-    "web/src/app/review/StatsView.tsx"
   ],
   "due next week": [
     "web/src/lib/rules.ts"
@@ -12647,9 +12710,6 @@
   "new account": [
     "web/src/app/auditFormat.ts"
   ],
-  "new tasks": [
-    "web/src/app/review/StatsView.tsx"
-  ],
   "next try {instant}": [
     "web/src/lib/webhooks.ts"
   ],
@@ -12767,9 +12827,6 @@
   ],
   "open": [
     "web/src/app/MembersPanel.tsx"
-  ],
-  "open and due before today": [
-    "web/src/app/review/StatsView.tsx"
   ],
   "open tasks only unless one of these, or a completion date, appears": [
     "web/src/app/FilterView.tsx"
@@ -13141,9 +13198,6 @@
   "too many attempts": [
     "web/src/app/auditFormat.ts"
   ],
-  "tracked": [
-    "web/src/app/review/StatsView.tsx"
-  ],
   "unarchived the project": [
     "web/src/lib/activity.ts"
   ],
@@ -13225,6 +13279,21 @@
   ],
   "violet": [
     "web/src/lib/colourNames.ts"
+  ],
+  "vs last month": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "vs last quarter": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "vs last week": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "vs last year": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "vs the week before": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "waiting for": [
     "web/src/lib/history.ts"
@@ -13328,11 +13397,20 @@
   "{date}: {n, plural, one {# task} other {# tasks}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{date}: {n} completed": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "{days}d": [
     "web/src/lib/dates.ts"
   ],
   "{days}d over": [
     "web/src/lib/dates.ts"
+  ],
+  "{day} {hour}: {n} completed": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "{done} completed and {created} created in this period; most completed: {name}, {n}.": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "{done} of {total} done": [
     "web/src/app/method/LoopHome.tsx",
@@ -13488,6 +13566,7 @@
   ],
   "{n, plural, one {# day} other {# days}}": [
     "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/review/StatsView.tsx",
     "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# done} other {# done}}": [
@@ -13658,6 +13737,9 @@
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/lib/assistant.ts"
   ],
+  "{n, plural, one {# tracked task has no estimate} other {# tracked tasks have no estimate}}": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -13739,6 +13821,9 @@
   "{n, plural, one {next action} other {next actions}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{n, plural, one {of # task with a due date} other {of # tasks with a due date}}": [
+    "web/src/app/review/StatsView.tsx"
+  ],
   "{n, plural, one {pasted text, # line} other {pasted text, # lines}}": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
@@ -13783,6 +13868,9 @@
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
+  ],
+  "{name}: {a} {aName}, {b} {bName}": [
+    "web/src/app/review/charts.tsx"
   ],
   "{n} days": [
     "web/src/app/PlanView.tsx"
@@ -13895,7 +13983,7 @@
   "{planned} planned · {tracked} tracked": [
     "web/src/lib/time.ts"
   ],
-  "{projectOf} · due": [
+  "{project} · moved {n, plural, one {# time} other {# times}}": [
     "web/src/app/review/StatsView.tsx"
   ],
   "{provider} did not confirm a verified email address for you, so it cannot be matched to an account. Verify your email there, or ask the owner.": [
@@ -13915,6 +14003,9 @@
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "{sign}{n} pts {vs}": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "{size} labels share a name. Merge “{name}” into “{name2}”?": [
     "web/src/app/LabelsView.tsx"
@@ -13961,8 +14052,11 @@
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
   ],
-  "{title}: {total} {unit} in total; {values}": [
-    "web/src/app/review/Bars.tsx"
+  "{total} completed in the last 53 weeks; busiest day {date} with {n}; current streak {streak, plural, one {# day} other {# days}}.": [
+    "web/src/app/review/StatsView.tsx"
+  ],
+  "{total} completions by weekday and hour; most often on {day} at {hour}.": [
+    "web/src/app/review/StatsView.tsx"
   ],
   "{tracked} tracked": [
     "web/src/lib/time.ts"

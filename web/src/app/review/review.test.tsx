@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
-// Statistics and the weekly review on screen (OpenSpec change stats-and-review,
-// tasks 2.1, 3.2, 3.3): the period chooser by keyboard, chart tables equal to the
-// computed numbers, no request, the zero state, axe; the review's keyboard path,
-// finishing, archiving offline and the sidebar marker.
+// The weekly review on screen (OpenSpec change stats-and-review, tasks 3.2, 3.3):
+// the review's keyboard path, finishing, archiving offline and the sidebar marker.
+// Statistics has its own tests in statsView.test.tsx (stats-dashboard).
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -10,19 +9,16 @@ import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
 import { closeDay } from '../../lib/review'
-import { compute, periodFor, PERIOD_LABELS } from '../../lib/stats'
-import type { Task, User } from '../../lib/types'
+import type { User } from '../../lib/types'
 import { flush, key, render, type } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
 import { Sidebar } from '../Sidebar'
 import { setMethodMode } from '../../lib/method/mode'
-import { StatsContent, StatsView } from './StatsView'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', createdAt: 0 } as User
 const NOW = new Date(2026, 9, 14, 12, 0) // Wednesday 14 October 2026
-const at = (d: number, h = 10) => new Date(2026, 9, d, h).getTime()
 
 let fetchSpy: ReturnType<typeof vi.fn>
 beforeEach(async () => {
@@ -50,85 +46,6 @@ async function waitFor(ok: () => boolean, ms = 3000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
   expect(ok()).toBe(true)
 }
-
-async function seedWeek(): Promise<string> {
-  const work = await createProject({ name: 'Work' })
-  for (const [title, day, due] of [['Report', 12, null], ['Slides', 13, 12], ['Call', 13, null], ['Old', 6, null]] as const) {
-    const id = await createTask({ title, project_id: work, due: due ? { date: `2026-10-${due}` } : null })
-    await db.tasks.update(id, { completed_at: at(day), created_at: at(1) })
-  }
-  await createTask({ title: 'Overdue', project_id: work, due: { date: '2026-10-12' } })
-  return work
-}
-
-const tableValues = (fig: Element) => [...fig.querySelectorAll('table tbody tr')].map((tr) => Number(tr.querySelector('td')!.textContent))
-const number = (root: ParentNode, k: string) => Number(root.querySelector(`[data-number="${k}"] dd`)!.textContent)
-
-describe('Statistics screen', () => {
-  it('shows the numbers before the charts, chart tables carry the computed values, and nothing is requested', async () => {
-    await seedWeek()
-    const r = await render(<StatsView />)
-    await waitFor(() => number(r.container, 'completed') === 3)
-    const tasks = await db.tasks.toArray()
-    const projects = await db.projects.toArray()
-    const expected = compute({ tasks, projects, shared: new Set(), me: 'u1', today: '2026-10-14' }, periodFor('this-week', '2026-10-14', 1), 1)
-    expect(['completed', 'created', 'late', 'slipped', 'overdue'].map((k) => number(r.container, k)))
-      .toEqual([expected.completed, expected.created, expected.late, expected.slipped, expected.overdue])
-    const perDay = r.container.querySelector('[data-chart="Completed per day"]')!
-    expect(tableValues(perDay)).toEqual(expected.perDay.map((d) => d.count))
-    expect(tableValues(perDay)).toEqual([1, 2, 0])
-    expect(perDay.querySelector('svg[role="img"]')!.getAttribute('aria-label')).toContain('3 completed in total')
-    // The numbers come first, then the charts.
-    const numbers = r.container.querySelector('[data-testid="stats-numbers"]')!
-    expect(numbers.compareDocumentPosition(perDay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(r.container.textContent).toContain('Computed on this device')
-    expect(fetchSpy).not.toHaveBeenCalled()
-
-    const axe = (await import('axe-core')).default
-    const res = await axe.run(r.container, { rules: { 'color-contrast': { enabled: false }, region: { enabled: false } } })
-    expect(res.violations.map((v) => v.id)).toEqual([])
-    await r.unmount()
-  })
-
-  it('the heading takes focus, the period chooser is the next stop, and the arrow keys change the period', async () => {
-    await seedWeek()
-    const r = await render(<StatsView />)
-    await waitFor(() => number(r.container, 'completed') === 3)
-    const h1 = r.container.querySelector('h1')!
-    expect(document.activeElement).toBe(h1)
-    const focusable = [...r.container.querySelectorAll<HTMLElement>('button, [href], input, select, [tabindex]:not([tabindex="-1"])')]
-      .filter((el) => el.tabIndex >= 0)
-    expect(focusable[0].getAttribute('role')).toBe('radio')
-    expect(focusable[0].getAttribute('aria-checked')).toBe('true')
-    focusable[0].focus()
-    await key(focusable[0], 'ArrowRight')
-    const checked = () => r.container.querySelector('[role="radio"][aria-checked="true"]')!
-    expect(checked().textContent).toBe(PERIOD_LABELS['last-week'])
-    expect(document.activeElement).toBe(checked())
-    await waitFor(() => number(r.container, 'completed') === 1)
-    expect(number(r.container, 'slipped')).toBe(0)
-    await key(checked(), 'ArrowRight')
-    expect(checked().textContent).toBe(PERIOD_LABELS['4-weeks'])
-    expect(r.container.querySelector('[data-chart="Completed per weekday"]')).toBeTruthy()
-    expect(fetchSpy).not.toHaveBeenCalled()
-    await r.unmount()
-  })
-
-  it('shows zeros and a hint instead of empty charts', async () => {
-    const r = await render(<StatsContent tasks={[]} projects={[]} memberships={[]} me="u1" today="2026-10-14" weekStart={1} period="this-week" onPeriod={() => {}} />)
-    expect(number(r.container, 'completed')).toBe(0)
-    expect(r.container.querySelector('[data-testid="stats-empty"]')).toBeTruthy()
-    expect(r.container.querySelector('[data-testid="stats-charts"]')).toBeNull()
-    await r.unmount()
-  })
-
-  it('twelve weeks shows twelve week bars', async () => {
-    const tasks = [{ id: 'a', title: 'A', project_id: null, completed_at: at(13), created_at: at(1), deleted_at: null, due: null, series_id: null, assignee_id: null } as unknown as Task]
-    const r = await render(<StatsContent tasks={tasks} projects={[]} memberships={[]} me="u1" today="2026-10-14" weekStart={1} period="12-weeks" onPeriod={() => {}} />)
-    expect(tableValues(r.container.querySelector('[data-chart="Completed per week"]')!)).toHaveLength(12)
-    await r.unmount()
-  })
-})
 
 const stepTitle = () => document.querySelector<HTMLElement>('#review-step-title')
 const currentStep = () => document.querySelector('[data-progress-step][aria-current="step"]')?.getAttribute('data-progress-step')

@@ -1,6 +1,6 @@
 ---
 title: Statistics and the weekly digest
-summary: See what you completed, created and let slip, all computed on your device, and get an optional weekly digest by email on your review day.
+summary: A dashboard of what you completed, when, and where your time went, all computed on your device, and an optional weekly digest by email on your review day.
 audience: user
 section: Guides
 specs: [statistics, email-digest]
@@ -9,27 +9,35 @@ order: 25
 ---
 # Statistics and the weekly digest
 
-<picture><source srcset="images/stats-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/stats-light.webp" alt="The Statistics screen for this week: the period chooser, five numbers (completed, created, completed late, slipped, overdue now), bar charts per day and per project with every value printed, and the lists of late and slipped tasks."></picture>
+<picture><source srcset="images/stats-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/stats-light.webp" alt="The Statistics dashboard for this week: the period chooser, four tiles (done, on time, streak, tracked) with their change against last week, a line chart of completed and created tasks, time per project as bars, and a year of done tasks as a grid of shaded days."></picture>
 
 ## Statistics
 
-Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, last week, the last 4 or 12 weeks with the arrow keys. Weeks start on your [first day of the week](dates-and-times.md), and days begin at your [day start](dates-and-times.md#when-a-day-ends): with 04:00, a task completed at 01:30 counts for the day before.
+Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, this month, this quarter, this year or last week with the arrow keys. Weeks start on your [first day of the week](dates-and-times.md), and days begin at your [day start](dates-and-times.md#when-a-day-ends): with 04:00, a task completed at 01:30 counts for the day before. A period to date is compared with the same days of the previous one: on 10 October, this month is 1–10 October against 1–10 September.
 
-- **Completed**: tasks and subtasks completed in the period. Each day of a recurring task counts once; a skipped day of a habit never counts.
-- **Created**: new tasks. Completing a recurring task does not create one.
-- **Completed late**: completed on a day after the due day.
-- **Slipped**: due in the period, before today, and not done by the end of the period.
-- **Overdue now**: open and due before today, outside archived projects.
+The four tiles:
 
-- **Time tracked**: your own [time entries](time-tracking.md) that started in the period, a running one up to now. An entry counts whole for the day it started, even across midnight. Other members' entries on shared tasks count nothing here.
+- **Done**: tasks and subtasks completed. Each day of a recurring task counts once; a skipped habit day never counts.
+- **On time**: of the completions whose task had a due date, the share done on or before that day.
+- **Streak**: days in a row with a completion, up to today (or yesterday while today has none yet), and your best run in the last 53 weeks.
+- **Tracked**: your own [time entries](time-tracking.md) that started in the period, against the estimates of the tasks they were tracked on, and how many of those tasks have no estimate.
 
-Charts show completions per day, per week, per weekday and per project (the top five and "other"). When the period holds time entries, two more show the time tracked per day (up to 4 weeks) and per project, in hours and minutes, with Inbox for tasks without a project. Every value is printed, and screen readers get a table. Tasks in the Trash are left out.
+Each panel answers one question:
 
-**Export time entries** in the menu next to the period chooser downloads a CSV of the period's entries, made on this device: it works offline and sends nothing. The columns are those of the [server's CSV](time-tracking.md#export).
+- **Am I keeping up?** Completed and created as two lines: per day up to a month, per week for a quarter, per month for a year.
+- **Where does my time go?** Tracked time per project (the top five, then "other"; Inbox for tasks without a project), or completions per project when nothing was tracked.
+- **A year of done tasks**: every day of the last 53 weeks, shaded by how much you completed, whatever the period.
+- **When do I get things done?** Completions by weekday and hour, the hours starting at your day start.
+- **How good are my estimates?** For tasks with an estimate and at least 5 minutes tracked: how many times their estimate they take, and the projects or labels furthest from it.
+- **What keeps slipping?** Open tasks whose due date was moved later or removed three times or more in 90 days. It reads this device's history, so another device may list different tasks.
 
-In a shared project a completed task counts for whoever completed it. Older tasks that do not record that count for their assignee, or for you when unassigned.
+Every chart has **Show as table**, and with the keyboard the arrow keys move through its days or values. A panel with nothing to show collapses to one line.
 
-Statistics are computed on this device from your tasks. Nothing is sent to the server or stored, they work offline, and every synced device shows the same numbers. The [Loop home](method/overview.md)'s Loop pulse uses the same definitions for what was completed this week, last week and per day, so the two screens never disagree. With end-to-end encryption the numbers are the same and project names are decrypted on your device.
+**Export time entries** in the menu next to the period chooser downloads a CSV of the period's entries, made on this device. The columns are those of the [server's CSV](time-tracking.md#export).
+
+In a shared project a completed task counts for whoever completed it; older tasks count for their assignee, or for you when unassigned. Tasks in the Trash are left out.
+
+Statistics are computed on this device. Nothing is sent or stored, they work offline, and synced devices show the same numbers. The [Loop home](method/overview.md)'s Loop pulse uses the same definitions.
 
 ## Weekly digest by email
 
