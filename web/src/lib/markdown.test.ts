@@ -78,15 +78,49 @@ describe('markdown', () => {
   })
 })
 
-describe('rich mode (project notes)', () => {
-  it('reads headings and check items only when asked', async () => {
-    const { parseMarkdown } = await import('./markdown')
+describe('headings and check items', () => {
+  it('are read in every body (notes and comments, editor-everywhere)', () => {
     const src = '## Packing\n\n- [x] Passport\n- [ ] Charger'
-    expect(parseMarkdown(src, 0, true)).toEqual([
+    expect(parseMarkdown(src)).toEqual([
       { t: 'h', level: 2, c: [{ t: 'text', v: 'Packing' }] },
       { t: 'list', ordered: false, start: 1, checks: [true, false], items: [[{ t: 'p', c: [{ t: 'text', v: 'Passport' }] }], [{ t: 'p', c: [{ t: 'text', v: 'Charger' }] }]] },
     ])
-    // Comments keep their subset.
-    expect(parseMarkdown(src)[0]).toEqual({ t: 'p', c: [{ t: 'text', v: '## Packing' }] })
+  })
+})
+
+describe('editor-everywhere additions', () => {
+  it('Table: header and rows, scrolling in its own box', () => {
+    const out = html('| Item | Cost |\n| --- | ---: |\n| Paint | 40 |\n| a \\| b | 5 |')
+    expect(out).toContain('<div class="max-w-full overflow-x-auto" data-scroll-x="true">')
+    expect(out).toMatch(/<thead><tr><th[^>]*>Item<\/th><th style="text-align:right"[^>]*>Cost<\/th><\/tr><\/thead>/)
+    expect(out).toMatch(/<td[^>]*>Paint<\/td>/)
+    expect(out).toMatch(/<td[^>]*>a \| b<\/td>/)
+  })
+
+  it('Image from the web stays a link', () => {
+    const out = html('![photo](https://example.org/a.png)')
+    expect(out).not.toContain('<img')
+    expect(out).toContain(`<a href="https://example.org/a.png" target="_blank" rel="${LINK_REL}" class="text-accent underline">photo</a>`)
+  })
+
+  it('an attachment image without its task, or on the public page, is a placeholder that loads nothing', () => {
+    expect(html('![wall](attachment:att-1)')).not.toContain('<img')
+    expect(parseMarkdown('![The \\[wall\\]](attachment:att-1)')).toEqual([{ t: 'img', id: 'att-1', alt: 'The [wall]' }])
+  })
+
+  it('Issue chip: a recognised issue address reads as its id', () => {
+    const out = html('see https://github.com/pixari/opentodo/issues/198 now')
+    expect(out).toContain('class="issue-chip"')
+    expect(out).toContain('pixari/opentodo#198</a>')
+    expect(html('see https://example.org/issues/1')).not.toContain('issue-chip')
+  })
+
+  it('strike, task links and mentions', () => {
+    expect(parseInline('~~gone~~')).toEqual([{ t: 'strike', c: [{ t: 'text', v: 'gone' }] }])
+    expect(parseInline('[Book hotel](?task=t-1)')).toEqual([{ t: 'task', id: 't-1', c: [{ t: 'text', v: 'Book hotel' }] }])
+    expect(parseInline('hi @Bob and @eve', 0, { mention: (x) => x === 'Bob' })).toEqual([
+      { t: 'text', v: 'hi ' }, { t: 'mention', v: 'Bob' }, { t: 'text', v: ' and @eve' },
+    ])
+    expect(renderToStaticMarkup(createElement(Markdown, { source: 'hi @Bob', mentions: new Map([['Bob', 'Bob Smith']]) }))).toContain('<span class="mention-chip" title="Bob Smith">@Bob</span>')
   })
 })
