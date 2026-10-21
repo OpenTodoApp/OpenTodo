@@ -114,7 +114,7 @@ export function PlacesView() {
   const order = places.map((p) => p.id)
   return (
     <PageBody width="form" data-places-page>
-      <PageHeader title={t('Locations')} meta={places.length} help="locations-and-places"
+      <PageHeader title={t('Locations')} meta={places.length} help="locations"
         actions={<Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>{t('New location')}</Button>} />
       {adding && <NewPlaceForm onDone={() => setAdding(false)} />}
       {points.length > 0 && (

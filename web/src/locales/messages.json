@@ -177,6 +177,9 @@
   "A CSV of the period, made on this device": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "A Photon server; the public Photon by default.": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
   "A backup is already running.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -221,6 +224,9 @@
   ],
   "A line for tomorrow": [
     "web/src/lib/review.ts"
+  ],
+  "A map style URL; OpenFreeMap by default.": [
+    "web/src/app/locations/MapsSettings.tsx"
   ],
   "A microphone in quick add, or {kbd}; nothing is saved until you press Enter.": [
     "web/src/lib/settingsCopy.ts"
@@ -272,6 +278,9 @@
   ],
   "A reset email was sent to {email}.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "A saved location needs a name": [
+    "web/src/lib/locations.ts"
   ],
   "A session is running": [
     "web/src/app/focus/FocusView.tsx"
@@ -548,6 +557,12 @@
   "Add a task assigned to you…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Add a task at this location…": [
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Add a task at {place}…": [
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
   "Add a task due {adding}": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
@@ -615,6 +630,9 @@
   "Add label…": [
     "web/src/app/LabelPicker.tsx"
   ],
+  "Add location": [
+    "web/src/app/locations/PlacesView.tsx"
+  ],
   "Add notes": [
     "web/src/app/focus/FocusParts.tsx"
   ],
@@ -679,10 +697,23 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Address": [
-    "web/src/app/CalendarFeedsPanel.tsx"
+    "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Address logging": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Address search": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
+  "Address search is not available right now.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "Address search needs a connection.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "Addresses": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Admin": [
     "web/src/lib/roleNames.ts"
@@ -721,6 +752,9 @@
   ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "All locations": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All projects": [
@@ -1552,6 +1586,8 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/locations/PlacesView.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
@@ -2137,6 +2173,9 @@
     "web/src/app/IssueEditor.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
+  "Connect to change the map settings.": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
   "Connect to the internet to open this file.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
@@ -2166,6 +2205,10 @@
   ],
   "Conversations": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Coordinates": [
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Copied": [
     "web/src/app/AssistantsPanel.tsx",
@@ -2621,6 +2664,9 @@
   "Delete label…": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Delete location": [
+    "web/src/app/locations/PlacesView.tsx"
+  ],
   "Delete older than (days, 0 = never)": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -2683,7 +2729,8 @@
     "web/src/app/IssuesPanel.tsx"
   ],
   "Delete “{name}”?": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Deleted / restored": [
     "web/src/lib/activity.ts"
@@ -3197,6 +3244,11 @@
   ],
   "Encrypt your task text on your devices, and keep its recovery key": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Encrypted": [
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/locations/PlacesView.tsx",
+    "web/src/lib/locations.ts"
   ],
   "Encrypted with your passphrase": [
     "web/src/app/BackupsPanel.tsx"
@@ -3735,6 +3787,9 @@
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Find a saved location or type coordinates": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "Find a section…": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/Facets.tsx"
@@ -4020,6 +4075,9 @@
     "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to Locations": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Go to Next": [
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/palette/registry.ts"
@@ -4230,6 +4288,10 @@
   ],
   "Home SSO": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Home, Office, Gym…": [
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Home|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -4748,6 +4810,9 @@
   "Keep the last {keep}, delete after {days, plural, one {# day} other {# days}}": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Keep the locations you use often (home, the office, the gym) and give tasks a location in one step. A task’s location editor saves any address for reuse.": [
+    "web/src/app/locations/PlacesView.tsx"
+  ],
   "Keep “{source}” as text": [
     "web/src/app/ParseChips.tsx"
   ],
@@ -5170,6 +5235,16 @@
   "Local notification: this browser may show notifications.": [
     "web/src/lib/push.ts"
   ],
+  "Location": [
+    "web/src/app/TaskListView.tsx",
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/lib/facets.ts"
+  ],
+  "Locations": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/locations/PlacesView.tsx"
+  ],
   "Lock this device": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -5272,6 +5347,21 @@
   "Manual order": [
     "web/src/app/SavedViewView.tsx"
   ],
+  "Map of your locations": [
+    "web/src/app/locations/PlacesView.tsx"
+  ],
+  "Map of {place}": [
+    "web/src/app/locations/LocationPreview.tsx"
+  ],
+  "Map tiles": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
+  "Map: click to pick the location": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "Maps": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
   "Mark {title} for This Evening": [
     "web/src/app/palette/registry.ts"
   ],
@@ -5311,6 +5401,9 @@
   ],
   "Menu for label {name}": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "Menu for location {name}": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Menu for project {name}": [
     "web/src/app/ProjectRowMenu.tsx"
@@ -5428,7 +5521,8 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Move everything overdue to Friday.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -5515,7 +5609,8 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Move {nameOf} earlier": [
     "web/src/app/DashboardView.tsx"
@@ -5600,10 +5695,14 @@
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/TokensSection.tsx"
+    "web/src/app/TokensSection.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Name (optional)": [
     "web/src/app/PublicLinksSection.tsx"
+  ],
+  "Name of the saved location": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Natural-language parsing, its languages and the date order": [
     "web/src/app/settingsIndex.ts"
@@ -5677,6 +5776,9 @@
   ],
   "New label: {name}": [
     "web/src/lib/assistant.ts"
+  ],
+  "New location": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "New name for {name}": [
     "web/src/app/SecurityPanel.tsx"
@@ -5978,6 +6080,9 @@
   "No open task carries this label.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "No open task happens at this location.": [
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
   "No open task matches.": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/Facets.tsx"
@@ -6039,6 +6144,12 @@
   "No rule": [
     "web/src/app/RuleEditor.tsx"
   ],
+  "No saved location matches. Type coordinates such as 45.4642, 9.19.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "No saved locations yet": [
+    "web/src/app/locations/PlacesView.tsx"
+  ],
   "No section": [
     "web/src/app/BoardView.tsx",
     "web/src/app/RuleEditor.tsx",
@@ -6067,6 +6178,9 @@
   ],
   "No task holds a value for it.": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "No task is linked to this location.": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "No task matches this duration filter.": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -6445,6 +6559,9 @@
   "Off: members' links only work for people who already have an account.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
   "Off: the push carries only encrypted ids and this device adds the title.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -6704,6 +6821,10 @@
   "Open in Help": [
     "web/src/app/help/HelpPanel.tsx"
   ],
+  "Open in maps": [
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/locations/LocationPreview.tsx"
+  ],
   "Open it": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -6846,13 +6967,17 @@
     "web/src/app/OriginChip.tsx"
   ],
   "Optional": [
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Optional for everyone": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Optional, required for the owner, or required for everyone": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Optional, such as 45.4642, 9.19": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Optional. With a passphrase, archives are encrypted (AES-256-GCM) before they leave the server.": [
     "web/src/app/BackupsPanel.tsx"
@@ -7146,6 +7271,9 @@
   ],
   "Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "Pick on the map": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Pick one of the options.": [
     "web/src/lib/fields.ts"
@@ -7856,6 +7984,9 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/palette/registry.ts"
   ],
+  "Rename location": [
+    "web/src/app/locations/PlacesView.tsx"
+  ],
   "Rename project": [
     "web/src/app/palette/registry.ts"
   ],
@@ -7875,6 +8006,9 @@
   ],
   "Renamed “{from}” → “{to}”": [
     "web/src/lib/assistant.ts"
+  ],
+  "Rename…": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Reopen": [
     "web/src/app/RuleEditor.tsx",
@@ -8288,6 +8422,7 @@
     "web/src/app/ShareCapture.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -8309,6 +8444,9 @@
   "Save filter as view": [
     "web/src/app/palette/registry.ts"
   ],
+  "Save for reuse": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "Save my key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -8320,6 +8458,9 @@
   ],
   "Save pages and selected text from your browser as tasks.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Save providers": [
+    "web/src/app/locations/MapsSettings.tsx"
   ],
   "Save retention": [
     "web/src/app/AuditPanel.tsx"
@@ -8341,6 +8482,9 @@
   ],
   "Saved filters": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "Saved locations": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Saved view": [
     "web/src/app/palette/index.ts"
@@ -8415,6 +8559,9 @@
   ],
   "Search a city or zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Search an address, a saved location or coordinates": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Search and commands": [
     "web/src/app/Sidebar.tsx",
@@ -8640,7 +8787,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Set by {variable}": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/app/locations/MapsSettings.tsx"
   ],
   "Set it up in the assistant settings.": [
     "web/src/app/assistant/AskEntry.tsx"
@@ -8661,6 +8809,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Set the deadline of {title}": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Set the location of {title}": [
     "web/src/app/palette/registry.ts"
   ],
   "Set the priority of the open task while the panel has focus": [
@@ -8811,6 +8962,9 @@
   "Show less": [
     "web/src/app/MonthView.tsx",
     "web/src/app/ProjectNote.tsx"
+  ],
+  "Show maps and address search": [
+    "web/src/app/locations/MapsSettings.tsx"
   ],
   "Show me around": [
     "web/src/app/FirstRun.tsx"
@@ -9537,6 +9691,9 @@
   "Task deleted": [
     "web/src/lib/webhooks.ts"
   ],
+  "Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.": [
+    "web/src/app/locations/MapsSettings.tsx"
+  ],
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
@@ -9753,6 +9910,9 @@
   "The backups folder inside the data directory": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "The browser did not share the position.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "The browser has not been asked yet.": [
     "web/src/lib/push.ts"
   ],
@@ -9949,6 +10109,9 @@
   ],
   "The passphrase needs at least {n} characters.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "The position is not available right now.": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "The provider changed while you were reading. Read the updated text and accept again.": [
     "web/src/app/assistant/useAssistantConversation.ts"
@@ -10353,6 +10516,9 @@
   "This browser cannot recognise {name}; listening in the browser’s default language instead.": [
     "web/src/lib/voice/dictation.ts"
   ],
+  "This browser cannot share its position.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "This browser does not support passkeys.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10652,6 +10818,9 @@
   ],
   "This restore is no longer prepared. Choose the archive again.": [
     "web/src/lib/restore.ts"
+  ],
+  "This saved location no longer exists.": [
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "This server asks for the token its operator configured. Find it in your hosting panel, for example Coolify, this service, Environment Variables, {variable}.": [
     "web/src/app/AuthScreen.tsx"
@@ -11199,8 +11368,14 @@
   "Type a title": [
     "web/src/app/QuickAdd.tsx"
   ],
+  "Type an address, a saved location or coordinates such as 45.4642, 9.19.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "Type any interval or pattern, such as {examples}.": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Type coordinates as latitude, longitude, such as 45.4642, 9.19.": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Type the six-digit code the app shows.": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -11301,6 +11476,9 @@
   "Unlink": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Unlink from {place}": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "Unlink this identity": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -11324,6 +11502,9 @@
   ],
   "Unlock encryption on this device to open this file.": [
     "web/src/lib/attachments.ts"
+  ],
+  "Unlock encryption on this device to rename it.": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Unlock this device first: content can only be decrypted with the key.": [
     "web/src/lib/e2ee.ts"
@@ -11392,6 +11573,10 @@
     "web/src/lib/subtasks.ts",
     "web/src/lib/trash.ts",
     "web/src/lib/undoActions.ts"
+  ],
+  "Untitled location": [
+    "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "Untitled project": [
     "web/src/lib/trash.ts"
@@ -11487,6 +11672,9 @@
   "Use minutes or hours, for example 20, 45m, 1h30 (up to one week).": [
     "web/src/app/EstimateField.tsx"
   ],
+  "Use my location": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "Use my password instead": [
     "web/src/app/ReauthDialog.tsx"
   ],
@@ -11510,6 +11698,9 @@
   ],
   "Use this skill": [
     "web/src/app/assistant/AskEntry.tsx"
+  ],
+  "Use {coords}": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Used to sign in on new devices.": [
     "web/src/lib/settingsCopy.ts"
@@ -11740,6 +11931,9 @@
   ],
   "What will happen": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "What you type here is sent to the map provider through this server.": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Whatever is on your mind…": [
     "web/src/app/method/LoopHome.tsx",
@@ -13632,6 +13826,7 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/locations/PlacesView.tsx",
     "web/src/ui/patterns/ListGroupHeader.tsx"
   ],
   "{n, plural, one {# panel} other {# panels}}": [
@@ -13702,6 +13897,9 @@
   ],
   "{n, plural, one {# task is still in Today.} other {# tasks are still in Today.}}": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": [
+    "web/src/app/locations/PlacesView.tsx"
   ],
   "{n, plural, one {# task moved to the Trash} other {# tasks moved to the Trash}}": [
     "web/src/lib/bulk.ts"

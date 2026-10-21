@@ -44,7 +44,7 @@ export function MapsServerPanel() {
   const locked = (f: string) => !!s?.locked.includes(f)
   const byVariable = (name: string) => t('Set by {variable}', { variable: name })
   return (
-    <SettingsSection title={t('Maps')} id="maps" learnMore="self-hosting/maps"
+    <SettingsSection title={t('Maps')} id="maps" learnMore="locations"
       description={t('Task locations can show maps and search addresses. Map tiles and searches come from the provider below, through this server: the provider sees the server, the area shown and the search text, never accounts or tasks.')}>
       {s && (
         <div className="mt-3 space-y-3" data-maps-server>
@@ -74,7 +74,7 @@ export function MapsServerPanel() {
 export function MapsUserSection() {
   const prefs = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
   return (
-    <SettingsSection title={t('Maps')} id="maps" learnMore="locations-and-places"
+    <SettingsSection title={t('Maps')} id="maps" learnMore="locations"
       description={t('Off: no map is shown and addresses are not searched on any of your devices. Locations keep working with coordinates and “Open in maps”.')}>
       <div className="mt-3">
         <Switch label={t('Show maps and address search')} checked={mapsPrefOn(prefs)} onChange={(on) => act(setMapsPref(on))} />

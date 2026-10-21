@@ -134,7 +134,7 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
         <div className="space-y-1" data-location-current>
           <p className="text-body text-default">{shown.encrypted ? t('Encrypted') : locationLabel(shown)}</p>
           {shown.address && shown.name && <p className="text-meta text-muted">{shown.address}</p>}
-          {hasPoint && <p className="text-meta tabular-nums text-faint">{formatCoordinates(shown.lat!, shown.lon!)}</p>}
+          {hasPoint && (shown.name || shown.address) && <p className="text-meta tabular-nums text-faint">{formatCoordinates(shown.lat!, shown.lon!)}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {hasPoint && (
               <a href={openInMapsHref(shown.lat!, shown.lon!, isPhone())} target="_blank" rel="noreferrer noopener"
