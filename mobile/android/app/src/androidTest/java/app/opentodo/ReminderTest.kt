@@ -45,12 +45,12 @@ class ReminderTest {
     }
 
     /**
-     * The pending section of `dumpsys alarm` (from its "Pending alarm…" header to the next line
-     * indented no deeper): the removal and delivery histories list the same tags.
+     * The pending section of `dumpsys alarm` (from its "63 pending alarms:" header to the next
+     * line indented no deeper): the removal and delivery histories list the same tags.
      */
     private fun pendingSection(): List<String> {
         val lines = shell("dumpsys alarm").lines()
-        val start = lines.indexOfFirst { it.trim().startsWith("Pending alarm") }
+        val start = lines.indexOfFirst { Regex("""^\d+ pending alarms:""").containsMatchIn(it.trim()) }
         if (start < 0) return emptyList()
         val indent = lines[start].indexOfFirst { !it.isWhitespace() }
         val end = (start + 1 until lines.size).firstOrNull { i ->
