@@ -125,7 +125,7 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
     )
   }
   return (
-    <div ref={pageRef} className="mx-auto max-w-[80rem] px-4 py-6 outline-none md:px-8 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10" data-settings-section={page.id}>
+    <div ref={pageRef} className="max-w-[80rem] px-4 py-6 outline-none md:px-8 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10" data-settings-section={page.id}>
       {twoColumn && (
         <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:pr-1" aria-label={t('Settings')}>
           <SettingsList user={user} current={page.id} compact />

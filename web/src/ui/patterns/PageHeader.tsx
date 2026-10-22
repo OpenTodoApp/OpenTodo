@@ -3,11 +3,12 @@
 // title size, optional meta, at most two visible actions, an overflow menu and the
 // Help action) inside a PageBody whose width is fixed per page type. The header
 // stays visible while the content column scrolls. Two frames (page-rhythm D3): a
-// standalone page's frame is its content width plus the padding, centred in the
-// column; a layout page (a project, the calendars) keeps the one 80 rem frame of
-// ux-feedback-2 D7, so its title and actions never move between list, board and
-// timeline (index.css `.page-frame`). The page's meta is a lead line under the
-// title (page-rhythm D1), inside the one header element.
+// standalone page's frame is its content width plus the padding; a layout page (a
+// project, the calendars) keeps the one 80 rem frame of ux-feedback-2 D7, so its
+// title and actions never move between list, board and timeline. Both start at the
+// column's left edge, so opening the panel moves nothing (list-stays-still D1,
+// index.css `.page-frame`). The page's meta is a lead line under the title
+// (page-rhythm D1), inside the one header element.
 import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
@@ -16,20 +17,19 @@ import { Icon, type IconName } from '../Icon'
 import { TruncatedText } from '../TruncatedText'
 import { setPageBar } from './pageBar'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
-import { useFrameSlide } from './frameSlide'
 import { t } from '../../lib/i18n'
 
 export type PageWidth = 'list' | 'form' | 'wide' | 'full'
 
 /**
  * Which frame a page has (page-rhythm D3): `standalone` (no layout switch) is its
- * content width plus the padding, centred; `layout` (a project, a board or timeline
+ * content width plus the padding; `layout` (a project, a board or timeline
  * view, the calendars) is the shared 80 rem frame, content from its left edge.
  */
 export type PageFrame = 'standalone' | 'layout'
 
-/** The page frame (app-shell "Page template"): centred, at most 80 rem; `data-page-body` picks the content width, `data-page-frame` the frame. */
-export const PAGE_FRAME = 'page-frame mx-auto min-w-0 w-full max-w-[80rem]'
+/** The page frame (app-shell "Page template"): at most 80 rem, at the column's left edge (index.css); `data-page-body` picks the content width, `data-page-frame` the frame. */
+export const PAGE_FRAME = 'page-frame min-w-0 w-full max-w-[80rem]'
 
 export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
   /** list: 48 rem (lists and feeds); form: 42 rem (settings and forms); wide: 72 rem (a list with field columns); full: the whole frame (boards, calendars). */
@@ -44,9 +44,8 @@ export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
 /** A page: its frame with the padding; the content inside takes the page type's width. */
 export function PageBody({ width = 'list', flush = false, frame, className, children, ...rest }: PageBodyProps) {
   const kind = frameKind(width, frame)
-  const ref = useFrameSlide<HTMLDivElement>(kind === 'standalone')
   return (
-    <div {...rest} ref={ref} data-page-body={width} data-page-frame={kind} className={`${PAGE_FRAME} px-4 md:px-8 ${flush ? '' : 'pb-6'}${className ? ` ${className}` : ''}`}>
+    <div {...rest} data-page-body={width} data-page-frame={kind} className={`${PAGE_FRAME} px-4 md:px-8 ${flush ? '' : 'pb-6'}${className ? ` ${className}` : ''}`}>
       {children}
     </div>
   )

@@ -1,13 +1,12 @@
 // @vitest-environment happy-dom
 // The page rhythm (OpenSpec change page-rhythm): the lead line under the title (D1),
-// the two frames and the slide (D3, D4), and group headers as labels (D2).
+// the two frames (D3; list-stays-still D1), and group headers as labels (D2).
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../test-utils'
 import { frameKind, PageBody, PageHeader } from './PageHeader'
 import { pageBar } from './pageBar'
-import { frameSlideAllowed, FRAME_JUMP_PX, slideFrom } from './frameSlide'
 
-afterEach(() => { vi.unstubAllGlobals(); delete document.documentElement.dataset.motion })
+afterEach(() => { vi.unstubAllGlobals() })
 
 /** matchMedia answering `width` for min-width queries and `reduce` for reduced motion. */
 function stubMedia(width: number, reduce = false) {
@@ -91,24 +90,21 @@ describe('two frames (page-rhythm D3)', () => {
   })
 })
 
-describe('the frame slides when the panel docks (page-rhythm D4)', () => {
-  const before = { width: 1664, left: 416 }
-  it('slides by the distance the frame jumped when the column narrows by a panel', () => {
-    expect(slideFrom(before, { width: 1184, left: 176 }, true)).toBe(240)
-    expect(slideFrom({ width: 1184, left: 176 }, before, true)).toBe(-240)
+describe('opening the panel moves nothing (list-stays-still D1)', () => {
+  it('puts both frames at the column\'s left edge, never centred', async () => {
+    const css = (await import('../../index.css?raw')).default
+    expect(css).toMatch(/\.page-frame\s*\{\s*margin-left:\s*0;\s*margin-right:\s*auto;\s*\}/)
+    const r = await render(<PageBody width="list"><p>row</p></PageBody>)
+    expect(r.container.querySelector('[data-page-body]')!.className).not.toContain('mx-auto')
   })
-  it('does not slide for a window drag, nothing moving, or reduced motion', () => {
-    expect(slideFrom(before, { width: before.width - FRAME_JUMP_PX + 1, left: 300 }, true)).toBeNull()
-    expect(slideFrom({ width: 1184, left: 0 }, { width: 768, left: 0 }, true)).toBeNull()
-    expect(slideFrom(before, { width: 1184, left: 176 }, false)).toBeNull()
-  })
-  it('is not allowed under reduced motion or the no-motion setting', () => {
-    stubMedia(1920, false)
-    expect(frameSlideAllowed()).toBe(true)
-    stubMedia(1920, true)
-    expect(frameSlideAllowed()).toBe(false)
-    stubMedia(1920, false)
-    document.documentElement.dataset.motion = 'none'
-    expect(frameSlideAllowed()).toBe(false)
+  it('gives the docked panel one width, 26 rem and 30 rem from 1440 px', async () => {
+    const css = (await import('../../index.css?raw')).default
+    expect(css).toMatch(/:root\s*\{\s*--panel-w:\s*26rem;\s*\}/)
+    expect(css).toMatch(/@media \(min-width: 1440px\)\s*\{\s*:root\s*\{\s*--panel-w:\s*30rem;\s*\}\s*\}/)
+    const sources = import.meta.glob(['../../app/PanelFrame.tsx', '../../app/task-detail/TaskDetail.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    for (const [path, src] of Object.entries(sources)) {
+      expect(src, path).toContain('lg:w-(--panel-w)')
+      expect(src, path).not.toMatch(/min-\[1440px\]:w-|lg:w-\[26rem\]/)
+    }
   })
 })

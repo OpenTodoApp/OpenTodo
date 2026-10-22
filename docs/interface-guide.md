@@ -44,16 +44,16 @@ The [design system](design-system.md) says which tokens and building blocks exis
 
 **The lead line.** The title is set at the `display` step on its own line; the page's `meta` (Today's date and totals, a project's members, a label's count, a read-only note) is a muted line under it at the metadata size (`data-page-lead`). It is inside the one header element, so the interface budget's "rows of chrome" (a count of elements) is unchanged. Below 768 px the shell's bar shows it as its subtitle.
 
-**Two page frames** (`data-page-frame`). A *standalone* page, one without a layout switch (Inbox, Today, Upcoming, a label, Filter, Trash, Updates, Settings, Import, Ask, Help, the review screens), has a frame as wide as its content plus the side padding, centred in the content column: the title and the first row share one left edge and no page sits left-aligned in a wider column. A *layout* page (a project, a saved view with a board or timeline, the calendars) keeps one frame of at most 80 rem; the header spans it and the content starts at its left edge, so a project's title and actions never move between list, board and timeline. Content wider than the frame scrolls sideways inside it. `PageBody` picks the frame from its width (`full` is a layout page) or `frame`; the task lists mark theirs in `TaskListView`. The CSS is one unlayered rule in `index.css`.
+**Two page frames** (`data-page-frame`). A *standalone* page, one without a layout switch (Inbox, Today, Upcoming, a label, Filter, Trash, Updates, Settings, Import, Ask, Help, the review screens), has a frame as wide as its content plus the side padding: the title and the first row share one left edge. A *layout* page (a project, a saved view with a board or timeline, the calendars) keeps one frame of at most 80 rem; the header spans it and the content starts at its left edge, so a project's title and actions never move between list, board and timeline. Content wider than the frame scrolls sideways inside it. Both frames start at the content column's left edge (list-stays-still), so every page shares one left edge and the docked panel opens into the space on the right. `PageBody` picks the frame from its width (`full` is a layout page) or `frame`; the task lists mark theirs in `TaskListView`. The CSS is one unlayered rule in `index.css`.
 
-| Window (sidebar 16 rem) | Content column | Standalone, panel closed | Standalone, panel open | Layout frame |
-| --- | --- | --- | --- | --- |
-| 1024 px | 48 rem | fills (list 44 rem) | fills | 48 rem |
-| 1280 px | 64 rem | 52 rem, 6 rem each side | fills (38 rem) | 64 rem |
-| 1440 px | 74 rem | 52 rem, 11 rem each side | fills (44 rem) | 74 rem |
-| 1920 px | 104 rem | 52 rem, 26 rem each side | 52 rem, 11 rem each side | 80 rem |
+| Window (sidebar 16 rem) | Content column | Panel | Standalone, panel closed | Standalone, panel open | Layout frame, closed / open |
+| --- | --- | --- | --- | --- | --- |
+| 1024 px | 48 rem | 26 rem | fills (list 44 rem) | fills (22 rem) | 48 / 22 rem |
+| 1280 px | 64 rem | 26 rem | 52 rem, 12 rem free on the right | fills (38 rem) | 64 / 38 rem |
+| 1440 px | 74 rem | 30 rem | 52 rem, 22 rem free on the right | fills (44 rem) | 74 / 44 rem |
+| 1920 px | 104 rem | 30 rem | 52 rem, 52 rem free on the right | 52 rem, 22 rem free on the right | 80 / 74 rem |
 
-When the panel docks or the sidebar collapses, the column jumps in width and a standalone frame slides to its new centre over the emphasis duration (`frameSlide.ts`: a jump of 160 px or more in one step; a window drag moves nothing; at once under reduced motion or no motion). Where the column is no wider than the frame, nothing moves. Enforced by `pageTemplate.test.ts`, `pageRhythm.test.tsx` and the frame step of `make e2e`.
+Opening and closing the panel moves no row and not the title: the frame's left edge never changes, and a frame wider than the narrowed column gives up width on its right. Nothing slides. The panel's width is one custom property, `--panel-w` (26 rem, 30 rem from 1440 px), read by both docked panels. Enforced by `pageTemplate.test.ts`, `pageRhythm.test.tsx` and the frame step of `make e2e`.
 
 The header is sticky inside the content column. A string title is truncated; pass a node for an inline rename field. `back` adds a back action for nested pages and phones. `children` is a second row (a segmented control, tabs) and counts against the budget. Below 768 px the shell's bar shows the title and the first two actions, so a view declares its header once.
 

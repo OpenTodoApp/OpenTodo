@@ -172,7 +172,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} data-sheet={sheet ? '' : undefined} style={sheet?.style}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
-        : sheet ? sheet.className : `fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem] ${entering ? 'panel-enter' : ''}`}>
+        : sheet ? sheet.className : `fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-(--panel-w) lg:max-w-none lg:shadow-none ${entering ? 'panel-enter' : ''}`}>
       {sheet?.handle}
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
       <div data-panel-header ref={page ? measureHeader : undefined} className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : sheet ? '' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
