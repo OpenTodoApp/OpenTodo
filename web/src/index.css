@@ -803,6 +803,8 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
 /* A hairline between a flat section and whatever comes before it on the page (D9). */
 .ui-section-flat:not(:first-child) { @apply border-t border-default; }
+/* A dashboard panel: flat, full width of its grid cell, a hairline above every one (statistics). */
+.ui-panel-flat { @apply border-t border-default px-0; }
 }
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */

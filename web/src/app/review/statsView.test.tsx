@@ -115,6 +115,21 @@ describe('Statistics dashboard', () => {
     await r.unmount()
   })
 
+  it('Surfaces: tiles are cards with the display figure; panels are flat, with no border or shadow class of their own (surfaces-v2)', async () => {
+    const r = await render(<StatsContent tasks={[]} projects={[]} memberships={[]} me="u1" today="2026-10-14" weekStart={1} period="this-week" />)
+    for (const tl of r.container.querySelectorAll('[data-tile]')) {
+      expect(tl.className).toContain('surface-card')
+      expect(tl.querySelector('[data-tile-value]')!.className).toMatch(/\btext-display\b.*\btabular-nums\b/)
+    }
+    const panels = [...r.container.querySelectorAll('[data-panel]')]
+    expect(panels.length).toBe(6)
+    for (const p of panels) {
+      expect(p.className).toContain('ui-section-flat')
+      expect(p.className).not.toMatch(/\b(rounded-card|shadow-\d|border-dashed|border-input|surface-card)\b/)
+    }
+    await r.unmount()
+  })
+
   it('Phone: tiles wrap to two per row, panels stack in one column, the heatmap scrolls inside its figure', async () => {
     const r = await render(<StatsContent tasks={[]} projects={[]} memberships={[]} me="u1" today="2026-10-14" weekStart={1} period="this-week" />)
     const tiles = r.container.querySelector('[data-testid="stats-tiles"]')!.className
