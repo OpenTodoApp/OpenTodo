@@ -62,6 +62,12 @@ export interface UndoResult {
   skipped: string[]
 }
 
+/** How many tasks an Undo would touch (the list reflows only up to a cap, motion-v2 D4). */
+export async function undoTaskCount(id: string): Promise<number> {
+  const entry = await db.assistantUndo.get(id)
+  return new Set(entry?.inverse.filter((i) => i.entity === 'task').map((i) => i.entityId)).size
+}
+
 /**
  * Undoes one batch as one new batch: previous values come back, created entities
  * go to the Trash. A field changed again since (its clock is no longer the batch's)

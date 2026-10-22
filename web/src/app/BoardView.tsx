@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Label, Project, Section, Task } from '../lib/types'
 import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
 import { t } from '../lib/i18n'
+import { isGhost } from './motion'
 
 export interface BoardColumn {
   /** Section id, or '' for "No section". */
@@ -73,17 +74,19 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
       {columns.map((col) => {
         const idx = sections.findIndex((c) => c.key === col.key)
         const name = col.section ? col.section.name || t('Untitled section') : t('No section')
+        // A departing card (motion-v2 D2) is still shown but no longer counted.
+        const open = col.cards.reduce((n, c) => n + (isGhost(c) ? 0 : 1), 0)
         return (
           <section
             key={col.key || 'none'}
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
-            aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: col.cards.length })}
+            aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: open })}
             className="ui-column flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72"
           >
             <SectionHeader
               section={col.section}
-              count={col.cards.length}
+              count={open}
               layout="board"
               editable={editable}
               first={idx <= 0}
@@ -95,7 +98,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               {col.cards.map((tk) => renderCard(tk))}
               {placeholder?.key === col.key && <li aria-hidden data-drop-placeholder className="ui-drop-placeholder" style={{ height: placeholder.height }} />}
             </ul>
-            {editable && col.cards.length === 0 && addingTo !== col.key && (
+            {editable && open === 0 && addingTo !== col.key && (
               <Button variant="ghost" size="sm" icon="plus" className="w-full justify-start text-muted" data-column-add={col.key} onClick={() => setAddingTo(col.key)}>
                 {t('Add a task')}
               </Button>

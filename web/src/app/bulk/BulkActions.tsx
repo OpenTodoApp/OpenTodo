@@ -20,11 +20,13 @@ import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
 import { BulkReview } from './BulkReview'
 import { showBulkToast } from './toastStore'
 import { t } from '../../lib/i18n'
+import { withListTransition } from '../motion'
 
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
   if (ids.length === 0) return
-  const r = await applyBulk(ids, action)
+  // The rows that stay slide into place; more than the cap update at once (motion-v2 D4).
+  const r = await withListTransition(ids.length, () => applyBulk(ids, action))
   showBulkToast(r.label, r.undoId)
 }
 

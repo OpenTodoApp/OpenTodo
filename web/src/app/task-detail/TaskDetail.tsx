@@ -8,7 +8,8 @@ import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
-import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery, Menu } from '../../ui'
+import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery, Menu, playExit } from '../../ui'
+import { panelTaskId } from '../panel'
 import { Tooltip } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
@@ -45,8 +46,10 @@ export function taskLink(id: string, origin = typeof location === 'undefined' ? 
   return `${origin}/?task=${encodeURIComponent(id)}`
 }
 
-export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false, variant = 'panel' }: {
+export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false, variant = 'panel', entering = false }: {
   taskId: string
+  /** The panel was closed before this task opened: it slides in (web-app "Overlay motion"). */
+  entering?: boolean
   /** `panel`: the shell's slot. `page`: the expanded task at /task/<id>, where Close is a Back action. */
   variant?: 'panel' | 'page'
   /** Signed-in account; enables the assignee row (task-assignment). */
@@ -79,6 +82,11 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const [pageDialog, setPageDialog] = useState(false)
   const online = useOnline()
   const panel = useRef<HTMLElement>(null)
+  // Closing the panel (not switching its task) slides it out on a copy (motion-v2 D5).
+  useLayoutEffect(() => {
+    const el = panel.current
+    return () => { if (variant === 'panel' && panelTaskId() === null) playExit(el, { className: 'panel-exit' }) }
+  }, [variant])
   // The pinned bottom of the panel: the comment composer renders here while the
   // Comments tab is shown, so it is in view without scrolling (ux-overhaul).
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
@@ -167,7 +175,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
-        : 'fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
+        : `fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem] ${entering ? 'panel-enter' : ''}`}>
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
       <div data-panel-header ref={page ? measureHeader : undefined} className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
         onTouchStart={page ? undefined : onSwipeStart} onTouchEnd={page ? undefined : onSwipeEnd}>

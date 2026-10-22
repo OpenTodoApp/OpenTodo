@@ -111,8 +111,9 @@
   --shadow-2: 0 4px 12px rgb(15 23 42 / 0.10);
   --shadow-3: 0 12px 32px rgb(15 23 42 / 0.16);
   --ease-calm: cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* A light overshoot that settles (tokens-v2 D9), for sheets, popovers and moments. */
-  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+  /* The spring (tokens-v2 D9, motion-v2 D1): an ease-out quint that settles without
+     overshoot, for the completion sequence, list reflow and overlay entrances. */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root, [data-theme="light"] {
@@ -181,7 +182,8 @@
 :root {
   --duration-ui: 120ms;
   --duration-emphasis: 250ms;
-  /* Moments (tokens-v2 D9): the one longer duration, for the completion sequence only. */
+  /* The moment (tokens-v2 D9, motion-v2 D1): the one longer duration, for the completion
+     sequence, list reflow and overlay entrances. Nothing lasts longer. */
   --duration-moment: 400ms;
   --size-row: 44px;
   /* Derivation ratios (tokens-v2 D4, D5): every accent and hue step is one of these
@@ -848,10 +850,58 @@ select.ui-input { @apply truncate; contain: layout paint; }
    a toast (3.5 rem) and the selection bar (3.5 rem) plus their gap, so a focused row
    action scrolled into view with `block: 'nearest'` stays clear of both. */
 :root { --list-scroll-pad: 8rem; }
-/* Completion feedback (task-list-presentation): the check mark pops within the emphasis
-   duration; under reduced motion the animation is instant and only the row's opacity fades. */
+/* Completion feedback (task-list-presentation; motion-v2 D3). The op is written at
+   once; the list keeps the row as a departing row (`data-departing`) for the moment:
+   0-250 ms the check mark pops, 60-260 ms the strike draws and the text fades to half,
+   200-400 ms the row collapses (its height is measured into --row-h) and the rows
+   below move up. A repeating task stays (`data-rolled`): the check pops, the line
+   below fades back in with the next date and the row tints briefly. Undo brings a
+   departing row back with a 120 ms fade (`data-restored`). Reduced motion: the row
+   fades within 120 ms and nothing moves or scales; no motion: everything is instant. */
 @keyframes row-check-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
-.row-check-pop { animation: row-check-pop var(--duration-emphasis) var(--ease-calm, ease-out) both; }
+@keyframes row-strike { from { inline-size: 0; } to { inline-size: 100%; } }
+@keyframes row-text-fade { from { opacity: 1; } to { opacity: 0.5; } }
+@keyframes row-collapse {
+  from { block-size: var(--row-h, auto); opacity: 1; }
+  to { block-size: 0; padding-block: 0; margin-block: 0; opacity: 0; }
+}
+@keyframes row-rolled { from { background-color: var(--ot-accent-soft); } to { background-color: transparent; } }
+@keyframes row-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.row-check-pop, [data-departing] [data-check-mark], [data-rolled] [data-check-mark] {
+  animation: row-check-pop var(--duration-emphasis) var(--ease-spring) backwards;
+}
+[data-departing] { overflow: hidden; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
+[data-departing] [data-row-open] { animation: row-text-fade 200ms var(--ease-calm) 60ms both; }
+[data-departing] [data-row-title] { position: relative; inline-size: fit-content; max-inline-size: 100%; text-decoration-line: none; }
+[data-departing] [data-row-title]::after {
+  content: ""; position: absolute; inset-inline-start: 0; inset-block-start: 50%; block-size: 1px;
+  background: currentColor; animation: row-strike 200ms var(--ease-calm) 60ms both;
+}
+[data-rolled] { animation: row-rolled var(--duration-emphasis) var(--ease-calm) var(--duration-emphasis) both; }
+[data-rolled] [data-row-meta] { animation: row-fade-in var(--duration-ui) var(--ease-calm) var(--duration-emphasis) both; }
+[data-restored] { animation: row-fade-in var(--duration-ui) var(--ease-calm) both; }
+@media (prefers-reduced-motion: reduce) {
+  .row-check-pop, [data-departing], [data-departing] *, [data-departing] [data-row-title]::after,
+  [data-rolled], [data-rolled] *, [data-restored] { animation: none !important; }
+  [data-departing] [data-row-title]::after { content: none; }
+  [data-departing] [data-row-title] { text-decoration-line: line-through; }
+  /* The departing row fades within the interface duration, then leaves. */
+  @starting-style { [data-departing] { opacity: 1; } }
+  [data-departing] { opacity: 0; transition: opacity var(--duration-ui) ease-out; }
+}
+:root[data-motion="none"] [data-departing] { display: none; }
+
+/* List reflow (task-list-presentation "List reflow", motion-v2 D4): the rows named for a
+   local change slide to their new places within the moment: the slide takes the emphasis
+   duration, so with the browser's snapshot of the rows (about 100 ms on a slow phone,
+   measured in design.md) the whole change stays under 400 ms. Old and new snapshots
+   only crossfade; the root keeps a crossfade within the interface duration. */
+::view-transition-group(*) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-spring); }
+::view-transition-old(*), ::view-transition-new(*) { animation-duration: var(--duration-ui); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--duration-ui); }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
 :root[data-density="compact"] .row-pad { padding-block: 0.25rem; }
 /* The task panel's facet lines follow the density too (task-panel-facets D4). */
 :root[data-density="compact"] .facet-line [data-part], :root[data-density="compact"] .facet-line > span:first-child { min-height: 1.5rem; height: auto; }
@@ -984,21 +1034,51 @@ select.ui-input { @apply truncate; contain: layout paint; }
 }
 }
 
-/* Dialog placement="sheet" (OpenSpec change lean-chrome D3): below 640 px the card
-   slides up from the bottom within --duration-ui; under reduced motion it only fades.
-   From 640 px up it is the ordinary centred card, without motion. */
+/* Overlay motion (web-app "Overlay motion", motion-v2 D5). Dialog placement="sheet"
+   (lean-chrome D3) slides up from the bottom below 640 px within the emphasis duration
+   and slides down in three quarters of it; from 640 px every dialog fades and scales
+   up from 98 %, and leaves the same way, faster. Toasts slide up 8 px and fade out.
+   Menus, popovers, tooltips and the palette fade in over the interface duration and
+   close at once. Reduced motion: every overlay only fades; no motion: instant.
+   Entrances fill `backwards` only: a transform left in effect after the animation would
+   make the overlay the containing block of the fixed pickers inside it. */
 @layer components {
 @keyframes dialog-sheet-up { from { transform: translateY(1.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes dialog-sheet-down { from { transform: none; opacity: 1; } to { transform: translateY(1.5rem); opacity: 0; } }
 @keyframes dialog-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
-.dialog-sheet { animation: dialog-sheet-up var(--duration-ui) var(--ease-calm, ease-out) both; }
-@media (prefers-reduced-motion: reduce) { .dialog-sheet { animation-name: dialog-sheet-fade; } }
-@media (min-width: 640px) { .dialog-sheet { animation: none; } }
+@keyframes overlay-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes dialog-enter { from { transform: scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes dialog-exit { from { transform: none; opacity: 1; } to { transform: scale(0.98); opacity: 0; } }
+@keyframes toast-enter { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes panel-enter { from { transform: translateX(1.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes panel-exit { from { transform: none; opacity: 1; } to { transform: translateX(1.5rem); opacity: 0; } }
+.dialog-sheet { animation: dialog-sheet-up var(--duration-emphasis) var(--ease-spring) backwards; }
+.dialog-sheet[data-closing] { animation: dialog-sheet-down calc(var(--duration-emphasis) * 0.75) var(--ease-calm) both; }
+@media (min-width: 640px) {
+  .dialog-card { animation: dialog-enter var(--duration-emphasis) var(--ease-spring) backwards; }
+  .dialog-card[data-closing] { animation: dialog-exit calc(var(--duration-emphasis) * 0.75) var(--ease-calm) both; }
+}
+/* The toast primitive (moments-and-onboarding D9, motion-v2 D5): it slides up 8 px as it
+   enters and only fades as it leaves; under reduced motion it only fades. */
+.ui-toast { animation: toast-enter var(--duration-emphasis) var(--ease-spring) backwards; }
+.ui-toast[data-closing] { animation: overlay-fade-out calc(var(--duration-emphasis) * 0.75) var(--ease-calm) both; }
+.panel-enter { animation: panel-enter var(--duration-emphasis) var(--ease-spring) backwards; }
+.panel-exit[data-closing] { animation: panel-exit calc(var(--duration-emphasis) * 0.75) var(--ease-calm) both; }
+/* An exit copy's scrim fades with its card. */
+.overlay-scrim-exit { animation: overlay-fade-out calc(var(--duration-emphasis) * 0.75) var(--ease-calm) both; }
+.overlay-fade-in { animation: dialog-sheet-fade var(--duration-ui) var(--ease-calm) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .dialog-sheet, .dialog-card, .ui-toast, .panel-enter, .overlay-fade-in { animation-name: dialog-sheet-fade !important; animation-duration: var(--duration-ui) !important; }
+  .dialog-sheet[data-closing], .dialog-card[data-closing], .ui-toast[data-closing], .panel-exit[data-closing] { animation-name: overlay-fade-out !important; }
+  .panel-exit[data-closing] { animation-duration: var(--duration-ui) !important; }
+}
 /* Quick add's inline tints (moments-and-onboarding D8): the chip's soft hue behind the
    recognised span; under the high-contrast presentation a 1 px underline in its colour. */
 .quick-add-tint { background-color: var(--hue-soft); color: transparent; border-radius: 0.1875rem; }
 html:root[data-contrast="high"] .quick-add-tint { background-color: transparent; text-decoration: underline 1px var(--hue-solid); text-decoration-color: var(--hue-solid); text-underline-offset: 0.2em; }
-/* The toast primitive (moments-and-onboarding D9): it fades in and never moves. */
-.ui-toast { animation: dialog-sheet-fade var(--duration-ui) var(--ease-calm, ease-out) both; }
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }
+
+
+

@@ -1,6 +1,7 @@
 import { Icon } from '../Icon'
-import { type ReactNode, useId, useRef } from 'react'
+import { type ReactNode, useId, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { clearExits, playExit } from './exit'
 import { trapTab } from './stack'
 import { isolate, useOverlay } from './useOverlay'
 import { t } from '../../lib/i18n'
@@ -23,8 +24,8 @@ export interface DialogProps {
    * Below 640 px: `center` (default) is a full-screen sheet; `sheet` is anchored to the
    * bottom, at most two thirds of the screen high, with curved top corners, the page
    * visible above it and its body scrolling inside (lean-chrome D3, used by the start
-   * guide). It slides up within `--duration-ui` and only fades under reduced motion.
-   * From 640 px up both are the same centred card.
+   * guide). It slides up within the emphasis duration and only fades under reduced
+   * motion. From 640 px up both are the same centred card, which fades and scales up.
    */
   placement?: 'center' | 'sheet'
   /**
@@ -32,6 +33,11 @@ export interface DialogProps {
    * library's detail) steps back first. The close button and a tap outside still close.
    */
   onEscape?: () => void
+  /**
+   * `dialog` (default): enters with the dialog motion and leaves faster; `fade`: fades in
+   * over the interface duration and closes at once, as menus do (the command palette).
+   */
+  motion?: 'dialog' | 'fade'
 }
 
 const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', xl: 'sm:max-w-5xl' }
@@ -51,16 +57,23 @@ const CARD = {
  * and the close button stays pinned. Mount it while open. `placement="sheet"` keeps
  * the page visible above a bottom sheet on phones instead (see the prop).
  */
-export function Dialog({ title, onClose, children, size = 'sm', dismissable = true, role = 'dialog', label, className = '', testId, placement = 'center', onEscape }: DialogProps) {
+export function Dialog({ title, onClose, children, size = 'sm', dismissable = true, role = 'dialog', label, className = '', testId, placement = 'center', onEscape, motion = 'dialog' }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null)
+  const root = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useOverlay({ panel, onClose: onEscape ?? onClose })
+  // The exit (web-app "Overlay motion", motion-v2 D5) plays on a copy once this unmounts.
+  useLayoutEffect(() => {
+    clearExits()
+    const el = root.current
+    return () => { if (motion === 'dialog') playExit(el, { closing: '.dialog-card', className: 'overlay-scrim-exit' }) }
+  }, [motion])
   const tree = (
-    <div className="fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim sm:p-4" data-overlay-root {...isolate}
+    <div ref={root} className="fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim sm:p-4" data-overlay-root {...isolate}
       onClick={(e) => { if (dismissable && e.target === e.currentTarget) onClose() }}
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role={role} aria-modal="true" aria-labelledby={label ? undefined : titleId} aria-label={label} tabIndex={-1} data-overlay="dialog" data-testid={testId}
-        data-placement={placement === 'sheet' ? 'sheet' : undefined} className={`${CARD[placement]} ${WIDTH[size]}`}>
+        data-placement={placement === 'sheet' ? 'sheet' : undefined} className={`${CARD[placement]} ${motion === 'fade' ? 'overlay-fade-in' : 'dialog-card'} ${WIDTH[size]}`}>
         <div className={placement === 'sheet' ? HEADER_SHEET : HEADER}>
           <h2 id={titleId} className="min-w-0 flex-1 py-2 text-body font-semibold">{title}</h2>
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label={t('Close')} data-overlay-close><Icon name="x" size="md" /></button>

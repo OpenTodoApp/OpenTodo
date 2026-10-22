@@ -398,31 +398,38 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     return () => { window.matchMedia = original }
   }
 
-  it('animates the check mark and fades the row before completing; reduced motion completes at once', async () => {
-    const { vi } = await import('vitest')
+  it('completes at once: the write never waits for the animation, with or without reduced motion (motion-v2 D2)', async () => {
     const { click } = await import('../ui/test-utils')
-    let restore = stubMotion(false)
-    try {
-      let toggled = 0
-      const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} /></ul>)
-      const li = r.container.querySelector('[data-task-id]')!
-      await click(li.querySelector('button[aria-label="Complete Task"]')!)
-      expect(li.hasAttribute('data-completing')).toBe(true)
-      expect(li.className).toContain('opacity-50')
-      expect(li.querySelector('[data-check-mark]')!.className).toContain('row-check-pop')
-      expect(toggled).toBe(0)
-      await waitFor(() => toggled === 1, 1500)
-      await r.unmount()
-      restore()
-      restore = stubMotion(true)
-      toggled = 0
-      const q = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} /></ul>)
-      await click(q.container.querySelector('button[aria-label="Complete Task"]')!)
-      expect(toggled).toBe(1)
-      expect(q.container.querySelector('[data-completing]')).toBeNull()
-      await q.unmount()
-      expect(vi).toBeTruthy()
-    } finally { restore() }
+    for (const reduce of [false, true]) {
+      const restore = stubMotion(reduce)
+      try {
+        let toggled = 0
+        const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} /></ul>)
+        await click(r.container.querySelector('button[aria-label="Complete Task"]')!)
+        expect(toggled).toBe(1)
+        await r.unmount()
+      } finally { restore() }
+    }
+  })
+
+  it('a departing row is done, hidden from assistive technology, inert and has no task id; rolled and restored rows are marked', async () => {
+    const leave = await render(<ul><TaskRow task={task({})} motion="leave" selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    const li = leave.container.querySelector('li')!
+    expect(li.getAttribute('data-departing')).toBe('t')
+    expect(li.hasAttribute('data-task-id')).toBe(false)
+    expect(li.getAttribute('aria-hidden')).toBe('true')
+    expect(li.hasAttribute('inert')).toBe(true)
+    // The check mark shows done while the sequence plays.
+    expect(li.querySelector('[data-check-mark] svg')).not.toBeNull()
+    expect(li.style.getPropertyValue('--row-h')).toMatch(/px$/)
+    await leave.unmount()
+    const rolled = await render(<ul><TaskRow task={task({})} motion="rolled" selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    expect(rolled.container.querySelector('li')!.hasAttribute('data-rolled')).toBe(true)
+    expect(rolled.container.querySelector('li')!.getAttribute('data-task-id')).toBe('t')
+    await rolled.unmount()
+    const restored = await render(<ul><TaskRow task={task({})} motion="restored" selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    expect(restored.container.querySelector('li')!.hasAttribute('data-restored')).toBe(true)
+    await restored.unmount()
   })
 
   it('without a selection in progress the circle is the only box: hover and focus never swap in the selection box', async () => {

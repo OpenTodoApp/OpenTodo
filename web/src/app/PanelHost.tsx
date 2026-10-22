@@ -2,7 +2,7 @@
 // the task detail panel is rendered. It owns the panel's data (projects, labels,
 // memberships) so every view, and the palette, notifications and reminders, open
 // a task the same way.
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLabels, useMembershipMap, useProjects, useTask } from '../lib/localData'
 import { roleOf } from '../lib/sharing'
 import type { Task, User } from '../lib/types'
@@ -27,6 +27,16 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   // undefined while loading, null when the task does not exist.
   const task = useTask(taskId)
 
+  // The panel slides in only when it opens from closed, never when it switches tasks
+  // (web-app "Overlay motion", motion-v2 D5).
+  const shown = occupant?.kind === 'task' ? occupant.id : null
+  const [prevShown, setPrevShown] = useState<string | null>(null)
+  const [enteredFor, setEnteredFor] = useState<string | null>(null)
+  if (shown !== prevShown) {
+    setPrevShown(shown)
+    setEnteredFor(shown && !prevShown ? shown : null)
+  }
+
   // A task that is gone (deleted here or elsewhere) leaves the slot.
   useEffect(() => {
     if (taskId && (task === null || task?.deleted_at)) closePanel()
@@ -47,6 +57,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
       onClose={closePanel}
       onOpen={openTaskPanel}
       onToggleComplete={handlers.toggleComplete}
+      entering={occupant.id === enteredFor}
     />
   )
 }

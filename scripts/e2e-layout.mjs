@@ -45,6 +45,8 @@ async function axeProblems(p, include) {
   if (!AXE) return ['axe-core is not installed (npm ci in web/)']
   if (!(await p.evaluate(() => typeof window.axe !== 'undefined'))) await p.addScriptTag({ content: AXE })
   return p.evaluate(async (sel) => {
+    // Entrances end first (motion-v2): a panel caught mid-fade reads as low contrast. Endless ones (spinners) are skipped.
+    await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity).map((a) => a.finished.catch(() => {})))
     // eslint-disable-next-line no-undef
     const r = await axe.run(sel ? { include: [sel] } : document, { resultTypes: ['violations'] })
     return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `axe ${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
@@ -479,6 +481,7 @@ const OVERLAYS = {
     const trigger = p.getByRole('button', { name: /^Share/ }).first()
     await trigger.click()
     const dialog = p.getByRole('dialog', { name: /^Share/ })
+    await settled(dialog)
     await dialog.getByRole('button', { name: 'Create a link…' }).click()
     await dialog.getByRole('button', { name: 'Create link' }).waitFor()
     return { overlay: dialog, trigger, kind: 'dialog' }
@@ -825,6 +828,13 @@ function smallTargets([rootSel, min]) {
     if (r.width + 0.5 < min || r.height + 0.5 < min) { seen.add(key); out.push(`"${name}" (${el.tagName.toLowerCase()}) is ${Math.round(r.width)}×${Math.round(r.height)}px`) }
   }
   return out
+}
+
+// An overlay's entrance (motion-v2: a dialog scales up over 250 ms) has finished: a click
+// on a control inside it while it still moves makes Playwright retry with other scroll
+// alignments, which scrolls the overlay; a person's click does not.
+async function settled(overlay) {
+  await overlay.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))))
 }
 
 // Overlay geometry: inside the viewport, close control inside and hit-testable.

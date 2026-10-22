@@ -641,6 +641,10 @@ var Schema = map[string]map[string]kind{
 		// Maps on this user's devices (OpenSpec change task-locations, design
 		// D6): "on" or "off"; clients read an empty or unknown value as "on".
 		"maps": kString,
+		// Haptic feedback on this user's devices (OpenSpec change motion-v2,
+		// design D6): "on" or "off"; clients read an empty or unknown value as
+		// "on" and keep the stored value, so the field stays additive.
+		"haptics": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

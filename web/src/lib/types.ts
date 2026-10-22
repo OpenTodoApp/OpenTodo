@@ -619,6 +619,8 @@ export interface UserPrefs {
   focus_break_after_minutes: number
   /** Maps on this user's devices (task-locations D6): 'off' turns them off; '' and anything else read as on. */
   maps?: string
+  /** Haptic feedback on this user's devices (motion-v2 D6): 'off' turns the tick off; '' and anything else read as on. */
+  haptics?: string
   _clock: Clock
 }
 

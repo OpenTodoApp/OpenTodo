@@ -297,6 +297,8 @@ jobs:
         working-directory: web
       - name: Accessibility (axe-core on every story, light and dark)
         run: node scripts/ui-check/a11y.mjs
+      - name: Motion (Foundations/Motion under reduced motion and no motion)
+        run: node scripts/ui-check/motion.mjs
 
   ui-visual:
     name: UI check (visual regression ${{ matrix.shard }}/3)

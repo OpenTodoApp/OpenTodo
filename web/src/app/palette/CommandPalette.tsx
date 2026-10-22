@@ -195,7 +195,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     }
     const picker = mode.picker
     return (
-      <Dialog title={picker.title} onClose={onClose} size="md">
+      <Dialog title={picker.title} onClose={onClose} size="md" motion="fade">
         <ComboboxPanel {...picker} label={picker.title}
           onPick={async (item: unknown) => { const c = await picker.onPick(item); if (c) setMode({ kind: 'confirm', confirm: c }); else onClose() }}
           onClose={onClose} />
@@ -203,7 +203,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     )
   }
   return (
-    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} size="md" testId="command-palette"
+    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} size="md" testId="command-palette" motion="fade"
       onEscape={() => (bar === 'search' ? onClose() : toMode('search'))}>
       <div className="space-y-2" data-combobox data-palette data-bar-mode-current={bar} onKeyDownCapture={onKeyDownCapture}>
         {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)} />}

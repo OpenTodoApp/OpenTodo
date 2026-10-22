@@ -48,7 +48,7 @@ Tokens are defined once in `web/src/index.css`:
 | Type | `text-hint`, `text-meta`, `text-body`, `text-h3`, `text-h2`, `text-h1`, `text-display` | 11, 13, 15, 17, 20, 24, 28 px; rem-based; headings and display are weight 600 with tracking −0.01em (h2), −0.015em (h1) and −0.02em (display) |
 | Radius | `rounded-chip`, `rounded-control`, `rounded-card` | 6, 10, 14 px |
 | Elevation | `shadow-1`, `shadow-2`, `shadow-3` | cards, popovers, dialogs; pair with a border in dark |
-| Motion | `duration-(--duration-ui)`, `duration-(--duration-emphasis)`, `duration-(--duration-moment)`, `ease-calm`, `ease-spring` | 120, 250 and 400 ms; the 400 ms moment is for the completion sequence only; `ease-spring` overshoots lightly and settles; reduced motion keeps only colour and opacity fades, `data-motion="none"` zeroes all three |
+| Motion | `duration-(--duration-ui)`, `duration-(--duration-emphasis)`, `duration-(--duration-moment)`, `ease-calm`, `ease-spring` | Three durations: 120 ms for interface feedback, 250 ms for emphasis and the 400 ms moment, reserved for the completion sequence, list reflow and overlay entrances; nothing lasts longer and an exit takes about three quarters of its entrance. `ease-spring` is an ease-out that settles without overshoot (nothing bounces). Reduced motion keeps only colour and opacity fades of at most 120 ms and skips view transitions; `data-motion="none"` zeroes all three, so everything is instant |
 
 Rules for code under `web/src/ui/`:
 
@@ -101,7 +101,7 @@ Steps toward black or white mix `in oklch`, which keeps the hue; steps into a su
 Two root attributes change the presentation for screens that ask for them (OpenSpec `display-mode`, design-system "High-contrast and no-motion presentation"):
 
 - `data-contrast="high"` on `<html>` overrides the `--ot-*` tokens: every surface is pure white (light) or pure black (dark), text is black or white with secondary text still at 7:1 or more, soft tints become the surface (an outline keeps their shape), borders and the focus ring are full black or white, and the priority and status hues are darkened (light) or lightened (dark) to 7:1 as text and 3:1 as marks. The blocks are `html:root[data-contrast="high"]`, the system-dark branch and `[data-theme="dark"]`; their selectors outrank the mode and accent blocks, so the override combines with any mode and accent. The two dark blocks must stay identical.
-- `data-motion="none"` sets `--duration-ui` and `--duration-emphasis` to `0ms` and makes every transition and animation instant, stricter than the reduced-motion query (colour and opacity do not fade either).
+- `data-motion="none"` sets `--duration-ui`, `--duration-emphasis` and `--duration-moment` to `0ms` and makes every transition and animation instant, stricter than the reduced-motion query (colour and opacity do not fade either).
 
 Only the display routes set them, on mount, and remove them on unmount (`useRootPresentation` in `web/src/app/display/displayHooks.ts`); they never touch the user's theme or preferences. `OVERRIDE_PAIRS` in `src/ui/tokens/pairs.ts` holds the override's pairs with raised minimums (7:1 for text and chips, 3:1 for the rest), and `contrast.test.ts` measures them in both modes and names the pair, the override and the ratio when one fails. The workbench shows the override in **Foundations → Colours → High Contrast Override**. The display's large type is not a token: `.display-root` multiplies the type tokens by `--display-scale` (1.35, 1.6 and 2.15 for the `m`, `l` and `xl` sizes), so it still follows the browser's font size.
 
@@ -226,7 +226,7 @@ Storybook is a development tool only: it adds nothing to `internal/web/dist`, th
 
 - `make storybook` (or `npm run storybook` in `web/`) opens it on http://localhost:6006. The toolbar switches the theme (light, dark, side by side) and the frame width (375 or 1280 px). A third switch picks the interface language: a story then renders with that language's catalog (loaded the way the app loads it) and `lang` set on the frame, which shows where a longer German or French label wraps. The accessibility gate and the visual baselines always run in English.
 - `npm run build-storybook` writes the static build to `web/storybook-static/` (not committed).
-- **Foundations** shows the colour tokens with their live contrast ratios, the palette, type, spacing, radius, elevation, motion and the component classes.
+- **Foundations** shows the colour tokens with their live contrast ratios, the palette, type, spacing, radius, elevation and the component classes. **Foundations → Motion** plays each sequence with a Play control over seeded rows: the completion on a row and on a card, the repeating completion, a list reflow, the dialog, the phone sheet, the task panel and the toast (OpenSpec `motion-v2`).
 
 ### Adding a story
 
@@ -239,6 +239,7 @@ Put a `*.stories.tsx` file next to the component, in Component Story Format; `ma
 | Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; Storybook code in the production build |
 | Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark |
 | Visual regression | `make ui-check`, CI job "UI check" | a story × theme × width screenshot that differs from its baseline by more than 0.2% |
+| Motion | `make ui-check` (`scripts/ui-check/motion.mjs`) | a Foundations → Motion story that, with reduced motion emulated, runs an animation changing `transform`, `translate`, `scale`, `height`, `block-size`, `width` or `inline-size`, or that runs any animation under `data-motion="none"`; it names the story and the property |
 
 `make ui-check` needs Playwright and `@playwright/test` 1.56.1 installed globally, as CI does (`npm i -g playwright@1.56.1 @playwright/test@1.56.1 && playwright install chromium`). Set `PLAYWRIGHT_NODE_PATH` to use another install. Failures leave actual, expected and diff images in `web/test-results/ui-visual`, and CI uploads them as the `ui-check-report-<shard>` artifact of the visual regression shard that failed.
 

@@ -168,6 +168,7 @@ export const SETTINGS_COPY = {
       mode: { label: msg('Mode'), description: msg("System follows your device's light or dark setting.") },
       theme: { label: msg('Theme') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
+      haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
     },
   },
   sidebar: {

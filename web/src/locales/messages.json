@@ -343,6 +343,9 @@
   "A short tone when a session or a break ends, while the app is shown.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "A short vibration when you complete a task or pick one up with a long press.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -4777,6 +4780,10 @@
   ],
   "Guests see where the task happens.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Haptic feedback": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Has a date": [
     "web/src/app/rules/RuleFields.tsx"

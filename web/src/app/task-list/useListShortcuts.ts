@@ -175,7 +175,11 @@ export function useListShortcuts(c: ShortcutContext) {
     'list.complete': () => {
       if (ticked.length) { act(runBulk(ticked, { kind: 'complete' })); return }
       if (!row || !writable) return false
-      act(c.toggleComplete(row.task.id, !row.task.completed_at))
+      const completing = !row.task.completed_at
+      // The cursor moves on at once (motion-v2 D2): the next completion never waits for the row
+      // to leave. A repeating task stays in the list with its next date, and so does the cursor.
+      if (completing && !row.task.recurrence) setSelectedId((rows[idx + 1] ?? rows[idx - 1])?.task.id ?? null)
+      act(c.toggleComplete(row.task.id, completing))
     },
     'list.priority': (e) => {
       const priority = Number(e.key) as Priority

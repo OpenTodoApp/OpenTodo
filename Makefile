@@ -89,6 +89,7 @@ PLAYWRIGHT_NODE_PATH ?= $(shell npm root -g)
 ui-check:
 	cd web && npm run build-storybook
 	node scripts/ui-check/a11y.mjs
+	node scripts/ui-check/motion.mjs
 	cd scripts/ui-check && NODE_PATH=$(PLAYWRIGHT_NODE_PATH) node $(PLAYWRIGHT_NODE_PATH)/@playwright/test/cli.js test -c playwright.config.ts
 
 ## Regenerate the visual baselines inside the pinned Playwright image, because font
