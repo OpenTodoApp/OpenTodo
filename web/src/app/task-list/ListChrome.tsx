@@ -129,7 +129,7 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
   )
 }
 
-export function placeholderFor(route: ListRoute, project?: Project, label?: Label, place?: Place): string {
+export function placeholderFor(route: ListRoute, project?: Project, label?: Label, place?: Place, workspace?: string): string {
   switch (route.view) {
     case 'today':
       return t('Add a task for today…')
@@ -148,7 +148,8 @@ export function placeholderFor(route: ListRoute, project?: Project, label?: Labe
     case 'assigned':
       return t('Add a task assigned to you…')
     default:
-      return t('Add a task to your Inbox…')
+      // With more than one workspace the Inbox names its workspace (workspaces "Quick add").
+      return workspace ? t('Add to {workspace}…', { workspace }) : t('Add a task to your Inbox…')
   }
 }
 

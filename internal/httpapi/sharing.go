@@ -97,7 +97,10 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 	actor := userFrom(ctx)
 	var in struct {
 		Email string `json:"email"`
-		Role  string `json:"role"`
+		// UserID names a member of the project's workspace directory instead of
+		// an email (OpenSpec change workspaces); only for a created workspace.
+		UserID string `json:"userId"`
+		Role   string `json:"role"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBody(w, err)
@@ -126,7 +129,7 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 	if len(m.Members) <= 1 && s.refuseIfEncrypted(w, r, "sharing is not available for accounts with end-to-end encryption yet") {
 		return
 	}
-	target, err := s.auth.UserByEmail(ctx, in.Email)
+	target, err := s.memberTarget(r, in.Email, in.UserID)
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "user_not_found", "no account with this email exists on this server")
 		return
@@ -264,4 +267,25 @@ func stripAnnotations(entity string, body map[string]json.RawMessage) {
 		delete(body, "role")
 		delete(body, "owner_id")
 	}
+}
+
+// memberTarget resolves who to add: by email, or by account id for a project
+// of a created workspace, whose directory the dialog lists (an id elsewhere is
+// answered as an unknown account, so ids cannot probe for accounts).
+func (s *Server) memberTarget(r *http.Request, email, userID string) (*auth.User, error) {
+	if userID == "" {
+		return s.auth.UserByEmail(r.Context(), email)
+	}
+	closed, err := s.sync.InClosedWorkspace(r.Context(), r.PathValue("id"))
+	if err != nil {
+		return nil, err
+	}
+	if !closed {
+		return nil, auth.ErrNotFound
+	}
+	u, err := s.auth.UserByID(r.Context(), userID)
+	if err != nil || u == nil {
+		return nil, auth.ErrNotFound
+	}
+	return u, nil
 }

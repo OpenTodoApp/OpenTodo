@@ -164,6 +164,13 @@ export function commands(ctx: PaletteContext): Command[] {
         { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, { evening: !tk.evening }) },
         { id: 'task:schedule', label: t('Schedule {title} in the Day view', { title }), icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(tk, ctx.today) },
       )
+      // A task without a project moves to another workspace's Inbox (workspaces "Move an Inbox task").
+      if (!tk.project_id && !tk.parent_id) {
+        for (const w of (ctx.workspaces?.list ?? []).filter((x) => x.id !== ctx.workspaces?.current)) {
+          out.push({ id: `task:workspace:${w.id}`, label: t('Move {title} to workspace {name}', { title, name: workspaceLabel(w.name, w.default) }), icon: 'layers',
+            keywords: 'workspace', run: () => updateTask(tk.id, { workspace_id: w.default ? null : w.id }) })
+        }
+      }
       if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: t('Add labels to {title}', { title }), icon: 'tag', shortcut: keysOf('list.labels'), run: () => open(tk.id) }) }
       if (list.openAssignee) { const open = list.openAssignee; out.push({ id: 'task:assign', label: t('Assign {title}', { title }), icon: 'user-check', shortcut: keysOf('list.assign'), run: () => open(tk.id) }) }
       if (tk.recurrence) {

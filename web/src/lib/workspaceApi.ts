@@ -67,6 +67,9 @@ export const workspaceApi = {
   acceptInvite: (token: string) => change(() => request<{ workspaceId: string; role: WorkspaceRole }>('POST', `/api/v1/workspace-invites/${enc(token)}/accept`, {})),
   registerWithInvite: (email: string, name: string, password: string, token: string) =>
     request<{ user: { id: string }; workspaceId: string }>('POST', '/api/v1/auth/register', { email, name, password, workspaceInvite: token }),
+  /** Adds a member of the project's workspace directory by account id (created workspaces only). */
+  addMemberById: (projectId: string, userId: string, role: Exclude<ProjectRole, 'owner'>) =>
+    request<Membership>('POST', `/api/v1/projects/${enc(projectId)}/members`, { userId, role }),
   // Group grants on a project (project-sharing "Membership routes").
   grant: (projectId: string, groupId: string, role: Exclude<ProjectRole, 'owner'>) =>
     request<Membership>('POST', `/api/v1/projects/${enc(projectId)}/grants`, { groupId, role }),

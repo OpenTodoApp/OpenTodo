@@ -228,6 +228,13 @@ func closedWorkspace(ctx context.Context, q querier, projectID string) (string, 
 	return ws, err
 }
 
+// InClosedWorkspace reports whether a project belongs to a created workspace,
+// whose directory names its possible members (the share dialog adds them by id).
+func (s *Service) InClosedWorkspace(ctx context.Context, projectID string) (bool, error) {
+	ws, err := closedWorkspace(ctx, s.db, projectID)
+	return ws != "", err
+}
+
 // requireInDirectory refuses targetID with ErrNotInWorkspace when the project
 // is in a created workspace targetID is not a member of.
 func requireInDirectory(ctx context.Context, q querier, projectID, targetID string) error {

@@ -2,6 +2,9 @@ import { Button, Icon, IconPicker, PageHeader, Tooltip } from '../ui'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { useMembership, useProjects } from '../lib/localData'
+import { moveProjectToWorkspaceUndoable } from '../lib/undoActions'
+import { showUndoToast } from './bulk/toastStore'
+import { useOtherWorkspaces } from './workspaceNav'
 import { useDemo } from '../lib/demo'
 import { useOnline } from '../lib/online'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
@@ -85,7 +88,7 @@ function ColourSwatches({ project }: { project: Project }) {
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; workspaces?: { id: string; name: string }[] }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   const pin: ActionGroup[] = a.pin ? [{ items: [pinItem(!!o.pinned, a.pin)] }] : []
   const subsText = subCount ? ` ${t('{n, plural, one {Its sub-project moves up one level.} other {Its # sub-projects move up one level.}}', { n: subCount })}` : ''
@@ -110,6 +113,12 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         selected: [project.parent_id ?? '__top__'], rankContext: 'project-move',
         onPick: (item: MoveTarget) => { act(moveProject(project.id, item.id || null)) },
       } },
+      // Only the owner moves a project to another of their workspaces (workspaces D7).
+      ...(role === 'owner' && o.workspaces?.length ? [{ kind: 'picker' as const, id: 'move-workspace', label: t('Move to workspace…'), icon: 'layers' as const, picker: {
+        title: t('Move to workspace'), placeholder: t('Find a workspace…'), emptyText: t('No other workspace'),
+        source: o.workspaces, getKey: (w: { id: string }) => w.id, getLabel: (w: { name: string }) => w.name, rankContext: 'project-move-workspace',
+        onPick: (w: { id: string; name: string }) => { void moveProjectToWorkspaceUndoable(project.id, w.id, w.name).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) }) },
+      } }] : []),
       { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename },
       // The searchable icon picker (icons-and-section-style), inside the same overlay.
       { kind: 'step', id: 'icon', label: t('Icon'), icon: 'image', step: {
@@ -211,6 +220,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   }
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
+  const otherWorkspaces = useOtherWorkspaces()
   const panels: ActionGroup = { items: [
     ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
@@ -220,7 +230,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
-    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned },
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces },
       { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     panels,
   ]

@@ -4,7 +4,9 @@
 // otherwise; opening an entity of another workspace switches first and says so.
 import { useEffect } from 'react'
 import { t } from '../lib/i18n'
-import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
+import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceIdFor, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
+import { useWorkspaceState } from '../lib/localData'
+import { updateTask } from '../lib/ops'
 import { showBulkToast } from './bulk/toastStore'
 import { focusHeading, pageHeading } from './pageFocus'
 import { navigate, type Route } from './router'
@@ -70,4 +72,35 @@ export function useWorkspaceFollow(route: Route, panelTask: string | null): void
     navigate({ view: 'inbox' })
     showBulkToast(names[0] ? t('{name} is no longer available', { name: names[0] }) : t('That workspace is no longer available'), null, { ttl: 5000 })
   }), [])
+}
+
+/** The current workspace's name while the account has more than one, else undefined (quick add's placeholder). */
+export function useWorkspaceName(): string | undefined {
+  const state = useWorkspaceState()
+  if (state.list.length <= 1) return undefined
+  const w = state.list.find((x) => x.id === state.current)
+  return w ? workspaceLabel(w.name, w.default) : undefined
+}
+
+/**
+ * After quick add put a task in the Inbox: with more than one workspace the
+ * toast offers "Move to <other workspace>" (the default workspace, or the first
+ * other one from it).
+ */
+export async function offerMoveToWorkspace(taskId: string): Promise<void> {
+  const state = await readWorkspaceState()
+  if (state.list.length <= 1) return
+  const other = state.list.find((w) => w.id !== state.current && w.default) ?? state.list.find((w) => w.id !== state.current)
+  if (!other) return
+  const here = state.list.find((w) => w.id === state.current)
+  showBulkToast(t('Added to {name}', { name: here ? workspaceLabel(here.name, here.default) : '' }), null, {
+    ttl: 5000,
+    action: { label: t('Move to {name}', { name: workspaceLabel(other.name, other.default) }), run: () => { void updateTask(taskId, { workspace_id: workspaceIdFor(other.id, state.list) }) } },
+  })
+}
+
+/** The account's other workspaces, by name: the targets of "Move to workspace…". */
+export function useOtherWorkspaces(): { id: string; name: string }[] {
+  const state = useWorkspaceState()
+  return state.list.filter((w) => w.id !== state.current).map((w) => ({ id: w.id, name: workspaceLabel(w.name, w.default) }))
 }
