@@ -96,6 +96,12 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	// Additive (workspaces D8): the caller's workspaces with members and groups.
+	workspaces, err := s.sync.Workspaces(r.Context(), uid)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	rejected := res.Rejected
 	if rejected == nil {
 		rejected = []opsync.Rejection{}
@@ -117,6 +123,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		// Additive (project-sharing): refused ops and the caller's shared projects.
 		"rejected":    rejected,
 		"memberships": memberships,
+		"workspaces":  workspaces,
 		// Additive (trash-and-history): entities purged since the cursor, which
 		// devices delete locally, and the Trash retention in days (0 = never).
 		"purged":             purged,

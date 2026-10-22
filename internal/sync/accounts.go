@@ -116,6 +116,8 @@ func (s *Service) DeleteAccountData(ctx context.Context, tx *sql.Tx, userID stri
 	for _, q := range []string{
 		`DELETE FROM project_members WHERE user_id = ?`,
 		`DELETE FROM member_backfills WHERE user_id = ?`,
+		`DELETE FROM project_grants WHERE subject_kind = 'user' AND subject_id = ?`,
+		`DELETE FROM project_grants WHERE project_id IN (SELECT project_id FROM project_scopes WHERE owner_id = ?)`,
 	} {
 		if _, err := tx.ExecContext(ctx, q, userID); err != nil {
 			return nil, err
@@ -123,6 +125,9 @@ func (s *Service) DeleteAccountData(ctx context.Context, tx *sql.Tx, userID stri
 	}
 
 	if err := deleteScope(ctx, tx, PersonalScope(userID)); err != nil {
+		return nil, err
+	}
+	if err := handOverWorkspaces(ctx, tx, userID, notify); err != nil {
 		return nil, err
 	}
 
@@ -164,4 +169,82 @@ func stringColumn(ctx context.Context, q querier, query string, args ...any) ([]
 		out = append(out, v)
 	}
 	return out, rows.Err()
+}
+
+// WorkspaceHandover is what happened to one created workspace a deleted
+// account owned (workspaces design D10), for the audit event.
+type WorkspaceHandover struct {
+	WorkspaceID string
+	// NewOwner is the account that owns it now, "" when it was deleted.
+	NewOwner string
+}
+
+type handoverKey struct{}
+
+// WithWorkspaceHandovers returns a context in which DeleteAccountData records
+// the workspaces it handed over or deleted into *out.
+func WithWorkspaceHandovers(ctx context.Context, out *[]WorkspaceHandover) context.Context {
+	return context.WithValue(ctx, handoverKey{}, out)
+}
+
+// handOverWorkspaces runs inside the account deletion before the users row
+// goes (its default workspace and memberships go with it by cascade): each
+// created workspace the account owns passes to its oldest admin, or is deleted
+// when it has no projects and no other member, or otherwise passes to the
+// server owner. Every member of an affected workspace is told.
+func handOverWorkspaces(ctx context.Context, tx *sql.Tx, userID string, notify map[string]bool) error {
+	member, err := stringColumn(ctx, tx, `SELECT DISTINCT m2.user_id FROM workspace_members m
+		JOIN workspace_members m2 ON m2.workspace_id = m.workspace_id WHERE m.user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+	for _, u := range member {
+		notify[u] = true
+	}
+	owned, err := stringColumn(ctx, tx, `SELECT id FROM workspaces WHERE owner_id = ? AND kind = 'created' ORDER BY id`, userID)
+	if err != nil {
+		return err
+	}
+	record, _ := ctx.Value(handoverKey{}).(*[]WorkspaceHandover)
+	for _, ws := range owned {
+		next := ""
+		err := tx.QueryRowContext(ctx, `SELECT user_id FROM workspace_members WHERE workspace_id = ? AND role = 'admin' ORDER BY created_at, user_id LIMIT 1`, ws).Scan(&next)
+		if err != nil && err != sql.ErrNoRows {
+			return err
+		}
+		if next == "" {
+			projects, err := workspaceProjectIDs(ctx, tx, ws)
+			if err != nil {
+				return err
+			}
+			others, err := stringColumn(ctx, tx, `SELECT user_id FROM workspace_members WHERE workspace_id = ? AND user_id != ?`, ws, userID)
+			if err != nil {
+				return err
+			}
+			if len(projects) > 0 || len(others) > 0 {
+				err := tx.QueryRowContext(ctx, `SELECT id FROM users WHERE role = 'owner' AND id != ? ORDER BY created_at LIMIT 1`, userID).Scan(&next)
+				if err != nil && err != sql.ErrNoRows {
+					return err
+				}
+			}
+		}
+		if next == "" {
+			if _, err := tx.ExecContext(ctx, `DELETE FROM workspaces WHERE id = ?`, ws); err != nil {
+				return err
+			}
+		} else {
+			if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO workspace_members(workspace_id,user_id,role,added_by,created_at) VALUES(?,?,'admin',?,?)`,
+				ws, next, userID, time.Now().UnixMilli()); err != nil {
+				return err
+			}
+			if err := transferWorkspaceTx(ctx, tx, ws, userID, next); err != nil {
+				return err
+			}
+			notify[next] = true
+		}
+		if record != nil {
+			*record = append(*record, WorkspaceHandover{WorkspaceID: ws, NewOwner: next})
+		}
+	}
+	return nil
 }

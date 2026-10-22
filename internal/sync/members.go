@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/pixari/opentodo/internal/ids"
 )
@@ -46,6 +47,28 @@ type Member struct {
 	// AvatarVersion is the member's profile picture version, 0 without one
 	// (settings-refresh D10); it is part of the picture's address.
 	AvatarVersion int `json:"avatarVersion,omitempty"`
+	// Via lists the groups the role comes from, empty for a direct grant alone
+	// (OpenSpec change workspaces). The sync response carries ids only; the
+	// member route adds names.
+	Via []GroupRef `json:"via"`
+}
+
+// GroupRef names a group a member's role comes from.
+type GroupRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
+// viaOf parses project_members.via.
+func viaOf(raw string) []GroupRef {
+	out := []GroupRef{}
+	if raw == "" {
+		return out
+	}
+	for _, id := range strings.Split(raw, ",") {
+		out = append(out, GroupRef{ID: id})
+	}
+	return out
 }
 
 // Membership is the caller's view of one shared project: their role, the owner
@@ -55,6 +78,8 @@ type Membership struct {
 	Role      string   `json:"role"`
 	OwnerID   string   `json:"ownerId"`
 	Members   []Member `json:"members"`
+	// Grants lists the project's group grants (member route only).
+	Grants []Grant `json:"grants,omitempty"`
 }
 
 // MemberChange reports a successful membership change: the target's role before
@@ -101,7 +126,7 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 		return out, nil
 	}
 	// Every project's members in one query rather than one per project.
-	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0) FROM project_members m
+	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0), m.via FROM project_members m
 		LEFT JOIN users u ON u.id = m.user_id LEFT JOIN user_profiles up ON up.user_id = m.user_id
 		WHERE m.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?) ORDER BY m.project_id, m.user_id`, userID)
 	if err != nil {
@@ -110,11 +135,12 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 	defer rows.Close()
 	byProject := map[string][]Member{}
 	for rows.Next() {
-		var pid string
+		var pid, via string
 		var m Member
-		if err := rows.Scan(&pid, &m.UserID, &m.Name, &m.Email, &m.Role, &m.AvatarVersion); err != nil {
+		if err := rows.Scan(&pid, &m.UserID, &m.Name, &m.Email, &m.Role, &m.AvatarVersion, &via); err != nil {
 			return nil, err
 		}
+		m.Via = viaOf(via)
 		byProject[pid] = append(byProject[pid], m)
 	}
 	if err := rows.Err(); err != nil {
@@ -138,7 +164,7 @@ func (s *Service) SharesProject(ctx context.Context, a, b string) (bool, error) 
 var roleOrder = map[string]int{RoleOwner: 0, RoleAdmin: 1, RoleEditor: 2, RoleViewer: 3}
 
 func members(ctx context.Context, q querier, projectID string) ([]Member, error) {
-	rows, err := q.QueryContext(ctx, `SELECT m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0) FROM project_members m
+	rows, err := q.QueryContext(ctx, `SELECT m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0), m.via FROM project_members m
 		LEFT JOIN users u ON u.id = m.user_id LEFT JOIN user_profiles up ON up.user_id = m.user_id WHERE m.project_id = ?`, projectID)
 	if err != nil {
 		return nil, err
@@ -147,9 +173,11 @@ func members(ctx context.Context, q querier, projectID string) ([]Member, error)
 	out := []Member{}
 	for rows.Next() {
 		var m Member
-		if err := rows.Scan(&m.UserID, &m.Name, &m.Email, &m.Role, &m.AvatarVersion); err != nil {
+		var via string
+		if err := rows.Scan(&m.UserID, &m.Name, &m.Email, &m.Role, &m.AvatarVersion, &via); err != nil {
 			return nil, err
 		}
+		m.Via = viaOf(via)
 		out = append(out, m)
 	}
 	return sortMembers(out), rows.Err()
@@ -216,14 +244,30 @@ func (s *Service) ProjectMembers(ctx context.Context, actorID, projectID string)
 		var name, email string
 		_ = s.db.QueryRowContext(ctx, `SELECT name, email FROM users WHERE id = ?`, actorID).Scan(&name, &email)
 		m.OwnerID = actorID
-		m.Members = []Member{{UserID: actorID, Name: name, Email: email, Role: RoleOwner}}
+		m.Members = []Member{{UserID: actorID, Name: name, Email: email, Role: RoleOwner, Via: []GroupRef{}}}
+		m.Grants = []Grant{}
 		return m, nil
 	}
 	if err := s.db.QueryRowContext(ctx, `SELECT owner_id FROM project_scopes WHERE project_id = ?`, projectID).Scan(&m.OwnerID); err != nil {
 		return Membership{}, err
 	}
-	m.Members, err = members(ctx, s.db, projectID)
-	return m, err
+	if m.Members, err = members(ctx, s.db, projectID); err != nil {
+		return Membership{}, err
+	}
+	if m.Grants, err = projectGrants(ctx, s.db, projectID); err != nil {
+		return Membership{}, err
+	}
+	// Name the groups each role comes from (the grants hold every group on the project).
+	names := map[string]string{}
+	for _, g := range m.Grants {
+		names[g.GroupID] = g.Name
+	}
+	for i := range m.Members {
+		for j := range m.Members[i].Via {
+			m.Members[i].Via[j].Name = names[m.Members[i].Via[j].ID]
+		}
+	}
+	return m, nil
 }
 
 // membershipTx runs fn in a transaction with the actor's role on the project and
@@ -312,23 +356,40 @@ func (s *Service) addMember(ctx context.Context, actorID, projectID, targetID, r
 				return MemberChange{}, err
 			}
 		}
-		existing, err := memberRole(ctx, tx, projectID, targetID)
+		// A created workspace is a closed directory (workspaces design D4).
+		if err := requireInDirectory(ctx, tx, projectID, targetID); err != nil {
+			return MemberChange{}, err
+		}
+		existing, err := userGrant(ctx, tx, projectID, targetID)
 		if err != nil {
 			return MemberChange{}, err
 		}
 		if existing != "" {
 			return MemberChange{}, ErrAlreadyMember
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO project_members(project_id,user_id,role,added_by,created_at,backfill) VALUES(?,?,?,?,?,1)`,
-			projectID, targetID, role, actorID, s.now().UnixMilli()); err != nil {
+		from, err := memberRole(ctx, tx, projectID, targetID)
+		if err != nil {
 			return MemberChange{}, err
 		}
-		// A re-added member replays the history again on every device.
-		if _, err := tx.ExecContext(ctx, `DELETE FROM member_backfills WHERE project_id = ? AND user_id = ?`, projectID, targetID); err != nil {
+		if err := putUserGrant(ctx, tx, projectID, targetID, role, actorID, s.now().UnixMilli()); err != nil {
 			return MemberChange{}, err
 		}
-		return MemberChange{From: "", To: role}, nil
+		return s.recomputeFor(ctx, tx, actorID, projectID, targetID, from)
 	}
+}
+
+// recomputeFor recomputes the project after a change to targetID's grants and
+// reports targetID's effective role before (from) and after.
+func (s *Service) recomputeFor(ctx context.Context, tx *sql.Tx, actorID, projectID, targetID, from string) (MemberChange, error) {
+	re, err := s.recomputeProject(ctx, tx, actorID, projectID)
+	if err != nil {
+		return MemberChange{}, err
+	}
+	to, err := memberRole(ctx, tx, projectID, targetID)
+	if err != nil {
+		return MemberChange{}, err
+	}
+	return MemberChange{From: from, To: to, Unassigned: re.unassigned, changes: re.changes}, nil
 }
 
 // CanGrant reports whether a member with actorRole may add someone with role:
@@ -502,9 +563,11 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 	if _, err := tx.ExecContext(ctx, `INSERT INTO project_scopes(project_id, owner_id, created_at) VALUES(?,?,?)`, projectID, ownerID, now); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO project_members(project_id,user_id,role,added_by,created_at,backfill) VALUES(?,?,?,?,?,0)`,
-		projectID, ownerID, RoleOwner, ownerID, now)
-	return err
+	if _, err := tx.ExecContext(ctx, `INSERT INTO project_members(project_id,user_id,role,added_by,created_at,backfill) VALUES(?,?,?,?,?,0)`,
+		projectID, ownerID, RoleOwner, ownerID, now); err != nil {
+		return err
+	}
+	return putUserGrant(ctx, tx, projectID, ownerID, RoleOwner, ownerID, now)
 }
 
 // SetMemberRole changes a member's role. The owner may change anyone but
@@ -530,13 +593,18 @@ func (s *Service) SetMemberRole(ctx context.Context, actorID, projectID, targetI
 		if actorRole == RoleAdmin && (current == RoleAdmin || role == RoleAdmin) {
 			return MemberChange{}, ErrForbidden
 		}
-		if current == role {
-			return MemberChange{From: current, To: role}, nil
-		}
-		if _, err := tx.ExecContext(ctx, `UPDATE project_members SET role = ? WHERE project_id = ? AND user_id = ?`, role, projectID, targetID); err != nil {
+		direct, err := userGrant(ctx, tx, projectID, targetID)
+		if err != nil {
 			return MemberChange{}, err
 		}
-		return MemberChange{From: current, To: role}, nil
+		if direct == role {
+			return MemberChange{From: current, To: current}, nil
+		}
+		// The direct grant changes; a group may still give a higher role.
+		if err := putUserGrant(ctx, tx, projectID, targetID, role, actorID, s.now().UnixMilli()); err != nil {
+			return MemberChange{}, err
+		}
+		return s.recomputeFor(ctx, tx, actorID, projectID, targetID, current)
 	})
 }
 
@@ -569,17 +637,12 @@ func (s *Service) RemoveMember(ctx context.Context, actorID, projectID, targetID
 		if targetID != actorID && actorRole == RoleAdmin && (current == RoleAdmin || current == RoleOwner) {
 			return MemberChange{}, ErrForbidden
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM project_members WHERE project_id = ? AND user_id = ?`, projectID, targetID); err != nil {
+		// The direct grant goes; a member through a group stays one with the
+		// group's role until removed from the group (workspaces design D3).
+		if _, err := tx.ExecContext(ctx, `DELETE FROM project_grants WHERE project_id = ? AND subject_kind = 'user' AND subject_id = ?`, projectID, targetID); err != nil {
 			return MemberChange{}, err
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM member_backfills WHERE project_id = ? AND user_id = ?`, projectID, targetID); err != nil {
-			return MemberChange{}, err
-		}
-		unassigned, changes, err := s.unassignDeparted(ctx, tx, actorID, projectID, targetID)
-		if err != nil {
-			return MemberChange{}, err
-		}
-		return MemberChange{From: current, To: "", Unassigned: unassigned, changes: changes}, nil
+		return s.recomputeFor(ctx, tx, actorID, projectID, targetID, current)
 	})
 }
 
@@ -657,16 +720,17 @@ func (s *Service) TransferOwnership(ctx context.Context, actorID, projectID, tar
 		if current == "" {
 			return MemberChange{}, fmt.Errorf("%w: the new owner must be a member of the project", ErrInvalidMember)
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE project_members SET role = ? WHERE project_id = ? AND user_id = ?`, RoleAdmin, projectID, actorID); err != nil {
+		now := s.now().UnixMilli()
+		if err := putUserGrant(ctx, tx, projectID, actorID, RoleAdmin, actorID, now); err != nil {
 			return MemberChange{}, err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE project_members SET role = ? WHERE project_id = ? AND user_id = ?`, RoleOwner, projectID, targetID); err != nil {
+		if err := putUserGrant(ctx, tx, projectID, targetID, RoleOwner, actorID, now); err != nil {
 			return MemberChange{}, err
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE project_scopes SET owner_id = ? WHERE project_id = ?`, targetID, projectID); err != nil {
 			return MemberChange{}, err
 		}
-		return MemberChange{From: current, To: RoleOwner}, nil
+		return s.recomputeFor(ctx, tx, actorID, projectID, targetID, current)
 	})
 }
 

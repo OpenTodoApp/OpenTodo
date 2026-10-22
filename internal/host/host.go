@@ -177,7 +177,8 @@ func (h *Host) openTenant(_ context.Context, name string) (*tenant.Tenant, error
 		// closing the tenant applies it on the next open.
 		Restart: func() { go h.pool.evict(name) },
 		Hosted: &tenant.Hosted{Name: name, PushSubject: h.hc.URL.Scheme + "://" + h.hc.URL.Host, Quota: q,
-			MaxMembers: lim.Members, Changed: func() { h.markDirty(name) }}}
+			MaxMembers: lim.Members, Changed: func() { h.markDirty(name) },
+			Workspaces: opsync.WorkspaceLimits{Workspaces: lim.Workspaces, Members: lim.WorkspaceMembers, Groups: lim.WorkspaceGroups, GroupMembers: lim.GroupMembers}}}
 	if h.adjust != nil {
 		h.adjust(name, &opts)
 	}
