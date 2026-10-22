@@ -157,6 +157,9 @@ jobs:
           - { engine: webkit, name: WebKit 360 px, browsers: chromium webkit, widths: '360' }
           - { engine: webkit, name: WebKit 390 px, browsers: chromium webkit, widths: '390' }
           - { engine: webkit, name: WebKit 768 px, browsers: chromium webkit, widths: '768' }
+          # The longest catalogs on the narrowest phone (OpenSpec change phone-v2, design D9).
+          - { engine: chromium, name: Chromium 360 px German, browsers: chromium, widths: '360', lang: de }
+          - { engine: chromium, name: Chromium 360 px French, browsers: chromium, widths: '360', lang: fr }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -183,12 +186,13 @@ jobs:
         env:
           ENGINES: ${{ matrix.engine }}
           WIDTHS: ${{ matrix.widths }}
+          OPENTODO_LANG: ${{ matrix.lang }}
         run: |
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
       - name: End-to-end (two devices, offline sync, inbox triage, saved views)
-        if: matrix.engine == 'chromium'
+        if: matrix.engine == 'chromium' && !matrix.lang
         run: make e2e
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()

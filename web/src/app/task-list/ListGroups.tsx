@@ -20,6 +20,8 @@ import { ListRow, SubtaskInput, type RowActions } from './ListRow'
 import type { ListRoute } from './useListModel'
 
 export interface RowContext {
+  /** Touch rows follow a swipe (phone-v2 D3): coarse pointer, nothing ticked, not select mode. */
+  swipe?: boolean
   view: ListRoute['view']
   /** The open label's id in a label's view: its own chip is left out of Calm rows (calm-rows D3). */
   labelId?: string
@@ -144,6 +146,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
           setSize={tree ? c.siblingPos.get(r.task.id)?.size : undefined}
           handlers={c.actions}
+          swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
         />
         {c.addingUnder === r.task.id && !c.board && (

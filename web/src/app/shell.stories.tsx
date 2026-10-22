@@ -1,6 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect } from 'react'
 import { Shell } from './Shell'
 import { openTask } from './signals'
+import { forceMinimisedForStory } from './useScrollDirection'
 import { seedInbox, seedTracking, seeded, storyUser, withSeed } from './stories/fixtures'
 
 // Core screen: the shell (OpenSpec change ux-overhaul, task 8.7; app-shell "Three
@@ -38,5 +40,14 @@ export const ListWithPanel: StoryObj = {
 /** An entry running for 1 h 5 min (time-tracking D6): the sidebar footer's indicator, the phone bar's pill below 768 px. */
 export const Tracking: StoryObj = {
   ...withSeed(seedTracking),
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
+}
+
+/** Below 768 px while the list scrolls down (phone-v2 D6): the tab bar as 40 px of icons, the add button slid out. */
+const minimisedSeed = withSeed(async () => { await seedInbox(); forceMinimisedForStory(true) })
+export const PhoneScrolling: StoryObj = {
+  ...minimisedSeed,
+  // The override ends with the story, so the next story shows the full bar.
+  decorators: [...(minimisedSeed.decorators as Decorator[]), (Story) => { useEffect(() => () => forceMinimisedForStory(false), []); return <Story /> }],
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }

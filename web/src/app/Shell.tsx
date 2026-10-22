@@ -31,6 +31,7 @@ import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
+import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
@@ -197,6 +198,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const frame = useRef<HTMLElement>(null)
   const content = useRef<HTMLDivElement>(null)
   usePageFocus(route, frame, content)
+  // The phone's bottom chrome: the tab bar minimises while scrolling down, the toast sits above it (phone-v2 D5, D6).
+  const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
 
   return (
     <div className="flex h-full">
@@ -206,7 +209,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the tinted sidebar token as a column with a fine pointer (sidebar-v2 D8). */}
       <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-64 max-w-[85vw] transform border-r border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform border-r border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
@@ -232,7 +235,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        <div ref={content} id="content" className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2). */}
+        <div ref={content} id="content" data-add-room={phoneChrome || undefined}
+          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (
@@ -300,8 +305,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
-      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} />}
-      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} minimised={minimised} />}
+      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
@@ -364,7 +369,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       </div>
       <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
-        {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
+        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>
     </header>
   )

@@ -613,7 +613,8 @@
     "web/src/app/method/MethodListView.tsx"
   ],
   "Add a note": [
-    "web/src/app/ProjectNote.tsx"
+    "web/src/app/ProjectNote.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a picture": [
     "web/src/app/profile/ProfileSection.tsx"
@@ -2370,7 +2371,8 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/rules/RuleFields.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/task-list/RowSwipe.tsx"
   ],
   "Complete / reopen the selected task (and its subtasks), or the ticked tasks": [
     "web/src/lib/shortcuts.ts"
@@ -2898,6 +2900,7 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/fields.ts"
   ],
   "Date and time": [
@@ -3383,6 +3386,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -5719,6 +5723,9 @@
   "Later|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Layout": [
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
   "Learn Open Loops": [
     "web/src/app/help/HelpView.tsx"
   ],
@@ -6728,6 +6735,7 @@
     "web/src/app/palette/registry.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/dates.ts"
   ],
   "Next {n} days": [
@@ -8272,6 +8280,9 @@
   "Pick a day for {title}": [
     "web/src/app/review/CloseDay.tsx"
   ],
+  "Pick a day…": [
+    "web/src/app/task-list/RowSwipe.tsx"
+  ],
   "Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -9133,6 +9144,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Reopen task": [
@@ -9466,6 +9478,9 @@
   "Revoked {day}": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Right completes, left schedules; the same two actions start the task's menu": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Rights": [
     "web/src/app/PublicLinksSection.tsx"
   ],
@@ -9703,6 +9718,7 @@
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Schedule the selected task: Day view in placement mode": [
@@ -9731,6 +9747,9 @@
   ],
   "Scheduled|method": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Schedule…": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Schema version": [
     "web/src/app/RestoreSection.tsx"
@@ -9858,6 +9877,9 @@
   ],
   "Select a task and press f to put it in today’s focus, up to three. c completes, Enter opens.": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Select tasks": [
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Select the first task of the next column": [
     "web/src/lib/shortcuts.ts"
@@ -10536,6 +10558,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
@@ -10877,6 +10900,9 @@
   ],
   "Swap which label is kept": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "Swipe right to complete, left to schedule. Also in a task's menu.": [
+    "web/src/app/task-list/RowSwipe.tsx"
   ],
   "Switch between Comments, Activity and History in the task panel": [
     "web/src/lib/shortcuts.ts"
@@ -12376,6 +12402,9 @@
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Tick me off when you have read this": [
     "web/src/lib/sampleTasks.ts"
   ],
@@ -12521,6 +12550,7 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/dates.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
@@ -12577,6 +12607,7 @@
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
+    "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/dates.ts",
     "web/src/lib/views.ts"
   ],

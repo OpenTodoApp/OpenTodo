@@ -19,7 +19,7 @@ import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
 import { FieldsDialog } from './FieldsDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
-import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
 import { iconPickerSpec } from './menus/stylePickers'
 import { closePanel, openPanel, usePanelOccupantKey } from './panel'
 import { PanelFrame } from './PanelFrame'
@@ -152,7 +152,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle, phone }: {
   project: Project
   userId?: string
   /** Below 768 px, a line under the title in the shell's bar (the board's current column). */
@@ -161,6 +161,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   actions?: ReactNode
   /** The List/Board control, first among the actions (app-shell "Page template"). */
   layout?: ReactNode
+  /** Below 768 px (phone-v2 D1): the bar's visible slots, and items for the project menu (Layout, Share, the list's own). */
+  phone?: { slots: ReactNode; groups: ActionGroup[] }
 }) {
   const [editing, setEditing] = useState(false)
   const [sharing, setSharing] = useState<false | true | 'public'>(false)
@@ -235,6 +237,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
     panels,
   ]
 
+  // On a phone Share is a menu item, since the bar keeps two slots (phone-v2 D1).
+  const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
+
   const title = editing ? (
     <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={t('Project name')}
       onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
@@ -272,14 +277,15 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   return (
     <>
       <PageHeader title={title} subtitle={subtitle} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
-        actions={<>
+        barActions={!!phone}
+        actions={phone ? phone.slots : <>
           {layout}
           <Tooltip label={canManageMembers(role) ? t('Share project') : t('Members')} shortcut={keysOf('project.share')}>
             <Button variant="ghost" size="sm" icon="users" onClick={() => setSharing(true)} aria-haspopup="dialog" data-project-share>{canManageMembers(role) ? t('Share') : t('Members')}</Button>
           </Tooltip>
           {actions}
         </>}
-        menu={<ActionMenu label={t('Project menu')} title={project.name} groups={groups} header={editable ? <ColourSwatches project={project} /> : undefined}
+        menu={<ActionMenu label={t('Project menu')} title={project.name} groups={phone ? [...phone.groups, { items: [shareItem] }, ...groups] : groups} header={editable ? <ColourSwatches project={project} /> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership ?? undefined} section={sharing === 'public' ? 'public' : undefined}

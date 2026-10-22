@@ -28,11 +28,11 @@ New tasks without a project land in the **Inbox**. Tasks added inside a project 
 
 ## Complete, reopen and delete
 
-Click the circle next to a task, or press <kbd>c</kbd>. Completed tasks move to **Completed** in the sidebar, where you can reopen them.
+Click a task's circle or press <kbd>c</kbd>. On a phone, swipe right to complete, left to schedule; hold to select. Completed tasks move to **Completed**, where you can reopen them.
 
 Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. You can restore it from there. See [Trash and history](trash-and-history.md).
 
-Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes). Undo works offline too.
+Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes).
 
 ## What a row shows
 

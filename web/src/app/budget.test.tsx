@@ -260,3 +260,71 @@ describe('visible properties', () => {
     await r.unmount()
   })
 })
+
+// The phone (phone-v2 D1, D2, D10): the bar and the quick add, two rows, and the add button never covers a row.
+describe('on a phone (390 px)', () => {
+  const original = window.matchMedia
+  beforeEach(() => {
+    window.matchMedia = ((q: string) => ({
+      matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390 && !/pointer:\s*fine/.test(q), media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  })
+  afterEach(() => { window.matchMedia = original })
+
+  it('Today, the Inbox and a project show nothing between the bar and the quick add', async () => {
+    const { project } = await seed()
+    for (const route of [{ view: 'inbox' } as const, { view: 'today' } as const, { view: 'project', id: project } as const]) {
+      const r = await render(<TaskListView route={route} />)
+      await waitFor(() => r.container.querySelectorAll('[data-task-id]').length > 0)
+      const rows = chromeRows(r.container)
+      expect(rows.map((e) => e.outerHTML.slice(0, 120)), route.view).toEqual([rows[0].outerHTML.slice(0, 120)])
+      expect(rows[0].querySelector('[role="combobox"]'), route.view).toBeTruthy()
+      await r.unmount()
+    }
+  })
+
+  it('the bar holds Process the Inbox; its overflow lists Select tasks, and Today\'s lists Display mode', async () => {
+    await seed()
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-triage-start]'))
+    expect(document.querySelector('[data-list-page] [data-triage-start]')).toBeNull()
+    const more = () => document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu], [data-phone-bar] button[aria-label="More actions"]')
+    await waitFor(() => !!more())
+    more()!.click()
+    await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
+    await r.unmount()
+    navigate({ view: 'today' })
+    const today = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!more())
+    more()!.click()
+    await waitFor(() => !!document.querySelector('[data-phone-item="display"]'))
+    await today.unmount()
+  })
+
+  it('the Inbox\'s planned tasks without a project are the bar\'s subtitle, opening Filter', async () => {
+    await seed()
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-phone-subtitle] [data-planned-line]'))
+    const line = document.querySelector<HTMLButtonElement>('[data-phone-subtitle] [data-planned-line]')!
+    expect(line.textContent).toBe('8 planned tasks without a project')
+    line.click()
+    await waitFor(() => location.pathname.startsWith('/filter'))
+    await r.unmount()
+  })
+
+  it('the content scroller reserves the add button\'s footprint below the last row', async () => {
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    const content = r.container.querySelector('#content')!
+    expect(content.getAttribute('data-add-room')).toBe('true')
+    expect(content.className).toContain('max-md:pb-(--add-room)')
+    const css = (await import('../index.css?raw')).default
+    expect(css).toMatch(/--add-room:\s*4\.75rem/)
+    // The toast sits above the tab bar (3.5 rem) and the add button's room (4.25 rem), never on a row's last line.
+    expect(document.documentElement.style.getPropertyValue('--toast-lift')).toBe('7.75rem')
+    await r.unmount()
+  })
+})

@@ -5,6 +5,7 @@ import { useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Task } from '../../lib/types'
 import { useSelection, type SelectionApi } from '../selection'
 import { BulkActionsMenu, SelectionBar } from './BulkActions'
+import { RowScheduleHost } from '../task-list/RowSwipe'
 import { t } from '../../lib/i18n'
 
 export interface BulkList {
@@ -34,6 +35,7 @@ export function useBulkList(tasks: readonly Task[]): BulkList {
     render: (cursor) => (
       <>
         <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={open && ticked.length > 0} onMenuOpenChange={onOpenChange} startPicker={picker} />
+        <RowScheduleHost />
         {open && ticked.length === 0 && cursor && (
           <BulkActionsMenu ids={[cursor]} open onOpenChange={onOpenChange} startPicker={picker} anchor={from} trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
         )}

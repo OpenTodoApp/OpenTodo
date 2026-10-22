@@ -352,7 +352,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
  * Favourites group. Rename asks in a dialog, Edit opens the panel beside the trigger;
  * from the Favourites group (`within`) Move up and Move down reorder the favourites.
  */
-export function LabelMenu({ label, within, className = '' }: { label: Label; within?: 'favourites'; className?: string }) {
+export function LabelMenu({ label, within, className = '', extra = [] }: { label: Label; within?: 'favourites'; className?: string; extra?: ActionGroup[] }) {
   const labels = useLabels()
   const favourites = useFavourites()
   const pinned = useIsFavourite('label', label.id)
@@ -373,7 +373,7 @@ export function LabelMenu({ label, within, className = '' }: { label: Label; wit
           triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
       ) : (
         // The page header's menu (app-shell "Page template"), styled like the project header's.
-        <ActionMenu label={t('Label menu')} title={label.name} groups={groups} trigger={<Icon name="ellipsis" size="md" />}
+        <ActionMenu label={t('Label menu')} title={label.name} groups={[...extra, ...groups]} trigger={<Icon name="ellipsis" size="md" />}
           triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" />
       )}
       {renaming && (

@@ -4938,5 +4938,12 @@
   "A task’s date passes": "Das Datum einer Aufgabe ist vorbei",
   "when a task’s date passes": "wenn das Datum einer Aufgabe vorbei ist",
   "due earlier": "früher fällig",
-  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": "Eine Regel ändert Aufgaben für dich, wenn etwas passiert: ein Label wird hinzugefügt, das Datum einer Aufgabe ist vorbei oder jeden Sonntagabend."
+  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": "Eine Regel ändert Aufgaben für dich, wenn etwas passiert: ein Label wird hinzugefügt, das Datum einer Aufgabe ist vorbei oder jeden Sonntagabend.",
+  "Layout": "Ansicht",
+  "Pick a day…": "Tag wählen…",
+  "Schedule…": "Planen…",
+  "Select tasks": "Aufgaben auswählen",
+  "Swipe right to complete, left to schedule. Also in a task's menu.": "Nach rechts wischen zum Erledigen, nach links zum Planen. Auch im Menü einer Aufgabe.",
+  "Right completes, left schedules; the same two actions start the task's menu": "Rechts erledigt, links plant; dieselben zwei Aktionen stehen oben im Menü der Aufgabe",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "Markiert sie und zeigt alle Kästchen; „Aufgaben auswählen“ im Seitenmenü tut dasselbe, „Fertig“ blendet sie aus"
 }

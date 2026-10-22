@@ -63,6 +63,17 @@ The header is sticky inside the content column. A string title is truncated; pas
 - **Content**: the page template. The shell gives it the scroller; a view never adds one of its own.
 - **Panel**: owned by the shell (`PanelHost`). Views open a task with `openTaskPanel(id)` (or `setPanelTaskId`) from `app/panel.ts`; the address carries `?task=<id>`. Other occupants (project activity, the planning list) use `openPanel(key, render)`.
 
+## On a phone
+
+Below 768 px (OpenSpec change `phone-v2`):
+
+- **Bar**: the shell's `PhoneBar` takes the page title, a subtitle (the board's column, the Inbox's planned count) and two slots. A list passes its actions with `PageHeader barActions`: Process the Inbox or Ask first, then the duration filter (`usePhoneListActions` in `task-list/ListChrome.tsx`); Select tasks, Display mode, a project's Layout, Share and Add a note are overflow items (`PhoneMenuItems`, `phoneGroups`). Nothing sits between the bar and the quick add.
+- **Bottom**: the tab bar (Today, Inbox, Upcoming, Search, More) and the add button. While the list scrolls down the bar drops to 40 px of icons and the button slides out; any scroll up, the end of the list or 600 ms of quiet bring both back (`usePhoneChrome`); reduced motion keeps them still. The content column reserves the button's footprint (`--add-room`) and the toast sits above both (`--toast-lift`).
+- **Rows**: swipe right completes (reopens in Completed), swipe left opens the Schedule sheet (`rowSwipe.ts`, `task-list/RowSwipe.tsx`): a 12 px direction lock, the action named at 64 px, fired at 96 px or on a flick, a return under 32 px. No swipe on a fine pointer, a read-only row, a card, the inline editor or while anything is ticked. Complete and Schedule… start the touch row menu. A long press ticks the row and shows every checkbox (`onHold` in `lib/dnd.ts`); moving on drags the selection.
+- **Sheets**: the task panel is a bottom sheet (`useTaskSheet`): a handle, 90 dvh at most, the scrim behind, Close in place of Back; a drag down on the handle or header closes it, on the body only from the top. Menus and pickers below 640 px are sheets with the same cap and drag.
+- **Drawer**: More opens the sidebar as a 20 rem drawer (85 vw at most) of 48 px rows, without the destinations the tab bar holds.
+- **Budget**: two rows of chrome above the first task (the bar and the quick add); the bottom chrome never covers a row; every touch control is at least 48 px. The layout check also runs the phone screens at 360 px in German and French.
+
 ## The task panel
 
 Sticky header (checkbox, title wrapping to two lines, menu, close); notes as one placeholder line until focused, clamped to about eight lines at rest; four facet lines built by `facetsOf` in `web/src/lib/facets.ts` (Where, When, How always; Who when set) whose parts open `FacetEditor` popovers with Clear and Done, the When parts on one segment of the When popover; an Add menu grouped by facet; subtasks as a checklist; Comments, Activity, History and Time tabs with the composer resting as one line at the bottom. Parts use the row's words; no clear buttons between values. The words are **Do on**, **Start**, **Deadline**, **Evening**.

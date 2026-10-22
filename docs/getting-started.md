@@ -40,7 +40,7 @@ Once you're signed in, the app is stored on your device. You can keep using it w
 
 ## Find your way around
 
-The sidebar on the left lists your views and projects; its groups fold with a click on their name. The magnifier by the OpenTodo name searches everything (<kbd>Ctrl+K</kbd>); the one by **Projects** finds a project, label or filter. On a phone, a bar at the bottom goes to **Today**, **Inbox** and **Upcoming**, opens **Search**, and **More** opens the sidebar as a drawer; the round **+** adds a task from any page with the page's defaults (today's date in Today, the project in a project).
+The sidebar on the left lists your views and projects; its groups fold with a click on their name. The magnifier by the OpenTodo name searches everything (<kbd>Ctrl+K</kbd>); the one by **Projects** finds a project, label or filter. On a phone, a bar at the bottom goes to **Today**, **Inbox** and **Upcoming**, opens **Search**, and **More** opens a drawer with everything else; the round **+** adds a task from any page with the page's defaults (today's date in Today, the project in a project).
 
 - **Inbox** collects tasks that don't belong to a project yet.
 - **Today** shows what's due today, earlier days first.

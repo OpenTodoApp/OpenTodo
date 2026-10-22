@@ -131,6 +131,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
+  // Below 768 px the sidebar is the phone drawer, under a tab bar with Today, Inbox and Upcoming (phone-v2 D7).
+  const drawer = !useMediaQuery('(min-width: 768px)')
   const projectCountMode = useMediaQuery('(pointer: coarse)') ? 'always' : 'hover'
   const scroller = useRef<HTMLDivElement>(null)
   useScrollEdges(scroller)
@@ -380,7 +382,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
   const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge, m.tip) }))
   const primaryExtra = first ? [] : more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
-  const rest = more.filter((m) => !primaryExtra.includes(m))
+  // The phone drawer lists only what the tab bar lacks (phone-v2 D7): Calendar, or the method's destinations.
+  const rest = more.filter((m) => !primaryExtra.includes(m) && !(drawer && TAB_BAR_VIEWS.has(m.route.view)))
+  const primary = primaryDestinations(first, calendarMode, counts, reviewDot, reviewText).filter((d) => !(drawer && TAB_BAR_VIEWS.has(d.route.view)))
 
   return (
     // One scroller (ux-overhaul, app-shell "Sidebar structure"): the name and the
@@ -394,7 +398,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         <SidebarHeader left={<WorkspaceControl route={route} />} rail={<BrandMark size={24} />} railLabel="OpenTodo"
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
-          {primaryDestinations(first, calendarMode, counts, reviewDot, reviewText).map((d) => item(d.route, d.label, d.icon, d.count, d.badge, d.tip))}
+          {primary.map((d) => item(d.route, d.label, d.icon, d.count, d.badge, d.tip))}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
             <MoreMenu entries={rest} collapsed={collapsed} hints={hints}
@@ -615,6 +619,9 @@ function firstModeMore(entries: MoreEntry[], calendarMode: Route['view']): MoreE
     ...entries.filter((m) => !primary.has(m.id)),
   ]
 }
+
+/** The destinations the phone tab bar already holds; the drawer leaves them out (phone-v2 D7). */
+const TAB_BAR_VIEWS = new Set<Route['view']>(['inbox', 'today', 'upcoming'])
 
 /** The primary destinations (app-shell "Sidebar structure"): by the Places in Open Loops first, else Inbox, Today, Upcoming and Calendar. */
 function primaryDestinations(first: boolean, calendarMode: Route['view'], counts: { inbox?: number; today?: number }, reviewDot: ReactNode, reviewText: string): { route: Route; label: string; icon: IconName; count?: number; badge?: ReactNode; tip?: string }[] {

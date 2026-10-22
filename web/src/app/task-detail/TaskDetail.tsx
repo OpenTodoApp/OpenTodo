@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
+import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useTaskSheet } from './TaskSheet'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { useSubtasks, useTask } from '../../lib/localData'
 import { markTaskNotificationsRead } from '../../lib/notifications'
@@ -137,13 +138,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   }, { within: () => panel.current })
 
   const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
-  const swipe = useRef<{ x: number; y: number } | null>(null)
-  const onSwipeStart = (e: TouchEvent<HTMLElement>) => { const item = e.touches[0]; swipe.current = item ? { x: item.clientX, y: item.clientY } : null }
-  const onSwipeEnd = (e: TouchEvent<HTMLElement>) => {
-    const s = swipe.current, entry = e.changedTouches[0]
-    swipe.current = null
-    if (s && entry && entry.clientY - s.y > 80 && Math.abs(entry.clientX - s.x) < 60) onClose()
-  }
+  // Below 768 px the panel is a bottom sheet with a handle over a scrim (phone-v2 D5).
+  const sheet = useTaskSheet({ on: phone && variant !== 'page', onClose, panel, entering })
 
   if (!task) return null
 
@@ -172,15 +168,17 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const done = !!task.completed_at
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }[task.priority] ?? 'border-p4'
   return (
-    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant}
+    <>{sheet?.scrim}
+    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} data-sheet={sheet ? '' : undefined} style={sheet?.style}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
-        : `fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem] ${entering ? 'panel-enter' : ''}`}>
+        : sheet ? sheet.className : `fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem] ${entering ? 'panel-enter' : ''}`}>
+      {sheet?.handle}
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
-      <div data-panel-header ref={page ? measureHeader : undefined} className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
-        onTouchStart={page ? undefined : onSwipeStart} onTouchEnd={page ? undefined : onSwipeEnd}>
-        {/* Below 768 px the panel is a full-screen sheet (app-shell "Panel width and expansion"): Back, or a swipe down on the header, closes it. */}
-        {(page || phone) && <IconButton icon="arrow-left" label={t('Back to the list')} onClick={onClose} data-task-back className="touch-target" />}
+      <div data-panel-header ref={page ? measureHeader : undefined} className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : sheet ? '' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}
+        {...sheet?.header}>
+        {/* The page keeps Back; the phone sheet closes with Close, a drag down, the scrim or Escape (phone-v2 D5). */}
+        {page && <IconButton icon="arrow-left" label={t('Back to the list')} onClick={onClose} data-task-back className="touch-target" />}
         <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
           className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
           <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${done ? 'bg-faint border-input text-on-accent' : `${ring} hover:bg-success-soft`}`}>
@@ -227,7 +225,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </p>
       )}
       {isSample(task) && !readOnly && <SampleNotice />}
-      <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'}>
+      <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'} {...sheet?.body} data-panel-body>
         <div className="min-w-0 space-y-4 p-4">
           {parent && (
             <Tooltip label={t('Open parent task')}>
@@ -293,7 +291,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
       </div>
       <div ref={setFooter} data-panel-footer className={`shrink-0 border-t border-default px-4 py-3 empty:hidden ${page ? 'sticky bottom-0 bg-canvas/95 backdrop-blur-sm' : 'bg-surface'}`} />
       {pageDialog && <TaskPageDialog task={task} status={pageStatus ?? null} onClose={() => setPageDialog(false)} />}
-    </aside>
+    </aside></>
   )
 }
 

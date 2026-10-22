@@ -4938,5 +4938,12 @@
   "A task’s date passes": "La date d’une tâche est passée",
   "when a task’s date passes": "quand la date d’une tâche est passée",
   "due earlier": "prévue avant",
-  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": "Une règle modifie des tâches pour vous quand quelque chose se produit : une étiquette est ajoutée, la date d’une tâche est passée, ou chaque dimanche soir."
+  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": "Une règle modifie des tâches pour vous quand quelque chose se produit : une étiquette est ajoutée, la date d’une tâche est passée, ou chaque dimanche soir.",
+  "Layout": "Disposition",
+  "Pick a day…": "Choisir un jour…",
+  "Schedule…": "Planifier…",
+  "Select tasks": "Sélectionner des tâches",
+  "Swipe right to complete, left to schedule. Also in a task's menu.": "Glissez à droite pour terminer, à gauche pour planifier. Aussi dans le menu d'une tâche.",
+  "Right completes, left schedules; the same two actions start the task's menu": "À droite pour terminer, à gauche pour planifier ; les deux mêmes actions ouvrent le menu de la tâche",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La coche et affiche toutes les cases ; « Sélectionner des tâches » dans le menu de la page fait de même, « Terminé » les masque"
 }

@@ -4,6 +4,7 @@
 // view, hidden while a sheet or the task panel is open, 44 px tabs above the
 // bottom safe area.
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
@@ -99,5 +100,83 @@ describe('the tab bar', () => {
     expect(document.querySelector('main')!.className).toContain('md:!pb-0')
     await r.unmount()
     width = 390
+  })
+})
+
+// Minimising while scrolling down (phone-v2 D6).
+describe('the tab bar while the list scrolls', () => {
+  let reduce = false
+  beforeEach(() => {
+    reduce = false
+    window.matchMedia = ((q: string) => ({
+      matches: /prefers-reduced-motion/.test(q) ? reduce : Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  })
+  const content = () => document.querySelector<HTMLElement>('#content')!
+  async function scrollTo(y: number) {
+    const el = content()
+    Object.defineProperty(el, 'scrollHeight', { value: 3000, configurable: true })
+    Object.defineProperty(el, 'clientHeight', { value: 600, configurable: true })
+    el.scrollTop = y
+    el.dispatchEvent(new Event('scroll'))
+    await flush(10)
+  }
+  const add = () => document.querySelector('[data-add-button]')!
+
+  it('scrolling down more than 24 px drops the labels and slides the add button out; scrolling up restores both', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(50)
+    await scrollTo(10)
+    expect(bar()!.hasAttribute('data-minimised')).toBe(false)
+    await scrollTo(60)
+    expect(bar()!.getAttribute('data-minimised')).toBe('true')
+    expect(tab('today').className).toContain('min-h-10')
+    expect(tab('today').querySelector('span')!.className).toContain('sr-only')
+    expect(tab('today').textContent).toBe('Today')
+    expect(add().getAttribute('data-away')).toBe('true')
+    expect(add().getAttribute('tabindex')).toBe('-1')
+    await scrollTo(40)
+    expect(bar()!.hasAttribute('data-minimised')).toBe(false)
+    expect(tab('today').className).toContain('min-h-14')
+    expect(add().hasAttribute('data-away')).toBe(false)
+    await r.unmount()
+  })
+
+  it('comes back 600 ms after the scroll stops, and at the end of the list', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(50)
+    await scrollTo(100)
+    expect(bar()!.getAttribute('data-minimised')).toBe('true')
+    await flush(700)
+    expect(bar()!.hasAttribute('data-minimised')).toBe(false)
+    await scrollTo(200)
+    expect(bar()!.getAttribute('data-minimised')).toBe('true')
+    await scrollTo(2400)
+    expect(bar()!.hasAttribute('data-minimised')).toBe(false)
+    await r.unmount()
+  })
+
+  it('never minimises under reduced motion', async () => {
+    reduce = true
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(50)
+    await scrollTo(100)
+    await scrollTo(300)
+    expect(bar()!.hasAttribute('data-minimised')).toBe(false)
+    expect(add().hasAttribute('data-away')).toBe(false)
+    await r.unmount()
+  })
+
+  it('a sheet open keeps both hidden, as before', async () => {
+    const id = await createTask({ title: 'Read' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(50)
+    await act(async () => { openTaskPanel(id) })
+    await flush(50)
+    expect(bar()).toBeNull()
+    expect(document.querySelector('[data-add-button]')).toBeNull()
+    await act(async () => { closePanel() })
+    await r.unmount()
   })
 })

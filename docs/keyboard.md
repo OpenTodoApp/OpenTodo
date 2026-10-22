@@ -114,7 +114,9 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Alt+↓</kbd> | Move it one place down |
 | <kbd>Alt+Shift+↑</kbd> | Move it to the top of its list |
 | <kbd>Alt+Shift+↓</kbd> | Move it to the bottom of its list |
-| <kbd>Drag</kbd> (touch: press and hold) | Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels |
+| <kbd>Drag</kbd> (touch: press and hold, then move) | Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels |
+| <kbd>Swipe</kbd> then <kbd>a</kbd> then <kbd>task</kbd> | Touch: right completes, left schedules; the same two actions start the task's menu |
+| <kbd>Press</kbd> then <kbd>and</kbd> then <kbd>hold</kbd> then <kbd>a</kbd> then <kbd>task</kbd> | Touch: tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them |
 | Today, Upcoming, Assigned, Completed, labels, filters | Sorted by date (or their own rule): no drag or Alt moves there |
 | <kbd>←</kbd> | Collapse the subtasks of the selected task (or go to its parent), or the sub-projects of the focused sidebar project |
 | <kbd>→</kbd> | Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project |

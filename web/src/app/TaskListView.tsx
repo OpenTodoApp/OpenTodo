@@ -6,7 +6,7 @@
 // board and the timeline.
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
@@ -19,7 +19,7 @@ import { dayTotalsText } from '../lib/time'
 import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
-import type { AccountRole, Task } from '../lib/types'
+import type { AccountRole, Label, Task } from '../lib/types'
 import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer, useFrameSlide } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
@@ -39,6 +39,7 @@ import { useRowClick } from './rowClick'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
+import { holdSelect, useListSwipe } from './task-list/RowSwipe'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { requestQuickAddSheet } from './QuickAddSheet'
 import { navigate, type Route } from './router'
@@ -48,7 +49,7 @@ import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
-import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
+import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePhoneListActions, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
@@ -187,7 +188,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // and above) and the Inbox. Date and filter views keep their own sort.
   const manual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox'
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, dataGroups), [board, dataColumns, dataGroups])
-  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked }, moveToSection, onDropped: setSelectedId })
+  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: fine ? undefined : (task) => holdSelect(task.id, selection, setSelectMode) }, moveToSection, onDropped: setSelectedId })
   const { latestSectionMap } = drag
 
   // The view supplies defaults; attributes typed in the quick-add line override them.
@@ -258,9 +259,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const renderRow = rowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked,
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
-    showCheckbox: selectMode || selection.ticked.size > 0, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
+    showCheckbox: selectMode || (fine && selection.ticked.size > 0), fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null),
-    inlineId: inline?.id ?? null, renderInline, departures,
+    inlineId: inline?.id ?? null, renderInline, departures, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
   // Planned tasks without a project (inbox-means-unplaced D4): in the Inbox header's meta, or its action row on phones.
@@ -270,6 +271,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} planned={planned} />
   )
   const { currentProject, currentLabel, currentPlace } = m
+  // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
+  const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: rows.length, topLevelCount: rows.filter((r) => r.depth === 0).length,
+    onSelectMode: () => setSelectMode(true), filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration,
+    project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
   // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
@@ -277,7 +282,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const totals = useDayTotals(listedTasks, today, route.view === 'today')
   const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
   const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : planned > 0 ? <PlannedWithoutProject count={planned} /> : undefined)
-  const methodSubtitle = useWithMethod(methodMove)
+  // On a phone the Inbox's planned count is the bar's subtitle (phone-v2 D1), not a row.
+  const methodSubtitle = useWithMethod(methodMove, phone && planned > 0 ? <PlannedWithoutProject count={planned} /> : undefined)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),
     place: currentPlace?.name ?? t('Location'),
@@ -294,14 +300,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         <div ref={frame.ref} className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
+              phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
-            // The page header (ux-overhaul, app-shell "Page template"; task-list-presentation
-            // "Nothing between the header and the list"): title, meta, actions, Help.
-            <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={pageActions}
-              leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
-              meta={meta} subtitle={methodSubtitle}
-              menu={route.view === 'label' && currentLabel ? <LabelMenu label={currentLabel} /> : route.view === 'inbox' ? <InboxMenu /> : undefined} />
+            <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} actions={pageActions} phone={phone ? phoneActions : null} />
           )}
 
           {route.view !== 'completed' && (
@@ -313,14 +315,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
-            onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} />
+            onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
           {actionsOpen && ticked.length === 0 && selectedId && (
             // `.` with nothing ticked: the same menu for the cursor task.
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={onActionsOpen} startPicker={actionsPicker} anchor={actionsFrom}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
 
-          {route.view === 'project' && currentProject && <ProjectNote project={currentProject} />}
+          {route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
           {m.offerColumns && (
             // The list's columns layout (custom-fields): per project, on this device only.
@@ -359,6 +361,31 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       {ui.prompt && <CompleteParentPrompt parent={ui.prompt} onAccept={acceptPrompt} onDismiss={() => setPrompt(null)} />}
       <RowPickerDialogs assignFor={ui.assignFor} pickerFor={ui.pickerFor} userId={userId} onCloseAssign={() => ui.setAssignFor(null)} onClosePicker={() => ui.setPickerFor(null)} />
     </div>
+  )
+}
+
+/**
+ * The page header of a list that is not a project (ux-overhaul, app-shell "Page template";
+ * task-list-presentation "Nothing between the header and the list"): title, meta, actions,
+ * Help. On a phone the actions are the bar's slots and the rest joins its menu (phone-v2 D1).
+ */
+function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
+  route: ListRoute
+  title: string
+  label?: Label
+  meta: ReactNode
+  subtitle: ReactNode
+  actions: ReactNode
+  phone: { slots: ReactNode; items: PhoneItem[] } | null
+}) {
+  const items = phone?.items ?? []
+  const menu = route.view === 'label' && label ? <LabelMenu label={label} extra={phoneGroups(items)} />
+    : route.view === 'inbox' ? <InboxMenu extra={items.length > 0 ? <PhoneMenuItems items={items} /> : undefined} /> : undefined
+  return (
+    <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
+      overflow={route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : undefined}
+      leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
+      meta={meta} subtitle={subtitle} menu={menu} />
   )
 }
 
