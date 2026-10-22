@@ -11,6 +11,8 @@ import type { Op } from '../lib/types'
 import { flush, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
+import { DateTimePrefsProvider } from './DateTimePrefsProvider'
+import { setUserPref } from '../lib/userPrefs'
 
 // TaskRow computes its field badges once per render: counting the calls counts row renders.
 const rowRenders = vi.hoisted(() => ({ n: 0 }))
@@ -63,6 +65,29 @@ describe('large lists', () => {
     expect(presses[0]).toBeLessThanOrEqual(2)
     for (const n of presses.slice(1)) expect(n).toBeLessThanOrEqual(4)
     expect(r.container.querySelector('[data-task-id="t00001"]')!.className).toContain('row-selected')
+    await r.unmount()
+  }, 120_000)
+
+  // rows-v2 D12 (task 5.2): the time format is one CSS variable for every list, so a
+  // switch costs each row one render (its own formatted time), never a cascade, and the
+  // cursor still re-renders only the two rows whose selection changed afterwards.
+  it(`a time format switch renders each row at most once, then j re-renders two (${ROWS} rows, rows-v2 5.2)`, async () => {
+    await seed(ROWS, null)
+    const r = await render(<DateTimePrefsProvider><TaskListView route={{ view: 'inbox' }} /></DateTimePrefsProvider>)
+    await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === ROWS, 'every row rendered', 60_000)
+    await flush(50)
+    const before = document.documentElement.style.getPropertyValue('--row-time-w')
+    rowRenders.n = 0
+    await setUserPref('time_format', before.includes('7') ? '24h' : '12h')
+    await waitFor(() => document.documentElement.style.getPropertyValue('--row-time-w') !== before, 'the column width variable', 10_000)
+    await flush(100)
+    const onSwitch = rowRenders.n
+    console.info(`[large-list-performance] row renders for one time format switch with ${ROWS} rows: ${onSwitch}`)
+    expect(onSwitch).toBeLessThanOrEqual(ROWS)
+    rowRenders.n = 0
+    await key(document.body, 'j')
+    await flush(20)
+    expect(rowRenders.n).toBeLessThanOrEqual(2)
     await r.unmount()
   }, 120_000)
 
