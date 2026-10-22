@@ -77,7 +77,7 @@ text     := word | '"' chars '"'
 | `deadline <cmp> <date>` | tasks whose [deadline](tasks-and-projects.md#deadlines) compares as asked; a task without a deadline never matches. `deadline <= 3 days` includes deadlines that have passed |
 | `start <cmp> <date>` | tasks whose [start date](tasks-and-projects.md#when-a-task-starts) compares as asked; parked tasks and tasks without a start never match |
 | `completed <cmp> <date>` | completed tasks whose completion day, in your time zone, compares as asked; open tasks never match. `completed = last week` is what you finished last week |
-| `overdue` | due before today |
+| `overdue` | due before today: the tasks of Today's **Earlier** group |
 | `today` | due today |
 | `tomorrow` | due tomorrow |
 | `no date` | no due date |

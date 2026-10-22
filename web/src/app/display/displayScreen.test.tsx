@@ -141,6 +141,10 @@ describe('display targets', () => {
     await waitFor(() => r.container.textContent!.includes('Later p1'))
     expect(r.container.querySelector('h1')!.textContent).toBe('Dated')
     expect(headings(r.container)).toEqual(['Earlier', 'Today', 'Friday 16 Oct'])
+    // Labels like the list's group headers (page-rhythm): muted, uppercase for the groups the display generates.
+    const earlier = r.container.querySelector('#display-group-overdue')!
+    expect(earlier.className).toContain('display-heading')
+    expect(earlier.hasAttribute('data-generated')).toBe(true)
     await r.unmount()
   })
 

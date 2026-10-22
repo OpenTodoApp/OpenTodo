@@ -24,7 +24,7 @@ The built-in views are at the top of the sidebar, the less frequent ones under *
 
 ## Plan your day with Today
 
-Overdue tasks first, then today's by time, with **This Evening** and **Blocked** below. Anything you add here is due today. See [Today and Upcoming](today-and-upcoming.md#plan-your-day-with-today).
+Tasks from earlier days first under **Earlier**, then today's by time, with **This Evening** and **Blocked** below. Anything you add here is due today. See [Today and Upcoming](today-and-upcoming.md#plan-your-day-with-today).
 
 ## Plan your week with Upcoming
 

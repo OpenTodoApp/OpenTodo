@@ -27,6 +27,10 @@ export interface DisplayRowData {
 const EM = { width: '0.8em', height: '0.8em' }
 const PRIORITY_MARK: Record<number, string> = { 1: 'text-p1', 2: 'text-p2', 3: 'text-p3' }
 
+/** Groups the display generates (a day, Earlier, Today, This Evening, Blocked, Done today, Later): uppercase labels. */
+const GENERATED = new Set(['overdue', 'today', 'evening', 'blocked', 'done', 'later'])
+const generatedGroup = (id: string) => GENERATED.has(id) || /^\d{4}-\d{2}-\d{2}$/.test(id)
+
 export function DisplayColumn({ id, heading, rows, empty, focusKey, onFocusRow, onToggle }: {
   id: string
   heading?: string | null
@@ -41,7 +45,7 @@ export function DisplayColumn({ id, heading, rows, empty, focusKey, onFocusRow, 
   const headingId = `display-group-${id}`
   return (
     <section aria-labelledby={heading ? headingId : undefined} aria-label={heading ? undefined : t('Tasks')} data-display-group={id} className="min-w-0">
-      {heading && <h2 id={headingId} className="display-heading mb-1 border-b-2 border-default pb-1">{heading}</h2>}
+      {heading && <h2 id={headingId} className="display-heading mb-1 border-b-2 border-default pb-1" data-generated={generatedGroup(id) || undefined}>{heading}</h2>}
       {rows.length === 0 ? (
         <p className="display-meta py-2">{empty}</p>
       ) : (

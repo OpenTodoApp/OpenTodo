@@ -37,12 +37,23 @@ The [design system](design-system.md) says which tokens and building blocks exis
 
 | Width | Used by | Column |
 | --- | --- | --- |
-| `list` | Inbox, Today, Upcoming, projects, labels, filters, Trash, Updates, Help | 48 rem |
+| `list` | Inbox, Today, Upcoming, labels, filters, Trash, Updates, Help | 48 rem |
 | `form` | Settings pages, Import, Ask | 42 rem |
-| `wide` | a project's list with field columns | 72 rem |
+| `wide` | a project's list (with or without field columns) | 72 rem |
 | `full` | Board, timeline, Day, Week, Month and Plan | the whole frame |
 
-**One page frame.** Every page sits in the same frame: centred in the content column, at most 80 rem wide, with the same side padding (`PageBody`, or `PAGE_FRAME` for the task lists). The header spans the whole frame; the content takes its width from the table and starts at the frame's left edge, so the title and the last header action never move when you go from a list to a board, a timeline or Settings. Content wider than the frame (a board with many columns, a long timeline) scrolls sideways inside it. Enforced by `pageTemplate.test.ts` and the frame step of `make e2e`.
+**The lead line.** The title is set at the `display` step on its own line; the page's `meta` (Today's date and totals, a project's members, a label's count, a read-only note) is a muted line under it at the metadata size (`data-page-lead`). It is inside the one header element, so the interface budget's "rows of chrome" (a count of elements) is unchanged. Below 768 px the shell's bar shows it as its subtitle.
+
+**Two page frames** (`data-page-frame`). A *standalone* page, one without a layout switch (Inbox, Today, Upcoming, a label, Filter, Trash, Updates, Settings, Import, Ask, Help, the review screens), has a frame as wide as its content plus the side padding, centred in the content column: the title and the first row share one left edge and no page sits left-aligned in a wider column. A *layout* page (a project, a saved view with a board or timeline, the calendars) keeps one frame of at most 80 rem; the header spans it and the content starts at its left edge, so a project's title and actions never move between list, board and timeline. Content wider than the frame scrolls sideways inside it. `PageBody` picks the frame from its width (`full` is a layout page) or `frame`; the task lists mark theirs in `TaskListView`. The CSS is one unlayered rule in `index.css`.
+
+| Window (sidebar 16 rem) | Content column | Standalone, panel closed | Standalone, panel open | Layout frame |
+| --- | --- | --- | --- | --- |
+| 1024 px | 48 rem | fills (list 44 rem) | fills | 48 rem |
+| 1280 px | 64 rem | 52 rem, 6 rem each side | fills (38 rem) | 64 rem |
+| 1440 px | 74 rem | 52 rem, 11 rem each side | fills (44 rem) | 74 rem |
+| 1920 px | 104 rem | 52 rem, 26 rem each side | 52 rem, 11 rem each side | 80 rem |
+
+When the panel docks or the sidebar collapses, the column jumps in width and a standalone frame slides to its new centre over the emphasis duration (`frameSlide.ts`: a jump of 160 px or more in one step; a window drag moves nothing; at once under reduced motion or no motion). Where the column is no wider than the frame, nothing moves. Enforced by `pageTemplate.test.ts`, `pageRhythm.test.tsx` and the frame step of `make e2e`.
 
 The header is sticky inside the content column. A string title is truncated; pass a node for an inline rename field. `back` adds a back action for nested pages and phones. `children` is a second row (a segmented control, tabs) and counts against the budget. Below 768 px the shell's bar shows the title and the first two actions, so a view declares its header once.
 
@@ -63,10 +74,12 @@ Nine sections (Account, Appearance, General, Notifications, Capture, Integration
 ## Rows and chips
 
 - A row: a 24 px leading slot (chevron only with children), the checkbox, the time column when the list has one (`data-row-time`, width `--row-time-w`: the due time, else the deadline countdown), the title, a metadata line only when there is metadata, and a trailing group (`data-row-trailing`: the project from 640 px, the counts `data-row-counts`, the origin) in `text-faint` that turns `text-muted` on hover or focus within the row. It is never hidden and never a control.
-- One row language (rows-v2; `row_detail` is retired): the line is one run of muted `ToneText` separated by CSS middle dots (`[data-row-meta]`), the date muted except overdue (danger) and a timed today (accent), repeat as a `repeat` icon with its word, the priority ring coloured for P1 and P2 only. `LabelChips` (two chips, then "+n") are the only pills of a row. On a fine pointer from 768 px, `RowActionCluster` (Schedule, Priority, More) takes the trailing group's place on hover or focus within. Board cards (`shape="card"`) have no column: the time leads their line. No icon-only glyphs.
+- One row language (rows-v2; `row_detail` is retired): the line is one run of muted `ToneText` separated by CSS middle dots (`[data-row-meta]`), the date on the due ladder (`ladderTone` in `rowTone.ts`: after tomorrow muted, tomorrow default, today accent timed or not, an earlier day danger; the deadline countdown keeps its own steps), repeat as a `repeat` icon with its word, the priority ring coloured for P1 and P2 only. `LabelChips` (two chips, then "+n") are the only pills of a row. On a fine pointer from 768 px, `RowActionCluster` (Schedule, Priority, More) takes the trailing group's place on hover or focus within. Board cards (`shape="card"`) have no column: the time leads their line. No icon-only glyphs.
 - A row leaves out only what its view or heading states: `ListRow.implied` from `listGroups()` (the day a heading names, This Evening, Someday), `omitLabel` in a label's view and `showProject`. A new fact a heading can imply is one more field there; a new count is one more entry in `rowCounts()`.
 - Motion on a row (motion-v2): `data-departing` marks the last picture of a completed task while it folds away (no `data-task-id`, `aria-hidden`, `inert`; counts, the cursor and drops never see it), `data-rolled` a repeating task rolling to its next date, `data-restored` a row Undo brought back. Local list changes go through `withListTransition` in `web/src/app/motion.ts` (view transitions, at most 40 rows, never for sync); overlays exit on a copy (`playExit` in `web/src/ui/overlay/exit.ts`).
 - Counts use tabular figures in the interface face, never a monospace face.
+- Group headers are labels (`ListGroupHeader`): metadata size, semibold, muted; `kind="generated"` (a date, Earlier, Today, Blocked, Later, Completed, No section) is uppercase with wide tracking, `kind="named"` (a section, a project) keeps the user's case. CSS uppercase keeps the DOM text for assistive technology. No header is red; how late a task is shows on its row. `actionsAlwaysVisible` is for a group whose actions are its purpose (Today's **Earlier**: Move all to today, Reschedule…), and wraps them under the label on a phone.
+- Words: tasks planned for an earlier day are **Earlier** (a group), "n from earlier" (a count), "still open from earlier" (a sentence), never "overdue"; Statistics' "completed late" and "slipped" and the countdown's "nd over" are measurements and keep their words. `i18n.test.ts` checks the catalogs.
 - Calendar blocks, Month and Plan rows and timeline bars are `ui-block` in the project hue (dashed edge without an estimate, dimmed before today, danger edge when late); events from other calendars are `ui-block--event`, neutral with a calendar dot. No chrome row was added for them.
 - Icon sizes: 16 px in rows, 20 px in headers, 12 px in chips.
 - Empty views: one sentence, one primary action, one optional link; the key in the tooltip. Every task view renders them through `EmptyState` in `web/src/ui` with data (`title`, `action: { label, onClick, shortcut }`, `secondary`), never nodes, so a view cannot add an icon, a second line or a second button. `compact` is for an empty day inside a list of days. The `icon`, `body` and `control` slots are kept for the settings panels only, until those move to the same rule.
@@ -82,7 +95,7 @@ Every change that touches a screen states in its design how it stays inside thes
 | Limit | Value | Test |
 | --- | --- | --- |
 | Vertical scroll regions per screen | 3 | `budget.test.tsx`, layout check |
-| Rows of chrome above a list's first item | 2 (header, quick add); nothing under the quick add, first-run guidance only as an overlay | `budget.test.tsx` |
+| Rows of chrome above a list's first item | 2 elements (the header, with its lead line inside, and quick add); nothing under the quick add, first-run guidance only as an overlay | `budget.test.tsx` |
 | Task properties visible by default | 7 | `budget.test.tsx` (with the panel redesign) |
 | Primary sidebar destinations | 6 | `budget.test.tsx` (with the navigation change) |
 | New shortcuts | registered, no conflict | the shortcut registry test |

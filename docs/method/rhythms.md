@@ -16,7 +16,7 @@ Reviews keep the system trustworthy. Open Loops has three, each short enough to 
 Five minutes, usually in the morning: open it from the Review screen's menu, the Loop home or <kbd>g</kbd> <kbd>Shift+R</kbd>.
 
 1. **Process the Inbox** if anything is in it.
-2. Look at what is **overdue**: complete it, or give it a new date.
+2. Look at what is still open from **Earlier**: complete it, or give it a new date.
 3. Pick **today's focus**: press <kbd>f</kbd> on up to three of today's tasks. They are shown on the Loop home on every device, with how many of them are done. To work through them one at a time with a timer, press <kbd>g</kbd> <kbd>Shift+F</kbd> for [Focus](../focus.md).
 
 **Done for today** records the check. In Open Loops first, the app offers it once a day. If you closed yesterday with a line for tomorrow, it is shown at the top.

@@ -20,7 +20,7 @@ Each view is built from your device's tasks, so it works offline. Today and Upco
 | View | Shows | Shortcut |
 | --- | --- | --- |
 | **Inbox** | Tasks that aren't in a project yet; **Process** [walks them one at a time](process-the-inbox.md) | <kbd>g</kbd> <kbd>i</kbd> |
-| **Today** | Tasks due today and tasks whose deadline is today, with overdue ones first | <kbd>g</kbd> <kbd>t</kbd> |
+| **Today** | Tasks due today or with a deadline today, earlier ones first | <kbd>g</kbd> <kbd>t</kbd> |
 | **Upcoming** | Tasks due after today, and undated tasks with a deadline ahead, grouped by day | <kbd>g</kbd> <kbd>u</kbd> |
 | **Anytime** | Open tasks with no date and no start: things to do whenever there is time | <kbd>g</kbd> <kbd>n</kbd> |
 | **Someday** | Tasks you parked for later, by project | <kbd>g</kbd> <kbd>o</kbd> |

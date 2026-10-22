@@ -22,7 +22,7 @@ The review walks you through one step at a time, starting with the first that is
 2. **Mind sweep**: a few prompts ("Calls to return", "Promises to someone") and a quick add that catches into the Inbox.
 
 **Get current**
-3. **Look back**: what you completed this week, and what is overdue. Done when nothing is overdue.
+3. **Look back**: what you completed this week, and what is still open from earlier ("2 from earlier"). Done when nothing is.
 4. **Waiting**: what you assigned to someone else or what waits for another task.
 5. **Projects**: one card per project, least recently reviewed first, with its outcome (the first lines of its [note](project-notes.md)), its next action and whether it has stalled. <kbd>r</kbd> marks it reviewed, <kbd>q</kbd> adds a next action, <kbd>Enter</kbd> opens it, <kbd>a</kbd> archives it, <kbd>j</kbd> skips and <kbd>k</kbd> goes back. Done when every project was reviewed in the last seven days and has a next action. Your mark is yours: in a shared project, the others keep their own.
 6. **Look ahead**: what is due in the next seven days.

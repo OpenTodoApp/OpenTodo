@@ -1,6 +1,6 @@
 ---
 title: Automation rules
-summary: Rules change tasks for you when something happens, such as a label added, a task overdue or every Sunday evening, and run on your server even when no device is open.
+summary: Rules change tasks for you when something happens, such as a label added, a task's date passing or every Sunday evening, and run on your server even when no device is open.
 audience: user
 section: Guides
 specs: [custom-views, webhooks]
@@ -17,7 +17,7 @@ A rule says **when** something happens, **which tasks** it is for, and **what** 
 
 Choose **New rule**, name it, then:
 
-- **When**: a task is created, completed or reopened; a label is added or removed; a task is assigned to you or moved to a project or section; a task is due (at its time, 09:00 for a date without a time); a task becomes overdue (at the start of the next day); or on a schedule, at a time on chosen weekdays.
+- **When**: a task is created, completed or reopened; a label is added or removed; a task is assigned to you or moved to a project or section; a task is due (at its time, 09:00 for a date without a time); a task's date passes (at the start of the next day); or on a schedule, at a time on chosen weekdays.
 - **Only for tasks that**: optional conditions, all of which must hold: project (with its sub-projects), labels, priority, date, deadline, assignee, blocked. The editor shows how many open tasks match now.
 - **Then**: priority, date, start, deadline, assignee, labels to add or remove, project and section, complete or reopen, a comment, an in-app notification, or a delivery to one of your [webhooks](webhooks.md).
 

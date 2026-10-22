@@ -17,7 +17,7 @@ Display mode shows one view full screen, in large type, with a clock and nothing
 
 Choose **Display mode** in the header of Today or Upcoming, in a project's menu, or in a saved view's menu. Each opens its own address, which you can bookmark:
 
-- `/display/today` (or just `/display`): the clock and date, overdue and today's tasks, what was done today ticked below them, and the next three days as columns.
+- `/display/today` (or just `/display`): the clock and date, the tasks from earlier days and today's tasks, what was done today ticked below them, and the next three days as columns.
 - `/display/upcoming`: the next seven days as columns.
 - `/display/project/<id>`: the project's open tasks by section.
 - `/display/view/<id>`: a saved view with its own grouping and sort.

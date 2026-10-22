@@ -36,7 +36,7 @@ Completing, deleting, moving, rescheduling or parking a task shows a toast with 
 
 ## What a row shows
 
-A row leaves out what the view already says: no "Today" in Today, no date under an Upcoming day, no project inside that project. Times stand in a column before the titles (a deadline's countdown when there is no time). Dates are grey unless overdue (red) or timed for today; only P1 and P2 colour the circle. Labels are small chips, two at most and "+2". The project and the counts sit at the end of the row, faint until you hover it.
+A row leaves out what the view already says: no "Today" in Today, no date under an Upcoming day, no project inside that project. Times stand in a column before the titles (a deadline's countdown when there is no time). Dates are grey for later, darker for tomorrow, the accent for today and red when past; only P1 and P2 colour the circle. Labels are small chips, two at most and "+2". The project and counts end the row, faint until hovered.
 
 With a mouse on a wide screen, hovering a row shows **Schedule**, **Priority** and **More** at its end; <kbd>Tab</kbd> reaches them. On a touch screen, long-press a row for its menu.
 
