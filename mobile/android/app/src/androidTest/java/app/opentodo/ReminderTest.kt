@@ -44,9 +44,9 @@ class ReminderTest {
         return JSONArray().put(r).toString()
     }
 
-    /** The app's armed alarms as the alarm manager lists them (tag `*walarm*:app.opentodo/.AlarmReceiver`). */
-    private fun armedAlarms(): List<String> =
-        shell("dumpsys alarm").lines().filter { it.contains("${context.packageName}/.AlarmReceiver") }
+    /** The app's pending alarms as the alarm manager lists them (`tag=*walarm*:app.opentodo/.AlarmReceiver`; history sections omit `tag=`). */
+    private fun armedAlarms(): Int =
+        shell("dumpsys alarm").lines().count { it.contains("tag=*walarm*:${context.packageName}/.AlarmReceiver") }
 
     private fun shown(id: String): StatusBarNotification? =
         context.getSystemService(NotificationManager::class.java).activeNotifications.firstOrNull { it.id == Notifier.notificationId(id) }
@@ -68,13 +68,14 @@ class ReminderTest {
 
     @Test fun withoutExactAlarmsTheInexactFallbackIsArmed() {
         // Android may hold an inexact alarm back by minutes, so this checks it is armed, not that it fired.
-        assertTrue("no alarm before: ${armedAlarms()}", armedAlarms().isEmpty())
-        val list = ReminderSchedule.parse(schedule("r2", 60_000), System.currentTimeMillis())
+        val before = armedAlarms()
+        val list = ReminderSchedule.parse(schedule("r2", 60 * 60_000), System.currentTimeMillis())
         Prefs(context).reminders = ReminderSchedule.toJson(list)
         Scheduler.arm(context, list, exact = false)
-        waitUntil("the inexact alarm in dumpsys alarm") { armedAlarms().isNotEmpty() }
+        var armed = 0
+        waitUntil("the inexact alarm in dumpsys alarm") { armed = armedAlarms(); armed > before }
         Scheduler.clear(context)
-        waitUntil("the alarm to be cancelled") { armedAlarms().isEmpty() }
+        waitUntil("the alarm to be cancelled") { armedAlarms() < armed }
     }
 
     @Test fun withoutATitleTheNotificationSaysReminder() {
