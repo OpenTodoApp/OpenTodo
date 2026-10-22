@@ -17,19 +17,21 @@ import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
 import { TaskListView } from './TaskListView'
+// The limits, shared with the interface audit tour (scripts/ux-audit, ux-audit-three-widths D2).
+import budget from './budget.json'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
 /** At most the sidebar, the content column and the panel scroll vertically. */
-export const MAX_SCROLLERS = 3
+export const MAX_SCROLLERS = budget.MAX_SCROLLERS
 /** Above the first task of a list: the header and the quick add, nothing else. */
-export const MAX_CHROME_ROWS = 2
+export const MAX_CHROME_ROWS = budget.MAX_CHROME_ROWS
 /** The project page keeps its header, layout toggle and quick add until task 4.4 moves the toggle into the header. */
-const PROJECT_CHROME_ALLOWANCE = 3
+const PROJECT_CHROME_ALLOWANCE = budget.PROJECT_CHROME_ALLOWANCE
 /** An empty task's panel: the breadcrumb, Do on, Priority and Add, never a form of empty rows. */
-export const MAX_EMPTY_TASK_ITEMS = 7
+export const MAX_EMPTY_TASK_ITEMS = budget.MAX_EMPTY_TASK_ITEMS
 /** A row in Today: at most five items in its metadata line; the time column and the quiet trailing group are counted apart (rows-v2 D10). */
-export const MAX_ROW_META_ITEMS = 5
+export const MAX_ROW_META_ITEMS = budget.MAX_ROW_META_ITEMS
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })

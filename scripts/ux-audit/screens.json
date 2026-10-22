@@ -1,0 +1,1093 @@
+[
+ {
+  "id": "inbox",
+  "route": "inbox",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "inbox",
+  "story": "Screens/Task list"
+ },
+ {
+  "id": "today",
+  "route": "today",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "today",
+  "story": "Screens/Task list"
+ },
+ {
+  "id": "upcoming",
+  "route": "upcoming",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "upcoming",
+  "story": "Screens/Task list"
+ },
+ {
+  "id": "project",
+  "route": "project",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "project",
+  "story": "Screens/Shell"
+ },
+ {
+  "id": "board",
+  "route": "project",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "board",
+  "story": "Screens/Board"
+ },
+ {
+  "id": "task",
+  "route": "task",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "the task route opens the list with the panel; the layout check reaches the panel as the task-detail overlay",
+  "story": "Task/Panel",
+  "path": "/task/{quotes}",
+  "ready": "aside[data-detail-for]"
+ },
+ {
+  "id": "task-panel",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "task-detail",
+  "story": "Task/Panel",
+  "on": "inbox"
+ },
+ {
+  "id": "panel-comments",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a tab of the panel, opened by the tour after task-detail",
+  "story": "Task/Panel",
+  "on": "project",
+  "open": {
+   "overlay": "task-detail",
+   "steps": [
+    {
+     "tab": "Comments"
+    }
+   ]
+  }
+ },
+ {
+  "id": "panel-activity",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a tab of the panel, opened by the tour after task-detail",
+  "story": "Task/Panel",
+  "on": "project",
+  "open": {
+   "overlay": "task-detail",
+   "steps": [
+    {
+     "tab": "Activity"
+    }
+   ]
+  }
+ },
+ {
+  "id": "panel-history",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "task-history",
+  "story": "Task/Panel",
+  "on": "project"
+ },
+ {
+  "id": "panel-time",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a tab of the panel, opened by the tour after task-detail",
+  "story": "Task/Panel",
+  "on": "project",
+  "open": {
+   "overlay": "task-detail",
+   "steps": [
+    {
+     "tab": "Time"
+    }
+   ]
+  }
+ },
+ {
+  "id": "when-popover",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "when-popover",
+  "story": "Task/Panel",
+  "on": "project"
+ },
+ {
+  "id": "label-picker",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "label-picker",
+  "story": "Screens/Task list",
+  "on": "inbox"
+ },
+ {
+  "id": "command-palette",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "command-palette",
+  "story": "Screens/Command bar",
+  "on": "inbox"
+ },
+ {
+  "id": "sidebar",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "sidebar",
+  "story": "Screens/Sidebar",
+  "on": "inbox"
+ },
+ {
+  "id": "quick-add",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "the inline quick add is part of every list screen; the tour focuses it and types a phrase with chips",
+  "story": "Screens/Quick add",
+  "on": "inbox",
+  "open": {
+   "steps": [
+    {
+     "focus": "input[aria-label=\"Add a task\"]"
+    },
+    {
+     "type": "Call mum tomorrow p1 @errand"
+    }
+   ]
+  }
+ },
+ {
+  "id": "add-menu",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "opened by the tour from the sidebar",
+  "story": "Screens/Sidebar",
+  "on": "inbox",
+  "open": {
+   "steps": [
+    {
+     "click": "button[aria-label=\"Add or fold projects\"]"
+    }
+   ]
+  }
+ },
+ {
+  "id": "notifications",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "notifications",
+  "story": "Screens/Shell",
+  "on": "inbox"
+ },
+ {
+  "id": "bulk-actions",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "bulk-actions-menu",
+  "story": "Screens/Task list",
+  "on": "inbox"
+ },
+ {
+  "id": "undo-toast",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": true,
+  "layoutCheck": "bulk-toast",
+  "story": "Overlay/Toast",
+  "on": "inbox"
+ },
+ {
+  "id": "triage",
+  "route": "triage",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "triage",
+  "story": "Screens/Process the Inbox"
+ },
+ {
+  "id": "day",
+  "route": "day",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "day",
+  "story": "Screens/Calendar"
+ },
+ {
+  "id": "week",
+  "route": "week",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "week",
+  "story": "Screens/Calendar"
+ },
+ {
+  "id": "month",
+  "route": "month",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "month",
+  "story": "Screens/Month"
+ },
+ {
+  "id": "plan",
+  "route": "plan",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "plan",
+  "story": "Screens/Calendar"
+ },
+ {
+  "id": "timeline",
+  "route": "project",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "timeline",
+  "story": "Screens/Timeline"
+ },
+ {
+  "id": "columns",
+  "route": "project",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "columns",
+  "story": "Screens/Task list"
+ },
+ {
+  "id": "assigned",
+  "route": "assigned",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "assigned",
+  "story": "Screens/Task list"
+ },
+ {
+  "id": "someday",
+  "route": "someday",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
+  "story": "Screens/Someday",
+  "path": "/someday",
+  "ready": "main h1"
+ },
+ {
+  "id": "anytime",
+  "route": "anytime",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
+  "story": "Screens/Anytime",
+  "path": "/anytime",
+  "ready": "main h1"
+ },
+ {
+  "id": "next",
+  "route": "next",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
+  "story": "Screens/Next",
+  "path": "/next",
+  "ready": "main h1"
+ },
+ {
+  "id": "waiting",
+  "route": "waiting",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
+  "story": "Screens/Waiting",
+  "path": "/waiting",
+  "ready": "main h1"
+ },
+ {
+  "id": "loop",
+  "route": "loop",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "Open Loops home, shown only in that mode; added to the tour",
+  "story": "Screens/Loop home",
+  "path": "/loop",
+  "ready": "main"
+ },
+ {
+  "id": "focus",
+  "route": "focus",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "Open Loops focus, shown only in that mode; added to the tour",
+  "story": "Screens/Focus",
+  "path": "/focus",
+  "ready": "main"
+ },
+ {
+  "id": "review",
+  "route": "review",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": null,
+  "layoutCheckReason": "the weekly review walk; added to the tour, not yet to the layout check",
+  "story": "Screens/Review and statistics",
+  "path": "/review",
+  "ready": "main h1"
+ },
+ {
+  "id": "stats",
+  "route": "stats",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "stats",
+  "story": "Screens/Statistics charts"
+ },
+ {
+  "id": "completed",
+  "route": "completed",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "completed",
+  "story": "Screens/Completed"
+ },
+ {
+  "id": "trash",
+  "route": "trash",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "trash",
+  "story": "Screens/Trash"
+ },
+ {
+  "id": "feed",
+  "route": "feed",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "updates",
+  "story": "Screens/Updates"
+ },
+ {
+  "id": "ask",
+  "route": "ask",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "ask",
+  "story": "Screens/Ask"
+ },
+ {
+  "id": "filter",
+  "route": "filter",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "filter",
+  "story": "Screens/Filter"
+ },
+ {
+  "id": "views",
+  "route": "views",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "views",
+  "story": "Screens/Filters overview"
+ },
+ {
+  "id": "view",
+  "route": "view",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "saved-view",
+  "story": "Screens/Filter"
+ },
+ {
+  "id": "dashboard",
+  "route": "view",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "dashboard",
+  "story": "Screens/Board of filters"
+ },
+ {
+  "id": "labels",
+  "route": "labels",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "labels",
+  "story": "Screens/Labels"
+ },
+ {
+  "id": "label",
+  "route": "label",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "label",
+  "story": "Screens/Label view"
+ },
+ {
+  "id": "projects",
+  "route": "projects",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "projects",
+  "story": "Screens/All projects"
+ },
+ {
+  "id": "settings",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "settings",
+  "story": "Settings/Navigation"
+ },
+ {
+  "id": "settings-account",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "settings-account",
+  "story": "Settings/You"
+ },
+ {
+  "id": "settings-appearance",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "settings-appearance",
+  "story": "Settings/App/Appearance"
+ },
+ {
+  "id": "share",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "share",
+  "story": "Screens/Shell",
+  "on": "project"
+ },
+ {
+  "id": "project-menu",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "project-menu",
+  "story": "Screens/Page header",
+  "on": "project"
+ },
+ {
+  "id": "section-menu",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "section-menu",
+  "story": "Screens/Section style",
+  "on": "project"
+ },
+ {
+  "id": "assistant",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "assistant",
+  "story": "Screens/Ask",
+  "on": "inbox"
+ },
+ {
+  "id": "help-panel",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "help-panel",
+  "story": "Screens/Shell",
+  "on": "project"
+ },
+ {
+  "id": "label-menu",
+  "route": "labels",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "label-menu",
+  "story": "Screens/Labels",
+  "on": "labels"
+ },
+ {
+  "id": "view-menu",
+  "route": "views",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "view-menu",
+  "story": "Screens/Filters overview",
+  "on": "views"
+ },
+ {
+  "id": "workspaces",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "added with the workspaces change after the layout check list",
+  "path": "/settings/workspaces",
+  "ready": "main h1"
+ },
+ {
+  "id": "settings-general",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-general"
+ },
+ {
+  "id": "settings-notifications",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-notifications"
+ },
+ {
+  "id": "settings-capture",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-capture"
+ },
+ {
+  "id": "settings-about",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "a short page of version and links; added to the tour",
+  "path": "/settings/about",
+  "ready": "main h1"
+ },
+ {
+  "id": "settings-integrations",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-integrations"
+ },
+ {
+  "id": "settings-data",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-data"
+ },
+ {
+  "id": "settings-people",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-people"
+ },
+ {
+  "id": "settings-server",
+  "route": "settings",
+  "kind": "settings",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "settings-server"
+ },
+ {
+  "id": "import",
+  "route": "import",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "import"
+ },
+ {
+  "id": "places",
+  "route": "places",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "locations",
+  "story": "Screens/Locations"
+ },
+ {
+  "id": "place",
+  "route": "place",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "the seed has no saved location; the tour opens an unknown one, which shows the not-found state",
+  "path": "/location/none",
+  "ready": "main"
+ },
+ {
+  "id": "rules",
+  "route": "rules",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "automation rules, added after the layout check list",
+  "story": "Screens/Rules",
+  "path": "/rules",
+  "ready": "main h1"
+ },
+ {
+  "id": "projects-archived",
+  "route": "projects",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "projects-archived",
+  "story": "Screens/All projects"
+ },
+ {
+  "id": "help",
+  "route": "help",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "help"
+ },
+ {
+  "id": "help-guide",
+  "route": "help",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "help-guide"
+ },
+ {
+  "id": "capture",
+  "route": "share",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "share-files"
+ },
+ {
+  "id": "display-today",
+  "route": "display",
+  "kind": "display",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "display-today"
+ },
+ {
+  "id": "display-today-high-xl",
+  "route": "display",
+  "kind": "display",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "display-today-high-xl"
+ },
+ {
+  "id": "display-upcoming",
+  "route": "display",
+  "kind": "display",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "display-upcoming"
+ },
+ {
+  "id": "display-project",
+  "route": "display",
+  "kind": "display",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "display-project"
+ },
+ {
+  "id": "display-view",
+  "route": "display",
+  "kind": "display",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "display-view"
+ },
+ {
+  "id": "public",
+  "route": "public",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "public-list"
+ },
+ {
+  "id": "public-display",
+  "route": "public",
+  "kind": "display",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "public-display"
+ },
+ {
+  "id": "task-page",
+  "route": "public",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "task-page",
+  "story": "Screens/Task page"
+ },
+ {
+  "id": "sign-in",
+  "route": "inbox",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "sign-in"
+ },
+ {
+  "id": "forgot",
+  "route": "forgot",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "a signed-out form; added to the tour",
+  "path": "/forgot",
+  "ready": "main",
+  "anon": true
+ },
+ {
+  "id": "reset",
+  "route": "reset",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "needs a reset token; the tour opens an expired one, which shows the invalid-link state",
+  "path": "/reset/expired-token",
+  "ready": "main",
+  "anon": true
+ },
+ {
+  "id": "verify",
+  "route": "verify",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "needs a verification token; the tour opens an expired one",
+  "path": "/verify/expired-token",
+  "ready": "main",
+  "anon": true
+ },
+ {
+  "id": "confirm-email",
+  "route": "confirm-email",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "needs an email-change token; the tour opens an expired one",
+  "path": "/confirm-email/expired-token",
+  "ready": "main"
+ },
+ {
+  "id": "invite",
+  "route": "invite",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "needs an account invitation; the tour opens an expired one",
+  "path": "/invite/expired-token",
+  "ready": "main",
+  "anon": true
+ },
+ {
+  "id": "project-invite",
+  "route": "project-invite",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "project-invite"
+ },
+ {
+  "id": "project-invite-member",
+  "route": "project-invite",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "project-invite-member"
+ },
+ {
+  "id": "workspace-invite",
+  "route": "workspace-invite",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "added with the workspaces change; the tour opens an expired link",
+  "path": "/invite/w/expired-token",
+  "ready": "main",
+  "anon": true
+ },
+ {
+  "id": "owner-setup",
+  "route": "inbox",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "shown only on a server with no account; the seeded server has one, so the tour cannot reach it",
+  "story": "Screens/Start guide",
+  "tour": false
+ },
+ {
+  "id": "start-guide",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "shown once to a new account; covered by its story",
+  "story": "Screens/Start guide",
+  "tour": false
+ },
+ {
+  "id": "spotlight",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "spotlight",
+  "on": "inbox"
+ },
+ {
+  "id": "template-dialog",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "template-dialog",
+  "story": "Screens/Template library",
+  "on": "inbox"
+ },
+ {
+  "id": "fields-dialog",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "fields-dialog",
+  "on": "columns"
+ },
+ {
+  "id": "duplicate-project",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "duplicate-project",
+  "on": "project"
+ },
+ {
+  "id": "location-editor",
+  "route": "project",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "location-editor",
+  "on": "project"
+ },
+ {
+  "id": "voice-consent",
+  "route": "settings",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "voice-consent",
+  "on": "settings-capture"
+ }
+]
