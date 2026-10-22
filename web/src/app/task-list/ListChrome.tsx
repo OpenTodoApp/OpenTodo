@@ -10,7 +10,7 @@ import { useOpenTasks } from '../../lib/liveTasks'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
-import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IconName, type IllustrationName, IconButton, MenuGroup, MenuItem, MenuSeparator, Tooltip } from '../../ui'
+import { Button, DESKTOP_HEADER_QUERY, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IconName, type IllustrationName, IconButton, MenuGroup, MenuItem, MenuSeparator, Tooltip, useMediaQuery } from '../../ui'
 import { TodayAskAction, useTodayAsk } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
@@ -18,6 +18,7 @@ import { LabelPicker } from '../LabelPicker'
 import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
 import { Dialog, Menu } from '../../ui'
 import { navigate } from '../router'
+import { requestProjectNote } from '../ProjectNote'
 import { Kbd } from '../shortcuts/Kbd'
 import type { ListRoute } from './useListModel'
 
@@ -113,7 +114,7 @@ export interface PhoneItem { id: string; label: string; icon?: IconName; checked
  * as overflow items: Select tasks, Display mode, and the duration filter when it
  * had no slot (its active choice then shows as a chip in the bar).
  */
-export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration }: {
+export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project }: {
   route: ListRoute
   userRole?: AccountRole
   rowCount: number
@@ -122,7 +123,10 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
   filterKey: string | null
   duration: DurationFilter | null
   onDuration: (kind: DurationFilter | null) => void
-}): { slots: ReactNode; items: PhoneItem[] } {
+  /** A project page: its layout choice and, when empty, "Add a note" join the project menu. */
+  project?: { row: Project; editable: boolean; viewMode: ProjectViewMode; onViewMode: (m: ProjectViewMode) => void }
+}): { phone: boolean; slots: ReactNode; items: PhoneItem[]; projectItems: PhoneItem[] } {
+  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
   const ask = useTodayAsk(userRole) && route.view === 'today'
   const process = route.view === 'inbox' && rowCount > 0
   const filterSlot = !!filterKey && !ask && !process
@@ -148,7 +152,12 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
       {!filterSlot && current && <DurationChip label={current.label} onClear={() => onDuration(null)} />}
     </>
   )
-  return { slots, items }
+  const projectItems: PhoneItem[] = project ? [
+    ...(['list', 'board', 'timeline'] as const).map((mode) => ({ id: `layout-${mode}`, label: LAYOUT_LABEL[mode], checked: project.viewMode === mode, group: t('Layout'), onSelect: () => project.onViewMode(mode) })),
+    ...(project.editable && !project.row.description?.trim() ? [{ id: 'note', label: t('Add a note'), icon: 'pencil' as const, onSelect: () => requestProjectNote(project.row.id) }] : []),
+    ...items,
+  ] : items
+  return { phone, slots, items, projectItems }
 }
 
 /** The phone overflow items as ActionMenu groups (the project and label menus). */

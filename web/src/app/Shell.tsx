@@ -31,6 +31,7 @@ import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
+import { useScrollMinimised } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
@@ -197,6 +198,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const frame = useRef<HTMLElement>(null)
   const content = useRef<HTMLDivElement>(null)
   usePageFocus(route, frame, content)
+  // The tab bar minimises and the add button slides out while the list scrolls down (phone-v2 D6).
+  const minimised = useScrollMinimised(content, phoneChrome && !sidebarOpen)
 
   return (
     <div className="flex h-full">
@@ -302,8 +305,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
-      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} />}
-      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} minimised={minimised} />}
+      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}

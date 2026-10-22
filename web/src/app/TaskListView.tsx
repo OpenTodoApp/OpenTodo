@@ -6,7 +6,7 @@
 // board and the timeline.
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
@@ -19,8 +19,8 @@ import { dayTotalsText } from '../lib/time'
 import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
-import type { AccountRole, Task } from '../lib/types'
-import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer, useFrameSlide, useMediaQuery } from '../ui'
+import type { AccountRole, Label, Task } from '../lib/types'
+import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer, useFrameSlide } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
@@ -38,7 +38,7 @@ import { InlineEditor } from './task-list/InlineEditor'
 import { useRowClick } from './rowClick'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
-import { ProjectNote, requestProjectNote } from './ProjectNote'
+import { ProjectNote } from './ProjectNote'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { requestQuickAddSheet } from './QuickAddSheet'
 import { navigate, type Route } from './router'
@@ -48,7 +48,7 @@ import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
-import { CompleteParentPrompt, EmptyState, FilteredEmpty, LAYOUT_LABEL, LayoutSwitch, ListPageActions, MissingTarget, PhoneMenuItems, phoneGroups, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePhoneListActions, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
+import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePhoneListActions, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
@@ -269,14 +269,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <ListPageActions route={route} userRole={userRole} rowCount={rows.length} topLevelCount={rows.filter((r) => r.depth === 0).length}
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} planned={planned} />
   )
-  // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
-  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
-  const phoneActions = usePhoneListActions({ route, userRole, rowCount: rows.length, topLevelCount: rows.filter((r) => r.depth === 0).length,
-    onSelectMode: () => setSelectMode(true), filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration })
-  const layoutItems = (['list', 'board', 'timeline'] as const).map((mode) => ({ id: `layout-${mode}`, label: LAYOUT_LABEL[mode], checked: viewMode === mode, group: t('Layout'), onSelect: () => chooseViewMode(mode) }))
   const { currentProject, currentLabel, currentPlace } = m
-  const noteItem = currentProject && !currentProject.description?.trim() && m.projectEditable
-    ? [{ id: 'note', label: t('Add a note'), icon: 'pencil' as const, onSelect: () => requestProjectNote(currentProject.id) }] : []
+  // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
+  const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: rows.length, topLevelCount: rows.filter((r) => r.depth === 0).length,
+    onSelectMode: () => setSelectMode(true), filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration,
+    project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
   // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
@@ -302,17 +299,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         <div ref={frame.ref} className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
-              phone={phone ? { slots: phoneActions.slots, groups: phoneGroups([...layoutItems, ...noteItem, ...phoneActions.items]) } : undefined}
+              phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
-            // The page header (ux-overhaul, app-shell "Page template"; task-list-presentation
-            // "Nothing between the header and the list"): title, meta, actions, Help.
-            <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phoneActions.slots : pageActions} barActions={phone}
-              overflow={phone && route.view !== 'inbox' && route.view !== 'label' && phoneActions.items.length > 0 ? <PhoneMenuItems items={phoneActions.items} /> : undefined}
-              leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
-              meta={meta} subtitle={methodSubtitle}
-              menu={route.view === 'label' && currentLabel ? <LabelMenu label={currentLabel} extra={phone ? phoneGroups(phoneActions.items) : []} />
-                : route.view === 'inbox' ? <InboxMenu extra={phone && phoneActions.items.length > 0 ? <PhoneMenuItems items={phoneActions.items} /> : undefined} /> : undefined} />
+            <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} actions={pageActions} phone={phone ? phoneActions : null} />
           )}
 
           {route.view !== 'completed' && (
@@ -370,6 +360,31 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       {ui.prompt && <CompleteParentPrompt parent={ui.prompt} onAccept={acceptPrompt} onDismiss={() => setPrompt(null)} />}
       <RowPickerDialogs assignFor={ui.assignFor} pickerFor={ui.pickerFor} userId={userId} onCloseAssign={() => ui.setAssignFor(null)} onClosePicker={() => ui.setPickerFor(null)} />
     </div>
+  )
+}
+
+/**
+ * The page header of a list that is not a project (ux-overhaul, app-shell "Page template";
+ * task-list-presentation "Nothing between the header and the list"): title, meta, actions,
+ * Help. On a phone the actions are the bar's slots and the rest joins its menu (phone-v2 D1).
+ */
+function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
+  route: ListRoute
+  title: string
+  label?: Label
+  meta: ReactNode
+  subtitle: ReactNode
+  actions: ReactNode
+  phone: { slots: ReactNode; items: PhoneItem[] } | null
+}) {
+  const items = phone?.items ?? []
+  const menu = route.view === 'label' && label ? <LabelMenu label={label} extra={phoneGroups(items)} />
+    : route.view === 'inbox' ? <InboxMenu extra={items.length > 0 ? <PhoneMenuItems items={items} /> : undefined} /> : undefined
+  return (
+    <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
+      overflow={route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : undefined}
+      leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
+      meta={meta} subtitle={subtitle} menu={menu} />
   )
 }
 
