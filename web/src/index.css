@@ -811,6 +811,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .ui-cards--lift > li[data-dragging] {
   opacity: 1;
   transform: none;
+  scale: none;
   box-shadow: none;
   border-style: dashed;
   border-color: var(--ot-border-input);
