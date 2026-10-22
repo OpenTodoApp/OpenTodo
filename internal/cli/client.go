@@ -321,13 +321,13 @@ func (t task) originLabel() string {
 }
 
 type project struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	Color     string          `json:"color"`
-	Archived  bool            `json:"archived"`
-	Position  float64         `json:"position"`
-	CreatedAt float64         `json:"created_at"`
-	DeletedAt *float64        `json:"deleted_at"`
+	ID        string   `json:"id"`
+	Name      string   `json:"name"`
+	Color     string   `json:"color"`
+	Archived  bool     `json:"archived"`
+	Position  float64  `json:"position"`
+	CreatedAt float64  `json:"created_at"`
+	DeletedAt *float64 `json:"deleted_at"`
 	// ParentID and WorkspaceID place the project in a workspace (workspaces).
 	ParentID    *string         `json:"parent_id"`
 	WorkspaceID *string         `json:"workspace_id"`
