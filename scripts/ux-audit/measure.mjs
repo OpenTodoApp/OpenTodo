@@ -22,6 +22,8 @@ export async function axeProblems(p, include) {
   return p.evaluate(async (sel) => {
     // Entrances end first (motion-v2): a panel caught mid-fade reads as low contrast. Endless ones (spinners) are skipped.
     await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity).map((a) => a.finished.catch(() => {})))
+    // A settings section settling (motion-polish D3) hides its cards for at most 600 ms: check the page it settles into.
+    for (let t = 0; t < 1000 && document.querySelector('[data-settings-settling]'); t += 50) await new Promise((r) => setTimeout(r, 50))
     // eslint-disable-next-line no-undef
     const r = await axe.run(sel ? { include: [sel] } : document, { resultTypes: ['violations'] })
     return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `axe ${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
