@@ -41,7 +41,8 @@ export function RowActionCluster({ task, onMore, force = false }: {
     e.stopPropagation()
     open.focus()
   }
-  const shown = force || scheduling ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+  // Hidden actions take no clicks: the trailing group's origin link stays under the pointer.
+  const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
   return (
     <span data-row-actions="" onKeyDown={onKeyDown} onFocus={(e) => reveal(e.target as HTMLElement)}
       className={`absolute top-0.5 right-1 hidden items-center gap-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>
