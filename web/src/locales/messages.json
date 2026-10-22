@@ -304,9 +304,6 @@
   "A project can have at most {n} fields.": [
     "web/src/lib/fields.ts"
   ],
-  "A repeating task: complete it and the next one appears": [
-    "web/src/app/FirstRun.tsx"
-  ],
   "A repository or project was not found.": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -321,6 +318,9 @@
   ],
   "A rule needs at least one action": [
     "web/src/lib/rules/store.ts"
+  ],
+  "A sample task": [
+    "web/src/app/SampleNotice.tsx"
   ],
   "A saved location needs a name": [
     "web/src/lib/locations.ts"
@@ -367,9 +367,6 @@
   "A task cannot wait for itself": [
     "web/src/lib/dependencies.ts"
   ],
-  "A task due today: press c to complete it": [
-    "web/src/app/FirstRun.tsx"
-  ],
   "A task is assigned to me": [
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -396,15 +393,6 @@
   ],
   "A task of a minute or two is done on the spot, not filed.": [
     "web/src/lib/method/vocabulary.json"
-  ],
-  "A task with a deadline: it turns red when late": [
-    "web/src/app/FirstRun.tsx"
-  ],
-  "A task with a subtask: press a to add another": [
-    "web/src/app/FirstRun.tsx"
-  ],
-  "A task with notes: open it and write below the title": [
-    "web/src/app/FirstRun.tsx"
   ],
   "A token is shown once, when you create it.": [
     "web/src/lib/settingsCopy.ts"
@@ -584,6 +572,8 @@
   ],
   "Add": [
     "web/src/app/PlanView.tsx",
+    "web/src/app/palette/CommandPalette.tsx",
+    "web/src/app/palette/modes.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
@@ -637,6 +627,7 @@
     "web/src/app/task-list/ListRow.tsx"
   ],
   "Add a task": [
+    "web/src/app/FirstDay.tsx",
     "web/src/app/FirstRun.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/QuickAdd.tsx",
@@ -644,6 +635,7 @@
     "web/src/app/TabBar.tsx",
     "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
+    "web/src/app/palette/BarParts.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a task assigned to you…": [
@@ -697,8 +689,12 @@
   "Add a task with this label…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Add a task, run a command, ask the assistant; the same character again returns to Search": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Add a task…": [
     "web/src/app/QuickAddSheet.tsx",
+    "web/src/app/palette/BarParts.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a webhook": [
@@ -795,8 +791,14 @@
   "Add your first task": [
     "web/src/app/FirstRun.tsx"
   ],
+  "Add “{text}” as a task": [
+    "web/src/app/palette/CommandPalette.tsx"
+  ],
   "Added a next action to {name}.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Added to Inbox": [
+    "web/src/app/palette/addFromBar.ts"
   ],
   "Added to Someday": [
     "web/src/app/addedWhere.ts"
@@ -809,6 +811,9 @@
   ],
   "Added to {day}": [
     "web/src/app/addedWhere.ts"
+  ],
+  "Added to {project}": [
+    "web/src/app/palette/addFromBar.ts"
   ],
   "Added {label}": [
     "web/src/lib/undoActions.ts"
@@ -1241,6 +1246,7 @@
   "Ask": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/assistant/AskEntry.tsx",
+    "web/src/app/palette/modes.ts",
     "web/src/lib/shortcuts.ts",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
@@ -1258,10 +1264,14 @@
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Ask about your tasks…": [
-    "web/src/app/assistant/AssistantComposer.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx",
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Ask questions and see what other people build.": [
     "web/src/app/WelcomeDialog.tsx"
+  ],
+  "Ask the assistant": [
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Ask the assistant (Shift+I)": [
     "web/src/app/assistant/AskEntry.tsx"
@@ -1457,6 +1467,9 @@
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/menus/ActionMenu.tsx",
     "web/src/app/review/StepCard.tsx"
+  ],
+  "Back to Today": [
+    "web/src/app/review/DoneForToday.tsx"
   ],
   "Back to my tasks": [
     "web/src/app/EmailScreens.tsx",
@@ -2097,6 +2110,9 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Click a task to open its panel. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "Click to sync now": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -2241,7 +2257,8 @@
   ],
   "Commands": [
     "web/src/app/EditorChrome.tsx",
-    "web/src/app/palette/entries.ts"
+    "web/src/app/palette/entries.ts",
+    "web/src/app/palette/modes.ts"
   ],
   "Comment": [
     "web/src/app/RelayConfirm.tsx",
@@ -2851,7 +2868,8 @@
   "Day closed, {time}": [
     "web/src/app/CloseDayRow.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/review/CloseDay.tsx",
+    "web/src/app/review/DoneForToday.tsx"
   ],
   "Day length": [
     "web/src/app/CalendarSettings.tsx",
@@ -3279,6 +3297,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/DashboardView.tsx",
+    "web/src/app/FirstDay.tsx",
     "web/src/app/Markdown.tsx",
     "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
@@ -4437,6 +4456,9 @@
   "Get current": [
     "web/src/lib/review.ts"
   ],
+  "Get it on another device": [
+    "web/src/app/FirstDay.tsx"
+  ],
   "Get reminders while the app is closed. Each device decides for itself.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -4721,6 +4743,7 @@
     "web/src/app/help/HelpLink.tsx"
   ],
   "Hide": [
+    "web/src/app/FirstDay.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/Sections.tsx"
   ],
@@ -4740,6 +4763,9 @@
   "Hide the planning list": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
+  ],
+  "Hide the start guide": [
+    "web/src/app/FirstDay.tsx"
   ],
   "Hide what is not now|method": [
     "web/src/lib/method/vocabulary.json"
@@ -5044,6 +5070,9 @@
   "In the Trash: select the previous item": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the command bar: add what you typed as a task": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In the filter query: recall recent queries on this device": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5077,6 +5106,7 @@
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/SampleNotice.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
@@ -5100,6 +5130,9 @@
     "web/src/lib/trash.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/views.ts"
+  ],
+  "Inbox menu": [
+    "web/src/app/SampleNotice.tsx"
   ],
   "Inbox zero: every task has a place.": [
     "web/src/app/TriageView.tsx",
@@ -5132,6 +5165,7 @@
     "web/src/app/FirstRun.tsx"
   ],
   "Install the app": [
+    "web/src/app/FirstDay.tsx",
     "web/src/app/FirstRun.tsx",
     "web/src/app/help/HelpView.tsx"
   ],
@@ -5456,9 +5490,6 @@
   ],
   "Labels group tasks across projects. Add one to a selected task with {kbd}, or create one here.": [
     "web/src/app/LabelsView.tsx"
-  ],
-  "Labels group tasks across projects: press L to add one": [
-    "web/src/app/FirstRun.tsx"
   ],
   "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": [
     "web/src/lib/shortcuts.ts"
@@ -6006,6 +6037,9 @@
   "Menu for rule {name}": [
     "web/src/app/rules/RulesView.tsx"
   ],
+  "Menu for the start guide": [
+    "web/src/app/FirstDay.tsx"
+  ],
   "Menu for view {name}": [
     "web/src/app/ViewsView.tsx"
   ],
@@ -6059,6 +6093,7 @@
   ],
   "Mode": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/palette/BarParts.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -6969,6 +7004,9 @@
   "Not done": [
     "web/src/app/MarkdownView.tsx"
   ],
+  "Not done yet": [
+    "web/src/app/FirstDay.tsx"
+  ],
   "Not encrypted": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -7037,9 +7075,6 @@
   ],
   "Notes edited": [
     "web/src/app/task-detail/HistoryTab.tsx"
-  ],
-  "Notes take markdown: **bold**, lists, links. Press Esc to leave them.": [
-    "web/src/app/FirstRun.tsx"
   ],
   "Nothing changes until you apply: apply the checked items with {enter}, discard with {esc}.": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -7148,6 +7183,9 @@
   ],
   "Nothing was planned for today and nothing was completed.": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Nothing was planned today": [
+    "web/src/app/review/DoneForToday.tsx"
   ],
   "Nothing was shared. Type a task to add it anyway.": [
     "web/src/app/ShareCapture.tsx"
@@ -7476,6 +7514,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Open Account settings": [
@@ -7514,6 +7553,7 @@
     "web/src/app/palette/registry.ts"
   ],
   "Open Today": [
+    "web/src/app/FirstDay.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Open Upcoming": [
@@ -7556,6 +7596,9 @@
   ],
   "Open link {name}": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Open me: I have a subtask": [
+    "web/src/lib/sampleTasks.ts"
   ],
   "Open menu": [
     "web/src/app/Shell.tsx"
@@ -8090,6 +8133,12 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "Plan today": [
+    "web/src/app/FirstDay.tsx"
+  ],
+  "Plan today: due at 10:00, takes 15 minutes": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "Planned estimates against a {minutes} day": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
@@ -8498,7 +8547,9 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Quick add a task": [
-    "web/src/app/palette/registry.ts",
+    "web/src/app/palette/registry.ts"
+  ],
+  "Quick add a task (the command bar in Add mode on screens without a quick add)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Quick add syntax": [
@@ -8758,6 +8809,10 @@
   "Remove picture": [
     "web/src/app/profile/PictureDialog.tsx"
   ],
+  "Remove sample tasks": [
+    "web/src/app/FirstDay.tsx",
+    "web/src/app/SampleNotice.tsx"
+  ],
   "Remove saved key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -8858,7 +8913,8 @@
   ],
   "Reopen the day": [
     "web/src/app/CloseDayRow.tsx",
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/review/CloseDay.tsx",
+    "web/src/app/review/DoneForToday.tsx"
   ],
   "Reopen {title}": [
     "web/src/app/PublicListScreen.tsx",
@@ -9223,6 +9279,9 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/rules/RulesView.tsx"
   ],
+  "Run a command": [
+    "web/src/app/palette/CommandPalette.tsx"
+  ],
   "Run automation rules": [
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
@@ -9270,6 +9329,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Sample": [
+    "web/src/app/TaskRow.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.": [
@@ -9441,7 +9501,8 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Search": [
-    "web/src/app/TabBar.tsx"
+    "web/src/app/TabBar.tsx",
+    "web/src/app/palette/modes.ts"
   ],
   "Search Help for “{query}”": [
     "web/src/app/palette/registry.ts"
@@ -9455,6 +9516,7 @@
   "Search and commands": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/palette/BarParts.tsx",
     "web/src/app/palette/CommandPalette.tsx"
   ],
   "Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)": [
@@ -9493,6 +9555,12 @@
   ],
   "Search templates…": [
     "web/src/app/templates/TemplateLibrary.tsx"
+  ],
+  "Search, or start with {add} to add a task, {commands} for commands, {ask} to ask.": [
+    "web/src/app/palette/BarParts.tsx"
+  ],
+  "Search, or start with {add} to add a task, {commands} for commands.": [
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Second factor disabled": [
     "web/src/app/auditFormat.ts"
@@ -9875,9 +9943,6 @@
   ],
   "Show maps and address search": [
     "web/src/app/locations/MapsSettings.tsx"
-  ],
-  "Show me around": [
-    "web/src/app/FirstRun.tsx"
   ],
   "Show more": [
     "web/src/app/ProjectNote.tsx"
@@ -10339,7 +10404,11 @@
     "web/src/app/NewBoardDialog.tsx"
   ],
   "Start guide": [
+    "web/src/app/FirstDay.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Start guide · {n} of 3 done": [
+    "web/src/app/FirstDay.tsx"
   ],
   "Start on": [
     "web/src/app/TemplateDialogs.tsx",
@@ -10383,6 +10452,9 @@
   ],
   "Start with four contexts? {names}. Any label that starts with @ is a context.": [
     "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "Start with three sample tasks": [
+    "web/src/app/FirstRun.tsx"
   ],
   "Start with…": [
     "web/src/app/review/CloseDay.tsx"
@@ -10511,6 +10583,9 @@
   ],
   "Subtasks follow their parent task’s section.": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Subtasks tick off on their own row": [
+    "web/src/lib/sampleTasks.ts"
   ],
   "Succeeded": [
     "web/src/app/BackupsPanel.tsx"
@@ -11371,9 +11446,6 @@
   "The start must be on or before the due date.": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
-  "The subtask: complete it and the parent asks to follow": [
-    "web/src/app/FirstRun.tsx"
-  ],
   "The tasks must be in one project": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
@@ -12028,6 +12100,9 @@
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Tick me off when you have read this": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -12458,6 +12533,9 @@
   "Type RESTORE to confirm": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "Type a command…": [
+    "web/src/app/palette/CommandPalette.tsx"
+  ],
   "Type a date: fri, 3 days, {example}": [
     "web/src/app/datetime/DatePicker.tsx"
   ],
@@ -12487,9 +12565,6 @@
   ],
   "Type to find or create a label…": [
     "web/src/app/LabelPicker.tsx"
-  ],
-  "Type to search, or a command. Filter queries like {example} work too.": [
-    "web/src/app/palette/CommandPalette.tsx"
   ],
   "Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {max} fields.": [
     "web/src/app/FieldsDialog.tsx"
@@ -13444,6 +13519,9 @@
   ],
   "Your files need a connection to be decrypted. Encryption stays on; try again when you are online.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Your first day": [
+    "web/src/app/FirstRun.tsx"
   ],
   "Your issue connections were stopped, because their polls would write issue text unencrypted: {names}.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -15289,6 +15367,9 @@
   "{n, plural, one {# run in 7 days} other {# runs in 7 days}}": [
     "web/src/app/rules/RulesView.tsx"
   ],
+  "{n, plural, one {# sample task removed} other {# sample tasks removed}}": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "{n, plural, one {# section} other {# sections}}": [
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
@@ -15536,8 +15617,14 @@
   "{n} deactivated": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "{n} done": [
+    "web/src/app/review/DoneForToday.tsx"
+  ],
   "{n} failed ({error})": [
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "{n} kept": [
+    "web/src/app/review/DoneForToday.tsx"
   ],
   "{n} left": [
     "web/src/app/review/ReviewProgress.tsx",
@@ -15551,6 +15638,18 @@
   ],
   "{n} min before": [
     "web/src/lib/nlp/reminders.ts"
+  ],
+  "{n} moved to Someday": [
+    "web/src/app/review/DoneForToday.tsx"
+  ],
+  "{n} moved to a later day": [
+    "web/src/app/review/DoneForToday.tsx"
+  ],
+  "{n} moved to tomorrow": [
+    "web/src/app/review/DoneForToday.tsx"
+  ],
+  "{n} of 3 done": [
+    "web/src/app/FirstDay.tsx"
   ],
   "{n} of {max}": [
     "web/src/app/IssuesPanel.tsx"

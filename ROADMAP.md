@@ -123,6 +123,7 @@ One visual language, built in a workbench: friendly and roomy like TickTick, Tod
 | 3 | Settings regrouped into smaller sections with state-first cards | `settings-redesign` | Old settings links keep working |
 | 4 | Task detail: smart pickers, comments, activity and history tabs, a usable time-zone control | `task-detail-redesign` | Uses `date-time-preferences` |
 | 5 | One menu language everywhere and a redesigned labels page | `labels-and-menus` | |
+| 6 | **Shipped.** Moments and onboarding: an illustration set for empty and finished states, three sample tasks and a first-day checklist, Done for today at the end of Close the day, one command bar with Search, Add, Commands and Ask, inline tints in quick add, and one toast primitive | `moments-and-onboarding` | Additive `task.sample` and `user_prefs.start_checklist`; no migration, no dependency |
 
 Related usability fixes, independent of the refresh: your own date and time format (`date-time-preferences`), a test notification that proves delivery (`push-test-delivery`) and restoring a backup from the web app (`backup-restore-web`).
 
