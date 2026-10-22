@@ -8,7 +8,7 @@ import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
-import { BrandMark, BrandWordmark } from '../ui'
+import { InstanceMark, InstanceWordmark, PoweredBy } from './InstanceBrand'
 import { roleName } from '../lib/roleNames'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
@@ -371,14 +371,14 @@ export function AuthCard({ version, children }: { version: string; children: Rea
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-sm rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="mb-6 flex items-center gap-3">
-          <BrandMark size={32} />
+          <InstanceMark size={32} />
           <div>
-            <h1 className="text-h3 font-semibold"><BrandWordmark /></h1>
+            <h1 className="text-h3 font-semibold"><InstanceWordmark /></h1>
             <p className="text-meta text-muted">{t('Your tasks, your server.')}</p>
           </div>
         </div>
         {children}
-        <p className="mt-6 text-center text-meta text-faint">{t('OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry', { version })}</p>
+        <PoweredBy version={version} />
       </div>
     </div>
   )

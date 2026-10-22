@@ -8,6 +8,7 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef } from 'react'
 import { isTypingTarget } from './shortcuts'
 import { t } from '../lib/i18n'
+import { getBranding } from '../lib/branding'
 
 /** Elements that own focus over the page: dialogs, overlays (menus, sheets) and the task panel. */
 const OWNERS = '[role="dialog"], [role="alertdialog"], [data-overlay], [data-overlay-root], [data-detail-for]'
@@ -15,6 +16,9 @@ const OWNERS = '[role="dialog"], [role="alertdialog"], [data-overlay], [data-ove
 /** The tab title for a page heading. */
 export function pageTitle(heading: string | null | undefined): string {
   const page = heading?.replace(/\s+/g, ' ').trim()
+  // A branded instance (instance-branding) names itself in the tab.
+  const app = getBranding().name
+  if (app) return page ? `${page} – ${app}` : app
   return page ? t('{page} – OpenTodo', { page }) : 'OpenTodo'
 }
 

@@ -19,6 +19,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Vim-style modal navigation option | `vim-keybindings` | |
 | Public demo instance for the launch | `demo-mode` | `OPENTODO_DEMO=true`: seeded demo account, nightly reset, abusable features off. See [docs/self-hosting/demo.md](docs/self-hosting/demo.md) |
 | User guide, docs website and in-app Help | `user-documentation` | One source in `docs/`, built into [open-todo.app/docs](https://open-todo.app/docs/) and an offline Help view with contextual help links. See [docs/README.md](docs/README.md) |
+| Your own name and logo on a server | `instance-branding` | Owner-set name and logo in the tab, the installed app's icons, the sign-in screen and the sidebar; "Powered by OpenTodo" stays. See [docs/self-hosting/branding.md](docs/self-hosting/branding.md) |
 | Hosted OpenTodo: host mode, many tenants in one process | `multi-tenant-host` | Optional `OPENTODO_HOST_*`: tenants by host name, opened on demand and closed when idle, one scheduler for due work, per-tenant limits, an operator interface, and an archive owners can take to a self-hosted server. The control plane (sign-up site, billing) stays outside this repository. See [docs/self-hosting/host-mode.md](docs/self-hosting/host-mode.md) |
 
 ### 2. Capture and input

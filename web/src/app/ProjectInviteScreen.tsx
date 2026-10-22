@@ -8,7 +8,7 @@ import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
-import { BrandMark, BrandWordmark } from '../ui'
+import { InstanceMark, InstanceWordmark } from './InstanceBrand'
 import { roleName } from '../lib/roleNames'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
@@ -253,8 +253,8 @@ function Card({ title, children }: { title: ReactNode; children: ReactNode }) {
     <div className="flex min-h-full items-center justify-center bg-canvas p-4 sm:p-6">
       <main className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-5 shadow-1 sm:p-6">
         <div className="flex items-center gap-3">
-          <BrandMark size={32} />
-          <p className="text-h3 font-semibold"><BrandWordmark /></p>
+          <InstanceMark size={32} />
+          <p className="text-h3 font-semibold"><InstanceWordmark /></p>
         </div>
         <h1 className="font-medium">{title}</h1>
         {children}

@@ -4,7 +4,7 @@ import { useOnline } from '../lib/online'
 import type { AuthStatus, InvitationPreview, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { t } from '../lib/i18n'
-import { BrandMark, BrandWordmark } from '../ui'
+import { InstanceMark, InstanceWordmark } from './InstanceBrand'
 
 export type InviteState =
   | { kind: 'loading' }
@@ -130,8 +130,8 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
-          <BrandMark size={32} />
-          <h1 className="text-h3 font-semibold"><BrandWordmark /></h1>
+          <InstanceMark size={32} />
+          <h1 className="text-h3 font-semibold"><InstanceWordmark /></h1>
         </div>
         <h2 className="font-medium">{title}</h2>
         {children}

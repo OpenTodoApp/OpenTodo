@@ -5,7 +5,7 @@
 // workspace it reads "OpenTodo · Personal". Switching is device state.
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BrandMark, BrandWordmark, CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
+import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
@@ -15,13 +15,14 @@ import type { Workspace } from '../lib/types'
 import { inToday } from '../lib/views'
 import { Partition } from '../lib/workspaces'
 import { requestNewWorkspace } from './NewWorkspaceDialog'
+import { InstanceMark, InstanceWordmark, useInstanceName } from './InstanceBrand'
 import { navigate, type Route } from './router'
 import { useToday } from './useViews'
 import { switchWorkspace, workspaceLabel } from './workspaceNav'
 
 /** A workspace's mark: its catalogue icon in its colour, a colour dot, or the app's mark for an unstyled default workspace. */
 export function WorkspaceMark({ workspace, size = 20 }: { workspace: Pick<Workspace, 'icon' | 'color' | 'default'> | undefined; size?: 20 | 24 }) {
-  if (!workspace || (workspace.default && !workspace.icon && !workspace.color)) return <BrandMark size={size} />
+  if (!workspace || (workspace.default && !workspace.icon && !workspace.color)) return <InstanceMark size={size} />
   // Stored colours render through the palette's hues (design-system).
   const hue = workspace.color ? hueFor(workspace.color) : undefined
   const dot = <span data-hue={hue} className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${hue ? 'bg-hue-solid' : 'bg-accent'}`} />
@@ -67,7 +68,8 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
   const single = state.list.length <= 1
   const elsewhere = state.list.filter((w) => w.id !== state.current && (counts.get(w.id)?.unread ?? 0) > 0)
   const updates = elsewhere.length > 0 ? t('Updates in {names}', { names: elsewhere.map((w) => workspaceLabel(w.name, w.default)).join(', ') }) : ''
-  const label = single ? `OpenTodo · ${name}` : name
+  const app = useInstanceName()
+  const label = single ? `${app} · ${name}` : name
   return (
     <div data-workspace-control className="flex min-w-0 flex-1">
       <Menu kind="menu" label={updates ? t('Workspace: {name}, {updates}', { name: label, updates }) : t('Workspace: {name}', { name: label })} title={t('Workspaces')}
@@ -77,7 +79,7 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
         trigger={<>
           <WorkspaceMark workspace={current} />
           {!collapsed && <span className="min-w-0 flex-1 truncate font-semibold text-strong">
-            {single ? <><BrandWordmark /><span className="text-faint"> · </span><span>{name}</span></> : name}
+            {single ? <><InstanceWordmark /><span className="text-faint"> · </span><span>{name}</span></> : name}
           </span>}
           {updates && <StatusDot label={updates} data-workspace-updates />}
           {!collapsed && <span aria-hidden className="text-faint"><Icon name="chevron-down" size="xs" /></span>}

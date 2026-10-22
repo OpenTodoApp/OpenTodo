@@ -819,6 +819,8 @@ export interface AuthStatus {
   minClientVersion?: number
   /** Public demo instance (OpenSpec `demo-mode`, `demo-sandboxes`); absent on a normal server. */
   demo?: DemoInfo
+  /** The instance's name and logo (OpenSpec `instance-branding`); absent on older servers. */
+  branding?: { name: string; logoVersion: number }
   /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
   outgoingEmail?: { enabled: boolean }
   /** A tenant of a hosted service (OpenSpec `multi-tenant-host`): the operator owns server settings; absent when self-hosted. */

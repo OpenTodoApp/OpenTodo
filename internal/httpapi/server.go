@@ -124,7 +124,9 @@ type Server struct {
 	// pictureClient fetches provider pictures (oidc-profile-pictures); nil
 	// means the outbound client.
 	pictureClient *http.Client
-	oidcLimiter   *rateLimiter
+	// brand caches the instance branding (instance-branding).
+	brand       brandingState
+	oidcLimiter *rateLimiter
 	// caldav caches the CalDAV toggle and davLimiter counts failed Basic
 	// authentications per client address (10/min; OpenSpec `caldav`).
 	caldav caldavState

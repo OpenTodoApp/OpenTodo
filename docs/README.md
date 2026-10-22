@@ -127,6 +127,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Speech to text](self-hosting/speech-to-text.md) | Dictation on your own network with Speaches or whisper.cpp; Settings or `OPENTODO_STT_*`, what passes through the server |
+| [Branding](self-hosting/branding.md) | Your own name and logo in the tab, the installed app's icon, the sign-in screen and the sidebar; what stays OpenTodo's |
 | [Single sign-on](self-hosting/sso.md) | Connecting an OpenID Connect provider, linking, SSO-only mode, break-glass |
 | [Host mode](self-hosting/host-mode.md) | For a hosted service: many tenants in one process by host name, limits, the operator interface |
 | [Backups](backups.md) | Scheduled backups to disk, S3 or WebDAV, encryption, restore, archive format |

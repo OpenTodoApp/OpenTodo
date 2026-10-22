@@ -4948,5 +4948,20 @@
   "Swipe right to complete, left to schedule. Also in a task's menu.": "Nach rechts wischen zum Erledigen, nach links zum Planen. Auch im Menü einer Aufgabe.",
   "Right completes, left schedules; the same two actions start the task's menu": "Rechts erledigt, links plant; dieselben zwei Aktionen stehen oben im Menü der Aufgabe",
   "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "Markiert sie und zeigt alle Kästchen; „Aufgaben auswählen“ im Seitenmenü tut dasselbe, „Fertig“ blendet sie aus",
-  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Dieses Projekt gehört zu einem Arbeitsbereich, in dem du nicht bist. Bitte die Person, der der Arbeitsbereich gehört, dich zuerst hinzuzufügen, und öffne den Link dann erneut."
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Dieses Projekt gehört zu einem Arbeitsbereich, in dem du nicht bist. Bitte die Person, der der Arbeitsbereich gehört, dich zuerst hinzuzufügen, und öffne den Link dann erneut.",
+  "A square PNG or JPEG of at least 192 pixels; the server renders every size.": "Ein quadratisches PNG oder JPEG mit mindestens 192 Pixeln; der Server erzeugt jede Größe.",
+  "Add to {app}": "Zu {app} hinzufügen",
+  "Branding": "Branding",
+  "Change logo": "Logo ändern",
+  "Choose a PNG or JPEG image.": "Wähle ein PNG- oder JPEG-Bild.",
+  "Choose logo": "Logo wählen",
+  "Current logo": "Aktuelles Logo",
+  "Logo": "Logo",
+  "Powered by OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry": "Powered by OpenTodo {version} · AGPL-3.0 · kein Tracking, keine Telemetrie",
+  "Remove logo": "Logo entfernen",
+  "Shown in place of OpenTodo. Up to 40 characters; empty keeps OpenTodo.": "Wird statt OpenTodo angezeigt. Bis zu 40 Zeichen; leer behält OpenTodo.",
+  "The logo must be at most 2 MB.": "Das Logo darf höchstens 2 MB groß sein.",
+  "The name is at most {max} characters.": "Der Name hat höchstens {max} Zeichen.",
+  "Your own name and logo for this server, in the tab, the app icon and the sidebar": "Eigener Name und Logo für diesen Server, im Tab, im App-Symbol und in der Seitenleiste",
+  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Eigener Name und Logo im Tab, im App-Symbol, auf dem Anmeldebildschirm und in der Seitenleiste."
 }

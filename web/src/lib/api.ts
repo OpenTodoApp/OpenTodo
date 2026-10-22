@@ -1,6 +1,7 @@
 import { errorMessage } from './i18n/errors'
 import { t } from './i18n/catalog'
 import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
+import type { Branding } from './branding'
 import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
@@ -470,6 +471,11 @@ export const api = {
   // owner's settings travel over these routes.
   uploadAttachment: (id: string, blob: Blob, onProgress?: (fraction: number) => void) => uploadAttachmentContent(id, blob, onProgress),
   attachmentSettings: () => request<AttachmentSettings>('GET', '/api/v1/settings/attachments'),
+  // Instance branding (instance-branding): the owner's name and logo.
+  brandingSettings: () => request<Branding>('GET', '/api/v1/settings/branding'),
+  putBrandingName: (name: string) => request<Branding>('PUT', '/api/v1/settings/branding', { name }),
+  putBrandingLogo: (logo: Blob) => sendRaw<Branding>('PUT', '/api/v1/settings/branding/logo', logo),
+  deleteBrandingLogo: () => request<Branding>('DELETE', '/api/v1/settings/branding/logo'),
   // Calendar feeds (OpenSpec calendar-feeds).
   calendarFeedsSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/calendar-feeds'),
   setCalendarFeedsSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/calendar-feeds', { enabled }),

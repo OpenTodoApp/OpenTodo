@@ -110,6 +110,7 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Project invite links (OpenSpec `project-invite-links`).
 	s.registerProjectInviteRoutes(mux)
 	s.registerWorkspaceRoutes(mux)
+	s.registerBrandingRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.
 	s.registerPushRoutes(mux)
 	// Notifications (OpenSpec `task-assignment`).
@@ -174,6 +175,9 @@ func (s *Server) registerDataRoutes(mux *routes) {
 // API is wanted (tests).
 func (s *Server) registerWebAppRoutes(mux *routes, web http.Handler) {
 	if web != nil {
+		// A branded instance (instance-branding) gets its name and icons in the
+		// page and the manifest on the way out.
+		web = s.brandedWeb(web)
 		// The share sheet POSTs here when the service worker is not active yet.
 		mux.handle("POST /share", public("the share sheet posts here before the service worker runs; it only redirects into the app"), s.handleSharePost)
 		mux.handler("/", public("the web app; it signs in through the API"), web)

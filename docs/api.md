@@ -1283,6 +1283,19 @@ Attachments (OpenSpec `attachments`) are files or links on a task or one of its 
 | `DELETE /api/v1/attachments/{id}` | Remove (author, project admin or owner); `204` |
 | `GET` / `PUT /api/v1/settings/attachments` | `{enabled, max_file_mb, quota_mb}`; changing them is for the owner (`max_file_mb` 1–2048, `quota_mb` 0 = unlimited). Changes are audited as `settings.changed` |
 
+### Instance branding
+
+The owner gives the server a name and a logo (**Settings → Server → Branding**). `GET /api/v1/auth/status` carries `"branding": {"name": "Acme Tasks", "logoVersion": 2}` for everyone (`name` empty and `logoVersion` 0 without branding), and the page and the web app manifest are served with the name in the title and the logo as favicon, touch icon and app icons, so an installed app shows them.
+
+| Route | Does |
+| --- | --- |
+| `GET` / `PUT /api/v1/settings/branding` | Owner. `PUT {"name": "…"}`: up to 40 characters after trimming, no control characters, empty for OpenTodo's own name (400 `invalid_input` otherwise). Answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.name`) |
+| `PUT /api/v1/settings/branding/logo` | Owner. The raw bytes of a PNG or JPEG, at most 2 MB (413 `too_large`), at least 192 and at most 4096 pixels a side (400 `invalid_input`). The server crops the centre square and renders 32, 180, 192 and 512 px PNGs plus a maskable 512 px icon under `<data>/branding/`, bumps `logoVersion` and answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.logo`) |
+| `DELETE /api/v1/settings/branding/logo` | Owner. Removes the rendered files; `logoVersion` becomes 0 and the app's own icons return |
+| `GET /branding/logo-{32,180,192,512}.png`, `GET /branding/logo-maskable-512.png` | Public, like the app's own icons. With `?v=<logoVersion>` cached for a year (`immutable`); without the current version `no-cache`. 404 without a logo |
+
+Branding is refused on a demo instance like every server setting.
+
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 
 **Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, max-age=31536000, immutable` and the digest as `ETag`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.

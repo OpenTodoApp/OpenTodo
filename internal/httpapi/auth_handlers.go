@@ -46,6 +46,8 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"passkeyDomain": s.cfg.RPID(),
 		"oidc":          s.oidcStatus(r.Context()),
 		"outgoingEmail": map[string]bool{"enabled": s.mailEnabled(r.Context())},
+		// The instance's name and logo (instance-branding): public, like the page.
+		"branding": brandingJSON(s.branding(r)),
 	}
 	// Without a token, a client outside the local network needs the setup code
 	// from the server log (trusted-client-identity).
