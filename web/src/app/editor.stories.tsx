@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useRef, useState } from 'react'
+import { TextSelection } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { parseMarkdown } from '../lib/richtext'
 import { createState } from '../lib/richtextEditor'
@@ -39,7 +40,9 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
     setView(v)
     if (slash) {
       v.focus()
-      v.dispatch(v.state.tr.insertText(' /', v.state.doc.child(0).nodeSize - 1))
+      const end = v.state.doc.child(0).nodeSize - 1
+      const tr = v.state.tr.insertText(' /', end)
+      v.dispatch(tr.setSelection(TextSelection.create(tr.doc, end + 2)))
     }
     const t = setTimeout(() => setReady(true), 50)
     return () => {
@@ -48,7 +51,7 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- one editor per story
   return (
-    <div className="max-w-md space-y-1">
+    <div className={`max-w-md space-y-1 ${slash ? 'min-h-96' : ''}`}>
       {toolbar && <EditorToolbar view={view} env={env} visible coarse onMenu={() => {}} />}
       <div ref={host} className="notes-host" data-notes-editing />
       {chrome.overlays}
