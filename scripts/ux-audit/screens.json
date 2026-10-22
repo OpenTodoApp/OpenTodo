@@ -354,7 +354,7 @@
   "core": true,
   "layoutCheck": null,
   "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
-  "story": "Screens/Someday",
+  "story": "Screens/Method views",
   "path": "/someday",
   "ready": "main h1"
  },
@@ -367,7 +367,7 @@
   "core": true,
   "layoutCheck": null,
   "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
-  "story": "Screens/Anytime",
+  "story": "Screens/Method views",
   "path": "/anytime",
   "ready": "main h1"
  },
@@ -380,7 +380,7 @@
   "core": true,
   "layoutCheck": null,
   "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
-  "story": "Screens/Next",
+  "story": "Screens/Method views",
   "path": "/next",
   "ready": "main h1"
  },
@@ -393,7 +393,7 @@
   "core": true,
   "layoutCheck": null,
   "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
-  "story": "Screens/Waiting",
+  "story": "Screens/Method views",
   "path": "/waiting",
   "ready": "main h1"
  },

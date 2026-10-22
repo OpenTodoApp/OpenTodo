@@ -12,6 +12,7 @@
   "<div.h-full.min-w-0>",
   "<div.group.relative>",
   "<div.flex.size-(--dot)>",
-  "<div.flex.min-h-6>"
+  "<div.flex.min-h-6>",
+  "<div.relative.min-w-0>"
  ]
 }
