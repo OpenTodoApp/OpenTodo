@@ -13,10 +13,11 @@ import { membershipMap, roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
 import { act } from '../actionError'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
-import { Icon, Dialog } from '../../ui'
+import { Icon, Dialog, useFinePointer } from '../../ui'
 import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
-import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem } from '../menus/ActionMenu'
+import { openRowSchedule } from '../task-list/RowSwipe'
 import { BulkReview } from './BulkReview'
 import { showBulkToast } from './toastStore'
 import { t } from '../../lib/i18n'
@@ -50,7 +51,7 @@ export function trackingItem(task: Task | undefined, runningTask: string | null 
 }
 
 /** The menu's groups for the given tasks (exported for the palette and tests). */
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void }, besideRow = false): ActionGroup[] {
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -60,11 +61,13 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const shared = commonSharedProject(d.tasks, d.memberships)
   const members = shared ? d.memberships.get(shared)?.members ?? [] : []
   const run = (action: BulkAction) => () => runBulk(ids, action)
+  const complete: ActionItem = { kind: 'action', id: 'complete', label: reopen ? t('Reopen') : t('Complete'), icon: 'check', shortcut: keysOf('list.complete'), onSelect: run({ kind: 'complete' }) }
+  // On touch, one task's menu starts with the two swipe actions (phone-v2 D3, WCAG 2.2 2.5.7).
+  const swipeTwins = n === 1 && a.schedule
   return [
+    ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
     ...(n === 1 ? [{ items: trackingItem(d.tasks[0], d.runningTask, d.memberships) }] : []),
-    { items: [
-      { kind: 'action', id: 'complete', label: reopen ? t('Reopen') : t('Complete'), icon: 'check', shortcut: keysOf('list.complete'), onSelect: run({ kind: 'complete' }) },
-    ] },
+    ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     ...(besideRow ? [] : [{ label: t('Priority'), items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: t('Priority {p}', { p }), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) }]),
     { items: [
@@ -133,10 +136,12 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   const [review, setReview] = useState<{ title: string; plan: ReviewPlan } | null>(null)
   const [dating, setDating] = useState(false)
   const besideRow = !!anchor?.current
+  const touch = !useFinePointer()
   const groups = useMemo(() => bulkMenuGroups(ids, data, {
     review: (title, plan) => { void plan.then((p) => setReview({ title, plan: p })) },
     pickDate: () => setDating(true),
-  }, besideRow), [ids, data, besideRow])
+    schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
+  }, besideRow), [ids, data, besideRow, touch])
   const n = data.tasks.length || ids.length
   return (
     <>

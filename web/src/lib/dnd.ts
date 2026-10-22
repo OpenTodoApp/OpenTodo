@@ -25,6 +25,12 @@ export interface DragOptions {
    * `drop:<value>` and preferred over a `data-drop-target` on the same element.
    */
   taskDrops?: boolean
+  /**
+   * Touch: the hold itself means something (phone-v2 D8, long press selects). It is
+   * called when the hold elapses instead of lifting; the drag lifts only if the finger
+   * then moves, and a release without moving swallows the click (the task does not open).
+   */
+  onHold?: () => void
 }
 
 /** Pixels a mouse or pen must travel before a press becomes a drag. */
@@ -88,6 +94,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const startX = e.clientX
   const startY = e.clientY
   let lifted = false
+  let held = false
   let ghost: HTMLElement | null = null
   let target: string | null = null
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -124,8 +131,12 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     if (!lifted) {
       const far = Math.hypot(ev.clientX - startX, ev.clientY - startY) > DRAG_THRESHOLD
       if (e.pointerType === 'touch') {
-        // Moving before the hold elapses is a scroll, not a drag.
-        if (far) cancel()
+        // Moving before the hold elapses is a scroll (or a swipe), not a drag; after a hold that selected, it carries the selection.
+        if (!held) { if (far) cancel(); return }
+        if (!far) return
+        lift()
+        ev.preventDefault()
+        place(ev.clientX, ev.clientY)
         return
       }
       if (!far) return
@@ -139,7 +150,10 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     const wasLifted = lifted
     const at = wasLifted ? dropTargetAt(ev.clientX, ev.clientY, document, opts.taskDrops) ?? target : null
     cleanup()
-    if (!wasLifted) return
+    if (!wasLifted) {
+      if (held) swallowNextClick()
+      return
+    }
     swallowNextClick()
     if (at !== null) opts.onDrop(at, ev.clientX, ev.clientY)
     opts.onEnd?.()
@@ -154,9 +168,9 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     ev.stopPropagation()
     cancel()
   }
-  // While a touch drag is lifted the page must not scroll under the finger.
+  // While a touch drag is lifted (or held, ready to lift) the page must not scroll under the finger.
   const blockScroll = (ev: TouchEvent) => {
-    if (lifted) ev.preventDefault()
+    if (lifted || held) ev.preventDefault()
   }
 
   window.addEventListener('pointermove', move)
@@ -166,6 +180,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   window.addEventListener('touchmove', blockScroll, { passive: false })
   if (e.pointerType === 'touch') {
     timer = setTimeout(() => {
+      if (opts.onHold) { held = true; opts.onHold(); return }
       lift()
       place(startX, startY)
     }, TOUCH_HOLD_MS)

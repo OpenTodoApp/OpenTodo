@@ -27,6 +27,7 @@ import { useAttachmentCount, useCommentCount, useSharedProject } from './useComm
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { prefersReducedMotion } from './motion'
+import { useRowSwipe } from './task-list/RowSwipe'
 import { dragFeedback } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useFieldDefs } from './useFields'
@@ -236,6 +237,10 @@ export interface TaskRowProps {
   /** The inline editor in place of the title and metadata (inline-task-editing). */
   inline?: ReactNode
   /** The completion sequence this row plays, if any (motion-v2). */
+  /** Touch: the row follows a swipe (phone-v2 D3); the list decides (coarse pointer, nothing ticked). */
+  swipe?: boolean
+  /** Stories: shown mid-swipe at this offset (the gate cannot swipe). */
+  forceSwipe?: number
   motion?: RowMotion
 }
 
@@ -252,7 +257,7 @@ export type RowMotion = 'leave' | 'rolled' | 'restored'
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
  */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe }: TaskRowProps) {
   const card = shape === 'card'
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
@@ -324,6 +329,8 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const departing = motion === 'leave'
   const checked = done || departing
   const rowRef = useRowHeight(departing)
+  // Swipe right completes, left schedules, on touch rows the user may edit (phone-v2 D3).
+  const swiping = useRowSwipe({ task, enabled: swipe && !card && !readOnly && !inline && !departing, onComplete: onToggle, force: forceSwipe, rowEl: rowRef })
   const feedback = dragFeedback(prefersReducedMotion())
   const lift = dragging ? feedback.lift : ''
   // The origin is a link, so it never sits inside the open button: on a card it ends the
@@ -351,15 +358,16 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       data-depth={depth}
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
+      data-swipeable={swipe && !card && !readOnly && !inline && !departing ? '' : undefined}
       data-ticked={ticked || undefined}
       data-dragging={dragging || undefined}
       aria-current={selected || undefined}
       aria-level={card || setSize === undefined ? undefined : depth + 1}
       aria-posinset={card ? undefined : posInSet}
       aria-setsize={card ? undefined : setSize}
-      onPointerDown={onPointerDown}
+      onPointerDown={swipe ? (e) => { swiping.onPointerDown(e); onPointerDown?.(e) } : onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
@@ -427,6 +435,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       </button>}
       {trailing}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} />}
+      {swipe && swiping.layers}
     </li>
   )
 })

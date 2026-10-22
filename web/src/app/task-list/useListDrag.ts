@@ -22,6 +22,8 @@ export interface DragSource {
   sectionMap: Map<string, Section>
   /** The bulk selection: a dragged row that is part of it carries every selected task to a sidebar target. */
   ticked?: ReadonlySet<string>
+  /** Touch: a hold on a row not yet ticked selects it (phone-v2 D8); moving on drags the selection. */
+  onHold?: (task: Task) => void
 }
 
 /**
@@ -64,9 +66,11 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
       current = d
       setDropAt(d)
     }
+    const hold = st.onHold
     beginDrag(e, {
       label: task.title,
       taskDrops: true,
+      onHold: hold && !st.ticked?.has(task.id) ? () => hold(task) : undefined,
       onStart: () => setDraggingId(task.id),
       onMove: (target, _x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).

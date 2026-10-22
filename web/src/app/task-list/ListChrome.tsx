@@ -19,6 +19,7 @@ import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
 import { Dialog, Menu } from '../../ui'
 import { navigate } from '../router'
 import { requestProjectNote } from '../ProjectNote'
+import { RowScheduleHost } from './RowSwipe'
 import { Kbd } from '../shortcuts/Kbd'
 import type { ListRoute } from './useListModel'
 
@@ -356,6 +357,8 @@ export function RowPickerDialogs({ assignFor, pickerFor, userId, onCloseAssign, 
 }) {
   return (
     <>
+      {/* The Schedule sheet of a left swipe or the touch row menu (phone-v2 D3). */}
+      <RowScheduleHost />
       {assignFor && userId && (
         <Dialog title={t('Assign')} label={t('Assign task')} onClose={onCloseAssign}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={onCloseAssign} />

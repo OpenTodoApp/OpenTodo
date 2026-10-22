@@ -39,6 +39,7 @@ import { useRowClick } from './rowClick'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
+import { holdSelect, useListSwipe } from './task-list/RowSwipe'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { requestQuickAddSheet } from './QuickAddSheet'
 import { navigate, type Route } from './router'
@@ -187,7 +188,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // and above) and the Inbox. Date and filter views keep their own sort.
   const manual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox'
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, dataGroups), [board, dataColumns, dataGroups])
-  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked }, moveToSection, onDropped: setSelectedId })
+  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: fine ? undefined : (task) => holdSelect(task.id, selection, setSelectMode) }, moveToSection, onDropped: setSelectedId })
   const { latestSectionMap } = drag
 
   // The view supplies defaults; attributes typed in the quick-add line override them.
@@ -260,7 +261,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null),
-    inlineId: inline?.id ?? null, renderInline, departures,
+    inlineId: inline?.id ?? null, renderInline, departures, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
   // Planned tasks without a project (inbox-means-unplaced D4): in the Inbox header's meta, or its action row on phones.
