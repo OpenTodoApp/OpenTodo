@@ -80,6 +80,20 @@ ONLY=inbox,today WIDTHS=1280 LANGS=en node scripts/ux-audit/tour.mjs   # a quick
 
 Environment: `OUT_DIR` (`ux-audit-report`), `ONLY`, `WIDTHS` (`360,768,1280`), `THEMES` (`light,dark`), `LANGS` (`en,de`), `CONCURRENCY` (2), `CHROMIUM_PATH`, `OPENTODO_BIN` (`bin/opentodo`), `UX_AUDIT_STRICT=1`.
 
+## `caldav-clients/`
+
+The CalDAV verification scenario against real clients (OpenSpec change `caldav-interop`, task 5.2); its results are the rows of the verification table in [Calendar apps](../docs/caldav.md#limits). `run.sh` starts a fresh server on port 18080 with CalDAV on, a recording proxy on 18081 (every request and answer in `$WORK/traffic.jsonl`, the source of the fixtures in `internal/caldav/testdata/<client>/`), then drives the client and prints one `PASS`/`FAIL` line per check: served due forms, deadlines, date shapes, estimates, alarms, completing a repeating task, moves, deletion and incremental sync. Server state is read back through the REST API.
+
+- `thunderbird`: downloads Thunderbird from Mozilla into `$WORK` and runs it headless with Marionette (`mn.py`); `tblib.js` calls its CalDAV provider through the item APIs its task list and task dialog use. Linux only.
+- `todoman`: todoman edits a local vdir and vdirsyncer syncs it (both installed into a venv in `$WORK`; `tm.sh` holds their configuration).
+
+```bash
+make build && scripts/caldav-clients/run.sh thunderbird
+scripts/caldav-clients/run.sh todoman
+```
+
+Environment: `OPENTODO_BIN` (`bin/opentodo`), `WORK` (`/tmp/opentodo-caldav-clients`). Needs `python3` with `venv`, `curl` and `fuser`. Not part of CI: it downloads a client and takes a few minutes.
+
 ## `e2e-docs.mjs`
 
 Browser check of the docs website (OpenSpec change `user-documentation`), also run by the `docs-site` CI job: builds it into `dist/docs-root/docs` and serves it like the website's nginx does and opens a sample of pages at 360, 390 and 1280 px in light and dark. It fails on sideways scrolling, on serious or critical axe-core issues, when searching "recurring" does not list the recurring guide and the rule or quick add reference, when the result count is not announced or a result does not open with the keyboard, and when a page without JavaScript lacks its heading or working navigation (the search form must be hidden then). Third-party requests (fonts, analytics) are blocked, so the pages must work without them.

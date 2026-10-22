@@ -249,3 +249,23 @@ func TestAlarmDecode(t *testing.T) {
 		t.Fatalf("apple: %+v", apple.Alarms)
 	}
 }
+
+// TestCompletedOccurrences: completed RECURRENCE-ID overrides are listed by
+// date (Thunderbird completes one occurrence that way); open ones are not.
+func TestCompletedOccurrences(t *testing.T) {
+	raw, err := os.ReadFile("testdata/thunderbird-158/occurrence-completed.ics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	in, err := Decode(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if in.Completed || len(in.CompletedOccurrences) != 1 || in.CompletedOccurrences[0] != "2026-11-02" || in.Rule != "every day" {
+		t.Fatalf("decoded: completed=%v occurrences=%v rule=%q", in.Completed, in.CompletedOccurrences, in.Rule)
+	}
+	open := strings.NewReplacer("STATUS:COMPLETED", "STATUS:NEEDS-ACTION", "COMPLETED:2026", "X-WAS:2026").Replace(string(raw))
+	if in, err = Decode([]byte(open)); err != nil || len(in.CompletedOccurrences) != 0 {
+		t.Fatalf("open override listed: %v %v", in.CompletedOccurrences, err)
+	}
+}

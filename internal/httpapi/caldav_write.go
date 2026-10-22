@@ -524,6 +524,10 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	// Completion: only a change of state writes; reopening clears completed_at.
 	wasDone := !isNullish(cur["completed_at"])
 	switch {
+	case !in.Completed && !wasDone && completesCurrentOccurrence(in, cur):
+		// A completed override of the current occurrence (Thunderbird's task
+		// list) completes it, which records it and moves the series below.
+		body["completed_at"] = mustJSON(time.Now().UnixMilli())
 	case in.Completed && !wasDone:
 		c := time.Now().UnixMilli()
 		if in.CompletedAt != nil {
@@ -984,4 +988,24 @@ func (d *davRequest) proppatchRefuse(body *caldav.Node, href string) {
 	m := caldav.NewMultistatus()
 	m.PropStatus(href, map[int][]caldav.PropName{http.StatusForbidden: names})
 	d.multistatus(m)
+}
+
+// completesCurrentOccurrence reports whether the client sent the recurring
+// task's current occurrence (its due date) as a completed override.
+func completesCurrentOccurrence(in *caldav.Inbound, cur map[string]json.RawMessage) bool {
+	if len(in.CompletedOccurrences) == 0 || idOf(cur["recurrence"]) == "" {
+		return false
+	}
+	var due struct {
+		Date string `json:"date"`
+	}
+	if json.Unmarshal(cur["due"], &due) != nil || due.Date == "" {
+		return false
+	}
+	for _, d := range in.CompletedOccurrences {
+		if strings.ReplaceAll(due.Date, "-", "") == strings.ReplaceAll(d, "-", "") {
+			return true
+		}
+	}
+	return false
 }

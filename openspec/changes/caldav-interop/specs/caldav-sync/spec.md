@@ -16,7 +16,7 @@ Each task SHALL be one VTODO resource, by default `<task-id>.ics` with UID equal
 - **THEN** the VTODO carries `ESTIMATED-DURATION:PT45M` and one VALARM with `TRIGGER:-PT30M`, and neither appears a second time as preserved client data
 
 ### Requirement: Due forms and recurrence
-A task without a deadline SHALL be served with DUE = its due date: DATE for a due without time, floating DATE-TIME for a floating due with time, and DATE-TIME with TZID (served with a VTIMEZONE) for a zoned due. A due with a time SHALL also be served with DTSTART equal to DUE, so clients that schedule by DTSTART show it as scheduled; a due without time SHALL be served without DTSTART. Inbound, a VTODO with only DUE SHALL set the due date of a task without a deadline, and a VTODO with DTSTART and a duration (`ESTIMATED-DURATION` or `DURATION`) and no DUE SHALL set the due date from DTSTART (see "Inbound date shapes"). RRULE SHALL map to the task's recurrence rule where the recurrence grammar expresses it, and completing a recurring task through CalDAV SHALL behave as completing it in the app. A recurring task SHALL keep its due date when a client sends back the served DTSTART without the DUE.
+A task without a deadline SHALL be served with DUE = its due date: DATE for a due without time, floating DATE-TIME for a floating due with time, and DATE-TIME with TZID (served with a VTIMEZONE) for a zoned due. A due with a time SHALL also be served with DTSTART equal to DUE, so clients that schedule by DTSTART show it as scheduled; a due without time SHALL be served without DTSTART. Inbound, a VTODO with only DUE SHALL set the due date of a task without a deadline, and a VTODO with DTSTART and a duration (`ESTIMATED-DURATION` or `DURATION`) and no DUE SHALL set the due date from DTSTART (see "Inbound date shapes"). RRULE SHALL map to the task's recurrence rule where the recurrence grammar expresses it, and completing a recurring task through CalDAV SHALL behave as completing it in the app. A recurring task SHALL keep its due date when a client sends back the served DTSTART without the DUE. A client that completes one occurrence as an override (a VTODO with RECURRENCE-ID and STATUS:COMPLETED next to the unchanged series) SHALL complete the task's current occurrence when the override's date is the task's due date, as completing it in the app does; an override of any other date SHALL complete nothing.
 
 #### Scenario: Zoned due
 - **WHEN** a client sends `DUE;TZID=Europe/Berlin:20261011T093000` and no DTSTART
@@ -33,6 +33,14 @@ A task without a deadline SHALL be served with DUE = its due date: DATE for a du
 #### Scenario: Scheduled from an undated task
 - **WHEN** a task with no dates is sent back by a client with `DTSTART:20261020T140000` and `ESTIMATED-DURATION:PT30M` and no `DUE`
 - **THEN** the task is due 2026-10-20 at 14:00 with a 30-minute estimate, written as operations, and is served back with `DUE:20261020T140000` and `ESTIMATED-DURATION:PT30M`
+
+#### Scenario: Occurrence completed as an override
+- **WHEN** a task due 2 November repeats every day and a client sends the series unchanged with an override `RECURRENCE-ID;VALUE=DATE:20261102` that has `STATUS:COMPLETED`
+- **THEN** an occurrence record for 2 November is added to Completed, the task stays open and is due 3 November, and it is served back without the override
+
+#### Scenario: Override of another day
+- **WHEN** the same client sends a completed override for 5 November while the task is due 2 November
+- **THEN** nothing is completed and the task stays due 2 November
 
 #### Scenario: Due date with time
 - **WHEN** a task due `2026-10-11` at `09:30` and without a deadline is fetched

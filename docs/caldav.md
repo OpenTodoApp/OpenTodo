@@ -41,7 +41,7 @@ The server address is `https://<your server>/dav/` (Settings shows it with a cop
 
 ### Thunderbird
 
-**New Calendar → On the Network**, user name: your email, location: the server address. Thunderbird discovers the lists; tick the ones to show and enter the app password when asked. Tasks appear in the Tasks tab.
+**New Calendar → On the Network**, user name: your email, location: the server address. Thunderbird discovers the lists; tick the ones to show and enter the app password when asked. Tasks appear in the Tasks tab. A task with a due time shows a Start equal to its Due: to move it, drag it or change Start (Due follows); changing only Due gives the task a deadline on that day.
 
 ### Android: Nextcloud Tasks, Tasks.org, jtx Board (DAVx⁵)
 
@@ -101,9 +101,9 @@ So a scheduling client such as Mitra, which writes `DTSTART` and `ESTIMATED-DURA
 
 Rules that the [recurrence grammar](recurrence.md) can express map both ways: `FREQ=DAILY/WEEKLY/MONTHLY/YEARLY` with `INTERVAL`, weekday lists, `BYMONTHDAY` (including `-1`), `BYDAY=2TU` / `-1FR`, the last weekday of the month, `UNTIL` and `COUNT`. A recurring task is served with `DTSTART` equal to its due date, like any task with a due time. A completion-relative rule (`every 3 days after completion`) is served as its plain interval and kept as is when the client sends the same `RRULE` back.
 
-Completing a recurring task in a calendar app does what completing it in OpenTodo does: an occurrence record is added to Completed and the task moves to its next due date. Apple Reminders and DAVx⁵ apps that advance the due date themselves keep working: their edit is applied as an ordinary due-date change.
+Completing a recurring task in a calendar app does what completing it in OpenTodo does: an occurrence record is added to Completed and the task moves to its next due date. Apple Reminders and DAVx⁵ apps that advance the due date themselves keep working: their edit is applied as an ordinary due-date change. Thunderbird's task list completes one occurrence as an override (`RECURRENCE-ID` with `STATUS:COMPLETED`); an override of the current occurrence completes it the same way. todoman finishes the task without its rule and creates the next occurrence as a new task, so that task carries on the series under a new id.
 
-An `RRULE` the grammar cannot express (hourly rules, `BYHOUR`, several ordinals…) is kept in `ical_extra`: the calendar app keeps repeating the task, OpenTodo shows it as a plain task. Per-occurrence overrides (`RECURRENCE-ID`) are not modelled and are dropped.
+An `RRULE` the grammar cannot express (hourly rules, `BYHOUR`, several ordinals…) is kept in `ical_extra`: the calendar app keeps repeating the task, OpenTodo shows it as a plain task. Other per-occurrence overrides (`RECURRENCE-ID`) are not modelled and are dropped.
 
 ### Alarms and reminders
 
@@ -139,13 +139,14 @@ Upgrading from a server without this mapping: alarms set earlier in a calendar a
 
 Not supported: events (VEVENT; to see other calendars' events in Day and Week, or to subscribe to your tasks from a calendar app that has no CalDAV, see [Calendar feeds](calendar-feeds.md)), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, per-occurrence overrides, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.
 
-The target clients were exercised only with recorded-style fixtures and protocol tests in this repository (`internal/caldav/testdata/`, `internal/httpapi/caldav_test.go`, `caldav_interop_test.go`); a manual run against real installations is still pending. What has been verified on real devices:
+Thunderbird and todoman were run against a real server with the scenario below (served due forms, deadlines, the date shapes, estimates, alarms, completing a repeating task, moves, deletion and incremental sync); what each sent is kept in `internal/caldav/testdata/thunderbird-158/` and `todoman-4.7/` and pinned by `internal/httpapi/caldav_clients_test.go`. The other rows rest on recorded-style fixtures and protocol tests (`internal/caldav/testdata/`, `caldav_interop_test.go`) until someone runs them on the real app:
 
 | Client | Due forms | Deadline | Date shapes | Estimates | Alarms both ways | Recurrence completion | Moves | Deletion | Incremental sync |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Apple Reminders (iOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
 | Apple Reminders (macOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
-| Thunderbird | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| Thunderbird 158.0.1 (Linux, 2026-10-22) | works; the task dialog writes times in your default time zone | works: Start is the due date, Due the deadline | works; clearing only Due keeps the due date (Start stays), clear both | kept (not shown) | works both ways; a changed alarm replaces the reminder | works: completing an occurrence in the task list completes it | dragging or changing Start moves the task; changing only Due sets a deadline | works | works (sync token) |
+| todoman 4.7.0 + vdirsyncer 0.21.0 (2026-10-22) | works; times are rewritten in UTC (same instant) | works | works | kept (not shown) | kept (todoman has no alarms) | the next occurrence arrives as a new task; the done one keeps no rule | works | works | works (etags, no sync token) |
 | DAVx⁵ + Tasks.org | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
 | DAVx⁵ + jtx Board | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
 | Mitra | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
