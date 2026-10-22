@@ -3,7 +3,7 @@ title: "Settings: Server"
 summary: The People and Server sections of Settings, for the owner and admins. Users, invitations, the two-factor policy, single sign-on, backups, attachment limits, outgoing email and the audit log.
 audience: user
 section: Guides
-specs: [outgoing-email]
+specs: [outgoing-email, instance-branding]
 screens: [settings/people#people, settings/server#server, settings/admin#people, settings/users#people, settings/access#people, settings/sso#people, settings/backups#server, settings/attachments#server, settings/outgoing-email#server, settings/branding#server]
 order: 144
 ---
