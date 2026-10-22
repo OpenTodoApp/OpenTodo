@@ -831,6 +831,10 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .page-frame[data-page-body="list"] > :not([data-page-header]) { max-width: 48rem; }
 .page-frame[data-page-body="form"] > :not([data-page-header]) { max-width: 42rem; }
 .page-frame[data-page-body="wide"] > :not([data-page-header]) { max-width: 72rem; }
+/* The content width of each page type, for the standalone frame below (page-rhythm D3). */
+.page-frame[data-page-body="list"] { --page-width: 48rem; }
+.page-frame[data-page-body="form"] { --page-width: 42rem; }
+.page-frame[data-page-body="wide"] { --page-width: 72rem; }
 /* The selected row (inline-task-editing D5, ux-feedback-2 D5): a 2 px leading accent
    bar and a 4% accent tint, no ring and no full background. Hovering another row
    gives it only a 3% neutral tint; hovering the selected row adds nothing. */
@@ -1082,3 +1086,12 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 
 
 
+/* A standalone page frame (page-rhythm D3, app-shell "Page template"): the page's
+   content width plus the side padding, centred in the content column, so a page
+   without a layout switch is never left-aligned in a wider column. Unlayered so it
+   overrides the frame's 80 rem utility; a layout page keeps that frame. The slide
+   when the panel docks is frameSlide.ts. */
+.page-frame[data-page-frame="standalone"] { --page-gutter: 1rem; max-width: calc(var(--page-width, 80rem) + 2 * var(--page-gutter)); }
+@media (min-width: 48rem) { .page-frame[data-page-frame="standalone"] { --page-gutter: 2rem; } }
+/* A frame whose padding sits on its parent (the task lists): the width alone. */
+.page-frame[data-page-frame="standalone"][data-page-gutter="outside"] { --page-gutter: 0px; }

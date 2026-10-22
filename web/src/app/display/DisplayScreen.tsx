@@ -122,7 +122,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
       case 'today': {
         const g = groupToday(todayList(all, today), today, blocked)
         const groups: Group[] = [
-          { id: 'overdue', heading: t('Overdue'), rows: g.overdue.map((task) => toRow(task, 'overdue')) },
+          { id: 'overdue', heading: t('Earlier'), rows: g.overdue.map((task) => toRow(task, 'overdue')) },
           { id: 'today', heading: t('Today'), rows: g.day.map((task) => toRow(task, 'today')), empty: g.overdue.length || g.evening.length ? undefined : t('Nothing left for today') },
           { id: 'evening', heading: t('This Evening'), rows: g.evening.map((task) => toRow(task, 'evening')) },
           { id: 'blocked', heading: t('Blocked'), rows: g.blocked.map((task) => toRow(task, 'blocked')) },

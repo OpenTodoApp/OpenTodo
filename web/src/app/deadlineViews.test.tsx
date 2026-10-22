@@ -60,7 +60,7 @@ describe('row countdown (2.2)', () => {
 })
 
 describe('Today and Upcoming lists (2.3)', () => {
-  it('Today: deadline-only today, and a past deadline planned later lands in Overdue once', async () => {
+  it('Today: deadline-only today, and a past deadline planned later lands in Earlier once', async () => {
     await createTask({ title: 'Due today', due: { date: '2026-10-14' } })
     await createTask({ title: 'Deadline today', deadline: '2026-10-14' })
     await createTask({ title: 'Planned late', due: { date: '2026-10-16' }, deadline: '2026-10-13' })
@@ -70,7 +70,7 @@ describe('Today and Upcoming lists (2.3)', () => {
     const text = r.container.textContent!
     expect(text).not.toContain('Still ahead')
     expect(text.split('Planned late').length - 1).toBe(1)
-    const overdue = text.indexOf('Overdue'), late = text.indexOf('Planned late'), todayH = text.indexOf('Today', overdue + 1)
+    const overdue = text.indexOf('Earlier'), late = text.indexOf('Planned late'), todayH = text.indexOf('Today', overdue + 1)
     expect(overdue).toBeGreaterThanOrEqual(0)
     expect(late).toBeGreaterThan(overdue)
     expect(late).toBeLessThan(todayH)

@@ -443,7 +443,7 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
         }
       }
       return emit([
-        ['overdue', t('Overdue')], ['today', t('Today')], ['tomorrow', t('Tomorrow')],
+        ['overdue', t('Earlier')], ['today', t('Today')], ['tomorrow', t('Tomorrow')],
         ...[...dates].sort().map((d): [string, string] => [d, formatDateHeading(d, today)]),
         ['none', t('No date')],
       ])

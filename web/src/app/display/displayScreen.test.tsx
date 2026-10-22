@@ -70,7 +70,7 @@ describe('day start (day-boundary 2.6)', () => {
 })
 
 describe('display targets', () => {
-  it('Today: clock and date, Overdue, Today, Done today and three day columns, without the shell', async () => {
+  it('Today: clock and date, Earlier, Today, Done today and three day columns, without the shell', async () => {
     await createTask({ title: 'Pay rent', due: { date: '2026-10-12' } })
     await createTask({ title: 'Water plants', due: { date: '2026-10-14' } })
     const done = await createTask({ title: 'Buy milk', due: { date: '2026-10-14' } })
@@ -140,7 +140,7 @@ describe('display targets', () => {
     const r = await show({ kind: 'view', id: v })
     await waitFor(() => r.container.textContent!.includes('Later p1'))
     expect(r.container.querySelector('h1')!.textContent).toBe('Dated')
-    expect(headings(r.container)).toEqual(['Overdue', 'Today', 'Friday 16 Oct'])
+    expect(headings(r.container)).toEqual(['Earlier', 'Today', 'Friday 16 Oct'])
     await r.unmount()
   })
 
@@ -156,7 +156,7 @@ describe('display targets', () => {
 })
 
 describe('clock, presentation and sync line', () => {
-  it('rolls over at midnight: the date changes, yesterday moves to Overdue, the columns shift', async () => {
+  it('rolls over at midnight: the date changes, yesterday moves to Earlier, the columns shift', async () => {
     vi.useRealTimers()
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
     vi.setSystemTime(new Date(2026, 9, 14, 23, 59, 50))

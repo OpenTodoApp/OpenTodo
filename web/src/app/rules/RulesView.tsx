@@ -110,7 +110,7 @@ export function RulesView({ create }: { create?: boolean }) {
       )}
       {rules.length === 0 && (
         <EmptyState icon="zap" title={t('No rules yet')}
-          body={t('A rule changes tasks for you when something happens: a label is added, a task becomes overdue, or every Sunday evening.')}
+          body={t('A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.')}
           control={<Button variant="primary" size="sm" icon="plus" onClick={() => setEditing({})}>{t('New rule')}</Button>} />
       )}
       {editing && <RuleDialog rule={editing.rule} draft={editing.draft} me={me} onClose={() => setEditing(null)} />}

@@ -8,7 +8,7 @@ import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db } from './db'
 import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
 import { planCompletion, seriesRule } from './recurring'
-import { assignableIn, currentUserId, membershipMap, scopeOf } from './sharing'
+import { assignableIn, canEditTask, currentUserId, membershipMap, scopeOf } from './sharing'
 import { descendants } from './tree'
 import type { Membership, Priority, Task } from './types'
 import { applyBatch } from './undo'
@@ -196,6 +196,34 @@ export async function applyBulk(ids: readonly string[], action: BulkAction, opts
   }
   const entry = await applyBatch(await toProposed(changes), { source: 'bulk', label })
   return { undoId: entry?.id ?? null, label, count: tasks.length }
+}
+
+/** The undo toast's words for a group action (page-rhythm D6): "4 tasks moved to today", "3 of 4 tasks rescheduled". */
+export function groupDueLabel(pick: Exclude<DuePick, null>, moved: number, total: number): string {
+  if (pick === 'today') {
+    return moved === total
+      ? t('{n, plural, one {# task moved to today} other {# tasks moved to today}}', { n: moved })
+      : t('{moved} of {n, plural, one {# task moved to today} other {# tasks moved to today}}', { moved, n: total })
+  }
+  return moved === total
+    ? t('{n, plural, one {# task rescheduled} other {# tasks rescheduled}}', { n: moved })
+    : t('{moved} of {n, plural, one {# task rescheduled} other {# tasks rescheduled}}', { moved, n: total })
+}
+
+/**
+ * A date for every task of a list group (page-rhythm D6, bulk-actions "Group actions
+ * are one batch"): the bulk date path on the group's ids, not the selection, as one
+ * undoable batch. Tasks the user may only view are left as they are and counted.
+ */
+export async function applyGroupDue(ids: readonly string[], pick: Exclude<DuePick, null>, opts: { today?: string } = {}): Promise<BulkResult> {
+  const today = opts.today ?? logicalToday()
+  await getDeviceId()
+  const { tasks } = await readTicked(ids)
+  const memberships = await membershipMap()
+  const editable = tasks.filter((task) => canEditTask(task, memberships))
+  const label = groupDueLabel(pick, editable.length, tasks.length)
+  const entry = editable.length ? await applyBatch(await toProposed(planDue(editable, pick, today)), { source: 'bulk', label }) : null
+  return { undoId: entry?.id ?? null, label, count: editable.length }
 }
 
 /**

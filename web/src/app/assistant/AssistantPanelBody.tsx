@@ -94,7 +94,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
               <p>{t('Ask about your tasks or ask for changes. For example:')}</p>
               <ul className="list-disc pl-5">
                 <li>{t('What is due today?')}</li>
-                <li>{t('Move everything overdue to Friday.')}</li>
+                <li>{t('Move everything from earlier days to Friday.')}</li>
                 <li>{t('Break “Plan the team offsite” into steps.')}</li>
               </ul>
               <p>{t('Changes are proposed for you to review; nothing changes until you apply them.')}</p>

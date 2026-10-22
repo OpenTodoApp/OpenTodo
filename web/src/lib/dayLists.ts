@@ -2,6 +2,7 @@
 // `display-mode`, design D3): the list screen (TaskListView) and the display
 // (app/display) both call these, so a display can never disagree with the list.
 import { addDaysISO, currentDayStart, logicalDay } from './dates'
+import { blockedMap } from './dependencies'
 import { compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
@@ -45,13 +46,22 @@ export interface TodayGroups {
   blocked: Task[]
 }
 
-/** Split Today's list (already sorted) into Overdue, the day, This Evening and Blocked. */
+/** Split Today's list (already sorted) into Earlier (`overdue`), the day, This Evening and Blocked. */
 export function groupToday(list: readonly Task[], today: string, blocked: { has(id: string): boolean } = new Set<string>()): TodayGroups {
   const waiting = list.filter((t) => blocked.has(t.id))
   const ready = waiting.length ? list.filter((t) => !blocked.has(t.id)) : [...list]
   const overdue = ready.filter((t) => overdueInToday(t, today))
   const rest = ready.filter((t) => !overdueInToday(t, today))
   return { overdue, day: rest.filter((t) => !t.evening), evening: rest.filter((t) => t.evening), blocked: waiting }
+}
+
+/**
+ * The ids of Today's Earlier group (page-rhythm D6), as the list shows it: open tasks
+ * of active projects due (or with a deadline) before today, blocked ones left out.
+ */
+export function earlierIds(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string): string[] {
+  const live = withoutArchived(tasks.filter((t) => !t.deleted_at), projects)
+  return groupToday(todayList(live, today), today, blockedMap(live)).overdue.map((t) => t.id)
 }
 
 /** Upcoming's list (already sorted) bucketed by its day, in date order. */

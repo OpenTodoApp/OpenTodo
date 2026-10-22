@@ -20,7 +20,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, hueFor, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
+import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer, useFrameSlide } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
@@ -29,6 +29,7 @@ import { offerMoveToWorkspace, useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
+import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { withListTransition } from './motion'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
@@ -84,6 +85,9 @@ function useListUi() {
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, setAddingTo, openActions }
   return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo }
 }
+
+/** Today's Earlier group header actions (page-rhythm D6). */
+const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
 
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
@@ -262,13 +266,19 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     place: currentPlace?.name ?? t('Location'),
   }[route.view]
 
+  const layoutPage = route.view === 'project'
+  const frameRef = useFrameSlide<HTMLDivElement>(!layoutPage)
+  const pageWidth = board || timeline ? 'full' : m.fieldColumns || layoutPage ? 'wide' : 'list'
+
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
-        <div className={PAGE_FRAME} data-page-body={board || timeline ? 'full' : m.fieldColumns ? 'wide' : 'list'} data-list-page>
+        {/* Two frames (page-rhythm D3): a project is a layout page (one 80 rem frame for list,
+            board and timeline; its list spans 72 rem); every other list is standalone, centred. */}
+        <div ref={frameRef} className={PAGE_FRAME} data-page-body={pageWidth} data-page-frame={frameKind(pageWidth, layoutPage ? 'layout' : 'standalone')} data-page-gutter="outside" data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
@@ -326,6 +336,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
+              earlierActions={route.view === 'today' ? earlierActions : undefined}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
           {route.view === 'today' && <CloseDayRow />}

@@ -2,10 +2,12 @@
 // primitives", app-shell "Page template"): every view renders a PageHeader (one
 // title size, optional meta, at most two visible actions, an overflow menu and the
 // Help action) inside a PageBody whose width is fixed per page type. The header
-// stays visible while the content column scrolls. Every page shares one frame
-// (ux-feedback-2 D7): centred, at most 80 rem, the same padding; the header spans
-// it and the content's width applies left-aligned inside it (index.css
-// `.page-frame`), so the title and actions never move between page types.
+// stays visible while the content column scrolls. Two frames (page-rhythm D3): a
+// standalone page's frame is its content width plus the padding, centred in the
+// column; a layout page (a project, the calendars) keeps the one 80 rem frame of
+// ux-feedback-2 D7, so its title and actions never move between list, board and
+// timeline (index.css `.page-frame`). The page's meta is a lead line under the
+// title (page-rhythm D1), inside the one header element.
 import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
@@ -13,11 +15,19 @@ import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { setPageBar } from './pageBar'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
+import { useFrameSlide } from './frameSlide'
 import { t } from '../../lib/i18n'
 
 export type PageWidth = 'list' | 'form' | 'wide' | 'full'
 
-/** The page frame (app-shell "Page template"): centred, at most 80 rem; `data-page-body` picks the content width. */
+/**
+ * Which frame a page has (page-rhythm D3): `standalone` (no layout switch) is its
+ * content width plus the padding, centred; `layout` (a project, a board or timeline
+ * view, the calendars) is the shared 80 rem frame, content from its left edge.
+ */
+export type PageFrame = 'standalone' | 'layout'
+
+/** The page frame (app-shell "Page template"): centred, at most 80 rem; `data-page-body` picks the content width, `data-page-frame` the frame. */
 export const PAGE_FRAME = 'page-frame mx-auto min-w-0 w-full max-w-[80rem]'
 
 export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
@@ -25,24 +35,33 @@ export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
   width?: PageWidth
   /** No bottom padding: the page's own scroller (a board, the calendar grid) fills the column. */
   flush?: boolean
+  /** The frame (page-rhythm D3): standalone unless the page offers a layout switch; a `full` page is always a layout page. */
+  frame?: PageFrame
   children: ReactNode
 }
 
-/** A page: the shared frame with its padding; the content inside takes the page type's width, left-aligned. */
-export function PageBody({ width = 'list', flush = false, className, children, ...rest }: PageBodyProps) {
+/** A page: its frame with the padding; the content inside takes the page type's width. */
+export function PageBody({ width = 'list', flush = false, frame, className, children, ...rest }: PageBodyProps) {
+  const kind = frameKind(width, frame)
+  const ref = useFrameSlide<HTMLDivElement>(kind === 'standalone')
   return (
-    <div {...rest} data-page-body={width} className={`${PAGE_FRAME} px-4 md:px-8 ${flush ? '' : 'pb-6'}${className ? ` ${className}` : ''}`}>
+    <div {...rest} ref={ref} data-page-body={width} data-page-frame={kind} className={`${PAGE_FRAME} px-4 md:px-8 ${flush ? '' : 'pb-6'}${className ? ` ${className}` : ''}`}>
       {children}
     </div>
   )
 }
 
+/** The frame of a page: a `full` page fills the shared frame, so it is a layout page. */
+export function frameKind(width: PageWidth, frame?: PageFrame): PageFrame {
+  return width === 'full' ? 'layout' : frame ?? 'standalone'
+}
+
 export interface PageHeaderProps {
   /** The page title; a string renders in the page title size, a node (an inline rename field) is placed as is. */
   title: ReactNode
-  /** Text beside the title: a date, a count, a read-only note. */
+  /** The lead line under the title (page-rhythm D1): a date and totals, members and role, a count, a read-only note. */
   meta?: ReactNode
-  /** Below 768 px, a line under the title in the shell's bar (the board's current column); not rendered in the header's own row. */
+  /** Below 768 px, the line under the title in the shell's bar (the board's current column); defaults to the lead line. */
   subtitle?: ReactNode
   /** Before the title: a colour dot or an icon. */
   leading?: ReactNode
@@ -70,6 +89,9 @@ export interface PageHeaderProps {
   testId?: string
 }
 
+/** The page title at the display step (page-rhythm D1, tokens-v2). */
+const TITLE = 'text-display text-strong'
+
 export function PageHeader({ title, subtitle, meta, leading, actions, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
   // The shell's phone bar shows this page's title and actions below 768 px (app-shell
@@ -81,12 +103,12 @@ export function PageHeader({ title, subtitle, meta, leading, actions, overflow, 
   // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px.
   useEffect(() => {
     if (ownRow) return
-    setPageBar({ title, subtitle, overflow, menu, help, back })
+    setPageBar({ title, subtitle: subtitle ?? meta, overflow, menu, help, back })
     return () => setPageBar(null)
   })
   return (
     <header data-page-header data-testid={testId}
-      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} ${ownRow || actions ? 'mb-3 pb-3' : ''} ${level === 1 ? (ownRow ? 'pt-3 md:pt-5' : '') : 'pt-5'}`}>
+      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} ${ownRow || actions ? 'mb-3 pb-3' : ''} ${level === 1 ? (ownRow ? 'pt-2 md:pt-4' : '') : 'pt-5'}`}>
       {!ownRow && actions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
       {ownRow && <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1" data-page-header-row>
         {back && (
@@ -98,13 +120,13 @@ export function PageHeader({ title, subtitle, meta, leading, actions, overflow, 
         {icon && <span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted" aria-hidden="true"><Icon name={icon} size="md" /></span>}
         {leading}
         {typeof title === 'string'
-          ? <H ref={titleRef} tabIndex={titleTabIndex} className="min-w-0 truncate text-h1 font-semibold text-strong outline-none" data-page-title>{title}</H>
-          : <H ref={titleRef} tabIndex={titleTabIndex} className="flex min-w-0 items-center text-h1 font-semibold text-strong outline-none" data-page-title>{title}</H>}
-        {meta && <span className="min-w-0 text-meta text-muted" data-page-meta>{meta}</span>}
+          ? <H ref={titleRef} tabIndex={titleTabIndex} className={`min-w-0 truncate ${TITLE} outline-none`} data-page-title>{title}</H>
+          : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE} outline-none`} data-page-title>{title}</H>}
         <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions>
           <PageActions actions={actions} overflow={overflow} menu={menu} help={help} />
         </div>
       </div>}
+      {ownRow && meta && <div className="mt-1 min-w-0 text-meta text-muted" data-page-lead data-page-meta>{meta}</div>}
       {children && <div className="mt-2 flex flex-wrap items-center gap-2" data-page-secondary>{children}</div>}
     </header>
   )

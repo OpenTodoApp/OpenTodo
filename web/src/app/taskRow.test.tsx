@@ -125,17 +125,50 @@ describe('one row language (rows-v2)', () => {
     await elsewhere.unmount()
   }))
 
-  it('dates are muted except overdue; a heading for another day leaves the date alone', () => atNoon(async () => {
-    const untimed = await row({ due: { date: '2026-10-14' } })
-    expect(untimed.container.querySelector('[data-date]')!.className).toContain('text-muted')
-    await untimed.unmount()
-    const late = await row({ due: { date: '2026-10-11' } }, { implied: { date: '2026-10-14' } })
-    expect(late.container.querySelector('[data-date]')!.className).toContain('text-danger')
-    await late.unmount()
-    const tomorrow = await row({ due: { date: '2026-10-15' } }, { implied: { date: '2026-10-15' } })
-    expect(tomorrow.container.querySelector('[data-date]')).toBeNull()
-    await tomorrow.unmount()
+  // The due ladder (page-rhythm D7, task-list-presentation "Due ladder in Calm rows").
+  const dateOf = async (over: Partial<Task>, extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) => {
+    const r = await row(over, extra)
+    const d = r.container.querySelector('[data-date]')
+    const out = d ? { text: visibleText(d), cls: d.className } : null
+    await r.unmount()
+    return out
+  }
+
+  it('the due ladder: later muted, tomorrow default, today accent (timed or not), earlier danger', () => atNoon(async () => {
+    expect((await dateOf({ due: { date: '2026-10-18' } }))!.cls).toContain('text-muted')
+    const tomorrow = (await dateOf({ due: { date: '2026-10-15' } }))!
+    expect(tomorrow.text).toBe('Tomorrow')
+    expect(tomorrow.cls).toContain('text-default')
+    const today = (await dateOf({ due: { date: '2026-10-14' } }))!
+    expect(today.text).toBe('Today')
+    expect(today.cls).toContain('text-accent')
+    expect((await dateOf({ due: { date: '2026-10-11' } }, { implied: { date: '2026-10-14' } }))!.cls).toContain('text-danger')
+    // A heading for the day leaves the date text out, under Today and under Tomorrow.
+    expect(await dateOf({ due: { date: '2026-10-14' } }, { implied: { date: '2026-10-14' } })).toBeNull()
+    expect(await dateOf({ due: { date: '2026-10-15' } }, { implied: { date: '2026-10-15' } })).toBeNull()
   }))
+
+  it('the deadline keeps its countdown tone beside a ladder date', () => atNoon(async () => {
+    const r = await row({ due: { date: '2026-10-15' }, deadline: '2026-10-16' })
+    expect(r.container.querySelector('[data-date]')!.className).toContain('text-default')
+    const deadline = r.container.querySelector('[data-deadline]')!
+    expect(visibleText(deadline)).toBe('2d')
+    expect(deadline.className).toContain('text-warning')
+    await r.unmount()
+  }))
+
+  it('midnight moves a task up the ladder: tomorrow, then today, then earlier', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date(2026, 9, 14, 12, 0))
+      expect((await dateOf({ due: { date: '2026-10-15' } }))!.cls).toContain('text-default')
+      vi.setSystemTime(new Date(2026, 9, 15, 12, 0))
+      const today = (await dateOf({ due: { date: '2026-10-15' } }))!
+      expect([today.text, today.cls.includes('text-accent')]).toEqual(['Today', true])
+      vi.setSystemTime(new Date(2026, 9, 16, 12, 0))
+      expect((await dateOf({ due: { date: '2026-10-15' } }))!.cls).toContain('text-danger')
+    } finally { vi.useRealTimers() }
+  })
 
   it('P1 and P2 keep their ring colour, P3 and P4 get the neutral ring', async () => {
     const ring = async (priority: Task['priority']) => {

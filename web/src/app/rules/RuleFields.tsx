@@ -16,7 +16,7 @@ export const TRIGGER_LABEL = translatedMap<RuleTriggerKind>({
   'assigned.to_me': msg('A task is assigned to me'),
   'task.moved': msg('A task is moved'),
   'due.reached': msg('A task is due'),
-  overdue: msg('A task becomes overdue'),
+  overdue: msg('A task’s date passes'),
   schedule: msg('On a schedule'),
 })
 const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow'), 'next-week': msg('Next week'), clear: msg('No date') })
@@ -103,7 +103,7 @@ export function TriggerFields({ value, onChange, names, sharedProjects }: { valu
 }
 
 const DATE_PRED = ['', 'none', 'set', 'today', 'overdue', 'within'] as const
-const DATE_PRED_LABEL = translatedMap<string>({ '': msg('Any'), none: msg('No date'), set: msg('Has a date'), today: msg('Today'), overdue: msg('Overdue'), within: msg('Within days') })
+const DATE_PRED_LABEL = translatedMap<string>({ '': msg('Any'), none: msg('No date'), set: msg('Has a date'), today: msg('Today'), overdue: msg('Earlier'), within: msg('Within days') })
 
 function DatePredicate({ label, value, overdue, onChange }: { label: string; value: RuleCondition['due']; overdue: boolean; onChange: (v: RuleCondition['due']) => void }) {
   const kind = value === undefined ? '' : typeof value === 'object' ? 'within' : value

@@ -30,6 +30,7 @@ import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
 import { keysOf } from '../../lib/shortcuts'
+import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 
@@ -57,6 +58,8 @@ export interface PaletteContext {
   showShortcuts: () => void
   /** Focus quick add on this screen; false when it has none. */
   focusQuickAdd: () => boolean
+  /** The tasks of Today's Earlier group (page-rhythm D6); its two commands are offered while it is not empty. */
+  earlier?: readonly string[]
 }
 
 interface Command {
@@ -108,6 +111,17 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
 ], 'label')
 
 const prompt = (title: string, label: string, initial: string, onSubmit: (v: string) => unknown): Step => ({ kind: 'prompt', title, label, initial, onSubmit })
+
+/** Reschedule… for Earlier as a palette picker: the bulk Date choices except "Pick a date". */
+function rescheduleEarlierStep(ids: readonly string[]): Step {
+  type Choice = { id: 'today' | 'tomorrow' | 'next-week'; label: string }
+  const source: Choice[] = [{ id: 'today', label: t('Today') }, { id: 'tomorrow', label: t('Tomorrow') }, { id: 'next-week', label: t('Next week') }]
+  return { kind: 'picker', picker: {
+    title: t('Reschedule earlier tasks…'), placeholder: t('Pick a date…'), source,
+    getKey: (c: Choice) => c.id, getLabel: (c: Choice) => c.label,
+    onPick: (c: Choice) => { void runGroupDue(ids, c.id) },
+  } }
+}
 
 /** Commands from an object menu: every enabled item, run as the menu runs it. */
 function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Command[] {
@@ -238,6 +252,15 @@ export function commands(ctx: PaletteContext): Command[] {
       move: (d) => reorderSection(s.row.id, d),
       remove: () => deleteSection(s.row.id),
     }), 'section'))
+  }
+
+  // Today's Earlier group (page-rhythm D6): the header's two actions, without keys.
+  if (ctx.earlier && ctx.earlier.length > 0) {
+    const ids = ctx.earlier
+    out.push(
+      { id: 'earlier:today', label: t('Move earlier tasks to today'), icon: 'calendar-check', keywords: 'earlier overdue late reschedule', run: () => runGroupDue(ids, 'today') },
+      { id: 'earlier:reschedule', label: t('Reschedule earlier tasks…'), icon: 'calendar-days', keywords: 'earlier overdue late tomorrow next week', run: () => rescheduleEarlierStep(ids) },
+    )
   }
 
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
