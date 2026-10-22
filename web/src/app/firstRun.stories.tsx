@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StartGuide } from './FirstRun'
+import { createSampleTasks } from '../lib/sampleTasks'
 import { seedInbox, storyUser, withSeed } from './stories/fixtures'
 import { TaskListView } from './TaskListView'
 
@@ -29,3 +30,10 @@ export const HowYouWork: StoryObj = { render: () => <Over step={1} /> }
 export const Install: StoryObj = { render: () => <Over step={2} /> }
 /** The last view, "Your first day" (moments-and-onboarding D5): three steps read from the seeded data. */
 export const YourFirstDay: StoryObj = { name: 'Your first day', render: () => <Over step={3} /> }
+
+/** The Inbox after "Start with three sample tasks": rows marked Sample, the Inbox menu to remove them (moments-and-onboarding D2-D4). */
+export const SampleTasks: StoryObj = {
+  name: 'Sample tasks',
+  ...withSeed(async () => { await seedInbox(); await createSampleTasks() }),
+  render: () => <div className="-m-4 h-[44rem] overflow-y-auto bg-canvas"><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></div>,
+}

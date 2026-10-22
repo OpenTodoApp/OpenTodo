@@ -143,7 +143,7 @@ function GuideStep({ step, id, userId, method, onMethod, next, onAdded, onClose 
           {id === 'install' ? t('Skip') : t('Skip this step')}
         </Button>
         {id === 'task' && offer && (
-          <Button size="sm" variant="ghost" icon="list-checks" data-first-run-sample onClick={() => act(createSampleTasks().then(onAdded))}>
+          <Button size="sm" variant="ghost" icon="rocket" data-first-run-sample onClick={() => act(createSampleTasks().then(onAdded))}>
             {t('Start with three sample tasks')}
           </Button>
         )}

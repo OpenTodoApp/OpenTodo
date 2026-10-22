@@ -1,5 +1,5 @@
 // Week clear (OpenSpec change moments-and-onboarding, design D1; design-system
-// "Illustration set"): seven small rounded squares in a row on a baseline, the first
+// "Illustration set"): seven small soft-cornered squares in a row on a baseline, the first
 // slightly raised and the only accent shape; the others take the sunken fill.
 const DAYS = [36, 54, 72, 90, 108, 126]
 
