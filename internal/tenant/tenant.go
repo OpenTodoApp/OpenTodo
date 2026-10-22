@@ -7,6 +7,7 @@ package tenant
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -28,6 +29,7 @@ import (
 	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
+	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -93,6 +95,7 @@ type Tenant struct {
 	Mail     *mail.Service   // nil on a demo instance
 	Digest   *digest.Service // weekly digests (stats-and-review); nil with Mail
 	Demo     *demo.Service   // nil unless OPENTODO_DEMO
+	Rules    *rules.Engine   // automation rules (automation-rules); nil on a demo instance
 	Handler  http.Handler
 
 	log       *slog.Logger
@@ -163,6 +166,8 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 		return err
 	}
 	inbox := openInbox(ctx, db, syncSvc, log)
+	ruleEngine, ruleSwitch := openRules(cfg, o, db, syncSvc, inbox, hooks, log)
+	wireObserver(syncSvc, hooks, ruleEngine, hosted)
 	backups, err := openBackups(ctx, cfg, o, db, authSvc, log)
 	if err != nil {
 		return err
@@ -171,7 +176,8 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	if err != nil {
 		return err
 	}
-	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox), httpapi.WithMCPSettings(mcpSettings)}
+	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox), httpapi.WithMCPSettings(mcpSettings),
+		httpapi.WithRules(ruleEngine, ruleSwitch)}
 	if hosted != nil {
 		opts = append(opts, httpapi.WithHosted())
 	}
@@ -218,7 +224,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	t.Handler = httpapi.New(cfg, authSvc, syncSvc, webHandler, log, o.Version, opts...)
 	t.Cfg, t.Auth, t.Sync, t.Hooks, t.Inbox, t.Backups, t.MCP = cfg, authSvc, syncSvc, hooks, inbox, backups, mcpSettings
 	t.Push, t.Email, t.Calendar, t.Issues, t.Demo = pushSvc, emailSvc, calWorker, issueWorker, demoSvc
-	t.Mail, t.Digest = mailSvc, digestSvc
+	t.Mail, t.Digest, t.Rules = mailSvc, digestSvc, ruleEngine
 	return nil
 }
 
@@ -233,7 +239,6 @@ func wireWebhooks(ctx context.Context, cfg config.Config, o Options, db *sql.DB,
 		if err := hooks.SeedAllowPrivate(ctx, cfg.WebhooksAllowPrivate); err != nil {
 			return nil, err
 		}
-		syncSvc.SetObserver(hooks.Observe)
 		return hooks, nil
 	}
 	// A host's private network is the operator's (multi-tenant-host D4):
@@ -243,14 +248,49 @@ func wireWebhooks(ctx context.Context, cfg config.Config, o Options, db *sql.DB,
 	}
 	authSvc.SetMemberLimit(hosted.MaxMembers)
 	syncSvc.SetQuota(hosted.Quota)
-	changed := hosted.Changed
+	return hooks, nil
+}
+
+// wireObserver installs the post-commit observer: webhooks first, then the
+// automation rules (automation-rules D5), then a host's change callback.
+func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules.Engine, hosted *Hosted) {
+	var changed func()
+	if hosted != nil {
+		changed = hosted.Changed
+	}
 	syncSvc.SetObserver(func(ctx context.Context, changes []opsync.Change) {
 		hooks.Observe(ctx, changes)
+		if engine != nil {
+			engine.Observe(ctx, changes)
+		}
 		if changed != nil {
 			changed()
 		}
 	})
-	return hooks, nil
+}
+
+// openRules builds the automation rules engine (automation-rules): the owner
+// switch with its OPENTODO_AUTOMATIONS override, in-app notifications and the
+// rule.fired webhook. Nothing runs on a demo instance.
+func openRules(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service, inbox *notify.InApp, hooks *webhook.Service, log *slog.Logger) (*rules.Engine, *rules.Switch) {
+	sw := rules.NewSwitch(settings.New(db), cfg.Automations)
+	if cfg.Demo {
+		return nil, sw
+	}
+	engine := rules.New(db, syncSvc, log)
+	if o.Now != nil {
+		engine.SetClock(o.Now)
+	}
+	engine.Enabled = sw.On
+	engine.Notify = inbox
+	engine.Webhook = func(ctx context.Context, userID, webhookID string, f rules.Fired) error {
+		err := hooks.QueueRuleFired(ctx, userID, webhookID, webhook.RuleRef{ID: f.RuleID, Name: f.RuleName}, f.TaskID, f.Changes)
+		if errors.Is(err, webhook.ErrNoWebhook) {
+			return rules.ErrWebhookMissing
+		}
+		return err
+	}
+	return engine, sw
 }
 
 // openInbox builds in-app notifications (task-assignment): assignment events
@@ -424,6 +464,11 @@ func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context,
 		spawn(t.Issues.Run)
 		// No outbound webhook deliveries on a demo instance.
 		spawn(t.Hooks.Run)
+	}
+	if t.Rules != nil {
+		// Automation rules: the queue, the minute scheduler and the run log
+		// pruning; nothing on a demo instance (t.Rules is nil there).
+		spawn(t.Rules.Run)
 	}
 	return func() {
 		cancel()

@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -128,6 +128,8 @@ class OpenTodoDB extends Dexie {
   timeEntries!: Table<TimeEntry, string>
   /** Saved places (OpenSpec task-locations): a synced entity, ordered by position. */
   places!: Table<Place, string>
+  /** Automation rules (OpenSpec automation-rules): a synced entity, ordered by position. */
+  rules!: Table<Rule, string>
   /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
   focus!: Table<FocusState, string>
 
@@ -415,6 +417,8 @@ class OpenTodoDB extends Dexie {
     this.version(21).stores({ focus: 'id' })
     // v22 (task-locations): the synced `place` entity.
     this.version(22).stores({ places: 'id, position' })
+    // v23 (automation-rules): the synced `rule` entity.
+    this.version(23).stores({ rules: 'id, position' })
   }
 }
 
@@ -500,7 +504,7 @@ function tableMap(d: OpenTodoDB) {
   return {
     project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
     field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
-    time_entry: d.timeEntries, place: d.places,
+    time_entry: d.timeEntries, place: d.places, rule: d.rules,
   } satisfies Record<Entity, Table<unknown, string>>
 }
 

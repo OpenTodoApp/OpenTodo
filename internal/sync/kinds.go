@@ -10,6 +10,7 @@ import (
 	"github.com/pixari/opentodo/internal/location"
 	"github.com/pixari/opentodo/internal/origin"
 	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/pixari/opentodo/internal/ruleval"
 	"github.com/pixari/opentodo/internal/zoned"
 )
 
@@ -40,6 +41,9 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kRule:           orNull(checkRule),
 	kLocation:       location.CheckValue,
 	kGeo:            location.CheckGeo,
+	kRuleTrigger:    ruleval.CheckTrigger,
+	kRuleCondition:  orNull(ruleval.CheckCondition),
+	kRuleActions:    ruleval.CheckActions,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }

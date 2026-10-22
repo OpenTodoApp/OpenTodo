@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pixari/opentodo/internal/e2ee"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -75,6 +76,19 @@ func (s *Server) labelAgentChanges(ctx context.Context, viewerID string, sets []
 		// review (in-app-assistant): the same label for every viewer.
 		if strings.HasPrefix(sets[i].Device, opsync.AssistantDevicePrefix) {
 			sets[i].DeviceLabel = "Assistant"
+			continue
+		}
+		// An automation rule's batch (automation-rules): "Rule (<name>)" for its
+		// author while the rule exists, "Rule" otherwise. Rules are personal.
+		if ruleID, ok := strings.CutPrefix(sets[i].Device, opsync.RuleDevicePrefix); ok {
+			sets[i].DeviceLabel = "Rule"
+			if sets[i].UserID == viewerID {
+				if r, err := s.sync.Get(ctx, viewerID, "rule", ruleID); err == nil && r != nil && !r.Deleted() {
+					if name := idOf(r["name"]); name != "" && !e2ee.IsCiphertext(name) {
+						sets[i].DeviceLabel = "Rule (" + name + ")"
+					}
+				}
+			}
 			continue
 		}
 		tokenID, ok := strings.CutPrefix(sets[i].Device, opsync.AgentDevicePrefix)

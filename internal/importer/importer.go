@@ -44,6 +44,9 @@ const (
 	KindSection  = "section"
 	KindReminder = "reminder"
 	KindView     = "view"
+	// KindRule is an automation rule (OpenSpec change automation-rules),
+	// restored verbatim from an own export with its ids.
+	KindRule = "rule"
 	// KindUserPrefs is the date and time preferences row (OpenSpec change
 	// date-time-preferences): restored from an own export, never undone.
 	KindUserPrefs = "user_prefs"

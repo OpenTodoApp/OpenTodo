@@ -18,6 +18,8 @@ export const WEBHOOK_EVENTS: { event: WebhookEvent; label: string }[] = [
   // Imports are reported once per job, not once per task (harden-server-edges).
   { event: 'import.completed', label: msg('Import completed') },
   { event: 'import.undone', label: msg('Import undone') },
+  // Sent only to the webhook an automation rule names (automation-rules).
+  { event: 'rule.fired', label: msg('Rule fired') },
 ]
 
 export type WebhookTone = 'ok' | 'warn' | 'off'

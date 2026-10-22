@@ -554,7 +554,7 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
 // Each More destination once, as data: an item in the inline group, or a menu item.
-type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
+type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places' | 'rules'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
 
 /** The More group's destinations, each once, as data (app-shell "Sidebar structure"). */
 function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean }): MoreEntry[] {
@@ -573,6 +573,8 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     ...(o.shared ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: o.unreadBadge, note: o.unreadTotal > 0 ? `${formatUnread(o.unreadTotal)} ${t('unread updates')}` : undefined }] : []),
     // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
     { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },
+    // Automation rules (automation-rules "Rules page"): after Locations in every mode.
+    { id: 'rules', route: { view: 'rules' }, label: t('Rules'), icon: 'zap' },
     { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
     { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
     ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),

@@ -156,6 +156,13 @@ const (
 	// kGeo is a place's coordinate pair (task-locations D1): null, a ciphertext
 	// string, or {lat, lon} validated by internal/location.
 	kGeo
+	// kRuleTrigger, kRuleCondition and kRuleActions are an automation rule's
+	// whole values (OpenSpec change automation-rules, design D1), checked by
+	// internal/ruleval (closed key sets, enumerations, bounds). Sync checks the
+	// shape only; REST resolves the ids. A condition may be null.
+	kRuleTrigger
+	kRuleCondition
+	kRuleActions
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -472,6 +479,20 @@ var Schema = map[string]map[string]kind{
 	// personal scope and never reaches other members. geo is the coordinate
 	// pair as one value, so an encrypted account encrypts it whole; name,
 	// address and geo are content fields.
+	// rule: an automation rule (OpenSpec change automation-rules, design D1). Like
+	// a label it is personal: it resolves to the author's personal scope. trigger,
+	// condition and actions are each one whole value; name is a content field.
+	// The server engine (internal/rules) runs enabled rules for their author.
+	"rule": {
+		"name":       kString,
+		"enabled":    kBool,
+		"trigger":    kRuleTrigger,
+		"condition":  kRuleCondition,
+		"actions":    kRuleActions,
+		"position":   kNumber,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 	"place": {
 		"name":       kString,
 		"address":    kString,
@@ -596,7 +617,7 @@ var Schema = map[string]map[string]kind{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")

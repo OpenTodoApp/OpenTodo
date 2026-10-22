@@ -779,6 +779,85 @@
       }
     },
     {
+      "name": "rules disable",
+      "summary": "turn an automation rule off",
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "rules enable",
+      "summary": "turn an automation rule on (clears a pause for running too often)",
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "rules list",
+      "aliases": [
+        "rules ls"
+      ],
+      "summary": "list the account's automation rules (built in the app)",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/rule"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "rules runs",
+      "summary": "print an automation rule's run log, newest first",
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/rule_run"
+        },
+        "type": "array"
+      }
+    },
+    {
       "name": "schema",
       "summary": "print every command, flag, exit code and output schema as JSON (works offline)",
       "args": [],
@@ -1974,6 +2053,127 @@
         },
         "owner_id": {
           "type": "string"
+        }
+      }
+    },
+    "rule": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "rule",
+      "description": "An automation rule exactly as the REST API returns it (OpenSpec automation-rules). The name is ciphertext for an encrypted account.",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "trigger",
+        "actions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "trigger": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string"
+            }
+          }
+        },
+        "condition": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "actions": {
+          "type": "object"
+        },
+        "position": {
+          "type": "number"
+        },
+        "created_at": {
+          "type": "number"
+        },
+        "deleted_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "rule_run": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "rule_run",
+      "description": "One run of an automation rule, from GET /api/v1/rules/{id}/runs (OpenSpec automation-rules). Task titles are never stored: resolve task ids yourself.",
+      "type": "object",
+      "required": [
+        "id",
+        "rule_id",
+        "occurrence",
+        "at",
+        "outcome",
+        "changes",
+        "depth"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "rule_id": {
+          "type": "string"
+        },
+        "occurrence": {
+          "type": "string",
+          "description": "the run's idempotency key"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "at": {
+          "type": "integer",
+          "description": "Unix milliseconds"
+        },
+        "outcome": {
+          "enum": [
+            "pending",
+            "applied",
+            "already_matched",
+            "skipped",
+            "stopped",
+            "failed",
+            "partial"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "task_id": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "depth": {
+          "type": "integer"
         }
       }
     },

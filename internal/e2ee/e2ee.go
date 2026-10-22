@@ -60,6 +60,9 @@ var ContentFields = map[string][]string{
 	// A place (OpenSpec task-locations, design D1): its coordinates are one
 	// object, encrypted whole; its position and timestamps stay plaintext.
 	"place": {"name", "address", "geo"},
+	// An automation rule (automation-rules D1): its name. Trigger, condition and
+	// actions are structural; the comment action is refused for encrypted accounts.
+	"rule": {"name"},
 }
 
 // ContentPrefixes are families of content fields named by a prefix: a task's

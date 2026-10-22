@@ -251,7 +251,7 @@ func TestResourcesListShape(t *testing.T) {
 		}
 		uris = append(uris, m["uri"].(string))
 	}
-	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://integrations/issues" {
+	if strings.Join(uris, " ") != "opentodo://projects opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://rules opentodo://integrations/issues" {
 		t.Fatalf("resources = %v", uris)
 	}
 	tpl := f.call("u1", "resources/templates/list", nil)["result"].(map[string]any)

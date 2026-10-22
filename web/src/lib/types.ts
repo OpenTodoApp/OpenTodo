@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule']
 
 export interface Op {
   id: string
@@ -330,6 +330,100 @@ export interface OnDropRule {
   start?: (typeof RULE_START)[number]
   section?: { project_id: string; section_id: string | null }
   state?: (typeof RULE_STATE)[number]
+}
+
+/** Trigger kinds of an automation rule (automation-rules "Rule validation"). */
+export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule'] as const
+export type RuleTriggerKind = (typeof RULE_TRIGGERS)[number]
+
+/** An automation rule's trigger: one kind with the members it takes. */
+export interface RuleTrigger {
+  kind: RuleTriggerKind
+  label_id?: string
+  project_id?: string
+  section_id?: string | null
+  /** `schedule`: HH:MM in the user's zone, on these weekdays (1 Monday … 7 Sunday). */
+  at?: string
+  weekdays?: number[]
+}
+
+/** A date predicate (`due`, `deadline`). */
+export type RuleDatePredicate = 'none' | 'set' | 'today' | 'overdue' | { within_days: number }
+/** A minutes predicate (`estimate`, `tracked`). */
+export type RuleMinutesPredicate = 'none' | { min_minutes: number } | { max_minutes: number }
+
+/** An automation rule's condition: every predicate that is set must hold (automation-rules "Conditions"). */
+export interface RuleCondition {
+  project?: 'none' | { in: string[]; descendants?: boolean }
+  section?: 'none' | { in: string[] }
+  labels?: { any?: string[]; all?: string[]; none?: string[] }
+  priority?: { in: number[] }
+  due?: RuleDatePredicate
+  deadline?: 'none' | 'set' | { within_days: number }
+  start?: 'someday' | 'deferred' | 'none'
+  evening?: boolean
+  blocked?: boolean
+  assignee?: 'me' | 'none' | 'anyone'
+  origin?: 'none' | { kind: OriginKind }
+  habit?: boolean
+  estimate?: RuleMinutesPredicate
+  tracked?: 'none' | { min_minutes: number }
+}
+
+/** An automation rule's actions: the on-drop keys plus the automation keys (automation-rules "Actions"). */
+export interface RuleActions extends Omit<OnDropRule, 'due'> {
+  due?: (typeof RULE_DUE)[number] | { in_days: number }
+  deadline?: 'clear' | { in_days: number }
+  assignee?: 'me' | 'clear'
+  comment?: { text: string }
+  notify?: true
+  webhook?: { webhook_id: string }
+}
+
+/** One run of an automation rule (GET /api/v1/rules/{id}/runs); titles are never stored. */
+export interface RuleRun {
+  id: number
+  rule_id: string
+  occurrence: string
+  task_id?: string
+  at: number
+  outcome: 'pending' | 'applied' | 'already_matched' | 'skipped' | 'stopped' | 'failed' | 'partial'
+  reason?: string
+  changes: { task_id: string; fields: Record<string, unknown> }[]
+  depth: number
+}
+
+/** The Rules page's server state (GET /api/v1/me/rules). */
+export interface RulesStatus {
+  enabled: boolean
+  paused: boolean
+  rules: Record<string, { last_run?: number; runs_7d?: number; paused_reason?: string }>
+}
+
+/** The owner's automations switch (GET /api/v1/settings/automations). */
+export interface AutomationsSetting {
+  enabled: boolean
+  locked: boolean
+  locked_by: string
+}
+
+/**
+ * An automation rule (OpenSpec change `automation-rules`): personal like a label,
+ * run by the server for its author. `trigger`, `condition` and `actions` are each
+ * one whole value; a key this build does not know is kept in the row.
+ */
+export interface Rule {
+  id: string
+  name: string
+  enabled: boolean
+  trigger: RuleTrigger | null
+  condition: RuleCondition | null
+  actions: RuleActions | null
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
 }
 
 /** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
@@ -1007,7 +1101,7 @@ export interface ProjectInvitePreview extends InvitationPreview {
 export type WebhookEvent =
   | 'task.created' | 'task.updated' | 'task.completed' | 'task.reopened' | 'task.deleted'
   | 'project.created' | 'project.updated' | 'project.archived' | 'project.deleted'
-  | 'import.completed' | 'import.undone'
+  | 'import.completed' | 'import.undone' | 'rule.fired'
 
 /** A user's webhook (server-side configuration, never synced). `secret` is present only in the create response. */
 export interface Webhook {

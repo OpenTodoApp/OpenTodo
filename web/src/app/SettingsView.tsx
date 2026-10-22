@@ -37,6 +37,7 @@ import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
+import { AutomationsServerPanel } from './rules/AutomationsSettings'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { useDemo } from '../lib/demo'
@@ -377,6 +378,8 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           )}
           {/* Maps (task-locations D6): the owner's switch and providers; off on a demo unless OPENTODO_MAPS=on. */}
           {isOwner && <DemoDisabled on={demo}><MapsServerPanel /></DemoDisabled>}
+          {/* Automation rules (automation-rules D9): the owner's switch; nothing runs on a demo. */}
+          {isOwner && <DemoDisabled on={demo}><AutomationsServerPanel /></DemoDisabled>}
           <Anchor id="audit-log"><AuditPanel /></Anchor>
         </>
       )

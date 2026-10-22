@@ -173,6 +173,11 @@ async function plainSetup() {
   const page = await api('POST', `/api/v1/tasks/${fence.id}/page`, { rights: 'tick', label: 'paint-the-fence' })
   const secret = page.link.split('/t/')[1].split('/')[0]
   await api('POST', `/api/v1/pages/${secret}/replies`, { name: 'Marco', body: 'Bought the primer, starting tomorrow morning.' })
+  // Automation rules (automation-rules): a label rule, a Sunday sweep and one turned off.
+  const waiting = await api('POST', '/api/v1/labels', { name: 'waiting' })
+  await api('POST', '/api/v1/rules', { name: 'Waiting for others', trigger: { kind: 'label.added', label_id: waiting.id }, actions: { priority: 3 } })
+  await api('POST', '/api/v1/rules', { name: 'Sunday sweep', trigger: { kind: 'schedule', at: '18:00', weekdays: [7] }, condition: { due: 'overdue' }, actions: { due: 'tomorrow' } })
+  await api('POST', '/api/v1/rules', { name: 'Due today means urgent', trigger: { kind: 'due.reached' }, actions: { priority: 1, notify: true }, enabled: false })
   await p.reload(); await settle(p, 1500)
   const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
 }
@@ -460,6 +465,7 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 380 }
   } },
+  { name: 'rules', server: P, async run(p) { await go(p, plainBase, '/rules', () => p.locator('[data-rule-row]').nth(2).waitFor()); await settle(p, 600) } },
   { name: 'import', card: true, server: P, async run(p) { await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor()) } },
   // The switch guides (named-importers 7.4): the import preview of each app's real
   // export, from the sanitised fixtures in internal/importer/testdata (and the

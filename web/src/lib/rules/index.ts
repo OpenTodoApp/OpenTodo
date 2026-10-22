@@ -4,10 +4,11 @@
 // subtree completion, un-parking on a date, the section cleared on a project
 // change, labels read just before being written and written whole), and the
 // one-line wording shown on the panel, in Arrange and in the toast.
-import { mergeChanges, planComplete, planDue, planLabels, planMoveGroups, planPriority, planReopen } from './bulk'
-import type { Change } from './ops'
-import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Membership, type OnDropRule, type Project, type Section, type Task } from './types'
-import { t } from './i18n'
+import { mergeChanges, planComplete, planDue, planLabels, planMoveGroups, planPriority, planReopen } from '../bulk'
+import type { Change } from '../ops'
+import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Membership, type OnDropRule, type Project, type RuleActions, type Section, type Task } from '../types'
+import { addDays } from './match'
+import { t } from '../i18n'
 
 export interface RuleContext {
   now: number
@@ -17,6 +18,30 @@ export interface RuleContext {
   labels: readonly Pick<Label, 'id' | 'deleted_at'>[]
   memberships: Map<string, Membership>
   me: string | null
+}
+
+const inDays = (v: unknown): v is { in_days: number } =>
+  !!v && typeof v === 'object' && typeof (v as { in_days?: unknown }).in_days === 'number' && Number.isInteger((v as { in_days: number }).in_days) && (v as { in_days: number }).in_days >= 0 && (v as { in_days: number }).in_days <= 365
+
+/**
+ * An automation rule's actions with only what this build understands
+ * (automation-rules D4): the on-drop keys plus `due: {in_days}`, `deadline`,
+ * `assignee`, `comment`, `notify` and `webhook`. Null when nothing is left.
+ */
+export function knownActions(actions: unknown): RuleActions | null {
+  const base = knownRule(actions) as RuleActions | null
+  if (!actions || typeof actions !== 'object' || Array.isArray(actions)) return base
+  const a = actions as Record<string, unknown>
+  const out: RuleActions = { ...(base ?? {}) }
+  if (inDays(a.due)) out.due = { in_days: a.due.in_days }
+  if (a.deadline === 'clear' || inDays(a.deadline)) out.deadline = a.deadline === 'clear' ? 'clear' : { in_days: (a.deadline as { in_days: number }).in_days }
+  if (a.assignee === 'me' || a.assignee === 'clear') out.assignee = a.assignee
+  const c = a.comment as { text?: unknown } | null | undefined
+  if (c && typeof c === 'object' && typeof c.text === 'string' && c.text) out.comment = { text: c.text }
+  if (a.notify === true) out.notify = true
+  const w = a.webhook as { webhook_id?: unknown } | null | undefined
+  if (w && typeof w === 'object' && typeof w.webhook_id === 'string' && w.webhook_id) out.webhook = { webhook_id: w.webhook_id }
+  return Object.keys(out).length ? out : null
 }
 
 const isPriority = (p: unknown): p is 1 | 2 | 3 | 4 => p === 1 || p === 2 || p === 3 || p === 4
@@ -67,8 +92,8 @@ function withoutNoops(changes: Change[], rows: Map<string, Task>): Change[] {
  * project and section (last, so a move across sharing scopes copies the task with
  * the rule's other changes already on it). Empty means the task already matched.
  */
-export function planRule(task: Task, all: Task[], rule: OnDropRule | null | undefined, ctx: RuleContext): Change[] {
-  const r = knownRule(rule)
+export function planRule(task: Task, all: Task[], rule: OnDropRule | RuleActions | null | undefined, ctx: RuleContext): Change[] {
+  const r = knownActions(rule)
   if (!r) return []
   const live = new Set(ctx.labels.filter((l) => !l.deleted_at).map((l) => l.id))
   let cur: Task = task
@@ -83,10 +108,15 @@ export function planRule(task: Task, all: Task[], rule: OnDropRule | null | unde
   for (const id of r.add_labels ?? []) if (live.has(id)) take(planLabels([cur], id, true))
   if (r.priority) take(planPriority([cur], r.priority))
   if (r.due === 'clear') { if (cur.due) take(planDue([cur], null, ctx.today)) }
+  else if (r.due && typeof r.due === 'object') take(planDue([cur], addDays(ctx.today, r.due.in_days), ctx.today))
   else if (r.due) take(planDue([cur], r.due, ctx.today))
   if (r.start === 'someday') {
     if (cur.start !== 'someday' || cur.due || cur.evening) take([{ entity: 'task', entityId: task.id, patch: { start: 'someday', due: null, evening: false } }])
   } else if (r.start === 'clear' && cur.start) take([{ entity: 'task', entityId: task.id, patch: { start: null } }])
+  // Automation-only keys (automation-rules "Actions"): deadline and assignee. The
+  // comment, notification and webhook run on the server only.
+  if (r.deadline) take([{ entity: 'task', entityId: task.id, patch: { deadline: r.deadline === 'clear' ? null : addDays(ctx.today, r.deadline.in_days) } }])
+  if (r.assignee) take([{ entity: 'task', entityId: task.id, patch: { assignee_id: r.assignee === 'me' ? ctx.me : null } }])
   const tree = all.map((x) => (x.id === task.id ? cur : x))
   if (r.state === 'complete' && !cur.completed_at) take(planComplete([cur], tree, ctx.now, ctx.today))
   else if (r.state === 'reopen' && cur.completed_at) take(planReopen([cur]))

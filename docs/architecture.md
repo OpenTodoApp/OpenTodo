@@ -53,6 +53,7 @@ The writers are:
 | CalDAV clients | `/dav/` PUT, PROPPATCH, MKCALENDAR, DELETE → one op per changed property | `caldav:<app password id>` |
 | Email to task | IMAP poller → `ApplyStrict`, ids derived from account and Message-ID | `server:<boot id>` |
 | Issue import | poller → `ApplyStrict` per page, ids derived from connection and issue | `issues:<connection id>` |
+| Automation rules | observer queues events after commit; worker and minute scheduler → `ApplyStrict` per task, op ids derived from rule, run key and field | `rule:<rule id>` |
 | Import | background job, batches of 1,000 ops | `import` |
 | Server itself | reminder delivery (`delivered_at`), unassigning people who leave a project or whose account is deleted, recurring completion via REST | `server:<boot id>` |
 
@@ -116,6 +117,8 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `importer` | Reads the own export, CSV and other apps' JSON exports into rows, plans projects, labels, parents and duplicates, and writes ops in background jobs with undo. `sanitize` is a command that turns a real export into a test fixture; it is never linked into the server. See [import.md](import.md) |
 | `blobs` | Attachment bytes as immutable files under `<data>/attachments/`, written once through a temporary file with the size and SHA-256 checked, streamed and never read whole. See [attachments.md](attachments.md) |
 | `calfeed` | Calendar feeds: other people's calendars read into read-only events (fetched through `outbound`), and the user's tasks written as an iCalendar feed. See [calendar-feeds.md](calendar-feeds.md) |
+| `ruleval` | Automation rule values (trigger, condition, actions) with their checks and the condition matcher; a leaf package `sync` uses for the `rule` entity's kinds, pinned to the web matcher by `web/src/lib/rules/match.vectors.json`. See [automations.md](automations.md) |
+| `rules` | Automation rules engine: the planner (shared fixture with the web planner), the post-commit observer, the durable queue, the worker with limits and loop depth, the minute scheduler for time triggers and the run log; the owner switch with `OPENTODO_AUTOMATIONS`. See [automations.md](automations.md) |
 | `issues` | Issue import: per-user GitHub and GitLab connections, tokens in `<data>/secrets/issues.json`, two REST clients on `outbound` without redirects, the mapping of issues to task ops (deterministic ids, a field changes only when the issue changed it) and the poller on the jobs leader. Never writes to the provider. See [issue-import.md](issue-import.md) |
 | `backup` | Snapshots (`VACUUM INTO`), tar/gzip archives, `OTBK1` encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, `Restore`. See [backups.md](backups.md) |
 | `caldav` | Protocol pieces of the CalDAV endpoint: iCalendar tokenizer and serialiser for VTODO, the VTODO ↔ task mapping (unmapped lines kept in `ical_extra`), WebDAV XML parsing and multistatus rendering; HTTP handling lives in `httpapi`. See [caldav.md](caldav.md) |

@@ -1663,6 +1663,25 @@ A tenant of a host (see [host mode](self-hosting/host-mode.md)) answers like any
 
 A tenant's limits refuse changes one at a time. On `/api/v1/sync` a refused op appears in `rejected` with reason `limit_storage`, `limit_ops_hour` or `limit_ops_total`; the rest of the batch is applied, and the server does not send its own value back for it, so the device keeps the change and sends it again later. A REST write answers `403` with the reason as code.
 
+## Automation rules
+
+Rules (OpenSpec `automation-rules`; guide: [automations.md](automations.md)) are the synced entity `rule`, personal like a label: `name` (content, encrypted for an encrypted account), `enabled`, `trigger`, `condition`, `actions` (each one whole value), `position`, `created_at`, `deleted_at`. Devices write them through `/api/v1/sync`; the REST routes below add id checks. The server runs them; their state (run log, watermarks, pauses) is server data, never operations. Every route answers `403 demo_restricted` on the public demo.
+
+| Method | Path | Auth | Body / answer |
+|---|---|---|---|
+| `GET` | `/api/v1/rules` | signed in | `{rules: [...]}` |
+| `POST` | `/api/v1/rules` | signed in, write | `{name, trigger, condition?, actions, enabled?}` → `201`; ids are resolved (live labels, projects, sections of that project, your webhooks), a project action into a shared project is refused (`400 invalid_input`), a `comment` action on an encrypted account answers `409 encryption_enabled`, a 51st rule `409 limit_reached` |
+| `GET` / `PATCH` / `DELETE` | `/api/v1/rules/{id}` | signed in (writes: write) | like every collection |
+| `GET` | `/api/v1/rules/{id}/runs` | signed in | `{runs: [...]}`, newest first, at most 100: `id`, `rule_id`, `occurrence` (the run key), `task_id`, `at`, `outcome` (`pending`, `applied`, `already_matched`, `skipped`, `stopped`, `failed`, `partial`), `reason`, `changes` (`[{task_id, fields}]`), `depth`; another account's rule answers `404 not_found` |
+| `POST` | `/api/v1/rules/{id}/test` | signed in, write | `{task_id}` → `{matches, changes, skipped}`: the condition and the planned changes on one task now; nothing is written |
+| `GET` | `/api/v1/me/rules` | signed in | `{enabled, paused, rules: {id: {last_run, runs_7d, paused_reason}}}` |
+| `PUT` | `/api/v1/me/rules/paused` | signed in, write | `{paused}` → `{enabled, paused}`: pause or resume all your rules |
+| `GET` / `PUT` | `/api/v1/settings/automations` | owner | `{enabled}` → `{enabled, locked, locked_by}`; `409 set_by_environment` while `OPENTODO_AUTOMATIONS` is set; a change is recorded as `settings.changed` (`automations.enabled`) |
+
+`trigger` is `{kind}` with `kind` one of `task.created`, `task.completed`, `task.reopened`, `label.added` and `label.removed` (with `label_id`), `assigned.to_me`, `task.moved` (`project_id`, optional `section_id`), `due.reached`, `overdue`, `schedule` (`at` `HH:MM`, `weekdays` 1 Monday to 7 Sunday). `condition` is `null` or an object of predicates: `project` (`{in, descendants?}` or `"none"`), `section`, `labels` (`{any?, all?, none?}`), `priority` (`{in}`), `due` and `deadline` (`"none"`, `"set"`, `"today"`, `"overdue"`, `{within_days}`), `start`, `evening`, `blocked`, `assignee` (`"me"`, `"none"`, `"anyone"`), `origin`, `habit`, `estimate`, `tracked`. `actions` holds the on-drop keys of a board column plus `due: {in_days}`, `deadline` (`{in_days}` or `"clear"`), `assignee` (`"me"`, `"clear"`), `comment: {text}`, `notify: true`, `webhook: {webhook_id}`. Lists hold at most 32 ids; days are 0 to 365.
+
+A rule's batch is written with device `rule:<rule-id>` (reserved: `/api/v1/sync` refuses it from devices) and the author as actor; the history labels it `Rule (<name>)` for its author. Limits: 60 runs a minute and 2,000 a day per account, 500 tasks per run; a rule refused three times in an hour by the per-minute limit is paused (`paused_reason: "runaway"`) until it is turned on again.
+
 ## Task pages
 
 One task published as a page people without an account open at `/t/<secret>[/<label>]` (OpenSpec `task-pages`). The secret is 22 characters (128 bits), stored as a hash; the label is decoration and never used to find the page. A task has at most one active page; publishing again revokes the previous one in the same request. Pages are server data, never ops.
@@ -1803,7 +1822,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:` or `issues:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:`, `issues:` or `rule:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
@@ -1812,7 +1831,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `unknown_skill` | 400 | `POST /api/v1/assistant/turn` naming a skill id the server does not have |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
-| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
+| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`), automation rules (`/api/v1/rules*`, `/api/v1/me/rules*`, `/api/v1/settings/automations`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
 | `too_large` | 413 | a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
@@ -1879,7 +1898,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
-| `limit_reached` | 409 | more than 20 webhooks or 5 issue connections on one account |
+| `limit_reached` | 409 | more than 20 webhooks, 5 issue connections or 50 automation rules on one account |
 | `destination_error` | 502 | `POST /backups/test`, the archive list or preparing a restore when the destination refuses or cannot be reached |
 | `passphrase_required` | 422 | preparing an encrypted archive without a passphrase when the stored one is missing |
 | `passphrase_invalid` | 422 | preparing an encrypted archive with a passphrase that does not open it |

@@ -16,6 +16,8 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 - **Yours only.** Each request acts as the account whose API token it carries and sees exactly what that account sees in the app: its personal projects and tasks plus the shared projects it is a member of. Deleted items are never returned.
 - **Passive.** The assistant connects to your server. For MCP, OpenTodo never contacts a model provider, a registry or anything else on its own. (The separate [in-app assistant](assistant.md) does contact the provider the owner chooses, and only when it is turned on.)
 
+`opentodo://rules` is a read-only resource listing your [automation rules](automations.md): trigger, condition and actions as ids and enumerations, names as untrusted text. There is no tool that changes rules.
+
 ## 1. Enable it (owner)
 
 **Settings → Integrations → AI assistants → Allow AI assistants**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).

@@ -111,6 +111,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   scope_change: msg('This change would move the item out of its project’s sharing.'),
   self_action: msg('You cannot do this to your own account.'),
   session_required: msg('This needs a signed-in browser session, not an API token.'),
+  set_by_environment: msg('A server variable sets this; change it in the server configuration.'),
   setup_code_invalid: msg('That setup code is not right. Copy it from the server log and try again.'),
   setup_token_invalid: msg('The setup token is missing or wrong.'),
   signup_closed: msg('Sign-up is disabled on this server.'),

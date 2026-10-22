@@ -18,6 +18,7 @@ const (
 	KindHousekeeping = "housekeeping" // Trash retention, audit and log pruning
 	KindDigest       = "digest"       // weekly digest emails (stats-and-review)
 	KindIssues       = "issues"       // issue connections to poll (issue-import)
+	KindRules        = "rules"        // automation rules: queued events and time triggers
 )
 
 // Scheduler tuning.
@@ -103,6 +104,15 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 			due[KindDigest] = at
 		}
 	}
+	if t.Rules != nil {
+		at, ok, err := t.Rules.NextDue(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			due[KindRules] = at
+		}
+	}
 	// Housekeeping is due when the first of its deadlines passes.
 	var house time.Time
 	for _, f := range []func(context.Context) (time.Time, bool, error){
@@ -179,7 +189,16 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			} else if n > 0 {
 				log.Info("weekly digests sent", "count", n)
 			}
+		case KindRules:
+			if t.Rules != nil {
+				t.Rules.RunOnce(ctx)
+			}
 		case KindHousekeeping:
+			if t.Rules != nil {
+				if _, err := t.Rules.Store.Prune(ctx); err != nil {
+					log.Error("rules: prune runs", "err", err)
+				}
+			}
 			if _, err := t.Sync.RetentionPass(ctx, t.Cfg.TrashRetentionDays); err != nil {
 				log.Error("trash retention failed", "err", err)
 			}

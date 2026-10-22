@@ -340,7 +340,9 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			// time_entries and the exporting account's userId (time-tracking).
 			"time_entries", "userId",
 			// saved locations (task-locations).
-			"places":
+			"places",
+			// automation rules (automation-rules).
+			"rules":
 		default:
 			t.Fatalf("user export has unexpected key %q", k)
 		}

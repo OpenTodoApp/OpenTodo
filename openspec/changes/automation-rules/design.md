@@ -70,6 +70,8 @@ One worker and one scheduler per tenant; the host's shared scheduler calls `Tick
 
 No dependency. Go binary about +300 KB: the value kinds and matcher (~60 KB), the planner (~40 KB), the queue, worker and scheduler (~120 KB), routes and CLI (~80 KB). Web: the matcher, summary wording, types and the More entry in the main bundle (~4 KB gzipped); the Rules page, editor and history as a lazy chunk (~10 KB gzipped, the editor reuses `RuleEditor`'s controls). Server memory: one goroutine for the worker and the scheduler's tick per open tenant, in-memory counters per account (bounded like the agent limiter), the rule-kind cache per user (a few bytes per user). Database growth: one row per candidate event until processed (processed rows deleted), at most 100 runs per rule, batches pruned with their runs. A scheduler tick over a tenant with no time-triggered rules is one indexed query.
 
+**Measured (task 4.8).** Go server binary (`-s -w`, same embedded web assets): 31,699,104 → 31,957,152 bytes (+258 KB). Main web bundle: 271.09 → 271.15 KB gzipped (+0.06 KB: the More entry, the palette commands, the server error message and the conversion helper; the lib pieces the Rules page uses load with it). Lazy chunks: `RulesView` 2.57 KB gzipped and `RuleDialog` 6.13 KB gzipped (the editor, its fields and the history), also used by the board column's Rule dialog and the saved filter menu. No dependency added.
+
 ## Interface budget
 
 - **Rules page**: page header (title, New rule, overflow) is the one row of chrome; rows are a list pattern, not task rows; one scroller (the content column). No new primary sidebar destination: Rules is in More in every mode.
