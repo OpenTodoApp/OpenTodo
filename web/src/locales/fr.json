@@ -3973,7 +3973,6 @@
   "Open Next": "Ouvrir Prochaines",
   "Open Upcoming": "Ouvrir À venir",
   "Press {key}": "Appuyez sur {key}",
-  "Show the start guide again": "Afficher à nouveau le guide de démarrage",
   "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset at {time}. Don't store anything personal.": "Ce bac à sable de démo vous est réservé. Il est supprimé après {idle} heures d’inactivité, au plus tard {max} heures après sa création et lors de la réinitialisation nocturne à {time}. N’y enregistrez rien de personnel.",
   "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset. Don't store anything personal.": "Ce bac à sable de démo vous est réservé. Il est supprimé après {idle} heures d’inactivité, au plus tard {max} heures après sa création et lors de la réinitialisation nocturne. N’y enregistrez rien de personnel.",
   "This project has no open tasks.": "Ce projet n’a aucune tâche ouverte.",
@@ -4710,5 +4709,10 @@
   "{name}: uploading": "{name} : envoi en cours",
   "{name}: waiting to upload": "{name} : en attente d'envoi",
   "{reaction}: {count} ({names})": "{reaction} : {count} ({names})",
-  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "« {name} » apparaît dans les notes de « {task} » et en est retiré aussi. Vous pouvez annuler juste après."
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "« {name} » apparaît dans les notes de « {task} » et en est retiré aussi. Vous pouvez annuler juste après.",
+  "Start guide": "Guide de démarrage",
+  "Add a first task, choose how you work, install the app.": "Ajoutez une première tâche, choisissez votre façon de travailler, installez l’app.",
+  "Finished": "Terminé",
+  "Not finished": "Pas terminé",
+  "Open the start guide": "Ouvrir le guide de démarrage"
 }

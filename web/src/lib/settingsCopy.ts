@@ -47,6 +47,9 @@ export const SETTINGS_COPY = {
       companion: { label: msg('Companion'), description: msg('Your sidebar as it is; screens name the move they serve.') },
       first: { label: msg('Open Loops first'), description: msg('The Loop home first, a sidebar by the Places, a daily check.') },
     },
+    rows: {
+      guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
+    },
   },
   session: {
     title: msg('Session'),

@@ -3973,7 +3973,6 @@
   "Open Next": "Abrir Próximas",
   "Open Upcoming": "Abrir Em breve",
   "Press {key}": "Prima {key}",
-  "Show the start guide again": "Mostrar novamente o guia inicial",
   "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset at {time}. Don't store anything personal.": "Esta sandbox de demo é só sua. É apagada após {idle} horas de inatividade, no máximo {max} horas depois de criada e no reinício noturno às {time}. Não guarde nada pessoal.",
   "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset. Don't store anything personal.": "Esta sandbox de demo é só sua. É apagada após {idle} horas de inatividade, no máximo {max} horas depois de criada e no reinício noturno. Não guarde nada pessoal.",
   "This project has no open tasks.": "Este projeto não tem tarefas abertas.",
@@ -4710,5 +4709,10 @@
   "{name}: uploading": "{name}: a enviar",
   "{name}: waiting to upload": "{name}: à espera de envio",
   "{reaction}: {count} ({names})": "{reaction}: {count} ({names})",
-  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "«{name}» aparece nas notas de «{task}» e também é removido delas. Podes desfazer logo a seguir."
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "«{name}» aparece nas notas de «{task}» e também é removido delas. Podes desfazer logo a seguir.",
+  "Start guide": "Guia inicial",
+  "Add a first task, choose how you work, install the app.": "Adicione uma primeira tarefa, escolha como você trabalha, instale o app.",
+  "Finished": "Concluído",
+  "Not finished": "Não concluído",
+  "Open the start guide": "Abrir o guia inicial"
 }

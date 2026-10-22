@@ -581,6 +581,9 @@
   "Add a field": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Add a first task, choose how you work, install the app.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Add a link": [
     "web/src/app/LinkDialog.tsx"
   ],
@@ -4144,6 +4147,9 @@
   "Finish review": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Finished": [
+    "web/src/app/method/HowYouWorkSection.tsx"
+  ],
   "Fires once the task has a due date": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -6845,6 +6851,9 @@
   "Not enough free disk space on the server: {detail}": [
     "web/src/lib/restore.ts"
   ],
+  "Not finished": [
+    "web/src/app/method/HowYouWorkSection.tsx"
+  ],
   "Not found. It may have been deleted.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -7462,6 +7471,9 @@
   ],
   "Open the selected task; accept \"complete parent too?\"": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Open the start guide": [
+    "web/src/app/method/HowYouWorkSection.tsx"
   ],
   "Open the task as a page": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -9701,9 +9713,6 @@
   "Show the map": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
-  "Show the start guide again": [
-    "web/src/app/method/HowYouWorkSection.tsx"
-  ],
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
@@ -10126,6 +10135,9 @@
   ],
   "Start from": [
     "web/src/app/NewBoardDialog.tsx"
+  ],
+  "Start guide": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Start on": [
     "web/src/app/TemplateDialogs.tsx",

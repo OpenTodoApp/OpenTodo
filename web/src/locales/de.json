@@ -3973,7 +3973,6 @@
   "Open Next": "Als Nächstes öffnen",
   "Open Upcoming": "Demnächst öffnen",
   "Press {key}": "Drücke {key}",
-  "Show the start guide again": "Startanleitung erneut zeigen",
   "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset at {time}. Don't store anything personal.": "Diese Demo-Sandbox gehört nur dir. Sie wird nach {idle} Stunden Inaktivität gelöscht, spätestens {max} Stunden nach ihrer Erstellung und beim nächtlichen Zurücksetzen um {time}. Speichere nichts Persönliches.",
   "This demo sandbox is private to you. It is deleted after {idle} hours of inactivity, {max} hours after it was created at the latest, and at the nightly reset. Don't store anything personal.": "Diese Demo-Sandbox gehört nur dir. Sie wird nach {idle} Stunden Inaktivität gelöscht, spätestens {max} Stunden nach ihrer Erstellung und beim nächtlichen Zurücksetzen. Speichere nichts Persönliches.",
   "This project has no open tasks.": "Dieses Projekt hat keine offenen Aufgaben.",
@@ -4710,5 +4709,10 @@
   "{name}: uploading": "{name}: wird hochgeladen",
   "{name}: waiting to upload": "{name}: wartet auf das Hochladen",
   "{reaction}: {count} ({names})": "{reaction}: {count} ({names})",
-  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "„{name}“ wird in den Notizen von „{task}“ gezeigt und auch dort entfernt. Du kannst es gleich danach rückgängig machen."
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": "„{name}“ wird in den Notizen von „{task}“ gezeigt und auch dort entfernt. Du kannst es gleich danach rückgängig machen.",
+  "Start guide": "Startanleitung",
+  "Add a first task, choose how you work, install the app.": "Eine erste Aufgabe hinzufügen, deine Arbeitsweise wählen, die App installieren.",
+  "Finished": "Abgeschlossen",
+  "Not finished": "Nicht abgeschlossen",
+  "Open the start guide": "Startanleitung öffnen"
 }

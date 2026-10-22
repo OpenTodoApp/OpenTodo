@@ -6,7 +6,7 @@
 
 ## 2. Account
 
-- [ ] 2.1 "Start guide" row in How you work (D3): label, description, state from `first_run`, "Open the start guide" navigating to `/inbox` and opening the guide at step 1 without a write. Verify: a `firstRun.test.tsx` case "Shown again from Settings" (Inbox route, step 1, closing writes no op) and "Not finished yet"; `npm test`
+- [x] 2.1 "Start guide" row in How you work (D3): label, description, state from `first_run`, "Open the start guide" navigating to `/inbox` and opening the guide at step 1 without a write. Verify: a `firstRun.test.tsx` case "Shown again from Settings" (Inbox route, step 1, closing writes no op) and "Not finished yet"; `npm test` — Done: the row in `HowYouWorkSection.tsx` (copy `how-you-work.rows.guide`), `openStartGuideInInbox` navigates then opens the guide. Verified by `firstRun.test.tsx` "Shown again from Settings" (Inbox route, step 1, the task lands in the Inbox, closing writes no user_prefs op) and "Not finished yet"; `howYouWork.test.tsx` updated; `npx tsc -b`, i18n-check, docs-check (`docs/your-first-task.md`).
 - [ ] 2.2 Recent activity (D4): group by day, fold repeated sign-ins per client and day with a count, ten lines and "Show all", warning tone for failed or unusual events. Verify: unit tests for the grouping and folding in `auditFormat.test.ts`; a story with 30 events; `make ui-check`
 - [ ] 2.3 Profile card (account-profile): picture or initials, name, email with edit actions, offline note. Verify: `accountSettings.test.tsx` cases for rename, the email states (pending, confirmed, SSO read-only) and offline; `npm test`
 
