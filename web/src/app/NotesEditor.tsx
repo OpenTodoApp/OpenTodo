@@ -16,7 +16,7 @@ import { checkLineAt, mentionIds, sameIds, subtaskLine } from '../lib/editorNote
 import { useMembershipMap } from '../lib/localData'
 import { foldNote, mutate, mutateMany, planTask, type Change } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
-import { applyBody, createState, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { applyBody, createState, insertBlocks, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import { useMe } from '../lib/timeEntries'
 import type { Clock } from '../lib/types'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
@@ -118,9 +118,7 @@ async function embedImages(view: EditorView, taskId: string, files: File[]): Pro
   const ids = await queueFiles(taskId, images)
   if (view.isDestroyed) return
   const nodes = ids.map((id, i) => schema.nodes.image.create({ id, alt: images[i].name.replace(/\.[a-z0-9]+$/i, '') }))
-  let tr = view.state.tr
-  for (const n of nodes.reverse()) tr = tr.replaceSelectionWith(n)
-  view.dispatch(tr.scrollIntoView())
+  view.dispatch(insertBlocks(view.state, nodes).scrollIntoView())
   view.focus()
 }
 

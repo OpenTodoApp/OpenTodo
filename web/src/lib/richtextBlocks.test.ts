@@ -6,7 +6,8 @@ import {
   activeBody, DEFAULT_BODY, decodeDoc, encodeDoc, foldText, insertModel, mergeDocs, newDoc, parseMarkdown, projectDoc,
   renderMarkdown, toModel, updateBody, type RNode,
 } from './richtext'
-import { modelToPm, pmToModel } from './richtextEditor'
+import { EditorState, TextSelection } from 'prosemirror-state'
+import { insertBlocks, modelToPm, pmToModel, schema } from './richtextEditor'
 
 const p = (text: string, marks: Record<string, Record<string, unknown>> = {}): RNode => ({ type: 'paragraph', attrs: {}, runs: [{ text, marks }] })
 const cell = (text: string, header = false, align: string | null = null): RNode => ({ type: header ? 'table_header' : 'table_cell', attrs: { align }, runs: text ? [{ text, marks: {} }] : [] })
@@ -144,5 +145,16 @@ describe('Table projection', () => {
     // A PATCH of the description through the API folds back into the document.
     const folded = foldText(encodeDoc(d), text, 5000, 'server')
     expect(toModel(activeBody(decodeDoc(folded)!))).toEqual([table])
+  })
+})
+
+describe('inserting an image in a table', () => {
+  it('goes after the table instead of splitting it', () => {
+    const doc = modelToPm([{ type: 'table', attrs: {}, content: [row(cell('A', true), cell('B', true)), row(cell('1'), cell('2'))] }])
+    let state = EditorState.create({ doc })
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 4)))
+    const next = state.apply(insertBlocks(state, [schema.nodes.image.create({ id: 'att-1', alt: 'x' })]))
+    expect(pmToModel(next.doc).map((n) => n.type)).toEqual(['table', 'image'])
+    expect(renderMarkdown(pmToModel(next.doc))).toBe('| A | B |\n| --- | --- |\n| 1 | 2 |\n\n![x](attachment:att-1)')
   })
 })

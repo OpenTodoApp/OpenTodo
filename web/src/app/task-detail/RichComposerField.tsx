@@ -9,7 +9,7 @@ import { EditorView } from 'prosemirror-view'
 import { mentionToken } from '../../lib/comments'
 import { mentionIds } from '../../lib/editorNotes'
 import { parseMarkdown, renderMarkdown, type RNode } from '../../lib/richtext'
-import { createState, markdownSlice, modelToPm, pmToModel, schema, type EditorHooks } from '../../lib/richtextEditor'
+import { createState, insertBlocks, markdownSlice, modelToPm, pmToModel, schema, type EditorHooks } from '../../lib/richtextEditor'
 import type { ProjectMember } from '../../lib/types'
 import { EditorToolbar, openCellMenu, useEditorChrome } from '../EditorChrome'
 import type { CommandEnv } from '../editorCommands'
@@ -72,9 +72,7 @@ export default function RichComposerField(p: RichComposerFieldProps) {
     const rest = files.filter((f) => !planned.length || !isImage(f.type))
     if (rest.length) props.current.onFiles?.(rest)
     if (!planned.length || v.isDestroyed) return
-    let tr = v.state.tr
-    for (const f of [...planned].reverse()) tr = tr.replaceSelectionWith(schema.nodes.image.create({ id: f.id, alt: f.name.replace(/\.[a-z0-9]+$/i, '') }))
-    v.dispatch(tr.scrollIntoView())
+    v.dispatch(insertBlocks(v.state, planned.map((f) => schema.nodes.image.create({ id: f.id, alt: f.name.replace(/\.[a-z0-9]+$/i, '') }))).scrollIntoView())
   }
   const [linkAsk, setLinkAsk] = useState<{ current: string; answer: (href: string | null) => void } | null>(null)
   const env: CommandEnv = {

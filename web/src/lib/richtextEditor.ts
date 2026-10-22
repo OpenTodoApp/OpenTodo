@@ -94,7 +94,8 @@ export const schema = new Schema({
     link: {
       attrs: { href: {} }, inclusive: false,
       parseDOM: [{ tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) }],
-      toDOM: (m) => ['a', { href: safeHref(m.attrs.href as string) ?? undefined, title: m.attrs.href, rel: LINK_REL, target: '_blank' }, 0],
+      // A link to a task of this app (Make subtask) keeps its relative address.
+      toDOM: (m) => ['a', { href: safeHref(m.attrs.href as string) ?? (/^\?task=[\w-]+$/.test(m.attrs.href as string) ? m.attrs.href : undefined), title: m.attrs.href, rel: LINK_REL, target: '_blank' }, 0],
     },
     strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: () => ['strong', 0] },
     em: { parseDOM: [{ tag: 'em' }, { tag: 'i' }], toDOM: () => ['em', 0] },
@@ -472,6 +473,21 @@ export const fenceOnEnter: Command = (state, dispatch) => {
   return true
 }
 
+/**
+ * A table or an image at the end of the document gets an empty paragraph after
+ * it, so the caret can always move below it (an empty paragraph is not projected).
+ */
+export function trailingParagraph(): Plugin {
+  return new Plugin({
+    appendTransaction: (trs, _old, state) => {
+      if (!trs.some((tr) => tr.docChanged)) return null
+      const last = state.doc.lastChild
+      if (!last || (last.type !== schema.nodes.table && last.type !== schema.nodes.image)) return null
+      return state.tr.insert(state.doc.content.size, schema.nodes.paragraph.create()).setMeta('addToHistory', false)
+    },
+  })
+}
+
 /** Every plugin of the notes editor. */
 export function plugins(hooks: EditorHooks): Plugin[] {
   const { nodes, marks } = schema
@@ -492,6 +508,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
     rules(),
     ...tablePlugins(),
+    trailingParagraph(),
     keymap({
       'Mod-z': undoAndTell, 'Mod-Shift-z': redo, 'Mod-y': redo,
       'Mod-b': toggleMark(marks.strong), 'Mod-i': toggleMark(marks.em), 'Mod-Shift-x': toggleMark(marks.strike),
@@ -518,7 +535,13 @@ export function plugins(hooks: EditorHooks): Plugin[] {
 
 /** A fresh editor state for a model. */
 export function createState(nodes: RNode[], hooks: EditorHooks): EditorState {
-  return EditorState.create({ doc: modelToPm(nodes), plugins: plugins(hooks) })
+  const state = EditorState.create({ doc: modelToPm(nodes), plugins: plugins(hooks) })
+  const last = state.doc.lastChild
+  // Room after a closing table or image (see trailingParagraph).
+  if (last && (last.type === schema.nodes.table || last.type === schema.nodes.image)) {
+    return state.apply(state.tr.insert(state.doc.content.size, schema.nodes.paragraph.create()).setMeta('addToHistory', false))
+  }
+  return state
 }
 
 /**
@@ -533,4 +556,18 @@ export function markdownSlice(text: string): Slice {
   }
   const doc = modelToPm(parseMarkdown(text))
   return new Slice(Fragment.from(doc.content), 1, 1)
+}
+
+/**
+ * Insert block nodes (images) at the selection; inside a table, after the table,
+ * since a cell holds text only and splitting the table would break it in two.
+ */
+export function insertBlocks(state: EditorState, nodes: PMNode[]): Transaction {
+  const { $from } = state.selection
+  for (let d = $from.depth; d > 0; d--) {
+    if ($from.node(d).type === schema.nodes.table) return state.tr.insert($from.after(d), nodes)
+  }
+  let tr = state.tr
+  for (const n of [...nodes].reverse()) tr = tr.replaceSelectionWith(n)
+  return tr
 }
