@@ -51,6 +51,8 @@ export interface Project {
   description?: string
   /** The mergeable note document (an envelope), or '' / absent. */
   notes_doc?: string
+  /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
+  workspace_id?: string | null
   _clock: Clock
 }
 
@@ -183,6 +185,8 @@ export interface Task {
    * or `isSample(task)` from `lib/sampleTasks.ts`.
    */
   sample?: boolean
+  /** Workspace of a task without a project (OpenSpec change `workspaces`); a task with a project follows its project. */
+  workspace_id?: string | null
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
@@ -288,6 +292,8 @@ export interface Label {
   position: number
   created_at: number
   deleted_at: number | null
+  /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
+  workspace_id?: string | null
   _clock: Clock
 }
 
@@ -323,6 +329,8 @@ export interface View {
   on_drop: OnDropRule | null
   created_at: number
   deleted_at: number | null
+  /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
+  workspace_id?: string | null
   _clock: Clock
 }
 
@@ -1580,6 +1588,49 @@ export interface Membership {
   members: ProjectMember[]
 }
 
+// ---- workspaces (OpenSpec `workspaces`) ----
+
+export type WorkspaceRole = 'owner' | 'admin' | 'member'
+
+/**
+ * One of the caller's workspaces as the sync response carries it (design D8),
+ * cached in the local `workspaces` table. Server-side directory data, never ops.
+ */
+export interface Workspace {
+  id: string
+  name: string
+  icon: string
+  color: string
+  /** The account's default workspace ("Personal" until renamed). */
+  default: boolean
+  role: WorkspaceRole
+  ownerId: string
+}
+
+/** A member of a workspace, by name only (the directory is shown to every member). */
+export interface WorkspaceMember {
+  /** `${workspaceId}\u0000${userId}`: a plain string key. */
+  id: string
+  workspaceId: string
+  userId: string
+  name: string
+  role: WorkspaceRole
+}
+
+/** A group of a workspace with its members' account ids. */
+export interface WorkspaceGroup {
+  id: string
+  workspaceId: string
+  name: string
+  members: string[]
+}
+
+/** A workspace in the sync response, with its members and groups. */
+export interface WorkspaceEntry extends Workspace {
+  members: { userId: string; name: string; role: WorkspaceRole }[]
+  groups: { id: string; name: string; members: string[] }[]
+}
+
 /** A pushed op the server refused (forbidden, scope_change or not_a_member); it was not stored. */
 export interface Rejection {
   id: string
@@ -1598,6 +1649,8 @@ export interface SyncResponse {
   generation?: string
   rejected?: Rejection[]
   memberships?: Membership[]
+  /** The caller's workspaces with members and groups (workspaces D8); absent from older servers. */
+  workspaces?: WorkspaceEntry[]
   /** Entities purged on the server since the cursor (trash-and-history); delete them locally. */
   purged?: { entity: Entity; entityId: string }[]
   /** Days an item stays in the Trash before the server purges it; 0 = never (additive). */

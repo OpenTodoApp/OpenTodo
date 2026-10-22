@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
 import { forgetShellData } from './shell'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -133,6 +133,10 @@ class OpenTodoDB extends Dexie {
   rules!: Table<Rule, string>
   /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
   focus!: Table<FocusState, string>
+  /** The account's workspaces, their members and groups (workspaces D8): replaced from every sync response, never ops. */
+  workspaces!: Table<Workspace, string>
+  workspaceMembers!: Table<WorkspaceMember, string>
+  groups!: Table<WorkspaceGroup, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -420,6 +424,17 @@ class OpenTodoDB extends Dexie {
     this.version(22).stores({ places: 'id, position' })
     // v23 (automation-rules): the synced `rule` entity.
     this.version(23).stores({ rules: 'id, position' })
+    // v24 (workspaces D8): the cached directory, and a workspace_id index on
+    // the four entities that carry the field.
+    this.version(24).stores({
+      projects: 'id, position, workspace_id',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id',
+      labels: 'id, position, workspace_id',
+      views: 'id, position, workspace_id',
+      workspaces: 'id',
+      workspaceMembers: 'id, workspaceId',
+      groups: 'id, workspaceId',
+    })
   }
 }
 
@@ -546,11 +561,12 @@ export async function clearLocalData(): Promise<void> {
   bumpLocalEpoch()
   // Sign-out in a native shell: its schedule and the key behind the biometrics go too (native-shells).
   forgetShellData()
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions, db.focus], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions, db.focus, db.workspaces, db.workspaceMembers, db.groups], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),
       db.calendarEvents.clear(), db.calendarSubscriptions.clear(),
       db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(), db.focus.clear(),
+      db.workspaces.clear(), db.workspaceMembers.clear(), db.groups.clear(),
     ])
   })
 }

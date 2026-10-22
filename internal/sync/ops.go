@@ -314,6 +314,11 @@ var Schema = map[string]map[string]kind{
 		// description, the mergeable document in notes_doc, as on tasks.
 		"description": kString,
 		"notes_doc":   kDoc,
+		// The workspace the project belongs to, or null for the owner's default
+		// workspace (OpenSpec change workspaces, design D2). A partition key, not
+		// user text, so it is not an encrypted content field; on a shared project
+		// only the owner may write it (CanWrite).
+		"workspace_id": kNullableString,
 	},
 	"task": {
 		"title":        kString,
@@ -382,6 +387,10 @@ var Schema = map[string]map[string]kind{
 		// design D3): excluded from Statistics, the Loop pulse and the digest,
 		// kept on completion. A whole boolean, not content; additive.
 		"sample": kBool,
+		// The workspace of a task without a project, or null for the default
+		// (OpenSpec change workspaces, design D2); a task with a project follows
+		// its project and this value is ignored there.
+		"workspace_id": kNullableString,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -422,6 +431,8 @@ var Schema = map[string]map[string]kind{
 		"position":   kNumber,
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
+		// Workspace of the label, null for the default (OpenSpec change workspaces).
+		"workspace_id": kNullableString,
 	},
 	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
 	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
@@ -441,6 +452,8 @@ var Schema = map[string]map[string]kind{
 		"on_drop":    kRule,
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
+		// Workspace of the view, null for the default (OpenSpec change workspaces).
+		"workspace_id": kNullableString,
 	},
 	// reminder: fires relative to its task's due time or at an absolute instant
 	// (OpenSpec change reminders, docs/sync.md). fire_at is always the resolved
