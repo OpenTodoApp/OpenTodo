@@ -18,6 +18,10 @@ import { workspaceApi, type WorkspaceInvite } from '../lib/workspaceApi'
 import { requestNewWorkspace, WorkspaceColours } from './NewWorkspaceDialog'
 import { WorkspaceMark } from './WorkspaceControl'
 import { workspaceLabel } from './workspaceNav'
+import { cardCopy, rowCopy } from '../lib/settingsCopy'
+
+// Row lines that are data (who, who created a link), not settings copy.
+const createdBy = (name: string) => t('Created by {name}', { name })
 
 /** Whether the role may manage members, groups and links. */
 const manages = (role: WorkspaceRole) => role === 'owner' || role === 'admin'
@@ -36,7 +40,7 @@ export function WorkspacesSettings({ user }: { user: User }) {
       {!online && <Notice tone="info">{t('Workspaces need a connection to your server. The lists below are from this device.')}</Notice>}
       {demo && <Notice tone="info">{t('Creating workspaces, members, groups and invite links is not available on the demo.')}</Notice>}
       {encrypted && <Notice tone="info">{t('With end-to-end encryption you can create workspaces and move things between them, but not add members, groups or invite links yet.')}</Notice>}
-      <SettingsSection title={t('Your workspaces')} description={t('Each workspace has its own projects, labels and filters, and its own people.')} id="workspaces-list">
+      <SettingsSection {...cardCopy('workspaces-list')} id="workspaces-list">
         {state.list.map((w) => (
           <ListRow key={w.id} leading={<WorkspaceMark workspace={w} />} label={workspaceLabel(w.name, w.default)} onClick={() => setSelected(w.id)}
             ariaLabel={t('{name}, {role}', { name: workspaceLabel(w.name, w.default), role: roleName(w.role) })}
@@ -59,7 +63,7 @@ function WorkspaceDetail({ ws, user, online, encrypted }: { ws: Workspace; user:
     <>
       {manages(ws.role) && <IdentityCard ws={ws} online={online} />}
       {ws.default
-        ? <SettingsSection title={t('Members')} description={t('Your default workspace is yours alone. Share its projects by email, or create a workspace for a team or a household.')}><span /></SettingsSection>
+        ? <SettingsSection {...cardCopy('workspace-members', { variant: 'default' })}><span /></SettingsSection>
         : <>
           <MembersCard ws={ws} members={members} user={user} canManage={canManage} online={online && !encrypted} />
           <GroupsCard ws={ws} members={members} groups={groups} canManage={canManage} online={online && !encrypted} />
@@ -83,7 +87,7 @@ function IdentityCard({ ws, online }: { ws: Workspace; online: boolean }) {
     }
   }
   return (
-    <SettingsSection title={t('Name and colour')} id="workspace-identity">
+    <SettingsSection {...cardCopy('workspace-identity')} id="workspace-identity">
       <form onSubmit={(e) => void save(e)} className="py-3">
         <Field label={t('Name')} error={error ?? undefined}>
           <div className="flex flex-wrap gap-2">
@@ -110,6 +114,8 @@ function MembersCard({ ws, members, user, canManage, online }: { ws: Workspace; 
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<WorkspaceRole>('member')
   const [error, setError] = useState<string | null>(null)
+  const you = t('You')
+  const unnamed = t('Unnamed')
   async function add(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -121,9 +127,9 @@ function MembersCard({ ws, members, user, canManage, online }: { ws: Workspace; 
     }
   }
   return (
-    <SettingsSection title={t('Members')} description={t('Projects in this workspace can be shared with these people and their groups only.')} id="workspace-members">
+    <SettingsSection {...cardCopy('workspace-members', { variant: 'created' })} id="workspace-members">
       {members.map((m) => (
-        <SettingRow key={m.userId} label={m.name || t('Unnamed')} description={m.userId === user.id ? t('You') : undefined}
+        <SettingRow key={m.userId} label={m.name || unnamed} description={m.userId === user.id ? you : undefined}
           control={canManage && m.role !== 'owner' && m.userId !== user.id
             ? <>
               <Select aria-label={t('Role of {name}', { name: m.name })} value={m.role} disabled={!online || (ws.role === 'admin' && m.role === 'admin')}
@@ -159,6 +165,7 @@ function GroupsCard({ ws, members, groups, canManage, online }: { ws: Workspace;
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name || t('Unnamed')
+  const memberList = (ids: string[]) => (ids.length ? ids.map(nameOf).join(', ') : t('No members'))
   async function create(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -170,10 +177,10 @@ function GroupsCard({ ws, members, groups, canManage, online }: { ws: Workspace;
     }
   }
   return (
-    <SettingsSection title={t('Groups')} description={t('Share a project with a group in one step: everyone in it gets the group’s role.')} id="workspace-groups">
+    <SettingsSection {...cardCopy('workspace-groups')} id="workspace-groups">
       {groups.length === 0 && <p className="py-3 text-meta text-muted">{t('No groups yet.')}</p>}
       {groups.map((g) => (
-        <SettingRow key={g.id} label={g.name} description={g.members.length ? g.members.map(nameOf).join(', ') : t('No members')}
+        <SettingRow key={g.id} label={g.name} description={memberList(g.members)}
           control={canManage && (
             <>
               <Menu kind="menu" label={t('Members of {name}', { name: g.name })} title={g.name} align="end" triggerClassName="ui-btn ui-btn--secondary ui-btn--md" trigger={t('Members')}>
@@ -219,7 +226,7 @@ function InvitesCard({ ws, online }: { ws: Workspace; online: boolean }) {
     }
   }
   return (
-    <SettingsSection title={t('Invite links')} description={t('A link adds whoever opens it to this workspace. It works once and expires after seven days.')} id="workspace-invites">
+    <SettingsSection {...cardCopy('workspace-invites')} id="workspace-invites">
       <div className="py-3">
         <Field label={t('Email (optional)')} description={t('Bind the link to one address.')} error={error ?? undefined}>
           <div className="flex flex-wrap gap-2">
@@ -236,7 +243,7 @@ function InvitesCard({ ws, online }: { ws: Workspace; online: boolean }) {
         )}
       </div>
       {invites.map((inv) => (
-        <SettingRow key={inv.id} label={inv.email ?? t('Anyone with the link')} description={t('Created by {name}', { name: inv.createdByName })}
+        <SettingRow key={inv.id} label={inv.email ?? t('Anyone with the link')} description={createdBy(inv.createdByName)}
           control={<Button variant="ghost" disabled={!online} onClick={() => act(workspaceApi.revokeInvite(ws.id, inv.id).then(load))}>{t('Revoke')}</Button>} />
       ))}
     </SettingsSection>
@@ -248,20 +255,20 @@ function DangerCard({ ws, members, user, online }: { ws: Workspace; members: Wor
   const [target, setTarget] = useState('')
   const others = members.filter((m) => m.userId !== user.id)
   return (
-    <SettingsSection title={t('Danger zone')} id="workspace-danger">
+    <SettingsSection {...cardCopy('workspace-danger')} id="workspace-danger">
       {ws.role === 'owner'
         ? <>
-          <SettingRow label={t('Transfer')} description={t('Make another member the owner; you become an admin.')} control={<>
+          <SettingRow {...rowCopy('workspace-danger', 'transfer')} control={<>
             <Select aria-label={t('New owner')} value={target} disabled={!online || others.length === 0} onChange={(e) => setTarget(e.target.value)}>
               <option value="">{t('Choose a member')}</option>
               {others.map((m) => <option key={m.userId} value={m.userId}>{m.name || t('Unnamed')}</option>)}
             </Select>
             <Button disabled={!online || !target} onClick={() => act(workspaceApi.transfer(ws.id, target))}>{t('Transfer')}</Button>
           </>} />
-          <SettingRow label={t('Delete workspace')} description={t('Possible once its projects are moved or deleted and its other members removed.')}
+          <SettingRow {...rowCopy('workspace-danger', 'delete')}
             control={<Button variant="danger" disabled={!online} onClick={() => setConfirm('delete')}>{t('Delete')}</Button>} />
         </>
-        : <SettingRow label={t('Leave workspace')} description={t('You lose access to the projects shared with you here.')}
+        : <SettingRow {...rowCopy('workspace-danger', 'leave')}
           control={<Button variant="danger" disabled={!online} onClick={() => setConfirm('leave')}>{t('Leave')}</Button>} />}
       {confirm && (
         <ConfirmDialog title={confirm === 'delete' ? t('Delete {name}?', { name: ws.name }) : t('Leave {name}?', { name: ws.name })}

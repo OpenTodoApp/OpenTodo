@@ -262,8 +262,8 @@
   "A line for tomorrow": [
     "web/src/lib/review.ts"
   ],
-  "A link adds whoever opens it to this workspace. It works once and expires after seven days.": [
-    "web/src/app/WorkspacesSettings.tsx"
+  "A link adds whoever opens it. It works once and expires after seven days.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "A map style URL; OpenFreeMap by default.": [
     "web/src/app/locations/MapsSettings.tsx"
@@ -2865,7 +2865,7 @@
   ],
   "Danger zone": [
     "web/src/app/LabelsView.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Dark": [
     "web/src/app/AppearanceSection.tsx",
@@ -3133,7 +3133,7 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Delete workspace": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Delete {email}?": [
     "web/src/app/UsersPanel.tsx"
@@ -3536,7 +3536,7 @@
     "web/src/app/review/MonthlyLook.tsx"
   ],
   "Each workspace has its own projects, labels and filters, and its own people.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Earlier conversations": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -4758,7 +4758,7 @@
   ],
   "Groups": [
     "web/src/app/ShareDirectory.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Guest (task page)": [
     "web/src/lib/activity.ts"
@@ -5310,7 +5310,7 @@
     "web/src/app/WorkspacesSettings.tsx"
   ],
   "Invite links": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Invite new people": [
     "web/src/lib/settingsCopy.ts"
@@ -5743,7 +5743,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Leave workspace": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Leave {name}?": [
     "web/src/app/WorkspacesSettings.tsx"
@@ -6045,7 +6045,7 @@
     "web/src/app/ViewsView.tsx"
   ],
   "Make another member the owner; you become an admin.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Make floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -6508,7 +6508,7 @@
     "web/src/app/PublicLinksSection.tsx"
   ],
   "Name and colour": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Name changed": [
     "web/src/app/auditFormat.ts"
@@ -8368,7 +8368,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Possible once its projects are moved or deleted and its other members removed.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Post the comment, reply or edit; Esc cancels or leaves the field": [
     "web/src/lib/shortcuts.ts"
@@ -8621,7 +8621,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Projects in this workspace can be shared with these people and their groups only.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Projects shared with you in this workspace leave your devices.": [
     "web/src/app/WorkspacesSettings.tsx"
@@ -10087,7 +10087,7 @@
     "web/src/app/FeedView.tsx"
   ],
   "Share a project with a group in one step: everyone in it gets the group’s role.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Share feedback or report a problem": [
     "web/src/app/WelcomeDialog.tsx",
@@ -12656,7 +12656,8 @@
     "web/src/app/TrackingIndicator.tsx"
   ],
   "Transfer": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Transfer ownership": [
     "web/src/app/UsersPanel.tsx"
@@ -13732,7 +13733,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "You lose access to the projects shared with you here.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "You need an account on this server first. Ask {inviterName} or the server owner for one, then open this link again and sign in.": [
     "web/src/app/ProjectInviteScreen.tsx"
@@ -13829,9 +13830,6 @@
   ],
   "Your default workspace cannot be deleted, left, transferred or shared.": [
     "web/src/lib/i18n/errors.ts"
-  ],
-  "Your default workspace is yours alone. Share its projects by email, or create a workspace for a team or a household.": [
-    "web/src/app/WorkspacesSettings.tsx"
   ],
   "Your demo sandbox has expired": [
     "web/src/app/App.tsx"
@@ -13943,10 +13941,13 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Your workspaces": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Yours alone. Share its projects by email, or create a workspace for a team.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Zoom": [
     "web/src/app/profile/PictureCropper.tsx"

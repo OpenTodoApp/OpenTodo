@@ -4834,7 +4834,6 @@
   "Configuration": "Configuração",
   "From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)": "A partir de uma tarefa, chegar às ações Agendar, Prioridade e Mais (telas largas com mouse; numa lista em árvore, Tab recua)",
   "A group with this name already exists in the workspace.": "Já existe um grupo com este nome no espaço de trabalho.",
-  "A link adds whoever opens it to this workspace. It works once and expires after seven days.": "Um link adiciona a este espaço de trabalho quem o abrir. Funciona uma vez e expira após sete dias.",
   "A workspace has its own projects, labels and filters, and its own people. Projects stay private until you share them.": "Um espaço de trabalho tem os seus próprios projetos, etiquetas e filtros, e as suas próprias pessoas. Os projetos ficam privados até você os compartilhar.",
   "Add by email": "Adicionar por e-mail",
   "Add to {workspace}…": "Adicionar a {workspace}…",
@@ -4919,7 +4918,6 @@
   "You are a member of this workspace already.": "Você já é membro deste espaço de trabalho.",
   "You lose access to the projects shared with you here.": "Perde o acesso aos projetos compartilhados consigo aqui.",
   "Your default workspace cannot be deleted, left, transferred or shared.": "O seu espaço de trabalho padrão não pode ser excluído, abandonado, transferido nem compartilhado.",
-  "Your default workspace is yours alone. Share its projects by email, or create a workspace for a team or a household.": "O seu espaço de trabalho padrão é só seu. Compartilhe os projetos por e-mail ou crie um espaço de trabalho para uma equipa ou uma casa.",
   "Your workspaces": "Os seus espaços de trabalho",
   "member": "membro",
   "workspaces": "espaços de trabalho",
@@ -4928,5 +4926,7 @@
   "{inviter} invited you to the workspace {name} as {role}.": "{inviter} convidou você para o espaço de trabalho {name} como {role}.",
   "{n, plural, one {# person} other {# people}}": "{n, plural, one {# pessoa} many {# pessoas} other {# pessoas}}",
   "{name} is no longer available": "{name} já não está disponível",
-  "{name}, {role}": "{name}, {role}"
+  "{name}, {role}": "{name}, {role}",
+  "A link adds whoever opens it. It works once and expires after seven days.": "Um link adiciona quem o abrir. Funciona uma vez e expira após sete dias.",
+  "Yours alone. Share its projects by email, or create a workspace for a team.": "Só seu. Compartilhe os projetos por e-mail ou crie um espaço de trabalho para uma equipa."
 }

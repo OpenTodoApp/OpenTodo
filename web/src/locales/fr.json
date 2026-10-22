@@ -4834,7 +4834,6 @@
   "Configuration": "Configuration",
   "From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)": "Depuis une tâche, atteindre ses actions Planifier, Priorité et Plus (grands écrans avec une souris ; dans une liste en arbre, Tab indente)",
   "A group with this name already exists in the workspace.": "Un groupe porte déjà ce nom dans l’espace de travail.",
-  "A link adds whoever opens it to this workspace. It works once and expires after seven days.": "Un lien ajoute à cet espace de travail la personne qui l’ouvre. Il ne sert qu’une fois et expire après sept jours.",
   "A workspace has its own projects, labels and filters, and its own people. Projects stay private until you share them.": "Un espace de travail a ses propres projets, étiquettes et filtres, et ses propres personnes. Les projets restent privés jusqu’à ce que vous les partagiez.",
   "Add by email": "Ajouter par e-mail",
   "Add to {workspace}…": "Ajouter à {workspace}…",
@@ -4919,7 +4918,6 @@
   "You are a member of this workspace already.": "Vous êtes déjà membre de cet espace de travail.",
   "You lose access to the projects shared with you here.": "Vous perdez l’accès aux projets partagés avec vous ici.",
   "Your default workspace cannot be deleted, left, transferred or shared.": "Votre espace de travail par défaut ne peut pas être supprimé, quitté, transféré ni partagé.",
-  "Your default workspace is yours alone. Share its projects by email, or create a workspace for a team or a household.": "Votre espace de travail par défaut n’est qu’à vous. Partagez ses projets par e-mail, ou créez un espace de travail pour une équipe ou un foyer.",
   "Your workspaces": "Vos espaces de travail",
   "member": "membre",
   "workspaces": "espaces de travail",
@@ -4928,5 +4926,7 @@
   "{inviter} invited you to the workspace {name} as {role}.": "{inviter} vous a invité dans l’espace de travail {name} en tant que {role}.",
   "{n, plural, one {# person} other {# people}}": "{n, plural, one {# personne} many {# personnes} other {# personnes}}",
   "{name} is no longer available": "{name} n’est plus disponible",
-  "{name}, {role}": "{name}, {role}"
+  "{name}, {role}": "{name}, {role}",
+  "A link adds whoever opens it. It works once and expires after seven days.": "Un lien ajoute la personne qui l’ouvre. Il ne sert qu’une fois et expire après sept jours.",
+  "Yours alone. Share its projects by email, or create a workspace for a team.": "Rien qu’à vous. Partagez ses projets par e-mail, ou créez un espace de travail pour une équipe."
 }
