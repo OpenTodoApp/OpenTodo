@@ -5,7 +5,7 @@
 export { Dialog } from './Dialog'
 export { Menu } from './Menu'
 export { Popover } from './Popover'
-export { ToastRegion } from './Toasts'
+export { ToastRegion, useToastClearance } from './Toasts'
 export { place } from './position'
 export { overlayDepth, trapTab, useOverlayDepth, useFinePointer, useWide, watchVisualViewport } from './stack'
 export { isolate, useOverlay } from './useOverlay'
