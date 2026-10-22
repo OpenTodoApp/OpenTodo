@@ -12220,6 +12220,9 @@
   "This project already has a field named “{name}”.": [
     "web/src/lib/fields.ts"
   ],
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": [
+    "web/src/app/ProjectInviteScreen.tsx"
+  ],
   "This project cannot be shared: another account has a project with the same id. Duplicate it and share the copy.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -14930,7 +14933,7 @@
   ],
   "read-only": [
     "web/src/app/MonthView.tsx",
-    "web/src/app/calendar/PlanRow.tsx",
+    "web/src/app/TaskRow.tsx",
     "web/src/lib/assistants.ts"
   ],
   "read-only token": [

@@ -82,3 +82,16 @@ See proposal.md for the motivation. Relevant current state:
 - The name of the default workspace: "Personal" is proposed; "My workspace" avoids implying work versus home. Changeable at apply time without touching the specs (the specs say "Personal until renamed").
 - Whether the workspace control should show the account's avatar beside the workspace name on a desktop, where the footer already shows the account. Visual only; decided in the workbench.
 - Group mentions (`@Family`) and a `workspace:` filter term are the two follow-ups most likely to be asked for first; both are additive.
+
+## Implementation notes
+
+- **Invite link from outside (task 6.3).** Accepting a project invite link from an account outside the project's created workspace answers 409 `not_in_workspace` instead of the uniform 404, so the invite screen can say whom to ask. The visitor already saw the project's name in the preview, so the code reveals only that the project is in a workspace they are not in. Every other refusal keeps 404 `invitation_invalid`.
+- **German and Portuguese at 375 px (task 8.2), 2026-10-22.** The workbench was checked at 375 px in de and pt, on the settings page as owner and as member, the switcher open, and the workspace control. A script found no sideways scroll, no element past the edge and no button or menu item wrapped past two lines, and the screenshots read cleanly. The longest strings ("Neuer Arbeitsbereich", "Gerir espaços de trabalho", the item lines "6 na caixa de entrada · 2 hoje") stay on one line. Nothing needed changing.
+- **Two-account smoke (task 10.2), 2026-10-22.** A Playwright script against a built `bin/opentodo` with sign-up open: Ada in one browser at 1280 px, Bob in another at 390 px with touch. All 11 checks passed:
+  - Ada creates "Family" from the workspace control, then adds Bob by email and creates the group "Adults" in Settings → Workspaces, all in the UI.
+  - Bob joining the group, Ada's project "House" moving into Family and its grant to "Adults" went through the REST routes the Members picker and the share dialog call. The script did not click through those two dialogs.
+  - Without a reload, Family reaches Bob's device and his switcher (opened from the tab bar's More), and after switching he sees House.
+  - Ada moves another project to Family from its project menu while her browser is offline. After reconnecting, the server has it in Family.
+  - Ada assigns a House task to Bob while his device is in Personal. At 390 px he opens the notification from the bell: the task opens and the app says "Switched to Family".
+
+  Ordinary setup the script had to handle: on a phone the switcher lives in the sidebar drawer, and a new account's start guide opens first.

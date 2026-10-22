@@ -9,7 +9,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, setMeta } from '../lib/db'
-import { createTask, resetDeviceId } from '../lib/ops'
+import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, render, type } from '../ui/test-utils'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { panelTaskId, resetPanel } from './panel'
@@ -121,6 +121,23 @@ describe('plan columns', () => {
     const p3 = () => day(r.container, d).querySelector('[data-priority="3"] [data-priority-dot]')!
     expect(p3().className).toContain('border-input')
     expect(day(r.container, d).querySelector('[data-estimate]')!.textContent).toBe('30m')
+    await r.unmount()
+  })
+
+  // rows-v2 "One row on the board, in Plan and in the review screens", scenario "Plan row".
+  it('Plan row: the one row in its compact shape, time, title, estimate and ring, no date words and no project', async () => {
+    const home = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Stretch', project_id: home, due: { date: '2026-10-15', time: '08:30' }, estimate_minutes: 15, priority: 2 })
+    const r = await plan()
+    await waitFor(() => !!day(r.container, '2026-10-15').querySelector(`[data-plan-task="${id}"]`))
+    const el = row(r.container, id)
+    expect(el.getAttribute('data-row-shape')).toBe('compact')
+    expect(el.querySelector('[data-plan-time]')!.textContent).toBe('08:30')
+    expect(el.querySelector('[data-estimate]')!.textContent).toBe('15m')
+    expect(el.querySelector('[data-priority="2"] [data-priority-dot]')!.className).toContain('border-p2')
+    expect(el.textContent).not.toContain('Home')
+    expect(el.textContent).not.toMatch(/Thu|Oct|Tomorrow|Today/)
+    expect(el.querySelector('input[type="checkbox"], [role="checkbox"]')).toBeNull()
     await r.unmount()
   })
 

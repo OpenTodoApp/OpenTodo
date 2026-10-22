@@ -4945,5 +4945,6 @@
   "Select tasks": "Aufgaben auswählen",
   "Swipe right to complete, left to schedule. Also in a task's menu.": "Nach rechts wischen zum Erledigen, nach links zum Planen. Auch im Menü einer Aufgabe.",
   "Right completes, left schedules; the same two actions start the task's menu": "Rechts erledigt, links plant; dieselben zwei Aktionen stehen oben im Menü der Aufgabe",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "Markiert sie und zeigt alle Kästchen; „Aufgaben auswählen“ im Seitenmenü tut dasselbe, „Fertig“ blendet sie aus"
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "Markiert sie und zeigt alle Kästchen; „Aufgaben auswählen“ im Seitenmenü tut dasselbe, „Fertig“ blendet sie aus",
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Dieses Projekt gehört zu einem Arbeitsbereich, in dem du nicht bist. Bitte die Person, der der Arbeitsbereich gehört, dich zuerst hinzuzufügen, und öffne den Link dann erneut."
 }

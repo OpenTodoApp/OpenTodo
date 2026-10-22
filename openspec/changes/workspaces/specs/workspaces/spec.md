@@ -156,7 +156,7 @@ In a workspace the user created, a project in that workspace SHALL be shareable 
 
 #### Scenario: Invite link from outside
 - **WHEN** an account that is not a member of "Work" accepts a project invite link to a project in Work
-- **THEN** the response is 404 `invitation_invalid` and nobody is added
+- **THEN** the response is 409 `not_in_workspace`, nobody is added, and the invite screen says "Ask the workspace owner to add you first"
 
 #### Scenario: Legacy share after a move
 - **WHEN** Alice moves "Trip", shared with Bob, from her default workspace into "Family", of which Bob is not a member

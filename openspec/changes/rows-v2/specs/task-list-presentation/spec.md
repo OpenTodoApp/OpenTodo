@@ -187,7 +187,7 @@ On a fine pointer from 768 px wide, a row SHALL hold three actions at its right 
 
 #### Scenario: Touch screen
 - **WHEN** a row is shown on a coarse pointer at 1024 px
-- **THEN** no action buttons are rendered, the counts stay, and a long press opens the row menu
+- **THEN** no action buttons are rendered, the counts stay, and a long press selects the row so its actions are in the phone bar (bulk-actions "Select with a pointer or on touch")
 
 #### Scenario: Focus not obscured
 - **WHEN** the focused More button of the last visible row sits under where a toast appears, and a toast appears

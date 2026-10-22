@@ -46,6 +46,8 @@ export type JoinState =
   | { kind: 'idle' }
   | { kind: 'busy' }
   | { kind: 'already-member' }
+  /** The project is in a workspace this account is not in (workspaces 6.3). */
+  | { kind: 'not-in-workspace' }
   | { kind: 'error'; message: string }
 
 /** What an anonymous visitor is doing: choosing, signing in, or creating an account. */
@@ -97,6 +99,7 @@ export function ProjectInviteScreen({ token, user, status, onAuthenticated, onLo
       navigate({ view: 'project', id: res.projectId }, { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'already_member') setJoin({ kind: 'already-member' })
+      else if (err instanceof ApiError && err.code === 'not_in_workspace') setJoin({ kind: 'not-in-workspace' })
       else if (err instanceof ApiError && err.code === 'invitation_invalid') setState({ kind: 'invalid' })
       else if (isNetworkError(err)) setJoin({ kind: 'error', message: t('The server could not be reached. Joining needs a connection; try again when you are online.') })
       else setJoin({ kind: 'error', message: (err as ApiError).message })
@@ -200,6 +203,11 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
           <>
             <p className="text-body text-muted" role="status">{t('You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.')}</p>
             <a className="ui-btn ui-btn--primary ui-btn--md" href="/">{t('Back to my tasks')}</a>
+          </>
+        ) : join.kind === 'not-in-workspace' ? (
+          <>
+            <p className="text-body text-warning" role="alert" data-not-in-workspace>{t('This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.')}</p>
+            <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Back to my tasks')}</a>
           </>
         ) : mismatch ? (
           <>

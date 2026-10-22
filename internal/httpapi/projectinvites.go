@@ -265,11 +265,15 @@ func (s *Server) projectJoiner(ctx context.Context, tx *sql.Tx, inviterID, proje
 }
 
 // projectInviteError maps acceptance failures onto the envelope. Rights that
-// changed between the preview and the acceptance answer the uniform 404.
+// changed between the preview and the acceptance answer the uniform 404; an
+// account outside the project's workspace learns that, so the screen can say
+// whom to ask (workspaces 6.3: the link already showed the project's name).
 func (s *Server) projectInviteError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, opsync.ErrNotInWorkspace):
+		writeError(w, http.StatusConflict, "not_in_workspace", "this account is not a member of the project's workspace; ask the workspace owner to add you first")
 	case errors.Is(err, auth.ErrInvitationInvalid), errors.Is(err, opsync.ErrForbidden), errors.Is(err, opsync.ErrNotFound), errors.Is(err, opsync.ErrInvalidMember),
-		errors.Is(err, opsync.ErrProjectIDConflict), errors.Is(err, opsync.ErrNotInWorkspace):
+		errors.Is(err, opsync.ErrProjectIDConflict):
 		writeError(w, http.StatusNotFound, "invitation_invalid", auth.ErrInvitationInvalid.Error())
 	case errors.Is(err, auth.ErrInvitationEmailMismatch):
 		writeError(w, http.StatusForbidden, "invitation_email_mismatch", "this invite link was issued for a different email address")
