@@ -66,7 +66,7 @@ A section with no open tasks SHALL show its header only, with "n completed" and 
 - **THEN** its tasks are hidden on that device and the section stays expanded on the user's other devices
 
 ### Requirement: Board view
-Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column only when it has open tasks, each listing the section's open tasks as cards ordered by position with a per-column count and quick-add. The board SHALL be one of three project layouts (list, board, timeline per `project-timeline`), chosen with the view toggle or by cycling with `v`, remembered per project per device and not synced.
+Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column only when it has open tasks, each listing the section's open tasks as cards ordered by position with a per-column count and quick-add. The board SHALL be one of three project layouts (list, board, timeline per `project-timeline`), chosen with the view toggle or by cycling with `v`, remembered per project per device and not synced. A card SHALL be the task row in its card shape (OpenSpec `task-list-presentation`, "One row on the board, in Plan and in the review screens"): the title, one muted line with the time or deadline countdown first, the label chips, and the counts at the line's end.
 
 #### Scenario: Switch to board
 - **WHEN** the user presses the view toggle or `v` in a project
@@ -89,8 +89,8 @@ Every project SHALL offer a board view with one column per section ordered by se
 - **THEN** the first column with open tasks fills most of the width, swiping snaps to the next column and the pager shows three dots
 
 #### Scenario: Card content
-- **WHEN** a task with a date, three labels, an estimate and two comments is shown as a card
-- **THEN** the card shows the title, the date, up to three chips and a footer with the comment count, and nothing else
+- **WHEN** a task with a date and time, three labels, an estimate and two comments is shown as a card
+- **THEN** the card shows the title, a muted line reading "10:00 · 1h", two label chips with their dots and "+1", and the comment count at the end of the line, and nothing else
 
 ### Requirement: Field badges on cards
 Board cards SHALL show the task's non-empty custom field values as compact badges in definition order (OpenSpec `custom-fields`), at most three, with a count for the rest whose accessible name lists them.

@@ -104,3 +104,14 @@ The digest SHALL exclude tasks marked `sample`, open or completed, from every nu
 #### Scenario: First week with samples
 - **WHEN** a user's only completed tasks in the week are two sample tasks and the digest is built
 - **THEN** the digest's completed count is 0, no sample task is listed, and the fixture's sample row is evaluated the same by the device and the server
+
+### Requirement: Digest words for tasks that are late
+The digest SHALL head the list of open tasks due before the send day "Still open from earlier" and SHALL NOT use the word "overdue" or its translation in any of its languages; the list itself (up to 15 tasks with due date and project) and the digest's numbers are unchanged. The wording SHALL be pinned by the golden files of every language.
+
+#### Scenario: Heading in English
+- **WHEN** a user with two tasks due before the send day receives the digest in English
+- **THEN** the section is headed "Still open from earlier" and lists the two tasks with their dates and projects
+
+#### Scenario: Every language
+- **WHEN** the digest is rendered in each of the six languages for the test fixture
+- **THEN** no rendering contains the word "overdue" or its translation, and each matches its golden file
