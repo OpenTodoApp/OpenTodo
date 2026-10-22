@@ -6,7 +6,7 @@
 // board and the timeline.
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
@@ -30,7 +30,7 @@ import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
 import { taskDefaults } from './listActions'
-import { listCommitted, registerList, useDepartures, withListTransition } from './motion'
+import { withListTransition } from './motion'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
@@ -48,7 +48,7 @@ import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
-import { GroupedList, LogbookMore, rowRenderer, useGhostColumns, useGhostGroups } from './task-list/ListGroups'
+import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
@@ -90,13 +90,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const m = useListModel(route, userId)
   const workspaceName = useWorkspaceName()
   const { rows, groups: dataGroups, columns: dataColumns, board, timeline, projectId, today, taskMap, isReadOnly, collapsedSections, viewMode, sectionMap } = m
-  // Completed rows stay on screen for their sequence (motion-v2 D2); data stays as read.
-  const departures = useDepartures()
-  const groups = useGhostGroups(dataGroups, departures)
-  const columns = useGhostColumns(dataColumns, departures)
-  // A list transition takes its new snapshot after the list's next commit (motion-v2 D4).
-  useLayoutEffect(() => listCommitted())
-  useLayoutEffect(() => registerList(), [])
+  // Completed rows stay on screen for their sequence (motion-v2); data stays as read.
+  const { groups, columns, departures } = useListMotion(dataGroups, dataColumns)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())

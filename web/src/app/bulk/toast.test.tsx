@@ -110,9 +110,12 @@ describe('the toast primitive', () => {
     await r.unmount()
   })
 
-  it('Reduced motion: it only fades (an opacity animation), with no movement', async () => {
+  it('slides up as it enters (motion-v2); under reduced motion it only fades (an opacity animation), with no movement', async () => {
     const css = (await import('../../index.css?raw')).default
-    expect(css).toMatch(/\.ui-toast \{ animation: dialog-sheet-fade /)
+    expect(css).toMatch(/\.ui-toast \{ animation: toast-enter /)
+    const reduced = css.slice(css.indexOf('.dialog-sheet, .dialog-card, .ui-toast'))
+    expect(reduced).toMatch(/^\.dialog-sheet, \.dialog-card, \.ui-toast, [^{]*\{ animation-name: dialog-sheet-fade !important/)
+    expect(css.slice(0, css.indexOf('.dialog-sheet, .dialog-card, .ui-toast'))).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*$/)
     expect(css).toMatch(/@keyframes dialog-sheet-fade \{ from \{ opacity: 0; \} to \{ opacity: 1; \} \}/)
     const r = await render(<UndoToast />)
     act(() => showUndoToast('Completed', 'u1'))

@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { Fragment, type ReactNode, useMemo, useRef } from 'react'
+import { Fragment, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
 import { t } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
@@ -14,7 +14,7 @@ import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
-import { isGhost, markGhost, withGhosts, type Departure } from '../motion'
+import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
 import type { RowMotion } from '../TaskRow'
 import { ListRow, SubtaskInput, type RowActions } from './ListRow'
 import type { ListRoute } from './useListModel'
@@ -81,6 +81,20 @@ export function useGhostColumns(columns: BoardColumn[], departures: ReadonlyMap<
     const shown = withGhosts(columns.map((c) => ({ key: c.key, items: c.cards })), (task) => task.id, (task) => ({ ...task }), departures, memory.current)
     return columns.map((c) => (shown.get(c.key)!.length === c.cards.length ? c : { ...c, cards: shown.get(c.key)! }))
   }, [columns, departures])
+}
+
+/**
+ * The list's motion (motion-v2): its groups and board columns with departing rows kept
+ * in place (D2), and the hooks a list transition needs: the list is on screen, and it
+ * says when it committed, so the new snapshot shows the write (D4).
+ */
+export function useListMotion(groups: ListGroup[], columns: BoardColumn[]) {
+  const departures = useDepartures()
+  const shownGroups = useGhostGroups(groups, departures)
+  const shownColumns = useGhostColumns(columns, departures)
+  useLayoutEffect(() => listCommitted())
+  useLayoutEffect(() => registerList(), [])
+  return { groups: shownGroups, columns: shownColumns, departures }
 }
 
 /** Rows that count: everything but the departing ones. */

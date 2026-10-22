@@ -148,7 +148,7 @@ function ToastDemo() {
       note="The toast slides up 8 px and fades in over 250 ms, and fades out when it closes.">
       {run > 0 && (
         <ToastRegion label="Last action">
-          <div key={run} className="toast-enter pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2">
+          <div key={run} className="ui-toast pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2">
             <p role="status" className="min-w-0 flex-1">Task completed</p>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-accent">Undo</button>
           </div>
