@@ -89,6 +89,9 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
       else if (r && typeof r === 'object') (r as { current: HTMLElement | null }).current = el
     },
     'aria-describedby': described,
+    // The tooltip's text on its control while closed: the interface audit's truncation
+    // check (ux-audit-three-widths M10) finds the full text of a cut name here.
+    'data-tip': typeof label === 'string' ? label : '',
     onPointerEnter: (e: PointerEvent) => { (child.props.onPointerEnter as ((e: PointerEvent) => void) | undefined)?.(e); if (e.pointerType !== 'touch' && !coarsePointer()) show(false) },
     onPointerLeave: (e: PointerEvent) => { (child.props.onPointerLeave as ((e: PointerEvent) => void) | undefined)?.(e); hide() },
     onPointerDown: (e: PointerEvent) => { (child.props.onPointerDown as ((e: PointerEvent) => void) | undefined)?.(e); pressed.current = true; hide() },
