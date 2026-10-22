@@ -1,11 +1,10 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
-import { scopeLabel, type ApiToken, type TokenScope } from '../lib/assistants'
-import { Button, Dialog, Menu } from '../ui'
+import type { ApiToken, TokenScope } from '../lib/assistants'
+import { Button, Dialog } from '../ui'
 import { Badge } from '../ui'
-import { Field, Input, Select } from '../ui'
+import { Field, Input } from '../ui'
 import { Icon } from '../ui'
-import { MenuItem } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
@@ -13,8 +12,9 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { formatInstant } from '../lib/dates'
+import { addDaysISO, formatInstant, todayISO } from '../lib/dates'
 import { t } from '../lib/i18n'
+import { useOnline } from '../lib/online'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 
 /**
@@ -46,6 +46,38 @@ export function SecretReveal({ what, secret, testId }: { what: string; secret: s
 const SCOPE_HUE: Record<TokenScope, HueName> = { full: 'slate', read: 'blue', agent: 'violet', admin: 'red' }
 const day = (ms: number) => formatInstant(ms, 'date')
 
+/** The scope badge of a token row (account-access "API tokens in Settings"). */
+export function scopeBadge(scope: TokenScope | undefined): string {
+  if (scope === 'read') return t('Read only')
+  if (scope === 'agent') return t('Assistant')
+  if (scope === 'admin') return t('Admin')
+  return t('Full access')
+}
+
+/** A coarse day: "today", "yesterday", then the date in the user's format. */
+export function coarseDay(ms: number, now = Date.now()): string {
+  const d = todayISO(new Date(ms))
+  const today = todayISO(new Date(now))
+  if (d === today) return t('today')
+  if (d === addDaysISO(today, -1)) return t('yesterday')
+  return day(ms)
+}
+
+/** "Created 3 Oct · Last used today" (or "· Never used"). */
+export function tokenMeta(token: ApiToken, now = Date.now()): string {
+  return token.lastUsedAt
+    ? t('Created {day} · Last used {used}', { day: day(token.createdAt), used: coarseDay(token.lastUsedAt, now) })
+    : t('Created {day} · Never used', { day: day(token.createdAt) })
+}
+
+/** The scopes offered in the create dialog, each with one line saying what it allows. */
+const SCOPES: { scope: TokenScope; label: () => string; line: () => string }[] = [
+  { scope: 'full', label: () => t('Full access'), line: () => t('Everything you can do, except sign-in credentials and administration.') },
+  { scope: 'read', label: () => t('Read only'), line: () => t('Reads everything you can; every change is refused.') },
+  { scope: 'agent', label: () => t('Assistant'), line: () => t('An AI assistant changes tasks only through its tools, while you and the owner allow it.') },
+  { scope: 'admin', label: () => t('Admin'), line: () => t('Full access plus credentials and administration. Keep it like a password.') },
+]
+
 export interface TokensViewProps {
   tokens: ApiToken[] | null
   name: string
@@ -61,12 +93,15 @@ export interface TokensViewProps {
   onRevoke: (token: ApiToken) => void
   onNew?: () => void
   onCloseNew?: () => void
+  /** No connection: the last loaded list stays, actions are disabled. */
+  offline?: boolean
+  now?: number
 }
 
 /** Pure rendering of Settings → Integrations → API tokens; state lives in TokensSection. */
 export function TokensView(p: TokensViewProps) {
   useDateTimeFormat()
-  const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>{t('New token')}</Button>
+  const newButton = <Button variant="primary" size="sm" icon="plus" disabled={p.offline} onClick={p.onNew}>{t('New token')}</Button>
   return (
     <SettingsSection {...cardCopy('tokens', { values: { header: 'Authorization: Bearer <token>' } })} testId="tokens-panel">
       {p.error && <Notice tone="danger">{p.error}</Notice>}
@@ -78,15 +113,10 @@ export function TokensView(p: TokensViewProps) {
       {p.tokens && p.tokens.length > 0 && (
         <div className="-mx-3">
           {p.tokens.map((token) => (
-            <ListRow key={token.id} leading={<Icon name="key-round" size="md" />} label={token.name}
-              meta={token.lastUsedAt ? t('Created {day} · used {used}', { day: day(token.createdAt), used: day(token.lastUsedAt) }) : t('Created {day} · never used', { day: day(token.createdAt) })}
-              badges={<Badge hue={SCOPE_HUE[token.scope ?? 'full']}>{scopeLabel(token.scope)}</Badge>}
-              menu={(
-                <Menu label={t('Actions for {name}', { name: token.name })} trigger={<Icon name="ellipsis" />} kind="menu"
-                  triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
-                  <MenuItem label={t('Revoke {name}', { name: token.name })} icon="trash-2" danger onSelect={() => p.onRevoke(token)} />
-                </Menu>
-              )} />
+            <ListRow key={token.id} leading={<Icon name="key-round" size="md" />} label={<span data-token-name>{token.name}</span>}
+              meta={<span data-token-meta>{tokenMeta(token, p.now)}</span>}
+              badges={<Badge hue={SCOPE_HUE[token.scope ?? 'full']}>{scopeBadge(token.scope)}</Badge>}
+              menu={<Button variant="ghost" size="sm" disabled={p.offline} aria-label={t('Revoke {name}', { name: token.name })} onClick={() => p.onRevoke(token)} data-token-revoke>{t('Revoke')}</Button>} />
           ))}
         </div>
       )}
@@ -105,15 +135,20 @@ export function TokensView(p: TokensViewProps) {
               <Field label={t('Name')} description={t('Something you will recognise later, such as the device or script.')}>
                 <Input aria-label={t('Token name')} placeholder={t('e.g. laptop CLI')} value={p.name} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
               </Field>
-              <Field label={t('Access')}
-                description={t('Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.')}>
-                <Select aria-label={t('Token scope')} value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
-                  <option value="full">{t('Full access')}</option>
-                  <option value="read">{t('Read-only')}</option>
-                  <option value="agent">{t('AI assistant, can make changes')}</option>
-                  <option value="admin">{t('Admin: full access plus credentials and administration')}</option>
-                </Select>
-              </Field>
+              <fieldset className="space-y-2">
+                <legend className="text-body font-medium text-default">{t('Access')}</legend>
+                <div role="radiogroup" aria-label={t('Token scope')} className="space-y-1">
+                  {SCOPES.map((o) => (
+                    <label key={o.scope} className={`flex cursor-pointer items-start gap-3 rounded-control border px-3 py-2 ${p.scope === o.scope ? 'border-accent bg-accent-soft' : 'border-default'}`}>
+                      <input type="radio" name="token-scope" value={o.scope} checked={p.scope === o.scope} onChange={() => p.onScopeChange(o.scope)} className="mt-1" data-token-scope={o.scope} />
+                      <span className="min-w-0">
+                        <span className="block text-body font-medium text-default">{o.label()}</span>
+                        <span className="block text-meta text-muted">{o.line()}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               {p.scope === 'admin' && (
                 <Notice tone="warning">
                   {t('An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.')}
@@ -142,6 +177,7 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   const [creating, setCreating] = useState(false)
   const [busy, setBusy] = useState(false)
   const [revoking, setRevoking] = useState<ApiToken | null>(null)
+  const online = useOnline()
 
   const load = useCallback(async () => {
     try {
@@ -157,7 +193,7 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   return (
     <>
       <TokensView
-        tokens={tokens} name={name} scope={scope} secret={secret} error={error} creating={creating} busy={busy}
+        tokens={tokens} name={name} scope={scope} secret={secret} error={error} creating={creating} busy={busy} offline={!online}
         onNameChange={setName} onScopeChange={setScope}
         onNew={() => { setError(null); setSecret(null); setCreating(true) }}
         onCloseNew={() => { setCreating(false); setSecret(null); setName(''); setScope('full') }}
