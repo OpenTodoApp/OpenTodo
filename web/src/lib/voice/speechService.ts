@@ -36,9 +36,9 @@ export function refreshSpeechService(): Promise<void> {
   return inflight
 }
 
-/** The speech service as this device knows it; refreshed once when first used. */
-export function useSpeechService(): SpeechService {
-  useEffect(() => { void refreshSpeechService() }, [])
+/** The speech service as this device knows it; asks the server once when `refresh` (the default). */
+export function useSpeechService(refresh = true): SpeechService {
+  useEffect(() => { if (refresh) void refreshSpeechService() }, [refresh])
   return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, () => current, () => NONE)
 }
 

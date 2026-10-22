@@ -36,7 +36,8 @@ export function useDictation(opts: {
 }) {
   const [voice, setVoice] = useState(loadVoiceSettings)
   useEffect(() => onVoiceSettingsChange(() => setVoice(loadVoiceSettings())), [])
-  const service = useSpeechService()
+  // Only a device that chose the server's service asks the server about it.
+  const service = useSpeechService(voice.enabled && voice.recognizer === 'server')
   // The server's service needs a connected service and a recorder; the browser's needs recognition.
   const server = voice.recognizer === 'server' && service.connected && canRecord()
   const enabled = voice.enabled && (server || (voice.recognizer === 'browser' && isSupported()))
