@@ -11,7 +11,7 @@
 //   from another account's workspace) reads as the default workspace.
 // The current workspace is device state in the `meta` table, never synced.
 import { db, getMeta, setMeta } from './db'
-import type { Project, Task, Workspace, WorkspaceEntry, WorkspaceGroup, WorkspaceMember } from './types'
+import type { Label, Project, Task, View, Workspace, WorkspaceEntry, WorkspaceGroup, WorkspaceMember } from './types'
 
 /** The meta key of this device's current workspace. */
 export const CURRENT_WORKSPACE_KEY = 'currentWorkspace'
@@ -19,8 +19,8 @@ export const CURRENT_WORKSPACE_KEY = 'currentWorkspace'
 /** Parent chains longer than this are cut, so a cycle cannot loop (the server uses the same bound). */
 const MAX_DEPTH = 64
 
-type ProjectLike = Pick<Project, 'id'> & { workspace_id?: string | null; parent_id?: string | null }
-type TaskLike = Pick<Task, 'id'> & { workspace_id?: string | null; project_id?: string | null; parent_id?: string | null }
+export type ProjectLike = Pick<Project, 'id'> & { workspace_id?: string | null; parent_id?: string | null }
+export type TaskLike = Pick<Task, 'id'> & { workspace_id?: string | null; project_id?: string | null; parent_id?: string | null }
 
 /** Places entities in one account's workspaces. */
 export class Partition {
@@ -147,3 +147,101 @@ export async function storeWorkspaces(entries: readonly WorkspaceEntry[]): Promi
   })
   return gone
 }
+
+// ---- the partition of what the device shows ----
+
+/** The device's workspace state: the current workspace, the default and every cached one. */
+export interface WorkspaceState {
+  current: string
+  defaultId: string
+  list: Workspace[]
+}
+
+/** Reads the workspace state; inside a live query it re-runs when either changes. */
+export async function readWorkspaceState(): Promise<WorkspaceState> {
+  const [stored, list] = await Promise.all([getMeta<string>(CURRENT_WORKSPACE_KEY, ''), db.workspaces.toArray()])
+  return { current: resolveCurrent(stored, list), defaultId: defaultWorkspaceId(list), list: sortWorkspaces(list) }
+}
+
+/** Whether the partition can change anything: an account with one workspace sees everything. */
+function partitioned(state: WorkspaceState): boolean {
+  return state.list.length > 1
+}
+
+/** The projects of the current workspace (rows of every state). */
+export function projectsIn<T extends ProjectLike>(state: WorkspaceState, projects: readonly T[]): T[] {
+  if (!partitioned(state)) return projects as T[]
+  const p = new Partition(state.defaultId, state.list.map((w) => w.id), projects)
+  const here = p.own(state.current)
+  return projects.filter((x) => p.project(x.id) === here)
+}
+
+/** The tasks of the current workspace; `projects` must be every project row. */
+export function tasksIn<T extends TaskLike>(state: WorkspaceState, projects: readonly ProjectLike[], tasks: readonly T[]): T[] {
+  if (!partitioned(state)) return tasks as T[]
+  const p = new Partition(state.defaultId, state.list.map((w) => w.id), projects, tasks)
+  const here = p.own(state.current)
+  return tasks.filter((x) => p.taskRow(x) === here)
+}
+
+/** Labels or views of the current workspace: their own workspace_id decides. */
+export function ownIn<T extends Label | View>(state: WorkspaceState, rows: readonly T[]): T[] {
+  if (!partitioned(state)) return rows as T[]
+  const p = new Partition(state.defaultId, state.list.map((w) => w.id))
+  const here = p.own(state.current)
+  return rows.filter((x) => p.own(x.workspace_id) === here)
+}
+
+/** The workspace_id a new project, label, view or project-less task gets here: null in the default workspace. */
+export async function newWorkspaceId(): Promise<string | null> {
+  const state = await readWorkspaceState()
+  return workspaceIdFor(state.current, state.list)
+}
+
+/** The fields a new entity carries for the current workspace: none in the default one, so the op footprint stays. */
+export async function workspaceFields(): Promise<{ workspace_id?: string }> {
+  const id = await newWorkspaceId()
+  return id ? { workspace_id: id } : {}
+}
+
+// ---- the directory from the sync response ----
+
+const goneListeners = new Set<(names: string[]) => void>()
+
+/** Subscribes to "the current workspace is no longer available" (the shell shows a toast); returns the unsubscribe. */
+export function onCurrentWorkspaceGone(fn: (names: string[]) => void): () => void {
+  goneListeners.add(fn)
+  return () => goneListeners.delete(fn)
+}
+
+/**
+ * Stores a sync response's directory. When the device's current workspace is
+ * gone from it (left, removed or deleted), the device falls back to the
+ * default workspace and the listeners are told its name.
+ */
+export async function storeWorkspacesFromSync(entries: readonly WorkspaceEntry[]): Promise<void> {
+  const before = await db.workspaces.toArray()
+  const stored = await getMeta<string>(CURRENT_WORKSPACE_KEY, '')
+  const gone = await storeWorkspaces(entries)
+  if (stored && gone.includes(stored)) {
+    await setMeta(CURRENT_WORKSPACE_KEY, '')
+    const name = before.find((w) => w.id === stored)?.name ?? ''
+    for (const fn of goneListeners) fn([name])
+  }
+}
+
+/** The workspace an entity belongs to, from the local data. */
+export async function workspaceOfEntity(kind: PartitionedKind, id: string): Promise<string | null> {
+  const [state, projects, tasks] = await Promise.all([readWorkspaceState(), db.projects.toArray(), kind === 'task' ? db.tasks.toArray() : Promise.resolve([])])
+  if (state.list.length <= 1) return null
+  const p = new Partition(state.defaultId, state.list.map((w) => w.id), projects, tasks)
+  let ws: string
+  if (kind === 'project') ws = p.project(id)
+  else if (kind === 'task') ws = p.task(id)
+  else {
+    const row = kind === 'label' ? await db.labels.get(id) : await db.views.get(id)
+    ws = p.own(row?.workspace_id)
+  }
+  return ws
+}
+

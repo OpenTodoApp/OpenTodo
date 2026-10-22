@@ -18,6 +18,7 @@ import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { workspaceFields } from './workspaces'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -569,6 +570,8 @@ export async function createProject(input: { name: string; color?: string; paren
   await mutate('project', id, {
     name: input.name.trim(), color: input.color ?? pickColor(), position: lastAmongProjectSiblings(all, id, parentId),
     archived: false, parent_id: parentId, created_at: now, deleted_at: null,
+    // A top-level project starts in the current workspace; a sub-project follows its parent (workspaces).
+    ...(parentId ? {} : await workspaceFields()),
   })
   return id
 }
@@ -654,6 +657,8 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
   if (input.location) extra.location = input.location
+  // A task without a project or parent lands in the current workspace's Inbox (workspaces).
+  if (!input.project_id && !input.parent_id) Object.assign(extra, await workspaceFields())
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,

@@ -1579,6 +1579,8 @@ export interface ProjectMember {
   role: ProjectRole
   /** Profile picture version, absent or 0 without one (settings-refresh D10). */
   avatarVersion?: number
+  /** The groups the role comes from (workspaces); empty or absent for a direct grant alone. */
+  via?: { id: string; name?: string }[]
 }
 
 /**
@@ -1591,6 +1593,8 @@ export interface Membership {
   role: ProjectRole
   ownerId: string
   members: ProjectMember[]
+  /** The project's group grants (workspaces); only in the member route's answer. */
+  grants?: { groupId: string; name: string; role: ProjectRole }[]
 }
 
 // ---- workspaces (OpenSpec `workspaces`) ----

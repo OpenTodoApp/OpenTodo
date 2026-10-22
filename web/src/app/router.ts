@@ -59,9 +59,9 @@ export type Route =
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
 
-/** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
+/** Settings sections, each at /settings/<id> (settings-navigation); eleven, in list order (workspaces added Workspaces). */
 export const SETTINGS_SECTION_IDS = [
-  'account', 'appearance',
+  'account', 'workspaces', 'appearance',
   'general', 'notifications', 'capture', 'about',
   'integrations', 'data',
   'people', 'server',

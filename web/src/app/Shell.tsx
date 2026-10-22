@@ -24,6 +24,7 @@ import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
+import { WorkspaceHost } from './NewWorkspaceDialog'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { sidebarFind, openTaskInList } from './signals'
@@ -318,7 +319,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <UndoToast />
       <DailyCheckToast />
       <TemplateDialogHost />
-      <ArchivePrompt />
+      <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
     </div>
   )
 }

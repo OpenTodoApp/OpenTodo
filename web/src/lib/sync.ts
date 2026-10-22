@@ -14,6 +14,7 @@ import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
+import { storeWorkspacesFromSync } from './workspaces'
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { refreshMapsAvailable } from './locations'
@@ -167,7 +168,7 @@ function isSyncResponse(v: unknown): v is SyncResponse {
     && typeof r.cursor === 'number' && Number.isFinite(r.cursor) && typeof r.hasMore === 'boolean'
     && (r.serverTime === undefined || typeof r.serverTime === 'number')
     && (r.backfillSeq === undefined || typeof r.backfillSeq === 'number')
-    && list(r.rejected) && list(r.memberships) && list(r.purged)
+    && list(r.rejected) && list(r.memberships) && list(r.purged) && list(r.workspaces)
     && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
 }
 
@@ -281,6 +282,9 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       await dropUnconfirmed(keys)
       alive()
       if (res.memberships) await storeMemberships(res.memberships)
+      alive()
+      // The workspace directory (workspaces D8): replaced on every exchange.
+      if (res.workspaces) await storeWorkspacesFromSync(res.workspaces)
       alive()
       // Purged on the server (trash-and-history D5): drop the rows and queued ops.
       if (res.purged?.length) await removeLocally(res.purged)

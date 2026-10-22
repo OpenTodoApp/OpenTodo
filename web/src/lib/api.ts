@@ -97,7 +97,7 @@ interface RequestOptions { signal?: AbortSignal }
 /** Sync protocol additions this client supports (POST /api/v1/sync `features`). */
 export const SYNC_FEATURES = ['clock_skew', 'backfill_ack']
 
-async function request<T>(method: string, path: string, body?: unknown, retried = false, opts: RequestOptions = {}): Promise<T> {
+export async function request<T>(method: string, path: string, body?: unknown, retried = false, opts: RequestOptions = {}): Promise<T> {
   try {
     return await send<T>(method, path, body, opts)
   } catch (err) {

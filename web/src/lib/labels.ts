@@ -9,6 +9,7 @@ import type { Label, Task } from './types'
 import { HUES } from '../ui/tokens/palette'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { ownIn, readWorkspaceState, workspaceFields } from './workspaces'
 
 // The canonical hexes of the design-system palette (src/ui/tokens/palette.ts). The
 // original nine keep their order so older clients and stored colours stay valid;
@@ -35,7 +36,9 @@ export function activeLabels(labels: Label[]): Label[] {
 export async function findLabelByName(name: string): Promise<Label | undefined> {
   const key = labelKey(name)
   if (!key) return undefined
-  return db.labels.filter((l) => !l.deleted_at && labelKey(l.name) === key).first()
+  // Names are unique within a workspace (OpenSpec change workspaces, design D7).
+  const here = ownIn(await readWorkspaceState(), await db.labels.filter((l) => !l.deleted_at && labelKey(l.name) === key).toArray())
+  return here[0]
 }
 
 /** Create a label; names are unique per device ignoring case. Returns the new id. */
@@ -48,7 +51,7 @@ export async function createLabel(input: { name: string; color?: string }): Prom
   const now = Date.now()
   const used = new Set((await db.labels.filter((l) => !l.deleted_at).toArray()).map((l) => l.color))
   const color = input.color ?? LABEL_PALETTE.find((c) => !used.has(c)) ?? LABEL_PALETTE[now % LABEL_PALETTE.length]
-  await mutate('label', id, { name, color, position: now, created_at: now, deleted_at: null })
+  await mutate('label', id, { name, color, position: now, created_at: now, deleted_at: null, ...(await workspaceFields()) })
   return id
 }
 

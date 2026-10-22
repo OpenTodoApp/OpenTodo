@@ -8,7 +8,7 @@ import { createProject, deleteTask, detachOccurrence, parkTask, skipOccurrence, 
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
-import type { Label, Project, ProjectRole, Section, Task, User, View } from '../../lib/types'
+import type { Label, Project, ProjectRole, Section, Task, User, View, Workspace } from '../../lib/types'
 import { createView, deleteView, reorderView, setStartView, updateView } from '../../lib/views'
 import { setFavourite } from '../../lib/favourites'
 import { setProjectAgentAccess } from '../../lib/agentAccess'
@@ -24,6 +24,8 @@ import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
+import { requestNewWorkspace } from '../NewWorkspaceDialog'
+import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
@@ -50,6 +52,8 @@ export interface PaletteContext {
   /** What is typed in the box. */
   query: string
   vimEnabled: boolean
+  /** The account's workspaces and the device's current one (workspaces D6); absent in older tests. */
+  workspaces?: { list: Workspace[]; current: string }
   showShortcuts: () => void
   /** Focus quick add on this screen; false when it has none. */
   focusQuickAdd: () => boolean
@@ -245,6 +249,12 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
+    // Workspaces (workspaces D6): one switch command per other workspace and New workspace; no keys.
+    ...(ctx.workspaces?.list ?? []).filter((w) => w.id !== ctx.workspaces?.current).map((w): Command => ({
+      id: `workspace:switch:${w.id}`, label: t('Switch to workspace: {name}', { name: workspaceLabel(w.name, w.default) }), icon: 'layers', keywords: 'workspace',
+      run: () => switchWorkspace(w.id, ctx.route, true),
+    })),
+    { id: 'workspace:new', label: t('New workspace'), icon: 'plus', keywords: 'workspace add create', run: () => requestNewWorkspace() },
     { id: 'app:sync', label: t('Sync now'), icon: 'rotate-ccw', run: () => syncNow() },
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label filter'), run: () => sidebarFind.request('open') },

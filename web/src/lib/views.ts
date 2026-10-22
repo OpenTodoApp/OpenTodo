@@ -17,6 +17,7 @@ import {
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
+import { workspaceFields } from './workspaces'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
@@ -177,6 +178,7 @@ export async function createView(input: NewView): Promise<string> {
     position,
     color: input.color ?? VIEW_DEFAULTS.color,
     panels: [],
+    ...(await workspaceFields()),
     created_at: now,
     deleted_at: null,
   })

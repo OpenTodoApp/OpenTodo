@@ -424,17 +424,8 @@ class OpenTodoDB extends Dexie {
     this.version(22).stores({ places: 'id, position' })
     // v23 (automation-rules): the synced `rule` entity.
     this.version(23).stores({ rules: 'id, position' })
-    // v24 (workspaces D8): the cached directory, and a workspace_id index on
-    // the four entities that carry the field.
-    this.version(24).stores({
-      projects: 'id, position, workspace_id',
-      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id',
-      labels: 'id, position, workspace_id',
-      views: 'id, position, workspace_id',
-      workspaces: 'id',
-      workspaceMembers: 'id, workspaceId',
-      groups: 'id, workspaceId',
-    })
+    // v24 (workspaces D8): the cached directory, and a workspace_id index on the four entities that carry the field.
+    this.version(24).stores({ projects: 'id, position, workspace_id', tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id', labels: 'id, position, workspace_id', views: 'id, position, workspace_id', workspaces: 'id', workspaceMembers: 'id, workspaceId', groups: 'id, workspaceId' })
   }
 }
 

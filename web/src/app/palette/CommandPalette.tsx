@@ -9,13 +9,15 @@ import { useAgentExclusions } from '../../lib/agentAccess'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useSectionPlace, useUserPrefsRow } from '../../lib/localData'
+import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState } from '../../lib/localData'
 import { isFavourite } from '../../lib/favourites'
 import { pickScores } from '../../lib/pickRank'
 import { canEditProject, membershipMap, roleOf } from '../../lib/sharing'
 import { loadViewMode } from '../../lib/sections'
-import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
-import type { User } from '../../lib/types'
+import { NO_TASKS, useLiveTasks, useTasksOfEveryWorkspace } from '../../lib/liveTasks'
+import { Partition } from '../../lib/workspaces'
+import { workspaceLabel } from '../workspaceNav'
+import type { Task, User } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
 import { Icon } from '../../ui'
@@ -49,6 +51,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const route = useRoute()
   const today = useToday()
   const vimEnabled = useVimEnabled()
+  const workspaceState = useWorkspaceState()
   const startView = useStartView()
   // The list on screen when the box opened: its selection is what task commands act on.
   const [list] = useState(() => listState())
@@ -88,6 +91,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     const sorted = [...views].sort((a, b) => a.position - b.position)
     return {
       route, user, today, list, task, filterQuery: route.view === 'filter' ? currentFilter() : null, query, vimEnabled, showShortcuts,
+      workspaces: { list: workspaceState.list, current: workspaceState.current },
       focusQuickAdd: () => list?.focusQuickAdd(null) ?? false,
       project: project && canEditProject(role) ? {
         row: project, role, shared: !!memberships?.get(project.id), targets: moveTargets(project, projects),
@@ -100,10 +104,24 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, workspaceState])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
-  const source = useMemo(() => [...commandEntries(ctx), ...buildEntries({ tasks, projects, labels, views, user, today })], [ctx, tasks, projects, labels, views, user, today])
+  // Tasks and projects of every workspace: picking one elsewhere switches the device (workspaces).
+  const everyTask = useTasksOfEveryWorkspace() ?? tasks
+  const everyProject = useProjectsOfEveryWorkspace()
+  const elsewhere = useMemo(() => {
+    if (workspaceState.list.length <= 1) return undefined
+    const p = new Partition(workspaceState.defaultId, workspaceState.list.map((w) => w.id), everyProject, everyTask)
+    const here = p.own(workspaceState.current)
+    const names = new Map(workspaceState.list.map((w) => [w.id, workspaceLabel(w.name, w.default)]))
+    return (kind: 'task' | 'project', row: { id: string }) => {
+      const ws = kind === 'task' ? p.taskRow(row as Task) : p.project(row.id)
+      return ws === here ? undefined : names.get(ws)
+    }
+  }, [workspaceState, everyProject, everyTask])
+  const source = useMemo(() => [...commandEntries(ctx), ...buildEntries({ tasks: everyTask, projects: everyProject.length ? everyProject : projects, labels, views, user, today, elsewhere })],
+    [ctx, everyTask, everyProject, projects, labels, views, user, today, elsewhere])
   const emptySource = useMemo(() => {
     const context = contextEntries(ctx)
     const seen = new Set(context.map((e) => e.key))
