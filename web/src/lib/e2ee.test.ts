@@ -83,7 +83,7 @@ import { db, getMeta, setMeta, useDatabase } from './db'
 import {
   changePassphrase, commitEnable, currentKey, prepareEnable, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
   biometricUnlockState, enableBiometricUnlock, unlockWithBiometrics,
-  MAX_FAILURES, notYetEncrypted, refreshFromServer, resetPassphrase, restoreKeyRecord, turnOffAfterMissingRecord, unlock, UnlockThrottledError, UNDECRYPTABLE,
+  MAX_FAILURES, notYetEncrypted, refreshFromServer, resetPassphrase, restoreKeyRecord, turnOffAfterMissingRecord, unlock, UnlockThrottledError, UNDECRYPTABLE, isContentField,
 } from './e2ee'
 import { decryptIncoming, LockedError, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
 import { applyOps, mutate, PlaintextTooLongError, resetDeviceId } from './ops'
@@ -294,6 +294,15 @@ describe('field split and transport (task 2.1)', () => {
       results.push((await db.tasks.get('tx'))!.title)
     }
     expect(results).toEqual(['new', 'new', 'new'])
+  })
+})
+
+describe('reactions and note mentions (editor-everywhere D7, D8)', () => {
+  it('stay plaintext; comment bodies and task descriptions stay content', () => {
+    expect(isContentField('comment', 'reactions.alice')).toBe(false)
+    expect(isContentField('task', 'note_mentions')).toBe(false)
+    expect(isContentField('comment', 'body')).toBe(true)
+    expect(isContentField('task', 'description')).toBe(true)
   })
 })
 

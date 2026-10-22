@@ -78,7 +78,7 @@ export function ProjectNote({ project }: { project: Project }) {
             onClick: (e: React.MouseEvent) => { if (!(e.target as HTMLElement).closest('a')) setEditing(true) },
             onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); setEditing(true) } },
           } : {})}>
-          <Markdown source={note} rich />
+          <Markdown source={note} />
         </div>
         {clipped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-canvas" aria-hidden />}
       </div>

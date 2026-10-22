@@ -8,7 +8,8 @@ import { forwardRef, useCallback, useEffect, useRef, useState, useSyncExternalSt
 import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
 import {
-  canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, type Thread, threadOrder, threadVisible,
+  canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, mentionToken, type ReactionName, type Thread, threadOrder,
+  threadVisible, toggleReaction,
 } from '../../lib/comments'
 import { useCommentAttachments, useCommentRows } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
@@ -20,7 +21,8 @@ import { ConfirmDialog } from '../../ui'
 import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
-import { Composer, readDraft } from './Composer'
+import { Composer, readDraft, type ComposedExtras } from './Composer'
+import { ReactionBar, ReactionMenuItems } from './ReactionBar'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
 
@@ -46,13 +48,15 @@ export interface CommentsViewProps {
   members: ProjectMember[]
   name: (id: string) => string
   /** Resolve true when stored. */
-  onCreate: (body: string, mentions: string[], parentId: string | null, files: File[]) => Promise<boolean>
+  onCreate: (body: string, mentions: string[], parentId: string | null, files: File[], extras?: ComposedExtras) => Promise<boolean>
   /** Attachments by comment id (OpenSpec attachments), shown under each comment. */
   attachments?: Map<string, Attachment[]>
   /** Offer the composer's attach button. */
   canAttach?: boolean
   onEdit: (id: string, body: string, mentions: string[]) => Promise<boolean>
   onDelete: (id: string) => Promise<unknown>
+  /** Toggle the viewer's reaction (editor-everywhere D8); no reactions without it. */
+  onReact?: (id: string, reaction: ReactionName) => void
   error?: string | null
   /** Comment to scroll to and highlight (from the Activity tab). */
   focusComment?: string | null
@@ -62,11 +66,15 @@ export interface CommentsViewProps {
   composerHost?: HTMLElement | null
   /** Changes when Shift+C asks for the composer: it expands and takes focus. */
   expand?: number
+  /** The composer's field: the rich editor (default) or the plain text field (stories with fixed baselines). */
+  richComposer?: boolean
 }
 
-export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewProps>(function CommentsView(
-  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0 }, composerRef,
+export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(function CommentsView(
+  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, onReact, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0, richComposer }, composerRef,
 ) {
+  // Mention tokens of the members, shown as chips in the bodies.
+  const mentionChips = new Map(members.map((m) => [mentionToken(m), m.name || m.email]))
   const coarse = useCoarsePointer()
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -123,7 +131,8 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
     const reply = !isReply
     const edit = canEditComment(c, me)
     const del = canDeleteComment(c, me, role)
-    if (!reply && !edit && !del) return null
+    const react = !!onReact && !!me
+    if (!reply && !edit && !del && !(coarse && react)) return null
     if (coarse) {
       return (
         <span className="absolute -top-1 right-0" data-comment-actions>
@@ -131,6 +140,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
             {reply && <MenuItem label={t('Reply')} icon="corner-down-right" onSelect={() => startReply(c.id)} />}
             {edit && <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(c.id)} />}
             {del && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={() => setDeleting(c.id)} />}
+            {react && <ReactionMenuItems comment={c} me={me} onReact={onReact} />}
           </Menu>
         </span>
       )
@@ -163,14 +173,22 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
           </div>
           {editing === c.id ? (
             <div className="mt-1">
-              <Composer id={`edit-${c.id}`} initial={c.body} members={members} me={me} autoFocus submitLabel={t('Save')} label={t('Edit comment')}
+              <Composer id={`edit-${c.id}`} rich={richComposer} initial={c.body} members={members} me={me} autoFocus submitLabel={t('Save')} label={t('Edit comment')}
                 onCancel={() => setEditing(null)}
-                onSubmit={(body, mentions) => onEdit(c.id, body, mentions).then((ok) => { if (ok) setEditing(null); return ok })} />
+                onSubmit={(body, mentions) => {
+                  // Submitted unchanged: nothing to write (comments "Unchanged edit is byte-identical").
+                  if (body === c.body) {
+                    setEditing(null)
+                    return Promise.resolve(true)
+                  }
+                  return onEdit(c.id, body, mentions).then((ok) => { if (ok) setEditing(null); return ok })
+                }} />
             </div>
           ) : (
             <>
-              {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
+              {c.body && <Markdown source={c.body} taskId={taskId} mentions={mentionChips} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
               <CommentAttachments list={attachments?.get(c.id) ?? []} />
+              {onReact && <ReactionBar comment={c} me={me} name={name} onReact={onReact} coarse={coarse} />}
             </>
           )}
         </div>
@@ -200,9 +218,9 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
           <IconButton icon="x" size="sm" label={t('Cancel reply')} onClick={() => setReplyTo(null)} />
         </div>
       )}
-      <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
+      <Composer ref={composerRef} id="comment-composer" rich={richComposer} draftTaskId={taskId} members={members} me={me}
         submitLabel={replyTarget ? t('Reply') : t('Comment')} label={replyTarget ? t('Write a reply') : t('Write a comment')} attach={canAttach}
-        onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) { setReplyTo(null); posted.current = true } return ok })} />
+        taskId={taskId} onSubmit={(body, mentions, files, extras) => onCreate(body, mentions, replyTarget?.id ?? null, files, extras).then((ok) => { if (ok) { setReplyTo(null); posted.current = true } return ok })} />
     </div>
   ) : (
     <p className="text-meta text-faint">{t('Sign in to comment.')}</p>
@@ -249,7 +267,7 @@ export interface CommentsTabProps {
 }
 
 /** Container: reads comments, members and the signed-in user from local storage. */
-export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
+export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
@@ -277,8 +295,9 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}
       role={roleOf(task.project_id, memberships)} members={mentionableMembers(task.project_id, memberships)} name={name} error={error}
       focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost} expand={expand}
-      onCreate={(body, mentions, parentId, files) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files }))}
+      onCreate={(body, mentions, parentId, files, extras) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files, id: extras?.id, embeds: extras?.embeds }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}
-      onDelete={(id) => deleteComment(id)} />
+      onDelete={(id) => deleteComment(id)}
+      onReact={(id, reaction) => void run(() => toggleReaction(id, reaction))} />
   )
 })

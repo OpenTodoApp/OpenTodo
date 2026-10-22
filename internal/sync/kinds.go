@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -44,6 +46,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kRuleTrigger:    ruleval.CheckTrigger,
 	kRuleCondition:  orNull(ruleval.CheckCondition),
 	kRuleActions:    ruleval.CheckActions,
+	kReactions:      checkReactions,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -189,6 +192,26 @@ func checkIDList(raw json.RawMessage) error {
 			return fmt.Errorf("lists %q twice", id)
 		}
 		seen[id] = true
+	}
+	return nil
+}
+
+// checkReactions accepts a list of distinct names from ReactionNames
+// (editor-everywhere D8); an empty list removes the account's reactions.
+func checkReactions(raw json.RawMessage) error {
+	var l []string
+	if err := json.Unmarshal(raw, &l); err != nil || l == nil {
+		return errors.New("must be an array of reaction names")
+	}
+	seen := make(map[string]bool, len(l))
+	for _, name := range l {
+		if !slices.Contains(ReactionNames, name) {
+			return fmt.Errorf("%q is not a reaction (one of %s)", name, strings.Join(ReactionNames, ", "))
+		}
+		if seen[name] {
+			return fmt.Errorf("lists %q twice", name)
+		}
+		seen[name] = true
 	}
 	return nil
 }

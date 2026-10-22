@@ -16,6 +16,7 @@ A task, or a comment on it, can carry files and links: a receipt, a photo of a w
 ## Add a file or a link
 
 - **Pick, paste or drop.** Choose **Attach › Choose files…** to pick files, paste an image or a file into the task panel, or drop files onto it (a drop zone appears while you drag).
+- **In the text.** An image pasted into the notes or a comment is attached and shown in place ([details](formatting.md#images)).
 - **Links.** Choose **Attach › Add a link…** and paste an `http` or `https` address. A link is stored as a link: the server never downloads it.
 - **Offline.** Adding a file without a connection works: the attachment appears at once, marked "waiting to upload", and uploads after the next sync. Other devices show it as "uploading" until the file has arrived on the server.
 

@@ -7,8 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setDateTime } from '../../lib/dates'
 import type { Comment, ProjectMember } from '../../lib/types'
 import { click, flush, key, render } from '../../ui/test-utils'
-import { readDraft, writeDraft } from './Composer'
+import { readDraft, setRichComposer, writeDraft } from './Composer'
 import { CommentsView, type CommentsViewProps } from './CommentsTab'
+
+// The plain composer field (the rich editor has its own tests in richComposer.test.tsx).
+setRichComposer(false)
 
 const DAY = 86_400_000
 const MON = new Date(2026, 9, 12, 15, 5).getTime()
@@ -123,7 +126,7 @@ describe('CommentsView', () => {
     await typeArea(area, 'Ship it')
     await key(area, 'Enter', { ctrlKey: true })
     await flush()
-    expect(p.onCreate).toHaveBeenCalledWith('Ship it', [], null, [])
+    expect(p.onCreate).toHaveBeenCalledWith('Ship it', [], null, [], expect.objectContaining({ embeds: [] }))
     expect(composer(v.container).value).toBe('')
     expect(readDraft('t1')).toBe('')
     await v.unmount()
@@ -140,13 +143,13 @@ describe('CommentsView', () => {
     await typeArea(composer(v.container), 'Top level')
     await key(composer(v.container), 'Enter', { metaKey: true })
     await flush()
-    expect(p.onCreate).toHaveBeenLastCalledWith('Top level', [], null, [])
+    expect(p.onCreate).toHaveBeenLastCalledWith('Top level', [], null, [], expect.objectContaining({ embeds: [] }))
 
     await click(buttons(v.container.querySelector('[data-thread="c3"]') as HTMLElement, 'Reply')[0])
     await typeArea(composer(v.container), 'Answer')
     await key(composer(v.container), 'Enter', { ctrlKey: true })
     await flush()
-    expect(p.onCreate).toHaveBeenLastCalledWith('Answer', [], 'c3', [])
+    expect(p.onCreate).toHaveBeenLastCalledWith('Answer', [], 'c3', [], expect.objectContaining({ embeds: [] }))
     await v.unmount()
   })
 
@@ -216,7 +219,7 @@ describe('CommentsView', () => {
     const send = buttons(v.container, 'Comment')[0] as HTMLButtonElement
     expect(send.disabled).toBe(false)
     await click(send)
-    expect(p.onCreate).toHaveBeenCalledWith('', [], null, [shot])
+    expect(p.onCreate).toHaveBeenCalledWith('', [], null, [shot], expect.objectContaining({ embeds: [] }))
     await flush()
     expect(v.container.querySelector('[aria-label="Files to attach"]')).toBeNull()
     await v.unmount()

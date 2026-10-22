@@ -51,8 +51,8 @@ func TestSchemaMatchesSharedFixture(t *testing.T) {
 	if !maps.EqualFunc(got, sortedLists(f.Entities), slices.Equal) {
 		t.Fatalf("sync.Schema and testdata/schema_fixture.json differ:\nSchema  %v\nfixture %v", got, f.Entities)
 	}
-	if !maps.EqualFunc(map[string][]string{"task": {FieldValuePrefix}}, f.FieldPrefixes, slices.Equal) {
-		t.Fatalf("field prefixes: fixture %v, FieldValuePrefix %q", f.FieldPrefixes, FieldValuePrefix)
+	if !maps.EqualFunc(map[string][]string{"task": {FieldValuePrefix}, "comment": {ReactionPrefix}}, f.FieldPrefixes, slices.Equal) {
+		t.Fatalf("field prefixes: fixture %v, FieldValuePrefix %q, ReactionPrefix %q", f.FieldPrefixes, FieldValuePrefix, ReactionPrefix)
 	}
 	if !maps.EqualFunc(sortedLists(e2ee.ContentFields), sortedLists(f.ContentFields), slices.Equal) {
 		t.Fatalf("e2ee.ContentFields and the fixture differ:\ncode    %v\nfixture %v", e2ee.ContentFields, f.ContentFields)

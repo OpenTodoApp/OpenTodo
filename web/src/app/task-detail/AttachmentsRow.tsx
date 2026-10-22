@@ -7,7 +7,8 @@ import {
   AttachmentError, contentUrl, formatBytes, isImage, openAttachment, parseLink, queueFiles, queueLink, removeAttachment, renameAttachment,
   retryUpload, stateOf, useAttachmentLimits, useUploadProgress, type AttachmentState,
 } from '../../lib/attachments'
-import { hasAttachmentBlob, useAttachmentBlobs, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
+import { hasAttachmentBlob, useAttachmentBlobs, useTask, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
+import { embeddedIds } from '../../lib/markdown'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
 import { Button, ConfirmDialog, Icon, IconButton, MenuItem, Menu } from '../../ui'
@@ -61,6 +62,8 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
   const demo = useDemo()
   const limits = useAttachmentLimits()
   const rows = useTaskAttachments(taskId)
+  const task = useTask(taskId)
+  const embedded = embeddedIds(task?.description ?? '')
   const blobs = useAttachmentBlobs(rows)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(0)
@@ -100,8 +103,9 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     if (!el || !canAdd) return
     const onPaste = (e: ClipboardEvent) => {
       const files = filesFrom(e.clipboardData)
-      // The comment box has its own attach button; leave its pastes alone.
-      if (files.length === 0 || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
+      // The comment box has its own attach button, and the notes embed what they
+      // take (editor-everywhere D5): leave their pastes alone.
+      if (e.defaultPrevented || files.length === 0 || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
       e.preventDefault()
       void addRef.current(files)
     }
@@ -112,7 +116,7 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     }
     const onDragLeave = (e: globalThis.DragEvent) => { if (e.target === el) setDragging(false) }
     const onDrop = (e: globalThis.DragEvent) => {
-      if (!e.dataTransfer?.types.includes('Files') || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
+      if (e.defaultPrevented || !e.dataTransfer?.types.includes('Files') || (e.target as HTMLElement | null)?.closest?.('[data-composer]')) return
       e.preventDefault()
       setDragging(false)
       void addRef.current(filesFrom(e.dataTransfer))
@@ -223,7 +227,10 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
       )}
       {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
       {removing && (
-        <ConfirmDialog title={t('Remove attachment?')} consequence={t('“{name}” is removed from this task. You can undo right after.', { name: removing.name })}
+        <ConfirmDialog title={t('Remove attachment?')} consequence={embedded.includes(removing.id)
+          // The task's notes show it (editor-everywhere D5): say so before it becomes "Removed image" there.
+          ? t('“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.', { name: removing.name, task: task?.title ?? '' })
+          : t('“{name}” is removed from this task. You can undo right after.', { name: removing.name })}
           confirmLabel={t('Remove')} onConfirm={() => remove(removing)} onCancel={() => setRemoving(null)} />
       )}
     </section>

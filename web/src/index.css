@@ -726,6 +726,22 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .notes-editor a { @apply text-accent underline; }
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }
 .notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
+/* editor-everywhere: quotes, code blocks, tables (scrolling in their own box), images, mentions. */
+.notes-editor blockquote { @apply space-y-2 border-l-2 border-input pl-2 text-muted; }
+.notes-editor pre { @apply overflow-x-auto rounded-control bg-sunken p-2 font-mono text-meta dark:bg-raised; white-space: pre; }
+.notes-editor pre code { @apply bg-transparent p-0; }
+.notes-editor .tableWrapper { @apply max-w-full overflow-x-auto; }
+.notes-editor table, .md-table { @apply border-collapse text-meta; }
+.notes-editor td, .notes-editor th { @apply min-w-16 border border-default px-2 py-1 align-top; }
+.notes-editor th { @apply font-semibold; }
+.notes-editor .selectedCell { @apply bg-accent-soft; }
+.notes-editor figure.note-image { @apply my-1; }
+.notes-editor figure.note-image.ProseMirror-selectednode { @apply rounded-control ring-2 ring-focus; }
+.mention, .mention-chip { @apply rounded-chip bg-accent-soft px-0.5 text-accent; }
+.issue-chip { @apply inline-flex items-center gap-1 rounded-chip border border-default bg-sunken px-1 font-mono text-meta text-default no-underline; }
+.slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
+.slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }
+.editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 }
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */

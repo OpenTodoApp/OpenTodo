@@ -163,6 +163,9 @@ const (
 	kRuleTrigger
 	kRuleCondition
 	kRuleActions
+	// kReactions is one account's reactions on a comment (OpenSpec change
+	// editor-everywhere, design D8): a list of distinct names from ReactionNames.
+	kReactions
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -178,10 +181,30 @@ const MaxFieldIDLen = 64
 // op and no other entity).
 const MaxFieldsPerProject = 30
 
+// ReactionPrefix starts the name of a comment's per-account reactions field
+// (`reactions.<account id>`, OpenSpec change editor-everywhere, design D8): one
+// field per reacting account, so concurrent reactions never overwrite each other.
+const ReactionPrefix = "reactions."
+
+// ReactionNames is the closed set of reaction names a comment accepts.
+var ReactionNames = []string{"thumbs_up", "heart", "check", "eyes", "party", "question"}
+
+// ReactionAccount returns the account id of a comment op field named
+// `reactions.<account id>`, where the id is 1–64 characters of [A-Za-z0-9_-].
+func ReactionAccount(field string) (string, bool) {
+	return familyID(field, ReactionPrefix)
+}
+
 // FieldValueID returns the definition id of a task op field named
 // `fields.<id>`, where id is 1–64 characters of [A-Za-z0-9_-].
 func FieldValueID(field string) (string, bool) {
-	id, ok := strings.CutPrefix(field, FieldValuePrefix)
+	return familyID(field, FieldValuePrefix)
+}
+
+// familyID returns the id after prefix in a field family name, when it is 1–64
+// characters of [A-Za-z0-9_-].
+func familyID(field, prefix string) (string, bool) {
+	id, ok := strings.CutPrefix(field, prefix)
 	if !ok || id == "" || len(id) > MaxFieldIDLen {
 		return "", false
 	}
@@ -208,11 +231,17 @@ func fieldKind(entity, field string) (kind, bool) {
 			return kFieldValue, true
 		}
 	}
+	if entity == "comment" {
+		if _, ok := ReactionAccount(field); ok {
+			return kReactions, true
+		}
+	}
 	return 0, false
 }
 
 // KnownField reports whether entity.field may be written: a Schema entry or a
-// task's custom field value (`fields.<id>`). Readers that ask "is this a field
+// task's custom field value (`fields.<id>`) or a comment's reactions
+// (`reactions.<account id>`). Readers that ask "is this a field
 // of the schema" use it instead of indexing Schema.
 func KnownField(entity, field string) bool {
 	_, ok := fieldKind(entity, field)
@@ -312,6 +341,10 @@ var Schema = map[string]map[string]kind{
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
 		"blocked_by": kIDList,
+		// The members an @mention in the notes names (OpenSpec change
+		// editor-everywhere, design D7): written with notes_doc, filtered to
+		// current members of the task's shared project at receipt, plaintext.
+		"note_mentions": kIDList,
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": kRecurrence,

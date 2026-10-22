@@ -4,7 +4,7 @@
 // The page keeps no copy of the task: it refreshes every 30 seconds while visible
 // and after each action, and only the guest's typed name is stored in the browser.
 import { type FormEvent, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Markdown } from '../app/Markdown'
+import { MarkdownView as Markdown } from '../app/MarkdownView'
 import { formatDate, formatDueLong, formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { sha256 } from '../lib/ids'

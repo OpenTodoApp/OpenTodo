@@ -24,7 +24,11 @@ import (
 //   - body, mentions, edited_at, parent_id and created_at are the author's alone;
 //   - deleted_at may be set by the author, a project admin or the owner;
 //   - mentions are filtered to current members of the task's shared project
-//     (empty for a personal task) and the filtered value is what is stored.
+//     (empty for a personal task) and the filtered value is what is stored;
+//   - `reactions.<account>` (editor-everywhere D8) is written only by that
+//     account, by anyone who can see the comment, within the comment limit.
+//
+// A task's note_mentions (editor-everywhere D7) follow the same member filter.
 
 // ReasonRateLimited: the author created too many comments in the current window
 // (design risk "viewer comment spam"); the op is refused, not stored.
@@ -147,6 +151,17 @@ func (r *resolver) resolveComment(op Op) (scope, reason string, err error) {
 				return "", ReasonForbidden, nil
 			}
 		default:
+			// Reactions (editor-everywhere D8): anyone who sees the comment, viewers
+			// included, writes only their own key; each counts against the comment limit.
+			if account, ok := ReactionAccount(op.Field); ok {
+				if account != r.acc.userID || !r.acc.canSee(st.scope) {
+					return "", ReasonForbidden, nil
+				}
+				if r.allowComment != nil && !r.allowComment() {
+					return "", ReasonRateLimited, nil
+				}
+				return st.scope, "", nil
+			}
 			if st.author != r.acc.userID {
 				return "", ReasonForbidden, nil
 			}
@@ -160,6 +175,9 @@ func (r *resolver) resolveComment(op Op) (scope, reason string, err error) {
 		return "", ReasonForbidden, nil
 	}
 	if (op.Field == "author_id" && idValue(op.Value) != b.author) || (op.Field == "task_id" && idValue(op.Value) != b.task) {
+		return "", ReasonForbidden, nil
+	}
+	if account, ok := ReactionAccount(op.Field); ok && account != r.acc.userID {
 		return "", ReasonForbidden, nil
 	}
 	scope, found, err := r.existingTaskScope(b.task)
@@ -288,6 +306,10 @@ func (s *Service) emitMentions(ctx context.Context, author string, at int64, cha
 	var actorName string
 	actorLoaded := false
 	for _, c := range changes {
+		if c.Entity == "task" && strings.HasPrefix(c.ScopeID, "project:") && !IsAgentDevice(c.Origin) {
+			s.emitNoteMentions(ctx, author, at, c)
+			continue
+		}
 		if c.Entity != "comment" || !strings.HasPrefix(c.ScopeID, "project:") {
 			continue
 		}
@@ -327,6 +349,42 @@ func (s *Service) emitMentions(ctx context.Context, author string, at int64, cha
 			e.Excerpt = excerpt(s.stringField(ctx, c.ScopeID, "comment", c.EntityID, "body"), 140)
 			s.sinks.Mentioned(ctx, e)
 		}
+	}
+}
+
+// emitNoteMentions notifies the accounts newly listed in a task's note_mentions
+// (editor-everywhere D7): never an id the stored list already had, never the
+// author, never for a deleted task. The value was filtered to members at receipt.
+func (s *Service) emitNoteMentions(ctx context.Context, author string, at int64, c Change) {
+	fc, ok := c.Fields["note_mentions"]
+	if !ok {
+		return
+	}
+	var before, after []string
+	_ = json.Unmarshal(fc.From, &before)
+	_ = json.Unmarshal(fc.To, &after)
+	if raw := s.rawField(ctx, c.ScopeID, "task", c.EntityID, "deleted_at"); raw != "" && raw != "null" {
+		return
+	}
+	had := map[string]bool{author: true}
+	for _, id := range before {
+		had[id] = true
+	}
+	actorName := ""
+	for _, id := range after {
+		if had[id] {
+			continue
+		}
+		had[id] = true
+		if actorName == "" {
+			actorName = s.userName(ctx, author)
+		}
+		e := notify.Mentioned{RecipientID: id, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at, Source: "note"}
+		e.TaskTitle = s.stringField(ctx, c.ScopeID, "task", c.EntityID, "title")
+		e.ProjectID = strings.TrimPrefix(c.ScopeID, "project:")
+		e.ProjectName = s.stringField(ctx, c.ScopeID, "project", e.ProjectID, "name")
+		e.Excerpt = excerpt(s.stringField(ctx, c.ScopeID, "task", c.EntityID, "description"), 140)
+		s.sinks.Mentioned(ctx, e)
 	}
 }
 

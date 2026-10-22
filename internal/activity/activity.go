@@ -8,7 +8,9 @@
 //
 //  1. Only task, project and comment ops count; others are ignored, and so are
 //     opaque document fields (Opaque: task.notes_doc, collaborative-rich-text),
-//     whose readable projection (description) travels in the same batch.
+//     whose readable projection (description) travels in the same batch, a
+//     task's note_mentions (they travel with that edit) and a comment's
+//     reactions.<account> (editor-everywhere).
 //  2. Ops are ordered by (ts, device), keeping input (seq) order for ties, which
 //     is the order last-writer-wins resolves them in.
 //  3. Each op's old value is the previous value of the same field in that order
@@ -119,6 +121,14 @@ var counted = map[string]bool{"task": true, "project": true, "comment": true}
 // documents (internal/sync DocFields). Kept here because sync imports activity.
 var Opaque = map[string]bool{"task.notes_doc": true, "project.notes_doc": true}
 
+// quiet reports ops that never form or join an event (editor-everywhere): a
+// comment's reactions, and a task's note_mentions, which travel with the note
+// edit whose description projection already makes the event.
+func quiet(op Op) bool {
+	return Opaque[op.Entity+"."+op.Field] || (op.Entity == "task" && op.Field == "note_mentions") ||
+		(op.Entity == "comment" && strings.HasPrefix(op.Field, "reactions."))
+}
+
 type group struct {
 	ev      Event
 	order   []string
@@ -131,7 +141,7 @@ func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 	list := make([]Op, 0, len(ops))
 	commentTask := map[string]string{}
 	for _, op := range ops {
-		if !counted[op.Entity] || Opaque[op.Entity+"."+op.Field] {
+		if !counted[op.Entity] || quiet(op) {
 			continue
 		}
 		list = append(list, op)

@@ -122,6 +122,7 @@
       "ical_extra",
       "labels",
       "location",
+      "note_mentions",
       "notes_doc",
       "origin",
       "parent_id",
@@ -189,6 +190,9 @@
   "field_prefixes": {
     "task": [
       "fields."
+    ],
+    "comment": [
+      "reactions."
     ]
   },
   "content_fields": {

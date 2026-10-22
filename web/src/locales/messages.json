@@ -130,6 +130,9 @@
   "<b>{actor}</b> completed <b2>{blocker}</b2>: <b3>{task}</b3> is ready to start": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{actor}</b> mentioned you in the notes of <b2>{task}</b2>": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<b>{actor}</b> mentioned you on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -345,6 +348,12 @@
   ],
   "A system works only while you trust it, and you trust it by reviewing it.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "A table can have at most {count} columns.": [
+    "web/src/lib/editorTables.ts"
+  ],
+  "A table can have at most {count} rows.": [
+    "web/src/lib/editorTables.ts"
   ],
   "A task becomes overdue": [
     "web/src/app/rules/RuleFields.tsx"
@@ -680,6 +689,12 @@
   "Add calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Add column after": [
+    "web/src/app/editorCommands.ts"
+  ],
+  "Add column before": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Add details, or send as it is…": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
@@ -715,8 +730,17 @@
   "Add passkey": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "Add reaction": [
+    "web/src/app/task-detail/ReactionBar.tsx"
+  ],
   "Add reminder": [
     "web/src/app/RemindersField.tsx"
+  ],
+  "Add row above": [
+    "web/src/app/editorCommands.ts"
+  ],
+  "Add row below": [
+    "web/src/app/editorCommands.ts"
   ],
   "Add subtask": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -938,6 +962,9 @@
   ],
   "Already matched": [
     "web/src/app/rules/RuleHistory.tsx"
+  ],
+  "Alternative text": [
+    "web/src/app/editorImage.tsx"
   ],
   "Am I keeping up?": [
     "web/src/app/review/StatsView.tsx"
@@ -1505,6 +1532,9 @@
   "Between 7 and 3650 days. Older events are deleted.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Block quote (``` and Enter: code block)": [
+    "web/src/lib/richtextEditor.ts"
+  ],
   "Blocked": [
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/display/DisplayScreen.tsx",
@@ -1543,6 +1573,8 @@
     "web/src/app/ViewsView.tsx"
   ],
   "Bold": [
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
   "Bookmarklet": [
@@ -1596,6 +1628,8 @@
     "web/src/app/PreferencesPanels.tsx"
   ],
   "Bullet list": [
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
   "Busy": [
@@ -1844,6 +1878,9 @@
   "Changing this needs a connection.": [
     "web/src/app/AgentAccessRow.tsx"
   ],
+  "Check": [
+    "web/src/app/task-detail/ReactionBar.tsx"
+  ],
   "Check / uncheck item": [
     "web/src/lib/richtextEditor.ts"
   ],
@@ -1890,6 +1927,8 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Checklist": [
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/editorCommands.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Choice": [
@@ -1925,6 +1964,12 @@
   ],
   "Choose an archive…": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Choose an image for the comment": [
+    "web/src/app/task-detail/RichComposerField.tsx"
+  ],
+  "Choose an image for the note": [
+    "web/src/app/NotesEditor.tsx"
   ],
   "Choose another task": [
     "web/src/app/focus/FocusView.tsx"
@@ -2078,6 +2123,9 @@
   "Code": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Code block": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Code from the app": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -2144,7 +2192,11 @@
   "Command": [
     "web/src/app/vim/VimLayer.tsx"
   ],
+  "Command menu: headings, lists, table, quote, code, image, date, mention": [
+    "web/src/lib/richtextEditor.ts"
+  ],
   "Commands": [
+    "web/src/app/EditorChrome.tsx",
     "web/src/app/palette/entries.ts"
   ],
   "Comment": [
@@ -2702,6 +2754,7 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/editorCommands.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
@@ -2857,6 +2910,9 @@
   "Delete account": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Delete column": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Delete comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -2887,6 +2943,9 @@
   "Delete reminder": [
     "web/src/app/RemindersField.tsx"
   ],
+  "Delete row": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Delete rule": [
     "web/src/app/rules/RulesView.tsx"
   ],
@@ -2901,6 +2960,9 @@
   ],
   "Delete section “{name}”?": [
     "web/src/app/Sections.tsx"
+  ],
+  "Delete table": [
+    "web/src/app/editorCommands.ts"
   ],
   "Delete task": [
     "web/src/lib/shortcuts.ts"
@@ -3014,6 +3076,9 @@
   ],
   "Descending (p1 first)": [
     "web/src/app/SavedViewView.tsx"
+  ],
+  "Describe the image": [
+    "web/src/app/editorImage.tsx"
   ],
   "Description": [
     "web/src/app/RelayConfirm.tsx",
@@ -3159,6 +3224,7 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/DashboardView.tsx",
     "web/src/app/Markdown.tsx",
+    "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/ProjectNote.tsx",
     "web/src/app/TokensSection.tsx",
@@ -3489,6 +3555,9 @@
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/lib/locations.ts"
+  ],
+  "Encrypted image": [
+    "web/src/app/Markdown.tsx"
   ],
   "Encrypted with your passphrase": [
     "web/src/app/BackupsPanel.tsx"
@@ -3884,6 +3953,9 @@
   "Extend the ticked range up": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Eyes": [
+    "web/src/app/task-detail/ReactionBar.tsx"
+  ],
   "Failed": [
     "web/src/app/ActivityPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
@@ -4194,6 +4266,9 @@
   "Format": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Formatting": [
+    "web/src/app/EditorChrome.tsx"
+  ],
   "Former member": [
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -4501,14 +4576,29 @@
   "Have none of the labels": [
     "web/src/app/rules/RuleFields.tsx"
   ],
+  "Header row on or off": [
+    "web/src/app/editorCommands.ts"
+  ],
+  "Heading 1": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Heading 1 (2, 3 for smaller)": [
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Heading 2": [
+    "web/src/app/editorCommands.ts"
+  ],
+  "Heading 3": [
+    "web/src/app/editorCommands.ts"
   ],
   "Health and appointments": [
     "web/src/lib/review.ts"
   ],
   "Health|icon category": [
     "web/src/ui/icons/catalogue.ts"
+  ],
+  "Heart": [
+    "web/src/app/task-detail/ReactionBar.tsx"
   ],
   "Help": [
     "web/src/app/SidebarFooter.tsx",
@@ -4681,6 +4771,10 @@
   "Ignore": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Image": [
+    "web/src/app/MarkdownView.tsx",
+    "web/src/app/editorCommands.ts"
+  ],
   "Import": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -4820,6 +4914,12 @@
   "In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In a table: next / previous cell; Tab in the last cell adds a row": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In a task's notes: make the check-list line a subtask (Ctrl+Z takes it back)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them. Conversations stay on this device. You can withdraw consent in Settings → Integrations → Assistant.": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
@@ -4841,13 +4941,16 @@
   "In the filter query: recall recent queries on this device": [
     "web/src/lib/shortcuts.ts"
   ],
-  "In the notes: bold, italic, strikethrough, inline code, link (⌘ on a Mac)": [
+  "In the notes and comments: bold, italic, strikethrough, inline code, link (⌘ on a Mac)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the notes and comments: heading 1–3 / normal text": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the notes and comments: the command menu (headings, lists, table, quote, code, link, image, date, mention); ↑ / ↓ move, Enter applies, Esc closes": [
     "web/src/lib/shortcuts.ts"
   ],
   "In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent": [
-    "web/src/lib/shortcuts.ts"
-  ],
-  "In the notes: heading 1–3 / normal text": [
     "web/src/lib/shortcuts.ts"
   ],
   "In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before": [
@@ -4911,7 +5014,7 @@
     "web/src/app/ShellNotifications.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Indent list item (Shift-Tab: outdent)": [
+  "Indent list item, or next table cell (Shift-Tab: back)": [
     "web/src/lib/richtextEditor.ts"
   ],
   "Indent the selected task under the previous sibling": [
@@ -5039,6 +5142,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Italic": [
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
   "Items that already exist": [
@@ -5423,6 +5528,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Link": [
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/editorCommands.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
     "web/src/lib/richtextEditor.ts"
@@ -5520,6 +5627,9 @@
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Loading image": [
+    "web/src/app/Markdown.tsx"
   ],
   "Loading invitations": [
     "web/src/app/MembersPanel.tsx"
@@ -5684,6 +5794,12 @@
   "Make owner: {name}": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Make subtask": [
+    "web/src/app/editorCommands.ts"
+  ],
+  "Make the check-list line a subtask": [
+    "web/src/lib/richtextEditor.ts"
+  ],
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
@@ -5733,7 +5849,7 @@
   "Mark {title} for This Evening": [
     "web/src/app/palette/registry.ts"
   ],
-  "Markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes": [
+  "Markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes": [
     "web/src/lib/shortcuts.ts"
   ],
   "Matching settings": [
@@ -5764,8 +5880,13 @@
   "Members’ own keys": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Mention": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Mention a member": [
-    "web/src/app/task-detail/Composer.tsx"
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/task-detail/Composer.tsx",
+    "web/src/lib/richtextEditor.ts"
   ],
   "Menu for label {name}": [
     "web/src/app/LabelsView.tsx"
@@ -5887,6 +6008,9 @@
   ],
   "More actions for this comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "More formatting": [
+    "web/src/app/EditorChrome.tsx"
   ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
@@ -6721,7 +6845,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Not done": [
-    "web/src/app/Markdown.tsx"
+    "web/src/app/MarkdownView.tsx"
   ],
   "Not encrypted": [
     "web/src/app/BackupsPanel.tsx"
@@ -6949,6 +7073,7 @@
     "web/src/lib/fields.ts"
   ],
   "Numbered list": [
+    "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
   "Numeric dates like 12/11": [
@@ -7596,6 +7721,9 @@
   "Partial": [
     "web/src/app/rules/RuleHistory.tsx"
   ],
+  "Party popper": [
+    "web/src/app/task-detail/ReactionBar.tsx"
+  ],
   "Passkey": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -8200,6 +8328,9 @@
   "QR code to scan with your authenticator app": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Question": [
+    "web/src/app/task-detail/ReactionBar.tsx"
+  ],
   "Questions, ideas and other people who use OpenTodo, on Discord.": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -8230,6 +8361,9 @@
   "Quick wins": [
     "web/src/lib/filters.ts"
   ],
+  "Quote": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Quote\nOrdered\nDone": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -8246,6 +8380,9 @@
   ],
   "Re-syncing after restore…": [
     "web/src/app/SyncStatus.tsx"
+  ],
+  "React": [
+    "web/src/app/task-detail/ReactionBar.tsx"
   ],
   "Reactivate": [
     "web/src/app/UsersPanel.tsx"
@@ -8484,6 +8621,9 @@
   ],
   "Remove {title} from This Evening": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Removed image": [
+    "web/src/app/Markdown.tsx"
   ],
   "Removed label": [
     "web/src/app/RuleEditor.tsx"
@@ -10151,6 +10291,7 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Strikethrough": [
+    "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
   "Study": [
@@ -10266,6 +10407,10 @@
   ],
   "TLS on port 465, STARTTLS on others. Plain is only for a relay without a password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Table": [
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/editorCommands.ts"
   ],
   "Take a break": [
     "web/src/app/focus/BreakReminder.tsx",
@@ -11627,6 +11772,9 @@
   ],
   "Thu": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Thumbs up": [
+    "web/src/app/task-detail/ReactionBar.tsx"
   ],
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
@@ -13251,6 +13399,9 @@
   "at risk": [
     "web/src/app/RecurrenceField.tsx"
   ],
+  "at the start of a line or after a space": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "audit log": [
     "web/src/app/AuditPanel.tsx"
   ],
@@ -13619,6 +13770,9 @@
   "in a saved view": [
     "web/src/lib/shortcuts.ts"
   ],
+  "in a table": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "in the Inbox": [
     "web/src/app/method/LoopHome.tsx"
   ],
@@ -13866,6 +14020,9 @@
   ],
   "on": [
     "web/src/lib/history.ts"
+  ],
+  "on a check-list line": [
+    "web/src/lib/shortcuts.ts"
   ],
   "on the task tabs": [
     "web/src/lib/shortcuts.ts"
@@ -14117,6 +14274,9 @@
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "sign in to comment": [
+    "web/src/lib/comments.ts"
+  ],
+  "sign in to react": [
     "web/src/lib/comments.ts"
   ],
   "signed out": [
@@ -15064,6 +15224,12 @@
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
   ],
+  "{name}: uploading": [
+    "web/src/app/Markdown.tsx"
+  ],
+  "{name}: waiting to upload": [
+    "web/src/app/Markdown.tsx"
+  ],
   "{name}: {a} {aName}, {b} {bName}": [
     "web/src/app/review/charts.tsx"
   ],
@@ -15187,6 +15353,9 @@
   "{provider}, set up by the server owner.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "{reaction}: {count} ({names})": [
+    "web/src/app/task-detail/ReactionBar.tsx"
+  ],
   "{recoveryCodesRemaining} of 10 recovery codes left": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -15302,6 +15471,9 @@
     "web/src/app/auditFormat.ts"
   ],
   "“{name}” is removed from this task. You can undo right after.": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "“{name}” is too large once encrypted; files may be at most {max} on this server.": [

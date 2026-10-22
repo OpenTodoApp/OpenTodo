@@ -11,6 +11,10 @@ import { setCurrentUserId } from '../../lib/sharing'
 import type { HistoryPage, Task } from '../../lib/types'
 import { click, flush, key, render } from '../../ui/test-utils'
 import { ConversationTabs, readTaskTab, TASK_TAB_KEY } from './ConversationTabs'
+import { setRichComposer } from './Composer'
+
+// The plain composer field (the rich editor has its own tests in richComposer.test.tsx).
+setRichComposer(false)
 
 const fetchHistory = vi.fn<(entity: string, id: string) => Promise<HistoryPage>>()
 vi.mock('../../lib/history', async (orig) => ({ ...(await orig<typeof import('../../lib/history')>()), fetchHistory: (...a: [string, string]) => fetchHistory(...a) }))

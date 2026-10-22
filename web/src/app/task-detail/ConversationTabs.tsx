@@ -70,7 +70,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
   const [minHeight, setMinHeight] = useState<number | undefined>(undefined)
   const [focusComment, setFocusComment] = useState<string | null>(null)
   const [focusComposer, setFocusComposer] = useState(0)
-  const composerRef = useRef<HTMLTextAreaElement | null>(null)
+  const composerRef = useRef<HTMLElement | null>(null)
   const count = useLiveCommentCount(task.id)
   // Time (time-tracking D5): "Time · 35m" once something was tracked.
   const tracked = useTaskTotal(task.id)

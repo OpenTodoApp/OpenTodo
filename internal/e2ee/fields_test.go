@@ -65,3 +65,16 @@ func TestReviewContent(t *testing.T) {
 		}
 	}
 }
+
+// Reactions and note mentions (OpenSpec editor-everywhere, design D7/D8) stay
+// plaintext: they reveal only who reacted and whom a note names.
+func TestReactionsAndNoteMentionsArePlaintext(t *testing.T) {
+	for _, c := range [][2]string{{"comment", "reactions.alice"}, {"task", "note_mentions"}} {
+		if IsContentField(c[0], c[1]) {
+			t.Errorf("IsContentField(%s, %s) = true, want false", c[0], c[1])
+		}
+	}
+	if !IsContentField("comment", "body") || !IsContentField("task", "description") {
+		t.Error("comment body and task description must stay content")
+	}
+}

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { type ReactNode, useEffect, useState } from 'react'
 import type { Comment, ProjectMember } from '../../lib/types'
 import { CommentsView } from './CommentsTab'
 
@@ -22,7 +23,7 @@ export const ThreadWithReplies: StoryObj = {
   render: () => (
     <div className="max-w-md">
       <CommentsView taskId="story" me="u-ada" role="admin" members={members} name={(id) => names[id] ?? 'Someone'} now={NOW}
-        onCreate={noop} onEdit={noop} onDelete={async () => {}}
+        onCreate={noop} onEdit={noop} onDelete={async () => {}} richComposer={false}
         threads={[
           { root: c('c1', 'u-bob', 26 * H, 'Can we move the **kick-off** to Thursday? The venue is booked on Wednesday.'),
             replies: [c('r1', 'u-ada', 25 * H, 'Thursday works. I will update the invite.', { parent_id: 'c1' }), c('r2', 'u-bob', 24 * H, '', { parent_id: 'c1', deleted_at: NOW - 23 * H })] },
@@ -36,7 +37,40 @@ export const Empty: StoryObj = {
   render: () => (
     <div className="max-w-md">
       <CommentsView taskId="story-empty" me="u-ada" role="admin" members={[]} name={() => 'You'} now={NOW} threads={[]}
-        onCreate={noop} onEdit={noop} onDelete={async () => {}} />
+        onCreate={noop} onEdit={noop} onDelete={async () => {}} richComposer={false} />
+    </div>
+  ),
+}
+
+/** Marks the story pending until `selector` is in the page (the lazy editor chunk). */
+function Ready({ selector, children }: { selector: string; children: ReactNode }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.querySelector(selector)) {
+        setReady(true)
+        clearInterval(id)
+      }
+    }, 20)
+    return () => clearInterval(id)
+  }, [selector])
+  return <>{children}{!ready && <span data-story-pending />}</>
+}
+
+// editor-everywhere: reactions under the comments, a table, a mention chip, an issue
+// chip, and the expanded composer as the rich editor.
+export const ReactionsAndRichComposer: StoryObj = {
+  render: () => (
+    <div className="max-w-md">
+      <Ready selector="[data-rich-composer] .ProseMirror">
+        <CommentsView taskId="story-rich" me="u-ada" role="admin" members={members} name={(id) => names[id] ?? 'Someone'} now={NOW}
+          onCreate={noop} onEdit={noop} onDelete={async () => {}} onReact={() => {}}
+          threads={[
+            { root: c('c1', 'u-bob', 3 * H, 'Prices so far, @BobOkafor checked them:\n\n| Item | Cost |\n| --- | ---: |\n| Paint | 40 |\n| Brushes | 12 |', {
+              reactions: { 'u-ada': ['thumbs_up', 'heart'], 'u-bob': ['thumbs_up'] } }), replies: [] },
+            { root: c('c2', 'u-ada', H, 'Tracked in https://github.com/pixari/opentodo/issues/198', { reactions: { 'u-bob': ['eyes'] } }), replies: [] },
+          ]} />
+      </Ready>
     </div>
   ),
 }
