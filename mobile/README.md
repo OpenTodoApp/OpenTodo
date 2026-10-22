@@ -9,7 +9,7 @@ Thin apps around the OpenTodo web app (OpenSpec change `native-shells`). A shell
 Needs JDK 17 or later and the Android SDK (platform 35, build tools 35.0.0) with `ANDROID_HOME` set; the Gradle wrapper downloads Gradle itself (checksum pinned).
 
 ```sh
-make android          # unit tests, lint, the checks below, debug APK
+make android          # unit tests, lint, the checks below, debug APK and the instrumented-test APK
 cd mobile/android && ./gradlew :app:assembleDebug
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
@@ -68,8 +68,18 @@ Addresses the shell opens in the web app: `/?task=<id>` (a notification tap), `/
 
 - JVM unit tests (`./gradlew :app:testDebugUnitTest`): address rules, the health check against a local socket, schedule parsing, the widget model, share mapping and limits.
 - The web side's tests run with `npm test` in `web/` (`shell.test.ts`, `shellPublish.test.ts`, `shellActions.test.ts`, `shellNotifications.test.tsx`, `aboutShell.test.tsx`, `e2ee.test.ts`).
-- Not automated yet: instrumented tests on an emulator (bridge present on the server's origin and absent elsewhere, a fired notification and a snooze, shares, the widget, the biometric store with an enrolled fingerprint). See the follow-ups in the pull request that added the app.
+- Instrumented tests on an emulator (`app/src/androidTest`, `./gradlew :app:connectedDebugAndroidTest` with an emulator or a phone attached). CI's `android` job runs them on an API 34 Google APIs emulator with a cached AVD. A local stand-in server (MockWebServer, test-only) answers the health check and serves the pages:
 
+  | Class | Covers |
+  | --- | --- |
+  | `SetupActivityTest` | the first-run screen: local http after the warning, public http refused with the https offer, an invalid address, a server that isn't OpenTodo, nothing listening, an untrusted certificate |
+  | `BridgeTest` | `window.opentodoShell` on the server's origin and absent on another one, a call answered through the message channel, links to other sites in the system browser, back, the offline screen |
+  | `ShareTest` | text, a lone link, two photos as the `opentodo-files` message, a share waiting for the first-run screen |
+  | `ReminderTest` | an exact alarm firing, the inexact fallback, Snooze and Dismiss through the hidden run, a tap opening the task, re-arming after a reboot |
+  | `WidgetTest` | the Today widget in a bound host: rows, counts and "+ n more", counts only while locked, no request of its own |
+  | `BiometricTest` | without an enrolled finger: no `biometric` capability, nothing stored, the wrapped key forgotten; the prompt with an enrolled finger is skipped on the emulator and checked in the device smoke test |
+
+  The tests allow exact alarms with `appops` and bind the widget with `appwidget grantbind`; turning exact alarms off in-process would stop the app, so the fallback is armed through `Scheduler.arm(…, exact = false)`.
 ### Device smoke test
 
 Record each run here: date, device, Android version, server version.

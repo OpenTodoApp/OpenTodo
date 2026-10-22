@@ -14,8 +14,9 @@ object ReminderSchedule {
     /**
      * The reminders to arm: valid entries, firing from a minute ago (a late hand-over still
      * fires) to the horizon, one per id, at most [MAX], earliest first. Bad JSON is an empty list.
+     * With [now] null there is no time window: the stored schedule as it was armed.
      */
-    fun parse(json: String, now: Long): List<ShellReminder> {
+    fun parse(json: String, now: Long?): List<ShellReminder> {
         val arr = try { JSONArray(json) } catch (e: Exception) { return emptyList() }
         val seen = HashSet<String>()
         val out = ArrayList<ShellReminder>()
@@ -24,7 +25,8 @@ object ReminderSchedule {
             val id = o.optString("id")
             val taskId = o.optString("taskId")
             val fireAt = o.optLong("fireAt", -1)
-            if (id.isEmpty() || id.length > 100 || taskId.isEmpty() || taskId.length > 100 || fireAt < now - GRACE_MS || fireAt > now + HORIZON_MS) continue
+            if (id.isEmpty() || id.length > 100 || taskId.isEmpty() || taskId.length > 100 || fireAt < 0) continue
+            if (now != null && (fireAt < now - GRACE_MS || fireAt > now + HORIZON_MS)) continue
             if (!seen.add(id)) continue
             val title = if (o.has("title") && !o.isNull("title")) o.optString("title").take(200).ifEmpty { null } else null
             out.add(ShellReminder(id, taskId, fireAt, title))
