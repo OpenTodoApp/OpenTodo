@@ -44,9 +44,23 @@ class ReminderTest {
         return JSONArray().put(r).toString()
     }
 
-    /** The app's pending alarms as the alarm manager lists them (`tag=*walarm*:app.opentodo/.AlarmReceiver`; history sections omit `tag=`). */
-    private fun armedAlarms(): Int =
-        shell("dumpsys alarm").lines().count { it.contains("tag=*walarm*:${context.packageName}/.AlarmReceiver") }
+    /**
+     * The pending section of `dumpsys alarm` (from its "Pending alarm…" header to the next line
+     * indented no deeper): the removal and delivery histories list the same tags.
+     */
+    private fun pendingSection(): List<String> {
+        val lines = shell("dumpsys alarm").lines()
+        val start = lines.indexOfFirst { it.trim().startsWith("Pending alarm") }
+        if (start < 0) return emptyList()
+        val indent = lines[start].indexOfFirst { !it.isWhitespace() }
+        val end = (start + 1 until lines.size).firstOrNull { i ->
+            val l = lines[i]; l.isNotBlank() && l.indexOfFirst { !it.isWhitespace() } <= indent
+        } ?: lines.size
+        return lines.subList(start, end)
+    }
+
+    /** The app's pending alarms (`tag=*walarm*:app.opentodo/.AlarmReceiver`). */
+    private fun armedAlarms(): Int = pendingSection().count { it.contains("*walarm*:${context.packageName}/.AlarmReceiver") }
 
     private fun shown(id: String): StatusBarNotification? =
         context.getSystemService(NotificationManager::class.java).activeNotifications.firstOrNull { it.id == Notifier.notificationId(id) }
@@ -73,9 +87,14 @@ class ReminderTest {
         Prefs(context).reminders = ReminderSchedule.toJson(list)
         Scheduler.arm(context, list, exact = false)
         var armed = 0
-        waitUntil("the inexact alarm in dumpsys alarm") { armed = armedAlarms(); armed > before }
-        Scheduler.clear(context)
-        waitUntil("the alarm to be cancelled") { armedAlarms() < armed }
+        try {
+            waitUntil("the inexact alarm in dumpsys alarm") { armed = armedAlarms(); armed > before }
+            Scheduler.clear(context)
+            waitUntil("the alarm to be cancelled") { armedAlarms() < armed }
+        } catch (e: AssertionError) {
+            val ours = pendingSection().filter { it.contains(context.packageName) }.take(20)
+            throw AssertionError("${e.message}; before=$before armed=$armed; pending lines: $ours")
+        }
     }
 
     @Test fun withoutATitleTheNotificationSaysReminder() {
