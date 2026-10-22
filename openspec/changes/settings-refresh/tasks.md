@@ -47,5 +47,5 @@
 ## 8. Wrap-up
 
 - [x] 8.1 CHANGELOG entries under Unreleased (Added: profile, speech service; Changed: Settings cards, Recent activity, audit log, integrations; Changed **BREAKING**-flagged: quick add numeric order follows the date format). Verify: `make docs-check` — Done: CHANGELOG under Unreleased. Upgrade notes: the breaking numeric-order change and the profile migration. Added: profile and speech service. Changed: Settings cards, Recent activity, audit log, Date and time, integrations. Verified by `make docs-check`.
-- [ ] 8.2 Docs screenshots for Settings regenerated (`make docs-screenshots settings,settings-security,members,assistant-settings,…`). Verify: `make docs-check`
+- [x] 8.2 Docs screenshots for Settings regenerated (`make docs-screenshots settings,settings-security,members,assistant-settings,…`). Verify: `make docs-check` — Done: `node scripts/docs-screenshots.mjs settings,settings-security,settings-passkeys,settings-notifications,members,assistant-settings` against a fresh build (402 KB written), then `make docs`. Verified by `make docs-check`.
 - [ ] 8.3 Full checks. Verify: `go test ./...`, `cd web && npm run lint && npm test && npm run build`, `make ci-checks`, `make e2e`, `make openspec-validate`
