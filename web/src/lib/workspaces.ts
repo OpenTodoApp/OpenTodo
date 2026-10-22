@@ -10,7 +10,7 @@
 // - a workspace this account is not in (not received yet, or a project shared
 //   from another account's workspace) reads as the default workspace.
 // The current workspace is device state in the `meta` table, never synced.
-import { db, getMeta, setMeta } from './db'
+import { db, getMeta, setMeta, tableOf } from './db'
 import type { Label, Project, Task, View, Workspace, WorkspaceEntry, WorkspaceGroup, WorkspaceMember } from './types'
 
 /** The meta key of this device's current workspace. */
@@ -232,14 +232,14 @@ export async function storeWorkspacesFromSync(entries: readonly WorkspaceEntry[]
 
 /** The workspace an entity belongs to, from the local data. */
 export async function workspaceOfEntity(kind: PartitionedKind, id: string): Promise<string | null> {
-  const [state, projects, tasks] = await Promise.all([readWorkspaceState(), db.projects.toArray(), kind === 'task' ? db.tasks.toArray() : Promise.resolve([])])
+  const [state, projects, tasks] = await Promise.all([readWorkspaceState(), db.projects.toArray(), kind !== 'task' ? Promise.resolve([]) : db.tasks.toArray()])
   if (state.list.length <= 1) return null
   const p = new Partition(state.defaultId, state.list.map((w) => w.id), projects, tasks)
   let ws: string
   if (kind === 'project') ws = p.project(id)
   else if (kind === 'task') ws = p.task(id)
   else {
-    const row = kind === 'label' ? await db.labels.get(id) : await db.views.get(id)
+    const row = (await tableOf(kind).get(id)) as { workspace_id?: string | null } | undefined
     ws = p.own(row?.workspace_id)
   }
   return ws

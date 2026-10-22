@@ -32,10 +32,12 @@ export async function visibleTasks(): Promise<Task[]> {
   return db.tasks.filter((task) => isTaskVisible(task, gone)).toArray()
 }
 
-/** visibleTasks of the device's current workspace (OpenSpec change workspaces). */
-export async function visibleTasksHere(): Promise<Task[]> {
-  const [state, projects, tasks] = await Promise.all([readWorkspaceState(), db.projects.toArray(), visibleTasks()])
-  return tasksIn(state, projects, tasks)
+/** The visible tasks of every workspace and of the device's current one, from one read of each table (OpenSpec change workspaces). */
+export async function visibleTaskSets(): Promise<{ every: Task[]; here: Task[] }> {
+  const [state, projects] = await Promise.all([readWorkspaceState(), db.projects.toArray()])
+  const gone = new Set(projects.filter((p) => !!p.deleted_at).map((p) => p.id))
+  const every = await db.tasks.filter((task) => isTaskVisible(task, gone)).toArray()
+  return { every, here: tasksIn(state, projects, every) }
 }
 
 export interface TrashItem {

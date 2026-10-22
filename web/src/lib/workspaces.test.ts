@@ -105,3 +105,60 @@ describe('random histories converge (task 1.7)', () => {
     }
   })
 })
+
+describe('the partition on this device (task 5.1, 5.6, 5.7)', () => {
+  afterEach(async () => {
+    await db.delete()
+  })
+
+  async function twoWorkspaces() {
+    useDatabase(`ws-part-${Math.random()}`)
+    await storeWorkspaces([
+      { ...ws('w-p', { default: true, name: 'Personal' }), members: [], groups: [] },
+      { ...ws('w-work', { name: 'Work' }), members: [], groups: [] },
+    ])
+  }
+
+  it('new entities carry the current workspace; lists never leak across', async () => {
+    await twoWorkspaces()
+    const { createProject, createTask } = await import('./ops')
+    const { createLabel } = await import('./labels')
+    const home = await createProject({ name: 'Home' })
+    const inboxHome = await createTask({ title: 'Milk' })
+    await createLabel({ name: 'errand' })
+    await switchTo('w-work')
+    const site = await createProject({ name: 'Site' })
+    const call = await createTask({ title: 'Call' })
+    // The same label name may exist in another workspace.
+    await createLabel({ name: 'errand' })
+    expect((await db.projects.get(home))?.workspace_id ?? null).toBeNull()
+    expect((await db.projects.get(site))?.workspace_id).toBe('w-work')
+    expect((await db.tasks.get(call))?.workspace_id).toBe('w-work')
+    const { readWorkspaceState, projectsIn, tasksIn, ownIn } = await import('./workspaces')
+    const state = await readWorkspaceState()
+    const projects = await db.projects.toArray()
+    expect(projectsIn(state, projects).map((p) => p.id)).toEqual([site])
+    expect(tasksIn(state, projects, await db.tasks.toArray()).map((t) => t.id)).toEqual([call])
+    expect(ownIn(state, await db.labels.toArray())).toHaveLength(1)
+    await switchTo('w-p')
+    const back = await readWorkspaceState()
+    expect(tasksIn(back, projects, await db.tasks.toArray()).map((t) => t.id)).toEqual([inboxHome])
+  })
+
+  it('moving a project re-matches its labels by name in one batch', async () => {
+    await twoWorkspaces()
+    const { createProject, createTask } = await import('./ops')
+    const { createLabel } = await import('./labels')
+    const garden = await createProject({ name: 'Garden' })
+    const errand = await createLabel({ name: 'errand' })
+    const task = await createTask({ title: 'Seeds', project_id: garden, labels: [errand] })
+    const { moveProjectToWorkspaceUndoable } = await import('./undoActions')
+    const r = await moveProjectToWorkspaceUndoable(garden, 'w-work', 'Work')
+    expect(r.entry).not.toBeNull()
+    expect((await db.projects.get(garden))?.workspace_id).toBe('w-work')
+    const moved = (await db.tasks.get(task))!.labels[0]
+    expect(moved).not.toBe(errand)
+    expect((await db.labels.get(moved))?.workspace_id).toBe('w-work')
+    expect((await db.labels.get(moved))?.name).toBe('errand')
+  })
+})

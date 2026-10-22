@@ -5,7 +5,7 @@
 // workspace it reads "OpenTodo · Personal". Switching is device state.
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BrandMark, CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
+import { BrandMark, BrandWordmark, CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
@@ -77,7 +77,7 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
         trigger={<>
           <WorkspaceMark workspace={current} />
           {!collapsed && <span className="min-w-0 flex-1 truncate font-semibold text-strong">
-            {single ? <><span>OpenTodo</span><span className="text-faint"> · </span><span>{name}</span></> : name}
+            {single ? <><BrandWordmark /><span className="text-faint"> · </span><span>{name}</span></> : name}
           </span>}
           {updates && <StatusDot label={updates} data-workspace-updates />}
           {!collapsed && <span aria-hidden className="text-faint"><Icon name="chevron-down" size="xs" /></span>}
