@@ -8,6 +8,8 @@ import android.os.Build
 import android.service.notification.StatusBarNotification
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -36,8 +38,15 @@ class ReminderTest {
         resetApp()
     }
 
-    private fun schedule(id: String, inMs: Long, title: String? = "Water the plants") =
-        """[{"id":"$id","taskId":"task-$id","fireAt":${System.currentTimeMillis() + inMs}${if (title != null) ",\"title\":\"$title\"" else ""}}]"""
+    private fun schedule(id: String, inMs: Long, title: String? = "Water the plants"): String {
+        val r = JSONObject().put("id", id).put("taskId", "task-$id").put("fireAt", System.currentTimeMillis() + inMs)
+        if (title != null) r.put("title", title)
+        return JSONArray().put(r).toString()
+    }
+
+    /** The app's armed alarms as the alarm manager lists them (tag `*walarm*:app.opentodo/.AlarmReceiver`). */
+    private fun armedAlarms(): List<String> =
+        shell("dumpsys alarm").lines().filter { it.contains("${context.packageName}/.AlarmReceiver") }
 
     private fun shown(id: String): StatusBarNotification? =
         context.getSystemService(NotificationManager::class.java).activeNotifications.firstOrNull { it.id == Notifier.notificationId(id) }
@@ -57,13 +66,22 @@ class ReminderTest {
         assertEquals(listOf(context.getString(R.string.action_snooze), context.getString(R.string.action_dismiss)), actions)
     }
 
-    @Test fun withoutExactAlarmsTheInexactFallbackStillFires() {
-        val list = ReminderSchedule.parse(schedule("r2", 3_000, title = null), System.currentTimeMillis())
+    @Test fun withoutExactAlarmsTheInexactFallbackIsArmed() {
+        // Android may hold an inexact alarm back by minutes, so this checks it is armed, not that it fired.
+        assertTrue("no alarm before: ${armedAlarms()}", armedAlarms().isEmpty())
+        val list = ReminderSchedule.parse(schedule("r2", 60_000), System.currentTimeMillis())
         Prefs(context).reminders = ReminderSchedule.toJson(list)
         Scheduler.arm(context, list, exact = false)
-        val n = waitForNotification("r2", timeoutMs = 90_000)
-        // No title handed over (titles off or encrypted): the generic text.
-        assertEquals(context.getString(R.string.reminder_generic), n.notification.extras.getString(Notification.EXTRA_TITLE))
+        waitUntil("the inexact alarm in dumpsys alarm") { armedAlarms().isNotEmpty() }
+        Scheduler.clear(context)
+        waitUntil("the alarm to be cancelled") { armedAlarms().isEmpty() }
+    }
+
+    @Test fun withoutATitleTheNotificationSaysReminder() {
+        // No title handed over (titles off, or an encrypted account): the generic text.
+        Scheduler.replace(context, schedule("r8", 60 * 60_000, title = null))
+        assertTrue(Notifier.reminder(context, Scheduler.find(context, "r8")!!))
+        assertEquals(context.getString(R.string.reminder_generic), waitForNotification("r8").notification.extras.getString(Notification.EXTRA_TITLE))
     }
 
     @Test fun snoozeAppliesInTheBackgroundAtTheActionAddress() {

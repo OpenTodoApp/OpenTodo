@@ -30,13 +30,13 @@ class WidgetTest {
         resetApp()
         server = FakeServer()
         Prefs(context).server = server.origin
-        shell("appwidget grantbind --package ${context.packageName} --user current")
+        val grant = shell("appwidget grantbind --package ${context.packageName} --user ${android.os.Process.myUserHandle().hashCode()}")
         val manager = AppWidgetManager.getInstance(context)
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             host = AppWidgetHost(context, HOST_ID)
             host.startListening()
             widgetId = host.allocateAppWidgetId()
-            assertTrue("bind allowed", manager.bindAppWidgetIdIfAllowed(widgetId, ComponentName(context, TodayWidget::class.java)))
+            assertTrue("bind allowed (grantbind said: \"$grant\")", manager.bindAppWidgetIdIfAllowed(widgetId, ComponentName(context, TodayWidget::class.java)))
             view = host.createView(context, widgetId, manager.getAppWidgetInfo(widgetId))
         }
     }
