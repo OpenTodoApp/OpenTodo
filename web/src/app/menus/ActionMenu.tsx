@@ -3,7 +3,7 @@
 // order, icons, disabled reasons and confirmations cannot drift apart. A picker item
 // swaps the items for a Combobox inside the same overlay; a confirm item closes the
 // menu and opens a confirmation dialog.
-import { useContext, useEffect, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { Icon, type IconName, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
 import { MenuCloseContext, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
@@ -181,7 +181,7 @@ export function Confirmation({ spec, onClose }: { spec: ConfirmSpec; onClose: ()
  * Renders a menu from groups. `picker` (with `open`) starts directly in that
  * picker step, as the project menu's `m` shortcut does.
  */
-export function ActionMenu({ label, title, groups, header, trigger, triggerClassName, align = 'end', width = 'sm:w-64', open: openProp, onOpenChange, startPicker }: {
+export function ActionMenu({ label, title, groups, header, trigger, triggerClassName, align = 'end', width = 'sm:w-64', open: openProp, onOpenChange, startPicker, anchor }: {
   label: string
   /** Content above the first group (the project colour swatches). */
   header?: ReactNode
@@ -195,6 +195,8 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   onOpenChange?: (open: boolean) => void
   /** Id of a picker item to open straight into (keyboard shortcut). */
   startPicker?: string | null
+  /** Places the menu at this element instead of its trigger. */
+  anchor?: RefObject<HTMLElement | null>
 }) {
   const [ownOpen, setOwnOpen] = useState(false)
   const open = openProp ?? ownOpen
@@ -219,7 +221,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
       <Menu label={label} title={title} kind={current || step ? 'dialog' : 'menu'} align={align} width={width} className="p-1"
         trigger={trigger ?? <Icon name="ellipsis" />}
         triggerClassName={triggerClassName ?? 'ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-faint'}
-        open={open}
+        open={open} anchor={anchor}
         onOpenChange={(v) => {
           // The first Escape (or outside tap) in a picker step goes back to the items.
           if (!v && (current || step)) { setPicker(null); setStep(null); return }

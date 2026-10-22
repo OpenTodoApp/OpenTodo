@@ -153,9 +153,9 @@ export function useListBindings(c: BindingContext): RowActions {
     },
     drag: (e, task) => live.current.startDrag(e, task),
     // The revealed More action (rows-v2 D7): the row menu for this row, as `.` opens it.
-    more: (id) => {
+    more: (id, from) => {
       setSelectedId(id)
-      live.current.ui.openActions(null)
+      live.current.ui.openActions(null, from)
     },
   }), [setSelectedId])
 }

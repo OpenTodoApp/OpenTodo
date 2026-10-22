@@ -15,7 +15,7 @@ export interface RowActions {
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
   /** Opens the row menu for the task, as `.` does (rows-v2: the revealed More action). */
-  more: (id: string) => void
+  more: (id: string, from: HTMLElement) => void
 }
 
 type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore'> & {
@@ -47,7 +47,7 @@ export const ListRow = memo(function ListRow({ task, labelMap, draggable, reorde
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
       onOpen={(e) => actions.open(task.id, e)}
       onTick={(range) => actions.tick(task.id, range)}
-      onMore={() => actions.more(task.id)}
+      onMore={(from) => actions.more(task.id, from)}
     />
   )
 })

@@ -195,7 +195,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                           labels={resolveLabels(tk.labels, labelMap)}
                           showProject={opts.groupBy !== 'project'}
                           timeColumn={timeColumn}
-                          onMore={() => { setSelected(key); bulk.openActions() }}
+                          onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                           selected={key === selected}
                           progress={progress.get(tk.id)}
                           blockedBy={blocked.get(tk.id)}

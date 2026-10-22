@@ -77,10 +77,12 @@ function useListUi() {
   const [assignFor, setAssignFor] = useState<string | null>(null)
   /** Section whose quick add is open ('' = "No section"), board-view. */
   const [addingTo, setAddingTo] = useState<string | null>(null)
-  const openActions = useCallback((picker: string | null = null) => { setActionsPicker(picker); setActionsOpen(true) }, [])
+  /** The row's More button when the menu was opened from it (rows-v2 D7); null for `.`. */
+  const actionsFrom = useRef<HTMLElement | null>(null)
+  const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; setActionsPicker(picker); setActionsOpen(true) }, [])
   const onActionsOpen = useCallback((v: boolean) => { setActionsOpen(v); if (!v) setActionsPicker(null) }, [])
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, setAddingTo, openActions }
-  return { ui, actionsOpen, actionsPicker, onActionsOpen, selectMode, setSelectMode, addingTo }
+  return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo }
 }
 
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
@@ -101,7 +103,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
   const selection = useSelection(tickRows, readOnlyId)
   const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
-  const { ui, actionsOpen, actionsPicker, onActionsOpen, selectMode, setSelectMode, addingTo } = useListUi()
+  const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo } = useListUi()
   // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
   const openId = usePanelTaskId()
   const quickAddRef = useRef<HTMLInputElement>(null)
@@ -291,7 +293,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} />
           {actionsOpen && ticked.length === 0 && selectedId && (
             // `.` with nothing ticked: the same menu for the cursor task.
-            <BulkActionsMenu ids={[selectedId]} open onOpenChange={onActionsOpen} startPicker={actionsPicker}
+            <BulkActionsMenu ids={[selectedId]} open onOpenChange={onActionsOpen} startPicker={actionsPicker} anchor={actionsFrom}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
 

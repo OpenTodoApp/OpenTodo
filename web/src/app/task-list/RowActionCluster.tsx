@@ -26,7 +26,7 @@ function reveal(el: HTMLElement) {
 export function RowActionCluster({ task, onMore, force = false }: {
   task: Task
   /** Opens the row menu, as `.` does; without it the cluster has no More button. */
-  onMore?: () => void
+  onMore?: (from: HTMLElement) => void
   /** Stories: shown as if hovered (the visual gate cannot hover). */
   force?: boolean
 }) {
@@ -56,7 +56,7 @@ export function RowActionCluster({ task, onMore, force = false }: {
           <MenuItem key={p} label={PRIORITY_TEXT[p]} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
         ))}
       </Menu>
-      {onMore && <IconButton icon="ellipsis" size="sm" label={t('More actions')} shortcut={keysOf('list.actions')} data-row-action="more" onClick={onMore} />}
+      {onMore && <IconButton icon="ellipsis" size="sm" label={t('More actions')} shortcut={keysOf('list.actions')} data-row-action="more" onClick={(e) => onMore(e.currentTarget)} />}
       {scheduling && (
         <Suspense fallback={null}>
           <RowSchedule task={task} anchor={schedule} onClose={() => setScheduling(false)} />

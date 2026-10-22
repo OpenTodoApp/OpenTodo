@@ -5,7 +5,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type RefObject } from 'react'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan } from '../../lib/bulk'
 import { useAllLabels, useLiveSections, useProjects } from '../../lib/localData'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
@@ -50,7 +50,7 @@ export function trackingItem(task: Task | undefined, runningTask: string | null 
 }
 
 /** The menu's groups for the given tasks (exported for the palette and tests). */
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void }): ActionGroup[] {
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -65,7 +65,8 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
     { items: [
       { kind: 'action', id: 'complete', label: reopen ? t('Reopen') : t('Complete'), icon: 'check', shortcut: keysOf('list.complete'), onSelect: run({ kind: 'complete' }) },
     ] },
-    { label: t('Priority'), items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: t('Priority {p}', { p }), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) },
+    // Beside a row its own Priority and Schedule buttons already offer these.
+    ...(besideRow ? [] : [{ label: t('Priority'), items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: t('Priority {p}', { p }), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) }]),
     { items: [
       { kind: 'picker', id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: t('There are no labels yet'), picker: {
         title: t('Labels'), placeholder: t('Add to all, or remove from all…'), source: live, multiple: true, selected: common, rankContext: 'label',
@@ -73,13 +74,13 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
         onPick: (l: Label) => { void runBulk(ids, { kind: 'label', labelId: l.id, add: !common.includes(l.id) }) },
       } },
     ] },
-    { label: t('Date'), items: [
+    ...(besideRow ? [] : [{ label: t('Date'), items: [
       { kind: 'action', id: 'today', label: t('Today'), icon: 'calendar-check', onSelect: run({ kind: 'due', pick: 'today' }) },
       { kind: 'action', id: 'tomorrow', label: t('Tomorrow'), icon: 'calendar-days', onSelect: run({ kind: 'due', pick: 'tomorrow' }) },
       { kind: 'action', id: 'next-week', label: t('Next week'), icon: 'calendar-range', onSelect: run({ kind: 'due', pick: 'next-week' }) },
       { kind: 'action', id: 'no-date', label: t('No date'), icon: 'x', onSelect: run({ kind: 'due', pick: null }) },
       { kind: 'action', id: 'pick-date', label: t('Pick a date…'), icon: 'calendar-days', onSelect: a.pickDate },
-    ] },
+    ] }] as ActionGroup[]),
     { items: [
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
@@ -117,7 +118,7 @@ function useBulkData(ids: readonly string[]): Data {
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, startPicker = null, onApplied }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, startPicker = null, onApplied, anchor }: {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -125,19 +126,22 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   triggerClassName?: string
   startPicker?: string | null
   onApplied?: () => void
+  /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
+  anchor?: RefObject<HTMLElement | null>
 }) {
   const data = useBulkData(ids)
   const [review, setReview] = useState<{ title: string; plan: ReviewPlan } | null>(null)
   const [dating, setDating] = useState(false)
+  const besideRow = !!anchor?.current
   const groups = useMemo(() => bulkMenuGroups(ids, data, {
     review: (title, plan) => { void plan.then((p) => setReview({ title, plan: p })) },
     pickDate: () => setDating(true),
-  }), [ids, data])
+  }, besideRow), [ids, data, besideRow])
   const n = data.tasks.length || ids.length
   return (
     <>
       <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} onOpenChange={onOpenChange}
-        trigger={trigger} triggerClassName={triggerClassName} startPicker={startPicker} width="sm:w-72" />
+        trigger={trigger} triggerClassName={triggerClassName} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
       {review && <BulkReview title={review.title} plan={review.plan} onClose={() => setReview(null)} onApplied={onApplied} />}
       {dating && (
         <Dialog title={t('Date for {tasks}', { tasks: tasksWord(n) })} onClose={() => setDating(false)}>
