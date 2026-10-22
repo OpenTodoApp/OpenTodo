@@ -7,9 +7,9 @@ export function DayDone() {
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" data-illustration="day-done">
       <path d="M22 104h116" />
       <rect x="48" y="58" width="64" height="44" rx="4" fill="var(--color-sunken)" />
-      <path d="M56 58v44M88 58V46l5 4 5-4v12" />
-      <path d="M88 22a16 16 0 1 0 18 22 13 13 0 0 1-18-22Z" fill="var(--color-accent)" fillOpacity="0.15" />
-      <path d="M118 28v4M116 30h4M62 34v3M60.5 35.5h3" />
+      <path d="M56 58v44M70 58V46l5 4 5-4v12" />
+      <path d="M110 14a16 16 0 1 0 18 22 13 13 0 0 1-18-22Z" fill="var(--color-accent)" fillOpacity="0.15" />
+      <path d="M136 18v4M134 20h4M62 30v3M60.5 31.5h3" />
     </svg>
   )
 }

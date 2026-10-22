@@ -16,7 +16,8 @@ function Shown({ label, action }: { label: string; action?: string }) {
     showBulkToast(label, 'story-undo', { ttl: HOLD, ...(action ? { action: { label: action, run: () => {} } } : {}) })
     return () => hideBulkToast()
   }, [label, action])
-  return <div className="h-[28rem] bg-canvas"><UndoToast /></div>
+  // A transform makes the fixed region sit in this frame, so the capture shows it.
+  return <div className="h-[28rem] transform-gpu bg-canvas"><UndoToast /></div>
 }
 
 /** After one task's action: the sentence and Undo. */
