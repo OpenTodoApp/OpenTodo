@@ -82,5 +82,6 @@
 
 ## 7. Integration
 
-- [ ] 7.1 Run `make check`, `make ui-check`, `make layout-check` and `make ux-audit` on the final branch; verify all pass, strict mode exits zero with `UX_AUDIT_STRICT=1` on M2 to M6 and M14, and add the CHANGELOG.md entry under Unreleased (the audit command, the focus check in the UI gate, the new stories, the two empty states, the German layout leg)
+- [x] 7.1 Run `make check`, `make ui-check`, `make layout-check` and `make ux-audit` on the final branch; verify all pass, strict mode exits zero with `UX_AUDIT_STRICT=1` on M2 to M6 and M14, and add the CHANGELOG.md entry under Unreleased (the audit command, the focus check in the UI gate, the new stories, the two empty states, the German layout leg)
   - Partly: `make ci-checks`, `make docs-check`, `make openspec-validate`, `go vet`, `go test ./...`, web typecheck, lint and tests (two timing tests pass alone), the accessibility gate on the Screens stories, a narrowed `make layout-check` (LAYOUT OK) and a full `make ux-audit` pass; the full layout check and visual regression run in CI.
+  - Done on #243's final head (ef53a450, rebased on main): every CI job passed, including the full layout check, visual regression and the ux-audit job; the CHANGELOG entry is under Unreleased. Strict mode waits on 6.2 (owner question).
