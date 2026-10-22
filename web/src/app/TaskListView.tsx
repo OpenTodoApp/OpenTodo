@@ -100,6 +100,15 @@ function useListFrame(layoutPage: boolean, full: boolean, fieldColumns: boolean)
 /** Today's Earlier group header actions (page-rhythm D6). */
 const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
 
+/** Bulk selection over the list's rows (bulk-edit D1); read-only tasks cannot be ticked. */
+function useTickedRows(rows: { task: Task }[], taskMap: Map<string, Task>, isReadOnly: (task?: Task) => boolean) {
+  const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
+  const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
+  const selection = useSelection(tickRows, readOnlyId)
+  const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
+  return { tickRows, selection, ticked }
+}
+
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
 
@@ -114,10 +123,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
-  const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
-  const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
-  const selection = useSelection(tickRows, readOnlyId)
-  const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
+  const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
   const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo } = useListUi()
   // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
   const openId = usePanelTaskId()
