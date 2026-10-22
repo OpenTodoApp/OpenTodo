@@ -117,11 +117,11 @@ await pageA.getByRole('alert').filter({ hasText: 'Expected "&" or "|" before "p1
 await vq.press('Escape')
 assert((await vq.inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'Esc restores the query')
 
-step('Group by due date: Overdue, Today, Tomorrow headings in order; sort by priority descending')
+step('Group by due date: Earlier, Today, Tomorrow headings in order; sort by priority descending')
 await pageA.getByLabel('Group by').selectOption('due')
-await pageA.getByRole('heading', { name: 'Overdue', level: 2 }).waitFor()
+await pageA.getByRole('heading', { name: 'Earlier', level: 2 }).waitFor()
 const headings = await pageA.locator('[aria-label="View results"] h2').allTextContents()
-assert(JSON.stringify(headings) === JSON.stringify(['Overdue', 'Today', 'Tomorrow']), 'headings ' + headings)
+assert(JSON.stringify(headings) === JSON.stringify(['Earlier', 'Today', 'Tomorrow']), 'headings ' + headings)
 await pageA.getByLabel('Sort by').selectOption('priority')
 await pageA.getByLabel('Sort direction').selectOption('desc')
 // keyboard reachability: options are selects in tab order after the query input
@@ -371,7 +371,9 @@ for (const width of [1280, 1440]) {
 await pageA.setViewportSize({ width: 1024, height: 860 })
 await pageA.goto(`${base}/today`); await settle()
 const closed = await frameEdges()
-await pageA.getByRole('button', { name: /^Review PR/ }).first().click()
+// Open the first task from the keyboard (j selects it, Enter opens it in the panel).
+await pageA.keyboard.press('j')
+await pageA.keyboard.press('Enter')
 await pageA.locator('aside[data-detail-for]').waitFor()
 await pageA.waitForTimeout(400)
 const docked = await frameEdges()

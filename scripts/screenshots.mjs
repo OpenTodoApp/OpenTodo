@@ -262,7 +262,7 @@ const openTask = async (p, title) => { await row(p, title).click(); await detail
 
 // ------------------------------------------------------------------ shots
 console.log('· capturing')
-await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).waitFor())
+await go(page, '/today', () => page.getByRole('heading', { name: 'Earlier' }).waitFor())
 await shot(page, 'today')
 
 // Natural-language quick add: chips under the input as you type
@@ -324,7 +324,7 @@ await shot(page, 'dashboard')
 // Activity feed, notifications, trash
 await go(page, '/updates', () => page.getByRole('heading', { name: 'Updates' }).waitFor())
 await shot(page, 'feed')
-await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).waitFor())
+await go(page, '/today', () => page.getByRole('heading', { name: 'Earlier' }).waitFor())
 await page.getByRole('button', { name: /^Notifications/ }).click()
 await page.getByRole('dialog', { name: 'Notifications' }).waitFor(); await settle(page, 500)
 await shot(page, 'notifications')
@@ -333,7 +333,7 @@ await go(page, '/trash', () => page.getByRole('heading', { name: 'Trash' }).wait
 await shot(page, 'trash')
 
 // Keyboard help
-await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).waitFor())
+await go(page, '/today', () => page.getByRole('heading', { name: 'Earlier' }).waitFor())
 await page.keyboard.press('?'); await page.getByText('Keyboard shortcuts').first().waitFor(); await settle(page, 400)
 await shot(page, 'shortcuts')
 await page.keyboard.press('Escape')
@@ -378,11 +378,11 @@ if (want('settings-voice')) {
 // Dark mode, desktop and phone
 const dark = await mk({ colorScheme: 'dark' }); const dp = await dark.newPage()
 await signIn(dp, 'ada@example.com')
-await go(dp, '/today', () => dp.getByRole('heading', { name: 'Overdue' }).waitFor())
+await go(dp, '/today', () => dp.getByRole('heading', { name: 'Earlier' }).waitFor())
 await shot(dp, 'today-dark')
 const phone = await mk({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'dark', isMobile: true, hasTouch: true }); const mp = await phone.newPage()
 await signIn(mp, 'ada@example.com')
-await go(mp, '/today', () => mp.getByRole('heading', { name: 'Overdue' }).waitFor())
+await go(mp, '/today', () => mp.getByRole('heading', { name: 'Earlier' }).waitFor())
 await shot(mp, 'mobile-dark')
 await openTask(mp, 'Get three quotes for the kitchen')
 await shot(mp, 'mobile-detail')

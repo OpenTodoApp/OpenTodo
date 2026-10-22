@@ -231,9 +231,9 @@ const shots = [
     await p.goto(setupBase); await p.getByText('Create the owner account').waitFor(); await settle(p)
     return clipOf(p, p.locator('div[class*="rounded"]').filter({ has: p.locator('form') }).first(), 32)
   } },
-  { name: 'today', server: D, card: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()) } },
+  { name: 'today', server: D, card: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()) } },
   { name: 'quick-add', server: D, card: true, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     const qa = p.getByRole('combobox', { name: 'Add a task' }); await qa.click()
     await qa.pressSequentially('Call Sam about the tiles tomorrow at 4pm #Home @call p2 +15m', { delay: 5 }); await settle(p, 500)
     const main = p.locator('main'); const b = await main.boundingBox()
@@ -288,7 +288,7 @@ const shots = [
     await p.locator('[data-columns-toggle]').click(); await p.getByRole('table', { name: 'Tasks and fields' }).waitFor(); await p.mouse.move(700, 700); await settle(p, 800)
   }, async after(p) { await p.locator('[data-columns-toggle]').click().catch(() => {}) } },
   { name: 'sidebar', server: D, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     return clipOf(p, sidebar(p), 0)
   } },
   { name: 'labels', server: D, card: true, async run(p) {
@@ -335,7 +335,7 @@ const shots = [
   } },
   { name: 'repeat', server: D, async run(p) {
     // Dated tasks are not in the Inbox (inbox-means-unplaced): Run club is in Today.
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Run club')
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()); await openTask(p, 'Run club')
     await detail(p).getByRole('button', { name: /^When: every/ }).click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
@@ -357,7 +357,7 @@ const shots = [
     await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity, history and time' }), 8)
   } },
   { name: 'notifications', card: true, server: D, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     await p.getByRole('button', { name: /^Notifications/ }).click(); const d = p.getByRole('dialog', { name: 'Notifications' }); await d.waitFor(); await settle(p, 500)
     const b = await d.boundingBox(); const vp = p.viewportSize()
     const x = Math.max(0, b.x - 240)
@@ -383,7 +383,7 @@ const shots = [
   }, async after(p) { await p.keyboard.press('Escape') } },
   // A task's location editor (task-locations): coordinates typed into the field, set as the location.
   { name: 'locations', server: D, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()); await openTask(p, 'Pick up groceries')
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()); await openTask(p, 'Pick up groceries')
     const d = p.getByRole('dialog', { name: 'Location' })
     const part = detail(p).getByRole('button', { name: /^Where: .*45\.4642/ }).first()
     if (!(await part.count())) {
@@ -396,7 +396,7 @@ const shots = [
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'trash', server: D, card: true, async run(p) { await go(p, demoBase, '/trash', () => p.getByRole('heading', { level: 1, name: 'Trash' }).waitFor()) } },
   { name: 'shortcuts', server: D, card: true, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     await p.keyboard.press('?'); await p.getByText('Keyboard shortcuts').first().waitFor(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'sync-status', card: true, server: D, async run(p, { ctx }) {
@@ -407,9 +407,9 @@ const shots = [
     return { x: b.x, y: b.y, width: b.width, height: 330 }
   }, async after(p, { ctx }) { await ctx.setOffline(false); await settle(p, 2500) } },
   // Phone
-  { name: 'mobile-today', card: true, server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()) } },
+  { name: 'mobile-today', card: true, server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()) } },
   { name: 'mobile-menu', server: D, phone: true, async run(p) {
-    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     await p.getByRole('button', { name: 'Open menu' }).click(); await settle(p, 600)
   } },
   // Ordinary instance: account, settings and sharing
