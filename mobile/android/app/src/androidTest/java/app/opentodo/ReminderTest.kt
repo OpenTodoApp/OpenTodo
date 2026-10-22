@@ -92,8 +92,10 @@ class ReminderTest {
             Scheduler.clear(context)
             waitUntil("the alarm to be cancelled") { armedAlarms() < armed }
         } catch (e: AssertionError) {
-            val ours = pendingSection().filter { it.contains(context.packageName) }.take(20)
-            throw AssertionError("${e.message}; before=$before armed=$armed; pending lines: $ours")
+            val all = shell("dumpsys alarm").lines()
+            val headers = all.filter { l -> l.isNotBlank() && l.indexOfFirst { !it.isWhitespace() } <= 2 }.take(60)
+            val ours = all.withIndex().filter { it.value.contains(context.packageName) }.take(15).map { "${it.index}:${it.value.trim()}" }
+            throw AssertionError("${e.message}; before=$before armed=$armed; headers: $headers; lines: $ours")
         }
     }
 
