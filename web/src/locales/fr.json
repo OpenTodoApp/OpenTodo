@@ -4945,5 +4945,6 @@
   "Select tasks": "Sélectionner des tâches",
   "Swipe right to complete, left to schedule. Also in a task's menu.": "Glissez à droite pour terminer, à gauche pour planifier. Aussi dans le menu d'une tâche.",
   "Right completes, left schedules; the same two actions start the task's menu": "À droite pour terminer, à gauche pour planifier ; les deux mêmes actions ouvrent le menu de la tâche",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La coche et affiche toutes les cases ; « Sélectionner des tâches » dans le menu de la page fait de même, « Terminé » les masque"
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La coche et affiche toutes les cases ; « Sélectionner des tâches » dans le menu de la page fait de même, « Terminé » les masque",
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Ce projet appartient à un espace de travail dont vous ne faites pas partie. Demandez d’abord à la personne propriétaire de l’espace de vous ajouter, puis rouvrez le lien."
 }

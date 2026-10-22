@@ -191,6 +191,22 @@ func TestProjectGroupGrants(t *testing.T) {
 	if resp.StatusCode != 409 || errCode(out) != "not_in_workspace" {
 		t.Fatalf("outsider = %d %v", resp.StatusCode, out)
 	}
+	// A project invite link from outside the workspace: refused with its own code,
+	// so the invite screen can say whom to ask (workspaces 6.3); nobody is added.
+	_, secret, _ := projectLink(se.alice, se.project, map[string]any{"role": "viewer"})
+	members := func() int {
+		resp, out := se.alice.do("GET", "/api/v1/projects/"+se.project+"/members", nil)
+		se.alice.mustStatus(resp, 200, out)
+		return len(out["members"].([]any))
+	}
+	before := members()
+	resp, out = acceptLink(dan, secret)
+	if resp.StatusCode != 409 || errCode(out) != "not_in_workspace" {
+		t.Fatalf("outsider accepts a link = %d %v", resp.StatusCode, out)
+	}
+	if n := members(); n != before {
+		t.Fatalf("members after the refused link = %d, before %d", n, before)
+	}
 	// Grant refused for the role: the editor; an admin granting admin.
 	resp, out = se.bob.do("POST", "/api/v1/projects/"+se.project+"/grants", map[string]any{"groupId": group, "role": "viewer"})
 	if resp.StatusCode != 403 || errCode(out) != "forbidden" {

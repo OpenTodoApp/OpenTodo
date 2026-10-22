@@ -4945,5 +4945,6 @@
   "Select tasks": "Seleccionar tareas",
   "Swipe right to complete, left to schedule. Also in a task's menu.": "Desliza a la derecha para completar, a la izquierda para programar. También en el menú de una tarea.",
   "Right completes, left schedules; the same two actions start the task's menu": "A la derecha completa, a la izquierda programa; las mismas dos acciones abren el menú de la tarea",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La marca y muestra todas las casillas; «Seleccionar tareas» en el menú de la página hace lo mismo, «Listo» las oculta"
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La marca y muestra todas las casillas; «Seleccionar tareas» en el menú de la página hace lo mismo, «Listo» las oculta",
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Este proyecto pertenece a un espacio de trabajo del que no formas parte. Pide primero a quien es dueño del espacio que te añada y vuelve a abrir el enlace."
 }

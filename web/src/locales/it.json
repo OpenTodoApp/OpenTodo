@@ -4945,5 +4945,6 @@
   "Select tasks": "Seleziona attività",
   "Swipe right to complete, left to schedule. Also in a task's menu.": "Scorri a destra per completare, a sinistra per pianificare. Anche nel menu di un'attività.",
   "Right completes, left schedules; the same two actions start the task's menu": "A destra completa, a sinistra pianifica; le stesse due azioni aprono il menu dell'attività",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La spunta e mostra tutte le caselle; «Seleziona attività» nel menu della pagina fa lo stesso, «Fine» le nasconde"
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La spunta e mostra tutte le caselle; «Seleziona attività» nel menu della pagina fa lo stesso, «Fine» le nasconde",
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Questo progetto appartiene a uno spazio di lavoro di cui non fai parte. Chiedi prima a chi possiede lo spazio di aggiungerti, poi riapri il link."
 }

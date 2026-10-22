@@ -82,3 +82,7 @@ See proposal.md for the motivation. Relevant current state:
 - The name of the default workspace: "Personal" is proposed; "My workspace" avoids implying work versus home. Changeable at apply time without touching the specs (the specs say "Personal until renamed").
 - Whether the workspace control should show the account's avatar beside the workspace name on a desktop, where the footer already shows the account. Visual only; decided in the workbench.
 - Group mentions (`@Family`) and a `workspace:` filter term are the two follow-ups most likely to be asked for first; both are additive.
+
+## Implementation notes
+
+- **Invite link from outside (task 6.3).** Accepting a project invite link from an account outside the project's created workspace answers 409 `not_in_workspace` instead of the uniform 404, so the invite screen can say whom to ask. The visitor already saw the project's name in the preview, so the code reveals only that the project is in a workspace they are not in. Every other refusal keeps 404 `invitation_invalid`.
