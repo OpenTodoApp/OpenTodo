@@ -266,11 +266,11 @@ The workbench checks stories; the audit checks the built app. `make ux-audit` st
 | M1, M9 | axe-core, WCAG 2.2 AA; contrast reported apart | no serious or critical issue |
 | M2 to M5 | the interface budget: chrome rows, a row's metadata, primary destinations, vertical scrollers | `web/src/app/budget.json` |
 | M6 | an element or the page wider than the viewport, outside `data-scroll-x` | none |
-| M7 | target size, counting a transparent `::after` laid over the control | 44 px on touch; 24 px, or 24 px of space around it, with a mouse |
+| M7 | target size | 44 px on touch; 24 px, or 24 px of space around it, with a mouse |
 | M8 | focus: Tab through the screen at 1280 px | a ring on every focusable element |
 | M10 | text cut with an ellipsis | its full text in the accessible name, the tooltip (`data-tip`) or an `sr-only` neighbour |
 | M11 | two controls overlapping | at most 4 px |
-| M12 | layout shift from navigation to idle, naming the element that moved and by how much | 0.1 |
+| M12 | layout shift from navigation to idle | 0.1 |
 | M13 | the first task row on a second visit with the server stopped | reported |
 | M14 | story coverage of the core screens | none missing |
 | M15 | movement under reduced motion, watched from before the action until it settles: every overlay as it opens (1280 px with a mouse, 360 px on touch), completing a task in Today, and dragging a board card, a Plan task and a Week block | none |

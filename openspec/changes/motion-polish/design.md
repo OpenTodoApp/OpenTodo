@@ -12,13 +12,13 @@ See proposal.md for why. The audit already had M15 (a snapshot of running animat
 
 ## Decisions
 
-### D1. The phone bar keeps one height
+### D1. The phone bar keeps one line (taken from ux-fixes-phone)
 
-The bar's title column is 44 px tall (`h-11`), centred, holding the title (24 px line) and one subtitle line (`.phone-subtitle`, 18 px, one line, cut at the edge). The subtitle's controls keep a 44 px touch area through a transparent absolutely positioned `::after` (−13 px above and below) instead of `min-height: 44px`, which grew the line. Alternatives: reserving the subtitle's line only on pages that have one (the page cannot know before its data arrives), or letting the bar grow but animating it (motion the person did not ask for). M7 learns to count such an `::after` as the control's hit area, so the audit does not report a 18 px target that is really 44 px.
+This change first gave the bar's title column a fixed height and the subtitle's controls an `::after` hit area. `ux-fixes-phone` (#258), merged first, solved the same shift more simply: the subtitle is one line, a project's subtitle is plain text (members and public links open from Share), and the Inbox's planned line cuts itself. That is kept and the fixed height, the `.phone-subtitle` style and M7's `::after` rule were dropped in the rebase.
 
 ### D2. A screen draws what depends on local data once it is read
 
-Each screen that reads local data now distinguishes "not read yet" from "empty": `useListModel` exposes `loading` (the shared task snapshot is `undefined`) and `projectsLoaded`; PlanView, StatsView, ProjectsView and FeedView do the same with their own hooks (`useAllTaskRowsOrLoading`, `useProjectsLoaded`, `useTasksByIdRead`, which also says whether its rows answer the current ids). Until then they show the existing `Skeleton` (task-list-presentation "Skeleton loading"), and the empty state, the groups, "Add section", "Close the day" and the Updates "Load older" button are not drawn. A project page waits for its project row, so the generic header never shows before the project header. The sidebar draws Favourites, Projects, Labels and Filters once projects, labels, views and preferences are read (`useSidebarRowsLoaded`) and the collapse state was read for the current project list (the live query returns which list it answered for). The Display screen draws its footer with the content; the invite screen shows its "Checking…" card only after 400 ms; Updates gives its filter selects a fixed width; the Data page puts the sync badge on its own line. Alternative: hiding the whole app until every store is read (a later first paint everywhere for screens that need one store).
+Lists, projects and Statistics already wait for their data since `ux-fixes-phone` (#258: `useListReady` in TaskListView, `ready` in StatsView); that mechanism is kept. This change covers the screens it did not: PlanView (its own `loading` from `useLiveTasks`), ProjectsView (`useProjectsLoaded`), FeedView (`useTasksByIdRead`, which also says whether its rows answer the current ids, plus the projects and the user) show the existing `Skeleton` (task-list-presentation "Skeleton loading") and draw no empty state, groups or "Load older" until then. The sidebar draws Favourites, Projects, Labels and Filters once projects, labels, views and preferences are read (`useSidebarRowsLoaded`) and the collapse state was read for the current project list (the live query returns which list it answered for). The Display screen draws its footer with the content; the invite screen shows its "Checking…" card only after 400 ms; Updates gives its filter selects a fixed width; the Data page puts the sync badge on its own line. Alternative: hiding the whole app until every store is read (a later first paint everywhere for screens that need one store).
 
 ### D3. Settings sections settle before they show
 
@@ -26,7 +26,7 @@ Each screen that reads local data now distinguishes "not read yet" from "empty":
 
 ### D4. M15 watches a moment, not a snapshot
 
-`watchMotion()` starts before the action: a capture-phase `transitionrun` listener records transitions on moving properties, and a per-frame poll of `document.getAnimations()` records running animations whose keyframes move (Web Animations, CSS animations, view transitions); `motionSeen()` stops and returns them. The tour runs it under `reducedMotion: 'reduce'` for every overlay of the inventory with an opener (at 1280 px with a mouse and at 360 px as a touch device, skipping overlays whose screen is not at that width), completing a task in Today (a different task at each width, since the account is shared), and three drags at 1280 px: a card to the next board column, a Plan task to the next day, a Week block down an hour. A run with motion allowed finds the panel, sheets, toasts, drags and the drawer moving, which shows the watch works; under reduced motion it finds nothing. Strict mode now includes M15.
+`watchMotion()` starts before the action: a capture-phase `transitionrun` listener records transitions on moving properties, and a per-frame poll of `document.getAnimations()` records running animations whose keyframes move (Web Animations, CSS animations, view transitions); `motionSeen()` stops and returns them. The tour runs it under `reducedMotion: 'reduce'` for every overlay of the inventory with an opener (at 1280 px with a mouse and at 360 px as a touch device, skipping overlays whose screen is not at that width), completing a task in Today (a different task at each width, since the account is shared), and three drags at 1280 px: a card to the next board column, a Plan task to the next day, a Week block down an hour. A run with motion allowed finds the panel, sheets, toasts, drags and the drawer moving, which shows the watch works; under reduced motion it finds nothing. Strict mode now includes M15. M12's naming of the moved elements comes from `ux-fixes-phone`.
 
 ### Defaults chosen
 
@@ -35,13 +35,12 @@ Each screen that reads local data now distinguishes "not read yet" from "empty":
 
 ### Data model, size and interface budget
 
-No data model change: no op field, table or stored preference. No dependency; the image and runtime memory are unchanged and the web bundle grows by a few hundred bytes. The interface budget is unchanged: no chrome row, task property, sidebar destination, scroll region or shortcut is added; the phone bar keeps its single row (now of fixed height), and the skeleton takes the place of content that was there anyway. Offline nothing changes: every gate waits for local reads, and the settings gate gives up after 600 ms, offline included.
+No data model change: no op field, table or stored preference. No dependency; the image and runtime memory are unchanged and the web bundle grows by a few hundred bytes. The interface budget is unchanged: no chrome row, task property, sidebar destination, scroll region or shortcut is added; and the skeleton takes the place of content that was there anyway. Offline nothing changes: every gate waits for local reads, and the settings gate gives up after 600 ms, offline included.
 
 ## Risks / Trade-offs
 
 - [A slow device shows the skeleton longer than an empty page used to] → the skeleton is the specified cold-start look; data arrives in the same time.
 - [A settings section can be invisible for up to 600 ms on a slow server] → `aria-busy` is set meanwhile; the heading stays visible; after 600 ms every card shows its own loading state as before.
-- [The subtitle is cut on a narrow phone] → it was one truncated line before for text; controls in it (members, Public) stay reachable from the project menu and the share dialog.
 - [A component that reads "loading" wrongly as "empty" elsewhere] → the new hooks are additive; existing hooks keep their defaults.
 
 ## Migration Plan

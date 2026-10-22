@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Page template
-Every view SHALL render a page header with the title in the page title size, an optional lead line under the title (the page's meta: a date, totals, members and role, a count, a read-only note) in the muted tone at the metadata size, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, a list with field columns and a project's list layout 72 rem, boards, timelines and calendars the whole frame. The header SHALL stay visible while the content scrolls. Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle, on one line of fixed height whether or not the page has a lead line, its controls keeping a 44 px touch area without growing the line.
+Every view SHALL render a page header with the title in the page title size, an optional lead line under the title (the page's meta: a date, totals, members and role, a count, a read-only note) in the muted tone at the metadata size, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, a list with field columns and a project's list layout 72 rem, boards, timelines and calendars the whole frame. The header SHALL stay visible while the content scrolls. Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share.
 
 There SHALL be two page frames, both with the same side padding and both inside the content column:
 
@@ -55,5 +55,5 @@ When the panel opens as a column, the content column SHALL narrow by the panel's
 - **THEN** the shell's bar shows "Today" with the date line under it as its subtitle, and the page header row shows no second title
 
 #### Scenario: Long lead line on a phone
-- **WHEN** a shared project with a public link opens at 360 px and its members, role and Public chip are wider than the bar
-- **THEN** the subtitle stays one line, cut at the bar's edge, and the bar keeps its height
+- **WHEN** a shared project with a public link opens at 360 px and "2 · owner · Public" is wider than the space beside the title
+- **THEN** the subtitle stays one line, cut at the bar's edge with its full text reachable, and the bar keeps its height

@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Skeleton loading
-While a list, the panel or a settings page waits for local data, it SHALL show skeleton rows in the row's shape, never a spinner or a "Loading…" sentence; the skeleton SHALL be replaced in place. A screen SHALL draw what depends on its local data only once that data has been read: a list, a project (its header included), the Plan, Statistics, Projects and Updates SHALL show their skeleton until then, never an empty state, empty groups or a sidebar group that opens and then folds. A settings section whose cards ask the server SHALL draw its cards together once each has its first answer, waiting at most 600 ms, so a card that grows with its answer does not push the cards below it. Below 768 px the bar's line under the title SHALL be one line of fixed height, whether or not the page has one yet. On these screens the audit's layout shift (M12) SHALL stay at or below 0.1 at every width.
+While a list, the panel or a settings page waits for local data, it SHALL show skeleton rows in the row's shape, never a spinner or a "Loading…" sentence; the skeleton SHALL be replaced in place. A screen SHALL draw what depends on its local data only once that data has been read, never an empty state, empty groups, a header that is replaced, or a sidebar group that opens and then folds first: a list, a project and Statistics draw nothing below the shell until then, and the Plan, Projects and Updates show their skeleton. A settings section whose cards ask the server SHALL draw its cards together once each has its first answer, waiting at most 600 ms, so a card that grows with its answer does not push the cards below it. On these screens the audit's layout shift (M12) SHALL stay at or below 0.1 at every width.
 
 #### Scenario: Cold start
 - **WHEN** the app opens before the local database has answered
@@ -9,7 +9,7 @@ While a list, the panel or a settings page waits for local data, it SHALL show s
 
 #### Scenario: Project opens with its tasks
 - **WHEN** a project with three sections opens on a phone before the local database has answered
-- **THEN** the skeleton shows under the bar, and the sections appear with their tasks in one step, without first showing empty sections or "This project has no open tasks"
+- **THEN** the sections appear with their tasks in one step, without first showing empty sections or "This project has no open tasks"
 
 #### Scenario: Subtitle arrives on a phone
 - **WHEN** the Inbox opens at 360 px and its count of planned tasks without a project is read after the first frame
