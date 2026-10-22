@@ -8,7 +8,7 @@ La semaine dernière ({{.Week}})
   Terminées en retard : {{.Late}}
   Reportées : {{.Slipped}}
 
-En retard
+Encore ouvertes d'avant
 {{.Overdue}}
 
 À faire dans les sept prochains jours

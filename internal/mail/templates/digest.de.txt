@@ -8,7 +8,7 @@ Letzte Woche ({{.Week}})
   Verspätet erledigt: {{.Late}}
   Verschoben: {{.Slipped}}
 
-Überfällig
+Noch offen von früher
 {{.Overdue}}
 
 Fällig in den nächsten sieben Tagen

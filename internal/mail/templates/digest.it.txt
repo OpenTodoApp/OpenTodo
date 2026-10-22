@@ -8,7 +8,7 @@ La settimana scorsa ({{.Week}})
   Completate in ritardo: {{.Late}}
   Slittate: {{.Slipped}}
 
-In ritardo
+Ancora aperte da prima
 {{.Overdue}}
 
 In scadenza nei prossimi sette giorni
