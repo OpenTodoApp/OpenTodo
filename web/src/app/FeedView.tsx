@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, guestActorLabel, isPending, mergeOlder, pendingOpIds } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
-import { useAllProjects, useTasksById } from '../lib/localData'
+import { useAllProjects, useProjectsLoaded, useTasksByIdRead } from '../lib/localData'
 import { dayOf, FEED_KINDS, feedEvents, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, sharedProjectIds, type FeedKind } from '../lib/feed'
 import { useOnline } from '../lib/online'
 import { currentUserId, memberName, membershipMap } from '../lib/sharing'
@@ -11,7 +11,7 @@ import { navigate } from './router'
 import { openTaskInList } from './signals'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { hueFor, PageBody, PageHeader } from '../ui'
+import { hueFor, PageBody, PageHeader, Skeleton } from '../ui'
 import { Tooltip } from '../ui'
 import { t } from '../lib/i18n'
 
@@ -27,14 +27,16 @@ import { t } from '../lib/i18n'
 export function FeedView() {
   const dt = useDateTimeFormat()
   const online = useOnline()
-  const me = useLiveQuery(() => currentUserId(), [], null)
+  const meRead = useLiveQuery(() => currentUserId(), [])
+  const me = meRead ?? null
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
   const shared = useLiveQuery(() => sharedProjectIds(), [], null as string[] | null)
   const local = useLiveQuery(() => feedEvents(), [], null as ActivityEvent[] | null)
   const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
   const projects = useAllProjects()
   const taskIds = useMemo(() => [...new Set((local ?? []).map((e) => e.taskId).filter((id): id is string => !!id))], [local])
-  const tasks = useTasksById(taskIds)
+  const { tasks, read: tasksRead } = useTasksByIdRead(taskIds)
+  const projectsRead = useProjectsLoaded() !== undefined
   // Seen times as they were when the feed opened: those entries keep their dot.
   const [seenAtOpen, setSeenAtOpen] = useState<Map<string, number> | null>(null)
   useEffect(() => {
@@ -114,6 +116,8 @@ export function FeedView() {
     }
   }
 
+  // Until the log, its task titles, the projects and who you are are read: the skeleton, so rows do not rewrap (motion-polish D2).
+  const loading = shared === null || local === null || !tasksRead || !projectsRead || meRead === undefined
   const today = dayOf(Date.now())
   const yesterday = dayOf(Date.now() - 86_400_000)
   const dayLabel = (d: string) => (d === today ? t('Today') : d === yesterday ? t('Yesterday') : dt.formatDate(d, d.slice(0, 4) === today.slice(0, 4) ? 'heading' : 'long'))
@@ -124,33 +128,33 @@ export function FeedView() {
       <PageHeader title={t('Updates')} meta={t('What changed in your shared projects')} help="updates">
         <label className="flex items-center gap-1 text-meta text-muted">
           {t('Project')}
-          <select className="ui-input py-0.5 text-meta" value={project} onChange={(e) => setProject(e.target.value)} aria-label={t('Filter feed by project')}>
+          <select className="ui-input w-40 py-0.5 text-meta" value={project} onChange={(e) => setProject(e.target.value)} aria-label={t('Filter feed by project')}>
             <option value="">{t('All shared projects')}</option>
             {(shared ?? []).map((id) => <option key={id} value={id}>{projectName(id)}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-1 text-meta text-muted">
           {t('Person')}
-          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label={t('Filter feed by person')}>
+          <select className="ui-input w-40 py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label={t('Filter feed by person')}>
             <option value="">{t('Everyone')}</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-1 text-meta text-muted">
           {t('Kind')}
-          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label={t('Filter feed by kind')}>
+          <select className="ui-input w-40 py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label={t('Filter feed by kind')}>
             <option value="">{t('All changes')}</option>
             {FEED_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
       </PageHeader>
-      {shared && shared.length === 0 ? (
+      {loading ? <Skeleton shape="row" count={6} label={t('Loading activity')} /> : shared.length === 0 ? (
         <p className="py-12 text-center text-body text-faint">{t('Share a project to see what others change here.')}</p>
       ) : shown.length === 0 && local ? (
         <p className="py-12 text-center text-body text-faint">{project || actor || kind ? t('No activity matches these filters.') : t('No activity on this device yet.')}</p>
       ) : null}
       <div className="space-y-4">
-        {groups.map((g) => (
+        {!loading && groups.map((g) => (
           <section key={g.day} aria-label={dayLabel(g.day)}>
             <h2 className="mb-1 text-meta font-semibold uppercase tracking-wide text-faint">{dayLabel(g.day)}</h2>
             <ol className="divide-y divide-(--ot-border)" aria-label={t('Activity')}>
@@ -189,7 +193,7 @@ export function FeedView() {
           </section>
         ))}
       </div>
-      {more && online && shared && shared.length > 0 && (
+      {!loading && more && online && shared && shared.length > 0 && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm mt-3 text-meta" disabled={state === 'loading'} onClick={() => void loadOlder()}>
           {state === 'loading' ? t('Fetching older updates…') : t('Load older updates')}
         </button>

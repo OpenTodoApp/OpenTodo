@@ -153,6 +153,11 @@ export function useViewRowsLoaded(): View[] | undefined {
   return viewRows.use()
 }
 
+/** Whether projects, labels, saved views and preferences have been read once (the sidebar's groups wait for them). */
+export function useSidebarRowsLoaded(): boolean {
+  return [projectRows.use(), labelRows.use(), viewRows.use(), prefsRow.use()].every((rows) => rows !== undefined)
+}
+
 /** The synced user preferences row: undefined while loading, null when there is none yet. */
 export function useUserPrefsRow(): UserPrefs | null | undefined {
   return prefsRow.use()
@@ -225,6 +230,12 @@ export function useTaskRowsOfProjects(projectIds: readonly string[]): Task[] {
 /** The task rows with these ids that exist (deleted ones included), in the given order. */
 export function useTasksById(ids: readonly string[]): Task[] {
   return useLiveQuery(async () => (await db.tasks.bulkGet(ids as string[])).filter((tk): tk is Task => !!tk), [ids], NO_TASK_ROWS)
+}
+
+/** Like useTasksById, with whether the rows are the answer for these ids (a screen waits for it rather than jump). */
+export function useTasksByIdRead(ids: readonly string[]): { tasks: Task[]; read: boolean } {
+  const res = useLiveQuery(async () => ({ of: ids, rows: (await db.tasks.bulkGet(ids as string[])).filter((tk): tk is Task => !!tk) }), [ids])
+  return { tasks: res?.rows ?? NO_TASK_ROWS, read: res?.of === ids }
 }
 
 /** The occurrence records of a recurring task (series-id equals the task's id). */

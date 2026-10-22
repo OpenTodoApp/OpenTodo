@@ -156,7 +156,9 @@ describe('ProjectInviteView', () => {
     expect(screen({ kind: 'invalid' })).toContain('no longer valid')
     expect(screen({ kind: 'offline' })).toContain('Retry now')
     expect(screen({ kind: 'rate-limited' })).toContain('Too many attempts')
-    expect(screen({ kind: 'loading' })).toContain('Checking')
+    // A quick answer swaps no card: "Checking…" shows only after 400 ms (motion-polish D2).
+    expect(screen({ kind: 'loading' })).toContain('aria-busy="true"')
+    expect(screen({ kind: 'loading' })).not.toContain('Checking')
   })
 })
 

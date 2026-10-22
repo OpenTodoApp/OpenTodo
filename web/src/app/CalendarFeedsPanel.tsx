@@ -9,6 +9,7 @@ import type { CalendarFeed, CalendarSubscription } from '../lib/types'
 import { SecretReveal } from './TokensSection'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { useSettingsPending } from './settingsPending'
 
 // Settings → Integrations → Calendar feeds (OpenSpec change calendar-feeds, design
 // D9): the owner's switch, the user's subscribed calendars, and the private task
@@ -210,6 +211,7 @@ export function CalendarFeedsPanel({ isOwner }: { isOwner: boolean }) {
   const { enabled: encrypted } = useEncryption()
   const [enabled, setEnabled] = useState<boolean | null>(null)
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[] | null>(null)
+  useSettingsPending(enabled === null || subscriptions === null)
   const [feed, setFeed] = useState<CalendarFeed | null | undefined>(undefined)
   const [unreachable, setUnreachable] = useState(false)
   const [busy, setBusy] = useState(false)

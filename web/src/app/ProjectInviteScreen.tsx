@@ -153,7 +153,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   useDateTimeFormat()
   switch (state.kind) {
     case 'loading':
-      return <Card title={t('Checking your invite link…')}><p className="text-body text-muted">{t('One moment.')}</p></Card>
+      return <CheckingCard />
     case 'offline':
       return (
         <Card title={t('You seem to be offline')}>
@@ -246,6 +246,20 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
       )}
     </Card>
   )
+}
+
+/**
+ * The checking card shows only when the answer takes a while: a quick answer would
+ * otherwise swap a small centred card for a taller one and move it (motion-polish D2).
+ */
+function CheckingCard() {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setShown(true), 400)
+    return () => clearTimeout(timer)
+  }, [])
+  if (!shown) return <div className="min-h-full bg-canvas" aria-busy="true" />
+  return <Card title={t('Checking your invite link…')}><p className="text-body text-muted">{t('One moment.')}</p></Card>
 }
 
 function Card({ title, children }: { title: ReactNode; children: ReactNode }) {

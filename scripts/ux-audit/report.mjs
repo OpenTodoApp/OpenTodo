@@ -23,8 +23,8 @@ export const RULES = {
   M15: { name: 'Movement under reduced motion', severity: 2 },
   NAV: { name: 'Screen did not open', severity: 4 },
 }
-/** Rules strict mode fails on (D6): deterministic DOM measurements. */
-export const STRICT_RULES = ['M2', 'M3', 'M4', 'M5', 'M6', 'M14']
+/** Rules strict mode fails on (D6): deterministic DOM measurements, and M15 since motion-polish emptied it. */
+export const STRICT_RULES = ['M2', 'M3', 'M4', 'M5', 'M6', 'M14', 'M15']
 const FREQUENCY = { daily: 3, weekly: 2, rare: 1 }
 
 /** Severity of the rule times the frequency of the screen (S × F, D4). */

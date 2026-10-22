@@ -13,6 +13,7 @@ import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, currentLocale, preferredLanguages } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { useSettingsPending } from './settingsPending'
 
 /** The digest's languages, as the server's message templates (internal/mail). */
 export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português' }
@@ -157,6 +158,7 @@ export function DigestCard() {
   useDateTimeFormat() // re-render on a time format change
   const demo = !!useDemo()
   const [state, setState] = useState<DigestState>({ kind: 'loading' })
+  useSettingsPending(state.kind === 'loading')
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({ weekday: 5, hour: 7 })

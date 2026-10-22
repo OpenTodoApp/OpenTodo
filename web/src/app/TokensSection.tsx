@@ -16,6 +16,7 @@ import { addDaysISO, formatInstant, todayISO } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
+import { useSettingsPending } from './settingsPending'
 
 /**
  * A secret shown once, with a copy action (API tokens, app passwords). The parent
@@ -170,6 +171,7 @@ export function TokensView(p: TokensViewProps) {
 /** Settings → API tokens. `reloadKey` changes when another section created a token. */
 export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   const [tokens, setTokens] = useState<ApiToken[] | null>(null)
+  useSettingsPending(tokens === null)
   const [name, setName] = useState('')
   const [scope, setScope] = useState<TokenScope>('full')
   const [secret, setSecret] = useState<string | null>(null)

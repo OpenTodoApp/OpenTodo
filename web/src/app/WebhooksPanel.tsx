@@ -25,6 +25,7 @@ import {
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { useSettingsPending } from './settingsPending'
 
 export interface WebhookDraft {
   /** null when creating a new webhook. */
@@ -209,6 +210,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null)
   const [unreachable, setUnreachable] = useState(false)
   const [allowPrivate, setAllowPrivate] = useState<boolean | null>(null)
+  useSettingsPending(webhooks === null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<WebhookDraft | null>(null)

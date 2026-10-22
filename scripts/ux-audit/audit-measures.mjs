@@ -217,6 +217,41 @@ export function movingAnimations() {
   return out.slice(0, 8)
 }
 
+/**
+ * M15 over a moment (motion-polish D4): from now until motionSeen(), records every
+ * transition that starts on a moving property and every running animation that
+ * moves, polled each frame, so a short movement that ends before a snapshot is caught.
+ */
+export function watchMotion() {
+  const MOVING = /^(transform|translate|scale|rotate|width|height|top|left|right|bottom|inline-size|block-size|margin|inset)/
+  const seen = new Map()
+  const note = (el, what) => {
+    if (!el || el.nodeType !== 1) return
+    const key = `${window.__ux.d(el)}|${what}`
+    if (!seen.has(key)) seen.set(key, { rule: 'M15', element: window.__ux.d(el), value: what, limit: 'none under reduced motion' })
+  }
+  const onRun = (e) => { if (MOVING.test(e.propertyName)) note(e.target, e.propertyName) }
+  document.addEventListener('transitionrun', onRun, true)
+  let on = true
+  const poll = () => {
+    if (!on) return
+    for (const a of document.getAnimations()) {
+      if (a.playState !== 'running') continue
+      const props = new Set()
+      if (a.transitionProperty) props.add(a.transitionProperty)
+      for (const k of a.effect?.getKeyframes?.() ?? []) for (const p of Object.keys(k)) if (!['offset', 'easing', 'composite', 'computedOffset'].includes(p)) props.add(p.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()))
+      const moving = [...props].filter((p) => MOVING.test(p))
+      if (moving.length) note(a.effect?.target, moving.join(', '))
+    }
+    requestAnimationFrame(poll)
+  }
+  requestAnimationFrame(poll)
+  window.__motionStop = () => { on = false; document.removeEventListener('transitionrun', onRun, true); return [...seen.values()].slice(0, 8) }
+}
+export function motionSeen() {
+  return window.__motionStop ? window.__motionStop() : []
+}
+
 // ---------------------------------------------------------------- driven from Node
 /**
  * M8: Tab through the page and report focusable elements that, while focused, show

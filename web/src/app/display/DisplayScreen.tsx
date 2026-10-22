@@ -81,7 +81,8 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   useWakeLock()
 
   const projects = useProjectsLoaded()
-  const tasks = useLiveTasks() ?? NO_TASKS
+  const liveTasks = useLiveTasks()
+  const tasks = liveTasks ?? NO_TASKS
   const memberships = useMemberships()
   const labels = useAllLabels()
   const views = useViewRowsLoaded()
@@ -92,7 +93,8 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
 
   const content = useMemo<Content | null>(() => {
-    if (!projects) return null
+    // Until projects and tasks are read: nothing, so the lists do not grow under the footer (motion-polish D2).
+    if (!projects || !liveTasks) return null
     const live = projects
     const all = withoutArchived(tasks, live, projectId ?? undefined)
 
@@ -162,7 +164,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [projects, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days])
+  }, [projects, liveTasks, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days])
 
   // ---- keyboard and focus (design D5): one roving focus across groups and columns ----
   const rows = useMemo(() => (content ? [...content.groups, ...content.columns].flatMap((g) => g.rows) : []), [content])
@@ -210,7 +212,8 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
           </div>
         ) : null}
 
-        <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
+        {/* With the content: a footer drawn first would be pushed down when the lists arrive (motion-polish D2). */}
+        {content && <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
           <p role="status" className="display-meta" data-display-synced>
             {online ? lastSyncedLabel(sync.lastSyncedAt, now) : `${t('Offline')} · ${lastSyncedLabel(sync.lastSyncedAt, now)}`}
           </p>
@@ -223,7 +226,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
               <Icon name="log-out" size="md" />{t('Exit')}
             </button>
           </div>
-        </footer>
+        </footer>}
       </div>
     </main>
   )

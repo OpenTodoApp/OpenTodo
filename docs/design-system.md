@@ -273,8 +273,8 @@ The workbench checks stories; the audit checks the built app. `make ux-audit` st
 | M12 | layout shift from navigation to idle | 0.1 |
 | M13 | the first task row on a second visit with the server stopped | reported |
 | M14 | story coverage of the core screens | none missing |
-| M15 | movement under reduced motion (completing a task, opening the panel and a dialog) | none |
+| M15 | movement under reduced motion, watched from before the action until it settles: every overlay as it opens (1280 px with a mouse, 360 px on touch), completing a task in Today, and dragging a board card, a Plan task and a Week block | none |
 
 German captures cover every screen; overlays are opened in English, because their openers find controls by name. A finding seen only in German is marked so (M16). Each finding is scored by severity (4 blocks a task, 3 slows it, 2 breaks a guideline, 1 is cosmetic) times how often the screen is used (3 daily, 2 weekly, 1 rare), and the report lists the highest first.
 
-`ONLY` (inventory ids), `WIDTHS`, `THEMES`, `LANGS`, `CONCURRENCY` and `OUT_DIR` narrow a local run. With `UX_AUDIT_STRICT=1` the audit exits non-zero on budget, overflow and story-coverage findings; in CI the repository variable `UX_AUDIT_STRICT` turns that on. The measurements have fixture tests in `scripts/ux-audit/measure.test.mjs` (one passing and one failing case each), and `scripts/ux-audit/ux-audit.test.mjs` keeps the inventory in step with the router and the layout check.
+`ONLY` (inventory ids), `WIDTHS`, `THEMES`, `LANGS`, `CONCURRENCY` and `OUT_DIR` narrow a local run. With `UX_AUDIT_STRICT=1` the audit exits non-zero on budget, overflow, story-coverage and reduced-motion findings; in CI the repository variable `UX_AUDIT_STRICT` turns that on. The measurements have fixture tests in `scripts/ux-audit/measure.test.mjs` (one passing and one failing case each), and `scripts/ux-audit/ux-audit.test.mjs` keeps the inventory in step with the router and the layout check.

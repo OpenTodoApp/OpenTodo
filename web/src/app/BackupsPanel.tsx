@@ -16,6 +16,7 @@ import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { useSettingsPending } from './settingsPending'
 
 const POLL_MS = 1000
 
@@ -299,6 +300,7 @@ export function BackupsPanel() {
   const [draft, setDraft] = useState<BackupSettings>(defaultBackupSettings)
   const [flags, setFlags] = useState<BackupSecretFlags>({ hasS3SecretKey: false, hasWebdavPassword: false, hasPassphrase: false })
   const [status, setStatus] = useState<BackupStatus | null>(null)
+  useSettingsPending(status === null)
   const [secrets, setSecrets] = useState<SecretInputs>(EMPTY_SECRETS)
   const [unreachable, setUnreachable] = useState(false)
   const [busy, setBusy] = useState<Busy>(null)
