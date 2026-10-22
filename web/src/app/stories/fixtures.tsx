@@ -53,6 +53,26 @@ export function stubNetwork(): void {
   window.fetch = stub as typeof fetch
 }
 
+/**
+ * Requests a screen makes by token (a preview, a public list), answered from
+ * fixtures: the longest matching path prefix gives the status and the JSON body,
+ * every other request answers 404 (OpenSpec change screen-stories-rare, design D3).
+ * Install it in `beforeEach`; `withClock` and a seed keep it.
+ */
+export function answerRequests(routes: Record<string, { status?: number; body: unknown }>): void {
+  const prefixes = Object.keys(routes).sort((a, b) => b.length - a.length)
+  const stub = async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    const path = new URL(url, location.origin).pathname
+    const hit = prefixes.find((p) => path.startsWith(p))
+    const answer = hit ? routes[hit] : { status: 404, body: {} }
+    return new Response(JSON.stringify(answer.body), { status: answer.status ?? 200, headers: { 'content-type': 'application/json' } })
+  }
+  // Marked as the workbench's stub, so `withClock` and a seed keep it.
+  ;(stub as unknown as { storyStub: true }).storyStub = true
+  window.fetch = stub as typeof fetch
+}
+
 /** The format the list tests use: day-month, 24-hour, weeks from Monday. */
 export function setStoryDateTime(): void {
   setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })

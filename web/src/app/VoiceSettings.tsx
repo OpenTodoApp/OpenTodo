@@ -49,6 +49,27 @@ export function ServerSpeechStatement({ host, encrypted }: { host: string; encry
 type Confirming = { recognizer: Recognizer; enable: boolean } | null
 
 /** Settings section for voice capture; stored on this device only, never synced. */
+/** The consent asked before voice capture turns on or changes recogniser (the statement of who hears the audio). */
+export function VoiceConsentDialog({ confirming, host, encrypted, onCancel, onConfirm }: {
+  confirming: NonNullable<Confirming>
+  host: string
+  encrypted: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <Dialog title={confirming.enable ? t('Turn on voice capture?') : t('Change who recognises speech?')} onClose={onCancel} size="md" testId="voice-statement">
+      {confirming.recognizer === 'server' ? <ServerSpeechStatement host={host} encrypted={encrypted} /> : <VoicePrivacyStatement />}
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onCancel}>{t('Cancel')}</Button>
+        <Button variant="primary" data-autofocus data-voice-confirm onClick={onConfirm}>
+          {confirming.enable ? t('Turn on') : t('Use it')}
+        </Button>
+      </div>
+    </Dialog>
+  )
+}
+
 export function VoiceSettingsSection() {
   const [s, setS] = useState<VoiceSettings>(loadVoiceSettings)
   const [confirming, setConfirming] = useState<Confirming>(null)
@@ -98,15 +119,8 @@ export function VoiceSettingsSection() {
         } />
       )}
       {confirming && (
-        <Dialog title={confirming.enable ? t('Turn on voice capture?') : t('Change who recognises speech?')} onClose={() => setConfirming(null)} size="md" testId="voice-statement">
-          {confirming.recognizer === 'server' ? <ServerSpeechStatement host={service.host ?? ''} encrypted={encrypted} /> : <VoicePrivacyStatement />}
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setConfirming(null)}>{t('Cancel')}</Button>
-            <Button variant="primary" data-autofocus data-voice-confirm onClick={() => { update({ ...s, enabled: true, recognizer: confirming.recognizer }); setConfirming(null) }}>
-              {confirming.enable ? t('Turn on') : t('Use it')}
-            </Button>
-          </div>
-        </Dialog>
+        <VoiceConsentDialog confirming={confirming} host={service.host ?? ''} encrypted={encrypted} onCancel={() => setConfirming(null)}
+          onConfirm={() => { update({ ...s, enabled: true, recognizer: confirming.recognizer }); setConfirming(null) }} />
       )}
     </SettingsSection>
   )

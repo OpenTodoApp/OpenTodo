@@ -10,7 +10,7 @@ import { KeyboardView, LanguageView, StartViewView } from './PreferencesPanels'
 import { AutoArchiveView } from './ProjectsSettings'
 import { resolveDateTime } from '../lib/dates'
 import { QuickAddSettingsSection } from './QuickAddSettings'
-import { VoiceSettingsSection } from './VoiceSettings'
+import { VoiceConsentDialog, VoiceSettingsSection } from './VoiceSettings'
 
 const noop = () => {}
 const now = 1_760_000_060_000
@@ -62,3 +62,7 @@ export const EmailOperatorOff: StoryObj = { render: () => email({ inbox: { ...in
 export const EmailError: StoryObj = { render: () => email({ error: 'allowlist: "nope" is not an email address' }) }
 export const Projects: StoryObj = { render: () => <AutoArchiveView on onChange={noop} /> }
 export const ProjectsEmpty: StoryObj = { render: () => <AutoArchiveView on={false} onChange={noop} /> }
+/** Voice consent (screen-stories-rare D2): the statement shown before dictation turns on, with this browser recognising speech. */
+export const CaptureVoiceConsent: StoryObj = {
+  render: () => <VoiceConsentDialog confirming={{ recognizer: 'browser', enable: true }} host="" encrypted={false} onCancel={noop} onConfirm={noop} />,
+}

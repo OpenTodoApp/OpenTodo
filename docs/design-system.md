@@ -232,6 +232,8 @@ Storybook is a development tool only: it adds nothing to `internal/web/dist`, th
 
 Put a `*.stories.tsx` file next to the component, in Component Story Format; `make check` fails when a component in `web/src/ui` has no stories file importing it. Interaction tests opt into a DOM with `// @vitest-environment happy-dom` and use the helpers in `web/src/ui/test-utils.tsx`. Stories render with fixture data only, never Dexie or the network. Cover the states that matter (default, disabled, error, long text) and check them in both themes and at 375 px.
 
+Every entry of the screen inventory, rare ones included, names the story that shows it. Screen stories seed the local database through `withSeed` in `web/src/app/stories/fixtures.tsx`. A screen that reads one answer from the server by a token (a reset or invitation preview, a public list) gets it from `answerRequests`, which answers listed paths with a fixture and every other request with 404, so the whole screen renders as a visitor sees it.
+
 ## Checks
 
 | Check | Runs in | Fails on |

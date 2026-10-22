@@ -3,7 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db'
 import { createPlace, makeLocation, setTaskLocation } from '../../lib/locations'
 import { createTask } from '../../lib/ops'
-import { seeded, withSeed } from '../stories/fixtures'
+import { seeded, storyUser, withSeed } from '../stories/fixtures'
+import { TaskListView } from '../TaskListView'
 import { LocationEditor } from './LocationEditor'
 import { PlacesView } from './PlacesView'
 
@@ -53,4 +54,14 @@ export const LocationsPage: StoryObj = {
     }
   }),
   render: () => <div className="-m-4 bg-canvas"><PlacesView /></div>,
+}
+
+/** A saved location's page (`/location/<id>`, screen-stories-rare D1): the tasks linked to "Office". */
+export const LocationPage: StoryObj = {
+  ...withSeed(async () => {
+    seeded.place = await createPlace({ name: 'Office', address: 'Via Roma 1, 10121 Torino, Italia', geo: { lat: 45.0703, lon: 7.6869 } })
+    const at = makeLocation({ name: 'Office', address: 'Via Roma 1, 10121 Torino, Italia', lat: 45.0703, lon: 7.6869, place_id: seeded.place })
+    for (const title of ['Print the slides', 'Return the badge', 'Water the office plants']) await setTaskLocation(await createTask({ title }), at)
+  }),
+  render: () => <div className="-m-4 h-[40rem] overflow-y-auto bg-canvas"><TaskListView route={{ view: 'place', id: seeded.place }} userId={storyUser.id} userRole={storyUser.role} /></div>,
 }
