@@ -123,7 +123,7 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 }) {
   const sub = s?.subscription ?? null
   return (
-    <SettingsSection {...cardCopy('notifications')}>
+    <SettingsSection {...cardCopy('notifications')} tier="primary">
       {!s ? (
         <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : !s.available ? (

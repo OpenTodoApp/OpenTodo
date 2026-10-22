@@ -255,7 +255,7 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <SettingsSection {...cardCopy('users', { variant: isOwner ? 'owner' : 'admin' })}>
+    <SettingsSection {...cardCopy('users', { variant: isOwner ? 'owner' : 'admin' })} tier="primary">
       {p.offline && <Notice>{noticeCopy('users', 'offline')}</Notice>}
       {p.users && (
         <SettingRow {...rowCopy('users', 'accounts')} status={

@@ -800,9 +800,9 @@ select.ui-input { @apply truncate; contain: layout paint; }
 }
 .ui-card--lift, .ui-cards--lift > li:not([data-drop-placeholder]) { @apply transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2; }
 .ui-cards--lift > li[data-dragging] { opacity: 0.4; }
-.ui-section-flat { @apply py-5; }
-.ui-section-flat + .ui-section-flat,
-.surface-card + .ui-section-flat { @apply border-t border-default; }
+.ui-section-flat { @apply px-4 py-5 sm:px-6; }
+/* A hairline between a flat section and whatever comes before it on the page (D9). */
+.ui-section-flat:not(:first-child) { @apply border-t border-default; }
 }
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */

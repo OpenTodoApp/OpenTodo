@@ -93,7 +93,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
   }
 
   return (
-    <SettingsSection {...cardCopy('backups')}>
+    <SettingsSection {...cardCopy('backups')} tier="primary">
       {offline && (
         <div data-testid="backups-offline" className="py-3 first:pt-0">
           <Notice tone="warning">{noticeCopy('backups', 'offline')}</Notice>

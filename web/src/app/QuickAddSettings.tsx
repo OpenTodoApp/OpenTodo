@@ -31,7 +31,7 @@ export function QuickAddSettingsSection() {
   }
 
   return (
-    <SettingsSection {...cardCopy('quick-add')}>
+    <SettingsSection {...cardCopy('quick-add')} tier="primary">
       <SettingRow label={rowCopy('quick-add', 'parse').label} description={
         <>{t.rich(SETTINGS_COPY['quick-add'].rows.parse.description, { project: <code>#project</code>, label: <code>@label</code>, p1: <code>p1</code>, p4: <code>p4</code>, estimate: <code>+30m</code> })}</>
       } control={<Switch checked={s.enabled} onChange={(on) => update({ ...s, enabled: on })} label={t('Parse natural language in quick add')} hideLabel />} />
