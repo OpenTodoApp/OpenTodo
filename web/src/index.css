@@ -807,7 +807,15 @@ select.ui-input { @apply truncate; contain: layout paint; }
 
 /* Outside the layers, so they win over the row's own shadow and opacity utilities (surfaces-v2 D7, D8). */
 .ui-card--lift, .ui-cards--lift > li:not([data-drop-placeholder]) { @apply hover:shadow-2 focus-within:shadow-2; }
-.ui-cards--lift > li[data-dragging] { opacity: 0.4; }
+/* The origin card while dragged: a sunken, dashed ghost with readable text (opacity would fail 4.5:1). */
+.ui-cards--lift > li[data-dragging] {
+  opacity: 1;
+  transform: none;
+  box-shadow: none;
+  border-style: dashed;
+  border-color: var(--ot-border-input);
+  background: var(--ot-sunken);
+}
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
 @layer components {
