@@ -16,7 +16,7 @@ In Cosmos: **ServApps → Import Compose File**, paste `cosmos-compose.json`, ch
 | --- | --- |
 | `description.json` | An identical copy of [`description.json`](description.json) (the market card) |
 | `cosmos-compose.json` | An identical copy of [`cosmos-compose.json`](cosmos-compose.json) |
-| `icon.png` | 256x256, from `web/public/pwa-512.png`; served at the `cosmos-icon` URL once merged |
+| `icon.png` | 256x256, rendered from the brand mark by `make brand-icons`; served at the `cosmos-icon` URL once merged |
 | `screenshots/1.png`, `2.png` | 1280 wide, the Today and board screens (`docs/images/today-light.webp`, `board-light.webp`); the store's deploy crashes without this folder |
 
 `node scripts/deploy-check.mjs` (`scripts/deploy/cosmos.mjs`) fails when a copy differs, a file is missing or extra, or a picture is not a PNG.

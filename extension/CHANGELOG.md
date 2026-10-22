@@ -2,6 +2,10 @@
 
 The browser extension versions on its own, independently of the app. `make extension` refuses a build whose manifest version is not the first entry here.
 
+## 0.6.1 - 2026-10-22
+
+- The new OpenTodo mark as the toolbar and store icon, the same as the app's.
+
 ## 0.6.0 - 2026-10-22
 
 - A popup instead of a new window: the toolbar button and Alt+Shift+O open a quick-add line prefilled from the page, a project and a label picker, the page as the task's origin, and Save.

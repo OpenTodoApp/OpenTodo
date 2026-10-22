@@ -31,4 +31,12 @@ describe('built manifest', () => {
     expect(m.share_target.params.files[0].name).toBe('files')
     expect(m.share_target.params.files[0].accept).toContain('image/*')
   })
+  // sidebar-v2 D3: the brand icons, with the maskable one filling its square, and
+  // every icon in the precache so an installed app updates its mark offline too.
+  it.skipIf(!manifest || !sw)('lists the five brand icons and precaches them', () => {
+    const m = JSON.parse(manifest!) as { icons: { src: string; purpose?: string }[] }
+    expect(m.icons.map((i) => i.src)).toEqual(['/pwa-192.png', '/pwa-512.png', '/pwa-maskable-512.png', '/apple-touch-icon.png', '/favicon.svg'])
+    expect(m.icons.find((i) => i.purpose === 'maskable')?.src).toBe('/pwa-maskable-512.png')
+    for (const i of m.icons) expect(sw).toContain(`"url":"${i.src.slice(1)}"`)
+  })
 })

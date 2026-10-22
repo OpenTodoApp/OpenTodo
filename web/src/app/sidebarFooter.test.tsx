@@ -5,7 +5,9 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { resetDeviceId } from '../lib/ops'
+import { applyOps, createTask, resetDeviceId } from '../lib/ops'
+import { setCurrentUserId } from '../lib/sharing'
+import { startTracking } from '../lib/timeEntries'
 import type { User } from '../lib/types'
 import { click, flush, key, render, spokenText, type, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
@@ -136,6 +138,61 @@ describe('Help and sign out from the account menu', () => {
     const confirm = [...document.querySelectorAll<HTMLButtonElement>('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Sign out')!
     await click(confirm)
     await waitFor(() => out.mock.calls.length === 1)
+    await r.unmount()
+  })
+})
+
+// sidebar-v2 D6: the running entry is a pill in the footer's one row, in place of the name.
+describe('the running pill', () => {
+  const rows = (root: ParentNode) => [...root.querySelector('[data-sidebar-footer]')!.children].filter((c) => !c.classList.contains('sr-only'))
+  const start = async () => {
+    await setCurrentUserId('u1')
+    const id = await createTask({ title: 'Write the report' })
+    return startTracking(id, { now: Date.now() - 65 * 60000 })
+  }
+
+  it('Pill in the row: one row in both states, "Tracking 1:05 · Write the report" and "Stop", the menu named by the person', async () => {
+    const r = await render(<SidebarFooter route={{ view: 'inbox' }} user={user} collapsed={false} onToggleCollapse={() => {}} />)
+    await flush(50)
+    expect(rows(r.container)).toHaveLength(1)
+    const height = account(r.container).className.match(/\bmin-h-\S+/g)
+    await start()
+    await waitFor(() => !!r.container.querySelector('[data-tracking-indicator]'))
+    expect(rows(r.container)).toHaveLength(1)
+    const row = r.container.querySelector('[data-footer-icons]')!
+    expect(row.contains(r.container.querySelector('[data-tracking-indicator]'))).toBe(true)
+    expect(r.container.querySelector('[data-tracking-open]')!.getAttribute('aria-label')).toBe('Tracking 1:05 · Write the report')
+    expect(r.container.querySelector('[data-tracking-stop]')!.getAttribute('aria-label')).toBe('Stop')
+    // The pill takes the name's place; the menu keeps the person's name and its height.
+    expect(account(row).querySelector('.truncate')).toBeNull()
+    expect(account(row).getAttribute('aria-label')).toBe('Ada')
+    expect(account(row).className.match(/\bmin-h-\S+/g)).toEqual(height)
+    expect(r.container.querySelector('[data-tracking-open]')!.className).toContain('min-h-8')
+    await r.unmount()
+  })
+
+  it('Rail: the time alone, the title in its tooltip, Open and Stop in a menu', async () => {
+    await start()
+    const r = await render(<SidebarFooter route={{ view: 'inbox' }} user={user} collapsed />)
+    await waitFor(() => !!r.container.querySelector('[data-tracking-open]'))
+    const pill = r.container.querySelector<HTMLButtonElement>('[data-tracking-open]')!
+    expect(pill.textContent).toBe('1:05')
+    expect(pill.getAttribute('aria-label')).toBe('Tracking 1:05 · Write the report')
+    await click(pill)
+    await waitFor(() => items().length > 0)
+    expect(items().map((b) => b.getAttribute('data-menu-label'))).toEqual(['Open the tracked task', 'Stop'])
+    await r.unmount()
+  })
+
+  it('Stopped on another device: the pill leaves on sync without a reload and the name returns', async () => {
+    const entry = await start()
+    const r = await render(<SidebarFooter route={{ view: 'inbox' }} user={user} collapsed={false} />)
+    await waitFor(() => !!r.container.querySelector('[data-tracking-indicator]'))
+    expect(account(r.container).querySelector('.truncate')).toBeNull()
+    await applyOps([{ id: 'remote-stop', entity: 'time_entry', entityId: entry, field: 'ended_at', value: Date.now(), ts: Date.now() + 10_000_000, device: 'phone' }])
+    await waitFor(() => !r.container.querySelector('[data-tracking-indicator]'))
+    expect(account(r.container).querySelector('.truncate')?.textContent).toBe('Ada')
+    expect(spokenText(account(r.container))).toBe('Ada')
     await r.unmount()
   })
 })

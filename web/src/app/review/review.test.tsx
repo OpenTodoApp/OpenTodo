@@ -198,9 +198,14 @@ describe('sidebar Review entry', () => {
     await r.unmount()
   })
 
-  it('never reviewed: the closed More group shows the marker too', async () => {
+  it('never reviewed: the marker is on the Review entry, never on the closed More group (sidebar-v2 D7)', async () => {
+    localStorage.setItem('ot.sidebar.more', '1')
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: !/pointer:\s*fine/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    onTestFinished(() => { window.matchMedia = original })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await waitFor(() => !!r.container.querySelector('[data-review-due-more]'))
+    await waitFor(() => !!r.container.querySelector('[data-destination="review"] [data-review-due]'))
+    expect(r.container.querySelector('[data-review-due-more]')).toBeNull()
     await r.unmount()
   })
 })

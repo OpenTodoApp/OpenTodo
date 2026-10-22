@@ -1799,7 +1799,6 @@
   "Open {name}": "Abrir {name}",
   "Open {name} link": "Abrir o link {name}",
   "Open {title}": "Abrir {title}",
-  "OpenTodo": "OpenTodo",
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": "O OpenTodo pede ao navegador para reconhecer a fala neste dispositivo quando ele oferece essa opção.",
   "OpenTodo can't reach the server.": "O OpenTodo não consegue acessar o servidor.",
   "OpenTodo export (JSON)": "Exportação do OpenTodo (JSON)",

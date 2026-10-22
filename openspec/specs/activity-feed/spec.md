@@ -47,7 +47,7 @@ Opening the feed SHALL mark every listed project seen up to the newest displayed
 - **THEN** the seen time is today on both devices
 
 ### Requirement: Unread indicators in the sidebar
-The sidebar SHALL show an unread count next to each shared project and a total next to the Updates entry in the More group, updated live from local storage without a reload, and Updates SHALL be reachable with a `g`-prefixed keyboard shortcut. While the total is above zero the Updates entry SHALL also be visible as a badge on the More group's header when the group is collapsed.
+The sidebar SHALL show an unread count next to each shared project and a total next to the Updates entry in the More group, updated live from local storage without a reload, and Updates SHALL be reachable with a `g`-prefixed keyboard shortcut. The More group's header carries no badge (app-shell "More is a labelled group"); the total stays on the Updates entry.
 
 #### Scenario: Counts update on sync
 - **WHEN** a sync delivers three events by other members in two shared projects
@@ -59,7 +59,7 @@ The sidebar SHALL show an unread count next to each shared project and a total n
 
 #### Scenario: Collapsed More group
 - **WHEN** the More group is collapsed and there are unread updates
-- **THEN** the group header shows the unread badge
+- **THEN** the group header shows no badge, and opening the group shows the total on the Updates entry
 
 ### Requirement: Live refresh
 While the app is open and connected, the feed and unread counts SHALL reflect another member's change within a few seconds of it reaching the server, using the server wake-up channel to trigger a sync. Without the channel they SHALL refresh on the regular sync triggers, so content is identical and only latency differs.

@@ -1,0 +1,24 @@
+{
+  "source": "0a66b478a8abcc9424c28c2e3f38559dcd3acd74e1dcc6a3a649136d1a871456",
+  "outputs": {
+    "web/public/favicon.svg": "6a57ef04490f9c0067f3eb347955a003f7882ca1b962dc057907fe56b45a42f5",
+    "web/public/pwa-192.png": "72009c1ed85a93344eb6358c5a6453ad841299fb34c38cd3c9dfad66cf9e5ae4",
+    "web/public/pwa-512.png": "a61aeea49bb03e8d913fe0750ba2298455eca3f45543203fd96c9a02bb02cfb7",
+    "web/public/pwa-maskable-512.png": "ee222accd9257c335cc0ba9d09a5cb39988baed97ed11e9f61d497e18c730909",
+    "web/public/apple-touch-icon.png": "fe5b4fa969d3968c82c9cfa005f093ba088e9666c93a6abd47425b2ba9c442e4",
+    "extension/icons/icon-16.png": "f31eb6b11ec14bf646665b8ecd6ff1d278859fc6ccea9d34d2be7d530f004a1b",
+    "extension/icons/icon-48.png": "a924696fd7daa47cbd40b7f4ada426fba7a654f5a89e6bcfe65bc62b143f6dfd",
+    "extension/icons/icon-128.png": "e253dcd4743cd0e83a171bb0fd99df07ca1c2403e19163d50163e0e0f652b34a",
+    "deploy/coolify/opentodo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/coolify/upstream/public/svgs/opentodo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/coolify/upstream/coolify-docs/public/images/services/opentodo-logo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/dokploy/blueprints/opentodo/opentodo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/dokploy/upstream/blueprints/opentodo/opentodo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/easypanel/assets/logo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/easypanel/upstream/templates/opentodo/assets/logo.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/casaos/upstream/Apps/OpenTodo/icon.svg": "5aa860c9281de977e837e515f12be59b1e052abe8fd7b62e7280214d48accd5e",
+    "deploy/caprover/upstream/public/v4/logos/opentodo.png": "a61aeea49bb03e8d913fe0750ba2298455eca3f45543203fd96c9a02bb02cfb7",
+    "deploy/casaos/upstream/Apps/OpenTodo/icon.png": "4e4674930f08ff692552a28639409b80116fd11f62cfed6e6c12e58f4b2949a1",
+    "deploy/cosmos/upstream/servapps/OpenTodo/icon.png": "4e4674930f08ff692552a28639409b80116fd11f62cfed6e6c12e58f4b2949a1"
+  }
+}

@@ -10,7 +10,7 @@ EXT_ZIPS := dist/opentodo-browser-extension-chrome.zip dist/opentodo-browser-ext
 WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
 all: build
 
@@ -124,6 +124,7 @@ test-web:
 
 test-extension:
 	cd extension && npm test
+	node --test scripts/brand-icons.test.mjs
 
 lint:
 	go vet ./...
@@ -206,9 +207,14 @@ deploy-check:
 	node --test scripts/coolify-template-check.test.mjs scripts/deploy/*.test.mjs scripts/site-bundle.test.mjs
 	node scripts/deploy-check.mjs
 
-## CI path filter cases, the shared Go toolchain (go.mod, Dockerfile, CI) and compose defaults.
+## CI path filter cases, the shared Go toolchain (go.mod, Dockerfile, CI) and compose defaults;
+## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs
+
+## Every brand raster (app icons, favicon, extension icons) from web/src/ui/icons/brand.svg.
+brand-icons:
+	node scripts/brand-icons.mjs
 
 check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check templates-check openspec-validate deploy-check repo-check
 

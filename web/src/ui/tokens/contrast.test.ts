@@ -21,7 +21,9 @@ describe('token contrast', () => {
   }
 
   // theming D5: every accent in both modes meets the pairs that involve an accent token.
-  const accentPairs = [...PAIRS, ...GLYPH_PAIRS].filter((p) => (ACCENT_TOKENS as readonly string[]).includes(p.fg) || (ACCENT_TOKENS as readonly string[]).includes(p.bg))
+  // The sidebar surface mixes the accent in (sidebar-v2 D8), so its pairs count as accent pairs.
+  const accentDerived: readonly string[] = [...ACCENT_TOKENS, 'sidebar']
+  const accentPairs = [...PAIRS, ...GLYPH_PAIRS].filter((p) => accentDerived.includes(p.fg) || accentDerived.includes(p.bg))
   for (const [name, a] of Object.entries(parseAccents(css))) {
     for (const [mode, tokens] of [['light', a.light], ['dark', a.dark]] as const) {
       it(`the ${name} accent meets every accent pair in ${mode}`, () => {

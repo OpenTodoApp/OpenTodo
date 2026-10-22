@@ -4,6 +4,7 @@ import { useOnline } from '../lib/online'
 import type { AuthStatus, InvitationPreview, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { t } from '../lib/i18n'
+import { BrandMark, BrandWordmark } from '../ui'
 
 export type InviteState =
   | { kind: 'loading' }
@@ -129,8 +130,8 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
-          <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <h1 className="text-h3 font-semibold">{t('OpenTodo')}</h1>
+          <BrandMark size={32} />
+          <h1 className="text-h3 font-semibold"><BrandWordmark /></h1>
         </div>
         <h2 className="font-medium">{title}</h2>
         {children}

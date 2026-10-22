@@ -1,11 +1,12 @@
 // site-bundle 2.1–2.3: the pieces of the bundle match their sources.
 import { strict as assert } from 'node:assert'
+import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
-  buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
+  brandFiles, buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -39,6 +40,23 @@ test('the icon sprite has one symbol per bundled icon', () => {
   const sprite = iconSprite(read('web/src/ui/icons/lucide.ts'))
   for (const n of names) assert.ok(sprite.includes(`id="icon-${n}"`), n)
   assert.equal((sprite.match(/<symbol /g) ?? []).length, names.length)
+})
+
+// sidebar-v2 D3: brand/ is byte-identical to the app's assets, and fails when the rasters are stale.
+test('brand/ carries the source, both marks, the wordmark and the current 512 px icon, each with the licence note', () => {
+  const files = brandFiles()
+  assert.deepEqual([...files.keys()], ['mark.svg', 'mark-mono.svg', 'mark-colour.svg', 'wordmark.svg', 'icon-512.png'])
+  assert.ok(files.get('mark.svg').equals(readFileSync(join(repoRoot, 'web/src/ui/icons/brand.svg'))))
+  assert.ok(files.get('mark-colour.svg').equals(readFileSync(join(repoRoot, 'web/public/favicon.svg'))))
+  assert.ok(files.get('icon-512.png').equals(readFileSync(join(repoRoot, 'web/public/pwa-512.png'))))
+  assert.match(files.get('mark-mono.svg').toString(), /stroke="currentColor"/)
+  assert.match(files.get('wordmark.svg').toString(), />OpenTodo<\/text>/)
+  for (const [name, bytes] of files) if (name.endsWith('.svg')) assert.match(bytes.toString(), /AGPL-3\.0/, name)
+  // The icon is the render of today's source (scripts/brand-icons.mjs), not a stale file.
+  const stamp = JSON.parse(read('web/src/ui/icons/brand-icons.json'))
+  const sha = (b) => createHash('sha256').update(b).digest('hex')
+  assert.equal(stamp.source, sha(files.get('mark.svg')), 'brand.svg changed: run node scripts/brand-icons.mjs')
+  assert.equal(stamp.outputs['web/public/pwa-512.png'], sha(files.get('icon-512.png')), 'icon-512.png is stale: run node scripts/brand-icons.mjs')
 })
 
 test('the sprite adds the website-only icons once each (site-bundle-server-facts)', () => {

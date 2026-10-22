@@ -7495,14 +7495,6 @@
   "Open {title}": [
     "web/src/app/palette/registry.ts"
   ],
-  "OpenTodo": [
-    "web/src/app/AuthScreen.tsx",
-    "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx",
-    "web/src/app/Sidebar.tsx"
-  ],
   "OpenTodo as a plain task app, with no method words.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10235,6 +10227,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Stop": [
+    "web/src/app/TrackingIndicator.tsx",
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Stop dictating": [
@@ -14898,7 +14891,8 @@
     "web/src/app/auditFormat.ts"
   ],
   "{n, plural, one {# item} other {# items}}": [
-    "web/src/lib/history.ts"
+    "web/src/lib/history.ts",
+    "web/src/ui/patterns/Sidebar.tsx"
   ],
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx",

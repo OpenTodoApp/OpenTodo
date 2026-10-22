@@ -3,11 +3,18 @@
 // filters, and one group header. The app's Sidebar composes them; drag, keyboard
 // moves and live counts stay in the app.
 import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode, type RefObject, useEffect } from 'react'
+import { t } from '../../lib/i18n'
+import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { Tooltip } from '../Tooltip'
 
-const ACTIVE = 'bg-accent-soft font-medium text-on-accent-soft'
-const IDLE = 'text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised'
+// The row tones (sidebar-v2 D4): quiet at rest, default on hover and focus, strong on
+// the accent tint when active. The icon follows the text, and turns accent when active.
+const ACTIVE = 'bg-accent-soft font-medium text-strong'
+const IDLE = 'text-faint hover:bg-sunken hover:text-default focus-visible:text-default dark:hover:bg-raised'
+
+/** A group heading's type (sidebar-v2 D7): More's menu row uses it too, so the two read as one kind. */
+export const SIDEBAR_HEADING = 'text-hint font-semibold uppercase tracking-wide text-faint'
 
 export interface SidebarItemProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   label: ReactNode
@@ -38,12 +45,12 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
   { label, icon, leading, count, countMode = 'always', countLabel, badge, active = false, depth, collapsed = false, className, type = 'button', ...rest },
   ref,
 ) {
-  const quiet = countMode === 'hover' ? ' ui-count-quiet' : countMode === 'hidden' ? ' sr-only' : ''
+  const quiet = countMode === 'hover' ? ' ui-reveal' : countMode === 'hidden' ? ' sr-only' : ''
   const button = (
-    <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth}
+    <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth} data-tone={active ? 'active' : 'quiet'}
       className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
-      {icon ? <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
+      {icon ? <span className={`flex w-5 shrink-0 justify-center${active ? ' text-accent' : ''}`} aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
       {!collapsed && badge}
       {!collapsed && count ? <span className={`text-meta tabular-nums text-faint${quiet}`} data-count data-open-count={count} aria-hidden={countLabel ? true : undefined}>{count}</span> : null}
@@ -65,7 +72,7 @@ export interface SidebarGroupProps {
   label?: string
   /** A badge on the heading while the group is closed (unread updates in More). */
   badge?: ReactNode
-  /** The number of items, shown on the heading while the group is closed (sidebar-groups). */
+  /** The number of items, shown on the heading while the group is closed (sidebar-groups) and part of its name in every state (sidebar-v2 D5). */
   count?: number
   /** Icon rail: no heading or actions, items only. */
   collapsed?: boolean
@@ -91,24 +98,55 @@ export function StatusDot({ label, className, ...rest }: { label: string } & HTM
 
 /** A titled group of items: Filters, Projects, Labels. */
 export function SidebarGroup({ title, collapsible = false, open = true, onToggle, actions, label, badge, count, collapsed = false, tight = false, children, testId }: SidebarGroupProps) {
+  // "Projects, 12 items" in every state; the visible number only while closed.
+  const spoken = count !== undefined ? <span className="sr-only">{`, ${t('{n, plural, one {# item} other {# items}}', { n: count })}`}</span> : null
   const heading = collapsible ? (
-    <button type="button" className="flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted" onClick={onToggle} aria-expanded={open}>
+    <button type="button" className="flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted focus-visible:text-muted" onClick={onToggle} aria-expanded={open}>
       <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />{title}
-      {!open && count !== undefined && <span data-group-count className="ml-0.5 font-medium normal-case tracking-normal tabular-nums">{count}</span>}
+      {!open && count !== undefined && <span data-group-count aria-hidden="true" className="ml-0.5 font-medium normal-case tracking-normal tabular-nums">{count}</span>}
+      {spoken}
       {!open && badge}
     </button>
-  ) : <span className="flex min-h-6 items-center">{title}</span>
+  ) : <span className="flex min-h-6 items-center">{title}{spoken}</span>
   return (
     <nav aria-label={label ?? title} data-sidebar-group={title} data-testid={testId}>
-      {/* The heading sticks to the top of the sidebar's scroller while its rows scroll (app-shell "Sticky sidebar group headers"); the top padding, not a margin, keeps the canvas behind it. */}
+      {/* The heading sticks to the top of the sidebar's scroller while its rows scroll (app-shell "Sticky sidebar group headers"); the top padding, not a margin, keeps the column's colour behind it (--sidebar-bg, set by the shell: sidebar-v2 D8). The actions show on hover and focus (D5). */}
       {!collapsed && (
-        <div data-sidebar-group-header className={`${tight ? 'pt-2' : 'pt-5 pointer-fine:pt-4'} sticky top-0 z-10 flex items-center justify-between bg-canvas px-2 pb-1 text-hint font-semibold uppercase tracking-wide text-faint`}>
+        <div data-sidebar-group-header className={`${tight ? 'pt-2' : 'pt-5 pointer-fine:pt-4'} sticky top-0 z-10 flex items-center justify-between bg-(--sidebar-bg,var(--color-canvas)) px-2 pb-1 ${SIDEBAR_HEADING}`}>
           {heading}
-          {actions && <span className="flex items-center gap-1 normal-case">{actions}</span>}
+          {actions && <span className="ui-reveal flex items-center gap-1 normal-case" data-group-actions>{actions}</span>}
         </div>
       )}
       {(!collapsible || open || collapsed) && <div className="space-y-0.5">{children}</div>}
     </nav>
+  )
+}
+
+export interface SidebarHeaderProps {
+  /** The left of the row: the mark and the name today, a workspace switcher later (sidebar-v2 D1). */
+  left: ReactNode
+  /** The icon rail: this alone, named by `railLabel` in a tooltip. */
+  rail: ReactNode
+  railLabel: string
+  collapsed?: boolean
+  /** Opens search and commands; the button sits at the right of the row (not in the rail, whose footer has it). */
+  onSearch?: () => void
+  searchLabel?: string
+  searchShortcut?: string
+}
+
+/** The sidebar's first row (sidebar-v2 D1): a slot on the left, search and commands on the right. */
+export function SidebarHeader({ left, rail, railLabel, collapsed = false, onSearch, searchLabel, searchShortcut }: SidebarHeaderProps) {
+  return (
+    <div data-sidebar-header className={`mb-3 flex min-h-9 items-center gap-2 pointer-fine:mb-2 pointer-fine:min-h-8 ${collapsed ? 'justify-center' : 'px-1'}`}>
+      {collapsed
+        ? <Tooltip label={railLabel} side="right"><span role="img" aria-label={railLabel} className="flex">{rail}</span></Tooltip>
+        : <div className="flex min-w-0 flex-1 items-center gap-2">{left}</div>}
+      {!collapsed && onSearch && searchLabel && (
+        <IconButton icon="search" label={searchLabel} shortcut={searchShortcut} size="sm" onClick={onSearch}
+          aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />
+      )}
+    </div>
   )
 }
 

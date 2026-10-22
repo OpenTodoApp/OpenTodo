@@ -28,6 +28,10 @@ export const PAIRS: Pair[] = [
   // A selected row (task row, trash, pickers) keeps its metadata on accent-soft:
   // the tones, overdue and due-soon dates, the danger action and links.
   ...['text', 'muted', 'faint', 'danger', 'warning', 'info', 'accent-text'].flatMap((fg) => text(fg, ['accent-soft'])),
+  // The tinted sidebar column (sidebar-v2 D4, D8): every tone of its rows and the
+  // accent icon of the active row on the sidebar surface.
+  ...TEXT.flatMap((fg) => text(fg, ['sidebar'])),
+  ...ui('accent-text', ['sidebar']),
   ...text('warning-soft-text', ['surface']),
   ...text('success-soft-text', ['surface']),
   ...ui('warning', ['surface', 'accent-soft']),
