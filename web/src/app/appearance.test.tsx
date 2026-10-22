@@ -99,3 +99,33 @@ describe('Appearance → Sidebar in Open Loops first (open-loops-method 6.2)', (
     await r.unmount()
   })
 })
+
+describe('Appearance → Haptic feedback (motion-v2 4.4)', () => {
+  const setVibrate = (fn: unknown) => {
+    if (fn) Object.defineProperty(navigator, 'vibrate', { value: fn, configurable: true, writable: true })
+    else delete (navigator as { vibrate?: unknown }).vibrate
+  }
+  afterEach(() => setVibrate(undefined))
+
+  it('is hidden on a device that cannot vibrate, and nothing is written', async () => {
+    setVibrate(undefined)
+    const r = await render(<AppearanceSection />)
+    await flush(30)
+    expect(document.querySelector('#appearance-haptics-switch')).toBeNull()
+    expect((await db.userPrefs.get('me'))?.haptics).toBeUndefined()
+    await r.unmount()
+  })
+
+  it('on a device that can vibrate it is on by default and turning it off writes the synced preference', async () => {
+    setVibrate(() => true)
+    const r = await render(<AppearanceSection />)
+    await flush(30)
+    const sw = document.querySelector<HTMLButtonElement>('#appearance-haptics-switch')!
+    expect(sw.getAttribute('aria-checked')).toBe('true')
+    await click(sw)
+    for (let i = 0; i < 50 && (await db.userPrefs.get('me'))?.haptics !== 'off'; i++) await flush(10)
+    expect((await db.userPrefs.get('me'))?.haptics).toBe('off')
+    expect((await db.outbox.toArray()).some((o) => o.entity === 'user_prefs' && o.field === 'haptics' && o.value === 'off')).toBe(true)
+    await r.unmount()
+  })
+})

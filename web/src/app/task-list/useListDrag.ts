@@ -9,6 +9,7 @@ import { moveTask } from '../../lib/move'
 import type { Section, Task } from '../../lib/types'
 import { flattenTree, type Tree } from '../../lib/tree'
 import { act } from '../actionError'
+import { withListTransition } from '../motion'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from '../listDrop'
 import { dropTasks } from '../taskDrop'
 
@@ -79,7 +80,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
         const { rows: rs, sectionOfRow: secs, board: b, ticked } = dragState.current
         if (target.startsWith('drop:')) {
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
-          act(dropTasks(target.slice('drop:'.length), ids))
+          act(withListTransition(ids.length, () => dropTasks(target.slice('drop:'.length), ids)))
           return
         }
         if (!manual) return
@@ -88,12 +89,13 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
           if (!r || !current) return
           const entry = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
           const section = entry.parent_id === null ? secs.get(r.task.id) : undefined
-          act(moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) }))
+          // The row travels to its new place and the others make room (motion-v2 D4).
+          act(withListTransition(1, () => moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })))
         } else if (target.startsWith('section:')) {
           const key = target.slice('section:'.length)
           const row = rs.find((x) => x.task.id === task.id)
           if (row && row.parent === null) moveToSection(task, key)
-          else act(moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' }))
+          else act(withListTransition(1, () => moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' })))
         } else return
         onDropped(task.id)
       },

@@ -158,10 +158,19 @@ interface ViewTransitionLike { finished: Promise<void>; skipTransition(): void }
 type StartViewTransition = (update: () => Promise<void> | void) => ViewTransitionLike
 let running: ViewTransitionLike | null = null
 const commitWaiters = new Set<() => void>()
+let listsMounted = 0
+/** How long a transition waits for the list to show a write before it takes the new picture. */
+const COMMIT_WAIT_MS = 150
 
 /** The list calls this after each commit, so a transition can wait for the new rows. */
 export function listCommitted(): void {
   for (const w of [...commitWaiters]) w()
+}
+
+/** A list registers while mounted: without one on screen nothing is worth a transition. */
+export function registerList(): () => void {
+  listsMounted++
+  return () => { listsMounted-- }
 }
 
 function nextCommit(timeout: number): Promise<void> {
@@ -182,7 +191,7 @@ function textFieldFocused(): boolean {
 export function canReflow(affected: number): boolean {
   if (typeof document === 'undefined') return false
   const start = (document as unknown as { startViewTransition?: StartViewTransition }).startViewTransition
-  return typeof start === 'function' && !prefersReducedMotion() && !noMotion() && affected > 0 && affected <= REFLOW_CAP
+  return typeof start === 'function' && listsMounted > 0 && !prefersReducedMotion() && !noMotion() && affected > 0 && affected <= REFLOW_CAP
     && !textFieldFocused() && document.visibilityState !== 'hidden'
 }
 
@@ -220,9 +229,9 @@ export async function withListTransition<T>(affected: number, update: () => Prom
   const vt = start(async () => {
     clearOld()
     try {
-      const committed = nextCommit(momentMs())
       result = await update()
-      await committed
+      // The list shows a write on its next commit (a live query); never wait longer than this.
+      await nextCommit(COMMIT_WAIT_MS)
     } catch (err) { failure = err }
     flushSync(() => {})
     clearOld = nameRows()

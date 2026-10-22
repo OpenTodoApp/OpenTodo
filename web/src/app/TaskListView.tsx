@@ -30,7 +30,7 @@ import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
 import { taskDefaults } from './listActions'
-import { listCommitted, useDepartures } from './motion'
+import { listCommitted, registerList, useDepartures, withListTransition } from './motion'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
@@ -96,6 +96,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const columns = useGhostColumns(dataColumns, departures)
   // A list transition takes its new snapshot after the list's next commit (motion-v2 D4).
   useLayoutEffect(() => listCommitted())
+  useLayoutEffect(() => registerList(), [])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
@@ -161,7 +162,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   /** Move a top-level task to a section ('' = none); a no-op when it is already there. */
   const moveToSection = useCallback((task: Task, key: string) => {
     if ((effectiveSection(task, sectionMap) ?? '') === key) return
-    act(moveTaskToSection(task.id, key || null))
+    act(withListTransition(1, () => moveTaskToSection(task.id, key || null)))
   }, [sectionMap])
 
   // Manual ordering (OpenSpec `manual-ordering`): project lists and boards (editors

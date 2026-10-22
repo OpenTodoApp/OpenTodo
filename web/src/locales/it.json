@@ -4928,5 +4928,7 @@
   "{name}, {role}": "{name}, {role}",
   "A link adds whoever opens it. It works once and expires after seven days.": "Un link aggiunge chi lo apre. Funziona una volta e scade dopo sette giorni.",
   "Yours alone. Share its projects by email, or create a workspace for a team.": "Solo tuo. Condividi i suoi progetti per email o crea uno spazio di lavoro per un team.",
-  "Choose icon": "Scegli icona"
+  "Choose icon": "Scegli icona",
+  "Haptic feedback": "Feedback aptico",
+  "A short vibration when you complete a task or pick one up with a long press.": "Una breve vibrazione quando completi un’attività o la prendi con una pressione prolungata."
 }

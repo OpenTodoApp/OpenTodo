@@ -3,7 +3,8 @@
 // accent theme, density and the promoted sidebar destinations, all in the synced user_prefs row and
 // applied at once. Theme tiles are a radio group with roving focus; each tile
 // previews its theme through the real tokens (a data-accent subtree). Below
-// 640 px the tiles are one scrollable row of named swatches.
+// 640 px the tiles are one scrollable row of named swatches. On a device that can
+// vibrate, a switch turns the haptic tick off (motion-v2 D6).
 import { readMethodMode } from '../lib/method/mode'
 import { type KeyboardEvent, useRef } from 'react'
 import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
@@ -15,6 +16,9 @@ import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
+import { mutate } from '../lib/ops'
+import { USER_PREFS_ID } from '../lib/userPrefs'
+import { canVibrate, hapticsPrefOn } from './motion'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
@@ -30,6 +34,8 @@ export interface AppearanceViewProps {
   onMode: (m: ThemeModePref) => void
   onAccent: (a: AccentId) => void
   onDensity?: (d: Density) => void
+  /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
+  haptics?: { on: boolean; onChange: (on: boolean) => void }
 }
 
 /** Roving focus over a radio group: arrows move and select, Home and End jump. */
@@ -64,7 +70,7 @@ function Segmented<T extends string>({ label, items, labels, value, onChange, te
   )
 }
 
-export function AppearanceView({ value, onMode, onAccent, onDensity }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
@@ -103,6 +109,10 @@ export function AppearanceView({ value, onMode, onAccent, onDensity }: Appearanc
         <SettingRow id="appearance-density" {...rowCopy('appearance', 'density')}
           control={<Segmented label={t('Density')} items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
       )}
+      {haptics && (
+        <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
+          control={<Switch id="appearance-haptics-switch" checked={haptics.on} onChange={haptics.onChange} label={t('Haptic feedback')} hideLabel />} />
+      )}
     </SettingsSection>
   )
 }
@@ -128,7 +138,8 @@ export function AppearanceSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
-    onDensity={(d) => act(setAppearance('density', d))} />
+    onDensity={(d) => act(setAppearance('density', d))}
+    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(mutate('user_prefs', USER_PREFS_ID, { haptics: on ? 'on' : 'off' })) } : undefined} />
 }
 
 export function SidebarSection() {

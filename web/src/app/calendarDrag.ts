@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { dropStart, resizeEstimate } from '../lib/calendar'
 import { registerShortcutScope } from './shortcuts/dispatch'
+import { tick } from './motion'
 
 export type DragKind = 'move' | 'resize'
 
@@ -176,7 +177,8 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
       p.timer = setTimeout(() => {
         if (pending.current !== p) return
         p.lifted = true
-        navigator.vibrate?.(10)
+        // The haptic tick follows the user's preference (motion-v2 D6).
+        tick()
         setDrag({ taskId: p.taskId, kind: p.kind, x, y, target: targetAt(x, y, p) })
       }, LONG_PRESS_MS)
     }
