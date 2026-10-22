@@ -17,6 +17,7 @@ import { imageViews } from '../editorImage'
 import { LinkDialog } from '../LinkDialog'
 import { filesFrom } from './AttachmentsRow'
 import { t } from '../../lib/i18n'
+import { afterTap } from './afterTap'
 import { isImage } from '../../lib/attachments'
 
 export interface RichComposerFieldProps {
@@ -123,7 +124,8 @@ export default function RichComposerField(p: RichComposerFieldProps) {
           return false
         },
         blur: () => {
-          setFocused(false)
+          // After the tap's click: hiding the toolbar now would move what was tapped.
+          afterTap(() => setFocused(v.hasFocus()))
           return false
         },
         contextmenu: (pv, event) => openCellMenu(pv, event, chrome.openTableMenu),

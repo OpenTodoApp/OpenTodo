@@ -21,6 +21,7 @@ import { ConfirmDialog } from '../../ui'
 import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
+import { afterTap } from './afterTap'
 import { Composer, readDraft, type ComposedExtras } from './Composer'
 import { ReactionBar, ReactionMenuItems } from './ReactionBar'
 import { RelativeTime } from './RelativeTime'
@@ -208,8 +209,9 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
       onBlur={(e) => {
         // Leaving an empty composer (no draft, no reply) puts it back to rest.
         const next = e.relatedTarget as Node | null
-        if (!composerHost || (next && e.currentTarget.contains(next)) || replyTarget) return
-        if (!readDraft(taskId).trim()) setOpen(false)
+        const block = e.currentTarget
+        if (!composerHost || (next && block.contains(next)) || replyTarget) return
+        afterTap(() => { if (!block.contains(document.activeElement) && !readDraft(taskId).trim()) setOpen(false) })
       }}>
       {published && <p className="text-meta text-muted" data-page-composer-notice><Icon name="globe" size="xs" /> {t('This task is published: comments you write from now on are visible on its page.')}</p>}
       {replyTarget && (
