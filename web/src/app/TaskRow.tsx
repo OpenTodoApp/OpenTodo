@@ -207,7 +207,7 @@ export interface TaskRowProps {
   /** The revealed actions (rows-v2 D7); off where the screen has its own controls (Close the day, D9). */
   actions?: boolean
   /** Opens the row menu, as `.` does: the revealed More action. */
-  onMore?: () => void
+  onMore?: (from: HTMLElement) => void
   /** Stories: the revealed actions shown as if hovered. */
   forceActions?: boolean
   /** Starts a drag (board-view: move between sections; manual-ordering: place in a list). */

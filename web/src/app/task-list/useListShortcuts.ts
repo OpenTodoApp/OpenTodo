@@ -32,7 +32,8 @@ export interface ListUi {
   addingUnder: string | null
   setAddingUnder: Dispatch<SetStateAction<string | null>>
   setAddingTo: Dispatch<SetStateAction<string | null>>
-  openActions: (picker?: string | null) => void
+  /** `from`: the row's More button, where the menu then opens. */
+  openActions: (picker?: string | null, from?: HTMLElement | null) => void
 }
 
 export interface ShortcutContext {

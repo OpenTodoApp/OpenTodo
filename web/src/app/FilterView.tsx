@@ -277,7 +277,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                       project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
                       labels={resolveLabels(tk.labels, labelMap)}
                       showProject={false} timeColumn={timeColumn}
-                      onMore={() => { setSelectedId(tk.id); bulk.openActions() }}
+                      onMore={(from) => { setSelectedId(tk.id); bulk.openActions(null, from) }}
                       selected={tk.id === selectedId}
                       progress={progress.get(tk.id)}
                       blockedBy={blocked.get(tk.id)}

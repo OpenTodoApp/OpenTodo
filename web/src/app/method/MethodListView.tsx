@@ -93,7 +93,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                     return (
                       <TaskRow key={key} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined}
                         labels={resolveLabels(task.labels, labelMap)} showProject selected={key === selected} timeColumn={timeColumn}
-                        onMore={() => { setSelected(key); bulk.openActions() }}
+                        onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
                         onOpen={() => { setSelected(key); setPanelTaskId(task.id) }}

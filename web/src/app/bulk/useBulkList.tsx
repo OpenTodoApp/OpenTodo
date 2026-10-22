@@ -1,7 +1,7 @@
 // Bulk selection for the lists built on useListKeys (the Filter view and saved
 // views; bulk-edit tasks 1.2 and 2.4): the selection, the bar, the cursor menu
 // and the row props, in one hook.
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Task } from '../../lib/types'
 import { useSelection, type SelectionApi } from '../selection'
 import { BulkActionsMenu, SelectionBar } from './BulkActions'
@@ -13,7 +13,8 @@ export interface BulkList {
   ticked: string[]
   /** Task ids in list order (each once). */
   order: string[]
-  openActions: (picker?: string | null) => void
+  /** `from`: the row's More button, where the menu then opens. */
+  openActions: (picker?: string | null, from?: HTMLElement | null) => void
   /** The bar and, with nothing ticked, the cursor task's menu. */
   render: (cursor: string | null) => ReactNode
   rowProps: (id: string) => { ticked: boolean; showCheckbox: boolean; onTick: (range: boolean) => void }
@@ -25,15 +26,16 @@ export function useBulkList(tasks: readonly Task[]): BulkList {
   const ticked = useMemo(() => order.filter((id) => selection.ticked.has(id)), [order, selection.ticked])
   const [open, setOpen] = useState(false)
   const [picker, setPicker] = useState<string | null>(null)
+  const from = useRef<HTMLElement | null>(null)
   const onOpenChange = (v: boolean) => { setOpen(v); if (!v) setPicker(null) }
   return {
     selection, ticked, order,
-    openActions: (p = null) => { setPicker(p); setOpen(true) },
+    openActions: (p = null, el = null) => { from.current = el; setPicker(p); setOpen(true) },
     render: (cursor) => (
       <>
         <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={open && ticked.length > 0} onMenuOpenChange={onOpenChange} startPicker={picker} />
         {open && ticked.length === 0 && cursor && (
-          <BulkActionsMenu ids={[cursor]} open onOpenChange={onOpenChange} startPicker={picker} trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
+          <BulkActionsMenu ids={[cursor]} open onOpenChange={onOpenChange} startPicker={picker} anchor={from} trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
         )}
       </>
     ),

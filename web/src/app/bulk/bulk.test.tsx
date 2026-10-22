@@ -133,6 +133,25 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     expect(document.body.textContent).toContain('Tasks must be in one shared project')
   })
 
+  it('More on a row opens the menu at that button, without the Priority and Date its neighbours offer; `.` keeps them', async () => {
+    await inbox('One', 'Two')
+    const items = () => [...document.querySelectorAll('[role^="menuitem"]')].map((m) => m.textContent ?? '')
+    const more = document.querySelector<HTMLButtonElement>('[data-task-id] [data-row-action="more"]')!
+    await act(async () => { more.click() })
+    await waitFor(() => items().length > 0)
+    expect(items().some((m) => m.includes('Move to project'))).toBe(true)
+    expect(items().some((m) => m.startsWith('Tomorrow') || m.startsWith('Priority 1'))).toBe(false)
+    // Closing returns focus to the More button the menu was placed at.
+    await key(document.activeElement as HTMLElement, 'Escape')
+    await waitFor(() => items().length === 0)
+    expect(document.activeElement).toBe(more)
+    await key(document.body, 'j')
+    await key(document.body, '.')
+    await waitFor(() => items().length > 0)
+    expect(items().some((m) => m.startsWith('Tomorrow'))).toBe(true)
+    expect(items().some((m) => m.startsWith('Priority 1'))).toBe(true)
+  })
+
   it('Date → Tomorrow reschedules the ticked tasks', async () => {
     const { ids } = await inbox('One', 'Two', 'Three')
     await key(document.body, 'j'); await key(document.body, 'x')
