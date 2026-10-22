@@ -31,7 +31,7 @@ volumes:
   speaches-models:
 ```
 
-Download a model once with `docker compose exec speaches speaches-cli model download Systran/faster-whisper-small`. The small model needs about 1 GB of RAM and answers a short phrase in one to three seconds on four CPU cores. `Systran/faster-whisper-base` is faster on a small server, and `Systran/faster-whisper-medium` is more accurate if you have the memory.
+Download a model once with `docker compose exec speaches curl -X POST http://localhost:8000/v1/models/Systran/faster-whisper-small`. The small model needs about 1 GB of RAM and answers a short phrase in one to three seconds on four CPU cores. `Systran/faster-whisper-base` is faster on a small server, and `Systran/faster-whisper-medium` is more accurate if you have the memory.
 
 ## Connect it
 
