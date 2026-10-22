@@ -3,7 +3,7 @@ title: Install on your phone
 summary: Add OpenTodo to the home screen of an iPhone, iPad or Android phone, step by step, so it opens full screen and can show reminders.
 audience: user
 section: Get started
-specs: []
+specs: [native-shells]
 screens: []
 order: 21
 ---
