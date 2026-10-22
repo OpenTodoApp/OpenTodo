@@ -31,7 +31,7 @@ import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
-import { useScrollMinimised } from './useScrollDirection'
+import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
@@ -198,8 +198,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const frame = useRef<HTMLElement>(null)
   const content = useRef<HTMLDivElement>(null)
   usePageFocus(route, frame, content)
-  // The tab bar minimises and the add button slides out while the list scrolls down (phone-v2 D6).
-  const minimised = useScrollMinimised(content, phoneChrome && !sidebarOpen)
+  // The phone's bottom chrome: the tab bar minimises while scrolling down, the toast sits above it (phone-v2 D5, D6).
+  const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
 
   return (
     <div className="flex h-full">

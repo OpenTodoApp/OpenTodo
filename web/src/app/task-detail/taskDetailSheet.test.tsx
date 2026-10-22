@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
-// The task panel on a phone (OpenSpec change ux-overhaul, app-shell "Panel width
-// and expansion"): below 768 px a full-screen sheet with a sticky header, closed by
-// Back or by a swipe down on the header; from 768 px the panel keeps its Close.
+// The task panel on a phone (OpenSpec changes ux-overhaul and phone-v2, app-shell
+// "Panel width and expansion"): below 768 px a bottom sheet at most 90 dvh over a
+// scrim, with a handle above the sticky header, closed by Close, a drag down on the
+// handle or header, a drag down on the body at scroll top, or the scrim; from 768 px
+// the panel keeps its Close.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
@@ -39,21 +41,45 @@ function touch(el: Element, type: 'touchstart' | 'touchend', x: number, y: numbe
 }
 
 describe('below 768 px', () => {
-  it('is a full-screen sheet with a sticky header and a Back action that closes it', async () => {
+  it('is a bottom sheet over a scrim: a handle above the sticky header, 90 dvh at most, Close in place of Back', async () => {
     width = 390
     const id = await createTask({ title: 'Phone task' })
     let closed = 0
     const r = await render(<TaskDetail taskId={id} projects={[]} labelMap={new Map<string, Label>()} onClose={() => { closed++ }} />)
     await waitFor(() => !!document.querySelector(`[data-detail-for="${id}"]`))
-    const panel = document.querySelector(`[data-detail-for="${id}"]`)!
-    expect(panel.className).toContain('fixed inset-y-0 right-0')
-    expect(panel.className).toContain('w-full')
-    expect(panel.className).not.toMatch(/(^|\s)max-w-md(\s|$)/)
+    const panel = document.querySelector<HTMLElement>(`[data-detail-for="${id}"]`)!
+    expect(panel.hasAttribute('data-sheet')).toBe(true)
+    expect(panel.className).toContain('fixed inset-x-0')
+    expect(panel.className).toContain('rounded-t-card')
+    expect(panel.style.maxHeight).toBe('calc(90dvh - var(--vv-bottom, 0px))')
+    // Above the on-screen keyboard: the composer and the focused field stay in view.
+    expect(panel.style.bottom).toBe('var(--vv-bottom, 0px)')
+    expect(panel.firstElementChild!.hasAttribute('data-sheet-handle')).toBe(true)
     expect(panel.querySelector('[data-panel-header]')).toBeTruthy()
-    const back = panel.querySelector<HTMLButtonElement>('[data-task-back]')!
-    expect(back.getAttribute('aria-label')).toBe('Back to the list')
-    await click(back)
+    expect(panel.querySelector('[data-task-back]')).toBeNull()
+    await click(panel.querySelector<HTMLButtonElement>('[aria-label="Close"]')!)
     expect(closed).toBe(1)
+    await click(document.querySelector<HTMLElement>('[data-sheet-scrim]')!)
+    expect(closed).toBe(2)
+    await r.unmount()
+  })
+
+  it('a drag down on the handle closes; on the body only at scroll top', async () => {
+    width = 390
+    const id = await createTask({ title: 'Drag me' })
+    let closed = 0
+    const r = await render(<TaskDetail taskId={id} projects={[]} labelMap={new Map<string, Label>()} onClose={() => { closed++ }} />)
+    await waitFor(() => !!document.querySelector(`[data-detail-for="${id}"]`))
+    const handle = document.querySelector('[data-sheet-handle]')!
+    touch(handle, 'touchstart', 100, 10); touch(handle, 'touchend', 104, 120)
+    expect(closed).toBe(1)
+    const body = document.querySelector<HTMLElement>('[data-panel-body]')!
+    body.scrollTop = 200
+    touch(body, 'touchstart', 100, 300); touch(body, 'touchend', 100, 450)
+    expect(closed).toBe(1)
+    body.scrollTop = 0
+    touch(body, 'touchstart', 100, 300); touch(body, 'touchend', 100, 450)
+    expect(closed).toBe(2)
     await r.unmount()
   })
 

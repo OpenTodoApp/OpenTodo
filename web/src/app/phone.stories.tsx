@@ -1,12 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { HEX, project, task, withClock } from './stories/fixtures'
+import { HEX, project, seeded, seedInbox, storyUser, task, withClock, withSeed } from './stories/fixtures'
+import { Shell } from './Shell'
+import { openTask } from './signals'
 import { TaskRow } from './TaskRow'
 
 // The phone (OpenSpec change phone-v2): swipe actions on rows, the task sheet and the
 // drawer, at 375 px in both themes. The gate cannot swipe, so the rows are held at a
 // fixed offset through a story-only override.
-const meta: Meta = { title: 'Screens/Phone', decorators: [withClock] }
+const meta: Meta = { title: 'Screens/Phone' }
 export default meta
 
 const noop = () => {}
@@ -20,6 +22,7 @@ function List({ children }: { children: ReactNode }) {
 /** Mid-swipe (design D3): right uncovers the complete edge past the reveal, left the schedule edge. */
 export const RowMidSwipe: StoryObj = {
   name: 'Row mid-swipe',
+  decorators: [withClock],
   render: () => (
     <List>
       <TaskRow {...base} task={task({ id: 's1', title: 'Water the plants' })} forceSwipe={84} />
@@ -28,4 +31,19 @@ export const RowMidSwipe: StoryObj = {
       <TaskRow {...base} task={task({ id: 's4', title: 'Read the sync protocol draft', priority: 3 })} forceSwipe={40} />
     </List>
   ),
+}
+
+/** The viewport the shell fills: the theme frame's padding is undone so the sheet reaches the edges. */
+function Viewport({ children }: { children: ReactNode }) {
+  return <div className="-m-4 h-[49rem] overflow-hidden bg-canvas">{children}</div>
+}
+
+/** A task open over its list (design D5): the handle, the sticky header, 90 dvh at most, the list dimmed behind. */
+export const TaskSheet: StoryObj = {
+  name: 'Task sheet',
+  ...withSeed(async () => {
+    await seedInbox()
+    openTask.set(seeded.inboxTask)
+  }),
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }

@@ -3,6 +3,8 @@
 // than 24 px minimises; any scroll up, reaching the end, or 600 ms without scrolling
 // restores. Under reduced motion nothing moves, so the bar stays full.
 import { type RefObject, useEffect, useState } from 'react'
+import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../ui'
+import { TAB_BAR_HEIGHT_REM } from './TabBar'
 
 /** Downward travel before the bar minimises. */
 export const MINIMISE_AFTER_PX = 24
@@ -37,4 +39,18 @@ export function useScrollMinimised(scroller: RefObject<HTMLElement | null>, enab
     return () => { el.removeEventListener('scroll', onScroll); clearTimeout(timer) }
   }, [scroller, enabled])
   return enabled && (minimised || forced)
+}
+
+/**
+ * The phone's bottom chrome in one place: whether the tab bar is minimised, and the
+ * toast's lift above the tab bar and the add button (above a sheet's bottom row while
+ * one is open), published as `--toast-lift` (phone-v2 D5, D6).
+ */
+export function usePhoneChrome(scroller: RefObject<HTMLElement | null>, phoneChrome: boolean, drawerOpen: boolean): boolean {
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  useEffect(() => {
+    const lift = desktop ? '0px' : phoneChrome ? `${TAB_BAR_HEIGHT_REM + 4.25}rem` : '5rem'
+    document.documentElement.style.setProperty('--toast-lift', lift)
+  }, [desktop, phoneChrome])
+  return useScrollMinimised(scroller, phoneChrome && !drawerOpen)
 }

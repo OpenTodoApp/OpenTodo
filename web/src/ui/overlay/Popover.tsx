@@ -109,10 +109,11 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
         {/* A menu sheet is a dialog whose list carries the menu role: the title and the
             close button may not sit inside a menu. */}
         <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
-          className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-card border-t border-default bg-raised text-body shadow-3 outline-none"
+          className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex max-h-[90dvh] flex-col rounded-t-card border-t border-default bg-raised text-body shadow-3 outline-none"
           style={{ bottom: 'var(--vv-bottom, 0px)' }}>
-          <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2">
-            <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
+          {/* The handle strip and the title row: a drag down of more than 80 px closes the sheet (phone-v2 D5). */}
+          <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2" {...dragToClose(onClose)}>
+            <span aria-hidden="true" data-sheet-handle className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
             <h2 className="min-w-0 flex-1 truncate text-body font-semibold">{label}</h2>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-h3 leading-none" aria-label={t('Close')} data-overlay-close
               onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}><Icon name="x" size="md" /></button>
@@ -132,4 +133,17 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     </div>,
     document.body,
   )
+}
+
+/** A drag down on a sheet's top row closes it: more than 80 px, mostly vertical (phone-v2 D5). */
+function dragToClose(onClose: () => void) {
+  let start: { x: number; y: number } | null = null
+  return {
+    onTouchStart: (e: React.TouchEvent) => { const p = e.touches[0]; start = p ? { x: p.clientX, y: p.clientY } : null },
+    onTouchEnd: (e: React.TouchEvent) => {
+      const p = e.changedTouches[0], s = start
+      start = null
+      if (s && p && p.clientY - s.y > 80 && Math.abs(p.clientX - s.x) < 60) onClose()
+    },
+  }
 }
