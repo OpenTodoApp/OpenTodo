@@ -739,7 +739,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .notes-editor figure.note-image.ProseMirror-selectednode { @apply rounded-control ring-2 ring-focus; }
 .mention, .mention-chip { @apply rounded-chip bg-accent-soft px-0.5 text-accent; }
 .issue-chip { @apply inline-flex items-center gap-1 rounded-chip border border-default bg-sunken px-1 font-mono text-meta text-default no-underline; }
-.slash-menu { @apply z-50 max-h-72 w-64 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
+.slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
 .slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 }

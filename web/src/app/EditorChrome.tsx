@@ -14,6 +14,7 @@ import { Icon, IconButton, Menu, MenuItem, Popover, useMediaQuery } from '../ui'
 import { editorCommands, filterCommands, tableCommands, type CommandEnv, type EditorCommand } from './editorCommands'
 
 type Member = Pick<ProjectMember, 'userId' | 'name' | 'email'>
+const MAX_ITEMS = 8
 type Item = { kind: 'command'; cmd: EditorCommand } | { kind: 'member'; m: Member }
 
 export interface ChromeOptions {
@@ -47,7 +48,8 @@ export function useEditorChrome(o: ChromeOptions): EditorChrome {
   const [tableMenu, setTableMenu] = useState<{ view: EditorView; anchor: { current: HTMLElement } } | null>(null)
   const commands = useMemo(() => editorCommands(), [])
   const items: Item[] = !open ? []
-    : open.s.kind === 'slash' ? filterCommands(commands, open.s.query, open.view, o.env).map((cmd) => ({ kind: 'command' as const, cmd }))
+    // At most eight at a time, so the list never scrolls: typing narrows it.
+    : open.s.kind === 'slash' ? filterCommands(commands, open.s.query, open.view, o.env).slice(0, MAX_ITEMS).map((cmd) => ({ kind: 'command' as const, cmd }))
       : mentionCandidates(o.members, open.s.query, o.me).map((m) => ({ kind: 'member' as const, m }))
   const itemsRef = useRef(items)
   itemsRef.current = items
