@@ -292,9 +292,6 @@
   "A passkey is the fastest way to sign in: no password to type, and it cannot be phished.": [
     "web/src/app/SecurityPanel.tsx"
   ],
-  "A personal access token that can read issues. It is never shown again.": [
-    "web/src/app/IssueEditor.tsx"
-  ],
   "A personal copy of this project: nobody else sees it, and assignees are left out.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -415,6 +412,12 @@
   "A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time.": [
     "web/src/app/TokensSection.tsx"
   ],
+  "A token with read access to issues (classic: the repo scope). It is never shown again.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "A token with the read_api scope. It is never shown again.": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "A view needs a name": [
     "web/src/lib/views.ts"
   ],
@@ -426,9 +429,6 @@
   ],
   "AI assistant made changes": [
     "web/src/app/auditFormat.ts"
-  ],
-  "AI assistant, can make changes": [
-    "web/src/app/TokensSection.tsx"
   ],
   "AI assistants": [
     "web/src/app/AgentAccessRow.tsx",
@@ -495,6 +495,7 @@
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
   "Access": [
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/TokensSection.tsx"
   ],
   "Access key": [
@@ -556,8 +557,7 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/SecurityPanel.tsx",
-    "web/src/app/SsoPanel.tsx",
-    "web/src/app/TokensSection.tsx"
+    "web/src/app/SsoPanel.tsx"
   ],
   "Actions for {tasks}": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -612,8 +612,14 @@
   "Add a note": [
     "web/src/app/ProjectNote.tsx"
   ],
+  "Add a picture": [
+    "web/src/app/profile/ProfileSection.tsx"
+  ],
   "Add a property": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Add a remote MCP server (streamable HTTP) with the endpoint and send the token as the Authorization header. Clients that take a JSON entry accept this.": [
+    "web/src/app/AssistantsPanel.tsx"
   ],
   "Add a someday task…": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -712,6 +718,9 @@
   ],
   "Add field": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Add it to your assistant": [
+    "web/src/app/AssistantsPanel.tsx"
   ],
   "Add labels": [
     "web/src/app/RuleEditor.tsx",
@@ -830,13 +839,11 @@
     "web/src/app/locations/LocationEditor.tsx"
   ],
   "Admin": [
+    "web/src/app/TokensSection.tsx",
     "web/src/lib/roleNames.ts"
   ],
   "Admin: edits tasks and the project, manages viewers and editors": [
     "web/src/app/ShareDialog.tsx"
-  ],
-  "Admin: full access plus credentials and administration": [
-    "web/src/app/TokensSection.tsx"
   ],
   "Admins can invite people and manage members.": [
     "web/src/app/UsersPanel.tsx"
@@ -980,6 +987,9 @@
   ],
   "Am I keeping up?": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "An AI assistant changes tasks only through its tools, while you and the owner allow it.": [
+    "web/src/app/TokensSection.tsx"
   ],
   "An AI connector wants to make a change": [
     "web/src/app/RelayConfirm.tsx"
@@ -1323,7 +1333,9 @@
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Assistant": [
+    "web/src/app/AssistantsPanel.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/TokensSection.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/settingsIndex.ts",
@@ -1745,6 +1757,9 @@
   "Calm or detailed task rows": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Can make changes": [
+    "web/src/app/AssistantsPanel.tsx"
+  ],
   "Can tick items": [
     "web/src/app/PublicLinksSection.tsx"
   ],
@@ -1783,6 +1798,7 @@
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
+    "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/rules/RuleDialog.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -1790,6 +1806,9 @@
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
     "web/src/ui/patterns/ConfirmDialog.tsx"
+  ],
+  "Cancel change": [
+    "web/src/app/profile/ProfileSection.tsx"
   ],
   "Cancel deleting permanently": [
     "web/src/lib/shortcuts.ts"
@@ -1828,11 +1847,20 @@
     "web/src/app/task-detail/ZoneControl.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Change email": [
+    "web/src/app/profile/ProfileSection.tsx"
+  ],
+  "Change name": [
+    "web/src/app/profile/ProfileSection.tsx"
+  ],
   "Change passphrase": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Change password": [
     "web/src/app/PasswordSection.tsx"
+  ],
+  "Change picture": [
+    "web/src/app/profile/ProfileSection.tsx"
   ],
   "Change settings": [
     "web/src/app/BackupsPanel.tsx"
@@ -1887,6 +1915,9 @@
   ],
   "Changing this needs a connection.": [
     "web/src/app/AgentAccessRow.tsx"
+  ],
+  "Changing your profile needs a connection.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Check": [
     "web/src/app/task-detail/ReactionBar.tsx"
@@ -1944,6 +1975,9 @@
   "Choice": [
     "web/src/lib/fields.ts"
   ],
+  "Choose a PNG, JPEG or WebP image.": [
+    "web/src/app/profile/PictureDialog.tsx"
+  ],
   "Choose a date": [
     "web/src/app/datetime/DateField.tsx"
   ],
@@ -1975,11 +2009,20 @@
   "Choose an archive…": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "Choose an image": [
+    "web/src/app/profile/PictureDialog.tsx"
+  ],
   "Choose an image for the comment": [
     "web/src/app/task-detail/RichComposerField.tsx"
   ],
   "Choose an image for the note": [
     "web/src/app/NotesEditor.tsx"
+  ],
+  "Choose an image of at most 10 MB.": [
+    "web/src/app/profile/PictureDialog.tsx"
+  ],
+  "Choose another image": [
+    "web/src/app/profile/PictureDialog.tsx"
   ],
   "Choose another task": [
     "web/src/app/focus/FocusView.tsx"
@@ -2375,6 +2418,9 @@
   "Confirm deleting permanently": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Confirm email": [
+    "web/src/app/EmailScreens.tsx"
+  ],
   "Confirm it's you": [
     "web/src/app/ReauthDialog.tsx"
   ],
@@ -2388,6 +2434,9 @@
     "web/src/app/RestoreSection.tsx",
     "web/src/lib/restore.ts"
   ],
+  "Confirm your new email": [
+    "web/src/app/EmailScreens.tsx"
+  ],
   "Confirm your password or a code to continue.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -2400,6 +2449,9 @@
   ],
   "Confirm your password, then download again.": [
     "web/src/app/ServerArchivePanel.tsx"
+  ],
+  "Confirming needs a connection.": [
+    "web/src/app/EmailScreens.tsx"
   ],
   "Connect": [
     "web/src/app/IssueEditor.tsx"
@@ -2423,9 +2475,6 @@
   ],
   "Connecting…": [
     "web/src/app/RelaySettings.tsx"
-  ],
-  "Connection instructions": [
-    "web/src/app/AssistantsPanel.tsx"
   ],
   "Connection name": [
     "web/src/app/IssueEditor.tsx"
@@ -2585,11 +2634,8 @@
   "Create a task with the current view’s defaults (project, date, label)": [
     "web/src/app/vim/commands.ts"
   ],
-  "Create a token above (or under Settings → Integrations → API tokens).": [
-    "web/src/app/AssistantsPanel.tsx"
-  ],
-  "Create a token for an assistant that can make changes": [
-    "web/src/app/AssistantsPanel.tsx"
+  "Create a token": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Create account": [
     "web/src/app/AuthScreen.tsx"
@@ -2637,9 +2683,6 @@
   "Create public link": [
     "web/src/app/PublicLinksSection.tsx"
   ],
-  "Create read-only token": [
-    "web/src/app/AssistantsPanel.tsx"
-  ],
   "Create reset link": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -2656,6 +2699,7 @@
     "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Create token": [
+    "web/src/app/AssistantsPanel.tsx",
     "web/src/app/TokensSection.tsx"
   ],
   "Create webhook": [
@@ -2675,13 +2719,17 @@
   "Created {ago} · never used": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
-  "Created {day} · never used": [
-    "web/src/app/CaldavPanel.tsx",
+  "Created {day} · Last used {used}": [
     "web/src/app/TokensSection.tsx"
   ],
-  "Created {day} · used {used}": [
-    "web/src/app/CaldavPanel.tsx",
+  "Created {day} · Never used": [
     "web/src/app/TokensSection.tsx"
+  ],
+  "Created {day} · never used": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
+  "Created {day} · used {used}": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "Created {instant}": [
     "web/src/app/MembersPanel.tsx",
@@ -3497,7 +3545,8 @@
     "web/src/app/EmailScreens.tsx",
     "web/src/app/OriginChip.tsx",
     "web/src/app/ShareDialog.tsx",
-    "web/src/lib/history.ts"
+    "web/src/lib/history.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Email (optional)": [
     "web/src/app/MembersPanel.tsx"
@@ -3515,6 +3564,7 @@
     "web/src/app/auditFormat.ts"
   ],
   "Email changed": [
+    "web/src/app/EmailScreens.tsx",
     "web/src/app/auditFormat.ts"
   ],
   "Email me the digest": [
@@ -3644,6 +3694,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "Endpoint": [
+    "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -3855,6 +3906,9 @@
   ],
   "Everything that has your attention gets a home.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Everything you can do, except sign-in credentials and administration.": [
+    "web/src/app/TokensSection.tsx"
   ],
   "Everything you can see as one JSON file, including the Trash.": [
     "web/src/lib/settingsCopy.ts"
@@ -4268,6 +4322,9 @@
   "For Gmail and similar services, an app password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "For everyone on this server": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "For example Systran/faster-whisper-small.": [
     "web/src/app/SpeechServerPanel.tsx"
   ],
@@ -4282,6 +4339,9 @@
   ],
   "For scripts, the ot command and AI assistants. Sent as {header}.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "For you": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Forget all browsers": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -4358,7 +4418,7 @@
   "Full access": [
     "web/src/app/TokensSection.tsx"
   ],
-  "Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": [
+  "Full access plus credentials and administration. Keep it like a password.": [
     "web/src/app/TokensSection.tsx"
   ],
   "Full date": [
@@ -4387,6 +4447,9 @@
   ],
   "Get whatever is on your mind into the Inbox the moment it appears.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "GitHub’s public service.": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Give every item one home: a project, a date, Waiting or Someday.": [
     "web/src/lib/method/vocabulary.json"
@@ -4749,6 +4812,9 @@
   "How much the app shows its method, Open Loops. Synced; never changes a task.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "How people who share a project with you see you.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "How quick add reads what you type, on this device.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -5003,9 +5069,6 @@
   ],
   "In today’s focus": [
     "web/src/app/review/DailyCheck.tsx"
-  ],
-  "In your assistant, add a remote MCP server (“streamable HTTP”) with the endpoint URL.": [
-    "web/src/app/AssistantsPanel.tsx"
   ],
   "In {breadcrumb}": [
     "web/src/app/TaskRow.tsx"
@@ -5566,6 +5629,9 @@
   "Light or dark, colour theme, density and the sidebar": [
     "web/src/app/settingsSections.ts"
   ],
+  "Limits": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "Line break": [
     "web/src/lib/richtextEditor.ts"
   ],
@@ -5648,6 +5714,7 @@
     "web/src/app/FeedView.tsx"
   ],
   "Loading": [
+    "web/src/app/profile/PictureDialog.tsx",
     "web/src/ui/Skeleton.tsx"
   ],
   "Loading activity": [
@@ -6055,6 +6122,9 @@
   "More formatting": [
     "web/src/app/EditorChrome.tsx"
   ],
+  "More options": [
+    "web/src/app/IssueEditor.tsx"
+  ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -6244,7 +6314,9 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/locations/PlacesView.tsx",
-    "web/src/app/rules/RuleDialog.tsx"
+    "web/src/app/profile/ProfileSection.tsx",
+    "web/src/app/rules/RuleDialog.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Name (optional)": [
     "web/src/app/PublicLinksSection.tsx"
@@ -6311,6 +6383,9 @@
   ],
   "New dashboard": [
     "web/src/app/palette/registry.ts"
+  ],
+  "New email": [
+    "web/src/app/profile/ProfileSection.tsx"
   ],
   "New filter": [
     "web/src/app/ViewsView.tsx"
@@ -6633,6 +6708,9 @@
   ],
   "No microphone was found. Connect one, or keep typing.": [
     "web/src/lib/voice/dictation.ts"
+  ],
+  "No name": [
+    "web/src/app/profile/ProfileSection.tsx"
   ],
   "No next action": [
     "web/src/app/review/MonthlyLook.tsx",
@@ -7159,6 +7237,9 @@
   "Off by default; turning it off erases every stored address.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Off for your account: end-to-end encryption is on": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "Off until you save an issuer and client id.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -7176,6 +7257,9 @@
   ],
   "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Off: the owner has not turned it on": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Off: the push carries only encrypted ids and this device adds the title.": [
     "web/src/lib/settingsCopy.ts"
@@ -7286,6 +7370,9 @@
   "On drop: {rule}": [
     "web/src/app/DashboardView.tsx"
   ],
+  "On for everyone": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "On iPhone and iPad, push works only in the app installed to the Home Screen: check Settings → Notifications → OpenTodo, and Focus.": [
     "web/src/lib/push.ts"
   ],
@@ -7303,6 +7390,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "On this server": [
+    "web/src/app/AssistantsPanel.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "On time": [
@@ -7313,6 +7401,9 @@
   ],
   "On, read-only": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "On, using your own key": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "On, {weekday}s at {hour} ({zone})": [
     "web/src/app/DigestCard.tsx"
@@ -7420,6 +7511,9 @@
   ],
   "Open Next": [
     "web/src/app/method/MethodListView.tsx"
+  ],
+  "Open Settings": [
+    "web/src/app/EmailScreens.tsx"
   ],
   "Open Settings: {section}": [
     "web/src/app/palette/registry.ts"
@@ -7648,6 +7742,9 @@
     "web/src/lib/dashboard.ts",
     "web/src/lib/feed.ts",
     "web/src/lib/views.ts"
+  ],
+  "Other MCP clients": [
+    "web/src/app/AssistantsPanel.tsx"
   ],
   "Other calendars": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -7888,6 +7985,9 @@
   "People to see or thank": [
     "web/src/lib/review.ts"
   ],
+  "People who share a project with you see it. It is not end-to-end encrypted.": [
+    "web/src/app/profile/PictureDialog.tsx"
+  ],
   "People without an account can create one with this link.": [
     "web/src/app/InviteLinksSection.tsx"
   ],
@@ -7939,6 +8039,12 @@
   ],
   "Pick which More destinations sit next to Inbox, Today, Upcoming and Calendar.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Picture": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Picture crop: arrow keys move it, + and - zoom": [
+    "web/src/app/profile/PictureCropper.tsx"
   ],
   "Pin": [
     "web/src/app/SavedViewView.tsx",
@@ -8148,7 +8254,11 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Profile": [
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Profile picture": [
+    "web/src/app/profile/PictureDialog.tsx"
   ],
   "Profile picture changed": [
     "web/src/app/auditFormat.ts"
@@ -8442,6 +8552,10 @@
   "Read": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Read only": [
+    "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/TokensSection.tsx"
+  ],
   "Read the docs": [
     "web/src/app/AboutSection.tsx"
   ],
@@ -8452,8 +8566,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "Read-only": [
-    "web/src/app/ProjectHeader.tsx",
-    "web/src/app/TokensSection.tsx"
+    "web/src/app/ProjectHeader.tsx"
   ],
   "Read-only access for an AI assistant, or a token that can make changes": [
     "web/src/app/settingsIndex.ts"
@@ -8466,6 +8579,9 @@
   ],
   "Read-only: you are a viewer of this shared project. You can still comment.": [
     "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Reads everything you can; every change is refused.": [
+    "web/src/app/TokensSection.tsx"
   ],
   "Ready": [
     "web/src/app/RelaySettings.tsx"
@@ -8642,6 +8758,9 @@
   "Remove pasted text": [
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/ui/patterns/AskComposer.tsx"
+  ],
+  "Remove picture": [
+    "web/src/app/profile/PictureDialog.tsx"
   ],
   "Remove saved key": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -9010,6 +9129,7 @@
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/TokensSection.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Revoke app password": [
@@ -9115,6 +9235,9 @@
   "Run automation rules": [
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
+  "Run this in a terminal.": [
+    "web/src/app/AssistantsPanel.tsx"
+  ],
   "Run your own server": [
     "web/src/app/help/HelpView.tsx"
   ],
@@ -9185,6 +9308,7 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/locations/LocationEditor.tsx",
+    "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/rules/RuleDialog.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
@@ -9225,6 +9349,9 @@
   "Save pages and selected text from your browser as tasks.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Save picture": [
+    "web/src/app/profile/PictureDialog.tsx"
+  ],
   "Save providers": [
     "web/src/app/locations/MapsSettings.tsx"
   ],
@@ -9236,6 +9363,9 @@
   ],
   "Save the Filter query as a view, pinned to the sidebar": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Save the connection first, then test it.": [
+    "web/src/app/IssueEditor.tsx"
   ],
   "Save the page you are reading as a task": [
     "web/src/app/settingsIndex.ts"
@@ -9499,9 +9629,6 @@
   "Send the link again": [
     "web/src/app/AuthScreen.tsx"
   ],
-  "Send the token as the header {header}. Clients that take a JSON entry accept:": [
-    "web/src/app/AssistantsPanel.tsx"
-  ],
   "Send with {keys}": [
     "web/src/app/task-detail/Composer.tsx"
   ],
@@ -9637,6 +9764,15 @@
   ],
   "Settings → Account → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Settings → Account → Profile, picture dialog: move the picture inside the circle": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Settings → Account → Profile, picture dialog: zoom in or out": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.": [
+    "web/src/app/AssistantsPanel.tsx"
   ],
   "Settings → People → Members: copy the invite link created in this session": [
     "web/src/lib/shortcuts.ts"
@@ -9809,6 +9945,9 @@
   ],
   "Shown at the top of tomorrow’s Daily check.": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Shown instead of your initials. Not end-to-end encrypted.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Shown with your replies, followed by “(guest)”.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -10596,6 +10735,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "Test": [
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/SpeechServerPanel.tsx"
   ],
   "Test connection": [
@@ -10719,6 +10859,12 @@
   "The archive is damaged: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The assistant can also add and change tasks through its tools, while you allow it.": [
+    "web/src/app/AssistantsPanel.tsx"
+  ],
+  "The assistant can read your tasks and projects but never change them.": [
+    "web/src/app/AssistantsPanel.tsx"
+  ],
   "The assistant cannot read end-to-end encrypted tasks, so it is off for your account.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10766,6 +10912,9 @@
   ],
   "The calendar's secret or public iCal address (https, ending in .ics on most services).": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "The change applies at once. You may be asked for your password first.": [
+    "web/src/app/profile/ProfileSection.tsx"
   ],
   "The change could not be saved.": [
     "web/src/app/actionError.ts"
@@ -10966,6 +11115,9 @@
   ],
   "The passphrase needs at least {n} characters.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "The picture could not be saved. Try again.": [
+    "web/src/app/profile/PictureDialog.tsx"
   ],
   "The position is not available right now.": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -11613,6 +11765,9 @@
   "This language could not be loaded; your choice applies once it can be.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "This link belongs to another account. Sign in to that account and open it again.": [
+    "web/src/app/EmailScreens.tsx"
+  ],
   "This link can only be used by people who already have an account on this server. Sign in first, or ask the server owner for an account.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -11627,6 +11782,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This link is not valid any more. Ask for a new one.": [
+    "web/src/app/EmailScreens.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
   "This link no longer works": [
@@ -12053,6 +12209,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Token": [
+    "web/src/app/AssistantsPanel.tsx",
     "web/src/app/IssueEditor.tsx"
   ],
   "Token created": [
@@ -12264,6 +12421,9 @@
   ],
   "Turn on the assistant for this server": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Turn on the endpoint above to connect an assistant.": [
+    "web/src/app/AssistantsPanel.tsx"
   ],
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
@@ -12623,6 +12783,9 @@
   "Usage": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Usage this month": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "Usage: {usage}": [
     "web/src/app/vim/commands.ts"
   ],
@@ -12673,6 +12836,9 @@
   ],
   "Use the server’s assistant": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Use this address to sign in from now on.": [
+    "web/src/app/EmailScreens.tsx"
   ],
   "Use this skill": [
     "web/src/app/assistant/AskEntry.tsx"
@@ -12788,6 +12954,9 @@
   "Waiting for": [
     "web/src/lib/activity.ts"
   ],
+  "Waiting for confirmation: {email}": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Waiting for the first poll": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -12816,6 +12985,9 @@
   "Walk your projects": [
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/method/MethodListView.tsx"
+  ],
+  "We send a link to the new address; the change happens when you open it.": [
+    "web/src/app/profile/ProfileSection.tsx"
   ],
   "We sent a link to <strong>{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.": [
     "web/src/app/AuthScreen.tsx"
@@ -12910,6 +13082,9 @@
   "What may be sent": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
+  "What the assistant may do": [
+    "web/src/app/AssistantsPanel.tsx"
+  ],
   "What this device answered, without the text.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12939,6 +13114,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Where": [
+    "web/src/app/IssueEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -12958,6 +13134,9 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Which issues": [
+    "web/src/app/IssueEditor.tsx"
+  ],
+  "Which issues and where they go": [
     "web/src/app/IssueEditor.tsx"
   ],
   "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar": [
@@ -13176,11 +13355,20 @@
   "You need an account on this server first. Ask {inviterName} or the server owner for one, then open this link again and sign in.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
+  "You now sign in with {email}.": [
+    "web/src/app/EmailScreens.tsx"
+  ],
   "You seem to be offline": [
     "web/src/app/EmailScreens.tsx",
     "web/src/app/InviteScreen.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/ResetScreen.tsx"
+  ],
+  "You sign in with it. A new address applies at once.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "You sign in with it. A new address is confirmed by a link sent to it.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "You will no longer be able to sign in with {provider} using this account. Your password and passkeys keep working.": [
     "web/src/app/SsoPanel.tsx"
@@ -13283,6 +13471,9 @@
   "Your name": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Your name, email and profile picture are account data and are never encrypted.": [
+    "web/src/app/EncryptionPanel.tsx"
+  ],
   "Your name, email and role": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -13303,6 +13494,9 @@
   ],
   "Your password was changed. Sign in with the new one.": [
     "web/src/app/App.tsx"
+  ],
+  "Your picture, name and email": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Your provider sent this token with the address of your new server.": [
     "web/src/app/AuthScreen.tsx"
@@ -13335,6 +13529,9 @@
   "Your sidebar as it is; screens name the move they serve.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Your sign-in provider manages it: {provider}.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Your start view was deleted, so the Inbox opened instead.": [
     "web/src/app/Shell.tsx"
   ],
@@ -13355,6 +13552,9 @@
   ],
   "Your zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Zoom": [
+    "web/src/app/profile/PictureCropper.tsx"
   ],
   "[Cannot decrypt]": [
     "web/src/lib/e2ee.ts"
@@ -13821,7 +14021,7 @@
   "full access": [
     "web/src/lib/assistants.ts"
   ],
-  "github.com, gitlab.com or the address of your own instance.": [
+  "gitlab.com or the address of your own instance.": [
     "web/src/app/IssueEditor.tsx"
   ],
   "green": [
@@ -13841,6 +14041,9 @@
   ],
   "http://192.168.1.20:11434/v1": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "http://stt.home.lan:8000": [
+    "web/src/app/SpeechServerPanel.tsx"
   ],
   "https://cloud.example.com/remote.php/dav/files/me/opentodo/": [
     "web/src/app/BackupsPanel.tsx"
@@ -13874,6 +14077,9 @@
   ],
   "in the Inbox": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "in the picture dialog": [
+    "web/src/lib/shortcuts.ts"
   ],
   "in the thread": [
     "web/src/lib/shortcuts.ts"
@@ -14531,6 +14737,7 @@
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "today": [
+    "web/src/app/TokensSection.tsx",
     "web/src/app/method/LoopHome.tsx",
     "web/src/lib/review.ts",
     "web/src/lib/rules/summary.ts"
@@ -14726,6 +14933,7 @@
     "web/src/lib/history.ts"
   ],
   "yesterday": [
+    "web/src/app/TokensSection.tsx",
     "web/src/lib/review.ts"
   ],
   "you@example.com": [
