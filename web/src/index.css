@@ -798,14 +798,16 @@ select.ui-input { @apply truncate; contain: layout paint; }
   border-radius: var(--radius-control);
   background: var(--ot-accent-soft);
 }
-.ui-card--lift, .ui-cards--lift > li:not([data-drop-placeholder]) { @apply transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2; }
-.ui-cards--lift > li[data-dragging] { opacity: 0.4; }
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
 /* A hairline between a flat section and whatever comes before it on the page (D9). */
 .ui-section-flat:not(:first-child) { @apply border-t border-default; }
 /* A dashboard panel: flat, full width of its grid cell, a hairline above every one (statistics). */
 .ui-panel-flat { @apply border-t border-default px-0; }
 }
+
+/* Outside the layers, so they win over the row's own shadow and opacity utilities (surfaces-v2 D7, D8). */
+.ui-card--lift, .ui-cards--lift > li:not([data-drop-placeholder]) { @apply hover:shadow-2 focus-within:shadow-2; }
+.ui-cards--lift > li[data-dragging] { opacity: 0.4; }
 
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
 @layer components {
