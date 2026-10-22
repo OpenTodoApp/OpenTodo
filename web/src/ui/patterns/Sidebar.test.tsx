@@ -57,11 +57,11 @@ describe('SidebarItem counts', () => {
 
 describe('StatusDot', () => {
   it('is an accent dot with its meaning as hidden text, never a badge with text', async () => {
-    const r = await render(<SidebarItem label="More" badge={<StatusDot label="Review due" data-review-due-more />} />)
-    const dot = r.container.querySelector('[data-review-due-more]')!
+    const r = await render(<SidebarItem label="Review" badge={<StatusDot label="Review due" data-review-due />} />)
+    const dot = r.container.querySelector('[data-review-due]')!
     expect(dot.querySelector('[data-dot]')!.className).toContain('bg-accent')
-    expect(visibleText(r.container.querySelector('[data-sidebar-item]')!)).toBe('More')
-    expect(spokenText(r.container.querySelector('[data-sidebar-item]')!)).toBe('More, Review due')
+    expect(visibleText(r.container.querySelector('[data-sidebar-item]')!)).toBe('Review')
+    expect(spokenText(r.container.querySelector('[data-sidebar-item]')!)).toBe('Review, Review due')
     await r.unmount()
   })
 })

@@ -36,6 +36,6 @@ Lists use the usual keys, offline too.
 
 ## Finishing a review
 
-**Finish review** records the time. It syncs to all your devices, so your phone knows when you last reviewed on your laptop. In the sidebar, Review gets a small dot once the last review is more than seven days ago, or if you never finished one; point at it to read why ("Review due · last weekly review 9 days ago"). With nothing due there is no dot, and the tooltip says when you last reviewed. With [Open Loops](method/set-up.md) on, the dot also covers the Monthly look, and in Open Loops first the Daily check. The dot also shows on More, and the Review item in the More menu says the same in words.
+**Finish review** records the time. It syncs to all your devices, so your phone knows when you last reviewed on your laptop. In the sidebar, Review gets a small dot once the last review is more than seven days ago, or if you never finished one; point at it to read why ("Review due · last weekly review 9 days ago"). With nothing due there is no dot, and the tooltip says when you last reviewed. With [Open Loops](method/set-up.md) on, the dot also covers the Monthly look, and in Open Loops first the Daily check. When Review is inside More, its dot and these words are on the Review item in the More menu; More itself carries no dot.
 
 What you completed and let slip is in [Statistics and the weekly digest](statistics.md).

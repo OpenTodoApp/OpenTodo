@@ -22,7 +22,7 @@ Completed and deleted tasks offer no start, and viewers of a shared project cann
 
 ## The running indicator
 
-While an entry runs, the sidebar footer shows the elapsed time and the task's name, `1:05 · Write the report`, with a **Stop** button; activate it to open the task. On a phone the bar shows the time as a pill that opens a sheet with **Open** and **Stop**. The time counts in minutes, then as hours and minutes from one hour, and turns to a caution colour after 12 hours in case you forgot to stop. Screen readers hear it once when tracking starts and once when it stops.
+While an entry runs, a pill in the sidebar's bottom row takes the place of your name: the elapsed time and the task's name, `1:05 · Write the report`, with a **Stop** button inside it; activate the pill to open the task. With the sidebar collapsed to icons it shows the time alone and opens a menu with **Open the tracked task** and **Stop**. On a phone the bar shows the time as a pill that opens a sheet with **Open** and **Stop**. The time counts in minutes, then as hours and minutes from one hour, and turns to a caution colour after 12 hours in case you forgot to stop. Screen readers hear it once when tracking starts and once when it stops.
 
 If you stop the entry on another device, the indicator disappears here after that device syncs.
 

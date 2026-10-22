@@ -224,7 +224,7 @@ Close the day is never due and carries no marker of its own. When the day was cl
 
 #### Scenario: Due in Companion
 - **WHEN** a user in `companion` mode last finished the weekly review nine days ago and the Monthly look 40 days ago
-- **THEN** the More row shows one dot, its tooltip and accessible name read "Review due · last weekly review 9 days ago; the Monthly look is due", and finishing the review on another device removes the dot here after sync without a reload
+- **THEN** the Review entry inside More shows one dot, its tooltip and accessible description read "Review due · last weekly review 9 days ago; the Monthly look is due", the More row carries no dot, and finishing the review on another device removes the dot here after sync without a reload
 
 ### Requirement: Close the day is reachable
 The app SHALL offer Close the day at `/review/close`, reachable in every mode from a row at the end of the Today list, from the Loop home's Review move, from the command palette and by `g` then `Shift+D`. The row at the end of Today SHALL add no row above the list's first item and SHALL read "Day closed, <time>" after a close on the user's local date. Opening the screen SHALL need no connection; it reads local rows only.

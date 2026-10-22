@@ -147,6 +147,17 @@ node scripts/icons-sync.mjs ./package
 
 The script is idempotent. A unit test fails when a vendored icon is used nowhere (or listed as reserved for a planned screen change), so the set doesn't grow unnoticed.
 
+### Brand
+
+The mark is an open loop whose free end turns into a tick: the loop centred at (12, 13) with radius 8 on a 24-unit grid, a 2-unit stroke with round caps, the opening at the top right (70°) so the tick escapes through it and the two never touch at 16 px. It never sits in a square or a checkbox, and the wordmark is never part of it.
+
+- **Source**: `web/src/ui/icons/brand.svg`, under 2 KB, two symbols: `mono` and `colour`. Every other brand file is generated from it.
+- **In the interface**: `<BrandMark size={24} />` (sizes 16, 20, 24, 32) draws `mono`, in `currentColor` with the tick's short stroke in `--ot-accent-text`, so it takes the tone of its row and the theme's accent. `<BrandWordmark />` is the text "OpenTodo" in the strong tone, set in the bundled Inter; it is never translated. Both come from the `ui` barrel; no screen uses an image of the icon.
+- **Elsewhere**: `colour` is the mark in emerald on a slate rounded square, the same in every theme, because it sits on other people's surfaces: the favicon, the manifest icons (192 and 512 px, a 512 px maskable icon that fills its square), the Apple touch icon, the browser extension's icons and `brand/` in the site bundle.
+- **Regenerating**: `make brand-icons` (`scripts/brand-icons.mjs`) renders every raster in the Chromium that Playwright brings, with no image dependency, and writes `web/src/ui/icons/brand-icons.json` with the hash of the source and of each file. `scripts/brand-icons.test.mjs` (in `make repo-check` and `make test-extension`) fails when the source changed without regenerating or a raster was edited by hand.
+
+The `Foundations/Brand` story shows the mono mark at every size beside a row's checkbox in two accent themes; its 16 px baseline is the legibility check.
+
 ### Illustrations
 
 Empty and finished states may show one calm line drawing above their sentence (the first is Inbox zero). Each lives in its own file in `web/src/ui/illustrations/` as inline SVG and follows one style, so later ones match:
