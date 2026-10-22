@@ -22,11 +22,11 @@
 
 ## 4. Done for today
 
-- [ ] 4.1 Show the final state in `web/src/app/review/CloseDay.tsx` after the close writes (illustration, time, figures line, quoted note, "Back to Today" focused, "Reopen the day" where offered), device state only; verify `closeDay.test.tsx` ("Close with carry-over", "Nothing was planned", "Reload" shows the first step)
-- [ ] 4.2 Reduced motion: the state appears with a crossfade only; verify the motion test in `closeDay.test.tsx` under `prefers-reduced-motion`
+- [x] 4.1 Show the final state in `web/src/app/review/CloseDay.tsx` after the close writes (illustration, time, figures line, quoted note, "Back to Today" focused, "Reopen the day" where offered), device state only; verify `closeDay.test.tsx` ("Close with carry-over", "Nothing was planned", "Reload" shows the first step) — done: `web/src/app/review/DoneForToday.tsx` shown by `CloseDay.tsx` after `closeDay` (figures snapshotted at the close, device state only, Escape and Back to Today open Today); `closeDay.test.tsx` "Close with a note", "Close with carry-over", "Nothing was planned" and "Reload" pass
+- [x] 4.2 Reduced motion: the state appears with a crossfade only; verify the motion test in `closeDay.test.tsx` under `prefers-reduced-motion` — done: the state fades in with an opacity transition only (kept by the reduced-motion rule, which clamps animations but allows opacity transitions); `closeDay.test.tsx` "Reduced motion" passes
 - [ ] 4.3 Story `Screens/Close the day/Done for today` in both themes at 375 and 1280 px; verify `make ui-check` once baselines exist
-- [ ] 4.4 After `close-the-day` is archived, amend the one clause "and then return to the Today view" of weekly-review "Closing the day" in `openspec/specs/weekly-review/spec.md` to "and then show the Done for today state"; verify `make openspec-validate`
-- [ ] 4.5 Update `docs/method/rhythms.md` (Close the day ends on Done for today); verify `make docs-check`
+- [x] 4.4 After `close-the-day` is archived, amend the one clause "and then return to the Today view" of weekly-review "Closing the day" in `openspec/specs/weekly-review/spec.md` to "and then show the Done for today state"; verify `make openspec-validate` — done: close-the-day is archived: the clause and its "Close with a note" scenario amended in `openspec/specs/weekly-review/spec.md`; `make openspec-validate` passes
+- [x] 4.5 Update `docs/method/rhythms.md` (Close the day ends on Done for today); verify `make docs-check` — done: `docs/method/rhythms.md` describes Done for today; `make docs-check` ok
 
 ## 5. Command bar
 

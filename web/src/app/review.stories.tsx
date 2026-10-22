@@ -4,6 +4,8 @@ import { db } from '../lib/db'
 import type { EmailDigest, Task, TimeEntry } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
 import { CloseDay } from './review/CloseDay'
+import { DoneForToday } from './review/DoneForToday'
+import { PageBody, PageHeader } from '../ui'
 import { ReviewView } from './review/ReviewView'
 import { StatTile } from './review/charts'
 import { StatsContent } from './review/StatsView'
@@ -151,6 +153,18 @@ export const CloseTheDayNote: StoryObj = {
   name: 'Close the day · note',
   ...withSeed(seedCloseDay),
   render: () => <CloseDay initialStep="note" />,
+}
+
+/** Done for today (moments-and-onboarding D6): the calm final state after the close. */
+export const CloseTheDayDone: StoryObj = {
+  name: 'Close the day · done for today',
+  render: () => (
+    <PageBody width="list">
+      <PageHeader title="Close the day" icon="moon" meta="Day closed, 18:42" />
+      <DoneForToday figures={{ time: '18:42', planned: 9, done: 5, carried: { tomorrow: 3, day: 0, someday: 0, keep: 0 }, kept: 1, note: 'Start with the invoice' }}
+        onBack={() => {}} onReopen={() => {}} />
+    </PageBody>
+  ),
 }
 
 const digest: EmailDigest = {

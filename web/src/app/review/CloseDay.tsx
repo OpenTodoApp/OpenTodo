@@ -3,7 +3,8 @@
 // `daySummary`, the Statistics definitions), Carry over (one decision per unfinished
 // task of Today, device state until Apply writes ONE undoable batch through the
 // bulk path) and A line for tomorrow (the close writes `closed_at` and
-// `tomorrow_note` on the synced `review` row, then Today opens).
+// `tomorrow_note` on the synced `review` row). The screen then shows Done for today
+// (moments-and-onboarding D6, DoneForToday.tsx) until the user goes back to Today.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
@@ -31,6 +32,7 @@ import { useListKeys } from '../useListKeys'
 import { reopenDayAction } from '../reopenDay'
 import { ReviewProgress } from './ReviewProgress'
 import { StepCard } from './StepCard'
+import { DoneForToday, NOTHING_CARRIED, type Carried, type DayDoneFigures } from './DoneForToday'
 
 const ICONS: Record<CloseStepId, IconName> = { summary: 'chart-column', carry: 'calendar-days', note: 'moon' }
 const PHASE_OF: Record<CloseStepId, 'close'> = { summary: 'close', carry: 'close', note: 'close' }
@@ -50,6 +52,9 @@ export function CloseDay({ initialStep = 'summary' }: { initialStep?: CloseStepI
   const [step, setStep] = useState<CloseStepId>(initialStep)
   const [decisions, setDecisions] = useState<Map<string, CarryDecision>>(() => new Map())
   const [applied, setApplied] = useState(false)
+  // What Apply carried, and the final state once the close is written (device state only).
+  const [carried, setCarried] = useState<Carried>(NOTHING_CARRIED)
+  const [closed, setClosed] = useState<DayDoneFigures | null>(null)
   const [note, setNote] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const [picking, setPicking] = useState<CarryTask | null>(null)
@@ -96,11 +101,16 @@ export function CloseDay({ initialStep = 'summary' }: { initialStep?: CloseStepI
     if (!input) return
     const r = await applyCarryOver(decisions, unfinished, input.today)
     if (r.entry) showBulkToast(r.label, r.entry.id)
+    const counts = { ...NOTHING_CARRIED }
+    for (const x of unfinished) if (x.editable) counts[decisionOf(decisions, x).kind]++
+    setCarried(r.entry ? { ...counts, keep: 0 } : NOTHING_CARRIED)
     setApplied(true)
   }
   const finish = async () => {
-    await closeDay(note)
-    navigate({ view: 'today' })
+    if (!summary) return
+    const at = Date.now()
+    await closeDay(note, at)
+    setClosed({ time: formatInstant(at, 'time'), planned: summary.planned, done: summary.done, carried: applied ? carried : NOTHING_CARRIED, kept: unfinished.length, note: note.trim() })
   }
 
   const closedToday = !!input && dayClosed(review?.closed_at, input.today)
@@ -116,9 +126,12 @@ export function CloseDay({ initialStep = 'summary' }: { initialStep?: CloseStepI
   return (
     <PageBody width="list">
       <PageHeader title={t('Close the day')} icon="moon" meta={meta} help="review/close"
-        actions={closedToday && input ? <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(input.today)} data-reopen-day>{t('Reopen the day')}</Button> : undefined}
+        actions={closedToday && input && !closed ? <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(input.today)} data-reopen-day>{t('Reopen the day')}</Button> : undefined}
         back={{ label: t('Today'), onClick: () => navigate({ view: 'today' }), hideFrom: 'lg' }} />
-      {!summary ? <Skeleton shape="row" count={4} /> : (
+      {closed && input ? (
+        <DoneForToday figures={closed} onBack={() => navigate({ view: 'today' })}
+          onReopen={closedToday ? () => { reopenDayAction(input.today); setClosed(null) } : undefined} />
+      ) : !summary ? <Skeleton shape="row" count={4} /> : (
         <>
           <ReviewProgress<CloseStepId, 'close'> steps={progress} step={step} onStep={setStep} ids={CLOSE_STEP_IDS} phases={['close']}
             phaseOf={PHASE_OF} phaseTitles={CLOSE_PHASE_TITLES} stepTitles={CLOSE_STEP_TITLES} label={t('Close the day progress')} />

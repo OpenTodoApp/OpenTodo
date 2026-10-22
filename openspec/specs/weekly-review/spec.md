@@ -302,11 +302,11 @@ The Carry over step SHALL list every open task Today lists, each with one decisi
 - **THEN** the four others return to their previous dates, the hand-edited one is left alone and named in the toast
 
 ### Requirement: Closing the day
-"Close the day" on the last step SHALL write the time as `closed_at` and the note (one line, trimmed, empty allowed) as `tomorrow_note` on the user's `review` entity through the operation log, and then return to the Today view. Closing a day that is already closed SHALL be allowed and write a newer time and note. The stamp is not content; the note is user-written content and SHALL be encrypted for an encrypted account.
+"Close the day" on the last step SHALL write the time as `closed_at` and the note (one line, trimmed, empty allowed) as `tomorrow_note` on the user's `review` entity through the operation log, and then show the Done for today state. Closing a day that is already closed SHALL be allowed and write a newer time and note. The stamp is not content; the note is user-written content and SHALL be encrypted for an encrypted account.
 
 #### Scenario: Close with a note
 - **WHEN** the user types "Start with the invoice" and activates Close the day
-- **THEN** the review row carries the time and the note, Today is shown with "Day closed" at its end, and the laptop shows the same after sync
+- **THEN** the review row carries the time and the note, Done for today is shown, "Back to Today" shows Today with "Day closed" at its end, and the laptop shows the same after sync
 
 #### Scenario: Close again
 - **WHEN** the day was closed at 18:00 and the user closes it again at 21:10 with a new note

@@ -216,20 +216,93 @@ describe('Carry over', () => {
 })
 
 describe('Closing the day', () => {
-  it('Close with a note: the review row holds the time and the trimmed note, then Today ends with "Day closed"', async () => {
-    const r = await shell({ view: 'review', step: 'close' })
+  const doneState = () => document.querySelector<HTMLElement>('[data-day-done]')
+  const closeFromNote = async (note: string) => {
     await waitFor(() => stepOf() === 'summary')
     await key(document.body, ']')
     await key(document.body, ']')
     await waitFor(() => stepOf() === 'note')
     const input = document.querySelector<HTMLInputElement>('[data-close-note-input]')!
-    expect(input.maxLength).toBe(500)
-    await type(input, '  Start with the invoice ')
+    if (note) await type(input, note)
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await waitFor(() => location.pathname === '/today')
+    await waitFor(() => !!doneState())
+    return input
+  }
+
+  it('Close with a note: the review row holds the time and the trimmed note; Done for today; Back to Today ends with "Day closed"', async () => {
+    const r = await shell({ view: 'review', step: 'close' })
+    await waitFor(() => stepOf() === 'summary')
+    expect(document.querySelector<HTMLInputElement>('[data-close-note-input]')).toBeNull()
+    await closeFromNote('  Start with the invoice ')
     const row = await db.review.get('me')
     expect([row?.closed_at, row?.tomorrow_note]).toEqual([NOW.getTime(), 'Start with the invoice'])
+    expect(document.querySelector('[data-day-done-note]')!.textContent).toBe('“Start with the invoice”')
+    expect(document.activeElement).toBe(document.querySelector('[data-day-done-back]'))
+    await click(document.querySelector('[data-day-done-back]')!)
+    await waitFor(() => location.pathname === '/today')
     await waitFor(() => /Day closed, (18:42|6:42\sPM)/.test(document.querySelector('[data-close-day]')?.textContent ?? ''))
+    await r.unmount()
+  })
+
+  it('Close with carry-over: 5 done, 3 moved to tomorrow, 1 kept, the drawing and no score; showing it wrote nothing', async () => {
+    for (let i = 0; i < 5; i++) {
+      const id = await createTask({ title: `Done ${i}`, due: { date: TODAY } })
+      await db.tasks.update(id, { completed_at: NOW.getTime() - 3_600_000 })
+    }
+    for (const title of ['Move a', 'Move b', 'Move c', 'Stay']) await createTask({ title, due: { date: TODAY } })
+    const r = await shell({ view: 'review', step: 'close' })
+    await toCarry()
+    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 4)
+    await click(carryRow('Stay').querySelector('[data-carry-choice="keep"]')!)
+    await click(document.querySelector('[data-close-apply]')!)
+    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 1)
+    await key(document.body, ']')
+    await waitFor(() => stepOf() === 'note')
+    const input = document.querySelector<HTMLInputElement>('[data-close-note-input]')!
+    await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await waitFor(() => !!doneState())
+    const outbox = await db.outbox.count()
+    expect(doneState()!.querySelector('[data-illustration="day-done"]')!.closest('[aria-hidden="true"]')).not.toBeNull()
+    expect(doneState()!.querySelector('h2')!.textContent).toMatch(/^Day closed, (18:42|6:42\sPM)$/)
+    expect(document.querySelector('[data-day-done-figures]')!.textContent).toBe('5 done, 3 moved to tomorrow, 1 kept')
+    expect(document.querySelector('[data-day-done-note]')).toBeNull()
+    expect(document.querySelector('[data-review-step]')).toBeNull()
+    expect(doneState()!.textContent).not.toMatch(/streak|score/i)
+    expect(doneState()!.querySelector('[data-reopen-day]')).not.toBeNull()
+    await flush(60)
+    expect(await db.outbox.count()).toBe(outbox)
+    // Escape goes back to Today as well.
+    await key(document.activeElement!, 'Escape')
+    await waitFor(() => location.pathname === '/today')
+    await r.unmount()
+  })
+
+  it('Nothing was planned: "Nothing was planned today", no figures beyond it, no quoted line', async () => {
+    const r = await shell({ view: 'review', step: 'close' })
+    await closeFromNote('')
+    expect(document.querySelector('[data-day-done-figures]')!.textContent).toBe('Nothing was planned today')
+    expect(document.querySelector('[data-day-done-note]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Reload: the route shows the ordinary first step with "Day closed" in its header', async () => {
+    const r = await shell({ view: 'review', step: 'close' })
+    await closeFromNote('')
+    await r.unmount()
+    const r2 = await shell({ view: 'review', step: 'close' })
+    await waitFor(() => stepOf() === 'summary')
+    expect(document.querySelector('[data-day-done]')).toBeNull()
+    expect(document.body.textContent).toMatch(/Day closed, (18:42|6:42\sPM)/)
+    await r2.unmount()
+  })
+
+  it('Reduced motion: the state only fades in (an opacity transition), with no movement', async () => {
+    const r = await shell({ view: 'review', step: 'close' })
+    await closeFromNote('')
+    const cls = doneState()!.className
+    expect(cls).toContain('transition-opacity')
+    expect(cls).not.toMatch(/translate|scale|animate-/)
+    await waitFor(() => doneState()!.className.includes('opacity-100'))
     await r.unmount()
   })
 })

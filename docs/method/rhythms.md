@@ -33,7 +33,7 @@ A few minutes in the evening: open it from the end of the Today list, the Review
 2. **Carry over**: every unfinished task of Today, each going to **Tomorrow** unless you choose otherwise: **Pick a day**, **Someday** or **Keep in Today**. On the selected task, press <kbd>t</kbd>, <kbd>p</kbd>, <kbd>y</kbd> or <kbd>h</kbd>. Nothing changes until you select **Apply**; then every task moves at once and **Undo** (or <kbd>Ctrl</kbd>+<kbd>Z</kbd>) puts them all back in one step.
 3. **A line for tomorrow**: an optional note, shown at the top of tomorrow's Daily check.
 
-**Close the day** records the close and returns to Today, which then ends with **Day closed** and the time; so does the Review entry in the sidebar. You can close again later the same day. Close the day is never due: nothing reminds you of it.
+**Close the day** records the close and ends on **Done for today**: the time, the day's figures ("5 done, 3 moved to tomorrow, 1 kept") and your line for tomorrow. No streak, no score. **Back to Today** (or <kbd>Esc</kbd>) returns to Today, which then ends with **Day closed** and the time; so does the Review entry in the sidebar. You can close again later the same day. Close the day is never due: nothing reminds you of it.
 
 Changed your mind? Until your day ends, **Reopen the day** (next to **Day closed**, or at the top of the Close the day screen) puts the carried-over tasks back where they were and clears the close, on any of your devices; your line for tomorrow is kept. A task you moved again by hand after closing stays where you put it, and the message names it. **Undo** takes the reopen back.
 
