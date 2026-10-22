@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTodo</string>
+    <string name="setup_title">Se connecter à votre serveur</string>
+    <string name="setup_intro">Saisissez l’adresse de votre serveur OpenTodo, celle que vous ouvrez dans le navigateur.</string>
+    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_connect">Se connecter</string>
+    <string name="setup_connect_anyway">Se connecter quand même</string>
+    <string name="setup_try">Essayer %1$s</string>
+    <string name="setup_refused">Cette adresse ne peut pas être utilisée. Saisissez une adresse comme todo.example.com.</string>
+    <string name="setup_needs_https">Cette adresse demande une connexion sécurisée (https).</string>
+    <string name="setup_insecure">Cette adresse est sur votre réseau local et n’est pas chiffrée : d’autres personnes sur le même réseau pourraient lire ce que vous envoyez. Touchez à nouveau pour vous connecter quand même.</string>
+    <string name="setup_no_network">Pas de connexion. Le premier démarrage a besoin du réseau ; cet écran réessaie dès qu’il revient.</string>
+    <string name="setup_not_opentodo">Cette adresse ne répond pas comme un serveur OpenTodo. Vérifiez l’adresse.</string>
+    <string name="setup_untrusted">Ce téléphone ne fait pas confiance au certificat du serveur. Demandez à la personne qui gère le serveur, ou installez son autorité de certification dans les paramètres Android.</string>
+    <string name="retry">Réessayer</string>
+    <string name="change_server">Changer de serveur</string>
+    <string name="change_server_confirm">Cela supprime de ce téléphone les données du serveur actuel : la copie hors ligne, les rappels programmés, les données des widgets et le déverrouillage par empreinte. Les modifications pas encore synchronisées sont perdues.</string>
+    <string name="error_offline">Le serveur est injoignable et OpenTodo n’a jamais été ouvert sur ce téléphone.</string>
+    <string name="error_untrusted">Ce téléphone ne fait pas confiance au certificat du serveur.</string>
+    <string name="channel_reminders">Rappels</string>
+    <string name="reminder_generic">Rappel</string>
+    <string name="reminder_text">Rappel de tâche</string>
+    <string name="action_snooze">Reporter de 10 min</string>
+    <string name="action_dismiss">Ignorer</string>
+    <string name="test_title">Les notifications fonctionnent</string>
+    <string name="test_text">Les rappels s’afficheront ainsi.</string>
+    <string name="biometric_enable_title">Déverrouiller par empreinte ou visage</string>
+    <string name="biometric_unlock_title">Déverrouiller OpenTodo</string>
+    <string name="biometric_use_passphrase">Utiliser la phrase secrète</string>
+    <string name="widget_today">Aujourd’hui</string>
+    <string name="widget_today_description">Vos tâches du jour</string>
+    <string name="widget_quick_add">Ajout rapide</string>
+    <string name="widget_quick_add_label">Ajouter une tâche</string>
+    <string name="widget_quick_add_description">Ouvre OpenTodo pour ajouter une tâche</string>
+    <string name="widget_updated">Mis à jour à %1$s</string>
+    <string name="widget_open_app">Ouvrez OpenTodo une fois pour remplir ce widget.</string>
+    <string name="widget_locked">Verrouillé. Tâches : %1$d, en retard : %2$d</string>
+    <string name="widget_empty">Plus rien pour aujourd’hui.</string>
+    <string name="widget_untitled">Tâche</string>
+    <string name="widget_more">+ %1$d de plus</string>
+    <string name="setup_old_webview">L’Android System WebView de ce téléphone est ancien (version %1$s). Mettez-le à jour depuis votre magasin d’applications pour qu’OpenTodo fonctionne pleinement.</string>
+</resources>

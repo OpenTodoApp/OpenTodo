@@ -29,6 +29,10 @@ Below the options, **Delivery check** lists everything push needs on this device
 
 Push needs iOS or iPadOS 16.4 or later, and only works in the installed app. Add OpenTodo to your home screen first ([Install on your phone](install-phone.md#iphone-and-ipad)), open it from there, then turn on notifications in its settings.
 
+## In the Android app
+
+The [Android app](android-app.md) uses no push service: the switch reads **Notifications through the app**, and the app schedules your next seven days of reminders on the phone, refreshing them about hourly. For reminders on time, allow **Alarms & reminders** for OpenTodo in Android's settings, and exempt it from battery optimisation if your phone delays alarms.
+
 ## Privacy
 
 A push message goes through your browser's push service (run by the browser maker). It contains only an id and a time, encrypted so the push service can't read it. Your device then shows the title from its own copy of the task.

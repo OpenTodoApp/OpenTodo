@@ -1,0 +1,10 @@
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+*.iml
+# Release signing comes from CI secrets only; never committed.
+keystore.properties
+*.jks
+*.keystore

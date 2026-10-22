@@ -29,7 +29,7 @@ import { sidebarFind, openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
-import { onQuickAddSheetRequest, QuickAddSheet } from './QuickAddSheet'
+import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { getTask } from '../lib/localData'
@@ -45,6 +45,7 @@ import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
+import { handleShellUrl } from '../lib/shellActions'
 import { useRunningRepair } from '../lib/timeEntries'
 import { TrackingPill } from './TrackingIndicator'
 import { BreakReminder } from './focus/BreakReminder'
@@ -153,7 +154,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [showHelp, setShowHelp] = useState(false)
   // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
   const [addOpen, setAddOpen] = useState(false)
-  useEffect(() => onQuickAddSheetRequest(() => setAddOpen(true)), [])
+  useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()

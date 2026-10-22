@@ -1,0 +1,38 @@
+# F-Droid build metadata (fdroiddata `metadata/app.opentodo.yml` format), submitted by the owner.
+Categories:
+  - Time
+License: AGPL-3.0-only
+AuthorName: OpenTodo contributors
+WebSite: https://github.com/pixari/OpenTodo
+SourceCode: https://github.com/pixari/OpenTodo
+IssueTracker: https://github.com/pixari/OpenTodo/issues
+Changelog: https://github.com/pixari/OpenTodo/blob/main/CHANGELOG.md
+
+AutoName: OpenTodo
+Summary: The app for your own OpenTodo server
+Description: |-
+  OpenTodo is a self-hosted task manager. This app opens your own OpenTodo server
+  and adds what a phone app can do: reminders on time without a push service,
+  sharing from other apps, home-screen widgets and fingerprint unlock of an
+  encrypted account. It has no trackers, no analytics and talks only to your server.
+
+RepoType: git
+Repo: https://github.com/pixari/OpenTodo.git
+
+Builds:
+  - versionName: 0.10.0
+    versionCode: 1000
+    commit: v0.10.0
+    subdir: mobile/android/app
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-17-jdk-headless
+      - update-alternatives --auto java
+    gradle:
+      - yes
+    prebuild: export OPENTODO_VERSION=$$VERSION$$
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: 0.10.0
+CurrentVersionCode: 1000

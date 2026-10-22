@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#FF14171B</color>
+    <color name="text">#FFE8EAED</color>
+    <color name="text_muted">#FFA0A8B2</color>
+    <color name="accent">#FF6A9BFF</color>
+    <color name="widget_background">#F21E2226</color>
+    <color name="widget_text">#FFE8EAED</color>
+    <color name="widget_muted">#FFA0A8B2</color>
+    <color name="overdue">#FFFF7A73</color>
+</resources>

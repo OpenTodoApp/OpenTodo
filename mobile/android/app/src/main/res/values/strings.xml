@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTodo</string>
+    <string name="setup_title">Connect to your server</string>
+    <string name="setup_intro">Enter the address of your OpenTodo server, the one you open in the browser.</string>
+    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_connect">Connect</string>
+    <string name="setup_connect_anyway">Connect anyway</string>
+    <string name="setup_try">Try %1$s</string>
+    <string name="setup_refused">This address can\'t be used. Enter an address such as todo.example.com.</string>
+    <string name="setup_needs_https">This address needs a secure connection (https).</string>
+    <string name="setup_insecure">This address is on your local network and isn\'t encrypted: others on the same network could read what you send. Tap again to connect anyway.</string>
+    <string name="setup_no_network">No connection. The first start needs the network; this screen tries again when it\'s back.</string>
+    <string name="setup_not_opentodo">This address doesn\'t answer like an OpenTodo server. Check the address.</string>
+    <string name="setup_untrusted">This phone doesn\'t trust the server\'s certificate. Ask whoever runs the server, or install their certificate authority in Android settings.</string>
+    <string name="retry">Try again</string>
+    <string name="change_server">Change server</string>
+    <string name="change_server_confirm">This removes the current server\'s data from this phone: the offline copy, scheduled reminders, widget data and fingerprint unlock. Changes not yet synced are lost.</string>
+    <string name="error_offline">The server can\'t be reached, and OpenTodo hasn\'t been opened on this phone before.</string>
+    <string name="error_untrusted">This phone doesn\'t trust the server\'s certificate.</string>
+    <string name="channel_reminders">Reminders</string>
+    <string name="reminder_generic">Reminder</string>
+    <string name="reminder_text">Task reminder</string>
+    <string name="action_snooze">Snooze 10 min</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="test_title">Notifications work</string>
+    <string name="test_text">Reminders will show up like this.</string>
+    <string name="biometric_enable_title">Unlock with fingerprint or face</string>
+    <string name="biometric_unlock_title">Unlock OpenTodo</string>
+    <string name="biometric_use_passphrase">Use passphrase</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_today_description">Your tasks for today</string>
+    <string name="widget_quick_add">Quick add</string>
+    <string name="widget_quick_add_label">Add task</string>
+    <string name="widget_quick_add_description">Opens OpenTodo to add a task</string>
+    <string name="widget_updated">Updated %1$s</string>
+    <string name="widget_open_app">Open OpenTodo once to fill this widget.</string>
+    <string name="widget_locked">Locked. Tasks: %1$d, overdue: %2$d</string>
+    <string name="widget_empty">Nothing left for today.</string>
+    <string name="widget_untitled">Task</string>
+    <string name="widget_more">+ %1$d more</string>
+    <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
+</resources>

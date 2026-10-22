@@ -47,6 +47,10 @@ The web app manifest declares a [Web Share Target](https://developer.mozilla.org
 | iOS and iPadOS, any browser | Share → **Add to Home Screen** | Safari does not support share targets for web apps; use the bookmarklet in Safari instead |
 | Firefox (all platforms) | Firefox does not install web apps as share targets | Use the extension or bookmarklet |
 
+### From the Android app
+
+The [Android app](android-app.md) is in the share menu as soon as it is installed, also on phones without Google Play services. Links and text open the capture screen as above; photos and files (up to ten, 20 MB each, 25 MB together) are handed to it the way the browser extension hands over a screenshot, and stay on the phone until you save. A share that arrives before you have entered a server waits until you have.
+
 ### OpenTodo is missing from the share menu on Android
 
 Android lists a web app in the share menu only when it was installed as a real app (a *WebAPK*), not as a home-screen shortcut. Chrome creates that app through Google Play services, Samsung Internet through its own service. Other browsers such as Vivaldi or Brave, and any browser on a device without Google Play services (GrapheneOS without sandboxed Google Play, /e/OS, LineageOS), add a shortcut instead. OpenTodo then opens normally from the home screen but cannot receive shares. Nothing on your server can change this.

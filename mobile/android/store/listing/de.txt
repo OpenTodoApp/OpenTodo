@@ -1,0 +1,11 @@
+Title: OpenTodo
+Short description: Deine eigene Aufgabenverwaltung, auf deinem eigenen Server.
+
+OpenTodo ist eine quelloffene Aufgabenverwaltung, die du selbst betreibst. Diese App öffnet deinen OpenTodo-Server und ergänzt, was nur eine Telefon-App kann:
+
+- Pünktliche Erinnerungen, auf dem Telefon geplant, ohne Push-Dienst dazwischen
+- Links, Text, Fotos und Dateien aus jeder App als neue Aufgabe teilen
+- Ein Heute-Widget und eine Schnell-hinzufügen-Taste auf dem Startbildschirm
+- Ein Ende-zu-Ende-verschlüsseltes Konto mit Fingerabdruck oder Gesicht entsperren
+
+Keine Tracker, keine Analyse, keine Werbung. Die App spricht nur mit dem Server, den du eingibst. Du brauchst einen OpenTodo-Server: siehe die Anleitung zum Selbsthosten auf der Projektseite.

@@ -217,6 +217,9 @@ export const SETTINGS_COPY = {
     rows: {
       device: { label: msg('This device') },
       titles: { label: msg('Include task titles'), description: msg('Off: the push carries only encrypted ids and this device adds the title.') },
+      // A native shell's rows (native-shells): no push service, the app schedules reminders.
+      shell: { label: msg('Notifications through the app'), description: msg('Reminders are scheduled on this phone and shown without a push service.') },
+      shellTitles: { label: msg('Include task titles'), description: msg('Off: reminders read "Reminder" until you open the app. Never with encryption.') },
     },
     notices: {
       serverOff: msg('Push notifications are turned off on this server. Reminders are shown in the app.'),

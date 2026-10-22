@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTodo</string>
+    <string name="setup_title">Collegati al tuo server</string>
+    <string name="setup_intro">Inserisci l’indirizzo del tuo server OpenTodo, quello che apri nel browser.</string>
+    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_connect">Collegati</string>
+    <string name="setup_connect_anyway">Collegati comunque</string>
+    <string name="setup_try">Prova %1$s</string>
+    <string name="setup_refused">Questo indirizzo non si può usare. Inserisci un indirizzo come todo.example.com.</string>
+    <string name="setup_needs_https">Questo indirizzo richiede una connessione sicura (https).</string>
+    <string name="setup_insecure">Questo indirizzo è nella tua rete locale e non è cifrato: altri sulla stessa rete potrebbero leggere ciò che invii. Tocca di nuovo per collegarti comunque.</string>
+    <string name="setup_no_network">Nessuna connessione. Il primo avvio richiede la rete; questa schermata riprova quando torna.</string>
+    <string name="setup_not_opentodo">Questo indirizzo non risponde come un server OpenTodo. Controlla l’indirizzo.</string>
+    <string name="setup_untrusted">Questo telefono non si fida del certificato del server. Chiedi a chi gestisce il server, oppure installa la sua autorità di certificazione nelle impostazioni di Android.</string>
+    <string name="retry">Riprova</string>
+    <string name="change_server">Cambia server</string>
+    <string name="change_server_confirm">Questo rimuove da questo telefono i dati del server attuale: la copia offline, i promemoria programmati, i dati dei widget e lo sblocco con impronta. Le modifiche non ancora sincronizzate vanno perse.</string>
+    <string name="error_offline">Il server non è raggiungibile e OpenTodo non è mai stato aperto su questo telefono.</string>
+    <string name="error_untrusted">Questo telefono non si fida del certificato del server.</string>
+    <string name="channel_reminders">Promemoria</string>
+    <string name="reminder_generic">Promemoria</string>
+    <string name="reminder_text">Promemoria attività</string>
+    <string name="action_snooze">Posticipa di 10 min</string>
+    <string name="action_dismiss">Ignora</string>
+    <string name="test_title">Le notifiche funzionano</string>
+    <string name="test_text">I promemoria appariranno così.</string>
+    <string name="biometric_enable_title">Sblocca con impronta o volto</string>
+    <string name="biometric_unlock_title">Sblocca OpenTodo</string>
+    <string name="biometric_use_passphrase">Usa la passphrase</string>
+    <string name="widget_today">Oggi</string>
+    <string name="widget_today_description">Le tue attività di oggi</string>
+    <string name="widget_quick_add">Aggiunta rapida</string>
+    <string name="widget_quick_add_label">Aggiungi attività</string>
+    <string name="widget_quick_add_description">Apre OpenTodo per aggiungere un’attività</string>
+    <string name="widget_updated">Aggiornato alle %1$s</string>
+    <string name="widget_open_app">Apri OpenTodo una volta per riempire questo widget.</string>
+    <string name="widget_locked">Bloccato. Attività: %1$d, scadute: %2$d</string>
+    <string name="widget_empty">Niente altro per oggi.</string>
+    <string name="widget_untitled">Attività</string>
+    <string name="widget_more">+ altre %1$d</string>
+    <string name="setup_old_webview">L’Android System WebView di questo telefono è vecchio (versione %1$s). Aggiornalo dallo store delle app perché OpenTodo funzioni del tutto.</string>
+</resources>

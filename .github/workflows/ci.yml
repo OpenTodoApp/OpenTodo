@@ -35,6 +35,7 @@ jobs:
     outputs:
       code: ${{ steps.filter.outputs.code }}
       docs: ${{ steps.filter.outputs.docs }}
+      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -53,6 +54,7 @@ jobs:
           if [ "$EVENT" != "pull_request" ]; then
             echo "code=true" >> "$GITHUB_OUTPUT"
             echo "docs=true" >> "$GITHUB_OUTPUT"
+            echo "mobile=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
@@ -395,6 +397,59 @@ jobs:
             dist/opentodo-browser-extension-chrome.zip
             dist/opentodo-browser-extension-firefox.zip
 
+  # The Android app (OpenSpec change native-shells D9): unit tests, lint, the
+  # AndroidX-only dependency check, translations and store metadata, a debug APK.
+  # On tags, a release APK and AAB signed with the keystore from secrets (skipped
+  # with a warning while the secrets are not set); the release job attaches them.
+  android:
+    name: Android app (test, lint, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: "platforms;android-35 build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: make android
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opentodo-android-debug
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Signed release APK and AAB (tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set: no signed Android build for this release"
+            exit 0
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          cd mobile/android
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$RUNNER_TEMP/release.jks" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+          OPENTODO_VERSION="$version" ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease
+          rm -f keystore.properties "$RUNNER_TEMP/release.jks"
+          mkdir -p ../../dist
+          cp app/build/outputs/apk/release/app-release.apk "../../dist/opentodo-android-$version.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "../../dist/opentodo-android-$version.aab"
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opentodo-android
+          path: dist/opentodo-android-*
+          if-no-files-found: warn
+
   # The agent skill (OpenSpec change agent-ready-cli): the same SKILL.md that
   # `ot skill` prints, zipped as a release asset.
   skill:
@@ -487,7 +542,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, skill, checks, image]
+    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -550,7 +605,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, skill, checks, image, docker]
+    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)

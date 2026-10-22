@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTodo</string>
+    <string name="setup_title">Mit deinem Server verbinden</string>
+    <string name="setup_intro">Gib die Adresse deines OpenTodo-Servers ein, die du im Browser öffnest.</string>
+    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_connect">Verbinden</string>
+    <string name="setup_connect_anyway">Trotzdem verbinden</string>
+    <string name="setup_try">%1$s versuchen</string>
+    <string name="setup_refused">Diese Adresse kann nicht verwendet werden. Gib eine Adresse wie todo.example.com ein.</string>
+    <string name="setup_needs_https">Diese Adresse braucht eine sichere Verbindung (https).</string>
+    <string name="setup_insecure">Diese Adresse liegt in deinem lokalen Netz und ist nicht verschlüsselt: Andere im selben Netz könnten mitlesen. Tippe erneut, um trotzdem zu verbinden.</string>
+    <string name="setup_no_network">Keine Verbindung. Der erste Start braucht das Netz; dieser Bildschirm versucht es erneut, sobald es zurück ist.</string>
+    <string name="setup_not_opentodo">Diese Adresse antwortet nicht wie ein OpenTodo-Server. Prüfe die Adresse.</string>
+    <string name="setup_untrusted">Dieses Telefon vertraut dem Zertifikat des Servers nicht. Frag die Person, die den Server betreibt, oder installiere ihre Zertifizierungsstelle in den Android-Einstellungen.</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="change_server">Server wechseln</string>
+    <string name="change_server_confirm">Das entfernt die Daten des aktuellen Servers von diesem Telefon: die Offline-Kopie, geplante Erinnerungen, Widget-Daten und das Entsperren per Fingerabdruck. Noch nicht synchronisierte Änderungen gehen verloren.</string>
+    <string name="error_offline">Der Server ist nicht erreichbar, und OpenTodo wurde auf diesem Telefon noch nie geöffnet.</string>
+    <string name="error_untrusted">Dieses Telefon vertraut dem Zertifikat des Servers nicht.</string>
+    <string name="channel_reminders">Erinnerungen</string>
+    <string name="reminder_generic">Erinnerung</string>
+    <string name="reminder_text">Aufgabenerinnerung</string>
+    <string name="action_snooze">10 Min. später</string>
+    <string name="action_dismiss">Verwerfen</string>
+    <string name="test_title">Benachrichtigungen funktionieren</string>
+    <string name="test_text">So erscheinen Erinnerungen.</string>
+    <string name="biometric_enable_title">Mit Fingerabdruck oder Gesicht entsperren</string>
+    <string name="biometric_unlock_title">OpenTodo entsperren</string>
+    <string name="biometric_use_passphrase">Passphrase verwenden</string>
+    <string name="widget_today">Heute</string>
+    <string name="widget_today_description">Deine Aufgaben für heute</string>
+    <string name="widget_quick_add">Schnell hinzufügen</string>
+    <string name="widget_quick_add_label">Aufgabe hinzufügen</string>
+    <string name="widget_quick_add_description">Öffnet OpenTodo, um eine Aufgabe hinzuzufügen</string>
+    <string name="widget_updated">Aktualisiert %1$s</string>
+    <string name="widget_open_app">Öffne OpenTodo einmal, um dieses Widget zu füllen.</string>
+    <string name="widget_locked">Gesperrt. Aufgaben: %1$d, überfällig: %2$d</string>
+    <string name="widget_empty">Für heute ist nichts mehr offen.</string>
+    <string name="widget_untitled">Aufgabe</string>
+    <string name="widget_more">+ %1$d weitere</string>
+    <string name="setup_old_webview">Das Android System WebView dieses Telefons ist alt (Version %1$s). Aktualisiere es im App-Store, damit OpenTodo vollständig funktioniert.</string>
+</resources>

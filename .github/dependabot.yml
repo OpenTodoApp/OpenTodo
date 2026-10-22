@@ -23,6 +23,15 @@ updates:
       web-minor-and-patch:
         update-types: [minor, patch]
 
+  # The Android app (native-shells): AndroidX, the Android Gradle plugin, Kotlin.
+  - package-ecosystem: gradle
+    directory: /mobile/android
+    schedule:
+      interval: weekly
+    groups:
+      android:
+        patterns: ["*"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

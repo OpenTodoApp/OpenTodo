@@ -10,7 +10,7 @@ EXT_ZIPS := dist/opentodo-browser-extension-chrome.zip dist/opentodo-browser-ext
 WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
 all: build
 
@@ -54,6 +54,14 @@ skill:
 extension: test-extension
 	node extension/build.mjs
 	npx --yes $(WEB_EXT) lint --source-dir dist/extension-firefox --output text
+
+## The Android app (native-shells): unit tests, lint, the AndroidX-only dependency
+## check, translations, store metadata and a debug APK. Needs JDK 17+ and the
+## Android SDK (ANDROID_HOME); not part of `make check`. See mobile/README.md.
+android:
+	@command -v java >/dev/null 2>&1 || { echo "make android needs a JDK 17+ and the Android SDK (see mobile/README.md)"; exit 1; }
+	cd mobile/android && ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:checkDependencies :app:checkTranslations :app:checkStoreMetadata :app:assembleDebug
+	@echo "  mobile/android/app/build/outputs/apk/debug/app-debug.apk ($$(wc -c < mobile/android/app/build/outputs/apk/debug/app-debug.apk) bytes)"
 
 build: web server
 
