@@ -122,6 +122,9 @@ export default defineConfig({
     // waitFor (ui/test-utils, 10 s), so the cap only has to catch a hang
     // (web-lint-and-test-hygiene).
     testTimeout: 30_000,
+    // Floating and zoned dates are pinned in UTC, as CI runs (planView's zoned due,
+    // the "Calendars as of" time): a developer's own zone must not change results.
+    env: { TZ: 'UTC' },
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     // Token tests read index.css as text (src/ui/tokens); other CSS stays stubbed.
     css: { include: [/index\.css/] },

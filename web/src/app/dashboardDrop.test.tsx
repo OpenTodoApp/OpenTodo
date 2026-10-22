@@ -97,7 +97,8 @@ describe('drop targets and drops', () => {
     await waitFor(async () => (await db.tasks.get(id))!.priority === 1)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-14' })
     expect(new Set((await db.outbox.toArray()).map((o) => o.ts)).size).toBe(1)
-    expect(bulkToast()?.label).toBe('Moved to Urgent and important: priority 1, due today')
+    // The toast follows the write's commit.
+    await waitFor(() => bulkToast()?.label === 'Moved to Urgent and important: priority 1, due today')
     await waitFor(() => !!card(id, panel('Urgent and important')) && !card(id, panel('Backlog')))
   })
 
@@ -111,7 +112,7 @@ describe('drop targets and drops', () => {
     await waitFor(() => !!panel('Important, not urgent').querySelector('[data-held]'))
     expect(panel('Important, not urgent').querySelector('[data-held]')!.textContent).toContain('Not matching')
     expect(card(id, panel('Important, not urgent'))).toBeTruthy()
-    expect(bulkToast()?.label).toContain('It does not match the column’s filter.')
+    await waitFor(() => !!bulkToast()?.label?.includes('It does not match the column’s filter.'))
     expect((await db.tasks.get(id))!.priority).toBe(2)
     // Leaving the board (or another device) shows the task only where filters match it.
     await r.unmount()
