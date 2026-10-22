@@ -1,0 +1,109 @@
+package app.opentodo
+
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Intent
+import android.os.Build
+import android.service.notification.StatusBarNotification
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** Task 4.5: the handed-over schedule fires as notifications, with Snooze, Dismiss and a tap (native-shells D4). */
+@RunWith(AndroidJUnit4::class)
+class ReminderTest {
+    @get:Rule val notifications: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= 33) GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS) else GrantPermissionRule.grant()
+
+    private lateinit var server: FakeServer
+
+    @Before fun setUp() {
+        resetApp()
+        allowExactAlarms()
+        server = FakeServer()
+        Prefs(context).server = server.origin
+    }
+
+    @After fun tearDown() {
+        server.shutdown()
+        resetApp()
+    }
+
+    private fun schedule(id: String, inMs: Long, title: String? = "Water the plants") =
+        """[{"id":"$id","taskId":"task-$id","fireAt":${System.currentTimeMillis() + inMs}${if (title != null) ",\"title\":\"$title\"" else ""}}]"""
+
+    private fun shown(id: String): StatusBarNotification? =
+        context.getSystemService(NotificationManager::class.java).activeNotifications.firstOrNull { it.id == Notifier.notificationId(id) }
+
+    private fun waitForNotification(id: String, timeoutMs: Long = 30_000): StatusBarNotification {
+        var n: StatusBarNotification? = null
+        waitUntil("the notification of $id", timeoutMs) { n = shown(id); n != null }
+        return n!!
+    }
+
+    @Test fun anExactAlarmFiresTheNotification() {
+        assertTrue("exact alarms allowed for the test", Scheduler.canExact(context))
+        Scheduler.replace(context, schedule("r1", 3_000))
+        val n = waitForNotification("r1")
+        assertEquals("Water the plants", n.notification.extras.getString(Notification.EXTRA_TITLE))
+        val actions = n.notification.actions.map { it.title.toString() }
+        assertEquals(listOf(context.getString(R.string.action_snooze), context.getString(R.string.action_dismiss)), actions)
+    }
+
+    @Test fun withoutExactAlarmsTheInexactFallbackStillFires() {
+        val list = ReminderSchedule.parse(schedule("r2", 3_000, title = null), System.currentTimeMillis())
+        Prefs(context).reminders = ReminderSchedule.toJson(list)
+        Scheduler.arm(context, list, exact = false)
+        val n = waitForNotification("r2", timeoutMs = 90_000)
+        // No title handed over (titles off or encrypted): the generic text.
+        assertEquals(context.getString(R.string.reminder_generic), n.notification.extras.getString(Notification.EXTRA_TITLE))
+    }
+
+    @Test fun snoozeAppliesInTheBackgroundAtTheActionAddress() {
+        Scheduler.replace(context, schedule("r3", 60 * 60_000))
+        assertTrue(Notifier.reminder(context, Scheduler.find(context, "r3")!!))
+        val n = waitForNotification("r3")
+        n.notification.actions[0].actionIntent.send()
+        waitUntil("the notification to go") { shown("r3") == null }
+        assertEquals("/?reminder=r3&action=snooze", server.waitForPath("/?reminder=", timeoutMs = 60_000))
+    }
+
+    @Test fun dismissAppliesInTheBackgroundAtTheActionAddress() {
+        Scheduler.replace(context, schedule("r4", 60 * 60_000))
+        assertTrue(Notifier.reminder(context, Scheduler.find(context, "r4")!!))
+        waitForNotification("r4").notification.actions[1].actionIntent.send()
+        waitUntil("the notification to go") { shown("r4") == null }
+        assertEquals("/?reminder=r4&action=dismiss", server.waitForPath("/?reminder=", timeoutMs = 60_000))
+    }
+
+    @Test fun aTapOpensTheTask() {
+        // The app in front, as when Android delivers the tap (a test process may not start activities from the background).
+        androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java)
+        server.waitForPath("/")
+        Scheduler.replace(context, schedule("r5", 60 * 60_000))
+        assertTrue(Notifier.reminder(context, Scheduler.find(context, "r5")!!))
+        waitForNotification("r5").notification.contentIntent.send()
+        assertEquals("/?task=task-r5", server.waitForPath("/?task="))
+    }
+
+    @Test fun aRebootArmsTheStoredScheduleAgain() {
+        // As after a reboot: the schedule is stored, nothing is armed.
+        val list = ReminderSchedule.parse(schedule("r6", 3_000), System.currentTimeMillis())
+        Prefs(context).reminders = ReminderSchedule.toJson(list)
+        BootReceiver().onReceive(context, Intent(Intent.ACTION_BOOT_COMPLETED))
+        waitForNotification("r6")
+    }
+
+    @Test fun anEmptyHandOverClearsTheSchedule() {
+        Scheduler.replace(context, schedule("r7", 60 * 60_000))
+        Scheduler.replace(context, "[]")
+        assertEquals("[]", Prefs(context).reminders)
+    }
+}

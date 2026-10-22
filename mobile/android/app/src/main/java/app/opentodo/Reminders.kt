@@ -58,9 +58,9 @@ object Scheduler {
         for (r in ReminderSchedule.parse(prefs.reminders, 0)) am.cancel(alarmIntent(context, r.id))
     }
 
-    private fun arm(context: Context, list: List<ShellReminder>) {
+    /** [exact] is the permission's state; the instrumented tests pass false to take the inexact fallback. */
+    internal fun arm(context: Context, list: List<ShellReminder>, exact: Boolean = canExact(context)) {
         val am = context.getSystemService(AlarmManager::class.java)
-        val exact = canExact(context)
         for (r in list) {
             val pi = alarmIntent(context, r.id)
             if (exact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, r.fireAt, pi)

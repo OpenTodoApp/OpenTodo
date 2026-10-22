@@ -60,7 +60,7 @@ extension: test-extension
 ## Android SDK (ANDROID_HOME); not part of `make check`. See mobile/README.md.
 android:
 	@command -v java >/dev/null 2>&1 || { echo "make android needs a JDK 17+ and the Android SDK (see mobile/README.md)"; exit 1; }
-	cd mobile/android && ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:checkDependencies :app:checkTranslations :app:checkStoreMetadata :app:assembleDebug
+	cd mobile/android && ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:checkDependencies :app:checkTranslations :app:checkStoreMetadata :app:assembleDebug :app:assembleDebugAndroidTest
 	@echo "  mobile/android/app/build/outputs/apk/debug/app-debug.apk ($$(wc -c < mobile/android/app/build/outputs/apk/debug/app-debug.apk) bytes)"
 
 build: web server
