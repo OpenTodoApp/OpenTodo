@@ -31,6 +31,17 @@ export const OUTPUTS = [
   { path: 'extension/icons/icon-16.png', size: 16 },
   { path: 'extension/icons/icon-48.png', size: 48 },
   { path: 'extension/icons/icon-128.png', size: 128 },
+  // The deploy templates' logos and their upstream copies (deploy/README.md): the colour
+  // mark named "OpenTodo", the 512 px icon, and 256 px icons for CasaOS and Cosmos.
+  ...[
+    'deploy/coolify/opentodo.svg', 'deploy/coolify/upstream/public/svgs/opentodo.svg', 'deploy/coolify/upstream/coolify-docs/public/images/services/opentodo-logo.svg',
+    'deploy/dokploy/blueprints/opentodo/opentodo.svg', 'deploy/dokploy/upstream/blueprints/opentodo/opentodo.svg',
+    'deploy/easypanel/assets/logo.svg', 'deploy/easypanel/upstream/templates/opentodo/assets/logo.svg',
+    'deploy/casaos/upstream/Apps/OpenTodo/icon.svg',
+  ].map((path) => ({ path, svg: true, title: true })),
+  { path: 'deploy/caprover/upstream/public/v4/logos/opentodo.png', size: 512 },
+  { path: 'deploy/casaos/upstream/Apps/OpenTodo/icon.png', size: 256 },
+  { path: 'deploy/cosmos/upstream/servapps/OpenTodo/icon.png', size: 256 },
 ]
 
 export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
@@ -38,13 +49,18 @@ export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 /** The licence note every standalone brand file carries. */
 export const NOTICE = '<!-- OpenTodo brand mark. Part of OpenTodo, AGPL-3.0 (see LICENSE). -->'
 
-/** One symbol of the source (`mono` or `colour`) as a standalone SVG document; `full` drops the colour square's rounding. */
-export function symbolSvg(source, id, { full = false, size } = {}) {
+/**
+ * One symbol of the source (`mono` or `colour`) as a standalone SVG document; `full`
+ * drops the colour square's rounding, `title` names the image (for catalogs that show
+ * the file on its own).
+ */
+export function symbolSvg(source, id, { full = false, size, title = false } = {}) {
   const m = new RegExp(`<symbol id="${id}" viewBox="([^"]+)">([\\s\\S]*?)</symbol>`).exec(source)
   if (!m) throw new Error(`${SOURCE} has no symbol "${id}"`)
   const body = full ? m[2].replace(/ rx="[^"]*"/, '') : m[2]
   const dims = size ? ` width="${size}" height="${size}"` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${m[1]}"${dims}>${NOTICE}${body}</svg>\n`
+  const named = title ? ' role="img"' : ''
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${m[1]}"${dims}${named}>${title ? '<title>OpenTodo</title>' : ''}${NOTICE}${body}</svg>\n`
 }
 
 /** The colour symbol as a standalone SVG document: the favicon, and the page each raster is rendered from. */
@@ -63,7 +79,7 @@ async function main() {
     for (const out of OUTPUTS) {
       let bytes
       if (out.svg) {
-        bytes = Buffer.from(colourSvg(source))
+        bytes = Buffer.from(colourSvg(source, { title: out.title }))
       } else {
         const page = await browser.newPage({ viewport: { width: out.size, height: out.size }, deviceScaleFactor: 1 })
         await page.setContent(`<!doctype html><body style="margin:0;background:transparent">${colourSvg(source, { full: out.full, size: out.size })}</body>`)

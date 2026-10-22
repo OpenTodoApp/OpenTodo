@@ -62,7 +62,7 @@ Every pair is added to `pairs.ts` against the new sidebar surface token (D8) in 
 
 **D11. Interface budget.** No new chrome row: the header row exists today, the footer stays one row in every state (it loses a row while tracking), and the group controls add no height. Six primary destinations unchanged; More is not a destination. No new shortcut. The pill is not a task property. The drawer's budget is `phone-v2`'s.
 
-**D12. Size.** `brand.svg` under 2 KB, inlined once; the wordmark is text. The main bundle grows by about 1 KB gzipped (the two components and the pill). The regenerated PNGs replace files of the same size class; the maskable icon adds one 512 px PNG of about 6 KB. The binary and the image grow by that amount. No runtime memory change.
+**D12. Size.** `brand.svg` under 2 KB, inlined once; the wordmark is text. The main bundle grows by about 1 KB gzipped (the two components and the pill). The regenerated PNGs replace files of the same size class; the maskable icon adds one 512 px PNG of about 6 KB. The binary and the image grow by that amount. No runtime memory change. Measured at task 7.3 (clean `vite build` and `go build -trimpath -ldflags="-s -w"` of `origin/main` 675974aa against this branch): the main chunk 269,309 → 269,461 bytes gzipped (+152 B; `brand.svg` is 948 bytes), the embedded web build 7,409,444 → 7,448,562 bytes (+39 KB: the maskable icon is 13 KB, and the anti-aliased loop makes the regenerated icons larger than the old flat ones: `pwa-512.png` 6.0 → 18.1 KB, `pwa-192.png` 1.9 → 6.4 KB, `apple-touch-icon.png` 1.7 → 4.6 KB), the server binary 32,137,376 → 32,178,336 bytes (+40 KB).
 
 ## Risks / Trade-offs
 

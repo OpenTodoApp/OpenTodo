@@ -16,19 +16,18 @@ The store takes one folder per app. [`upstream/Apps/OpenTodo/`](upstream/Apps/Op
 | --- | --- |
 | `docker-compose.yml` | An identical copy of [`docker-compose.yml`](docker-compose.yml) |
 | `icon.svg` | An identical copy of [`../coolify/opentodo.svg`](../coolify/opentodo.svg) (`x-casaos.icon`) |
-| `icon.png` | 256x256, from `web/public/pwa-512.png` |
+| `icon.png` | 256x256, rendered from the brand mark by `make brand-icons` |
 | `thumbnail.png` | 1176x663, the Today screen (`docs/images/today-light.webp`), cropped |
 | `screenshot-1.png`, `screenshot-2.png` | 1280 wide, the Today and board screens (`docs/images/today-light.webp`, `board-light.webp`) |
 
 The asset URLs in `x-casaos` point at `https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenTodo/`, where the files are served once the pull request is merged; the store build copies them into its own output. The assets live only in `upstream/` (the template itself names them by URL). `node scripts/deploy-check.mjs` (`scripts/deploy/casaos.mjs`) fails when the copy differs, a file is missing or extra, the icon differs from the logo, or a PNG has the wrong size.
 
-To regenerate the PNGs (Pillow):
+To regenerate the screenshots (Pillow; `icon.png` and `icon.svg` come from `make brand-icons`):
 
 ```bash
 python3 - <<'EOF'
 from PIL import Image
 d = 'deploy/casaos/upstream/Apps/OpenTodo/'
-Image.open('web/public/pwa-512.png').convert('RGBA').resize((256, 256), Image.LANCZOS).save(d + 'icon.png', optimize=True)
 def shot(name):
     im = Image.open(f'docs/images/{name}.webp').convert('RGB')
     return im.resize((1280, round(im.height * 1280 / im.width)), Image.LANCZOS)

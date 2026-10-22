@@ -13,7 +13,7 @@ What the template does: it pulls the `stable` image, which every release moves (
 
 | Path | What |
 | --- | --- |
-| `opentodo.yaml`, `opentodo.svg` | The template and logo. Edit these. |
+| `opentodo.yaml`, `opentodo.svg` | The template (edit it) and the logo (rendered from the brand mark by `make brand-icons`, with every copy under `deploy/`). |
 | `upstream/` | Ready to submit: byte-identical copies at the paths they take in `coollabsio/coolify`, a draft docs page for `coollabsio/coolify-docs`, `PR.md` (title and body) and `HOW-TO-SUBMIT.md` (test first, then submit). |
 
 `make check` runs `scripts/coolify-template-check.mjs`. It fails when the template breaks Coolify's conventions, when its image is not `ghcr.io/pixari/opentodo:stable`, when it names an `OPENTODO_*` variable the server does not read, or when the upstream copies differ. With Docker it also validates the file with `docker compose config`. `make coolify-smoke` starts the image the way Coolify does and checks the health check, the owner setup, closed sign-up, the https base URL and data surviving a redeploy.
