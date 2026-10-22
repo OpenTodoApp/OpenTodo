@@ -155,3 +155,22 @@ export function smallTargets([rootSel, min]) {
 export async function settled(overlay) {
   await overlay.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))))
 }
+
+// The phone's add button never covers a row (phone-v2 D2): at the end of the list the
+// last row sits above the button's footprint. Scrolls the content column to its end.
+export async function addButtonCovers() {
+  const button = document.querySelector('[data-add-button]:not([data-away])')
+  const content = document.querySelector('#content')
+  if (!button || !content || !button.getClientRects().length) return []
+  content.scrollTop = content.scrollHeight
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  const rows = [...document.querySelectorAll('[data-task-id]')].filter((r) => r.getClientRects().length)
+  const last = rows[rows.length - 1]
+  const out = []
+  if (last) {
+    const a = last.getBoundingClientRect(), b = button.getBoundingClientRect()
+    if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) out.push(`the add button covers the last row "${last.textContent.trim().slice(0, 30)}" at the end of the list`)
+  }
+  content.scrollTop = 0
+  return out
+}

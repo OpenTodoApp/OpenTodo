@@ -30,7 +30,7 @@ import {
   overlaps, primaryDestinations, rowMetaItems, targetSize, truncation,
 } from './audit-measures.mjs'
 import { seed } from './seed.mjs'
-import { OVERLAYS, screens as layoutScreens } from './layout-screens.mjs'
+import { OVERLAYS, chooseLayout, screens as layoutScreens } from './layout-screens.mjs'
 import { inventory } from './inventory.mjs'
 import { STRICT_RULES, summarize, writeReport } from './report.mjs'
 import { coverage } from './stories.mjs'
@@ -140,8 +140,8 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
   const load = async () => {
     await p.goto(base + host.path)
     // A later language: the screens' ready signals are English headings (as in the layout check).
-    await (combo.lang === LANGS[0] || host.own ? host.ready(p) : p.locator('h1, [data-task-id], [role="alert"]').first().waitFor())
-    if (host.layout) { await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: host.layout }).click(); await p.waitForTimeout(300) }
+    await (combo.lang === LANGS[0] || host.own ? host.ready(p) : p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').first().waitFor({ timeout: 15000 }))
+    if (host.layout) { await chooseLayout(p, host.layout); await p.waitForTimeout(300) }
     await p.waitForTimeout(300)
     return e.kind === 'overlay' ? openOverlay(p, e, combo.width) : null
   }
@@ -154,7 +154,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     out.violations = [{ rule: 'NAV', element: e.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' }]
     await p.screenshot({ path: join(OUT, shot), type: 'jpeg', quality: 55 }).catch(() => {})
   }
-  if (host.layout) await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {})
+  if (host.layout) await chooseLayout(p, 'List').catch(() => {})
   await p.keyboard.press('Escape').catch(() => {})
   if (host.anon) await p.close()
   return out

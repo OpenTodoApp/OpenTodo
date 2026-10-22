@@ -120,6 +120,21 @@ export function screens(ids, base) {
 // (Escape + tap outside, close button on phones), 'panel' (detail panel / drawer:
 // close button + Escape), 'toast' (inside the viewport only).
 export const overlayLoc = (p) => p.locator('[data-overlay]').last()
+// The project's Share and layout choice: page controls from 768 px, project menu items on a phone (phone-v2 D1).
+async function openShare(p) {
+  const button = p.locator('[data-project-share]')
+  if (await button.isVisible().catch(() => false)) { await button.click(); return button }
+  const menu = p.getByRole('button', { name: 'Project menu' }).first()
+  await menu.click()
+  await p.getByRole('menuitem', { name: /^(Share project|Members)/ }).click()
+  return menu
+}
+export async function chooseLayout(p, name) {
+  const group = p.getByRole('group', { name: 'Project layout' })
+  if (await group.isVisible().catch(() => false)) return group.getByRole('button', { name }).click()
+  await p.getByRole('button', { name: 'Project menu' }).first().click()
+  await p.getByRole('menuitemcheckbox', { name }).or(p.getByRole('menuitem', { name })).first().click()
+}
 async function openSidebar(p) {
   const burger = p.getByRole('button', { name: 'Open menu' })
   if (await burger.isVisible()) { await burger.click(); await p.waitForTimeout(350) }
@@ -298,19 +313,17 @@ export const OVERLAYS = {
     return { overlay: overlayLoc(p), trigger, kind: 'popover' }
   },
   async share(p) {
-    const trigger = p.getByRole('button', { name: /^Share/ }).first()
-    await trigger.click()
-    return { overlay: p.getByRole('dialog', { name: /^Share/ }), trigger, kind: 'dialog' }
+    const trigger = await openShare(p)
+    return { overlay: p.getByRole('dialog', { name: /^Share/ }), trigger, kind: 'dialog', reopen: () => openShare(p) }
   },
   // The share dialog with the "Invite with a link" form open (project-invite-links).
   async 'share-invite-link'(p) {
-    const trigger = p.getByRole('button', { name: /^Share/ }).first()
-    await trigger.click()
+    const trigger = await openShare(p)
     const dialog = p.getByRole('dialog', { name: /^Share/ })
     await settled(dialog)
     await dialog.getByRole('button', { name: 'Create a link…' }).click()
     await dialog.getByRole('button', { name: 'Create link' }).waitFor()
-    return { overlay: dialog, trigger, kind: 'dialog' }
+    return { overlay: dialog, trigger, kind: 'dialog', reopen: () => openShare(p) }
   },
   // Blocked by (task-dependencies, ux-overhaul chips): the chip when set, else Add › Blocked by.
   async 'blocked-by-picker'(p) {
@@ -478,7 +491,7 @@ export const OVERLAYS = {
   // Contextual help over the share dialog (user-documentation 4.2): the panel opens on
   // top, and closing it leaves the dialog with the typed email in place.
   async 'help-panel'(p) {
-    await p.getByRole('button', { name: /^Share/ }).first().click()
+    await openShare(p)
     const dialog = p.getByRole('dialog', { name: /^Share/ })
     await dialog.waitFor()
     const email = dialog.getByRole('textbox').first()

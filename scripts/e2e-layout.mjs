@@ -31,9 +31,9 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, axeProblems, pageOverflow, rowMisalignment, settled, smallTargets, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowMisalignment, settled, smallTargets, verticalScrollers } from './ux-audit/measure.mjs'
 import { seed as seedAccount } from './ux-audit/seed.mjs'
-import { OVERLAYS, closes, screens } from './ux-audit/layout-screens.mjs'
+import { OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
@@ -49,7 +49,7 @@ const LANG = process.env.OPENTODO_LANG ?? ''
 // language (the German leg, ux-audit-three-widths F4) every screen is checked once a
 // heading, a task row or an alert shows, without its overlays or layout switches.
 const OTHER_LANG = !!LANG && LANG !== 'en'
-const anyReady = (p) => p.locator('h1, [data-task-id], [role="alert"]').first().waitFor()
+const anyReady = (p) => p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').first().waitFor({ timeout: 15000 })
 const MIN_TARGET = 44
 mkdirSync(outDir, { recursive: true })
 
@@ -171,7 +171,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         await p.goto(base + s.path)
         await (OTHER_LANG ? anyReady : s.ready)(p)
         if (s.layout) {
-          await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: s.layout }).click()
+          await chooseLayout(p, s.layout)
           await p.waitForTimeout(300)
         }
         await p.waitForTimeout(250)
@@ -188,9 +188,10 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
+      for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
       // Accessibility of the whole screen (axe-core, serious and critical issues).
       for (const m of await axeProblems(p)) await fail(p, s.name, null, m)
-      if (s.offline && engine === 'chromium') {
+      if (s.offline && engine === 'chromium' && !OTHER_LANG) {
         // Help ships with the app: offline, another guide still opens from the precache.
         await ctx.setOffline(true)
         try {
@@ -235,7 +236,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         }
       }
       if (s.layout) {
-        await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: s.layout === 'Columns' ? 'Columns' : 'List' }).click().catch(() => {})
+        await chooseLayout(p, s.layout === 'Columns' ? 'Columns' : 'List').catch(() => {})
       }
       if (s.anon) await p.close()
     }
