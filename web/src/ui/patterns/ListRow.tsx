@@ -25,7 +25,7 @@ export function ListRow({ leading, label, meta, badges, menu, onKeyDown, onClick
       aria-label={ariaLabel}
       onKeyDown={(e) => { if (e.target === e.currentTarget) onKeyDown?.(e) }}
       onClick={onClick}
-      className={`group flex min-h-(--size-row) items-center gap-3 rounded-control px-3 py-2 outline-none hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus dark:hover:bg-raised${onClick ? ' cursor-pointer' : ''}${className ? ` ${className}` : ''}`}
+      className={`group flex min-h-(--size-row) items-center gap-3 rounded-control px-3 py-2 outline-none hover:bg-sunken focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus dark:hover:bg-raised${onClick ? ' cursor-pointer' : ''}${className ? ` ${className}` : ''}`}
     >
       {leading && <span className="flex shrink-0 items-center text-muted">{leading}</span>}
       <div className="min-w-0 flex-1">

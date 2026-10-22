@@ -150,13 +150,16 @@ export function SidebarHeader({ left, rail, railLabel, collapsed = false, onSear
   )
 }
 
+/** A group header's action at rest (All, New, Find, a menu's trigger): 24 px square at least, so a fine pointer meets the target size (ux-fixes-phone). */
+export const SIDEBAR_GROUP_ACTION = 'inline-flex min-h-6 min-w-6 items-center justify-center rounded-chip px-1.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'
+
 /** A small text action in a group header (All, New, Find). */
 export const SidebarGroupAction = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }>(function SidebarGroupAction(
   { children, active = false, className, ...rest },
   ref,
 ) {
   return (
-    <button ref={ref} type="button" className={`rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case hover:bg-sunken dark:hover:bg-raised ${active ? 'text-accent' : 'text-faint hover:text-muted'}${className ? ` ${className}` : ''}`} {...rest}>
+    <button ref={ref} type="button" className={`inline-flex min-h-6 min-w-6 items-center justify-center rounded-chip px-1.5 text-hint font-medium normal-case hover:bg-sunken dark:hover:bg-raised ${active ? 'text-accent' : 'text-faint hover:text-muted'}${className ? ` ${className}` : ''}`} {...rest}>
       {children}
     </button>
   )

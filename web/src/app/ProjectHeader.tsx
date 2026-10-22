@@ -247,10 +247,11 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={() => setEditing(true)} data-project-name>{project.name}</button></Tooltip>
   ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>
 
+  // The list page waits for the membership (audit M12), so this row has its final content at first paint.
   const meta = (
-    <>
+    <span className="flex flex-wrap items-center gap-x-2">
       {membership && (
-        <button type="button" className="flex items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)}>
+        <button type="button" className="flex min-h-6 items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)}>
           {/* Named by its content (WCAG 2.5.3 Label in Name): the member list is visually hidden, the initials and count are not read. */}
           <span className="sr-only">{t('Members: {list}', { list: membership.members.map((m) => `${m.name || m.email} (${roleName(m.role)})`).join(', ') })}</span>
           <span aria-hidden className="flex -space-x-1">
@@ -267,16 +268,25 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
       {online && managesLinks && publicLinks > 0 && (
         <button type="button" data-public-badge onClick={() => setSharing('public')}
           aria-label={t('{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}', { n: publicLinks })}
-          className="inline-flex items-center gap-1 rounded-chip bg-warning-soft px-1.5 py-0.5 text-meta font-medium text-on-warning-soft hover:underline">
+          className="inline-flex min-h-6 items-center gap-1 rounded-chip bg-warning-soft px-1.5 text-meta font-medium text-on-warning-soft hover:underline">
           <Icon name="globe" size="xs" />{t('Public')}
         </button>
       )}
-    </>
+    </span>
   )
+
+  // On a phone the bar's line under the title is plain text (ux-fixes-phone, audit M12): the
+  // members and the public links open from Share in the project menu, and 44 px controls
+  // there would make the bar grow when the membership arrives.
+  const phoneMeta = [
+    membership ? `${membership.members.length} · ${roleName(role)}` : '',
+    role === 'viewer' ? t('Read-only') : '',
+    online && managesLinks && publicLinks > 0 ? t('Public') : '',
+  ].filter(Boolean).join(' · ')
 
   return (
     <>
-      <PageHeader title={title} subtitle={subtitle} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
+      <PageHeader title={title} subtitle={phone ? (subtitle ?? phoneMeta) : subtitle} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
         barActions={!!phone}
         actions={phone ? phone.slots : <>
           {layout}

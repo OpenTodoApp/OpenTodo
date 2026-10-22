@@ -218,6 +218,8 @@ Five surface styles, each a class in `@layer components` built from tokens (`Fou
 | Block | `ui-block` (`--row`, `--dashed`, `--past`, `--late`) | calendar blocks, Month and Plan rows, timeline bars |
 | Event | `ui-block--event`, `ui-block-dot` | events from other calendars |
 
+Text cut with an ellipsis outside a control uses `TruncatedText` (`web/src/ui/TruncatedText.tsx`): while it is cut it takes keyboard focus and shows its whole text in the Tooltip on hover and focus; while it fits it is plain text. A control named by its content (a button, a link) cuts its own text instead.
+
 A block reads `data-hue`: the soft hue as fill, a 3 px solid edge, `text-strong`. `--past` mixes the fill toward the surface and uses `text-faint` (measured per hue in the contrast pairs); `--late` takes the danger pair whatever the hue.
 
 ## The workbench
@@ -238,8 +240,8 @@ Every entry of the screen inventory, rare ones included, names the story that sh
 
 | Check | Runs in | Fails on |
 |---|---|---|
-| Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; Storybook code in the production build |
-| Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark; on a `Screens/*` story, an element that shows no focus ring when tabbed to (elements of the first run are listed in `scripts/ux-audit/focus-exempt.json` until their fix) |
+| Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; a focus ring cancelled by `outline-none` (Tailwind 4 reads the outline style from it, so `focus-visible:outline-2` beside it needs `focus-visible:outline-solid`); Storybook code in the production build |
+| Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark; on a `Screens/*` story, an element that shows no focus ring when tabbed to (an element is skipped only when `scripts/ux-audit/focus-exempt.json` lists it with a written reason; the list is empty) |
 | Story coverage | `make ui-lint` (`scripts/ux-audit/stories.mjs`) | a core screen of the inventory without its story; rare screens are listed, not failed |
 | Visual regression | `make ui-check`, CI job "UI check" | a story × theme × width screenshot that differs from its baseline by more than 0.2% |
 | Motion | `make ui-check` (`scripts/ui-check/motion.mjs`) | a Foundations → Motion story that, with reduced motion emulated, runs an animation changing `transform`, `translate`, `scale`, `height`, `block-size`, `width` or `inline-size`, or that runs any animation under `data-motion="none"`; it names the story and the property |

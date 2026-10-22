@@ -85,7 +85,7 @@ export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: 
             return (
               <button key={a.id} ref={(el) => { tileRefs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
                 data-accent={a.id} data-theme-tile={a.id}
-                className={`flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
+                className={`flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
                 onClick={() => onAccent(a.id)}
                 onKeyDown={(e) => roving(e, ids, value.accent, onAccent, (n) => tileRefs.current[n]?.focus())}>
                 <span className="flex h-12 w-full overflow-hidden rounded-control border border-default" aria-hidden="true">

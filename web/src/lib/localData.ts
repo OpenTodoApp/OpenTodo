@@ -208,7 +208,8 @@ export function useSubtasks(parentId: string): Task[] {
   return useLiveQuery(() => db.tasks.where('parent_id').equals(parentId).filter((tk) => !tk.deleted_at).sortBy('position'), [parentId], NO_TASK_ROWS)
 }
 
-const NO_TASK_ROWS: Task[] = []
+/** The empty list a task query returns while it is still reading (compare by identity). */
+export const NO_TASK_ROWS: Task[] = []
 
 /** Every task row of a project, deleted ones too. */
 export function useProjectTaskRows(projectId: string): Task[] {

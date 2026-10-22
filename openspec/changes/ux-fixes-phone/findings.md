@@ -88,3 +88,5 @@ From the interface audit's final run on main after phone-v2 (2026-10-22) (`make 
 ## Added by screen-stories-rare (2026-10-22)
 
 The focus pass on the new display stories found `<li.display-row>` focused without a ring (now in `scripts/ux-audit/focus-exempt.json`). The cause is likely shared by most of the focus exemptions: under Tailwind 4, `outline-none` sets `--tw-outline-style: none`, and a later `focus-visible:outline-2` (or `-3`) only sets the width, so no outline is drawn. Adding `focus-visible:outline-solid` where `outline-none` and `focus-visible:outline-N` meet (index.css `.display-row`, `ListRow`, `Chips`, `AskComposer`, `CalendarView`, `review/charts.tsx`, `LoopHome`) should let several exemption lines go at once.
+
+Confirmed and fixed in this change (design D3): `focus-visible:outline-solid` is added in all 18 places, `.display-row` included, and the style lint `cancelledRings` fails on the combination. `focus-exempt.json` is empty, `li.display-row` included.

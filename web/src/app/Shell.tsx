@@ -1,4 +1,4 @@
-import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -336,7 +336,7 @@ function SidebarResizer({ width }: { width: number }) {
   return (
     <div role="separator" aria-orientation="vertical" aria-label={t('Resize sidebar')} aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
       tabIndex={0} data-sidebar-resizer
-      className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-none lg:block"
+      className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus lg:block"
       onPointerDown={(e) => {
         dragging.current = { startX: e.clientX, startWidth: width }
         e.currentTarget.setPointerCapture(e.pointerId)
@@ -365,7 +365,10 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
       <div className="min-w-0 flex-1">
         <PageBarTitle>{bar?.title}</PageBarTitle>
-        {bar?.subtitle && <p className="truncate text-meta text-muted" data-phone-subtitle>{bar.subtitle}</p>}
+        {/* One line, so the bar keeps its height (audit M12): a plain subtitle keeps its full text reachable when cut; controls (the Inbox's planned line, a project's members) cut themselves and are named by their content (ux-fixes-phone D2). */}
+        {bar?.subtitle && (typeof bar.subtitle === 'string'
+          ? <TruncatedText as="p" text={bar.subtitle} className="block text-meta text-muted" data-phone-subtitle="" />
+          : <div className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-muted" data-phone-subtitle>{bar.subtitle}</div>)}
       </div>
       <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>

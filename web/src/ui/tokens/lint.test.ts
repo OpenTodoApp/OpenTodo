@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import css from '../../index.css?raw'
 import { STYLE_NOT_YET_MIGRATED, STYLE_NOT_YET_MIGRATED_MAX, TITLE_NOT_YET_MIGRATED, TITLE_NOT_YET_MIGRATED_MAX } from './notYetMigrated'
-import { format, handMadeSurfaces, momentOnHover, nativeTitles, rawStyles } from './styleLint'
+import { cancelledRings, format, handMadeSurfaces, momentOnHover, nativeTitles, rawStyles } from './styleLint'
 
 // OpenSpec design-system "Semantic design tokens": shared UI, screens and the
 // component style classes colour through tokens, never raw Tailwind palette
@@ -250,6 +250,19 @@ describe('token lint', () => {
       .toEqual(['Row.tsx:2: transition duration-(--duration-moment) hover:bg-hover'])
     expect(momentOnHover('src/ui/overlay/Menu.tsx', '<div className="transition-opacity duration-(--duration-moment)" />')).toHaveLength(1)
     expect(momentOnHover('Sheet.tsx', '<div className="animate-in duration-(--duration-moment)" />')).toEqual([])
+  })
+
+  it('no focus ring is cancelled by outline-none (ux-fixes-phone)', () => {
+    const screens = [
+      ...uiCode.map(([path, src]) => [path.replace(/^\.\.\//, 'src/ui/'), src] as const),
+      ...appFiles,
+    ]
+    expect(screens.flatMap(([path, src]) => cancelledRings(path, src)).map(format)).toEqual([])
+    // The rule itself: names the file and line; an explicit style keeps the ring.
+    expect(cancelledRings('Cell.tsx', '<a />\n<div className="outline-none focus-visible:outline-2 focus-visible:outline-focus" />').map(format))
+      .toEqual(['Cell.tsx:2: outline-none focus-visible:outline-2 focus-visible:outline-focus'])
+    expect(cancelledRings('Cell.tsx', '<div className="outline-none focus-visible:outline-2 focus-visible:outline-solid" />')).toEqual([])
+    expect(cancelledRings('Cell.tsx', '<div className="focus-visible:outline-2 focus-visible:outline-focus" />')).toEqual([])
   })
 
   it('the not-yet lists only shrink and name files that still need them', () => {

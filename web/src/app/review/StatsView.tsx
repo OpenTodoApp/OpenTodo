@@ -6,7 +6,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, Menu, MenuItem, PageBody, PageHeader } from '../../ui'
-import { useAllLabels, useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
+import { NO_TASK_ROWS, useAllLabels, useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
 import { currentDayStart, dateLocaleOf, formatDate } from '../../lib/dates'
 import { currentUserId } from '../../lib/sharing'
 import { comparisonOf, PERIOD_KINDS, PERIOD_LABELS, periodFor, sharedIds, type DashboardPeriod, type Period } from '../../lib/stats'
@@ -314,7 +314,10 @@ export function StatsView() {
   const entries = useLiveEntries()
   const now = useMinuteNow(entries.some((e) => e.ended_at === null))
   // This device's due-date changes, read once per open (design D5, D8).
-  const rows = useLiveQuery(() => slipRows(Date.now()), [], [])
+  const read = useLiveQuery(() => slipRows(Date.now()), [], null)
+  const rows = useMemo(() => read ?? [], [read])
+  // The panels wait for the tasks and this device's date changes: panels that fill in stages move the page (ux-fixes-phone, audit M12).
+  const ready = tasks !== NO_TASK_ROWS && read !== null
   const slipping = useMemo(() => slippingFrom(rows, { tasks, projects, shared: sharedIds(memberships), me }, Date.now()), [rows, tasks, projects, memberships, me])
   const [period, setPeriod] = useState<DashboardPeriod>(readPeriod)
   const exportCsv = useTimeExport(entries, tasks, projects, period, today, weekStart)
@@ -334,8 +337,8 @@ export function StatsView() {
           </span>
         </div>
       </PageHeader>
-      <StatsContent tasks={tasks} projects={projects} labels={labels} memberships={memberships} me={me} today={today} weekStart={weekStart}
-        dayStart={currentDayStart()} entries={entries} now={now} period={period} slipping={slipping} />
+      {ready && <StatsContent tasks={tasks} projects={projects} labels={labels} memberships={memberships} me={me} today={today} weekStart={weekStart}
+        dayStart={currentDayStart()} entries={entries} now={now} period={period} slipping={slipping} />}
     </PageBody>
   )
 }

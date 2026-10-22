@@ -97,7 +97,7 @@ export function ProjectWalk({ walk, now, onAdd, paused }: { walk: readonly WalkP
       <p className="sr-only" role="status" aria-live="polite" data-walk-live>{announce}</p>
       <p className="mb-2 text-meta text-muted tabular-nums" data-walk-progress>{t('{n} of {total}', { n: index + 1, total: live.length })}</p>
       <section ref={card} tabIndex={-1} data-walk-card={w.project.id} aria-label={t('Project {n} of {total}: {name}', { n: index + 1, total: live.length, name: w.project.name })}
-        className="rounded-card bg-sunken p-4 outline-none focus-visible:outline-2 focus-visible:outline-focus sm:p-5">
+        className="rounded-card bg-sunken p-4 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="flex min-w-0 items-center gap-2 text-h2 font-semibold text-strong">
             <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: w.project.color }} />

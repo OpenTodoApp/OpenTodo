@@ -117,4 +117,24 @@ export function momentOnHover(path: string, source: string): Finding[] {
   return out
 }
 
+/**
+ * A focus ring cancelled by `outline-none` (ux-fixes-phone): in Tailwind 4 `outline-none`
+ * sets `--tw-outline-style: none`, which `focus-visible:outline-2` then reads, so the
+ * ring never shows. The class list needs `focus-visible:outline-solid` (or no
+ * `outline-none`).
+ */
+export function cancelledRings(path: string, source: string): Finding[] {
+  const out: Finding[] = []
+  source.split('\n').forEach((line, i) => {
+    for (const value of classTokens(line)) {
+      const tokens = value.split(/\s+/)
+      if (!tokens.some((tk) => /^(?:[\w-]+:)*outline-none$/.test(tk))) continue
+      const ring = tokens.some((tk) => /^(?:[\w-]+:)*focus(?:-visible|-within)?:outline-\d/.test(tk))
+      const style = tokens.some((tk) => /^(?:[\w-]+:)*focus(?:-visible|-within)?:outline-(?:solid|dashed|dotted|double)$/.test(tk))
+      if (ring && !style) out.push({ path, line: i + 1, text: value.trim() })
+    }
+  })
+  return out
+}
+
 export const format = (f: Finding) => `${f.path}:${f.line}: ${f.text}`

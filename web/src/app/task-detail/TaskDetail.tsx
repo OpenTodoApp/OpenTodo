@@ -180,7 +180,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         {/* The page keeps Back; the phone sheet closes with Close, a drag down, the scrim or Escape (phone-v2 D5). */}
         {page && <IconButton icon="arrow-left" label={t('Back to the list')} onClick={onClose} data-task-back className="touch-target" />}
         <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
-          className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
+          className="touch-target inline-flex shrink-0 items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6">
           <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${done ? 'bg-faint border-input text-on-accent' : `${ring} hover:bg-success-soft`}`}>
             {done && <Icon name="check" size="xs" />}
           </span>
@@ -188,7 +188,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         {/* The title wraps to at most two lines instead of truncating (task-panel-facets D4); Enter commits. */}
         <TitleField multiline title={task.title} value={title} onChange={setTitle} onCommit={commitTitle}
           projects={projects} labels={labelList} readOnly={readOnly} fieldRef={titleField}
-          className={`block w-full resize-none overflow-hidden bg-transparent font-semibold leading-snug text-strong focus:outline-none ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
+          className={`block w-full resize-none overflow-hidden rounded-control bg-transparent font-semibold leading-snug text-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30 ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
           ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-task-title': true }} />
         {copied && <span role="status" className="text-meta text-muted">{t('Link copied')}</span>}
         {pageStatus && (
@@ -312,7 +312,7 @@ export function AddSubtask({ parent }: { parent: Task }) {
       <span className="text-faint"><Icon name="plus" size="xs" /></span>
       <input
         ref={ref}
-        className="min-w-0 flex-1 bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none"
+        className="min-w-0 flex-1 rounded-chip bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30"
         placeholder={t('Add subtask…')}
         aria-label={t('Add subtask')}
         value={value}

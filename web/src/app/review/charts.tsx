@@ -270,7 +270,7 @@ export function LineChart({ points, aName, bName, summary }: { points: readonly 
           <div {...grid.gridProps} role="grid" aria-label={summary} className="absolute inset-0 flex" data-chart-grid>
             <div role="row" className="flex h-full w-full">
               {points.map((_, i) => (
-                <div key={i} {...grid.cellProps(0, i)} className="h-full min-w-0 flex-1 cursor-default outline-none focus-visible:bg-sunken/60 focus-visible:outline-2 focus-visible:outline-focus" data-point={i} />
+                <div key={i} {...grid.cellProps(0, i)} className="h-full min-w-0 flex-1 cursor-default outline-none focus-visible:bg-sunken/60 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus" data-point={i} />
               ))}
             </div>
           </div>
@@ -312,7 +312,7 @@ export function HBars({ bars, summary }: { bars: readonly HBar[]; summary: strin
         {bars.map((b, i) => (
           <div key={i} role="row" className="grid grid-cols-[minmax(0,7rem)_1fr] items-center gap-2">
             <span className="truncate text-meta text-default" aria-hidden="true">{b.label}</span>
-            <div {...grid.cellProps(i, 0)} className="flex min-h-6 items-center gap-2 rounded-control outline-none focus-visible:outline-2 focus-visible:outline-focus" data-bar={b.label}>
+            <div {...grid.cellProps(i, 0)} className="flex min-h-6 items-center gap-2 rounded-control outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus" data-bar={b.label}>
               <span className="h-3 rounded-r-[4px] bg-chart-base" style={{ width: `${Math.max(2, (b.value / max) * 85)}%` }} aria-hidden="true" />
               <span className="text-meta tabular-nums text-muted" aria-hidden="true">{b.text}</span>
             </div>
@@ -372,7 +372,7 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
               {weeks.map((col, c) => {
                 const d = col[r]
                 return d
-                  ? <div key={c} {...grid.cellProps(r, c)} style={{ gridRow: r + 1, gridColumn: c + 1 }} className={`size-(--heat) rounded-[3px] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${LEVEL_CLASS[d.level]}`} data-day={d.date} data-level={d.level} />
+                  ? <div key={c} {...grid.cellProps(r, c)} style={{ gridRow: r + 1, gridColumn: c + 1 }} className={`size-(--heat) rounded-[3px] outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus ${LEVEL_CLASS[d.level]}`} data-day={d.date} data-level={d.level} />
                   : <div key={c} role="gridcell" aria-hidden="true" style={{ gridRow: r + 1, gridColumn: c + 1 }} className="size-(--heat)" />
               })}
             </div>
@@ -419,7 +419,7 @@ export function DotGrid({ counts, max, rowLabels, columnLabels, tip, summary }: 
             {row.map((n, c) => {
               const d = n === 0 ? 3 : 5 + 11 * Math.sqrt(n / Math.max(1, max))
               return (
-                <div key={c} {...grid.cellProps(r, c)} className="flex size-(--dot) items-center justify-center rounded-control outline-none focus-visible:outline-2 focus-visible:outline-focus" data-count={n}>
+                <div key={c} {...grid.cellProps(r, c)} className="flex size-(--dot) items-center justify-center rounded-control outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus" data-count={n}>
                   <span className={`rounded-full ${n === 0 ? 'bg-(--ot-border)' : 'bg-chart-base'}`} style={{ width: d, height: d }} aria-hidden="true" />
                 </div>
               )

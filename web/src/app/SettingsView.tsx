@@ -1,7 +1,7 @@
 import { HowYouWorkSection } from './method/HowYouWorkSection'
 import { ProfileSection } from './profile/ProfileSection'
 import { PersonAvatar } from './PersonAvatar'
-import { Badge, Icon, type IconName, Input, LearnMore, Notice, PageBody, PageHeader, useMediaQuery } from '../ui'
+import { Badge, Icon, type IconName, Input, LearnMore, Notice, PageBody, PageHeader, TruncatedText, useMediaQuery } from '../ui'
 import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -252,7 +252,7 @@ export function ProfileCard({ user, compact = false }: { user: User; compact?: b
       <PersonAvatar id={user.id} name={user.name || user.email} size={compact ? 'md' : 'lg'} />
       <div className="min-w-0 flex-1">
         <p className="user-text truncate text-body font-semibold text-default">{user.name || user.email}</p>
-        <p className="user-text truncate text-meta text-muted">{user.email}</p>
+        <TruncatedText as="p" className="user-text text-meta text-muted" text={user.email} />
       </div>
       <Badge hue={user.role === 'owner' ? 'green' : user.role === 'admin' ? 'indigo' : 'slate'}>{ACCOUNT_ROLE_LABEL[user.role]}</Badge>
     </div>

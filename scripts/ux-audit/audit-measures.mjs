@@ -161,14 +161,21 @@ export function truncation() {
   return out
 }
 
-/** M11: visible interactive controls overlapping by more than 4 px on both axes. */
+/**
+ * M11: visible interactive controls overlapping by more than 4 px on both axes. Controls
+ * in different layers (the page and an open menu, dialog, sheet or list of options) are
+ * not compared: a control under an open overlay is covered, not visible (ux-fixes-phone).
+ */
 export function overlaps() {
   const out = []
+  const LAYER = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog'
   const els = [...document.querySelectorAll(window.__ux.targets)].filter((el) => window.__ux.shown(el))
   const boxes = els.map((el) => el.getBoundingClientRect())
+  const layers = els.map((el) => el.closest(LAYER))
   for (let i = 0; i < els.length; i++) {
     for (let j = i + 1; j < els.length; j++) {
       if (els[i].contains(els[j]) || els[j].contains(els[i])) continue
+      if (layers[i] !== layers[j]) continue
       const a = boxes[i], b = boxes[j]
       const x = Math.min(a.right, b.right) - Math.max(a.left, b.left)
       const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
@@ -183,11 +190,15 @@ export function overlaps() {
   return out
 }
 
-/** M12, installed before load: sums layout-shift entries without recent input. */
-export const LAYOUT_SHIFT_INIT = `window.__cls = 0; try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value }).observe({ type: 'layout-shift', buffered: true }) } catch {}`
+/**
+ * M12, installed before load: sums layout-shift entries without recent input, and
+ * keeps how much each moved element contributed, so the report names what moved.
+ */
+export const LAYOUT_SHIFT_INIT = `window.__cls = 0; window.__clsBy = {}; try { new PerformanceObserver((l) => { for (const e of l.getEntries()) { if (e.hadRecentInput) continue; window.__cls += e.value; for (const s of e.sources || []) { const n = s.node; const k = n && n.nodeType === 1 ? '<' + n.tagName.toLowerCase() + [...n.classList].slice(0, 2).map((c) => '.' + c).join('') + (n.id ? '#' + n.id : '') + '>' : '#text'; window.__clsBy[k] = (window.__clsBy[k] || 0) + e.value / e.sources.length } } }).observe({ type: 'layout-shift', buffered: true }) } catch {}`
 export function layoutShift(limit) {
   const v = Math.round((window.__cls ?? 0) * 1000) / 1000
-  return v > limit ? [{ rule: 'M12', element: 'page', value: v, limit }] : []
+  const by = Object.entries(window.__clsBy ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k).join(', ')
+  return v > limit ? [{ rule: 'M12', element: by || 'page', value: v, limit }] : []
 }
 
 /** M15: running animations or transitions that move or scale an element. */

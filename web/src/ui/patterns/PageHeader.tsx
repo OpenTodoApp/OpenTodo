@@ -13,6 +13,7 @@ import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
 import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
+import { TruncatedText } from '../TruncatedText'
 import { setPageBar } from './pageBar'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
 import { useFrameSlide } from './frameSlide'
@@ -125,7 +126,7 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
         {icon && <span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted" aria-hidden="true"><Icon name={icon} size="md" /></span>}
         {leading}
         {typeof title === 'string'
-          ? <H ref={titleRef} tabIndex={titleTabIndex} className={`min-w-0 truncate ${TITLE} outline-none`} data-page-title>{title}</H>
+          ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE} outline-none`} data-page-title="" />
           : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE} outline-none`} data-page-title>{title}</H>}
         <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions>
           <PageActions actions={actions} overflow={overflow} menu={menu} help={help} />
@@ -142,7 +143,10 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
  * there, since the header's own title row is hidden at that width.
  */
 export function PageBarTitle({ children }: { children: ReactNode }) {
-  return <h1 className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong" data-phone-title>{children}</h1>
+  // A plain title keeps its full text reachable when cut (ux-fixes-phone D2); an element
+  // (a project's Rename button) cuts itself, so the bar's heading is a flex row.
+  if (typeof children === 'string') return <TruncatedText as="h1" text={children} className="min-w-0 flex-1 text-h3 font-semibold text-strong" data-phone-title="" />
+  return <h1 className="flex min-w-0 flex-1 items-center text-h3 font-semibold text-strong" data-phone-title>{children}</h1>
 }
 
 /** The right side of a page header or of the phone bar: actions, the overflow menu, Help. */
