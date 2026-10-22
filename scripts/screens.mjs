@@ -24,6 +24,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { inventory } from './ux-audit/inventory.mjs'
 
 const OUT = process.env.OUT_DIR ?? 'dist/screens'
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
@@ -108,31 +109,37 @@ async function demoState() {
 
 // ------------------------------------------------------------------ screens
 // Each screen runs once per device and theme on a fresh page; the whole
-// viewport is captured.
+// viewport is captured. `entry` is its id in the screen inventory
+// (scripts/ux-audit/screens.json, ux-audit-three-widths D1): the demo sandbox has
+// other projects than the audit's seed, so the openers stay here, and the script
+// and scripts/ux-audit/ux-audit.test.mjs check each names an inventory entry.
 const h1 = (p, name) => () => p.getByRole('heading', { level: 1, name }).first().waitFor()
 const screens = [
-  { name: 'inbox', async run(p) { await go(p, '/', h1(p, 'Inbox')) } },
-  { name: 'today', async run(p) { await go(p, '/today', h1(p, 'Today')) } },
-  { name: 'upcoming', async run(p) { await go(p, '/upcoming', h1(p, 'Upcoming')) } },
-  { name: 'project-list', async run(p, { ids }) { await go(p, `/project/${ids.home}`, h1(p, 'Home renovation')); await setLayout(p, 'List') } },
-  { name: 'project-board', async run(p, { ids }) { await go(p, `/project/${ids.launch}`, h1(p, 'Q4 launch')); await setLayout(p, 'Board') },
+  { name: 'inbox', entry: 'inbox', async run(p) { await go(p, '/', h1(p, 'Inbox')) } },
+  { name: 'today', entry: 'today', async run(p) { await go(p, '/today', h1(p, 'Today')) } },
+  { name: 'upcoming', entry: 'upcoming', async run(p) { await go(p, '/upcoming', h1(p, 'Upcoming')) } },
+  { name: 'project-list', entry: 'project', async run(p, { ids }) { await go(p, `/project/${ids.home}`, h1(p, 'Home renovation')); await setLayout(p, 'List') } },
+  { name: 'project-board', entry: 'board', async run(p, { ids }) { await go(p, `/project/${ids.launch}`, h1(p, 'Q4 launch')); await setLayout(p, 'Board') },
     async after(p) { await setLayout(p, 'List').catch(() => {}) } },
-  { name: 'calendar-day', async run(p) { await go(p, '/day', () => p.getByRole('region', { name: 'Day calendar' }).waitFor()) } },
-  { name: 'calendar-week', async run(p) { await go(p, '/week', () => p.getByRole('region', { name: 'Week calendar' }).waitFor()) } },
-  { name: 'task-panel', async run(p, { ids }) {
+  { name: 'calendar-day', entry: 'day', async run(p) { await go(p, '/day', () => p.getByRole('region', { name: 'Day calendar' }).waitFor()) } },
+  { name: 'calendar-week', entry: 'week', async run(p) { await go(p, '/week', () => p.getByRole('region', { name: 'Week calendar' }).waitFor()) } },
+  { name: 'task-panel', entry: 'task-panel', async run(p, { ids }) {
     await go(p, `/project/${ids.home}`, h1(p, 'Home renovation')); await openTask(p, 'Get three quotes for the kitchen')
   } },
-  { name: 'quick-add', async run(p) {
+  { name: 'quick-add', entry: 'quick-add', async run(p) {
     await go(p, '/today', h1(p, 'Today'))
     const field = await focusQuickAdd(p)
     await field.pressSequentially('Call Sam about the tiles tomorrow at 4pm #Home @call p2 +15m', { delay: 5 }); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
-  { name: 'settings', async run(p) { await go(p, '/settings', () => p.locator('[data-settings-overview], [data-settings-section]').first().waitFor()) } },
-  { name: 'settings-appearance', async run(p) { await go(p, '/settings/appearance', h1(p, 'Appearance')) } },
-  { name: 'help', async run(p) { await go(p, '/help', h1(p, 'Help')) } },
+  { name: 'settings', entry: 'settings', async run(p) { await go(p, '/settings', () => p.locator('[data-settings-overview], [data-settings-section]').first().waitFor()) } },
+  { name: 'settings-appearance', entry: 'settings-appearance', async run(p) { await go(p, '/settings/appearance', h1(p, 'Appearance')) } },
+  { name: 'help', entry: 'help', async run(p) { await go(p, '/help', h1(p, 'Help')) } },
 ]
 
 // ------------------------------------------------------------------ run
+const inventoryIds = new Set(inventory().map((e) => e.id))
+const stray = screens.filter((s) => !inventoryIds.has(s.entry))
+if (stray.length) { console.error(`not in the screen inventory: ${stray.map((s) => `${s.name} (${s.entry})`).join(', ')}`); process.exit(2) }
 const unknown = only ? [...only].filter((n) => !screens.some((s) => s.name === n)) : []
 if (unknown.length) { console.error(`unknown screens: ${unknown.join(', ')}\navailable: ${screens.map((s) => s.name).join(', ')}`); process.exit(2) }
 const demo = await demoState()

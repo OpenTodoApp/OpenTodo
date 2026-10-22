@@ -21,7 +21,7 @@ The [design system](design-system.md) says which tokens and building blocks exis
 6. **One row, one chip system.** All task rows come from `TaskRow`; metadata uses three styles (tone text, label chip, neutral chip).
 7. **One settings pattern.** A setting is a `SettingRow` inside a `SettingsSection`; one Help action per page.
 8. **Tokens or nothing.** No raw palette, size, radius or shadow class in a screen; no legacy `btn-*`, `.input` or `.kbd` class; no native `title` attribute. Enforced by `lint.test.ts` (the not-yet lists in `notYetMigrated.ts` only shrink).
-9. **Every core screen has a story** with a visual baseline in light, dark, 375 and 1280 px.
+9. **Every core screen has a story** with a visual baseline in light, dark, 375 and 1280 px. A screen is core when the screen inventory (`scripts/ux-audit/screens.json`) marks it as used daily or weekly; `make ui-lint` runs the story-coverage script, which fails naming a core screen without its story.
 10. **Delight is quiet.** Transitions stay within the motion tokens and respect reduced motion; nothing bounces, nothing promotes. The one considered moment is the completion sequence (motion-v2): the op is written at once and the list keeps a *departing* row for 400 ms while the check pops, the strike draws and the row folds away.
 
 ## The page template
@@ -105,10 +105,12 @@ Every change that touches a screen states in its design how it stays inside thes
 
 | Limit | Value | Test |
 | --- | --- | --- |
-| Vertical scroll regions per screen | 3 | `budget.test.tsx`, layout check |
-| Rows of chrome above a list's first item | 2 elements (the header, with its lead line inside, and quick add); nothing under the quick add, first-run guidance only as an overlay | `budget.test.tsx` |
-| Task properties visible by default | 7 | `budget.test.tsx` (with the panel redesign) |
-| Primary sidebar destinations | 6 | `budget.test.tsx` (with the navigation change) |
+| Vertical scroll regions per screen | 3 | `budget.test.tsx`, layout check, audit (M5) |
+| Rows of chrome above a list's first item | 2 elements (the header, with its lead line inside, and quick add); nothing under the quick add, first-run guidance only as an overlay | `budget.test.tsx`, audit (M2) |
+| Task properties visible by default | 7 | `budget.test.tsx` (with the panel redesign), audit (M3: a row's metadata line) |
+| Primary sidebar destinations | 6 | `budget.test.tsx` (with the navigation change), audit (M4) |
 | New shortcuts | registered, no conflict | the shortcut registry test |
+
+The limits live in `web/src/app/budget.json`, read by the tests and by the interface audit, which measures them on the built app at three widths ([Design system](design-system.md#the-interface-audit)).
 
 When a feature needs more than the budget allows, the answer is a menu, a chip, a panel occupant or a preference, not another row. Guidance that has to interrupt (the start guide) is a `Dialog`, with `placement="sheet"` so a phone keeps the page visible above it; the demo banner is one line above the shell at every width.

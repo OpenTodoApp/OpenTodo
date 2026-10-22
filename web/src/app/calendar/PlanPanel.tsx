@@ -6,7 +6,7 @@ import { useLiveProjects } from '../../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { compareDueThenPriority } from '../../lib/ordering'
 import type { Task } from '../../lib/types'
-import { Icon, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
+import { EmptyState, Icon, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
 import { Menu } from '../../ui'
 import { PanelFrame } from '../PanelFrame'
 import { useToday } from '../useViews'
@@ -75,7 +75,8 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
       )}>
       <p className="mb-2 text-meta text-faint">{t.rich('Drag a task onto a time, or focus one and press {key}.', { key: <span className="ui-kbd">s</span> })}</p>
       <ul className="space-y-0.5" aria-label={t('Tasks to plan')}>
-        {list.length === 0 && <li className="px-1 py-2 text-meta text-faint">{t('Nothing here.')}</li>}
+        {/* The empty-state pattern with the sentence the panel needs (ux-audit-three-widths F2, F13). */}
+        {list.length === 0 && <li><EmptyState compact title={t('Every task of these days is placed.')} /></li>}
         {list.map((task) => (
           <li key={task.id}>
             <button

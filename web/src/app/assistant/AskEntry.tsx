@@ -5,7 +5,8 @@
 import { useAssistantSkills } from '../../lib/assistantSkills'
 import { openAssistant, openAssistantWith, useAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import type { AccountRole } from '../../lib/types'
-import { Button, PageBody, PageHeader } from '../../ui'
+import { Button, PageBody, PageHeader, Tooltip } from '../../ui'
+import { keysOf } from '../../lib/shortcuts'
 import { Card } from '../../ui'
 import { AskComposer, type AskRequest } from '../../ui'
 import { Notice } from '../../ui'
@@ -42,9 +43,12 @@ export function TodayAskAction({ role }: { role?: AccountRole }) {
   const status = useAssistantStatus()
   if (askMode(status, role) !== 'composer') return null
   return (
-    <Button variant="ghost" size="sm" icon="message-circle" onClick={() => openAssistant()} aria-haspopup="dialog" title={t('Ask the assistant (Shift+I)')} data-today-ask>
-      {t('Ask')}
-    </Button>
+    // The tooltip names the action and its key (design-system "Tooltip primitive"; no native title, ux-audit-three-widths F1).
+    <Tooltip label={t('Ask the assistant')} shortcut={keysOf('global.assistant')}>
+      <Button variant="ghost" size="sm" icon="message-circle" onClick={() => openAssistant()} aria-haspopup="dialog" data-today-ask>
+        {t('Ask')}
+      </Button>
+    </Tooltip>
   )
 }
 

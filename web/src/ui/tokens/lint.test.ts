@@ -274,6 +274,10 @@ describe('token lint', () => {
     expect(rawStyles('x.tsx', '<Button className="ui-btn">x</Button> const input = 1; <input aria-label="Filter query input" className={`a ${b} kbd`} />').map((f) => f.text)).toEqual(['kbd'])
     expect(rawStyles('x.tsx', '<div className="text-xs" /> // style-lint-allow')).toEqual([])
     expect(nativeTitles('x.tsx', '<button type="button" onClick={() => go(1)} title="Open">x</button>').map((f) => f.text)).toEqual(['<button title='])
+    // Button and IconButton spread `title` onto their <button>: a native title the tooltip rule forbids.
+    expect(nativeTitles('x.tsx', '<Button variant="ghost" title="x">Ask</Button>').map((f) => f.text)).toEqual(['<Button title='])
+    expect(nativeTitles('x.tsx', '<IconButton icon="x" label="Close" title="x" />').map((f) => f.text)).toEqual(['<IconButton title='])
+    expect(nativeTitles('x.tsx', '<Tooltip label="x"><Button>Ask</Button></Tooltip>')).toEqual([])
     expect(nativeTitles('x.tsx', '<Dialog title="Labels" onClose={close}><p>title=</p></Dialog>')).toEqual([])
     expect(nativeTitles('x.tsx', '<span title="x" /> {/* tooltip-lint-allow */}')).toEqual([])
   })
