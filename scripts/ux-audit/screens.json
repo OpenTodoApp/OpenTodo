@@ -673,6 +673,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Workspaces",
   "layoutCheck": null,
   "layoutCheckReason": "added with the workspaces change after the layout check list",
   "path": "/settings/workspaces",
@@ -685,6 +686,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/Navigation",
   "layoutCheck": "settings-general"
  },
  {
@@ -694,6 +696,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/App",
   "layoutCheck": "settings-notifications"
  },
  {
@@ -703,6 +706,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/App",
   "layoutCheck": "settings-capture"
  },
  {
@@ -712,6 +716,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/Navigation",
   "layoutCheck": null,
   "layoutCheckReason": "a short page of version and links; added to the tour",
   "path": "/settings/about",
@@ -724,6 +729,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/Integrations",
   "layoutCheck": "settings-integrations"
  },
  {
@@ -733,6 +739,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/Data",
   "layoutCheck": "settings-data"
  },
  {
@@ -742,6 +749,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/Administration",
   "layoutCheck": "settings-people"
  },
  {
@@ -751,6 +759,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/Administration",
   "layoutCheck": "settings-server"
  },
  {
@@ -760,6 +769,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Import",
   "layoutCheck": "import"
  },
  {
@@ -779,6 +789,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Locations",
   "layoutCheck": null,
   "layoutCheckReason": "the seed has no saved location; the tour opens an unknown one, which shows the not-found state",
   "path": "/location/none",
@@ -814,6 +825,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Help",
   "layoutCheck": "help"
  },
  {
@@ -823,6 +835,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Help",
   "layoutCheck": "help-guide"
  },
  {
@@ -832,6 +845,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Capture",
   "layoutCheck": "share-files"
  },
  {
@@ -841,6 +855,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Display",
   "layoutCheck": "display-today"
  },
  {
@@ -850,6 +865,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Display",
   "layoutCheck": "display-today-high-xl"
  },
  {
@@ -859,6 +875,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Display",
   "layoutCheck": "display-upcoming"
  },
  {
@@ -868,6 +885,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Display",
   "layoutCheck": "display-project"
  },
  {
@@ -877,6 +895,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Display",
   "layoutCheck": "display-view"
  },
  {
@@ -886,6 +905,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Public list",
   "layoutCheck": "public-list"
  },
  {
@@ -895,6 +915,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Public list",
   "layoutCheck": "public-display"
  },
  {
@@ -914,6 +935,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": "sign-in"
  },
  {
@@ -923,6 +945,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": null,
   "layoutCheckReason": "a signed-out form; added to the tour",
   "path": "/forgot",
@@ -936,6 +959,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": null,
   "layoutCheckReason": "needs a reset token; the tour opens an expired one, which shows the invalid-link state",
   "path": "/reset/expired-token",
@@ -949,6 +973,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": null,
   "layoutCheckReason": "needs a verification token; the tour opens an expired one",
   "path": "/verify/expired-token",
@@ -962,6 +987,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": null,
   "layoutCheckReason": "needs an email-change token; the tour opens an expired one",
   "path": "/confirm-email/expired-token",
@@ -974,6 +1000,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": null,
   "layoutCheckReason": "needs an account invitation; the tour opens an expired one",
   "path": "/invite/expired-token",
@@ -987,6 +1014,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": "project-invite"
  },
  {
@@ -996,6 +1024,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": "project-invite-member"
  },
  {
@@ -1005,6 +1034,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Signed out",
   "layoutCheck": null,
   "layoutCheckReason": "added with the workspaces change; the tour opens an expired link",
   "path": "/invite/w/expired-token",
@@ -1042,6 +1072,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Shortcuts/Spotlight and cheat sheet",
   "layoutCheck": "spotlight",
   "on": "inbox"
  },
@@ -1063,6 +1094,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Project dialogs",
   "layoutCheck": "fields-dialog",
   "on": "columns"
  },
@@ -1073,6 +1105,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Project dialogs",
   "layoutCheck": "duplicate-project",
   "on": "project"
  },
@@ -1083,6 +1116,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Screens/Locations",
   "layoutCheck": "location-editor",
   "on": "project"
  },
@@ -1093,6 +1127,7 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
+  "story": "Settings/App",
   "layoutCheck": "voice-consent",
   "on": "settings-capture"
  }

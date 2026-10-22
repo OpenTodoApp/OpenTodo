@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { User } from '../lib/types'
 import { ProfileCard, SettingsView } from './SettingsView'
+import { withClock } from './stories/fixtures'
 
 const member: User = { id: 'u-sam', email: 'sam@example.com', name: 'Sam Rivera', role: 'member', createdAt: 1 }
 const owner: User = { id: 'u-ada', email: 'ada@example.com', name: 'Ada Lovelace', role: 'owner', createdAt: 1 }
@@ -30,3 +31,5 @@ export const SectionPage: StoryObj = {
   render: () => <SettingsView user={member} onLogout={() => {}} section="general" />,
 }
 export const AppearancePage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" /> }
+/** About (screen-stories-rare D1): the version, the licence and the links; the server's answers are stubbed. */
+export const AboutPage: StoryObj = { decorators: [withClock], render: () => <SettingsView user={member} onLogout={() => {}} section="about" /> }
