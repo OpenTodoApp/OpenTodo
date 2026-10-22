@@ -1,6 +1,6 @@
 # Findings
 
-From the interface audit's first full run (2026-10-22) (`make ux-audit`, OpenSpec change `ux-audit-three-widths`): 990 captures at 360, 768, 1280 px, light and dark, en and de; 1644 findings. The rare screens without a story (M14 lists them; it fails only on core screens). Score = severity × frequency (design D4); ids are this run's ranking.
+From the interface audit's final run on main after phone-v2 (2026-10-22) (`make ux-audit`, OpenSpec change `ux-audit-three-widths`): 980 captures at 360, 768, 1280 px, light and dark, en and de; 1347 findings. The rare screens without a story (M14 lists them; it fails only on core screens). Score = severity × frequency (design D4); ids are this run's ranking.
 
 - `workspaces`
 - `settings-general`
