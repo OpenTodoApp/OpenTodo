@@ -283,8 +283,11 @@ export function hitAreas() {
   const out = []
   const all = [...document.querySelectorAll(window.__ux.targets)].filter((el) => {
     if (el.closest('[role="option"]') && el.getAttribute('role') !== 'option') return false
-    // A link or a text button inside a sentence is exempt by the criterion.
-    if (getComputedStyle(el).display === 'inline') return false
+    // A link or a text button inside a sentence is exempt by the criterion: an inline box
+    // whose parent is a text container (a paragraph, a list item, a label, a cell).
+    const display = getComputedStyle(el).display
+    if (display === 'inline') return false
+    if (/^inline/.test(display) && el.parentElement && /^(P|SPAN|LI|DD|DT|TD|TH|LABEL|H[1-6]|FIGCAPTION)$/.test(el.parentElement.tagName)) return false
     if (el.tagName === 'INPUT' && ['checkbox', 'radio', 'range', 'color', 'file'].includes(el.getAttribute('type'))) return false
     if (el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['button', 'submit'].includes(el.getAttribute('type')))) return false
     return window.__ux.shown(el)
