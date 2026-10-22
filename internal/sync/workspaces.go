@@ -62,7 +62,9 @@ type LimitError struct {
 	Max   int
 }
 
-func (e *LimitError) Error() string { return fmt.Sprintf("limit reached: at most %d %s", e.Max, e.Limit) }
+func (e *LimitError) Error() string {
+	return fmt.Sprintf("limit reached: at most %d %s", e.Max, e.Limit)
+}
 
 // Is makes errors.Is(err, ErrLimitReached) hold.
 func (e *LimitError) Is(target error) bool { return target == ErrLimitReached }

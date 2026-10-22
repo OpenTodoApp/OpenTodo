@@ -133,7 +133,10 @@ func TestWorkspaceMembershipAndRoles(t *testing.T) {
 	for _, err := range []error{
 		func() error { _, err := f.s.AddWorkspaceMember(f.ctx, "bob", f.ws, "dan", WorkspaceMember); return err }(),
 		func() error { _, err := f.s.RemoveWorkspaceMember(f.ctx, "bob", f.ws, "carol"); return err }(),
-		func() error { _, err := f.s.SetWorkspaceMemberRole(f.ctx, "bob", f.ws, "carol", WorkspaceAdmin); return err }(),
+		func() error {
+			_, err := f.s.SetWorkspaceMemberRole(f.ctx, "bob", f.ws, "carol", WorkspaceAdmin)
+			return err
+		}(),
 		func() error { _, _, err := f.s.CreateGroup(f.ctx, "bob", f.ws, "Kids"); return err }(),
 	} {
 		if !errors.Is(err, ErrForbidden) {
