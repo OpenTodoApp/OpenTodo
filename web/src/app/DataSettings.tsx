@@ -66,8 +66,8 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
         description={<>{t.rich(SETTINGS_COPY.data.rows.import.description, { kbd: <Kbd k={keysOf('go.import')} /> })}</>}
         status={demo ? <span id="demo-import-note" className="text-muted">{t('Import: {note}', { note: t(DEMO_RESTRICTED_NOTE) })}</span> : undefined}
         control={demo
-          ? <Button size="sm" disabled aria-describedby="demo-import-note">{t('Import data…')}</Button>
-          : <a className={linkButton} href="/settings/import" onClick={(e) => followLink(e, { view: 'import' })}><Icon name="upload" size="sm" />{t('Import data…')}</a>} />
+          ? <Button size="sm" disabled aria-describedby="demo-import-note">{t('Import data')}</Button>
+          : <a className={linkButton} href="/settings/import" onClick={(e) => followLink(e, { view: 'import' })}><Icon name="upload" size="sm" />{t('Import data')}</a>} />
       <SettingRow {...rowCopy('data', 'sync')}
         status={(
           <span className="flex flex-wrap items-center gap-2" data-testid="sync-summary">

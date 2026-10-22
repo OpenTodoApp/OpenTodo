@@ -10,9 +10,8 @@
 // takes the line's place, dismissed or not.
 import { useState } from 'react'
 import { demoBannerLead, demoDetailsText, DEMO_NOTHING_PERSONAL, dismissBanner, useBannerDismissed, useDemo } from '../lib/demo'
-import { openHelp } from '../lib/helpRequest'
 import { t } from '../lib/i18n'
-import { Dialog, IconButton, Tooltip, useFinePointer } from '../ui'
+import { Dialog, IconButton, LearnMore, Tooltip, useFinePointer } from '../ui'
 
 export function DemoBanner({ notice }: { notice?: string }) {
   const info = useDemo()
@@ -34,8 +33,7 @@ export function DemoBanner({ notice }: { notice?: string }) {
           <p className="min-w-0 flex-1 truncate" data-demo-line>
             {demoBannerLead(info)}<span className="hidden sm:inline"> {t(DEMO_NOTHING_PERSONAL)}</span>
           </p>
-          <button type="button" className="shrink-0 px-1 font-medium underline" data-demo-learn-more
-            onClick={(e) => openHelp('demo', e.currentTarget)}>{t('Learn more')}</button>
+          <LearnMore screen="demo" className="shrink-0 px-1 font-medium" dataAttrs={{ 'data-demo-learn-more': true }} />
         </>
       )}
       {fine ? <Tooltip label={full}>{detailsButton}</Tooltip> : detailsButton}

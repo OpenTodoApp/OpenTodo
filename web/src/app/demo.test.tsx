@@ -132,7 +132,7 @@ describe('Settings', () => {
     expect(account).toContain('id="password-heading"')
     expect(account).toMatch(/<fieldset disabled=""[^>]*data-demo-disabled/)
     const data = page('data')
-    expect(data).toMatch(/<button[^>]*disabled=""[^>]*>Import data…<\/button>/)
+    expect(data).toMatch(/<button[^>]*disabled=""[^>]*>Import data<\/button>/)
     expect(data).toContain('Import: Disabled on this demo instance.')
     expect(data).not.toContain('href="/settings/import"')
     // Local preferences and the export keep working.

@@ -130,7 +130,7 @@ export function EncryptionView(p: EncryptionViewProps) {
           {state.enabled && <span className="text-muted">{state.unlocked ? t('Unlocked on this device · key version {version}', { version: state.keyVersion }) : t('This device is locked · key version {version}', { version: state.keyVersion })}</span>}
         </span>
       } control={!state.enabled && mode.kind === 'idle' && (
-        <Button variant="primary" onClick={() => p.onMode({ kind: 'passphrase' })}>{t('Set up encryption…')}</Button>
+        <Button variant="primary" onClick={() => p.onMode({ kind: 'passphrase' })}>{t('Set up encryption')}</Button>
       )} />
 
       {!state.enabled && mode.kind === 'idle' && (
@@ -169,22 +169,22 @@ export function EncryptionView(p: EncryptionViewProps) {
           </p>
           {state.unlocked && (
             <SettingRow {...rowCopy('e2ee', 'passphrase')}
-              control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'change' })}>{t('Change passphrase…')}</Button>} />
+              control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'change' })}>{t('Change passphrase')}</Button>} />
           )}
           <SettingRow {...rowCopy('e2ee', 'forgot')}
-            control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'reset' })}>{t('Reset passphrase with recovery key…')}</Button>} />
+            control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'reset' })}>{t('Reset passphrase with recovery key')}</Button>} />
           <SettingRow {...rowCopy('e2ee', 'history')}
-            control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'confirmPurge' })}>{t('Purge plaintext history…')}</Button>} />
+            control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'confirmPurge' })}>{t('Purge plaintext history')}</Button>} />
           {state.unlocked && (
             <SettingRow {...rowCopy('e2ee', 'device')}
               control={<Button variant="secondary" icon="lock" onClick={p.onLock}>{t('Lock this device')}</Button>} />
           )}
           {state.unlocked ? (
             <SettingRow {...rowCopy('e2ee', 'off')}
-              control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmDisable' })}>{t('Turn off encryption…')}</Button>} />
+              control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmDisable' })}>{t('Turn off encryption')}</Button>} />
           ) : (
             <SettingRow {...rowCopy('e2ee', 'lost')}
-              control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>{t('I lost my passphrase and recovery key…')}</Button>} />
+              control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>{t('I lost my passphrase and recovery key')}</Button>} />
           )}
         </>
       )}

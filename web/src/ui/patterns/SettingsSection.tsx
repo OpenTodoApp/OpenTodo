@@ -4,12 +4,15 @@
 // header carries Help, and a section's primary action is a row's control.
 // settings-copy D3: the one line may end with "Learn more", which opens the card's
 // guide section beside the page; it is part of the line, never a header action.
+// settings-refresh D1: a card may carry an icon before its title, from the copy table.
 import { useId, type ReactNode } from 'react'
-import { openHelp } from '../../lib/helpRequest'
-import { t } from '../../lib/i18n'
+import { Icon, type IconName } from '../Icon'
+import { LearnMore } from '../LearnMore'
 
 export interface SettingsSectionProps {
   title: string
+  /** An interface icon drawn before the title (settings-navigation "Card icons"); decorative. */
+  icon?: string
   description?: ReactNode
   /** Heading level: h2 under the section page's single h1 (default), h3 when nested. */
   level?: 2 | 3
@@ -22,19 +25,21 @@ export interface SettingsSectionProps {
   children: ReactNode
 }
 
-export function SettingsSection({ title, description, level = 2, id, headingId: fixedId, learnMore, testId, children }: SettingsSectionProps) {
+export function SettingsSection({ title, icon, description, level = 2, id, headingId: fixedId, learnMore, testId, children }: SettingsSectionProps) {
   const generated = useId()
   const headingId = fixedId ?? generated
   const H = level === 2 ? 'h2' : 'h3'
   return (
     <section id={id} aria-labelledby={headingId} data-testid={testId} data-settings-card className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-6">
       <div className="min-w-0">
-        <H id={headingId} className="text-h3 font-semibold text-default outline-none">{title}</H>
+        <H id={headingId} className="flex items-center gap-2 text-h3 font-semibold text-default outline-none">
+          {icon && <Icon name={icon as IconName} size="sm" className="shrink-0 text-muted" />}
+          <span className="min-w-0">{title}</span>
+        </H>
         {(description || learnMore) && (
           <p className="mt-1 text-meta text-muted" data-settings-line>
             {description}
-            {learnMore && <>{description ? ' ' : ''}<button type="button" className="text-meta text-accent underline" data-help-screen={learnMore} data-learn-more
-              aria-label={t('Learn more: {topic}', { topic: title })} aria-haspopup="dialog" onClick={(e) => openHelp(learnMore, e.currentTarget)}>{t('Learn more')}</button></>}
+            {learnMore && <>{description ? ' ' : ''}<LearnMore screen={learnMore} topic={title} className="text-meta" /></>}
           </p>
         )}
       </div>

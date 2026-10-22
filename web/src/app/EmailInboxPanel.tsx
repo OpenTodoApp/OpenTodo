@@ -57,7 +57,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
             control={
               <>
                 <Button icon="copy" onClick={p.onCopy}>{t('Copy address')}</Button>
-                <Button icon="rotate-ccw" aria-disabled={p.busy} onClick={p.onRotate}>{t('New address…')}</Button>
+                <Button icon="rotate-ccw" aria-disabled={p.busy} onClick={p.onRotate}>{t('New address')}</Button>
               </>
             } />
           {p.copied && <Notice tone="success">{noticeCopy('email-inbox', 'copied')}</Notice>}

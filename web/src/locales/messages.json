@@ -1821,9 +1821,6 @@
   "Change passphrase": [
     "web/src/app/EncryptionPanel.tsx"
   ],
-  "Change passphrase…": [
-    "web/src/app/EncryptionPanel.tsx"
-  ],
   "Change password": [
     "web/src/app/PasswordSection.tsx"
   ],
@@ -4735,7 +4732,7 @@
   "I lost both my passphrase and my recovery key": [
     "web/src/app/UnlockScreen.tsx"
   ],
-  "I lost my passphrase and recovery key…": [
+  "I lost my passphrase and recovery key": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "I saved it": [
@@ -4783,12 +4780,10 @@
     "web/src/lib/webhooks.ts"
   ],
   "Import data": [
+    "web/src/app/DataSettings.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
-  ],
-  "Import data…": [
-    "web/src/app/DataSettings.tsx"
   ],
   "Import failed": [
     "web/src/app/ImportScreen.tsx"
@@ -5449,13 +5444,10 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Learn more": [
-    "web/src/app/DemoBanner.tsx",
-    "web/src/app/SettingsView.tsx",
-    "web/src/ui/patterns/SettingsSection.tsx"
+    "web/src/ui/LearnMore.tsx"
   ],
   "Learn more: {topic}": [
-    "web/src/app/SettingsView.tsx",
-    "web/src/ui/patterns/SettingsSection.tsx"
+    "web/src/ui/LearnMore.tsx"
   ],
   "Learn the method: {method}": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -6247,7 +6239,7 @@
   "New API token": [
     "web/src/app/TokensSection.tsx"
   ],
-  "New address…": [
+  "New address": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
   "New app password": [
@@ -8293,10 +8285,10 @@
   "Purge history": [
     "web/src/app/EncryptionPanel.tsx"
   ],
-  "Purge plaintext history?": [
+  "Purge plaintext history": [
     "web/src/app/EncryptionPanel.tsx"
   ],
-  "Purge plaintext history…": [
+  "Purge plaintext history?": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Purging…": [
@@ -8790,7 +8782,7 @@
   "Reset passphrase": [
     "web/src/app/EncryptionPanel.tsx"
   ],
-  "Reset passphrase with recovery key…": [
+  "Reset passphrase with recovery key": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Reset password": [
@@ -9531,7 +9523,7 @@
   "Set the priority of the selected task, or of the ticked tasks": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Set up encryption…": [
+  "Set up encryption": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Set up two-factor authentication": [
@@ -12139,9 +12131,6 @@
     "web/src/app/UnlockScreen.tsx"
   ],
   "Turn off encryption?": [
-    "web/src/app/EncryptionPanel.tsx"
-  ],
-  "Turn off encryption…": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Turn off two-factor authentication?": [
