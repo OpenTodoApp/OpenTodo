@@ -39,14 +39,14 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 ## Switch to a board
 
-At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly. An empty column offers **Add a task** inside it.
+At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly.
 
 
 The choice is remembered per project on each device. On a phone the board shows one column at a time: swipe sideways or tap a dot above the columns; "No section" is a column only while it has open tasks.
 
 ## Move cards between columns
 
-- **Drag** a card to another column, or to a place within a column. On a touch screen, press and hold the card first. While you drag over a column, a dashed space at its end shows where the card lands.
+- **Drag** a card to another column, or to a place within a column. On a touch screen, press and hold the card first.
 - **Keyboard:** select a card and press <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd>.
 - **Panel:** open the task and pick another **Section**.
 

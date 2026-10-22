@@ -20,13 +20,13 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 - Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
 - Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
-- Days before today are dimmed; their tasks still move.
+- Past days are dimmed.
 - A red line marks the current time, in today's column.
-- A day shows three all-day events; **+N** shows the rest, and this device remembers it.
+- **+N** shows a day's other all-day events.
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
-The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → General → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
+Week starts on your first day of the week; the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → General → Date and time** and follow you to all your devices.
 
 ## See the month
 
@@ -37,7 +37,7 @@ The Week view starts on your first day of the week, and the hours and block time
 - With no task selected, the arrows move between days. <kbd>q</kbd> adds a task due on the day you're on.
 - <kbd>[</kbd> and <kbd>]</kbd> go to the previous and next month, and <kbd>t</kbd> comes back to today.
 
-Switching between **Day**, **Week**, **Month** and **Plan** keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in a project where you're a viewer are shown but can't be moved. Like the rest of the calendar, the month works offline.
+Switching between **Day**, **Week**, **Month** and **Plan** keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in a project where you're a viewer are shown but can't be moved.
 
 ## Plan the next two weeks
 

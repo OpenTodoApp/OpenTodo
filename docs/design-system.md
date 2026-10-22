@@ -195,6 +195,18 @@ Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `
 
 `Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with one line that may end with a **Learn more** link, `learnMore`, opening the card's guide section; never a header action) and `SettingRow` (label and state beside the control, stacked on phones), both fed by the settings copy table (`web/src/lib/settingsCopy.ts`; limits in the [interface guide](interface-guide.md#copy)). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside); the app never uses the browser's `confirm()` or `prompt()`, and code never finds elements by translated text (use a `data-*` attribute), and `ListRow` is the focusable row for lists with a trailing menu.
 
+Five surface styles, each a class in `@layer components` built from tokens (`Foundations/Surfaces` in the workbench):
+
+| Style | Class | Used for |
+|---|---|---|
+| Card | `surface-card`, `SettingsSection tier="primary"` | statistics tiles, the one primary settings card |
+| Flat section | `ui-section-flat` | other settings sections, statistics panels |
+| Column | `ui-column`, `ui-cards--lift`, `ui-drop-placeholder` | board columns, lifting cards, where a dragged card lands |
+| Block | `ui-block` (`--row`, `--dashed`, `--past`, `--late`) | calendar blocks, Month and Plan rows, timeline bars |
+| Event | `ui-block--event`, `ui-block-dot` | events from other calendars |
+
+A block reads `data-hue`: the soft hue as fill, a 3 px solid edge, `text-strong`. `--past` mixes the fill toward the surface and uses `text-faint` (measured per hue in the contrast pairs); `--late` takes the danger pair whatever the hue.
+
 ## The workbench
 
 Storybook is a development tool only: it adds nothing to `internal/web/dist`, the Go binary or the container image, and a unit test fails if the production build contains Storybook code.
