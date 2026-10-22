@@ -941,3 +941,52 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
     })
   })
 })
+
+// sidebar-v2 D1, D8: the header row is the brand slot; the column takes the tinted sidebar colour.
+describe('the brand header and the sidebar colour', () => {
+  it('Header: the mono mark and the wordmark, no image, search beside them, one row of at most 40 px', async () => {
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
+    await flush(50)
+    const header = r.container.querySelector('[data-sidebar-header]')!
+    expect(header.querySelector('[data-brand-mark="mono"]')).not.toBeNull()
+    expect(header.querySelector('[data-brand-wordmark]')!.textContent).toBe('OpenTodo')
+    expect(r.container.querySelector('img')).toBeNull()
+    expect(header.querySelector('[data-palette-button]')).not.toBeNull()
+    // 32 px with a fine pointer (min-h-8), never wrapping: one flex row.
+    expect(header.className).toContain('pointer-fine:min-h-8')
+    expect(header.className).not.toContain('flex-wrap')
+    await r.unmount()
+  })
+
+  it('Rail: the mark alone, named OpenTodo', async () => {
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} collapsed />)
+    await flush(50)
+    const header = r.container.querySelector('[data-sidebar-header]')!
+    expect(header.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('OpenTodo')
+    expect(header.querySelector('[data-brand-wordmark]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Tinted column: the sidebar colour from 768 px with a fine pointer, the surface in the drawer; group headers share it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    await createProject({ name: 'Home' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(50)
+    const aside = document.querySelector('aside[data-sidebar]')!
+    expect(aside.className).toContain('md:pointer-fine:[--sidebar-bg:var(--color-sidebar)]')
+    expect(aside.className).toContain('[--sidebar-bg:var(--color-surface)]')
+    expect(aside.className).toContain('bg-(--sidebar-bg)')
+    expect(aside.className).not.toMatch(/(^|\s)bg-canvas(\s|$)/)
+    const header = document.querySelector('[data-sidebar-group-header]')!
+    expect(header.className).toContain('bg-(--sidebar-bg,var(--color-canvas))')
+    await r.unmount()
+  })
+})
+
+// sidebar-v2 task 1.5: screens draw the mark from the SVG source, never the favicon file.
+describe('no screen references favicon.svg', () => {
+  it('every app source is free of it', () => {
+    const sources = import.meta.glob<string>(['./**/*.tsx', './**/*.ts', '!./**/*.test.ts', '!./**/*.test.tsx'], { query: '?raw', import: 'default', eager: true })
+    expect(Object.entries(sources).filter(([, src]) => src.includes('favicon.svg')).map(([p]) => p)).toEqual([])
+  })
+})

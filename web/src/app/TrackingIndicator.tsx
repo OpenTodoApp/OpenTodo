@@ -1,11 +1,12 @@
 // The running indicator (OpenSpec change time-tracking, "Running indicator", design
-// D6): while the user's entry runs, the sidebar footer shows the elapsed time and the
-// task's title with a Stop control, and below 768 px the bar shows the time as a pill
+// D6): while the user's entry runs, the sidebar footer's row shows a pill with the
+// elapsed time and the task's title and a Stop control in place of the account name
+// (sidebar-v2 D6), and below 768 px the bar shows the time as a pill
 // that opens a sheet with the title, Open and Stop. One live read of the running
 // entry and one minute timer; the ticking text is hidden from assistive technology,
 // which hears one announcement when tracking starts and one when it stops.
 import { useEffect, useRef, useState } from 'react'
-import { Button, DESKTOP_HEADER_QUERY, Dialog, Icon, IconButton, Tooltip, useMediaQuery } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, Dialog, Icon, IconButton, Menu, MenuItem, Tooltip, useMediaQuery } from '../ui'
 import { useTask } from '../lib/localData'
 import { keysOf } from '../lib/shortcuts'
 import { elapsedText, minutesOf, spokenMinutes } from '../lib/time'
@@ -18,8 +19,10 @@ import { openTaskPanel } from './panel'
 /** After this many minutes the elapsed time takes the caution tone (a forgotten entry). */
 export const LONG_RUNNING_MINUTES = 12 * 60
 
+export type Running = { entry: TimeEntry; title: string; minutes: number }
+
 /** The running entry with its task's title and elapsed minutes, ticking on the minute. */
-function useRunning(): { entry: TimeEntry; title: string; minutes: number } | null {
+export function useRunning(): Running | null {
   const entry = useRunningEntry()
   const task = useTask(entry?.task_id)
   const now = useMinuteNow(!!entry)
@@ -46,30 +49,52 @@ function Announcer({ id, title }: { id: string | null; title: string }) {
  */
 const nameOf = (title: string, minutes: number) => t('Tracking {text}', { text: `${elapsedText(minutes)} · ${title}` })
 
-/** The sidebar footer's indicator (from 768 px); the collapsed rail shows the time only. */
+/** The footer's announcements (from 768 px); below it the phone bar's pill announces and the drawer's copy stays quiet. */
+export function TrackingAnnouncer({ running }: { running: Running | null }) {
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  return desktop ? <Announcer id={running?.entry.id ?? null} title={running?.title ?? ''} /> : null
+}
+
+/**
+ * The footer's pill (sidebar-v2 D6): one group of two controls in the row, the body
+ * opening the task and Stop inside it. The icon rail shows the time alone, with the
+ * title in its tooltip and Open and Stop in a menu.
+ */
+export function RunningPill({ running: r, collapsed = false }: { running: Running; collapsed?: boolean }) {
+  const long = r.minutes >= LONG_RUNNING_MINUTES ? 'text-warning' : 'text-strong'
+  const stop = () => act(stopTracking())
+  if (collapsed) {
+    return (
+      <div data-tracking-indicator className="w-full">
+        <Menu kind="menu" label={nameOf(r.title, r.minutes)} title={r.title} tip={`${elapsedText(r.minutes)} · ${r.title}`} tipSide="right" align="start" width="sm:w-56"
+          triggerProps={{ 'data-tracking-open': true }}
+          triggerClassName={`flex min-h-8 w-full items-center justify-center rounded-full bg-accent-soft px-1 text-hint font-semibold tabular-nums max-md:min-h-11 ${long}`}
+          trigger={<span aria-hidden="true" data-tracking-text>{elapsedText(r.minutes)}</span>}>
+          <MenuItem label={t('Open the tracked task')} icon="external-link" onSelect={() => openTaskPanel(r.entry.task_id)} />
+          <MenuItem label={t('Stop')} icon="square" shortcut={keysOf('list.track')} onSelect={stop} data-tracking-stop />
+        </Menu>
+      </div>
+    )
+  }
+  return (
+    <div role="group" aria-label={t('Tracking time')} data-tracking-indicator className="flex min-w-0 flex-1 items-center rounded-full bg-accent-soft">
+      <Tooltip label={t('Open the tracked task')} side="top">
+        <button type="button" aria-label={nameOf(r.title, r.minutes)} onClick={() => openTaskPanel(r.entry.task_id)} data-tracking-open
+          className="flex min-h-8 min-w-0 flex-1 items-center rounded-full py-1 pl-2.5 text-left text-meta max-md:min-h-11">
+          <span aria-hidden="true" className="min-w-0 truncate text-on-accent-soft" data-tracking-text>
+            <span className={`font-semibold tabular-nums ${long}`}>{elapsedText(r.minutes)}</span>{' · '}{r.title}
+          </span>
+        </button>
+      </Tooltip>
+      <IconButton icon="square" label={t('Stop')} shortcut={keysOf('list.track')} size="sm" className="shrink-0 rounded-full text-on-accent-soft max-md:min-h-11 max-md:min-w-11" onClick={stop} data-tracking-stop />
+    </div>
+  )
+}
+
+/** The announcer and the pill together, for a footer that does not need the running entry itself. */
 export function TrackingIndicator({ collapsed = false }: { collapsed?: boolean }) {
   const r = useRunning()
-  // Below 768 px the phone bar's pill announces; the drawer's copy stays quiet.
-  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  return (
-    <>
-      {desktop && <Announcer id={r?.entry.id ?? null} title={r?.title ?? ''} />}
-      {r && (
-        <div className={`mb-1 flex items-center gap-1 ${collapsed ? 'flex-col' : ''}`} data-tracking-indicator>
-          <Tooltip label={collapsed ? `${elapsedText(r.minutes)} · ${r.title}` : t('Open the tracked task')} side={collapsed ? 'right' : 'top'}>
-            <button type="button" aria-label={nameOf(r.title, r.minutes)} onClick={() => openTaskPanel(r.entry.task_id)} data-tracking-open
-              className={`flex min-h-9 min-w-0 items-center gap-2 rounded-control py-1 text-left text-body text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised max-md:min-h-11 ${collapsed ? 'w-full justify-center px-0' : 'flex-1 px-2'}`}>
-              <Icon name="timer" className="shrink-0 text-accent" />
-              <span aria-hidden="true" className={`min-w-0 truncate tabular-nums ${r.minutes >= LONG_RUNNING_MINUTES ? 'text-on-warning-soft' : ''}`} data-tracking-text>
-                {collapsed ? elapsedText(r.minutes) : `${elapsedText(r.minutes)} · ${r.title}`}
-              </span>
-            </button>
-          </Tooltip>
-          <IconButton icon="square" label={t('Stop tracking')} shortcut={keysOf('list.track')} size="sm" onClick={() => act(stopTracking())} data-tracking-stop />
-        </div>
-      )}
-    </>
-  )
+  return <><TrackingAnnouncer running={r} />{r && <RunningPill running={r} collapsed={collapsed} />}</>
 }
 
 /** The phone bar's pill (below 768 px): the elapsed time, opening a sheet with the title, Open and Stop. */

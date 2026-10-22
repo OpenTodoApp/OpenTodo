@@ -209,10 +209,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <SkipLink frame={frame} content={content} />
       {/* touch-none: a swipe on the scrim does not scroll the page behind the open drawer (sidebar-drawer-scroll). */}
       {sidebarOpen && <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
-      {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell). */}
+      {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell).
+          Its colour (sidebar-v2 D8) is --sidebar-bg, which the sticky group headers share: the surface in the drawer, the tinted sidebar token as a column with a fine pointer. */}
       <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-64 max-w-[85vw] transform border-r border-default bg-canvas pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-64 max-w-[85vw] transform border-r border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
