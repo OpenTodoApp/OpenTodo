@@ -128,7 +128,6 @@ describe('Reschedule…', () => {
     for (const id of ids) expect((await task(id)).due).toEqual({ date: '2026-10-15' })
     const ops = (await db.outbox.toArray()).slice(before)
     expect(ops.filter((o) => o.field === 'due')).toHaveLength(4)
-    expect(new Set(ops.map((o) => o.hlc)).size).toBeLessThanOrEqual(ops.length)
     await waitFor(() => earlierSection() === null)
   })
 })
