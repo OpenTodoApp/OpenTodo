@@ -124,6 +124,8 @@ In the [Android app](android-app.md), on a phone with a fingerprint or face unlo
 
 ## Server-side reads and integrations
 
+Workspace names, members and groups are server data in plaintext, like project members; with encryption on you can create [workspaces](workspaces.md) and move things between them, but not add members, groups or invite links yet.
+
 The server cannot decrypt. Each feature that needs content degrades explicitly:
 
 | Feature | Behaviour for an encrypted account |

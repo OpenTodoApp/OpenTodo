@@ -46,8 +46,12 @@ All variables are optional; `OPENTODO_HOST_URL` turns host mode on.
 | `requests_per_minute` | Requests per minute | `429 limit_requests` |
 | `import_mb` | Size of an import file | `413 limit_import` |
 | `members` | Active accounts | New accounts are refused with `403 limit_members` |
+| `workspaces` | Workspaces one account owns (at most 20) | `409 limit_reached` |
+| `workspace_members` | Members of one workspace (at most 200) | `409 limit_reached` |
+| `workspace_groups` | Groups of one workspace (at most 50) | `409 limit_reached` |
+| `group_members` | Members of one group (at most 100) | `409 limit_reached` |
 
-`0` or a missing key means no limit. Changes are refused one at a time: the rest of a device's changes still sync, the refused ones stay on the device, marked as waiting, and are sent again later. Reads always work.
+`0` or a missing key means no limit (for the four workspace keys: the built-in maximum, which a value can only lower). Changes are refused one at a time: the rest of a device's changes still sync, the refused ones stay on the device, marked as waiting, and are sent again later. Reads always work.
 
 ## Operator interface
 

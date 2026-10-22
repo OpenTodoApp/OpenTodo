@@ -155,7 +155,15 @@ Nineteen candidates for after the design refresh, in a suggested order: the firs
 | 19 | **Shipped.** **Habits with streaks and a month history**: recurring tasks that track streaks and allow a skip without breaking the chain | `habits` | An additive `habit` flag on a recurring task with a calendar rule; streaks and a month heat-map are computed on the device from the occurrence records the series already writes, and a skip of a habit leaves a record marked `skipped`, so "skip today" keeps the streak while missed days do not. A `habit` filter keyword lists them. TickTick's habit tracker without a second app |
 | 20 | **Shipped.** **Markdown vault**: a folder of Markdown files in two-way sync, one file per project, for Obsidian and plain-text people | `markdown-vault` | `ot vault` is a sync device (`vault:<id>`) with a three-way merge per field, the Obsidian Tasks line format (`📅`, `🔁`, `🆔`, `⛔` and Dataview inline fields), conflict files instead of silent loss, and encryption on the user's machine. CLI only: the server binary is unchanged. See [docs/vault.md](docs/vault.md) |
 
-Considered and set aside for now, so they are not forgotten: a focus timer with time tracking, groups, custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, and scheduled assistant routines (an `assistant` action on an automation rule is the natural hook). Rules on events and timers shipped as `automation-rules`, after the drop rules of `rule-boards`. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
+Considered and set aside for now, so they are not forgotten: a focus timer with time tracking, ~~groups~~ (now row 1 of the next table), custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, and scheduled assistant routines (an `assistant` action on an automation rule is the natural hook). Rules on events and timers shipped as `automation-rules`, after the drop rules of `rule-boards`. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
+
+## Next: ten more
+
+The next candidates, in a suggested order. Each starts as an OpenSpec change; none is a commitment.
+
+| # | Capability | Change name | Notes |
+| --- | --- | --- | --- |
+| 1 | **In progress.** **Workspaces and groups**: separate rooms for work and home, each with its own projects, labels, filters and people, and sharing a project with a whole group in one step | `workspaces` | Additive `workspace_id` on projects, labels, views and project-less tasks; a server-side directory (members, groups, invite links) delivered in every sync; effective project membership materialised from grants. Follow-ups: group mentions (`@Family`) and a `workspace:` filter term |
 
 ## Next: Native shells
 
