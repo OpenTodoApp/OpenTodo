@@ -86,6 +86,17 @@ function useListUi() {
   return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo }
 }
 
+/**
+ * The list's frame (page-rhythm D3): a project is a layout page (one 80 rem frame for
+ * list, board and timeline; its list spans 72 rem); every other list is standalone,
+ * centred, and slides when the panel docks.
+ */
+function useListFrame(layoutPage: boolean, full: boolean, fieldColumns: boolean) {
+  const ref = useFrameSlide<HTMLDivElement>(!layoutPage)
+  const width = full ? 'full' as const : fieldColumns || layoutPage ? 'wide' as const : 'list' as const
+  return { ref, width, kind: frameKind(width, layoutPage ? 'layout' : 'standalone') }
+}
+
 /** Today's Earlier group header actions (page-rhythm D6). */
 const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
 
@@ -266,9 +277,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     place: currentPlace?.name ?? t('Location'),
   }[route.view]
 
-  const layoutPage = route.view === 'project'
-  const frameRef = useFrameSlide<HTMLDivElement>(!layoutPage)
-  const pageWidth = board || timeline ? 'full' : m.fieldColumns || layoutPage ? 'wide' : 'list'
+  const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
 
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
@@ -276,9 +285,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
-        {/* Two frames (page-rhythm D3): a project is a layout page (one 80 rem frame for list,
-            board and timeline; its list spans 72 rem); every other list is standalone, centred. */}
-        <div ref={frameRef} className={PAGE_FRAME} data-page-body={pageWidth} data-page-frame={frameKind(pageWidth, layoutPage ? 'layout' : 'standalone')} data-page-gutter="outside" data-list-page>
+        <div ref={frame.ref} className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
