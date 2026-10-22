@@ -78,3 +78,15 @@ Presentation only; nothing to migrate. A device on an older app sees the previou
 
 - Whether the Schedule sheet offers "This evening" as a sixth choice; the row count of the sheet is kept at five until a user asks.
 - The exact minimised height of the tab bar (40 px proposed) after a device check with large text settings.
+
+## Implementation notes
+
+- **D1.** `PageHeader` gains `barActions`: below 768 px its `actions` go to the shell's bar and no header row is rendered in the page. The list's slots and overflow items come from `usePhoneListActions` (task-list/ListChrome.tsx); a project's Layout, Share and "Add a note" (the empty note's line would be a row of chrome) join its menu. The touch Select button stays from 768 px (tablets), where the header row exists. page-rhythm's lead line is the bar's subtitle; the Inbox's planned count takes its place there.
+- **D2.** The footprint is `--add-room` (4.75 rem) on the content scroller; the toast's `--toast-lift` is set by `usePhoneChrome`. A layout-check rule scrolls each phone screen to its end and fails if the button covers the last row.
+- **D3.** `rowSwipe.ts` holds the numbers and the pointer tracking; `useRowSwipe` moves the row's children directly and renders the tinted edge once per gesture. The Schedule sheet lives in a small store with a `RowScheduleHost` the list renders, because both the row (it may depart) and the menu (it closes) unmount as it opens. Next week is the start of next week, as in the date choices.
+- **D5.** `useTaskSheet` returns the sheet's class, style, handle, scrim and touch handlers; the sheet sits on `--vv-bottom`, which `watchVisualViewport` already publishes, so the keyboard check is a style check in tests and a device check in 7.4. Popover sheets (menus, pickers) get the 90 dvh cap and the same drag on their top row.
+- **D6.** Tabs were already 56 px, above the 48 px the design asked for; they stay. Minimised, the labels become visually hidden so each tab keeps its name.
+- **D7.** The drawer is the sidebar with the tab bar's destinations filtered out below 768 px; the find field and the few primary rows stay above the scroller, as `sidebar-drawer-scroll` built it.
+- **D8.** `lib/dnd.ts` gains `onHold`: on touch, the hold calls it instead of lifting, the next move lifts and drags, and a release swallows the click. A long press therefore ticks; a ticked row's hold drags as before. Checkboxes show while select mode is on, or with any tick on a fine pointer.
+- **D9.** With `OPENTODO_LANG` the layout script checks the screens only: its overlay triggers and ready headings are English names.
+

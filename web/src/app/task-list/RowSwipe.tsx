@@ -87,7 +87,8 @@ export function useRowSwipe({ task, enabled, onComplete, force, rowEl }: {
     <>
       {dir && (
         <span aria-hidden="true" {...{ [EDGE]: dir }}
-          className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 items-center gap-1.5 overflow-hidden text-meta font-medium ${dir === 'right' ? 'left-0 justify-start bg-success-soft pl-3 text-on-success-soft' : 'right-0 justify-end bg-accent-soft pr-3 text-on-accent-soft'}`}>
+          // The icon over its word, so both fit from the reveal distance (64 px) on.
+          className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${dir === 'right' ? 'left-0 bg-success-soft text-on-success-soft' : 'right-0 bg-accent-soft text-on-accent-soft'}`}>
           <Icon name={dir === 'right' ? (doneTask ? 'rotate-ccw' : 'check') : 'calendar-days'} size="sm" />
           <span className="whitespace-nowrap opacity-0 transition-opacity duration-(--duration-ui) group-data-revealed/edge:opacity-100">
             {dir === 'right' ? (doneTask ? t('Reopen') : t('Complete')) : t('Schedule')}
