@@ -68,13 +68,13 @@ android {
 
 dependencies {
     // AndroidX only (native-shells D8): checkDependencies fails on anything else at runtime.
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("androidx.webkit:webkit:1.12.1")
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
     implementation("androidx.biometric:biometric:1.1.0")
     testImplementation("junit:junit:4.13.2")
     // org.json on the JVM for unit tests (Android provides it on devices).
-    testImplementation("org.json:json:20240303")
+    testImplementation("org.json:json:20260814")
     // Instrumented tests on the emulator (CI's android job): test-only, never in the app.
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:rules:1.6.1")
@@ -82,8 +82,8 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.6.1")
     // A local OpenTodo stand-in (health check, pages, the share screen), plain and with a self-signed certificate.
-    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-    androidTestImplementation("com.squareup.okhttp3:okhttp-tls:4.12.0")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:5.5.0")
+    androidTestImplementation("com.squareup.okhttp3:okhttp-tls:5.5.0")
 }
 
 /** Fails when the runtime classpath holds an artifact that is not AndroidX, Kotlin or Google's Android support. */
