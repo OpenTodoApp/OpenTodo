@@ -151,7 +151,9 @@ func (s *Service) Update(ctx context.Context, in Input) error {
 	if _, err := s.store.Get(ctx, SettingKey, &st); err != nil {
 		return err
 	}
-	locked := func(f string, set bool) bool { return set && ((f == "url" && s.env.URL != "") || (f == "model" && s.env.Model != "") || (f == "key" && s.env.KeyFromEnv)) }
+	locked := func(f string, set bool) bool {
+		return set && ((f == "url" && s.env.URL != "") || (f == "model" && s.env.Model != "") || (f == "key" && s.env.KeyFromEnv))
+	}
 	for f, set := range map[string]bool{"url": in.URL != nil, "model": in.Model != nil, "key": in.Key != nil} {
 		if locked(f, set) {
 			return &FieldError{f, "set by a variable on the server"}

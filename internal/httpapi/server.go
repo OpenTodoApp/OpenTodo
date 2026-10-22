@@ -130,10 +130,10 @@ type Server struct {
 	davLimiter      *rateLimiter
 	// Issue import (issue-import): the switch cache, the poller and the
 	// shared limit of hand-triggered checks and syncs.
-	issuesOn     caldavState
-	issueWorker  *issues.Worker
+	issuesOn    caldavState
+	issueWorker *issues.Worker
 	// stt is the speech-to-text service (settings-refresh D7), see stt.go.
-	stt *stt.Service
+	stt          *stt.Service
 	issueLimiter *rateLimiter
 	// maps is the map proxy and mapsLimiter the per-user search limit (OpenSpec
 	// `task-locations`); see maps.go.
