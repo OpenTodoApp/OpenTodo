@@ -55,4 +55,4 @@
 - [x] 8.2 Regenerate the visual baselines of the changed stories in the pinned Playwright image
 - [x] 8.3 `make check` (TZ=UTC), the workbench gate (`node scripts/ui-check/a11y.mjs` on the Screens stories) and a rerun of the core screens with `make ux-audit`; record the before and after figures here
   - Done: `make check` passes (4,434 web tests). Core screens (57 screens × 360/768/1280 × en/de, light), before → after: M11 523 → 181, M7 422 → 64, M10 95 → 0, M8 45 → 0, M12 28 → 6. One run also reported 4 NAV (overlay openers on the project page at 1280 px timing out under load); each passes when rerun alone.
-- [ ] 8.4 Open the pull request and get CI green
+- [x] 8.4 Open the pull request and get CI green
