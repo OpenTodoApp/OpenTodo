@@ -120,7 +120,7 @@ Upgrading from a server without this mapping: alarms set earlier in a calendar a
 
 ## Lists, sharing and deletion
 
-- **Discovery**: `/.well-known/caldav` redirects to `/dav/`; the principal is `/dav/principals/<user id>/`, the calendar home `/dav/calendars/<user id>/`, the Inbox `…/inbox/` and each project `…/<project id>/`. Archived and deleted projects are not listed. Another account's paths answer 404.
+- **Discovery**: `/.well-known/caldav` redirects to `/dav/`; the principal is `/dav/principals/<user id>/`, the calendar home `/dav/calendars/<user id>/`, the Inbox `…/inbox/` and each project `…/<project id>/`. Every other [workspace](workspaces.md) has its own Inbox at `…/inbox-<workspace id>/`, and outside the default workspace a list's name starts with the workspace's ("Work · Website", "Work · Inbox"). Moving a project to another workspace renames its list; the path stays. Archived and deleted projects are not listed. Another account's paths answer 404.
 - **Shared projects** appear for every member. Viewers get a read-only list (writes answer 403); editors may add, change and delete tasks; renaming or recolouring needs admin or owner, deleting the list needs the owner.
 - **Creating a list** in the app (MKCALENDAR) creates a project with that name and colour. Renaming or recolouring it (PROPPATCH) renames or recolours the project.
 - **Deleting a list** moves the project to the Trash and its open tasks to the Inbox (for a shared project as copies, since a task never changes sharing scope). The Inbox cannot be deleted or renamed (403).

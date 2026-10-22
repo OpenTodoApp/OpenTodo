@@ -40,6 +40,9 @@ type Service struct {
 	// quota refuses single ops once a hosted tenant reached a limit
 	// (multi-tenant-host D5); nil elsewhere.
 	quota Quota
+	// wsLimits bounds workspaces, members and groups (workspaces "Limits");
+	// the zero value means DefaultWorkspaceLimits.
+	wsLimits WorkspaceLimits
 	// clockMu guards lastTS, the last timestamp ServerTS issued (sync-convergence).
 	clockMu gosync.Mutex
 	lastTS  int64

@@ -182,6 +182,8 @@ type davView struct {
 	// once per request (caldav-interop D5): they are served as VALARMs.
 	reminders map[string][]opsync.Entity
 	remTask   map[string]string
+	// ws places calendars in workspaces (caldav_workspaces.go).
+	ws *davWorkspaces
 }
 
 func (d *davRequest) load() (*davView, error) {
@@ -260,6 +262,9 @@ func (d *davRequest) load() (*davView, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	if err := d.loadWorkspaces(ctx, v); err != nil {
+		return nil, err
+	}
 	v.index()
 	d.view = v
 	return v, nil
@@ -287,8 +292,9 @@ func (v *davView) index() {
 // calendarVisible reports whether cal names a calendar of this user: the Inbox
 // or a live, non-archived project.
 func (v *davView) calendarVisible(cal string) bool {
-	if cal == inboxCalendar {
-		return true
+	if isInboxID(cal) {
+		_, ok := v.ws.inboxWorkspace(cal)
+		return ok
 	}
 	p, ok := v.projects[cal]
 	return ok && string(p["archived"]) != "true"
@@ -296,7 +302,7 @@ func (v *davView) calendarVisible(cal string) bool {
 
 // calendarIDs lists the visible calendars, Inbox first, projects by position.
 func (v *davView) calendarIDs() []string {
-	out := []string{inboxCalendar}
+	out := v.ws.inboxes()
 	var ps []opsync.Entity
 	for id := range v.projects {
 		if v.calendarVisible(id) {
@@ -336,7 +342,7 @@ func (v *davView) role(cal string) string {
 func (v *davView) calendarOf(t opsync.Entity) string {
 	pid := idOf(t["project_id"])
 	if pid == "" {
-		return inboxCalendar
+		return v.ws.inboxOf(v.ws.part.Task(idOf(t["id"])))
 	}
 	if v.calendarVisible(pid) {
 		return pid
@@ -487,7 +493,7 @@ func calendarPrivileges(cal, role string) string {
 	switch {
 	case role == opsync.RoleViewer:
 		return privilegesReadOnly
-	case role == opsync.RoleEditor || cal == inboxCalendar:
+	case role == opsync.RoleEditor || isInboxID(cal):
 		return privileges("read", "read-current-user-privilege-set", "write-content", "bind", "unbind")
 	}
 	return privileges("read", "read-current-user-privilege-set", "write", "write-properties", "write-content", "bind", "unbind")
@@ -546,10 +552,10 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 	m := map[caldav.PropName]propFunc{
 		pResourceType: func() string { return "<d:collection/><c:calendar/>" },
 		pDisplayName: func() string {
-			if cal == inboxCalendar {
-				return "Inbox"
+			if ws, ok := v.ws.inboxWorkspace(cal); ok {
+				return caldav.Esc(v.ws.displayName(ws, "Inbox"))
 			}
-			return caldav.Esc(idOf(v.projects[cal]["name"]))
+			return caldav.Esc(v.ws.displayName(v.ws.part.Project(cal), idOf(v.projects[cal]["name"])))
 		},
 		pOwner:           func() string { return caldav.Href(principalHref(uid)) },
 		pPrivileges:      func() string { return calendarPrivileges(cal, v.role(cal)) },
@@ -560,7 +566,7 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 		pCTag:            func() string { return caldav.Esc(tok) },
 		pSyncToken:       func() string { return caldav.Esc(tok) },
 	}
-	if cal != inboxCalendar {
+	if !isInboxID(cal) {
 		m[pColor] = func() string { return caldav.Esc(idOf(v.projects[cal]["color"])) }
 		order := 1
 		for i, id := range v.calendarIDs() {

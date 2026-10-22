@@ -186,7 +186,7 @@ func (d *davRequest) put() {
 
 // projectValue is the project_id JSON value of a calendar.
 func projectValue(cal string) json.RawMessage {
-	if cal == inboxCalendar {
+	if isInboxID(cal) {
 		return json.RawMessage("null")
 	}
 	return mustJSON(cal)
@@ -418,6 +418,9 @@ func (d *davRequest) applyCreate(v *davView, in *caldav.Inbound, id, cal string)
 	f, extra := df.f, df.pre
 	now := time.Now().UnixMilli()
 	f["project_id"] = projectValue(cal)
+	if isInboxID(cal) {
+		f["workspace_id"] = v.workspaceValue(cal)
+	}
 	f["position"] = mustJSON(now)
 	f["created_at"] = mustJSON(now)
 	if in.CreatedAt != nil && *in.CreatedAt > 0 {
@@ -513,6 +516,9 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	moving := v.calendarOf(cur) != d.path.calendar
 	if moving {
 		body["project_id"] = projectValue(d.path.calendar)
+		if isInboxID(d.path.calendar) {
+			body["workspace_id"] = v.workspaceValue(d.path.calendar)
+		}
 		if !isNullish(cur["section_id"]) {
 			body["section_id"] = json.RawMessage("null")
 		}
@@ -579,6 +585,9 @@ func (d *davRequest) copyMove(v *davView, cur opsync.Entity, in *caldav.Inbound)
 	}
 	f, extraOps := df.f, df.pre
 	f["project_id"] = projectValue(d.path.calendar)
+	if isInboxID(d.path.calendar) {
+		f["workspace_id"] = v.workspaceValue(d.path.calendar)
+	}
 	f["position"] = cur["position"]
 	f["created_at"] = cur["created_at"]
 	f["deleted_at"] = json.RawMessage("null")
@@ -656,7 +665,7 @@ func (d *davRequest) delete() {
 // the deleted project's parent, as in the app. The Inbox is protected.
 func (d *davRequest) deleteCalendar(v *davView) {
 	cal := d.path.calendar
-	if cal == inboxCalendar {
+	if isInboxID(cal) {
 		d.precondition(http.StatusForbidden, "d", "need-privileges")
 		return
 	}
@@ -781,7 +790,7 @@ func (d *davRequest) mkcalendar() {
 		return
 	}
 	id := d.path.calendar
-	if id == inboxCalendar || v.calendarVisible(id) {
+	if isInboxID(id) || v.calendarVisible(id) {
 		http.Error(d.w, "a calendar already exists here", http.StatusMethodNotAllowed)
 		return
 	}
@@ -882,7 +891,7 @@ func (d *davRequest) proppatch() {
 		for _, p := range props.Children {
 			name := caldav.PropName{Space: p.Space, Local: p.Local}
 			field, ok := calendarSettable[name]
-			if !ok || (field != "" && (cal == inboxCalendar || !set)) {
+			if !ok || (field != "" && (isInboxID(cal) || !set)) {
 				groups[http.StatusForbidden] = append(groups[http.StatusForbidden], name)
 				refused = true
 				continue

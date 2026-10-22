@@ -143,7 +143,8 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | Area | Tables |
 | --- | --- |
 | Op log and current values | `ops` (append-only, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op), `scope_fields` (winner per field within a scope), `purges` (markers for permanently deleted entities) |
-| Sharing | `project_scopes`, `project_members` (roles, outside the op log), `member_backfills` (history replay per member device) |
+| Sharing | `project_scopes`, `project_members` (effective roles, outside the op log; `via` names the groups a role comes from), `project_grants` (direct and group grants; `project_members` is recomputed from them), `member_backfills` (history replay per member device) |
+| Workspaces | `workspaces` (one `default` per account), `workspace_members`, `groups`, `group_members`, `workspace_invites` (hashed link secrets) |
 | Accounts and credentials | `users`, `user_status`, `sessions`, `session_auth`, `session_oidc`, `api_tokens`, `api_token_scopes`, `api_token_agent`, `user_agent_access`, `app_passwords`, `passkeys`, `identities`, `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `invitations`, `password_resets` |
 | Features | `notifications`, `push_subscriptions`, `webhooks`, `webhook_deliveries`, `import_jobs`, `import_items`, `caldav_resources`, `email_inboxes`, `email_receipts`, `encryption_keys` |
 | Operations | `settings` (owner key/value settings, also the log `generation`), `audit_events`, `backup_runs` |

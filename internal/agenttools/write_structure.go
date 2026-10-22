@@ -34,12 +34,13 @@ func init() {
 		return writeDef("update_project", "Update a project",
 			"Rename, recolour or give an icon to a project, move it under another project (parent_id, null for the top level) or change its position. Archiving, deleting and the project's description are not available.",
 			object([]string{"id"}, map[string]any{
-				"id":        map[string]any{"type": "string", "description": "Project id."},
-				"name":      map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
-				"color":     colorProp,
-				"icon":      iconProp,
-				"parent_id": map[string]any{"type": []string{"string", "null"}, "description": "Parent project id, or null for the top level."},
-				"position":  positionProp,
+				"id":           map[string]any{"type": "string", "description": "Project id."},
+				"name":         map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
+				"color":        colorProp,
+				"icon":         iconProp,
+				"parent_id":    map[string]any{"type": []string{"string", "null"}, "description": "Parent project id, or null for the top level."},
+				"position":     positionProp,
+				"workspace_id": map[string]any{"type": []string{"string", "null"}, "description": "Move the project to this workspace (see list_workspaces), or null for the default workspace. Only the project's owner may."},
 			}), false, true, []string{"name"}, false)
 	}, plan: (*Registry).planUpdateProject})
 
@@ -170,7 +171,7 @@ func (r *Registry) claimIDs(ctx context.Context, c Caller, cs ChangeSet, chosen 
 // ---- update_project ----
 
 func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position"); err != nil {
+	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id"); err != nil {
 		return Plan{}, err
 	}
 	id, err := a.str("id")
@@ -218,8 +219,13 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		}
 		patch["parent_id"] = parent
 	}
+	if v, has, err := snap.workspaceValue(a); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["workspace_id"] = v
+	}
 	if len(patch) == 0 {
-		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id or position")
+		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position or workspace_id")
 	}
 	role := snap.role(id)
 	for f := range patch {

@@ -123,7 +123,9 @@ func CanWrite(role, entity, field string) bool {
 	case RoleOwner:
 		return true
 	case RoleAdmin:
-		return entity == "task" || entity == "section" || entity == "field" || (entity == "project" && field != "deleted_at")
+		// Only the owner deletes a shared project or moves it to another of
+		// their workspaces (OpenSpec change workspaces, design D12).
+		return entity == "task" || entity == "section" || entity == "field" || (entity == "project" && field != "deleted_at" && field != "workspace_id")
 	case RoleEditor:
 		// Editors may write the project's note but nothing else of the project
 		// (OpenSpec change project-notes, design D2).

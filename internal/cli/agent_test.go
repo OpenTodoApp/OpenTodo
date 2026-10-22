@@ -588,6 +588,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"rm", "book"},
 		{"project", "add", "Dry project"},
 		{"project", "rename", "Home", "Elsewhere"},
+		{"project", "move", "Home", "--workspace", "Personal"},
 		{"project", "archive", "Home"},
 		{"project", "rm", "Home"},
 		{"token", "create", "dry-token"},

@@ -59,7 +59,7 @@ describe('from 1024 px', () => {
     const aside = r.container.querySelector('aside')!
     expect([...aside.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['You', 'App', 'Data'])
     expect([...aside.querySelectorAll('section[aria-labelledby] a[data-settings-link]')].map((a) => a.getAttribute('data-settings-link')))
-      .toEqual(['account', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data'])
+      .toEqual(['account', 'workspaces', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data'])
     await r.unmount()
   })
 })
@@ -74,7 +74,7 @@ describe('below 1024 px', () => {
     expect(r.container.querySelector('[data-settings-section]')).toBeNull()
     expect(location.pathname).toBe('/settings')
     const entries = [...r.container.querySelectorAll<HTMLAnchorElement>('a[data-settings-link]')]
-    expect(entries.map((a) => a.getAttribute('data-settings-link'))).toEqual(['account', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data'])
+    expect(entries.map((a) => a.getAttribute('data-settings-link'))).toEqual(['account', 'workspaces', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data'])
     expect(entries.every((a) => /min-h-14/.test(a.className))).toBe(true)
 
     await click(entries.find((a) => a.getAttribute('data-settings-link') === 'capture')!)

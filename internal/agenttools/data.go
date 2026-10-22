@@ -48,6 +48,10 @@ type snapshot struct {
 	keptAway map[string]bool
 	// idx indexes tasks by id (built on first lookup, reset by apply).
 	idx map[string]opsync.Entity
+	// workspaces are the user's workspaces (OpenSpec change workspaces);
+	// part places projects and tasks in them (built on first use, reset by apply).
+	workspaces []opsync.Workspace
+	part       *opsync.Partition
 }
 
 // keptAway resolves which of the user's projects are kept away from AI
@@ -159,6 +163,9 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		snap.places[rawStr(pl, "id")] = pl
 	}
 	snap.tracked = timetrack.TotalsByTask(list, r.now().UnixMilli())
+	if err := r.loadWorkspaces(ctx, userID, snap); err != nil {
+		return nil, err
+	}
 	if snap.shared, err = r.sync.SharedProjects(ctx, userID); err != nil {
 		return nil, err
 	}

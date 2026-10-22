@@ -49,13 +49,14 @@ import { ServerArchivePanel } from './ServerArchivePanel'
 import { t } from '../lib/i18n'
 import { cardIcon, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
+import { WorkspacesSettings } from './WorkspacesSettings'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
 
 /** Each page's Help screen (documentation "Help links name the same screens"); the guide's `screens` resolve them. */
 const PAGE_HELP_SCREENS: Record<SettingsSectionId, string> = {
-  account: 'settings/account', appearance: 'settings/appearance', general: 'settings/general', notifications: 'settings/notifications',
+  account: 'settings/account', workspaces: 'settings/workspaces', appearance: 'settings/appearance', general: 'settings/general', notifications: 'settings/notifications',
   capture: 'settings/capture', about: 'settings/about', integrations: 'settings/integrations', data: 'settings/data', people: 'settings/people', server: 'settings/server',
 }
 
@@ -286,6 +287,8 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <Anchor id="sessions"><ActivityPanel /></Anchor>
         </>
       )
+    case 'workspaces':
+      return <WorkspacesSettings user={user} />
     case 'appearance':
       return (
         <>
@@ -406,7 +409,7 @@ function DemoDisabled({ on, children }: { on: boolean; children: ReactNode }) {
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
   'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'email to task', 'backups',
-  'outgoing email', 'the weekly digest', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+  'outgoing email', 'the weekly digest', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes', 'workspaces',
 ]
 
 /**

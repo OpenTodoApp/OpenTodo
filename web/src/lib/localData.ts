@@ -23,18 +23,41 @@ import { derived, liveSnapshot } from './liveSnapshot'
 import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
+import { ownIn, projectsIn, readWorkspaceState, type WorkspaceState } from './workspaces'
 import type {
-  AppNotification, Attachment, CalendarSubscription, IssueConnection, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
 
 // ---- shared snapshots ----
 
-const projectRows = liveSnapshot('projects', () => db.projects.toArray())
-const labelRows = liveSnapshot('labels', () => db.labels.toArray())
+// Projects, labels and views are those of the device's current workspace
+// (OpenSpec change workspaces, design D5): the partition happens here, once,
+// so every list, count and picker built on these snapshots follows it.
+const projectRows = liveSnapshot('projects', async () => projectsIn(await readWorkspaceState(), await db.projects.toArray()))
+const labelRows = liveSnapshot('labels', async () => ownIn(await readWorkspaceState(), await db.labels.toArray()))
 const membershipRows = liveSnapshot('memberships', () => db.memberships.toArray())
-const viewRows = liveSnapshot('views', () => db.views.toArray())
+const viewRows = liveSnapshot('views', async () => ownIn(await readWorkspaceState(), await db.views.toArray()))
+// Every workspace's rows, for what crosses workspaces: the palette, the project
+// picker grouped by workspace, moving between workspaces.
+const everyProjectRow = liveSnapshot('projects of every workspace', () => db.projects.toArray())
+const everyLabelRow = liveSnapshot('labels of every workspace', () => db.labels.toArray())
+const workspaceState = liveSnapshot('workspaces', readWorkspaceState)
+const workspaceMemberRows = liveSnapshot('workspace members', () => db.workspaceMembers.toArray())
+const groupRows = liveSnapshot('groups', () => db.groups.toArray())
+const NO_WS_MEMBERS: WorkspaceMember[] = []
+const NO_GROUPS: WorkspaceGroup[] = []
+
+/** The cached members of every workspace of the account (workspaces D8). */
+export function useWorkspaceMembers(): WorkspaceMember[] {
+  return workspaceMemberRows.use() ?? NO_WS_MEMBERS
+}
+
+/** The cached groups of every workspace of the account. */
+export function useWorkspaceGroups(): WorkspaceGroup[] {
+  return groupRows.use() ?? NO_GROUPS
+}
 const prefsRow = liveSnapshot('user prefs', async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null)
 const reviewRow = liveSnapshot('review', async () => (await db.review.get(REVIEW_ID)) ?? null)
 const projectPrefRows = liveSnapshot('project prefs', () => db.prefs.toArray())
@@ -52,6 +75,24 @@ const activeOf = derived((all: Label[]) => activeLabels(all))
 const memberMapOf = derived((all: Membership[]) => new Map(all.map((m) => [m.projectId, m])))
 const reviewedAtOf = derived((all: ProjectPrefs[]) => new Map(all.filter((p) => p.reviewed_at > 0).map((p) => [p.id, p.reviewed_at])))
 const NO_STAMPS = new Map<string, number>()
+
+const NO_WORKSPACES: WorkspaceState = { current: '', defaultId: '', list: [] }
+
+/** The device's workspaces and the current one (OpenSpec change workspaces). */
+export function useWorkspaceState(): WorkspaceState {
+  return workspaceState.use() ?? NO_WORKSPACES
+}
+
+/** Live projects of every workspace, in position order (the palette and grouped pickers). */
+export function useProjectsOfEveryWorkspace(): Project[] {
+  const all = everyProjectRow.use()
+  return all ? liveOf(all) : NO_PROJECTS
+}
+
+/** Every label row of every workspace (moving a project re-matches labels by name). */
+export function useLabelsOfEveryWorkspace(): Label[] {
+  return everyLabelRow.use() ?? NO_LABELS
+}
 
 /** Live projects in position order: not deleted, archived ones included (see the rule above). */
 export function useProjects(): Project[] {

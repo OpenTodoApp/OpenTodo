@@ -14,6 +14,8 @@ type Profile struct {
 	URL    string `json:"url"`
 	Token  string `json:"token,omitempty"`
 	Output string `json:"output,omitempty"`
+	// Workspace is the profile's default workspace, a name or an id (OpenSpec change workspaces).
+	Workspace string `json:"workspace,omitempty"`
 }
 
 // Config is the on-disk configuration file: a default profile name and the profiles.
@@ -91,10 +93,11 @@ func saveConfig(path string, cfg *Config) error {
 
 // target is the resolved connection a command runs against.
 type target struct {
-	Profile string
-	URL     string
-	Token   string
-	Output  string
+	Profile   string
+	URL       string
+	Token     string
+	Output    string
+	Workspace string
 }
 
 // profileName picks the profile: --profile, then OPENTODO_PROFILE, then the file's
@@ -117,7 +120,7 @@ func resolveTarget(g *globalFlags, getenv func(string) string, cfg *Config) targ
 	t := target{Profile: name}
 	if cfg != nil {
 		if p, ok := cfg.Profiles[name]; ok {
-			t.URL, t.Token, t.Output = p.URL, p.Token, p.Output
+			t.URL, t.Token, t.Output, t.Workspace = p.URL, p.Token, p.Output, p.Workspace
 		}
 	}
 	if v := getenv("OPENTODO_URL"); v != "" {

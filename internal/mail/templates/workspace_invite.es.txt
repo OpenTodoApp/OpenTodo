@@ -1,0 +1,9 @@
+{{.Inviter}} te ha invitado a un espacio de trabajo
+
+Esta es una invitación a un espacio de trabajo compartido en OpenTodo.
+
+{{.Inviter}} invitó a {{.Email}} a unirse a un espacio de trabajo como {{.Role}} en el servidor de OpenTodo {{.Origin}}. Los miembros de un espacio de trabajo pueden compartir proyectos entre sí. Para unirte, abre este enlace:
+
+{{.Link}}
+
+El enlace caduca en {{.Expiry}}. Si no conoces a {{.Inviter}}, puedes ignorar este mensaje.

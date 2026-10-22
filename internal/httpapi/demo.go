@@ -92,14 +92,15 @@ func prefix(p string) func(string) bool {
 }
 func exact(p string) func(string) bool { return func(s string) bool { return s == p } }
 
-// projectMembership matches /api/v1/projects/{id}/members[/...] and /transfer.
+// projectMembership matches /api/v1/projects/{id}/members[/...], /transfer
+// and the group grants /grants[/...] (OpenSpec change workspaces).
 func projectMembership(p string) bool {
 	rest, ok := strings.CutPrefix(p, "/api/v1/projects/")
 	if !ok {
 		return false
 	}
 	parts := strings.Split(rest, "/")
-	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer")
+	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer" || parts[1] == "grants")
 }
 
 // taskAttachments matches /api/v1/tasks/{id}/attachments (OpenSpec `attachments`).
@@ -240,6 +241,11 @@ var demoRules = []demoRule{
 	// Every method: links would let one sandbox join another's project.
 	{"Project invite links", false, projectInvites},
 	{"Project invite links", false, prefix("/api/v1/project-invites")},
+	// A sandbox keeps its one default workspace (OpenSpec change workspaces):
+	// creation, members, groups and invite links are writes; the anonymous
+	// preview answers the uniform 404 itself.
+	{"Workspaces", true, prefix("/api/v1/workspaces")},
+	{"Workspaces", true, prefix("/api/v1/workspace-invites")},
 }
 
 // demoRestricted returns the refused feature's name, or "" when allowed.

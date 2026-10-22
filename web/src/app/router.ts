@@ -35,6 +35,8 @@ export type Route =
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
+  // A workspace invite link (workspaces): /invite/w/<token>.
+  | { view: 'workspace-invite'; token: string }
   | { view: 'reset'; token: string }
   // The link that confirms a new sign-in email (settings-refresh D10).
   | { view: 'confirm-email'; token: string }
@@ -59,9 +61,9 @@ export type Route =
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
 
-/** Settings sections, each at /settings/<id> (settings-navigation); ten, in list order. */
+/** Settings sections, each at /settings/<id> (settings-navigation); eleven, in list order (workspaces added Workspaces). */
 export const SETTINGS_SECTION_IDS = [
-  'account', 'appearance',
+  'account', 'workspaces', 'appearance',
   'general', 'notifications', 'capture', 'about',
   'integrations', 'data',
   'people', 'server',
@@ -165,6 +167,7 @@ export function parseRoute(pathname: string): Route {
     case 'invite':
       // /invite/p/<token> is a project invite link (project-invite-links).
       if (parts[1] === 'p') return parts[2] ? { view: 'project-invite', token: safeDecode(parts[2]) } : { view: 'inbox' }
+      if (parts[1] === 'w') return parts[2] ? { view: 'workspace-invite', token: safeDecode(parts[2]) } : { view: 'inbox' }
       // The secret is URL-safe base64; decode defensively in case a mail client encoded it.
       return parts[1] ? { view: 'invite', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'reset':
@@ -246,6 +249,8 @@ export function routePath(r: Route): string {
       return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'project-invite':
       return `/invite/p/${encodeURIComponent(r.token)}`
+    case 'workspace-invite':
+      return `/invite/w/${encodeURIComponent(r.token)}`
     case 'forgot':
       return '/forgot'
     case 'verify':

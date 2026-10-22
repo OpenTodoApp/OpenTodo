@@ -1,0 +1,9 @@
+{{.Inviter}} invited you to a workspace
+
+This is an invitation to a shared workspace in OpenTodo.
+
+{{.Inviter}} invited {{.Email}} to join a workspace as {{.Role}} on the OpenTodo server at {{.Origin}}. Members of a workspace can share projects with each other. To join, open this link:
+
+{{.Link}}
+
+The link expires in {{.Expiry}}. If you do not know {{.Inviter}}, you can ignore this message.

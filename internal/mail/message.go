@@ -25,7 +25,9 @@ const (
 	KindPasswordReset Kind = "password_reset"
 	KindInvitation    Kind = "invitation"
 	KindProjectInvite Kind = "project_invite"
-	KindTest          Kind = "test"
+	// KindWorkspaceInvite is a workspace invite link (OpenSpec change workspaces).
+	KindWorkspaceInvite Kind = "workspace_invite"
+	KindTest            Kind = "test"
 	// KindDigest is the opt-in weekly digest (OpenSpec change stats-and-review).
 	KindDigest Kind = "digest"
 	// KindEmailChange carries the link that confirms a new sign-in email, to
@@ -36,7 +38,7 @@ const (
 )
 
 // Kinds lists every kind.
-var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice}
+var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindWorkspaceInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice}
 
 // carriesContent marks kinds that include entity content and must never be
 // built for an account with end-to-end encryption (design D8). Only the
@@ -166,12 +168,12 @@ func formatExpiry(d time.Duration, lang string) string {
 }
 
 var roleNames = map[string]map[string]string{
-	"en": {"admin": "admin", "editor": "editor", "viewer": "viewer"},
-	"de": {"admin": "Admin", "editor": "Bearbeiter", "viewer": "Betrachter"},
-	"fr": {"admin": "administrateur", "editor": "éditeur", "viewer": "lecteur"},
-	"es": {"admin": "administrador", "editor": "editor", "viewer": "lector"},
-	"it": {"admin": "amministratore", "editor": "editor", "viewer": "lettore"},
-	"pt": {"admin": "administrador", "editor": "editor", "viewer": "leitor"},
+	"en": {"admin": "admin", "editor": "editor", "viewer": "viewer", "member": "member"},
+	"de": {"admin": "Admin", "editor": "Bearbeiter", "viewer": "Betrachter", "member": "Mitglied"},
+	"fr": {"admin": "administrateur", "editor": "éditeur", "viewer": "lecteur", "member": "membre"},
+	"es": {"admin": "administrador", "editor": "editor", "viewer": "lector", "member": "miembro"},
+	"it": {"admin": "amministratore", "editor": "editor", "viewer": "lettore", "member": "membro"},
+	"pt": {"admin": "administrador", "editor": "editor", "viewer": "leitor", "member": "membro"},
 }
 
 // someone stands in for an inviter without a display name (the address is never shown).

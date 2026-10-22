@@ -50,6 +50,7 @@ func init() {
 			"List the user's projects (their own and shared ones they are a member of) with the number of open tasks in each. Archived projects are left out unless include_archived is true.",
 			object(nil, map[string]any{
 				"include_archived": map[string]any{"type": "boolean", "default": false, "description": "Also return archived projects."},
+				"workspace":        workspaceProp,
 			})),
 		read: (*Registry).listProjects,
 	})
@@ -61,6 +62,7 @@ func init() {
 				"view":              map[string]any{"type": "string", "enum": []string{"all", "inbox", "today", "upcoming", "someday", "anytime"}, "default": "all"},
 				"blocked":           map[string]any{"type": "boolean", "description": "true: only tasks waiting for an open task; false: only tasks that are not."},
 				"project_id":        map[string]any{"type": "string", "description": "Only tasks of this project (see list_projects)."},
+				"workspace":         workspaceProp,
 				"label":             map[string]any{"type": "string", "description": "Only tasks carrying this label (name, case-insensitive, or id)."},
 				"priority":          map[string]any{"type": "integer", "minimum": 1, "maximum": 4, "description": "Only tasks of this priority: 1 is the highest, 4 the default."},
 				"due_from":          map[string]any{"type": "string", "format": "date", "description": "Only tasks due on or after this date (YYYY-MM-DD)."},
@@ -88,6 +90,7 @@ func init() {
 			"Find tasks whose title or description contains the query (case-insensitive). Open tasks only unless include_completed is true. Paged like list_tasks.",
 			object([]string{"query"}, map[string]any{
 				"query":             map[string]any{"type": "string", "minLength": 1, "description": "Text to look for."},
+				"workspace":         workspaceProp,
 				"include_completed": completedArg,
 				"timezone":          timezoneProp,
 				"limit":             limitProp,
@@ -121,6 +124,8 @@ type nameText struct {
 type projectText struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	// Workspace is the name of the project's workspace (OpenSpec change workspaces).
+	Workspace string `json:"workspace,omitempty"`
 }
 
 type projectOut struct {
@@ -137,6 +142,8 @@ type projectOut struct {
 	OpenCount int     `json:"open_count"`
 	// Fields are the project's live custom field definitions (custom-fields).
 	Fields []fieldOut `json:"fields"`
+	// WorkspaceID is the project's workspace (OpenSpec change workspaces).
+	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
 // inboxCount counts the Inbox tasks (internal/inbox): open, no project, not scheduled.
@@ -169,14 +176,21 @@ func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) proj
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role
 	}
+	if len(snap.workspaces) > 0 {
+		out.WorkspaceID = snap.partition().Project(id)
+		out.Untrusted.Workspace = snap.workspaceName(out.WorkspaceID)
+	}
 	return out
 }
 
-func (r *Registry) projectsPayload(snap *snapshot, includeArchived bool) map[string]any {
+func (r *Registry) projectsPayload(snap *snapshot, includeArchived bool, workspace string) map[string]any {
 	counts := snap.openCounts()
 	items := []keyed[projectOut]{}
 	for _, p := range snap.projList {
 		if !includeArchived && boolean(p, "archived") {
+			continue
+		}
+		if workspace != "" && snap.partition().Project(str(p, "id")) != workspace {
 			continue
 		}
 		items = append(items, keyed[projectOut]{key: sortableFloat(num(p, "position")) + "|" + sortableFloat(num(p, "created_at")), id: str(p, "id"), v: snap.renderProject(p, counts)})
@@ -198,11 +212,19 @@ func (r *Registry) listProjects(ctx context.Context, userID string, a args) (map
 	if err != nil {
 		return nil, err
 	}
+	arg, err := a.str("workspace")
+	if err != nil {
+		return nil, err
+	}
 	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	return r.projectsPayload(snap, includeArchived), nil
+	ws, err := snap.resolveWorkspace("workspace", arg)
+	if err != nil {
+		return nil, err
+	}
+	return r.projectsPayload(snap, includeArchived, ws), nil
 }
 
 // ---- list_tasks ----
@@ -212,6 +234,7 @@ type taskQuery struct {
 	// blocked filters by the derived blocked state when set (agent-planning-fields).
 	blocked          *bool
 	projectID        string
+	workspace        string
 	label            string
 	priority         int
 	dueFrom, dueTo   string
@@ -248,6 +271,9 @@ func parseTaskQuery(a args) (taskQuery, error) {
 		return q, err
 	}
 	if q.label, err = a.str("label"); err != nil {
+		return q, err
+	}
+	if q.workspace, err = a.str("workspace"); err != nil {
 		return q, err
 	}
 	p, has, err := a.integer("priority")
@@ -306,6 +332,10 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 			return nil, argErr("project_id: no such project")
 		}
 	}
+	ws, err := snap.resolveWorkspace("workspace", q.workspace)
+	if err != nil {
+		return nil, err
+	}
 	var wantLabels map[string]bool
 	if q.label != "" {
 		if wantLabels = snap.labelIDs(q.label); len(wantLabels) == 0 {
@@ -317,6 +347,9 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 	for _, t := range snap.tasks {
 		pid := str(t, "project_id")
 		if q.projectID != "" && pid != q.projectID {
+			continue
+		}
+		if ws != "" && snap.partition().Task(str(t, "id")) != ws {
 			continue
 		}
 		if !snap.visible(t, q.projectID != "") {
@@ -564,7 +597,15 @@ func (r *Registry) searchTasks(ctx context.Context, userID string, a args) (map[
 	if err != nil {
 		return nil, err
 	}
+	wsArg, err := a.str("workspace")
+	if err != nil {
+		return nil, err
+	}
 	snap, err := r.load(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	ws, err := snap.resolveWorkspace("workspace", wsArg)
 	if err != nil {
 		return nil, err
 	}
@@ -573,6 +614,9 @@ func (r *Registry) searchTasks(ctx context.Context, userID string, a args) (map[
 	items := []keyed[taskOut]{}
 	for _, t := range snap.tasks {
 		if !snap.visible(t, false) || (!includeCompleted && !isOpen(t)) {
+			continue
+		}
+		if ws != "" && snap.partition().Task(str(t, "id")) != ws {
 			continue
 		}
 		// Encrypted content (OpenSpec `e2ee`) cannot be searched server-side; the

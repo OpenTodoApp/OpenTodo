@@ -208,7 +208,7 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		}
 		current = m.version
 	}
-	return nil
+	return migrateWorkspaces(ctx, db)
 }
 
 type migration struct {

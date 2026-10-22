@@ -36,7 +36,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const TEN = ['account', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data', 'people', 'server'] as const
+const TEN = ['account', 'workspaces', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data', 'people', 'server'] as const
 
 describe('routes', () => {
   it('parses and builds /settings/<section> for the ten sections', () => {
@@ -88,7 +88,7 @@ describe('section table', () => {
   it('groups the ten sections in the stated order per role, omitting empty groups', () => {
     const shape = (u: User) => groupedSections(u).map((g) => [g.group.label, g.sections.map((s) => s.id)])
     expect(shape(owner)).toEqual([
-      ['You', ['account', 'appearance']],
+      ['You', ['account', 'workspaces', 'appearance']],
       ['App', ['general', 'notifications', 'capture', 'about']],
       ['Data', ['integrations', 'data']],
       ['Server', ['people', 'server']],

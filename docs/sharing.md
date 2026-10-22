@@ -12,7 +12,7 @@ card: comments
 
 <picture><source srcset="images/share-dialog-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/share-dialog-light.webp" alt="The Share dialog for Home renovation: an email field, a role menu set to editor, and the member list with the owner and one editor."></picture>
 
-Share a project with people who have an account on the same OpenTodo server: your partner for the house move, your team for a launch. Everyone sees the same tasks, edits sync within seconds, and each task has a comment thread.
+Share a project with people who have an account on the same OpenTodo server: your partner for the house move, a [workspace](workspaces.md) team. Everyone sees the same tasks, edits sync within seconds, and each task has a comment thread.
 
 ## Share a project
 

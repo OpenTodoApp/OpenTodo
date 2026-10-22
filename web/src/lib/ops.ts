@@ -18,6 +18,7 @@ import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { workspaceFields } from './workspaces'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -52,20 +53,20 @@ export function resetDeviceId(): void {
 }
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
-  name: '', color: '#64748b', position: 0, archived: false, parent_id: null, icon: null, created_at: 0, deleted_at: null, description: '', notes_doc: '',
+  name: '', color: '#64748b', position: 0, archived: false, parent_id: null, icon: null, created_at: 0, deleted_at: null, description: '', notes_doc: '', workspace_id: null,
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [], sample: false,
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [], sample: false, workspace_id: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
-  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
+  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null,
 }
 /** Defaults for a view row created from partial ops; also the read-time fallback for unknown option values. */
 export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
   name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
-  position: 0, color: '#64748b', panels: [], on_drop: null, created_at: 0, deleted_at: null,
+  position: 0, color: '#64748b', panels: [], on_drop: null, created_at: 0, deleted_at: null, workspace_id: null,
 }
 const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
   task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,
@@ -569,6 +570,8 @@ export async function createProject(input: { name: string; color?: string; paren
   await mutate('project', id, {
     name: input.name.trim(), color: input.color ?? pickColor(), position: lastAmongProjectSiblings(all, id, parentId),
     archived: false, parent_id: parentId, created_at: now, deleted_at: null,
+    // A top-level project starts in the current workspace; a sub-project follows its parent (workspaces).
+    ...(parentId ? {} : await workspaceFields()),
   })
   return id
 }
@@ -654,6 +657,8 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
   if (input.location) extra.location = input.location
+  // A task without a project or parent lands in the current workspace's Inbox (workspaces).
+  if (!input.project_id && !input.parent_id) Object.assign(extra, await workspaceFields())
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,

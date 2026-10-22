@@ -208,12 +208,28 @@ func (w *propWorld) step(i int) {
 		if len(fields) == 0 || w.rng.IntN(2) == 0 {
 			fields["priority"] = strconv.Itoa(1 + w.rng.IntN(4))
 		}
+		if w.rng.IntN(4) == 0 {
+			fields["workspace_id"] = w.workspace()
+		}
 		d.edit(w.now, "task", id, fields)
+	case r < 6 && d.user == "alice":
+		// The owner moves the project, a label or a view between workspaces
+		// (OpenSpec change workspaces, task 1.7).
+		entity, id := []string{"project", "label", "view"}[w.rng.IntN(3)], "p"
+		if entity != "project" {
+			id = entity[:1] + "1"
+		}
+		d.edit(w.now, entity, id, map[string]string{"workspace_id": w.workspace()})
 	case r < 9:
 		w.exchange(d)
 	default:
 		w.now += w.rng.Int64N(180_000)
 	}
+}
+
+// workspace picks a workspace_id value: the default (null) or one of two ids.
+func (w *propWorld) workspace() string {
+	return []string{"null", `"w-work"`, `"w-family"`}[w.rng.IntN(3)]
 }
 
 func runConvergence(t *testing.T, seed uint64) {
@@ -237,6 +253,8 @@ func runConvergence(t *testing.T, seed uint64) {
 	}
 	a1, b1 := w.devices[0], w.devices[2]
 	a1.edit(w.now, "project", "p", map[string]string{"name": `"Home"`})
+	a1.edit(w.now, "label", "l1", map[string]string{"name": `"errand"`})
+	a1.edit(w.now, "view", "v1", map[string]string{"name": `"Soon"`})
 	for i := range 3 {
 		a1.edit(w.now, "task", fmt.Sprintf("t%d", i), map[string]string{"title": `"shared"`, "project_id": `"p"`})
 		b1.edit(w.now, "task", fmt.Sprintf("b%d", i), map[string]string{"title": `"bob's"`})
@@ -306,13 +324,19 @@ func runConvergence(t *testing.T, seed uint64) {
 		}
 	}
 	// Every device of a user holds the same entities, and bob, once a member,
-	// holds every field of the shared project.
+	// holds every field of the shared project (but none of alice's labels and views).
 	for _, d := range w.devices {
-		want := len(replay)
+		want := 0
+		for k := range replay {
+			// Labels and views stay in alice's personal scope.
+			if e, _, _ := propSplit(k); e != "label" && e != "view" {
+				want++
+			}
+		}
 		if d.user == "alice" {
 			want = 0
 			for k := range replay {
-				if e, id, _ := propSplit(k); e == "project" || id[0] == 't' {
+				if e, id, _ := propSplit(k); e != "task" || id[0] == 't' {
 					want++
 				}
 			}

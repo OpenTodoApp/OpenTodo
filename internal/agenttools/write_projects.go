@@ -13,7 +13,7 @@ import (
 // ---- create_project / create_label ----
 
 func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "name", "color", "icon", "parent_id", "client_request_id", "id"); err != nil {
+	if err := a.only("", "name", "color", "icon", "parent_id", "workspace_id", "client_request_id", "id"); err != nil {
 		return Plan{}, err
 	}
 	name, _, err := a.contentText(c, "name", true, 200)
@@ -55,6 +55,11 @@ func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, over
 			return Plan{}, notFound("project", []string{parent})
 		}
 		patch["parent_id"] = raw(parent)
+	}
+	if v, has, err := snap.workspaceValue(a); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["workspace_id"] = v
 	}
 	if err := checkPatch("", "project", id, patch); err != nil {
 		return Plan{}, err

@@ -492,6 +492,34 @@ const shots = [
   { name: 'assistant-phone', server: 'assistant', phone: true, async run(p) {
     await ask(p, 'Move everything overdue to Friday', () => p.locator('[data-assistant-review]').waitFor({ timeout: 20000 }))
   }, async after(p) { await p.locator('[data-assistant-review]').getByRole('button', { name: 'Discard' }).click().catch(() => {}) } },
+  // Workspaces (workspaces): last, because the scene adds a second workspace to the instance.
+  { name: 'workspace-switcher', server: P, async run(p) {
+    const api = async (method, path, body) => {
+      const r = await p.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      const t = await r.text(); return t ? JSON.parse(t) : null
+    }
+    // Once for both themes: the second run finds Family there.
+    const { workspaces } = await api('GET', '/api/v1/workspaces')
+    if (!workspaces.some((w) => w.name === 'Family')) {
+      const family = await api('POST', '/api/v1/workspaces', { name: 'Family', color: '#22c55e' })
+      await api('POST', `/api/v1/workspaces/${family.id}/members`, { email: 'bob@example.com', role: 'member' })
+      const adults = await api('POST', `/api/v1/workspaces/${family.id}/groups`, { name: 'Adults' })
+      await api('PUT', `/api/v1/workspaces/${family.id}/groups/${adults.id}/members/${family.ownerId}`)
+      const house = await api('POST', '/api/v1/projects', { name: 'House', color: '#f97316', workspace_id: family.id })
+      await api('POST', '/api/v1/tasks', { title: 'Fix the gutter', project_id: house.id })
+    }
+    await go(p, plainBase, '/today', () => p.locator('[data-workspace-trigger]').waitFor())
+    await settle(p, 1500)
+    await p.locator('[data-workspace-trigger]').click(); const menu = p.getByRole('menu'); await menu.waitFor(); await settle(p, 400)
+    const side = await p.locator('[data-sidebar-header]').boundingBox(); const m = await menu.boundingBox()
+    return { x: Math.max(0, side.x - 8), y: Math.max(0, side.y - 8), width: Math.max(side.width, m.x + m.width - side.x) + 24, height: m.y + m.height - side.y + 24 }
+  }, async after(p) { await p.keyboard.press('Escape') } },
+  { name: 'workspaces', server: P, async run(p) { await go(p, plainBase, '/today', () => p.locator('[data-workspace-trigger]').waitFor()) } },
+  { name: 'settings-workspaces', server: P, async run(p) {
+    await go(p, plainBase, '/settings/workspaces', () => p.getByRole('heading', { name: 'Workspaces', level: 1 }).waitFor())
+    await p.getByRole('group', { name: /^Family/ }).click(); await p.locator('#workspace-members').waitFor(); await settle(p, 600)
+  } },
   { name: 'assistant-settings', server: 'assistant', async run(p) {
     await go(p, assistantBase, '/settings/integrations', () => p.getByRole('heading', { name: 'Integrations', level: 1 }).waitFor())
     const h = p.locator('#assistant-settings-heading'); await h.waitFor(); await p.locator('[data-assistant-owner]').waitFor()

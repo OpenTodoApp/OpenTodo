@@ -22,6 +22,8 @@ OpenTodo doesn't come with an AI of its own and never sends your tasks anywhere 
 | **Set up by** | The server owner turns it on once | You create a token and add one entry to your assistant's config | You create a token and run `ot auth set-token` |
 | **Guide** | [AI assistant](assistant.md) | [AI assistants (MCP)](mcp.md) | [Using ot from an agent](cli.md#using-ot-from-an-agent) |
 
+Each of them sees every [workspace](workspaces.md) you belong to and can be told to look at one ("only Work").
+
 ## Which one to pick
 
 - **You want to ask and plan from inside OpenTodo**, on your phone too, and see every change before it happens: use the [assistant in the app](assistant.md).

@@ -359,6 +359,9 @@ func TestRoundTripExportImportExport(t *testing.T) {
 	}
 	delete(exportA, "comments")
 	delete(exportB, "comments")
+	// Each account has its own default workspace id (OpenSpec change workspaces).
+	delete(exportA, "workspaces")
+	delete(exportB, "workspaces")
 	for _, k := range []string{"projects", "tasks", "labels", "sections", "reminders", "views"} {
 		if !reflect.DeepEqual(exportA[k], exportB[k]) {
 			ja, _ := json.MarshalIndent(exportA[k], "", " ")

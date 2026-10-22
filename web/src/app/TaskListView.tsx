@@ -25,6 +25,7 @@ import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
+import { offerMoveToWorkspace, useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
@@ -86,6 +87,7 @@ const NO_DONE: Map<string, Task[]> = new Map()
 
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const m = useListModel(route, userId)
+  const workspaceName = useWorkspaceName()
   const { rows, groups, columns, board, timeline, projectId, today, taskMap, isReadOnly, collapsedSections, viewMode, sectionMap } = m
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
@@ -195,6 +197,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       const created = await getTask(id)
       const where = created ? addedWhere(created, today, currentDateTime()) : null
       if (where) showBulkToast(where.label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: () => { selectTask.set(id); navigate({ view: where.view }) } } })
+      else offerMoveToWorkspace(id)
     }
   }, [route, today, userId, latestSectionMap])
 
@@ -276,7 +279,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-default pb-2">
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
-                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined)} voiceShortcut />
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName)} voiceShortcut />
               )}
             </div>
           )}

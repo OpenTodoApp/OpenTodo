@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "workspace",
+  "description": "A workspace exactly as GET /api/v1/workspaces returns it: the caller's role, and members by name only.",
+  "type": "object",
+  "required": ["id", "name", "role", "default"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "icon": {"type": "string"},
+    "color": {"type": "string"},
+    "default": {"type": "boolean"},
+    "role": {"type": "string", "enum": ["owner", "admin", "member"]},
+    "ownerId": {"type": "string"},
+    "members": {"type": "array", "items": {"type": "object", "properties": {"userId": {"type": "string"}, "name": {"type": "string"}, "role": {"type": "string"}}}},
+    "groups": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "members": {"type": "array", "items": {"type": "string"}}}}}
+  }
+}

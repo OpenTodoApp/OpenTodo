@@ -99,6 +99,9 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 
 	p := cfg.Profiles[name]
 	p.URL, p.Token = serverURL, created.Secret
+	if g.workspace != "" {
+		p.Workspace = g.workspace
+	}
 	cfg.Profiles[name] = p
 	if cfg.Default == "" {
 		cfg.Default = name

@@ -19,6 +19,7 @@ import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
 import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
+import { WorkspaceInviteScreen } from './WorkspaceInviteScreen'
 import { ResetScreen } from './ResetScreen'
 import { ConfirmEmailScreen, ForgotScreen, VerifyScreen } from './EmailScreens'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
@@ -146,9 +147,9 @@ export function App() {
   // A visitor who went to sign in from a project invite link (possibly through
   // the identity provider, which returns to /) comes back to the link.
   useEffect(() => {
-    if (phase.kind !== 'ready' || route.view === 'project-invite') return
+    if (phase.kind !== 'ready' || route.view === 'project-invite' || route.view === 'workspace-invite') return
     const token = takePendingInvite()
-    if (token) navigate({ view: 'project-invite', token }, { replace: true })
+    if (token) navigate(token.startsWith('otw_') ? { view: 'workspace-invite', token } : { view: 'project-invite', token }, { replace: true })
   }, [phase.kind, route.view])
 
   const logout = useCallback(async () => {
@@ -246,6 +247,10 @@ export function App() {
           onLogout={() => void logout()}
         />
       )
+    }
+    if (route.view === 'workspace-invite') {
+      return <WorkspaceInviteScreen token={route.token} user={phase.kind === 'ready' ? phase.user : null}
+        status={phase.kind === 'anonymous' ? phase.status : null} onAuthenticated={() => void refresh()} />
     }
     if (route.view === 'project-invite') {
       // Project invite links (OpenSpec `project-invite-links`) work signed in

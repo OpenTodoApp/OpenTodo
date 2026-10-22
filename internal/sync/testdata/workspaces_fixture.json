@@ -1,0 +1,63 @@
+{
+  "about": "The workspace partition shared by the server and the web client (OpenSpec change workspaces, design D15). internal/sync/workspaces_test.go checks sync.Partition against it and web/src/lib/workspaces.test.ts checks workspaceOf. Absent or null workspace_id means the default workspace; a task with a known project follows the project, else its parent task, else its own value; a sub-project follows its root ancestor, a missing parent ends the chain; a workspace the account is not in (not received yet, or a legacy share from another account's workspace) reads as the default.",
+  "default": "w-default",
+  "workspaces": ["w-default", "w-work", "w-family"],
+  "projects": [
+    { "id": "p-home" },
+    { "id": "p-site", "workspace_id": "w-work" },
+    { "id": "p-sub", "workspace_id": null, "parent_id": "p-site" },
+    { "id": "p-sub-own", "workspace_id": "w-family", "parent_id": "p-site" },
+    { "id": "p-deep", "parent_id": "p-sub" },
+    { "id": "p-orphan", "workspace_id": "w-family", "parent_id": "p-missing" },
+    { "id": "p-unknown", "workspace_id": "w-not-received" },
+    { "id": "p-legacy", "workspace_id": "w-someone-elses-family" },
+    { "id": "p-cycle-a", "workspace_id": "w-work", "parent_id": "p-cycle-b" },
+    { "id": "p-cycle-b", "workspace_id": "w-work", "parent_id": "p-cycle-a" }
+  ],
+  "tasks": [
+    { "id": "t-inbox" },
+    { "id": "t-work-inbox", "workspace_id": "w-work" },
+    { "id": "t-in-site", "project_id": "p-site", "workspace_id": "w-family" },
+    { "id": "t-in-deep", "project_id": "p-deep" },
+    { "id": "t-in-legacy", "project_id": "p-legacy", "workspace_id": "w-work" },
+    { "id": "t-missing-project", "project_id": "p-gone", "workspace_id": "w-family" },
+    { "id": "t-sub-of-work-inbox", "parent_id": "t-work-inbox" },
+    { "id": "t-sub-own", "parent_id": "t-in-site", "workspace_id": "w-family" },
+    { "id": "t-unknown", "workspace_id": "w-not-received" }
+  ],
+  "labels": [
+    { "id": "l-errand" },
+    { "id": "l-deploy", "workspace_id": "w-work" },
+    { "id": "l-unknown", "workspace_id": "w-not-received" }
+  ],
+  "views": [
+    { "id": "v-family", "workspace_id": "w-family" },
+    { "id": "v-default", "workspace_id": null }
+  ],
+  "expected": {
+    "project:p-home": "w-default",
+    "project:p-site": "w-work",
+    "project:p-sub": "w-work",
+    "project:p-sub-own": "w-work",
+    "project:p-deep": "w-work",
+    "project:p-orphan": "w-family",
+    "project:p-unknown": "w-default",
+    "project:p-legacy": "w-default",
+    "project:p-cycle-a": "w-work",
+    "project:p-cycle-b": "w-work",
+    "task:t-inbox": "w-default",
+    "task:t-work-inbox": "w-work",
+    "task:t-in-site": "w-work",
+    "task:t-in-deep": "w-work",
+    "task:t-in-legacy": "w-default",
+    "task:t-missing-project": "w-family",
+    "task:t-sub-of-work-inbox": "w-work",
+    "task:t-sub-own": "w-work",
+    "task:t-unknown": "w-default",
+    "label:l-errand": "w-default",
+    "label:l-deploy": "w-work",
+    "label:l-unknown": "w-default",
+    "view:v-family": "w-family",
+    "view:v-default": "w-default"
+  }
+}

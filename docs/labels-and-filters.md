@@ -79,3 +79,4 @@ When a query is useful, keep it: press <kbd>s</kbd> in the results, give it a na
 - Labels for context work well: `@call`, `@computer`, `@errand`, `@home`. Then a view like `@errand & due <= 2 days` is your shopping list.
 - A `@waiting` label plus a pinned "Waiting on others" view makes follow-ups hard to forget.
 - Filters run on your device. They're instant, and they work offline.
+- Labels and saved filters belong to one [workspace](workspaces.md), so the same name can exist in two of them.

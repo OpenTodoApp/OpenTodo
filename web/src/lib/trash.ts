@@ -12,6 +12,7 @@ import { api, ApiError, isNetworkError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import type { Entity, Project, Task } from './types'
 import { t } from './i18n'
+import { readWorkspaceState, tasksIn } from './workspaces'
 
 /** Ids of every deleted project in a list. */
 export function deletedProjectIds(projects: Iterable<Pick<Project, 'id' | 'deleted_at'>>): Set<string> {
@@ -29,6 +30,14 @@ export function isTaskVisible(task: Pick<Task, 'deleted_at' | 'project_id'>, del
 export async function visibleTasks(): Promise<Task[]> {
   const gone = new Set((await db.projects.filter((p) => !!p.deleted_at).primaryKeys()) as string[])
   return db.tasks.filter((task) => isTaskVisible(task, gone)).toArray()
+}
+
+/** The visible tasks of every workspace and of the device's current one, from one read of each table (OpenSpec change workspaces). */
+export async function visibleTaskSets(): Promise<{ every: Task[]; here: Task[] }> {
+  const [state, projects] = await Promise.all([readWorkspaceState(), db.projects.toArray()])
+  const gone = new Set(projects.filter((p) => !!p.deleted_at).map((p) => p.id))
+  const every = await db.tasks.filter((task) => isTaskVisible(task, gone)).toArray()
+  return { every, here: tasksIn(state, projects, every) }
 }
 
 export interface TrashItem {

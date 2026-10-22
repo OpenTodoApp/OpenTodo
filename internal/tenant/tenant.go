@@ -70,6 +70,8 @@ type Hosted struct {
 	Quota opsync.Quota
 	// MaxMembers caps the tenant's accounts; 0 means no limit.
 	MaxMembers int
+	// Workspaces lowers the workspace limits for this tenant (workspaces "Limits").
+	Workspaces opsync.WorkspaceLimits
 	// Changed is called after every committed write, so the host can refresh
 	// the tenant's entries in the "next due" index (D3).
 	Changed func()
@@ -248,6 +250,7 @@ func wireWebhooks(ctx context.Context, cfg config.Config, o Options, db *sql.DB,
 	}
 	authSvc.SetMemberLimit(hosted.MaxMembers)
 	syncSvc.SetQuota(hosted.Quota)
+	syncSvc.SetWorkspaceLimits(hosted.Workspaces)
 	return hooks, nil
 }
 

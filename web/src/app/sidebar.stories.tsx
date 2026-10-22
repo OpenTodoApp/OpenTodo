@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { seedInbox, seedToday, seedTracking, seeded, storyUser, withSeed } from './stories/fixtures'
+import { createProject, createTask } from '../lib/ops'
+import { storeWorkspaces, switchTo } from '../lib/workspaces'
 
 // Core screen: the sidebar (OpenSpec change ux-overhaul, task 8.7; app-shell
 // "Sidebar structure", "Resizable sidebar", "No desktop top bar"). The real
@@ -199,4 +201,48 @@ const open = (el: HTMLElement) => el.click()
 export const MoreGroup: StoryObj = {
   ...withSeed(seedMarkers),
   render: () => <Acting find={moreHeading} act={open}><Column><Sidebar route={{ view: 'someday' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
+}
+
+// ---- workspaces (OpenSpec change workspaces, task 5.8) ----
+
+/** Two workspaces: Personal (the seeded Inbox) and Family with one project; the device is in Family. */
+async function seedWorkspaces(): Promise<void> {
+  await seedInbox()
+  const me = { userId: storyUser.id, name: storyUser.name, role: 'owner' as const }
+  await storeWorkspaces([
+    { id: 'ws-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: storyUser.id, members: [me], groups: [] },
+    { id: 'ws-family', name: 'Family', icon: 'house', color: '#22c55e', default: false, role: 'owner', ownerId: storyUser.id,
+      members: [me, { userId: 'u-bob', name: 'Bob Okafor', role: 'member' }], groups: [{ id: 'g-adults', name: 'Adults', members: [storyUser.id, 'u-bob'] }] },
+  ])
+  await switchTo('ws-family')
+  const house = await createProject({ name: 'House' })
+  await createTask({ title: 'Fix the gutter', project_id: house })
+  await createTask({ title: 'Buy a birthday present' })
+}
+
+/** The header as the workspace control (workspaces D6): the current workspace's mark and name, no new row. */
+export const WorkspaceControl: StoryObj = {
+  ...withSeed(seedWorkspaces),
+  render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
+}
+
+const workspaceTrigger = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-workspace-trigger]')
+const press = (el: HTMLElement) => el.click()
+/** The switcher open: the workspaces with their Inbox and Today counts, the current one checked, New workspace and Manage workspaces. */
+export const SwitcherOpen: StoryObj = {
+  ...withSeed(seedWorkspaces),
+  render: () => (
+    <Acting find={workspaceTrigger} act={press}>
+      <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+    </Acting>
+  ),
+}
+
+/** One workspace (the account never created one): the header reads OpenTodo · Personal. */
+export const OneWorkspace: StoryObj = {
+  ...withSeed(async () => {
+    await seedInbox()
+    await storeWorkspaces([{ id: 'ws-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: storyUser.id, members: [], groups: [] }])
+  }),
+  render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
 }

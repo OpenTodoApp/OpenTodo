@@ -39,6 +39,12 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     description: () => t('Profile, sessions, password, two-factor, passkeys, linked accounts and encryption'),
     demo: () => [msg('password and two-factor authentication'), msg('passkeys'), msg('linked accounts'), msg('end-to-end encryption')],
   },
+  // workspaces: the account's workspaces, their members, groups and invite links.
+  {
+    id: 'workspaces', label: msg('Workspaces'), group: 'you', icon: 'layers',
+    description: () => t('Workspaces, their members, groups and invite links'),
+    demo: () => [msg('workspaces')],
+  },
   { id: 'appearance', label: msg('Appearance'), group: 'you', icon: 'palette', description: () => t('Light or dark, colour theme, density and the sidebar') },
   { id: 'general', label: msg('General'), group: 'app', icon: 'settings', description: () => t('Language, start view, date and time, calendar and keyboard') },
   {

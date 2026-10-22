@@ -684,6 +684,40 @@ export const SETTINGS_COPY = {
       },
     },
   },
+  // Settings → Workspaces (OpenSpec change workspaces).
+  'workspaces-list': {
+    title: msg('Your workspaces'),
+    icon: 'layers',
+    description: msg('Each workspace has its own projects, labels and filters, and its own people.'),
+  },
+  'workspace-identity': { title: msg('Name and colour'), icon: 'palette' },
+  'workspace-members': {
+    title: msg('Members'),
+    icon: 'users',
+    description: {
+      created: msg('Projects in this workspace can be shared with these people and their groups only.'),
+      default: msg('Yours alone. Share its projects by email, or create a workspace for a team.'),
+    },
+  },
+  'workspace-groups': {
+    title: msg('Groups'),
+    icon: 'users',
+    description: msg('Share a project with a group in one step: everyone in it gets the group’s role.'),
+  },
+  'workspace-invites': {
+    title: msg('Invite links'),
+    icon: 'link',
+    description: msg('A link adds whoever opens it. It works once and expires after seven days.'),
+  },
+  'workspace-danger': {
+    title: msg('Danger zone'),
+    icon: 'trash-2',
+    rows: {
+      transfer: { label: msg('Transfer'), description: msg('Make another member the owner; you become an admin.') },
+      delete: { label: msg('Delete workspace'), description: msg('Possible once its projects are moved or deleted and its other members removed.') },
+      leave: { label: msg('Leave workspace'), description: msg('You lose access to the projects shared with you here.') },
+    },
+  },
 } as const satisfies Readonly<Record<string, CardCopyEntry>>
 
 type Copy = typeof SETTINGS_COPY

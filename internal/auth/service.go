@@ -230,9 +230,7 @@ func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invit
 		return nil, err
 	}
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: now}
-	_, err = tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
-		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt)
-	if err != nil {
+	if err := insertUser(ctx, tx, u, hash); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
 		}
@@ -437,8 +435,7 @@ func (s *Service) CreateAccount(ctx context.Context, email, name, password, role
 		}
 	}
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: time.Now().UnixMilli()}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
-		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt); err != nil {
+	if err := insertUser(ctx, tx, u, hash); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
 		}
@@ -459,8 +456,7 @@ func (s *Service) CreatePasswordlessAccount(ctx context.Context, email, name str
 		return nil, ErrInvalidEmail
 	}
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: time.Now().UnixMilli()}
-	if _, err := s.db.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
-		u.ID, u.Email, u.Name, "", u.Role, u.CreatedAt); err != nil {
+	if err := insertUser(ctx, s.db, u, ""); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
 		}

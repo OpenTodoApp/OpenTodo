@@ -41,6 +41,12 @@ func allConstructors() []Event {
 		AgentWrite("u", "create_tasks", "t", "Desk assistant", 0).Failed("writes_disabled_by_user"),
 		RelayEnabled("u", "device-1", "Laptop"),
 		RelayDisabled("u", "device-1", "Laptop", "locked"),
+		WorkspaceCreated("u", "w"), WorkspaceRenamed("u", "w"), WorkspaceDeleted("u", "w"), WorkspaceTransferred("u", "v", "w"),
+		WorkspaceMemberAdded("u", "v", "w", "member"), WorkspaceMemberRoleChanged("u", "v", "w", "member", "admin"), WorkspaceMemberRemoved("u", "v", "w"),
+		WorkspaceGroupCreated("u", "w", "g"), WorkspaceGroupDeleted("u", "w", "g"),
+		WorkspaceGroupMemberAdded("u", "v", "w", "g"), WorkspaceGroupMemberRemoved("u", "v", "w", "g"),
+		ProjectGrantAdded("u", "p", "g", "editor"), ProjectGrantChanged("u", "p", "g", "editor", "viewer"), ProjectGrantRemoved("u", "p", "g"),
+		WorkspaceInviteCreated("u", "i", "w", "member", "x@example.com"), WorkspaceInviteAccepted("v", "u", "i", "w", "member"), WorkspaceInviteRevoked("u", "i", "w"),
 		MFAEnrolled("u", "totp"),
 		MFADisabled("o", "u", "totp"),
 		MFAReset("o", "u"),
@@ -313,5 +319,20 @@ func TestListFiltersAndCursor(t *testing.T) {
 	other, _, _ := r.List(ctx, Filter{Actor: "u2", Outcome: Failure})
 	if len(other) != 0 {
 		t.Fatalf("actor+outcome filter leaked %d events", len(other))
+	}
+}
+
+// TestWorkspaceEventsCarryIdsOnly (OpenSpec change workspaces, task 3.4): a
+// workspace or group name never reaches the log, and the allow-list refuses a
+// detail key that would carry one.
+func TestWorkspaceEventsCarryIdsOnly(t *testing.T) {
+	e := WorkspaceGroupMemberAdded("alice", "bob", "w-1", "g-1")
+	if d := e.Details(); d["workspace"] != "w-1" || d["group"] != "g-1" || len(d) != 2 {
+		t.Fatalf("details = %v", d)
+	}
+	named := e
+	named.details = map[string]string{"workspace": "w-1", "name": "Family"}
+	if err := Validate(named); err == nil {
+		t.Fatal("a name detail passed validation")
 	}
 }

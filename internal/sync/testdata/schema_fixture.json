@@ -41,7 +41,8 @@
       "created_at",
       "deleted_at",
       "name",
-      "position"
+      "position",
+      "workspace_id"
     ],
     "place": [
       "address",
@@ -61,7 +62,8 @@
       "name",
       "notes_doc",
       "parent_id",
-      "position"
+      "position",
+      "workspace_id"
     ],
     "project_prefs": [
       "feed_seen_at",
@@ -135,7 +137,8 @@
       "series_id",
       "skipped",
       "start",
-      "title"
+      "title",
+      "workspace_id"
     ],
     "time_entry": [
       "created_at",
@@ -186,7 +189,8 @@
       "position",
       "query",
       "sort_by",
-      "sort_dir"
+      "sort_dir",
+      "workspace_id"
     ]
   },
   "field_prefixes": {

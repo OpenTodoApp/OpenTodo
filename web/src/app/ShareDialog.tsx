@@ -12,6 +12,8 @@ import { PublicLinksSection } from './PublicLinksSection'
 import { AgentAccessRow } from './AgentAccessRow'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
+import { useWorkspaceGroups, useWorkspaceState } from '../lib/localData'
+import { ShareDirectory } from './ShareDirectory'
 
 const ROLE_HINT = translatedMap<ProjectRole>({
   owner: msg('Owner'),
@@ -51,6 +53,11 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   // Handing over the project and leaving it are confirmed in the app's own dialog.
   const [asking, setAsking] = useState<{ kind: 'transfer'; userId: string; name: string } | { kind: 'leave' } | null>(null)
   const emailRef = useRef<HTMLInputElement>(null)
+  // In a created workspace the dialog shares from its directory (workspaces "A created workspace is a closed directory").
+  const wsState = useWorkspaceState()
+  const directory = wsState.list.find((w) => w.id === wsState.current && !w.default)
+  const groupNames = useWorkspaceGroups()
+  const groupName = (id: string) => groupNames.find((g) => g.id === id)?.name ?? ''
 
   useEffect(() => {
     let cancelled = false
@@ -85,7 +92,8 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   const members = membership?.members ?? []
   return (
     <Dialog title={<span className="user-text">{t('Share “{name}”', { name: project.name })}</span>} label={t('Share {name}', { name: project.name })} onClose={onClose} size="md">
-        {roles.length > 0 && (
+        {directory && roles.length > 0 && <ShareDirectory projectId={project.id} workspace={directory} membership={membership} roles={roles} busy={busy} run={(a) => void run(a)} />}
+        {!directory && roles.length > 0 && (
           <form onSubmit={share} className="mb-4 flex flex-wrap gap-2">
             <input ref={emailRef} autoFocus type="email" className="ui-input min-w-0 flex-1" placeholder={t('Email of an account on this server')}
               aria-label={t('Email')} value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -109,7 +117,7 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
                 <Tooltip label={m.email}>
                   <span className="min-w-0 flex-1 truncate">
                     {self ? t('{name} (you)', { name: m.name || m.email }) : m.name || m.email}
-                    <span className="block truncate text-meta text-faint">{m.email}</span>
+                    <span className="block truncate text-meta text-faint">{m.via?.length ? t('{email} · via {groups}', { email: m.email, groups: m.via.map((g) => g.name || groupName(g.id)).join(', ') }) : m.email}</span>
                   </span>
                 </Tooltip>
                 {manage ? (

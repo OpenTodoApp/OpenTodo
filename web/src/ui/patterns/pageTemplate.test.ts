@@ -19,6 +19,7 @@ export const OUTSIDE_SHELL: readonly string[] = [
   'src/app/ShareCapture.tsx',
   'src/app/TwoFactorPanel.tsx',
   'src/app/UnlockScreen.tsx',
+  'src/app/WorkspaceInviteScreen.tsx',
 ]
 
 /** Views not yet on the page template (ux-overhaul task 4.3): none since task 4.3; the list may only shrink. */

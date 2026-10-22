@@ -124,8 +124,7 @@ func (s *Service) CompleteSignup(ctx context.Context, secret string) (*User, err
 		return nil, err
 	}
 	u := &User{ID: ids.New(), Email: email, Name: name, Role: "member", CreatedAt: s.clock().UnixMilli()}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
-		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt); err != nil {
+	if err := insertUser(ctx, tx, u, hash); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
 		}

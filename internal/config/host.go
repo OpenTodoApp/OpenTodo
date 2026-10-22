@@ -40,6 +40,13 @@ type Limits struct {
 	RequestsPerMinute int `json:"requestsPerMinute"`
 	ImportMB          int `json:"importMb"`
 	Members           int `json:"members"`
+	// Workspace limits (OpenSpec change workspaces, "Limits"): lower the
+	// defaults of 20 workspaces per account, 200 members and 50 groups per
+	// workspace and 100 members per group; 0 keeps the default.
+	Workspaces       int `json:"workspaces"`
+	WorkspaceMembers int `json:"workspaceMembers"`
+	WorkspaceGroups  int `json:"workspaceGroups"`
+	GroupMembers     int `json:"groupMembers"`
 }
 
 // Host-mode defaults (design D2, open question settled in notes.md).
@@ -66,6 +73,14 @@ func (l *Limits) field(key string) *int {
 		return &l.ImportMB
 	case "members":
 		return &l.Members
+	case "workspaces":
+		return &l.Workspaces
+	case "workspace_members":
+		return &l.WorkspaceMembers
+	case "workspace_groups":
+		return &l.WorkspaceGroups
+	case "group_members":
+		return &l.GroupMembers
 	}
 	return nil
 }
@@ -96,7 +111,7 @@ func ParseLimits(raw string) (Limits, error) {
 // Merge returns l with every non-zero field of o applied (a tenant's
 // overrides over the host defaults).
 func (l Limits) Merge(o Limits) Limits {
-	for _, k := range []string{"db_mb", "ops_per_hour", "ops_total", "requests_per_minute", "import_mb", "members"} {
+	for _, k := range []string{"db_mb", "ops_per_hour", "ops_total", "requests_per_minute", "import_mb", "members", "workspaces", "workspace_members", "workspace_groups", "group_members"} {
 		if v := *o.field(k); v != 0 {
 			*l.field(k) = v
 		}

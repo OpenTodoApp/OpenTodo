@@ -141,8 +141,7 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		u = &User{ID: ids.New(), Email: email, Name: truncate(name, 100), Role: "member", CreatedAt: now}
 		// No password: the account signs in through the provider (an empty hash
 		// never verifies). It can add a passkey later.
-		if _, err := tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
-			u.ID, u.Email, u.Name, "", u.Role, u.CreatedAt); err != nil {
+		if err := insertUser(ctx, tx, u, ""); err != nil {
 			if strings.Contains(err.Error(), "UNIQUE") {
 				return nil, false, false, ErrEmailTaken
 			}

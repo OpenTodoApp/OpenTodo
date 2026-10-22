@@ -105,6 +105,25 @@ const (
 	EmailChangeRequestedName Name = "account.email_change_requested"
 	EmailChangedName         Name = "account.email_changed"
 	AvatarChangedName        Name = "account.avatar_changed"
+	// Workspaces, their members and groups, and group grants on projects
+	// (OpenSpec change workspaces, design D9): ids only, never a name.
+	WorkspaceCreatedName            Name = "workspace.created"
+	WorkspaceRenamedName            Name = "workspace.renamed"
+	WorkspaceDeletedName            Name = "workspace.deleted"
+	WorkspaceTransferredName        Name = "workspace.transferred"
+	WorkspaceMemberAddedName        Name = "workspace.member_added"
+	WorkspaceMemberRoleChangedName  Name = "workspace.member_role_changed"
+	WorkspaceMemberRemovedName      Name = "workspace.member_removed"
+	WorkspaceGroupCreatedName       Name = "workspace.group_created"
+	WorkspaceGroupDeletedName       Name = "workspace.group_deleted"
+	WorkspaceGroupMemberAddedName   Name = "workspace.group_member_added"
+	WorkspaceGroupMemberRemovedName Name = "workspace.group_member_removed"
+	ProjectGrantAddedName           Name = "project.grant_added"
+	ProjectGrantChangedName         Name = "project.grant_changed"
+	ProjectGrantRemovedName         Name = "project.grant_removed"
+	WorkspaceInviteCreatedName      Name = "workspace_invite.created"
+	WorkspaceInviteAcceptedName     Name = "workspace_invite.accepted"
+	WorkspaceInviteRevokedName      Name = "workspace_invite.revoked"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -136,6 +155,11 @@ var Names = []Name{
 	EmailSentName, EmailFailedName,
 	RelayEnabledName, RelayDisabledName,
 	NameChangedName, EmailChangeRequestedName, EmailChangedName, AvatarChangedName,
+	WorkspaceCreatedName, WorkspaceRenamedName, WorkspaceDeletedName, WorkspaceTransferredName,
+	WorkspaceMemberAddedName, WorkspaceMemberRoleChangedName, WorkspaceMemberRemovedName,
+	WorkspaceGroupCreatedName, WorkspaceGroupDeletedName, WorkspaceGroupMemberAddedName, WorkspaceGroupMemberRemovedName,
+	ProjectGrantAddedName, ProjectGrantChangedName, ProjectGrantRemovedName,
+	WorkspaceInviteCreatedName, WorkspaceInviteAcceptedName, WorkspaceInviteRevokedName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -234,6 +258,12 @@ var allowedDetailKeys = map[string]bool{
 	// Not "device_id", which is an op field name.
 	"relay_device_id":    true,
 	"relay_device_label": true,
+	// Workspaces (OpenSpec change workspaces): ids and roles only. Not
+	// "workspace_id", which is an op field name.
+	"workspace":           true,
+	"group":               true,
+	"workspace_role":      true,
+	"workspace_invite_id": true,
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -649,4 +679,95 @@ func EmailChanged(userID string) Event {
 // AvatarChanged records a profile picture being set or removed (never the picture).
 func AvatarChanged(userID string) Event {
 	return ev(AvatarChangedName, Success, userID, "")
+}
+
+// ---- workspaces (OpenSpec change workspaces, design D9) ----
+
+// WorkspaceCreated records a new workspace.
+func WorkspaceCreated(actorID, workspaceID string) Event {
+	return ev(WorkspaceCreatedName, Success, actorID, "", "workspace", workspaceID)
+}
+
+// WorkspaceRenamed records a change of a workspace's name, icon or colour (never the values).
+func WorkspaceRenamed(actorID, workspaceID string) Event {
+	return ev(WorkspaceRenamedName, Success, actorID, "", "workspace", workspaceID)
+}
+
+// WorkspaceDeleted records a deleted workspace.
+func WorkspaceDeleted(actorID, workspaceID string) Event {
+	return ev(WorkspaceDeletedName, Success, actorID, "", "workspace", workspaceID)
+}
+
+// WorkspaceTransferred records a new owner of a workspace (targetID); the
+// actor is the previous owner, or the server owner's account for a handover
+// at account deletion.
+func WorkspaceTransferred(actorID, targetID, workspaceID string) Event {
+	return ev(WorkspaceTransferredName, Success, actorID, targetID, "workspace", workspaceID)
+}
+
+// WorkspaceMemberAdded records an account added to a workspace with role.
+func WorkspaceMemberAdded(actorID, targetID, workspaceID, role string) Event {
+	return ev(WorkspaceMemberAddedName, Success, actorID, targetID, "workspace", workspaceID, "workspace_role", role)
+}
+
+// WorkspaceMemberRoleChanged records a member's new role.
+func WorkspaceMemberRoleChanged(actorID, targetID, workspaceID, from, to string) Event {
+	return ev(WorkspaceMemberRoleChangedName, Success, actorID, targetID, "workspace", workspaceID, "from", from, "to", to)
+}
+
+// WorkspaceMemberRemoved records a member removed from a workspace, or leaving it (actor = target).
+func WorkspaceMemberRemoved(actorID, targetID, workspaceID string) Event {
+	return ev(WorkspaceMemberRemovedName, Success, actorID, targetID, "workspace", workspaceID)
+}
+
+// WorkspaceGroupCreated records a new group.
+func WorkspaceGroupCreated(actorID, workspaceID, groupID string) Event {
+	return ev(WorkspaceGroupCreatedName, Success, actorID, "", "workspace", workspaceID, "group", groupID)
+}
+
+// WorkspaceGroupDeleted records a deleted group.
+func WorkspaceGroupDeleted(actorID, workspaceID, groupID string) Event {
+	return ev(WorkspaceGroupDeletedName, Success, actorID, "", "workspace", workspaceID, "group", groupID)
+}
+
+// WorkspaceGroupMemberAdded records an account added to a group.
+func WorkspaceGroupMemberAdded(actorID, targetID, workspaceID, groupID string) Event {
+	return ev(WorkspaceGroupMemberAddedName, Success, actorID, targetID, "workspace", workspaceID, "group", groupID)
+}
+
+// WorkspaceGroupMemberRemoved records an account removed from a group.
+func WorkspaceGroupMemberRemoved(actorID, targetID, workspaceID, groupID string) Event {
+	return ev(WorkspaceGroupMemberRemovedName, Success, actorID, targetID, "workspace", workspaceID, "group", groupID)
+}
+
+// ProjectGrantAdded records a group granted a role on a project.
+func ProjectGrantAdded(actorID, projectID, groupID, role string) Event {
+	return ev(ProjectGrantAddedName, Success, actorID, "", "shared_project_id", projectID, "group", groupID, "project_role", role)
+}
+
+// ProjectGrantChanged records a group grant's new role.
+func ProjectGrantChanged(actorID, projectID, groupID, from, to string) Event {
+	return ev(ProjectGrantChangedName, Success, actorID, "", "shared_project_id", projectID, "group", groupID, "from", from, "to", to)
+}
+
+// ProjectGrantRemoved records a group grant taken off a project.
+func ProjectGrantRemoved(actorID, projectID, groupID string) Event {
+	return ev(ProjectGrantRemovedName, Success, actorID, "", "shared_project_id", projectID, "group", groupID)
+}
+
+// WorkspaceInviteCreated records a new workspace invite link (never its secret).
+func WorkspaceInviteCreated(actorID, inviteID, workspaceID, role, boundEmail string) Event {
+	return ev(WorkspaceInviteCreatedName, Success, actorID, "", "workspace_invite_id", inviteID, "workspace", workspaceID,
+		"workspace_role", role, "invited_email", boundEmail)
+}
+
+// WorkspaceInviteAccepted records the account that joined through a link;
+// creatorID is the link's creator, recorded as the target.
+func WorkspaceInviteAccepted(userID, creatorID, inviteID, workspaceID, role string) Event {
+	return ev(WorkspaceInviteAcceptedName, Success, userID, creatorID, "workspace_invite_id", inviteID, "workspace", workspaceID, "workspace_role", role)
+}
+
+// WorkspaceInviteRevoked records a revoked workspace invite link.
+func WorkspaceInviteRevoked(actorID, inviteID, workspaceID string) Event {
+	return ev(WorkspaceInviteRevokedName, Success, actorID, "", "workspace_invite_id", inviteID, "workspace", workspaceID)
 }

@@ -60,6 +60,7 @@ var (
 		{Name: "json", Type: "bool", Description: "print only JSON on stdout (documented schemas, output_version 1)"},
 		{Name: "dry-run", Type: "bool", Description: "write commands: resolve and validate, print the requests that would be sent, send no write"},
 		{Name: "read-only", Type: "bool", Description: "refuse every write command before any request (also OPENTODO_READ_ONLY=1)"},
+		{Name: "workspace", Type: "string", Description: "workspace name or id the command acts on (also OPENTODO_WORKSPACE and the profile's workspace; default: the account's default workspace)"},
 	}
 	yesFlag    = flagSpec{Name: "yes", Short: "y", Type: "bool", Description: "confirm a destructive command (required off a terminal and with --json)"}
 	idemFlag   = flagSpec{Name: "idempotency-key", Type: "string", Description: "1-128 characters of [A-Za-z0-9._:-]; running again with the same key returns the same entity instead of creating another"}
@@ -121,6 +122,7 @@ var cmdSpecs = []cmdSpec{
 	{Name: "project list", Aliases: []string{"project ls"}, Summary: "list projects", Flags: []flagSpec{{Name: "all", Type: "bool", Description: "include archived projects"}}, Output: arrayOf("project")},
 	{Name: "project add", Aliases: []string{"project create"}, Summary: "create a project and print its id", Args: []argSpec{{Name: "name", Required: true, Repeatable: true}},
 		Flags: []flagSpec{{Name: "color", Type: "string", Description: "colour as #rrggbb (default: derived from the name)"}, idemFlag}, Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("project")},
+	{Name: "project move", Summary: "move a project to the workspace named by --workspace (only its owner)", Args: []argSpec{{Name: "ref", Required: true}}, Writes: true, DryRun: true, Output: ref("project")},
 	{Name: "project rename", Summary: "rename a project", Args: []argSpec{{Name: "ref", Required: true}, {Name: "new-name", Required: true, Repeatable: true}}, Writes: true, DryRun: true, Output: ref("project")},
 	{Name: "project archive", Summary: "archive a project, or restore it with --undo", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{{Name: "undo", Type: "bool", Description: "restore an archived project"}}, Writes: true, DryRun: true, Output: ref("project")},
@@ -183,6 +185,7 @@ var cmdSpecs = []cmdSpec{
 	{Name: "rules disable", Summary: "turn an automation rule off", Args: []argSpec{{Name: "id", Required: true}},
 		Writes: true, DryRun: true, Output: ref("rule")},
 	{Name: "rules runs", Summary: "print an automation rule's run log, newest first", Args: []argSpec{{Name: "id", Required: true}}, Output: arrayOf("rule_run")},
+	{Name: "workspaces", Summary: "list your workspaces (the current one marked)", Output: arrayOf("workspace")},
 	{Name: "export", Summary: "download the full JSON export", Flags: []flagSpec{{Name: "out", Short: "o", Type: "string", Description: "write to this file instead of stdout"}},
 		Output: map[string]any{"anyOf": []any{map[string]any{"type": "object", "description": "the server's export document (format opentodo-export)"}, ref("export_file")}}},
 	{Name: "schema", Summary: "print every command, flag, exit code and output schema as JSON (works offline)", Output: map[string]any{"type": "object", "description": "this document"}},

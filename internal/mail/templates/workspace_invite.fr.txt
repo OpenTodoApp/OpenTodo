@@ -1,0 +1,9 @@
+{{.Inviter}} vous invite dans un espace de travail
+
+Ceci est une invitation à un espace de travail partagé dans OpenTodo.
+
+{{.Inviter}} a invité {{.Email}} à rejoindre un espace de travail en tant que {{.Role}} sur le serveur OpenTodo {{.Origin}}. Les membres d'un espace de travail peuvent partager des projets entre eux. Pour le rejoindre, ouvrez ce lien :
+
+{{.Link}}
+
+Le lien expire dans {{.Expiry}}. Si vous ne connaissez pas {{.Inviter}}, ignorez ce message.

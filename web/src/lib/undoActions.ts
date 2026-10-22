@@ -16,6 +16,9 @@ import type { Task, View } from './types'
 import { applyBatch } from './undo'
 import { compileView } from './views'
 import { t } from './i18n'
+import { uuid } from './ids'
+import { labelKey } from './labels'
+import { Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
 export interface UndoableResult {
   /** The undo entry (null when nothing changed). */
@@ -178,3 +181,45 @@ export async function titleEditUndoable(id: string, patch: Partial<Task>, remind
   return apply(changes, t('Task updated'))
 }
 
+
+/**
+ * "Move to workspace…" on a project (OpenSpec change workspaces, design D7):
+ * one workspace_id op on the project (its sub-projects, sections and tasks
+ * follow), and the labels on its tasks re-matched by name to labels of the
+ * target workspace, a missing one created there, all as one batch with Undo.
+ */
+export async function moveProjectToWorkspaceUndoable(projectId: string, target: string, targetName: string): Promise<UndoableResult> {
+  const [state, projects, labels, tasks] = await Promise.all([readWorkspaceState(), db.projects.toArray(), db.labels.toArray(), db.tasks.toArray()])
+  const project = projects.find((p) => p.id === projectId)
+  if (!project) return { entry: null, label: '' }
+  const part = new Partition(state.defaultId, state.list.map((w) => w.id), projects)
+  const value = workspaceIdFor(target, state.list)
+  // The project and every sub-project under it.
+  const inTree = new Set([projectId])
+  for (let grew = true; grew;) {
+    grew = false
+    for (const p of projects) if (p.parent_id && inTree.has(p.parent_id) && !inTree.has(p.id)) { inTree.add(p.id); grew = true }
+  }
+  const byId = new Map(labels.map((l) => [l.id, l]))
+  const there = new Map(labels.filter((l) => !l.deleted_at && part.own(l.workspace_id) === part.own(target)).map((l) => [labelKey(l.name), l.id]))
+  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: { workspace_id: value } }]
+  const now = Date.now()
+  const mapLabel = (id: string): string => {
+    const l = byId.get(id)
+    if (!l || part.own(l.workspace_id) === part.own(target)) return id
+    const key = labelKey(l.name)
+    let to = there.get(key)
+    if (!to) {
+      to = uuid()
+      there.set(key, to)
+      changes.push({ entity: 'label', entityId: to, patch: { name: l.name, color: l.color, position: now, created_at: now, deleted_at: null, workspace_id: value } })
+    }
+    return to
+  }
+  for (const task of tasks) {
+    if (!task.project_id || !inTree.has(task.project_id) || !task.labels?.length) continue
+    const next = task.labels.map(mapLabel)
+    if (next.some((id, i) => id !== task.labels[i])) changes.push({ entity: 'task', entityId: task.id, patch: { labels: next } })
+  }
+  return apply(changes, t('Moved to {target}', { target: targetName }))
+}

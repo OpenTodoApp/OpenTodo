@@ -16,6 +16,10 @@
             "default": false,
             "description": "Also return archived projects.",
             "type": "boolean"
+          },
+          "workspace": {
+            "description": "Only this workspace: its id or exact name (see list_workspaces). Absent: every workspace.",
+            "type": "string"
           }
         },
         "type": "object"
@@ -101,6 +105,10 @@
               "anytime"
             ],
             "type": "string"
+          },
+          "workspace": {
+            "description": "Only this workspace: its id or exact name (see list_workspaces). Absent: every workspace.",
+            "type": "string"
           }
         },
         "type": "object"
@@ -171,6 +179,10 @@
           },
           "timezone": {
             "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "workspace": {
+            "description": "Only this workspace: its id or exact name (see list_workspaces). Absent: every workspace.",
             "type": "string"
           }
         },
@@ -283,6 +295,23 @@
       },
       "name": "list_time_entries",
       "title": "List time entries"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List workspaces"
+      },
+      "description": "List the user's workspaces: separate rooms with their own projects, labels and views. Each has an id, a name, the user's role and whether it is the default workspace; for workspaces the user owns, the names of the members and groups. Pass a workspace's id or name as workspace to list_projects, list_tasks or search_tasks.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "name": "list_workspaces",
+      "title": "List workspaces"
     }
   ]
 }
