@@ -11,7 +11,7 @@ import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect
 import { readAppearance, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
-import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useUserPrefsRow } from '../lib/localData'
+import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useSidebarRowsLoaded, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
 import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
 import { formatInstant } from '../lib/dates'
@@ -163,8 +163,10 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   // Per-device collapse state lives in the local meta table (never synced); reading it
   // through a live query keeps every Sidebar instance in step.
   // A device that never stored a state reads every parent as collapsed (roots only).
-  const collapsedLive = useLiveQuery(() => readCollapsed(projects), [projects])
-  const collapsed_ = useMemo(() => collapsedLive ?? new Set<string>(), [collapsedLive])
+  const collapsedLive = useLiveQuery(async () => ({ of: projects, set: await readCollapsed(projects) }), [projects])
+  const collapsed_ = useMemo(() => collapsedLive?.set ?? new Set<string>(), [collapsedLive])
+  // The groups wait for the rows and this device's collapse state, so the tree never opens and then folds (motion-polish D2).
+  const groupsReady = useSidebarRowsLoaded() && collapsedLive?.of === projects
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   // Find in the sidebar (app-shell "Find in the sidebar"): a query narrows the three
   // groups without touching the stored collapse or group state.
@@ -422,12 +424,12 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         <StartGuideMoreItem collapsed={collapsed} />
       </SidebarGroup>}
       {/* Favourites first (sidebar-favourites D5); while finding, the matches show in their own groups. */}
-      {!found && favourites.length > 0 && (
+      {groupsReady && !found && favourites.length > 0 && (
         <FavouritesGroup favourites={favourites} route={route} collapsed={collapsed} projects={projects}
           tree={tree} openTasks={openTasks} today={today} labelCounts={labelCounts} viewCounts={viewCounts} projectCountMode={projectCountMode} />
       )}
       {/* Projects stays while finding: its header holds the field's opener. */}
-      {(finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
+      {groupsReady && (finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
         <SidebarGroupAction active={route.view === 'projects'} onClick={() => navigate({ view: 'projects' })} aria-label={t('All projects')}>{t('All')}</SidebarGroupAction>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
         <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
@@ -507,7 +509,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         )}
         {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">{t('No projects yet.')}</p>}
       </SidebarGroup>}
-      {labelsShown && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
+      {groupsReady && labelsShown && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
         actions={<>
           <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label={t('All labels')}>{t('All')}</SidebarGroupAction>
           <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
@@ -515,7 +517,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} quiet label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
       </SidebarGroup>}
-      {filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
+      {groupsReady && filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
         actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
         {shownViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id

@@ -12,7 +12,7 @@
 //
 // Env: OUT_DIR (default ux-audit-report), ONLY (inventory ids), WIDTHS (360,768,1280),
 // THEMES (light,dark), LANGS (en,de), CONCURRENCY (2), CHROMIUM_PATH, OPENTODO_BIN
-// (bin/opentodo), UX_AUDIT_STRICT=1 (exit 1 on budget, overflow and story-coverage
+// (bin/opentodo), UX_AUDIT_STRICT=1 (exit 1 on budget, overflow, story-coverage and reduced-motion
 // violations; otherwise the tour only reports and exits 0).
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
@@ -26,8 +26,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { BUDGET, axeProblems, verticalScrollers } from './measure.mjs'
 import {
-  chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, movingAnimations,
-  overlaps, primaryDestinations, rowMetaItems, targetSize, truncation,
+  chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen,
+  overlaps, primaryDestinations, rowMetaItems, targetSize, truncation, watchMotion,
 } from './audit-measures.mjs'
 import { seed } from './seed.mjs'
 import { OVERLAYS, chooseLayout, screens as layoutScreens } from './layout-screens.mjs'
@@ -206,30 +206,75 @@ async function setLanguage(ids, lang) {
 }
 
 // ---------------------------------------------------------------- M15 and M13
-/** M15 in a reduced-motion context: complete a task in Today, open the panel and a dialog. */
+/**
+ * M15 in a reduced-motion context (motion-polish D4): every overlay of the inventory
+ * opened on its screen at 1280 px with a mouse and at 360 px as a touch device, the
+ * completion of a task in Today, and a drag on the board, the Plan and the Week. Each
+ * moment is watched from before the action until it settles, so a short movement
+ * that ends before a snapshot is caught too.
+ */
 async function reducedMotion(ids) {
-  const browser = await launch()
   const out = []
-  try {
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce', storageState: ids.storageState, bypassCSP: true, locale: 'en-GB', timezoneId: 'UTC' })
-    await ctx.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, 'en')
-    const p = await ctx.newPage()
-    const at = async (id, act) => {
-      try { await act(); await installHelpers(p); out.push(...(await p.evaluate(movingAnimations)).map((v) => ({ ...v, id }))) } catch (err) { out.push({ rule: 'NAV', id, element: id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' }) }
+  const moments = MOTION_WIDTHS.flatMap((width) => [
+    ...tourable.filter((e) => e.kind === 'overlay' && (e.layoutCheck ?? e.open?.overlay) && e.on && (!e.widths || e.widths.includes(width))
+      && (!hostOf(e, ids).widths || hostOf(e, ids).widths.includes(width))).map((e) => ({ id: e.id, width, screen: e.on, act: (p) => openOverlay(p, e, width) })),
+    ...(!ONLY || ONLY.has('today') ? [{ id: 'today', width, screen: 'today', act: (p) => p.locator('[data-task-id]').filter({ hasText: width === 1280 ? 'Get three quotes' : 'Renew passport' }).first().locator('.group\\/check').first().click() }] : []),
+    ...(width === 1280 ? DRAGS.filter((d) => !ONLY || ONLY.has(d.screen)).map((d) => ({ id: `${d.screen}-drag`, width, screen: d.screen, act: (p) => drag(p, d) })) : []),
+  ])
+  for (const width of MOTION_WIDTHS) {
+    const browser = await launch()
+    try {
+      const touch = width < 1280
+      const ctx = await browser.newContext({ viewport: { width, height: HEIGHTS[width] ?? 900 }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce', storageState: ids.storageState, bypassCSP: true, locale: 'en-GB', timezoneId: 'UTC' })
+      await ctx.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, 'en')
+      const p = await ctx.newPage()
+      p.on('dialog', (d) => d.dismiss())
+      for (const m of moments.filter((x) => x.width === width)) {
+        try {
+          const host = hostOf({ kind: 'screen', layoutCheck: m.screen }, ids)
+          await p.goto(base + host.path)
+          await host.ready(p)
+          if (host.layout) await chooseLayout(p, host.layout)
+          await p.waitForTimeout(400)
+          await installHelpers(p)
+          await p.evaluate(watchMotion)
+          await m.act(p)
+          await p.waitForTimeout(400)
+          out.push(...(await p.evaluate(motionSeen)).map((v) => ({ ...v, id: m.id, width })))
+        } catch (err) {
+          out.push({ rule: 'NAV', id: m.id, width, element: m.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' })
+        }
+        if (m.screen === 'board') await chooseLayout(p, 'List').catch(() => {})
+        await p.keyboard.press('Escape').catch(() => {})
+      }
+    } finally {
+      await browser.close()
     }
-    await p.goto(base + '/today')
-    await p.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
-    await at('today', async () => { await p.locator('[data-task-id]').filter({ hasText: 'Renew passport' }).first().locator('.group\\/check').first().click(); await p.waitForTimeout(60) })
-    await p.goto(base + '/inbox')
-    await p.locator('[data-task-id]').first().waitFor()
-    await at('task-panel', async () => { await OVERLAYS['task-detail'](p, { width: 1280 }); await p.waitForTimeout(60) })
-    await p.goto(base + `/project/${ids.home}`)
-    await p.locator('[data-task-id]').first().waitFor()
-    await at('share', async () => { await OVERLAYS.share(p, { width: 1280 }); await p.waitForTimeout(60) })
-  } finally {
-    await browser.close()
   }
   return out
+}
+
+// Each width completes its own task in Today (the account is shared by both passes);
+// 360 px runs last and keeps "Renew passport", which Today's ready check looks for, until then.
+const MOTION_WIDTHS = [1280, 360]
+/** The drags M15 watches: a card to the next column, a Plan task to the next day, a Week block down an hour. */
+const DRAGS = [
+  { screen: 'board', from: '[data-column] [data-task-id]', to: (p) => p.locator('[data-column]').nth(1) },
+  { screen: 'plan', from: '[data-plan-task]', to: (p) => p.locator('[data-plan-day]').nth(1) },
+  { screen: 'week', from: '[data-block]', to: (p, box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 + 60 }) },
+]
+async function drag(p, d) {
+  const source = p.locator(d.from).first()
+  const box = await source.boundingBox()
+  if (!box) throw new Error(`nothing to drag on ${d.screen}`)
+  const target = d.to(p, box)
+  const tb = typeof target.boundingBox === 'function' ? await target.boundingBox() : null
+  const to = tb ? { x: tb.x + tb.width / 2, y: tb.y + Math.min(tb.height / 2, 80) } : target
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.mouse.down()
+  await p.mouse.move(to.x, to.y, { steps: 12 })
+  await p.waitForTimeout(150)
+  await p.mouse.up()
 }
 
 /** M13: load Inbox, Today and a project online, stop the server, reload and time the first task row. */
@@ -282,7 +327,7 @@ for (const c of captures) {
   if (c.lang === LANGS[0]) continue
   for (const v of c.violations) if ((v.rule === 'M6' || v.rule === 'M10') && !firstLang.has(`${c.id}|${c.width}|${c.theme}|${v.rule}`)) v.languageOnly = true
 }
-const motion = ONLY && !['today', 'task-panel', 'share'].some((id) => ONLY.has(id)) ? [] : await reducedMotion(ids)
+const motion = await reducedMotion(ids)
 const stories = coverage()
 const extra = [
   ...motion,
@@ -305,7 +350,7 @@ for (const f of report.summary.ranked.slice(0, 10)) log(`  ${f.score}  ${f.rule}
 log(`\nreport: ${join(OUT, 'index.html')}`)
 const strictFailures = report.summary.ranked.filter((f) => STRICT_RULES.includes(f.rule))
 if (STRICT && strictFailures.length) {
-  console.error(`✗ strict mode: ${strictFailures.length} budget, overflow or story-coverage findings`)
+  console.error(`✗ strict mode: ${strictFailures.length} budget, overflow, story-coverage or reduced-motion findings`)
   process.exit(1)
 }
 process.exit(0)

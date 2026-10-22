@@ -1,5 +1,6 @@
 // Settings → Data: export, import and sync status (OpenSpec settings-navigation; settings-redesign D3).
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useSettingsPending } from './settingsPending'
 import { keysOf } from '../lib/shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { formatBytes, refreshLimits, useAttachmentLimits } from '../lib/attachments'
@@ -70,7 +71,8 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
           : <a className={linkButton} href="/settings/import" onClick={(e) => followLink(e, { view: 'import' })}><Icon name="upload" size="sm" />{t('Import data')}</a>} />
       <SettingRow {...rowCopy('data', 'sync')}
         status={(
-          <span className="flex flex-wrap items-center gap-2" data-testid="sync-summary">
+          // The badge on its own line: its word changes while syncing and must not rewrap the sentence (motion-polish D2).
+          <span className="flex flex-col items-start gap-1" data-testid="sync-summary">
             <Badge hue={s.hue}>{s.label}</Badge>
             <span className="text-muted">
               {sync.pending ? t('{n, plural, one {# change waiting to upload.} other {# changes waiting to upload.}}', { n: sync.pending }) : t('No changes waiting.')}
@@ -94,6 +96,9 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
 export function YourDataSection({ demo, isOwner }: { demo: boolean; isOwner: boolean }) {
   const sync = useSyncStatus()
   const attachments = useAttachmentLimits()
-  useEffect(() => { void refreshLimits() }, [])
+  // The export row gains its attachments button from the server's answer: the section waits for it (motion-polish D3).
+  const [refreshed, setRefreshed] = useState(false)
+  useEffect(() => { void refreshLimits().finally(() => setRefreshed(true)) }, [])
+  useSettingsPending(!refreshed)
   return <YourDataView demo={demo} isOwner={isOwner} sync={sync} attachments={attachments} />
 }

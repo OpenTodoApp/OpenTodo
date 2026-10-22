@@ -34,9 +34,9 @@ function PhoneBar() {
     <header className="flex min-h-12 items-center gap-1 border-b border-default px-2" data-phone-bar>
       <IconButton icon="menu" label="Open menu" onClick={noop} className="touch-target" />
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" />}
-      <div className="min-w-0 flex-1">
+      <div className="flex h-11 min-w-0 flex-1 flex-col justify-center">
         <PageBarTitle>{bar?.title}</PageBarTitle>
-        {bar?.subtitle && <p className="truncate text-meta text-muted">{bar.subtitle}</p>}
+        {bar?.subtitle && <div className="phone-subtitle">{bar.subtitle}</div>}
       </div>
       <div className="flex shrink-0 items-center gap-1">{bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}</div>
     </header>

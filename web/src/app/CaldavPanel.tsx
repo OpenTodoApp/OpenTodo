@@ -16,6 +16,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { useSettingsPending } from './settingsPending'
 
 // Settings → Calendar apps (OpenSpec change `caldav`): the owner's toggle, the
 // server address with per-client setup hints, and per-user app passwords. The
@@ -152,6 +153,7 @@ const message = (err: unknown) => (err instanceof ApiError ? err.message : t('Of
 export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: string }) {
   const [setting, setSetting] = useState<CaldavSetting | null>(null)
   const [passwords, setPasswords] = useState<AppPassword[] | null>(null)
+  useSettingsPending(setting === null || passwords === null)
   const [newName, setNewName] = useState('')
   const [secret, setSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)

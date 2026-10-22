@@ -5,7 +5,7 @@
 // a task, by drag onto a day or with the arrows, is one due edit that keeps its time
 // and zone. Projections and events are read-only and written nowhere. Works offline.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, hueFor, MenuItem, MenuSeparator, PageBody, PageHeader, useWide, Tooltip } from '../ui'
+import { Button, hueFor, MenuItem, MenuSeparator, PageBody, PageHeader, Skeleton, useWide, Tooltip } from '../ui'
 import { allDayEvents, calendarTasks, eventBlocks, nudgeDue } from '../lib/calendar'
 import { setShowEvents } from '../lib/calendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
@@ -40,7 +40,8 @@ const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: 
 function usePlanDays(dates: string[], today: string, dayLength: number) {
   const zone = useViewerZone()
   const projects = useLiveProjects()
-  const rawTasks = useLiveTasks() ?? NO_TASKS
+  const live = useLiveTasks()
+  const rawTasks = live ?? NO_TASKS
   const from = dates[0], to = dates[dates.length - 1]
   const feeds = useCalendarFeeds(from, to)
   const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
@@ -58,7 +59,7 @@ function usePlanDays(dates: string[], today: string, dayLength: number) {
     allDay: allDayEvents(feeds.visibleEvents, date),
     load: planLoad(shownRaw, projections, feeds.visibleEvents, date, dayLength, zone),
   })), [dates, shownRaw, projections, feeds.visibleEvents, zone, dayLength])
-  return { zone, projects, rawTasks, viewed, feeds, days }
+  return { zone, projects, rawTasks, viewed, feeds, days, loading: live === undefined }
 }
 
 export function PlanView({ date }: { date?: string }) {
@@ -71,7 +72,7 @@ export function PlanView({ date }: { date?: string }) {
   const online = useOnline()
   useEffect(() => rememberCalendarMode('plan'), [])
 
-  const { zone, projects, rawTasks, viewed, feeds, days } = usePlanDays(dates, today, prefs.dayLength)
+  const { zone, projects, rawTasks, viewed, feeds, days, loading } = usePlanDays(dates, today, prefs.dayLength)
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const memberMap = useMembershipMap()
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
@@ -205,7 +206,8 @@ export function PlanView({ date }: { date?: string }) {
           <MenuSeparator />
           <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a day, or press s on one')} onSelect={togglePlan} />
         </>} />
-      {wide ? (
+      {/* Until the local database answers: the skeleton, so the days do not jump as their tasks arrive (motion-polish D2). */}
+      {loading ? <Skeleton shape="row" count={6} label={t('Loading your tasks')} /> : wide ? (
         <PlanGrid gridRef={gridRef} title={title} days={days} today={today} focused={focused} dayLength={prefs.dayLength} eventHue={eventHue}
           onFocusDay={(d, keepSelection) => { setFocused(d); if (!keepSelection) setSelectedId(null) }} onAdd={setAdding}
           rowProps={{ ...rowProps, onSelect: (id, d) => { setSelectedId(id); setFocused(d) } }} />

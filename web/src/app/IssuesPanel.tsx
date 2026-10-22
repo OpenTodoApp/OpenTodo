@@ -10,6 +10,7 @@ import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { ago } from './CalendarFeedsPanel'
 import { draftBody, draftError, draftOf, IssueEditor, intervalLabel, newDraft, type FieldErrorState, type IssueDraft } from './IssueEditor'
+import { useSettingsPending } from './settingsPending'
 
 // Settings → Integrations → Issues (OpenSpec change issue-import, design D13): the
 // owner's switch and the user's GitHub and GitLab connections as cards that lead with
@@ -194,6 +195,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
   const { enabled: encrypted } = useEncryption()
   const [enabled, setEnabled] = useState<boolean | null>(null)
   const [connections, setConnections] = useState<IssueConnection[] | null>(null)
+  useSettingsPending(enabled === null || connections === null)
   const [unreachable, setUnreachable] = useState(false)
   const [busy, setBusy] = useState(false)
   const [polling, setPolling] = useState<ReadonlySet<string>>(new Set())

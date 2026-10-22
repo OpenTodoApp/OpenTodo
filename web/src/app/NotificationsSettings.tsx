@@ -17,6 +17,7 @@ import { t, msg, translatedMap } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { has as shellHas } from '../lib/shell'
 import { ShellNotifications } from './ShellNotifications'
+import { useSettingsPending } from './settingsPending'
 
 /**
  * Settings → Notifications (OpenSpec change `reminders`): per device, enable or
@@ -31,6 +32,7 @@ export function NotificationsSettings() {
 
 function PushNotificationsSettings() {
   const [state, setState] = useState<PushState | null>(null)
+  useSettingsPending(state === null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
 

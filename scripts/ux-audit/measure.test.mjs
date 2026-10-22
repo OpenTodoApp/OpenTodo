@@ -5,8 +5,8 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, movingAnimations,
-  overlaps, primaryDestinations, rowMetaItems, targetSize, truncation,
+  chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
+  overlaps, primaryDestinations, rowMetaItems, targetSize, truncation, watchMotion,
 } from './audit-measures.mjs'
 
 const pw = await import('playwright').catch(async () => {
@@ -130,6 +130,20 @@ test('M15 reduced motion: a fade passes, a transform transition fails', { skip }
   await fixture('<style>.m{transition:transform 5s}</style><div class="m" id="m">slide</div>', { reducedMotion: true })
   await page.evaluate(() => { const m = document.getElementById('m'); m.getBoundingClientRect(); m.style.transform = 'translateX(100px)' })
   const r = await page.evaluate(movingAnimations)
+  assert.deepEqual(rules(r), ['M15'])
+  assert.match(r[0].value, /transform/)
+})
+
+test('M15 over a moment: a short slide that ends before the snapshot is caught, a fade is not', { skip }, async () => {
+  await fixture('<style>.f{transition:opacity 80ms}.m{transition:transform 80ms}</style><div class="f" id="f">fade</div><div class="m" id="m">slide</div>', { reducedMotion: true })
+  await page.evaluate(watchMotion)
+  await page.evaluate(() => { document.getElementById('f').style.opacity = '0.5' })
+  await page.waitForTimeout(200)
+  assert.deepEqual(await page.evaluate(motionSeen), [])
+  await page.evaluate(watchMotion)
+  await page.evaluate(() => { document.getElementById('m').style.transform = 'translateX(40px)' })
+  await page.waitForTimeout(200)
+  const r = await page.evaluate(motionSeen)
   assert.deepEqual(rules(r), ['M15'])
   assert.match(r[0].value, /transform/)
 })

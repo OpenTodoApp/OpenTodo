@@ -977,6 +977,8 @@ describe('the brand header and the sidebar colour', () => {
     expect(aside.className).toContain('[--sidebar-bg:var(--color-surface)]')
     expect(aside.className).toContain('bg-(--sidebar-bg)')
     expect(aside.className).not.toMatch(/(^|\s)bg-canvas(\s|$)/)
+    // The groups appear once the rows and the collapse state are read (motion-polish D2).
+    await waitFor(() => !!document.querySelector('[data-sidebar-group-header]'), 5000)
     const header = document.querySelector('[data-sidebar-group-header]')!
     expect(header.className).toContain('bg-(--sidebar-bg,var(--color-canvas))')
     await r.unmount()

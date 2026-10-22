@@ -1,3 +1,4 @@
+import { SettingsPendingGate } from './settingsPending'
 import { HowYouWorkSection } from './method/HowYouWorkSection'
 import { ProfileSection } from './profile/ProfileSection'
 import { PersonAvatar } from './PersonAvatar'
@@ -133,7 +134,7 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
       <div className="min-w-0 space-y-6 lg:max-w-2xl">
         <PageHeader title={page.label} titleRef={headingRef} titleTabIndex={-1} help={PAGE_HELP_SCREENS[page.id]} sticky={false}
           back={{ label: t('Settings'), href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
-        <SectionContent section={page} user={user} onLogout={onLogout} />
+        <SettingsPendingGate key={page.id}><SectionContent section={page} user={user} onLogout={onLogout} /></SettingsPendingGate>
       </div>
     </div>
   )

@@ -3,7 +3,7 @@
 // ancestors, New project and From a template, and the archived projects behind a
 // disclosure. Everything is read from local data, so it works offline and follows sync.
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { useProjects, useMembershipMap } from '../lib/localData'
+import { useProjects, useProjectsLoaded, useMembershipMap } from '../lib/localData'
 import { useOpenTasks } from '../lib/liveTasks'
 import { createProject } from '../lib/ops'
 import { buildProjectTree, openCountsByProject, siblingEdges, visibleProjects } from '../lib/projects'
@@ -12,7 +12,7 @@ import { matchSidebar } from '../lib/sidebarFind'
 import { flattenTree } from '../lib/tree'
 import { openCount } from '../lib/views'
 import { t } from '../lib/i18n'
-import { Button, Icon, MenuItem, PageBody, PageHeader, ReadAs } from '../ui'
+import { Button, Icon, MenuItem, PageBody, PageHeader, ReadAs, Skeleton } from '../ui'
 import { ArchivedProjectsSection } from './ArchivedProjects'
 import { NamePrompt } from './NamePrompt'
 import { ProjectRowMenu } from './ProjectRowMenu'
@@ -29,6 +29,7 @@ function wantsArchived(prop?: boolean): boolean {
 
 export function ProjectsView({ archived }: { archived?: boolean }) {
   const all = useProjects()
+  const loaded = useProjectsLoaded() !== undefined
   const projects = useMemo(() => visibleProjects(all), [all])
   const archivedCount = useMemo(() => all.filter((p) => p.archived).length, [all])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
@@ -51,7 +52,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
     // A link to #archived while the page is open changes only the fragment.
     window.addEventListener('hashchange', reveal)
     return () => window.removeEventListener('hashchange', reveal)
-  }, [archived])
+  }, [archived, loaded])
 
   const everyRow = useMemo(() => flattenTree(tree.roots, () => false), [tree])
   const found = useMemo(() => (query.trim() ? matchSidebar(query, {
@@ -90,6 +91,8 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           onChange={(e) => setQuery(e.target.value)} onKeyDown={onFindKey} autoFocus={autoFocus} enterKeyHint="go" autoComplete="off" data-projects-find />
         {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
       </div>
+      {/* Until the projects are read, the skeleton: the archived disclosure below would jump (motion-polish D2). */}
+      {!loaded && <Skeleton shape="row" count={5} label={t('Loading the list…')} />}
       <ul className="space-y-0.5" aria-label={t('Projects')} data-projects-tree>
         {rows.map((n) => {
           const p = n.item
@@ -119,14 +122,14 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           )
         })}
       </ul>
-      {projects.length === 0 && <p className="px-2 py-2 text-body text-faint">{t('No projects yet.')}</p>}
-      <details ref={disclosure} id="archived" open={archivedOpen} onToggle={(e) => setArchivedOpen(e.currentTarget.open)}
+      {loaded && projects.length === 0 && <p className="px-2 py-2 text-body text-faint">{t('No projects yet.')}</p>}
+      {loaded && <details ref={disclosure} id="archived" open={archivedOpen} onToggle={(e) => setArchivedOpen(e.currentTarget.open)}
         className="mt-6 border-t border-default pt-3" data-archived-disclosure>
         <summary className="cursor-pointer rounded-control px-2 py-1.5 text-body font-medium text-default">
           {t('Archived projects')} <span className="text-meta font-normal tabular-nums text-faint" data-archived-count>{archivedCount}</span>
         </summary>
         <div className="pt-2">{archivedOpen && <ArchivedProjectsSection bare />}</div>
-      </details>
+      </details>}
       {creating && (
         <NamePrompt title={t('New project')} label={t('Project name')} confirm={t('Create')} onCancel={() => setCreating(false)}
           onSubmit={async (name) => {

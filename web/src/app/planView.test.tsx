@@ -42,7 +42,12 @@ async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
 }
 const day = (root: ParentNode, d: string) => root.querySelector<HTMLElement>(`[data-plan-day="${d}"]`)!
 const row = (root: ParentNode, id: string) => root.querySelector<HTMLElement>(`[data-plan-task="${id}"]`)!
-const plan = (date?: string) => render(<PlanView date={date} />)
+// The days appear once the local tasks are read; the skeleton stands in before (motion-polish D2).
+async function plan(date?: string) {
+  const r = await render(<PlanView date={date} />)
+  await waitFor(() => !!r.container.querySelector('[data-plan-grid], [data-plan-agenda]'))
+  return r
+}
 
 async function drag(el: Element, target: Element) {
   document.elementFromPoint = () => target
