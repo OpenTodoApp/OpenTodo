@@ -133,15 +133,23 @@ Body text rendered by shared UI components and screens SHALL be 15 px, and their
 - **THEN** their size is a multiple of the display step and is the same size as before this change within one pixel
 
 ### Requirement: Reduced motion
-Ordinary interface transitions SHALL last no more than 250 ms. One longer duration, the moment token of 400 ms, SHALL be reserved for the completion sequence and SHALL never be used for navigation, hover, focus or layout transitions. When the system requests reduced motion, the app SHALL replace movement and scaling animations, including the moment, with instant changes or opacity fades of at most 250 ms.
+Interface transitions SHALL use one of three durations: 120 ms for interface feedback, 250 ms for emphasis, and one 400 ms *moment* reserved for the completion sequence, list reflow and overlay entrances; nothing SHALL last longer than 400 ms and no exit SHALL last longer than its entrance. Movement SHALL use an ease-out curve without overshoot (`--ease-spring`) or the calm ease; nothing SHALL bounce. When the system requests reduced motion, the app SHALL replace every movement, scale and height animation with an instant change or an opacity or colour fade of at most 120 ms, and SHALL skip view transitions. Under the no-motion attribute every transition and animation SHALL be instant, colour and opacity included.
 
 #### Scenario: Completing a task with reduced motion
 - **WHEN** reduced motion is requested and the user completes a task
-- **THEN** the task changes state without a movement or scale animation
+- **THEN** the check mark changes state without a scale animation, the row's opacity fades within 120 ms and the rows below take their new places at once
+
+#### Scenario: Nothing longer than a moment
+- **WHEN** any sequence in the app is measured
+- **THEN** no transition or animation is declared longer than 400 ms and every exit is shorter than or equal to its entrance
 
 #### Scenario: Moment used for a hover
 - **WHEN** a change applies the moment duration to a hover or a menu transition
 - **THEN** the token lint fails naming the file and line
+
+#### Scenario: Reduced motion skips view transitions
+- **WHEN** reduced motion is requested and a reschedule moves three rows to another group
+- **THEN** no view transition starts and the list shows its new order at once
 
 ### Requirement: Legacy component classes follow the tokens
 The legacy button, input and keyboard-hint classes SHALL take their colours, radius and type from the tokens while any screen still uses them. Once no screen uses a legacy class, it SHALL be removed from the stylesheet and a test SHALL fail if it returns. Screens SHALL use the shared button, field and key-badge primitives instead.
@@ -671,15 +679,15 @@ An accent theme SHALL declare only its accent, its bright dark-mode text colour 
 - **THEN** the canvas, surfaces, text tones and borders keep exactly the same values
 
 ### Requirement: Moment motion tokens
-The tokens SHALL include a spring easing curve (an ease-out with a light overshoot that settles, defined as a cubic bezier with no animation library) and a moment duration of 400 ms. The moment SHALL be zero under the no-motion attribute and SHALL fall under the reduced-motion rule. The motion foundation SHALL demonstrate both.
+The tokens SHALL include a spring easing curve (an ease-out that settles without overshoot, defined as a cubic bezier with no animation library) and a moment duration of 400 ms. The moment SHALL be zero under the no-motion attribute and SHALL fall under the reduced-motion rule. The motion foundation SHALL demonstrate both.
 
 #### Scenario: No motion zeroes the moment
 - **WHEN** the root carries `data-motion="none"` and an element transitions with the moment duration
 - **THEN** it changes instantly
 
 #### Scenario: Spring on a sheet
-- **WHEN** a later change opens a sheet with the spring curve at the emphasis duration
-- **THEN** the sheet overshoots its resting place by a few pixels and settles within 250 ms, and under reduced motion it fades in without moving
+- **WHEN** a phone sheet opens with the spring curve at the emphasis duration
+- **THEN** the sheet reaches its resting place within 250 ms without passing it, and under reduced motion it fades in without moving
 
 ### Requirement: Brand mark
 OpenTodo SHALL have one brand mark and one wordmark, kept as a single SVG source in the shared UI folder, from which every other brand asset is generated. The mark SHALL be an open loop that closes into a tick, drawn as one continuous stroke on a 24-unit grid with a 2-unit stroke, never a tick inside a square and never a generic checkbox. It SHALL exist in two variants: mono, which draws the whole mark in `currentColor` with the loop's closing segment in the accent colour, for use in the interface; and colour, which draws the mark on a filled rounded square in the brand's dark slate with the stroke in the accent, for icons on other people's surfaces (home screens, browser toolbars, store listings). The wordmark SHALL be the name "OpenTodo" set in the bundled interface typeface and SHALL never appear inside the mark. The mark SHALL stay legible at 16 px and SHALL be rendered by the app at 16, 20, 24 and 32 px only from the SVG; raster files SHALL exist only where a platform requires them (web app manifest, Apple touch icon, extension icons) and SHALL be generated by a script, never edited by hand. The mono mark SHALL meet 3:1 against every surface it is placed on in both themes and the high-contrast override; the colour mark's stroke SHALL meet 3:1 against its own square. The source SVG SHALL be under 2 KB and carry the project's licence note.
@@ -741,3 +749,14 @@ The client SHALL show at most one toast at a time, in the toast region (bottom c
 #### Scenario: Reduced motion
 - **WHEN** the system prefers reduced motion and a toast appears and leaves
 - **THEN** it only fades in and out, with no movement
+
+### Requirement: Motion sequences in the workbench
+The workbench SHALL have a Foundations motion story set showing the completion sequence on a row and on a card, the repeating-task completion, a list reflow and each overlay entrance, each playable with a control, in both themes. An automated check in the interface check SHALL open these stories with reduced motion emulated and fail if any running animation changes `transform`, `height`, `width` or `translate`, and SHALL open them with the no-motion attribute and fail if any animation runs at all.
+
+#### Scenario: A movement sneaks past reduced motion
+- **WHEN** a contributor adds a 200 ms slide to a toast without a reduced-motion rule and runs the interface check
+- **THEN** the check fails naming the story and the animated property
+
+#### Scenario: Stories render in both themes
+- **WHEN** the motion stories are opened in light and in dark
+- **THEN** every sequence plays and the accessibility gate passes on each story

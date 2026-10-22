@@ -13,11 +13,33 @@ The client SHALL ship a web app manifest and a service worker that precaches the
 - **THEN** the shell loads and shows locally stored tasks
 
 ### Requirement: Standard views
-The client SHALL provide Inbox (the Inbox tasks of OpenSpec `project-organization`, "Inbox is the default container": open, without a project and not scheduled), Today (open tasks due today or earlier, with overdue tasks grouped first), Upcoming (open tasks due after today grouped by date), Completed (completed tasks newest first, grouped by the day they were completed), and one view per project (its open tasks). Under its header the Inbox SHALL show one quiet line "N planned tasks without a project" while at least one open scheduled task without a project exists; activating it SHALL open the Filter view with the query `no project`. When quick add in the Inbox creates a task that is scheduled (its line sets a date, a start or Someday), the client SHALL announce where it went (for example "Added to Friday") with a control that opens that view, instead of leaving the user to wonder why it did not appear. "Today" in these views is the user's logical today (OpenSpec `date-time-preferences`, "Logical today"): the calendar date, or the previous one while the local time is before the user's day start.
+The client SHALL provide Inbox (the Inbox tasks of OpenSpec `project-organization`, "Inbox is the default container": open, without a project and not scheduled), Today (open tasks due today or earlier, with the tasks due before today grouped first under "Earlier"), Upcoming (open tasks due after today grouped by date), Completed (completed tasks newest first, grouped by the day they were completed), and one view per project (its open tasks). Under its header the Inbox SHALL show one quiet line "N planned tasks without a project" while at least one open scheduled task without a project exists; activating it SHALL open the Filter view with the query `no project`. When quick add in the Inbox creates a task that is scheduled (its line sets a date, a start or Someday), the client SHALL announce where it went (for example "Added to Friday") with a control that opens that view, instead of leaving the user to wonder why it did not appear. "Today" in these views is the user's logical today (OpenSpec `date-time-preferences`, "Logical today"): the calendar date, or the previous one while the local time is before the user's day start.
+
+The Earlier group of Today SHALL carry two actions in its header, visible at all times: **Move all to today**, which sets today as the due date of every task in the group keeping each task's time of day, and **Reschedule…**, which opens the date choices of the bulk Actions menu (today, tomorrow, next week, pick a date) and applies the choice to every task in the group. Both SHALL write one batch with the Undo toast of bulk actions, apply locally at once, work offline and converge per task and field. A task in the group because of a past deadline only SHALL get a due date and keep its deadline; a repeating task SHALL move its occurrence as a single date change does. The same two actions SHALL be command palette commands, "Move earlier tasks to today" and "Reschedule earlier tasks…", offered while Today's Earlier group is not empty, with no key of their own.
 
 #### Scenario: Overdue grouping
 - **WHEN** Today is opened and there are tasks due before today
-- **THEN** they are listed under an "Overdue" heading above today's tasks
+- **THEN** they are listed under an "Earlier" heading above today's tasks (the group is named Earlier; "overdue" is not a word of the interface, see `task-list-presentation` "Words for tasks that are late")
+
+#### Scenario: Move all to today
+- **WHEN** Earlier holds a task due Monday at 09:30 and a task due Tuesday without a time, and the user activates "Move all to today"
+- **THEN** both are due today, the first at 09:30, they join today's group at once, the Earlier group is gone, and a toast reads "2 tasks moved to today" with Undo
+
+#### Scenario: Reschedule offline
+- **WHEN** the device is offline and the user chooses Reschedule… → Tomorrow on an Earlier group of four tasks
+- **THEN** the four tasks are due tomorrow at once, leave Today, are queued as one batch and reach the other devices after the next sync
+
+#### Scenario: Undo
+- **WHEN** the user moved three earlier tasks to today and activates Undo within ten seconds
+- **THEN** each task has its previous due date again and is back in Earlier, as one batch
+
+#### Scenario: Deadline-only task
+- **WHEN** Earlier holds a task with no due date whose deadline was yesterday and the user activates "Move all to today"
+- **THEN** the task is due today and its deadline is unchanged
+
+#### Scenario: Palette command
+- **WHEN** Earlier holds two tasks and the user opens the command palette and types "earlier"
+- **THEN** "Move earlier tasks to today" and "Reschedule earlier tasks…" are offered, and neither is offered while Earlier is empty
 
 #### Scenario: Upcoming grouping
 - **WHEN** Upcoming is opened
@@ -25,7 +47,7 @@ The client SHALL provide Inbox (the Inbox tasks of OpenSpec `project-organizatio
 
 #### Scenario: Today after midnight with a day start
 - **WHEN** the user's day start is `04:00`, it is 01:30 on Thursday, and tasks are due on Wednesday and on Thursday
-- **THEN** Today lists Wednesday's tasks under "Today" and none under "Overdue", and Upcoming lists Thursday's under "Tomorrow"
+- **THEN** Today lists Wednesday's tasks under "Today" and none under "Earlier", and Upcoming lists Thursday's under "Tomorrow"
 
 #### Scenario: Where planned tasks went
 - **WHEN** the user has 3 tasks without a project that are due later this week and opens the Inbox
@@ -36,7 +58,7 @@ The client SHALL provide Inbox (the Inbox tasks of OpenSpec `project-organizatio
 - **THEN** the task is created due Friday without a project, it is not listed in the Inbox, and an announcement reads "Added to Friday" with a control that opens Upcoming at Friday
 
 ### Requirement: Task detail panel
-Opening a task SHALL show a panel in the shell's panel slot (see `app-shell`) for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The panel SHALL show only the properties that have a value and offer the rest from an Add menu. A task SHALL open in the panel from Enter on a selected row, from Open details or `Shift+Enter` in the inline editor, and from a click on a row's title when the inline editor does not apply (see `task-list-presentation` "Inline title editing"). On narrow screens the panel SHALL open as a full-screen sheet over the list.
+Opening a task SHALL show a panel in the shell's panel slot (see `app-shell`) for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The panel SHALL show only the properties that have a value and offer the rest from an Add menu. A task SHALL open in the panel from Enter on a selected row, from Open details or `Shift+Enter` in the inline editor, and from a click on a row's title when the inline editor does not apply (see `task-list-presentation` "Inline title editing"). Below 768 px the panel SHALL open as a bottom sheet over the dimmed list: a drag handle on its own strip above the sticky header, a height of at most 90 percent of the viewport, the same content and address as the panel. The sheet SHALL close on a drag down of more than 80 px or a flick on the handle or the header, on a drag down on its body only while the body is scrolled to its top, on a tap on the scrim, on its Close control and on Escape. With the on-screen keyboard up the focused field SHALL stay visible inside the sheet.
 
 #### Scenario: Open from the list
 - **WHEN** the user presses Enter on a selected task, or taps a task's title on a touch screen
@@ -49,6 +71,18 @@ Opening a task SHALL show a panel in the shell's panel slot (see `app-shell`) fo
 #### Scenario: Empty task shows few things
 - **WHEN** the user opens a task with a title, a project and nothing else
 - **THEN** the panel shows the title, the notes placeholder, the project, the When and priority values, the subtask line and the Add menu, and no other property
+
+#### Scenario: Drag the handle to close
+- **WHEN** the user opens a task on a 390 px phone and drags the handle down by 100 px
+- **THEN** the sheet closes, the address loses the task id, and the list behind is where it was
+
+#### Scenario: Reading comments does not close the sheet
+- **WHEN** the user has scrolled the sheet's body down to the comments and drags down on a comment
+- **THEN** the body scrolls back up and the sheet stays open; a further drag down once the body is at its top closes it
+
+#### Scenario: Scrim and Close
+- **WHEN** the user taps the dimmed list above the sheet, or the sheet's Close control
+- **THEN** the sheet closes and focus returns to the row that opened it
 
 ### Requirement: Keyboard navigation
 Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k` (or arrows) move, Enter opens, `F2` edits the selected task's title in place, `c` completes or reopens, `1`–`4` set priority, Delete deletes, `g` then `i`/`t`/`u`/`c`/`s` navigates, `g` then `p` opens Inbox triage, Escape closes the panel or clears the selection, `?` lists shortcuts, and `Ctrl`/`⌘`+`K` opens the palette. Shortcuts SHALL not fire while typing in a field, except `Ctrl`/`⌘`+`K` outside the notes editor.
@@ -249,11 +283,11 @@ When Vim keybindings are enabled the `?` overlay SHALL include a Vim section lis
 - **THEN** the overlay shows only the default shortcuts and a hint that Vim keybindings can be enabled in Settings
 
 ### Requirement: Overlays fit every screen
-Every menu, popover, picker, dialog and toast SHALL be fully inside the viewport from 360 px wide up, with its close control visible and usable. Below 640 px menus, popovers and pickers SHALL open as bottom sheets across the screen width; from 640 px up they SHALL open next to their trigger, shifted or flipped to stay inside the viewport. A dialog taller than the screen SHALL become a full-screen sheet with a pinned header and close button.
+Every menu, popover, picker, dialog and toast SHALL be fully inside the viewport from 360 px wide up, with its close control visible and usable. Below 640 px menus, popovers and pickers SHALL open as bottom sheets across the screen width with a drag handle, at most 90 percent of the viewport height, closing on a drag down on the handle as well as on their close control and a tap outside; from 640 px up they SHALL open next to their trigger, shifted or flipped to stay inside the viewport. A dialog taller than the screen SHALL become a full-screen sheet with a pinned header and close button. A toast SHALL never cover the focused control (it sits above the tab bar on a phone and moves up while a sheet is open).
 
 #### Scenario: Notifications on a phone
 - **WHEN** a user on a 390 px wide screen taps the bell
-- **THEN** the notifications open as a bottom sheet across the screen, every entry is fully visible and the sheet closes with its close button or a tap outside
+- **THEN** the notifications open as a bottom sheet across the screen with a drag handle, every entry is fully visible and the sheet closes with its close button, a drag down on the handle or a tap outside
 
 #### Scenario: Menu near the edge on a tablet
 - **WHEN** a menu's trigger sits near the left edge of a 768 px screen
@@ -262,6 +296,10 @@ Every menu, popover, picker, dialog and toast SHALL be fully inside the viewport
 #### Scenario: Long dialog
 - **WHEN** a dialog's content is taller than the screen
 - **THEN** it opens full screen, its content scrolls and its close button stays visible at the top
+
+#### Scenario: Toast above the tab bar
+- **WHEN** the user completes a task on a phone and the Undo toast appears
+- **THEN** the toast sits above the tab bar and covers no row, and Undo is at least 48 px tall
 
 ### Requirement: Consistent overlay behaviour
 All overlays SHALL close with Escape and, except destructive confirmations, with a tap outside; move focus into themselves when opened and back to their trigger when closed; keep the page behind from scrolling while open; respect device safe areas; and expose their role and label to assistive technology.
@@ -275,19 +313,27 @@ All overlays SHALL close with Escape and, except destructive confirmations, with
 - **THEN** only the sheet scrolls and the page behind it does not move
 
 ### Requirement: Phone layout rules
-From 360 px wide up no screen SHALL scroll horizontally, except designated regions (board columns, week grid, wide tables) that scroll inside themselves. On touch screens interactive controls SHALL be at least 44×44 px and controls shown on hover SHALL always be visible. Long words and URLs SHALL wrap, layouts SHALL follow the visible viewport height and safe areas, and the on-screen keyboard SHALL not hide the focused field.
+From 360 px wide up no screen SHALL scroll horizontally, in every interface language, except designated regions (board columns, week grid, wide tables) that scroll inside themselves. On touch screens interactive controls SHALL be at least 48×48 px, or at least 44×44 px with 8 px of space to the next control, and controls shown on hover SHALL always be visible. Long words and URLs SHALL wrap, layouts SHALL follow the visible viewport height and safe areas, and the on-screen keyboard SHALL not hide the focused field, inside a sheet included. A fixed control SHALL NOT cover content: a list reserves the room a floating control needs under its last row.
 
 #### Scenario: Narrow phone
 - **WHEN** any screen is shown 360 px wide
 - **THEN** the page has no horizontal scrollbar and nothing is cut off at the edges
 
+#### Scenario: Narrow phone in German
+- **WHEN** the interface language is German or French and Today, a project, Settings and the drawer are shown 360 px wide
+- **THEN** no page scrolls sideways and no control is clipped, with the longer labels wrapped or truncated with their full name in the accessible name
+
 #### Scenario: Row menu on a touch screen
 - **WHEN** a touch-screen user looks at the sidebar views or labels
-- **THEN** their menu buttons are visible without hovering and at least 44 px in both directions
+- **THEN** their menu buttons are visible without hovering and at least 48 px in both directions
 
 #### Scenario: Long URL in a comment
 - **WHEN** a comment contains a 120-character URL
 - **THEN** it wraps inside the comment and the page does not scroll sideways
+
+#### Scenario: Keyboard over a sheet
+- **WHEN** the user focuses the comment composer at the bottom of the task sheet on a phone
+- **THEN** the sheet scrolls so the composer stays above the keyboard and the sticky header stays visible
 
 ### Requirement: Automated layout check
 CI SHALL open every screen and every overlay at 360, 390 and 768 px wide, in light and dark themes, in Chromium and in WebKit, and SHALL fail when a page scrolls horizontally outside designated regions, an overlay or its close control is outside the viewport or not clickable, an overlay does not close with Escape and its close button, or a touch target is smaller than 44×44 px.
@@ -650,3 +696,22 @@ The installed app's icons SHALL be the colour variant of the brand mark: the SVG
 #### Scenario: Offline icon
 - **WHEN** the installed app is opened without network
 - **THEN** the shell and its icons load from the precache and the browser shows the brand mark in the title bar
+
+### Requirement: Overlay motion
+Each overlay kind SHALL enter and leave with a fixed motion: a dialog from 640 px up fades and scales up slightly within the emphasis duration and leaves in about three quarters of it; a phone sheet slides up within the emphasis duration and slides down in about three quarters of it; the task panel slides in from its edge within the emphasis duration when opened from closed and slides out in about three quarters of it, and switching the task it shows SHALL NOT replay the slide; a toast slides up within the emphasis duration and fades out; menus, popovers, tooltips and the command palette fade in within the interface duration and close at once. Entrances SHALL use the spring ease-out; an overlay SHALL accept input from its first frame; focus SHALL move as "Consistent overlay behaviour" requires regardless of motion. Under reduced motion every overlay fades only; under no motion it appears and disappears at once.
+
+#### Scenario: Dialog on a desktop
+- **WHEN** the user opens the share dialog at 1280 px
+- **THEN** the dialog fades in and scales from slightly smaller to its size within 250 ms and its first field has focus before the animation ends
+
+#### Scenario: Panel switches tasks without replaying
+- **WHEN** the task panel is open on one task and the user presses the open key on another row
+- **THEN** the panel's content changes with no slide
+
+#### Scenario: Menu closes at once
+- **WHEN** the user picks an item in a row menu
+- **THEN** the menu disappears with no exit animation and the action's effect is visible immediately
+
+#### Scenario: Reduced motion
+- **WHEN** reduced motion is requested and the user opens a phone sheet
+- **THEN** the sheet fades in with no slide and closes with a fade
