@@ -784,6 +784,10 @@ select.ui-input { @apply truncate; contain: layout paint; }
 /* The time column's width (rows-v2 D2): one value for every list, from the user's time
    format; DateTimePrefsProvider sets it on the root ("23:59" or "12:00 PM"). */
 :root { --row-time-w: 3.25rem; }
+/* Focus not obscured (rows-v2 D7, WCAG 2.2 2.4.11): the content scroller keeps room for
+   a toast (3.5 rem) and the selection bar (3.5 rem) plus their gap, so a focused row
+   action scrolled into view with `block: 'nearest'` stays clear of both. */
+:root { --list-scroll-pad: 8rem; }
 /* Completion feedback (task-list-presentation): the check mark pops within the emphasis
    duration; under reduced motion the animation is instant and only the row's opacity fades. */
 @keyframes row-check-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }

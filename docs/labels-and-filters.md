@@ -22,7 +22,7 @@ Pick whichever is quickest:
 - Select a task and press <kbd>L</kbd>, start typing, and press <kbd>Enter</kbd>. The picker stays open so you can add more.
 - Open the task and use **Labels** in the panel.
 
-If the label doesn't exist yet, typing its name and pressing <kbd>Enter</kbd> creates it. On a task row, labels show as small colored dots with the first label's name and "+2" for the others (hover or focus them to read every name); with Detailed rows in Settings → Appearance, each label is a chip. To remove one, open the task and select the **×** on the chip.
+If the label doesn't exist yet, typing its name and pressing <kbd>Enter</kbd> creates it. On a task row, labels show as small chips with the label's colour and name, two at most, then "+2" for the others (hover or focus them to read every name). To remove one, open the task and select the **×** on the chip.
 
 Labels are personal. In a shared project, other members don't see the labels you add.
 

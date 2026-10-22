@@ -313,10 +313,21 @@ describe('time column (rows-v2 D2, D3)', () => {
     await r.unmount()
   }))
 
-  it('the width variable follows the time format', async () => {
+  it('Width follows the time format: switching to 12-hour widens every column at once, through one CSS variable', async () => {
     const { rowTimeWidth } = await import('../lib/rowTime')
+    const { setUserPref } = await import('../lib/userPrefs')
+    const { DateTimePrefsProvider } = await import('./DateTimePrefsProvider')
     expect(rowTimeWidth(false)).toBe('3.25rem')
     expect(rowTimeWidth(true)).toBe('4.75rem')
+    await setUserPref('time_format', '24h')
+    const r = await render(<DateTimePrefsProvider><ul><TaskRow task={task({ due: { date: '2030-01-01', time: '21:00' } })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} timeColumn /></ul></DateTimePrefsProvider>)
+    await waitFor(() => document.documentElement.style.getPropertyValue('--row-time-w') === '3.25rem')
+    await setUserPref('time_format', '12h')
+    await waitFor(() => document.documentElement.style.getPropertyValue('--row-time-w') === '4.75rem')
+    await waitFor(() => /9:00\s?PM/i.test(r.container.querySelector('[data-row-time]')!.textContent ?? ''))
+    await r.unmount()
+    const { setDateTime } = await import('../lib/dates')
+    setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
   })
 })
 

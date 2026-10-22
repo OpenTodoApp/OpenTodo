@@ -206,6 +206,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.defer', keys: ['Shift+N'], description: 'Defer the selected task: type its start date, Enter', section: 'tasks', scope: 'list' },
   { id: 'list.evening', keys: ['Shift+E'], description: 'Toggle This Evening on the selected task', section: 'tasks', scope: 'list' },
   { id: 'list.schedule', keys: ['s'], description: 'Schedule the selected task: Day view in placement mode', section: 'tasks', scope: 'list', overrides: ['filter.save'] },
+  { id: 'list.row-actions', keys: ['Tab'], description: 'From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)', section: 'tasks', scope: 'list', local: true },
   { id: 'list.skip', keys: ['Shift+K'], description: 'Skip the current occurrence of the selected recurring task', section: 'tasks', scope: 'list', when: 'recurring task' },
   { id: 'list.detach', keys: ['Shift+O'], description: 'Recurring task: this occurrence only (standalone copy, series moves on)', section: 'tasks', scope: 'list' },
   { id: 'list.delete', keys: ['Delete', 'Backspace'], description: 'Move the selected task (and its subtasks), or the ticked tasks, to the Trash', section: 'tasks', scope: 'list' },

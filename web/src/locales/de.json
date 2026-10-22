@@ -3957,11 +3957,7 @@
   "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": "Gib hier eine Zeile ein und drücke Enter; sie landet in deinem Eingang. Probiere <em>Morgen um 15 Uhr den Zahnarzt anrufen</em>: Datum und Uhrzeit werden Teil der Aufgabe.",
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": "{n, plural, one {# wartet auf andere Aufgaben} other {# warten auf andere Aufgaben}}",
   "{n, plural, one {Show # completed} other {Show # completed}}": "{n, plural, one {# erledigte zeigen} other {# erledigte zeigen}}",
-  "Calm": "Ruhig",
-  "Calm or detailed task rows": "Ruhige oder ausführliche Aufgabenzeilen",
-  "Detailed": "Ausführlich",
   "Labels: {names}": "Labels: {names}",
-  "Rows": "Zeilen",
   "Favourites": "Favoriten",
   "Pin to sidebar": "An die Seitenleiste anheften",
   "Menu for project {name}": "Menü für Projekt {name}",
@@ -4029,7 +4025,6 @@
   "An email on your review day with last week's numbers and what is due.": "Eine E-Mail an deinem Rückblicktag mit den Zahlen der letzten Woche und dem, was fällig ist.",
   "Assistants can only read, whatever people choose.": "Assistenten können nur lesen, egal was die Leute wählen.",
   "Assistants may make changes": "Assistenten dürfen ändern",
-  "Calm leaves out what the view says and keeps counts quiet; Detailed shows every chip.": "Ruhig lässt weg, was die Ansicht schon sagt, und hält Zähler leise; Ausführlich zeigt jeden Chip.",
   "Changes to my tasks": "Änderungen an meinen Aufgaben",
   "Changing calendar feeds needs a connection. You are seeing the last loaded state.": "Kalender-Feeds zu ändern braucht eine Verbindung. Du siehst den zuletzt geladenen Stand.",
   "Changing it signs out your other sessions; this one stays signed in.": "Eine Änderung meldet deine anderen Sitzungen ab; diese bleibt angemeldet.",
@@ -4810,5 +4805,6 @@
   "How long audit events are kept and whether addresses are recorded": "Wie lange Audit-Ereignisse bleiben und ob Adressen erfasst werden",
   "How long the audit log keeps events, and whether it records addresses.": "Wie lange das Audit-Protokoll Ereignisse behält und ob es Adressen erfasst.",
   "Remove filter: {name}": "Filter entfernen: {name}",
-  "Configuration": "Konfiguration"
+  "Configuration": "Konfiguration",
+  "From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)": "Von einer Aufgabe aus ihre Aktionen Planen, Priorität und Weitere erreichen (breite Bildschirme mit Maus; in einer Baumliste rückt Tab ein)"
 }

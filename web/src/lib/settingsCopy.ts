@@ -168,7 +168,6 @@ export const SETTINGS_COPY = {
       mode: { label: msg('Mode'), description: msg("System follows your device's light or dark setting.") },
       theme: { label: msg('Theme') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
-      rows: { label: msg('Rows'), description: msg('Calm leaves out what the view says and keeps counts quiet; Detailed shows every chip.') },
     },
   },
   sidebar: {

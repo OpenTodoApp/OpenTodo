@@ -238,7 +238,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        <div ref={content} id="content" className={`relative min-h-0 flex-1 overflow-y-auto ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+        <div ref={content} id="content" className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (

@@ -28,8 +28,8 @@ export const MAX_CHROME_ROWS = 2
 const PROJECT_CHROME_ALLOWANCE = 3
 /** An empty task's panel: the breadcrumb, Do on, Priority and Add, never a form of empty rows. */
 export const MAX_EMPTY_TASK_ITEMS = 7
-/** A Calm row in Today: at most four metadata items at full contrast; the counts are quiet (calm-rows D10). */
-export const MAX_CALM_ROW_ITEMS = 4
+/** A row in Today: at most five items in its metadata line; the time column and the quiet trailing group are counted apart (rows-v2 D10). */
+export const MAX_ROW_META_ITEMS = 5
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -218,7 +218,7 @@ describe('visible properties', () => {
     await r.unmount()
   })
 
-  it('a busy Calm row in Today shows at most four full-contrast metadata items, with the counts in a quiet group', async () => {
+  it('a busy row in Today shows at most five metadata items, its time in the column and the project and counts in the trailing group', async () => {
     const project = await createProject({ name: 'Home' })
     const labels = [await createLabel({ name: 'errand' }), await createLabel({ name: 'call' }), await createLabel({ name: 'home' })]
     const id = await createTask({ title: 'Busy', project_id: project, due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 30, labels })
@@ -230,12 +230,14 @@ describe('visible properties', () => {
     await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-row-counts] [data-comments]`), 'the busy row with its counts')
     const row = r.container.querySelector(`[data-task-id="${id}"]`)!
     const items = [...row.querySelector('[data-row-meta]')!.children]
-    expect(items.length, items.map((e) => e.outerHTML.slice(0, 60)).join(' | ')).toBeLessThanOrEqual(MAX_CALM_ROW_ITEMS)
-    expect(row.querySelector('[data-row-counts] [data-progress]')).toBeTruthy()
+    expect(items.length, items.map((e) => e.outerHTML.slice(0, 60)).join(' | ')).toBeLessThanOrEqual(MAX_ROW_META_ITEMS)
+    expect(row.querySelector('[data-row-time]')!.textContent).toBe('10:00')
+    expect(row.querySelector('[data-row-trailing] [data-project]')!.textContent).toBe('Home')
+    expect(row.querySelector('[data-row-trailing] [data-row-counts] [data-progress]')).toBeTruthy()
     await r.unmount()
   })
 
-  it('an origin keeps a busy Calm row inside the budget: the chip is quiet, outside the metadata line (task-origin)', async () => {
+  it('an origin keeps a busy row inside the budget: the chip is quiet, outside the metadata line (task-origin)', async () => {
     const project = await createProject({ name: 'Home' })
     const labels = [await createLabel({ name: 'errand' }), await createLabel({ name: 'call' })]
     const id = await createTask({ title: 'Captured', project_id: project, due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 30, labels,
@@ -243,9 +245,18 @@ describe('visible properties', () => {
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-origin]`), 'the row with its origin chip')
     const row = r.container.querySelector(`[data-task-id="${id}"]`)!
-    expect(row.querySelectorAll('[data-row-meta] > *').length).toBeLessThanOrEqual(MAX_CALM_ROW_ITEMS)
+    expect(row.querySelectorAll('[data-row-meta] > *').length).toBeLessThanOrEqual(MAX_ROW_META_ITEMS)
     expect(row.querySelector('[data-row-meta] [data-origin]')).toBeNull()
     expect(row.querySelector('[data-row-trailing] [data-origin] .text-faint')).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('focus not obscured: the content scroller keeps room for a toast and the selection bar (rows-v2 D7)', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    const content = r.container.querySelector('#content')!
+    expect(content.className).toContain('scroll-pb-(--list-scroll-pad)')
+    const css = (await import('../index.css?raw')).default
+    expect(css).toMatch(/--list-scroll-pad:\s*8rem/)
     await r.unmount()
   })
 })

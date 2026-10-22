@@ -75,6 +75,11 @@ function leaveSidebar() {
   if ((document.activeElement as HTMLElement | null)?.closest?.('[data-project-row]')) (document.activeElement as HTMLElement).blur()
 }
 
+/** The key was pressed on a row's revealed actions (rows-v2 D7): Tab keeps its browser meaning there. */
+function inRowActions(e: KeyboardEvent): boolean {
+  return !!(e.target as HTMLElement | null)?.closest?.('[data-row-actions]')
+}
+
 export function useListShortcuts(c: ShortcutContext) {
   const { rows, selectedId, setSelectedId, selection, ticked, ui, openId, isReadOnly } = c
   const idx = rows.findIndex((r) => r.task.id === selectedId)
@@ -165,8 +170,9 @@ export function useListShortcuts(c: ShortcutContext) {
       c.toggleCollapsed(row.task.id, false)
       ui.setAddingUnder(row.task.id)
     },
-    'list.indent': () => { if (!row || !writable || !c.treeView) return false; indent(row, idx) },
-    'list.outdent': () => { if (!row || !writable || !c.treeView) return false; outdent(row) },
+    // Tab inside a row's revealed actions moves between them (rows-v2 D7), never indents.
+    'list.indent': (e) => { if (!row || !writable || !c.treeView || inRowActions(e)) return false; indent(row, idx) },
+    'list.outdent': (e) => { if (!row || !writable || !c.treeView || inRowActions(e)) return false; outdent(row) },
     'list.complete': () => {
       if (ticked.length) { act(runBulk(ticked, { kind: 'complete' })); return }
       if (!row || !writable) return false

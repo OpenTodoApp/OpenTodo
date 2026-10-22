@@ -3957,11 +3957,7 @@
   "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": "Tapez une ligne ici et appuyez sur Entrée ; elle va dans votre boîte de réception. Essayez <em>Appeler le dentiste demain à 15 h</em> : la date et l’heure font partie de la tâche.",
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": "{n, plural, one {# en attente d’autres tâches} other {# en attente d’autres tâches}}",
   "{n, plural, one {Show # completed} other {Show # completed}}": "{n, plural, one {Afficher # terminée} other {Afficher # terminées}}",
-  "Calm": "Calme",
-  "Calm or detailed task rows": "Lignes de tâches calmes ou détaillées",
-  "Detailed": "Détaillé",
   "Labels: {names}": "Étiquettes : {names}",
-  "Rows": "Lignes",
   "Favourites": "Favoris",
   "Pin to sidebar": "Épingler à la barre latérale",
   "Menu for project {name}": "Menu du projet {name}",
@@ -4029,7 +4025,6 @@
   "An email on your review day with last week's numbers and what is due.": "Un e-mail le jour de votre revue avec les chiffres de la semaine passée et ce qui arrive à échéance.",
   "Assistants can only read, whatever people choose.": "Les assistants peuvent seulement lire, quel que soit le choix de chacun.",
   "Assistants may make changes": "Modifications par les assistants",
-  "Calm leaves out what the view says and keeps counts quiet; Detailed shows every chip.": "Calme omet ce que la vue dit déjà et garde les compteurs discrets ; Détaillé montre chaque pastille.",
   "Changes to my tasks": "Modifier mes tâches",
   "Changing calendar feeds needs a connection. You are seeing the last loaded state.": "Modifier les flux de calendrier nécessite une connexion. Vous voyez le dernier état chargé.",
   "Changing it signs out your other sessions; this one stays signed in.": "Le changer déconnecte vos autres sessions ; celle-ci reste connectée.",
@@ -4810,5 +4805,6 @@
   "How long audit events are kept and whether addresses are recorded": "Durée de conservation des événements d’audit et enregistrement des adresses",
   "How long the audit log keeps events, and whether it records addresses.": "Combien de temps le journal d’audit garde les événements, et s’il enregistre les adresses.",
   "Remove filter: {name}": "Retirer le filtre : {name}",
-  "Configuration": "Configuration"
+  "Configuration": "Configuration",
+  "From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)": "Depuis une tâche, atteindre ses actions Planifier, Priorité et Plus (grands écrans avec une souris ; dans une liste en arbre, Tab indente)"
 }
