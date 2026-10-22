@@ -4,7 +4,7 @@
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op). Since
 // web-component-structure the days come from lib/calendarDays, the live reads from
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
-import { Button, MenuItem, PageBody, PageHeader } from '../ui'
+import { Button, MenuItem, PageBody, PageHeader, Tooltip } from '../ui'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { calendarTasks, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
@@ -200,10 +200,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           meta={<CalendarStatus placing={placing} placingTask={placingTask} status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />}
           actions={<>
             {feeds.subs.length > 0 && (
-              <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={feeds.eventsShown} data-calendars-toggle
-                title={feeds.eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}
-                className={feeds.eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
-                onClick={() => act(setShowEvents(!feeds.eventsShown))}>{t('Calendars')}</Button>
+              <Tooltip label={feeds.eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}>
+                <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={feeds.eventsShown} data-calendars-toggle
+                  className={feeds.eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
+                  onClick={() => act(setShowEvents(!feeds.eventsShown))}>{t('Calendars')}</Button>
+              </Tooltip>
             )}
             <span className="flex items-center" role="group" aria-label={t('Range')}>
               <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? t('Previous day') : t('Previous week')} onClick={() => step(-1)} />

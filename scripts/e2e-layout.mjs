@@ -45,6 +45,11 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
+// Screens wait on English headings and overlays are opened by English names: in another
+// language (the German leg, ux-audit-three-widths F4) every screen is checked once a
+// heading, a task row or an alert shows, without its overlays or layout switches.
+const OTHER_LANG = !!LANG && LANG !== 'en'
+const anyReady = (p) => p.locator('h1, [data-task-id], [role="alert"]').first().waitFor()
 const MIN_TARGET = 44
 mkdirSync(outDir, { recursive: true })
 
@@ -153,6 +158,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
       if (s.widths && !s.widths.includes(width)) continue
+      if (OTHER_LANG && s.layout) continue
       run.step = `screen ${s.name}`
       const p = s.anon ? await anonCtx.newPage() : page
       // A screen that does not load is retried once (a slow CI machine); the second
@@ -163,7 +169,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }))
       const load = async () => {
         await p.goto(base + s.path)
-        await s.ready(p)
+        await (OTHER_LANG ? anyReady : s.ready)(p)
         if (s.layout) {
           await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: s.layout }).click()
           await p.waitForTimeout(300)
@@ -199,7 +205,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         }
       }
       await shot(p, s.name)
-      for (const o of s.overlays ?? []) {
+      for (const o of OTHER_LANG ? [] : s.overlays ?? []) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()

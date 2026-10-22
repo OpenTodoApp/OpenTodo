@@ -83,12 +83,12 @@
   "layoutCheck": null,
   "layoutCheckReason": "a tab of the panel, opened by the tour after task-detail",
   "story": "Task/Panel",
-  "on": "project",
+  "on": "inbox",
   "open": {
    "overlay": "task-detail",
    "steps": [
     {
-     "tab": "Comments"
+     "click": "[data-conversation] [role=\"tab\"][id$=\"-tab-comments\"]"
     }
    ]
   }
@@ -103,12 +103,12 @@
   "layoutCheck": null,
   "layoutCheckReason": "a tab of the panel, opened by the tour after task-detail",
   "story": "Task/Panel",
-  "on": "project",
+  "on": "inbox",
   "open": {
    "overlay": "task-detail",
    "steps": [
     {
-     "tab": "Activity"
+     "click": "[data-conversation] [role=\"tab\"][id$=\"-tab-activity\"]"
     }
    ]
   }
@@ -134,12 +134,12 @@
   "layoutCheck": null,
   "layoutCheckReason": "a tab of the panel, opened by the tour after task-detail",
   "story": "Task/Panel",
-  "on": "project",
+  "on": "inbox",
   "open": {
    "overlay": "task-detail",
    "steps": [
     {
-     "tab": "Time"
+     "click": "[data-conversation] [role=\"tab\"][id$=\"-tab-time\"]"
     }
    ]
   }
@@ -224,7 +224,10 @@
   "open": {
    "steps": [
     {
-     "click": "button[aria-label=\"Add or fold projects\"]"
+     "clickIfVisible": "button[aria-label=\"Open menu\"]"
+    },
+    {
+     "click": "aside[data-sidebar] button[aria-label=\"Add or fold projects\"]"
     }
    ]
   }
@@ -776,7 +779,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "the seed has no saved location; the tour opens an unknown one, which shows the not-found state",
   "path": "/location/none",
-  "ready": "main"
+  "ready": "h1, h2, [role=\"alert\"], main"
  },
  {
   "id": "rules",
@@ -920,7 +923,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "a signed-out form; added to the tour",
   "path": "/forgot",
-  "ready": "main",
+  "ready": "h1, h2, form, [role=\"alert\"]",
   "anon": true
  },
  {
@@ -933,7 +936,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "needs a reset token; the tour opens an expired one, which shows the invalid-link state",
   "path": "/reset/expired-token",
-  "ready": "main",
+  "ready": "h1, h2, form, [role=\"alert\"]",
   "anon": true
  },
  {
@@ -946,7 +949,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "needs a verification token; the tour opens an expired one",
   "path": "/verify/expired-token",
-  "ready": "main",
+  "ready": "h1, h2, form, [role=\"alert\"]",
   "anon": true
  },
  {
@@ -959,7 +962,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "needs an email-change token; the tour opens an expired one",
   "path": "/confirm-email/expired-token",
-  "ready": "main"
+  "ready": "h1, h2, form, [role=\"alert\"]"
  },
  {
   "id": "invite",
@@ -971,7 +974,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "needs an account invitation; the tour opens an expired one",
   "path": "/invite/expired-token",
-  "ready": "main",
+  "ready": "h1, h2, form, [role=\"alert\"]",
   "anon": true
  },
  {
@@ -1002,7 +1005,7 @@
   "layoutCheck": null,
   "layoutCheckReason": "added with the workspaces change; the tour opens an expired link",
   "path": "/invite/w/expired-token",
-  "ready": "main",
+  "ready": "h1, h2, form, [role=\"alert\"]",
   "anon": true
  },
  {

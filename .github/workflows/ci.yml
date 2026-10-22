@@ -200,6 +200,54 @@ jobs:
           name: layout-report-${{ matrix.engine }}-${{ strategy.job-index }}
           path: layout-report
 
+  # The interface audit (OpenSpec change ux-audit-three-widths): every screen of the
+  # inventory at 360/768/1280 px, light and dark, English and German, measured against
+  # the interface budget and the audited rules; the report (index.html, report.json,
+  # screenshots) is uploaded as ux-audit-report. Non-blocking: the tour only reports,
+  # unless the repository variable UX_AUDIT_STRICT is 1; its measurement tests fail it.
+  ux-audit:
+    name: Interface audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [changes, web]
+    if: needs.changes.outputs.code == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: internal/web/dist
+      - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
+      # axe-core for M1 (web devDependency).
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - name: Install Playwright with Chromium
+        run: |
+          npm i -g playwright@1.56.1
+          playwright install --with-deps chromium
+      - name: Measurement tests (fixtures in Chromium)
+        run: node --test scripts/ux-audit/measure.test.mjs
+      # Reports only, unless the maintainer sets the repository variable UX_AUDIT_STRICT to 1.
+      - name: Run the audit tour
+        continue-on-error: ${{ vars.UX_AUDIT_STRICT != '1' }}
+        env:
+          UX_AUDIT_STRICT: ${{ vars.UX_AUDIT_STRICT }}
+          CONCURRENCY: 3
+        run: node scripts/ux-audit/tour.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: ux-audit-report
+          path: ux-audit-report
+
   # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
   # axe-core without serious or critical issues, search, and pages without JavaScript.
   # Its own job so docs-only changes run it without the server and layout jobs.
@@ -548,7 +596,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image]
+    needs: [changes, web, server, layout, ux-audit, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -611,7 +659,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image, docker]
+    needs: [changes, web, server, layout, ux-audit, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)

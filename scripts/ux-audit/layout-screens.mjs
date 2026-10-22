@@ -211,7 +211,10 @@ export const OVERLAYS = {
     return { overlay: overlayLoc(p), trigger, kind: 'popover', after: async () => p.keyboard.press('Escape') }
   },
   async 'task-detail'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().getByRole('button').nth(1).click()
+    // Enter on the row's open control: from 768 px with a fine pointer a click on the
+    // title edits it in place instead (inline-task-editing), so the audit tour's 1280 px
+    // pass opens the panel the keyboard way, as every width does here.
+    await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
     return { overlay: p.locator('aside[data-detail-for]'), kind: 'panel' }
   },
   // Process the Inbox's scheduling sheet (inbox-means-unplaced): a bottom sheet on phones.
@@ -221,7 +224,7 @@ export const OVERLAYS = {
     return { overlay: p.getByRole('dialog', { name: 'Schedule' }), kind: 'dialog' }
   },
   async 'label-picker'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
     await p.locator('aside[data-detail-for]').waitFor()
     await p.keyboard.press('Escape')
     await p.keyboard.press('L')
@@ -311,13 +314,13 @@ export const OVERLAYS = {
   },
   // Blocked by (task-dependencies, ux-overhaul chips): the chip when set, else Add › Blocked by.
   async 'blocked-by-picker'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-open]').press('Enter')
     const { editor, trigger } = await openProperty(p, 'blocked-by', 'Blocked by')
     await editor.getByRole('combobox').first().waitFor()
     return { overlay: editor, trigger, kind: 'popover' }
   },
   async 'mention-picker'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     const comments = p.locator('aside[data-detail-for]').getByRole('tab', { name: /^Comments/ })
     await comments.evaluate((el) => el.scrollIntoView({ block: 'start' }))
     await comments.click()
@@ -335,7 +338,7 @@ export const OVERLAYS = {
   // Task panel (task-panel-facets): a property's picker opens in a popover anchored to its
   // part; a property without a value has no part yet and is reached through Add.
   ...Object.fromEntries([['project', 'Project'], ['parent', 'Parent task'], ['section', 'Section']].map(([field, label]) => [`${field}-picker`, async (p) => {
-    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     const { editor, trigger } = await openProperty(p, field, label)
     await editor.getByRole('combobox').first().waitFor()
     return { overlay: editor, trigger, kind: 'popover' }
@@ -351,14 +354,14 @@ export const OVERLAYS = {
   },
   // The When popover, one segment at a time (task-panel-facets D3).
   async 'when-popover'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     const { editor, trigger } = await openProperty(p, 'due', 'Do on')
     return { overlay: editor, trigger, kind: 'popover' }
   },
   // A task's location editor (task-locations "Setting a location"): search, coordinates,
   // "Use my location" and the saved locations; no map until "Pick on the map".
   async 'location-editor'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     const { editor, trigger } = await openProperty(p, 'location', 'Location')
     await editor.locator('[data-location-editor]').waitFor()
     return { overlay: editor, trigger, kind: 'popover' }
@@ -372,7 +375,7 @@ export const OVERLAYS = {
     return { overlay: form, kind: 'inline', after: async () => { await form.getByRole('button', { name: 'Cancel' }).click() } }
   },
   async 'zone-control'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     // The zone lives inside the Do on segment of the When popover (task-panel-facets D3).
     await openProperty(p, 'due', 'Do on')
     const trigger = p.locator('[data-facet-editor]').getByRole('button', { name: /^Time zone:/ }).first()
@@ -381,7 +384,7 @@ export const OVERLAYS = {
     return { overlay: p.getByRole('dialog', { name: 'Time zone' }), trigger, kind: 'popover' }
   },
   async 'task-history'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     const panel = p.locator('aside[data-detail-for]')
     const tab = panel.getByRole('tab', { name: 'History' })
     await tab.evaluate((el) => el.scrollIntoView({ block: 'start' }))
@@ -399,7 +402,7 @@ export const OVERLAYS = {
     return { overlay: change, kind: 'inline', after: async () => panel.getByRole('tab', { name: /^Comments/ }).click() }
   },
   async 'assignee-picker'(p) {
-    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().getByRole('button').nth(1).click()
+    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-open]').press('Enter')
     await p.locator('aside[data-detail-for]').waitFor()
     await p.keyboard.press('Escape')
     await p.keyboard.press('A')

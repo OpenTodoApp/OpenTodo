@@ -71,7 +71,8 @@ export function nativeTitles(path: string, source: string): Finding[] {
     // Still inside the tag? Arrow functions and `{…}` expressions are not the tag's end.
     const tagText = before.slice(open).replace(/=>/g, '').replace(/\{[^{}]*\}/g, '').replace(/\{[^{}]*\}/g, '')
     if (tagText.includes('>')) continue
-    if (/^[a-z]/.test(tag[1])) out.push({ path, line: line + 1, text: `<${tag[1]} title=` })
+    // HTML tags, and Button and IconButton, which pass `title` through to their <button> (ux-audit-three-widths F1).
+    if (/^[a-z]/.test(tag[1]) || tag[1] === 'Button' || tag[1] === 'IconButton') out.push({ path, line: line + 1, text: `<${tag[1]} title=` })
   }
   return out
 }
