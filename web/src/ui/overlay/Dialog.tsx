@@ -1,7 +1,7 @@
 import { Icon } from '../Icon'
 import { type ReactNode, useId, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { playExit } from './exit'
+import { clearExits, playExit } from './exit'
 import { trapTab } from './stack'
 import { isolate, useOverlay } from './useOverlay'
 import { t } from '../../lib/i18n'
@@ -64,6 +64,7 @@ export function Dialog({ title, onClose, children, size = 'sm', dismissable = tr
   useOverlay({ panel, onClose: onEscape ?? onClose })
   // The exit (web-app "Overlay motion", motion-v2 D5) plays on a copy once this unmounts.
   useLayoutEffect(() => {
+    clearExits()
     const el = root.current
     return () => { if (motion === 'dialog') playExit(el, { closing: '.dialog-card', className: 'overlay-scrim-exit' }) }
   }, [motion])

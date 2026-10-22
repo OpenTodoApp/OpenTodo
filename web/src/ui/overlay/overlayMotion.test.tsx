@@ -64,7 +64,8 @@ describe('dialog exit', () => {
     await click(trigger)
     await flush(10)
     expect(document.querySelectorAll('[data-overlay="dialog"]')).toHaveLength(1)
-    expect(document.querySelectorAll('[data-overlay-exit]').length).toBeLessThanOrEqual(1)
+    // The new dialog replaces the one still leaving.
+    expect(document.querySelectorAll('[data-overlay-exit]')).toHaveLength(0)
     await r.unmount()
   })
 

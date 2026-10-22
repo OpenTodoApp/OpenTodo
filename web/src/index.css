@@ -868,7 +868,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 @keyframes row-rolled { from { background-color: var(--ot-accent-soft); } to { background-color: transparent; } }
 @keyframes row-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .row-check-pop, [data-departing] [data-check-mark], [data-rolled] [data-check-mark] {
-  animation: row-check-pop var(--duration-emphasis) var(--ease-spring) both;
+  animation: row-check-pop var(--duration-emphasis) var(--ease-spring) backwards;
 }
 [data-departing] { overflow: hidden; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
 [data-departing] [data-row-open] { animation: row-text-fade 200ms var(--ease-calm) 60ms both; }
@@ -1079,4 +1079,6 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }
+
+
 

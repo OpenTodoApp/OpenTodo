@@ -6,6 +6,12 @@
 // gone back where the overlay's own code put it. Nothing plays under the no-motion
 // attribute or where the browser runs no animations.
 
+/** A new overlay replaces any that is still leaving: their exits never overlap it. */
+export function clearExits(): void {
+  if (typeof document === 'undefined') return
+  for (const el of document.querySelectorAll('[data-overlay-exit]')) el.remove()
+}
+
 /** The longest an exit copy stays, whatever happens to its animation. */
 const SAFETY_MS = 300
 

@@ -479,6 +479,7 @@ const OVERLAYS = {
     const trigger = p.getByRole('button', { name: /^Share/ }).first()
     await trigger.click()
     const dialog = p.getByRole('dialog', { name: /^Share/ })
+    await settled(dialog)
     await dialog.getByRole('button', { name: 'Create a link…' }).click()
     await dialog.getByRole('button', { name: 'Create link' }).waitFor()
     return { overlay: dialog, trigger, kind: 'dialog' }
@@ -825,6 +826,13 @@ function smallTargets([rootSel, min]) {
     if (r.width + 0.5 < min || r.height + 0.5 < min) { seen.add(key); out.push(`"${name}" (${el.tagName.toLowerCase()}) is ${Math.round(r.width)}×${Math.round(r.height)}px`) }
   }
   return out
+}
+
+// An overlay's entrance (motion-v2: a dialog scales up over 250 ms) has finished: a click
+// on a control inside it while it still moves makes Playwright retry with other scroll
+// alignments, which scrolls the overlay; a person's click does not.
+async function settled(overlay) {
+  await overlay.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))))
 }
 
 // Overlay geometry: inside the viewport, close control inside and hit-testable.
