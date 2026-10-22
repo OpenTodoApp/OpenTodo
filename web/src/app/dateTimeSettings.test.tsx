@@ -138,9 +138,13 @@ describe('DateTimeSection', () => {
     const ops = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => o.value)
     expect(ops).toEqual(['24h', '12h'])
 
-    await choose(view.container.querySelector('#date-format-select') as HTMLSelectElement, 'iso')
+    const full = () => view.container.querySelector('[data-testid="preview-full"]')!.textContent
+    await choose(view.container.querySelector('#date-format-select') as HTMLSelectElement, 'month-day')
     await settle()
-    expect(view.container.querySelector('[data-testid="preview-numeric"]')!.textContent).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    const monthDay = full()
+    await choose(view.container.querySelector('#date-format-select') as HTMLSelectElement, 'day-month')
+    await settle()
+    expect(full()).not.toBe(monthDay)
     await view.unmount()
   })
 })

@@ -1422,9 +1422,6 @@
   "Automatic archiving": [
     "web/src/app/settingsIndex.ts"
   ],
-  "Automatic: {order}, {source}": [
-    "web/src/app/QuickAddSettings.tsx"
-  ],
   "Automations": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -2751,7 +2748,6 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Date": [
-    "web/src/app/DateTimeSettings.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/editorCommands.ts",
@@ -2810,9 +2806,6 @@
   ],
   "Day-month, month-day or ISO": [
     "web/src/app/settingsIndex.ts"
-  ],
-  "Day/month (12 November)": [
-    "web/src/app/QuickAddSettings.tsx"
   ],
   "Day: closed {time}": [
     "web/src/app/method/LoopHome.tsx"
@@ -4336,6 +4329,9 @@
   ],
   "Full access can do everything you can except managing sign-in credentials and administration. Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.": [
     "web/src/app/TokensSection.tsx"
+  ],
+  "Full date": [
+    "web/src/app/DateTimeSettings.tsx"
   ],
   "Full quick add syntax": [
     "web/src/app/ShortcutHelp.tsx"
@@ -5991,9 +5987,6 @@
   "Month-day": [
     "web/src/app/DateTimeSettings.tsx"
   ],
-  "Month/day (December 11)": [
-    "web/src/app/QuickAddSettings.tsx"
-  ],
   "Monthly look finished {instant}.": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
@@ -7091,9 +7084,6 @@
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
-  "Numeric dates like 12/11": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "OK": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -8018,8 +8008,7 @@
   ],
   "Preview": [
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/RestoreSection.tsx",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/app/RestoreSection.tsx"
   ],
   "Preview · {format}": [
     "web/src/app/ImportScreen.tsx"
@@ -9113,6 +9102,9 @@
   "Safety copy from {instant}, {size}": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "Sample": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.": [
     "web/src/app/App.tsx"
   ],
@@ -9526,9 +9518,6 @@
   ],
   "Set new password": [
     "web/src/app/ResetScreen.tsx"
-  ],
-  "Set on this device; it wins over your date format.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Set priority {p} on {tasks}": [
     "web/src/app/palette/registry.ts"
@@ -11923,7 +11912,6 @@
   ],
   "Today": [
     "web/src/app/CalendarView.tsx",
-    "web/src/app/DateTimeSettings.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/ParseChips.tsx",
@@ -13499,9 +13487,6 @@
   "day {n}": [
     "web/src/lib/templateLibrary.ts"
   ],
-  "day-month": [
-    "web/src/app/QuickAddSettings.tsx"
-  ],
   "days": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -13729,12 +13714,6 @@
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx"
   ],
-  "from your date format": [
-    "web/src/app/QuickAddSettings.tsx"
-  ],
-  "from your language": [
-    "web/src/app/QuickAddSettings.tsx"
-  ],
   "from {date}": [
     "web/src/lib/facets.ts"
   ],
@@ -13872,9 +13851,6 @@
   ],
   "month {n}": [
     "web/src/lib/templateLibrary.ts"
-  ],
-  "month-day": [
-    "web/src/app/QuickAddSettings.tsx"
   ],
   "moved the due date to {date}": [
     "web/src/lib/activity.ts"
@@ -14285,9 +14261,6 @@
   ],
   "set by environment": [
     "web/src/app/SsoPanel.tsx"
-  ],
-  "set on this device": [
-    "web/src/app/QuickAddSettings.tsx"
   ],
   "shared": [
     "web/src/app/assistant/ChangeSetReview.tsx"

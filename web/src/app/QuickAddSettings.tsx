@@ -1,28 +1,16 @@
 import { useState } from 'react'
-import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Checkbox, Switch } from '../ui'
 import {
-  BUNDLED_LANGUAGES, dayMonthOrderSource, type DayMonthOrderSource, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
+  BUNDLED_LANGUAGES, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
-import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { t, msg, translatedMap, preferredLanguages } from '../lib/i18n'
+import { t, preferredLanguages } from '../lib/i18n'
 import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
 }
 
-const SOURCE = translatedMap<DayMonthOrderSource>({
-  device: msg('set on this device'),
-  'date-format': msg('from your date format'),
-  language: msg('from your language'),
-})
-
-/** "Automatic: day-month, from your date format" (date-time-preferences D6). */
-export function automaticOrderLabel(order: 'DM' | 'MD', source: DayMonthOrderSource): string {
-  return t('Automatic: {order}, {source}', { order: order === 'DM' ? t('day-month') : t('month-day'), source: SOURCE[source] })
-}
 
 
 /** Settings section for natural-language quick add; stored on this device only. */
@@ -35,9 +23,6 @@ export function QuickAddSettingsSection() {
   const browser = preferredLanguages()
   const active = resolveLanguages(s, browser)
   const followBrowser = s.languages === null
-  // An automatic order follows the date format preference before the language (date-time-preferences D6).
-  const { prefs } = useDateTimeFormat()
-  const auto = dayMonthOrderSource({ ...s, dayMonthOrder: 'auto' }, browser, prefs)
 
   function toggleLanguage(code: string, on: boolean) {
     const base = followBrowser ? active : s.languages ?? []
@@ -62,15 +47,6 @@ export function QuickAddSettingsSection() {
           ))}
         </div>
       </fieldset>
-      <SettingRow label={rowCopy('quick-add', 'order').label} htmlFor="quickadd-order"
-        description={s.dayMonthOrder === 'auto' ? undefined : rowCopy('quick-add', 'order').description} control={
-        <Select id="quickadd-order" className="sm:w-60" disabled={!s.enabled} value={s.dayMonthOrder}
-          onChange={(e) => update({ ...s, dayMonthOrder: e.target.value as QuickAddSettings['dayMonthOrder'] })}>
-          <option value="auto">{automaticOrderLabel(auto.order, auto.source)}</option>
-          <option value="DM">{t('Day/month (12 November)')}</option>
-          <option value="MD">{t('Month/day (December 11)')}</option>
-        </Select>
-      } />
     </SettingsSection>
   )
 }

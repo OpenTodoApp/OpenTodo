@@ -42,7 +42,7 @@ Push notifications for reminders on this device, and a test that shows whether t
 
 ## Capture
 
-- **Quick add**: turn natural-language parsing on or off, pick the languages it understands, and the order of day and month in dates like `12/11`. See [Quick add syntax](quick-add.md#languages).
+- **Quick add**: turn natural-language parsing on or off, and pick the languages it understands. Dates like `12/11` follow your date format. See [Quick add syntax](quick-add.md#languages).
 - **Voice capture**: dictate tasks into quick add. Off until you turn it on, and the app explains first what your browser does with the audio. See [Quick add syntax](quick-add.md#voice).
 - **Bookmarklet and extension**: the **Add to OpenTodo** bookmarklet, to save the page you're reading as a task. See [Capturing pages](capture.md).
 - **Email to task**: your own secret address; an email sent there becomes an Inbox task, with the subject as its title, the text as its description and the attachment names listed, up to an hourly limit. Anyone who knows the address can add tasks, so keep it private: **New address** replaces it, and the old one stops working at once. See [Email to task](email.md).

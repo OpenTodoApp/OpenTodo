@@ -138,15 +138,15 @@ describe('quick-add settings', () => {
     vi.unstubAllGlobals()
   })
 
-  it('defaults to parsing on, browser languages, automatic date order', () => {
+  it('defaults to parsing on and browser languages', () => {
     expect(loadQuickAddSettings()).toEqual(DEFAULT_QUICK_ADD_SETTINGS)
   })
 
   it('round-trips through localStorage and sanitises bad data', () => {
-    saveQuickAddSettings({ enabled: false, languages: ['de', 'fr'], dayMonthOrder: 'MD' })
-    expect(loadQuickAddSettings()).toEqual({ enabled: false, languages: ['de', 'fr'], dayMonthOrder: 'MD' })
-    localStorage.setItem('opentodo.quickadd', JSON.stringify({ enabled: 'yes', languages: ['xx', 'it'], dayMonthOrder: 'YMD' }))
-    expect(loadQuickAddSettings()).toEqual({ enabled: true, languages: ['it'], dayMonthOrder: 'auto' })
+    saveQuickAddSettings({ enabled: false, languages: ['de', 'fr'] })
+    expect(loadQuickAddSettings()).toEqual({ enabled: false, languages: ['de', 'fr'] })
+    localStorage.setItem('opentodo.quickadd', JSON.stringify({ enabled: 'yes', languages: ['xx', 'it'] }))
+    expect(loadQuickAddSettings()).toEqual({ enabled: true, languages: ['it'] })
     localStorage.setItem('opentodo.quickadd', '{not json')
     expect(loadQuickAddSettings()).toEqual(DEFAULT_QUICK_ADD_SETTINGS)
   })
@@ -177,7 +177,14 @@ describe('quick-add settings', () => {
     expect(resolveDayMonthOrder(auto, ['ja', 'fr'])).toBe('DM')
     expect(resolveDayMonthOrder(auto, ['ja'])).toBe('MD')
     expect(resolveDayMonthOrder({ ...auto, languages: ['it'] }, ['en-US'])).toBe('DM')
-    expect(resolveDayMonthOrder({ ...auto, dayMonthOrder: 'MD' }, ['de'])).toBe('MD')
+  })
+
+  it('An old device order is ignored, and dropped from the key on load (settings-refresh D6)', () => {
+    localStorage.setItem('opentodo.quickadd', JSON.stringify({ enabled: true, languages: null, dayMonthOrder: 'MD' }))
+    const s = loadQuickAddSettings()
+    expect(s).toEqual({ enabled: true, languages: null })
+    expect(JSON.parse(localStorage.getItem('opentodo.quickadd')!)).toEqual({ enabled: true, languages: null })
+    expect(resolveDayMonthOrder(s, ['en-US'], { date_format: 'day-month' })).toBe('DM')
   })
 
   it('formats estimates', () => {

@@ -207,7 +207,7 @@ export const SETTINGS_COPY = {
       timeFormat: { label: msg('Time format') },
       weekStart: { label: msg('Week starts on') },
       dayStart: { label: msg('My day starts at'), description: msg('Work done before this time counts for the previous day.') },
-      preview: { label: msg('Preview') },
+      preview: { label: msg('Sample') },
     },
   },
   calendar: {
@@ -293,7 +293,6 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/quick-add',
     rows: {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
-      order: { label: msg('Numeric dates like 12/11'), description: msg('Set on this device; it wins over your date format.') },
     },
   },
   'voice-settings': {
