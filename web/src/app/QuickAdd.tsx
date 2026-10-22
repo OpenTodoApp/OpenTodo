@@ -23,13 +23,13 @@ function caretOutside(el: HTMLInputElement | null, span: Span): boolean {
   return c < span.start || c > span.end
 }
 
-function nowHHMM(d = new Date()): string {
+export function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 
 /** The picker's helper; a label created meanwhile (another tab, a sync) is reused. */
-async function createLabelByName(name: string): Promise<string> {
+export async function createLabelByName(name: string): Promise<string> {
   try {
     return await createLabel({ name })
   } catch (err) {

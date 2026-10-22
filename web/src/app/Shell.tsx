@@ -1,4 +1,5 @@
 import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
+import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
@@ -149,8 +150,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     void setCurrentUserId(user.id)
   }, [user.id])
 
-  const [paletteOpen, setPaletteOpen] = useState(false)
-  const [paletteLoaded, setPaletteLoaded] = useState(false)
+  const palette = useCommandBar()
   const [showHelp, setShowHelp] = useState(false)
   // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
   const [addOpen, setAddOpen] = useState(false)
@@ -165,13 +165,6 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useShortcutDispatcher()
   const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
   useShortcutScope('global', {
-    'global.palette': (e) => {
-      // Ctrl/⌘+K opens the palette from everywhere, also while typing in a field,
-      // except in the notes editor, where it inserts a link (search-and-command-palette D1).
-      if ((e.target as HTMLElement | null)?.closest?.('[data-notes-editor], .ProseMirror')) return false
-      setPaletteLoaded(true)
-      setPaletteOpen(true)
-    },
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }), 'go.projects': go({ view: 'projects' }),
     'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.plan': go({ view: 'plan' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
@@ -194,7 +187,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   })
 
   const sidebar = useSidebarLayout()
-  const openPalette = () => { setPaletteLoaded(true); setPaletteOpen(true) }
+  const openPalette = palette.openSearch
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
   const helpRequest = useHelpRequest()
@@ -313,7 +306,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
-      {paletteLoaded && paletteOpen && <PanelBoundary resetKey={paletteOpen}><Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
+      {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} onClose={palette.close} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}

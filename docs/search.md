@@ -19,12 +19,16 @@ Use the shortcut, or the magnifying glass at the top of the screen. On a phone t
 
 With nothing typed, the box lists what you can do right now (for the selected task, the project or view you are in) and what you picked most recently on this device.
 
+## Four modes
+
+Under the field, **Search**, **Add**, **Commands** and **Ask** (when the assistant is on) switch what the box does. As the first character, <kbd>+</kbd> adds a task with [quick add](quick-add.md), <kbd>></kbd> lists commands and <kbd>?</kbd> asks the assistant; typing it again returns to Search. <kbd>Esc</kbd> returns to Search first. The last search result is always **Add "…" as a task**; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> picks it. On screens without a quick add, <kbd>q</kbd> opens the box in Add mode.
+
 ## What it finds
 
 - **Tasks**, by title and by the text of their notes. Open tasks come first; completed ones are marked. Deleted tasks never show up. Picking a task opens its project with the task's panel open.
 - **Projects** (archived ones are marked), **labels**, **saved views and dashboards**, and the **Settings** sections you can see.
 
-Matching ignores case and accents and finds words by their start or by letters in order: `cafe` finds *Café*, `rp` finds *Renew passport*. Exact matches come first, then word starts, then the rest; among equal matches, what you picked often on this device comes first. At most 50 results are listed; keep typing to narrow them down.
+Matching ignores case and accents and finds words by their start or by letters in order: `cafe` finds *Café*, `rp` finds *Renew passport*. Exact matches come first; among equal matches, what you picked often on this device comes first. At most 50 results are listed; keep typing to narrow them down.
 
 ## Filter queries inline
 

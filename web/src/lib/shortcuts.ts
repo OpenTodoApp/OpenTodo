@@ -115,7 +115,11 @@ export const SCOPE_ANCESTORS: Record<ShortcutScope, ShortcutScope[]> = {
 export const SHORTCUTS: Shortcut[] = [
   // ---- everywhere
   { id: 'global.palette', keys: ['Ctrl+K', '⌘+K'], description: 'Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)', section: 'everywhere', scope: 'global', typing: true, dialog: true },
-  { id: 'list.quick-add', keys: ['q'], description: 'Quick add a task', section: 'everywhere', scope: 'list' },
+  // Global since moments-and-onboarding D11: a list's own quick add where there is one, else the command bar in Add mode.
+  { id: 'list.quick-add', keys: ['q'], description: 'Quick add a task (the command bar in Add mode on screens without a quick add)', section: 'everywhere', scope: 'global' },
+  // The command bar's prefixes (moments-and-onboarding D7): characters typed into the bar, not shortcuts.
+  { id: 'note.bar-prefixes', keys: ['+ · > · ? (first character in the command bar)'], description: 'Add a task, run a command, ask the assistant; the same character again returns to Search', section: 'everywhere', scope: 'global', note: true },
+  { id: 'palette.add-task', keys: ['Ctrl+Enter', '⌘+Enter'], description: 'In the command bar: add what you typed as a task', section: 'everywhere', scope: 'global', local: true },
   { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
   { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
   { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
@@ -255,7 +259,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'month.next', keys: ['j'], description: 'In Month: select the next task of the month', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.prev', keys: ['k'], description: 'In Month: select the previous task', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.open', keys: ['Enter'], description: 'In Month: open the selected task', section: 'calendar', scope: 'view', views: ['month'] },
-  { id: 'month.quick-add', keys: ['q'], description: 'In Month: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['month'] },
+  { id: 'month.quick-add', keys: ['q'], description: 'In Month: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['month'], overrides: ['list.quick-add'] },
   { id: 'month.range-prev', keys: ['['], description: 'In Month: previous month', section: 'calendar', scope: 'view', views: ['month'], overrides: ['global.sidebar'] },
   { id: 'month.range-next', keys: [']'], description: 'In Month: next month', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.today', keys: ['t'], description: 'In Month: back to today', section: 'calendar', scope: 'view', views: ['month'] },
@@ -267,7 +271,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'plan.prev', keys: ['k'], description: 'In Plan: select the previous task', section: 'calendar', scope: 'view', views: ['plan'] },
   { id: 'plan.open', keys: ['Enter'], description: 'In Plan: open the selected task', section: 'calendar', scope: 'view', views: ['plan'] },
   { id: 'plan.complete', keys: ['c'], description: 'In Plan: complete the selected task', section: 'calendar', scope: 'view', views: ['plan'] },
-  { id: 'plan.quick-add', keys: ['q'], description: 'In Plan: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['plan'] },
+  { id: 'plan.quick-add', keys: ['q'], description: 'In Plan: add a task due on the focused day', section: 'calendar', scope: 'view', views: ['plan'], overrides: ['list.quick-add'] },
   { id: 'plan.range-prev', keys: ['['], description: 'In Plan: the span one week earlier', section: 'calendar', scope: 'view', views: ['plan'], overrides: ['global.sidebar'] },
   { id: 'plan.range-next', keys: [']'], description: 'In Plan: the span one week later', section: 'calendar', scope: 'view', views: ['plan'] },
   { id: 'plan.today', keys: ['t'], description: 'In Plan: back to today', section: 'calendar', scope: 'view', views: ['plan'] },
@@ -325,7 +329,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'review.prev-step', keys: ['['], description: 'Weekly review: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },
   { id: 'review.next-step', keys: [']'], description: 'Weekly review: the next step', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-reviewed', keys: ['r'], description: 'Project walk: mark the project reviewed, then the next one', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'review.walk-add', keys: ['q'], description: 'Project walk: add a next action to the project', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'review.walk-add', keys: ['q'], description: 'Project walk: add a next action to the project', section: 'review', scope: 'view', views: ['review'], overrides: ['list.quick-add'] },
   { id: 'review.walk-open', keys: ['Enter'], description: 'Project walk: open the project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-archive', keys: ['a'], description: 'Project walk: archive the project, then the next one', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-skip', keys: ['j', 'Space'], description: 'Project walk: skip to the next project', section: 'review', scope: 'view', views: ['review'] },

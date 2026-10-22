@@ -1,10 +1,14 @@
 // The command palette (OpenSpec change search-and-command-palette): one box on
 // Ctrl/⌘+K that finds any task, project, label, saved view or Settings section from
 // local data and runs any command by name. Lazy chunk, mounted by Shell on first open.
+// One bar, four modes (moments-and-onboarding D7, modes.ts): Search (default; its last
+// entry adds the text as a task, Ctrl/⌘+Enter too), Add (the quick add), Commands (the
+// registry only) and Ask (handed to the assistant panel), switched by the segmented
+// control or the `+`, `>` and `?` prefixes; Escape in another mode returns to Search.
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
 import { useLabels, useProjects, useSectionPlace, useUserPrefsRow } from '../../lib/localData'
 import { isFavourite } from '../../lib/favourites'
 import { pickScores } from '../../lib/pickRank'
@@ -15,7 +19,6 @@ import type { User } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
 import { Icon } from '../../ui'
-import { HelpLink } from '../help/HelpLink'
 import { currentFilter, listState } from '../listActions'
 import { Confirmation } from '../menus/ActionMenu'
 import { NamePrompt } from '../NamePrompt'
@@ -28,13 +31,21 @@ import { filterEntries } from './filterEntries'
 import { buildEntries, makeTaskEntry } from './index'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 import { t } from '../../lib/i18n'
+import { useAssistantStatus } from '../../lib/assistantStatus'
+import { addFromBar, lineToInput } from './addFromBar'
+import { AddPanel, AskPanel, BarHint, ModeSwitch } from './BarParts'
+import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
 const DEBOUNCE_MS = 150
 const RECENT = 10
 
-export default function CommandPalette({ user, onClose, showShortcuts }: { user: User | null; onClose: () => void; showShortcuts: () => void }) {
+export default function CommandPalette({ user, onClose, showShortcuts, initialMode = 'search', initialText }: {
+  user: User | null; onClose: () => void; showShortcuts: () => void; initialMode?: BarMode
+  /** Text Add mode starts with (the workbench shows the chips with it). */
+  initialText?: string
+}) {
   const route = useRoute()
   const today = useToday()
   const vimEnabled = useVimEnabled()
@@ -43,6 +54,9 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const [list] = useState(() => listState())
   const [taskId] = useState(() => list?.selected() ?? list?.openId() ?? null)
   const [mode, setMode] = useState<'search' | 'closing' | Step>('search')
+  const askAvailable = !!useAssistantStatus()?.available
+  const modes = barModes(askAvailable)
+  const [bar, setBar] = useState<BarMode>(initialMode)
 
   const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useProjects()
@@ -105,21 +119,54 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
+  // Search's last entry: the text as a new task, never first, so Enter never adds by surprise.
+  const addLine = async (line: string) => { await addFromBar(await lineToInput(line, projects, labels), route, user?.id) }
+  const addEntry = useMemo<Entry | null>(() => (query.trim() ? {
+    kind: 'command', key: 'bar:add-task', label: t('Add “{text}” as a task', { text: query.trim() }), icon: 'plus', shortcut: 'Ctrl+Enter', group: t('Add'),
+    run: () => addLine(query.trim()),
+  } : null), [query]) // eslint-disable-line react-hooks/exhaustive-deps -- addLine reads the current projects, labels and route
+  const commandsOnly = useMemo(() => commandEntries(ctx), [ctx])
+  const runEntry = (e: Pick<Entry, 'run'>) => {
+    // The box closes first, so the action's own focus (quick add, a prompt) wins.
+    keepOpen.current = true
+    setMode('closing')
+    setTimeout(() => {
+      void Promise.resolve(e.run()).then((r) => (isStep(r) ? setMode(r) : onClose()), () => onClose())
+    }, 0)
+  }
+  const commandsMode = bar === 'commands'
   const keepOpen = useRef(false)
   const state = useCombobox<Entry>({
-    source, emptySource, prefix, suffix: trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
+    source: commandsMode ? commandsOnly : source, emptySource: commandsMode ? commandsOnly : emptySource, prefix: commandsMode ? [] : prefix,
+    suffix: commandsMode ? [] : addEntry ? [...trailing, addEntry] : trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
     getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf, getKeywords: (e) => e.keywords, getGroup: groupOf,
-    onPick: (e) => {
-      // The box closes first, so the action's own focus (quick add, a prompt) wins.
-      keepOpen.current = true
-      setMode('closing')
-      setTimeout(() => {
-        void Promise.resolve(e.run()).then((r) => (isStep(r) ? setMode(r) : onClose()), () => onClose())
-      }, 0)
-    },
+    onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
   useEffect(() => { setTyped(state.query) }, [state.query])
+  // The prefixes switch mode as the first character of an empty field (modes.ts).
+  const field = { ...state, setQuery: (next: SetStateAction<string>) => {
+    const v = typeof next === 'function' ? next(state.query) : next
+    const sw = prefixSwitch(bar, state.query, v, askAvailable)
+    if (sw) { setBar(sw.mode); state.setQuery(sw.text) } else state.setQuery(v)
+  } }
+  const toMode = (m: BarMode) => { setBar(m); if (m === 'search' || m === 'commands') state.setQuery('') }
+  // In Add and Ask the field is their own: the same prefix in it while empty returns to Search with the character.
+  const onKeyDownCapture = (e: KeyboardEvent) => {
+    const target = e.target as HTMLInputElement
+    if (bar === 'search' && e.key === 'Enter' && (e.ctrlKey || e.metaKey) && state.query.trim()) {
+      e.preventDefault()
+      e.stopPropagation()
+      const line = state.query.trim()
+      runEntry({ run: () => addLine(line) })
+      return
+    }
+    if ((bar === 'add' || bar === 'ask') && target.tagName === 'INPUT' && target.value === '' && e.key === PREFIX_OF[bar]) {
+      e.preventDefault()
+      setBar('search')
+      state.setQuery(e.key)
+    }
+  }
 
   if (mode === 'closing') return null
   if (mode !== 'search') {
@@ -138,17 +185,21 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     )
   }
   return (
-    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} size="md" testId="command-palette">
-      <div className="space-y-1" data-combobox data-palette>
-        <ComboboxField state={state} label={t('Search tasks, projects and commands')} placeholder={t('Search or type a command…')} expanded autoFocus />
-        {!state.query.trim() && (
-          <p className="flex items-center gap-2 px-1 text-meta text-muted">
-            <span className="min-w-0 flex-1">{t.rich('Type to search, or a command. Filter queries like {example} work too.', { example: <code>@errand &amp; p1</code> })}</span>
-            <HelpLink screen="palette" topic={t('Search and commands')} />
-          </p>
+    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} size="md" testId="command-palette"
+      onEscape={() => (bar === 'search' ? onClose() : toMode('search'))}>
+      <div className="space-y-2" data-combobox data-palette data-bar-mode-current={bar} onKeyDownCapture={onKeyDownCapture}>
+        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)} />}
+        {bar === 'ask' && <AskPanel onSent={onClose} />}
+        {(bar === 'search' || bar === 'commands') && (
+          <ComboboxField state={field} label={bar === 'commands' ? t('Run a command') : t('Search tasks, projects and commands')}
+            placeholder={bar === 'commands' ? t('Type a command…') : t('Search or type a command…')} expanded autoFocus />
         )}
-        <ComboboxList state={state} label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
-          renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />} />
+        <ModeSwitch modes={modes} mode={bar} onMode={toMode} />
+        {bar === 'search' && !state.query.trim() && <BarHint ask={askAvailable} />}
+        {(bar === 'search' || bar === 'commands') && (
+          <ComboboxList state={state} label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
+            renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />} />
+        )}
       </div>
     </Dialog>
   )
