@@ -82,7 +82,8 @@ export function rowCounts(c: { progress?: Progress; notes: boolean; comments: nu
  */
 export function RowCounts({ counts }: { counts: RowCount[] }) {
   return (
-    <span data-row-counts="" className="flex shrink-0 items-center gap-2 text-meta tabular-nums text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted">
+    // min-w-0 and overflow-hidden: in a very narrow panel the counts clip, never the page (they are read in full).
+    <span data-row-counts="" className="flex min-w-0 items-center gap-2 overflow-hidden text-meta tabular-nums text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted">
       {counts.map((c) => (
         <span key={c.key} className="inline-flex items-center gap-1" {...{ [`data-${c.key}`]: '' }}>
           {c.icon && <Icon name={c.icon} size="xs" />}
