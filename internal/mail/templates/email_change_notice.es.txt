@@ -1,0 +1,7 @@
+Se está cambiando tu correo de OpenTodo
+
+Este es un aviso de seguridad de OpenTodo.
+
+Alguien con la sesión iniciada en la cuenta {{.Email}} en {{.Origin}} ha pedido cambiar su correo de inicio de sesión. El cambio solo se hace cuando se abre el enlace enviado a la nueva dirección.
+
+Si has sido tú, no tienes que hacer nada. Si no, inicia sesión, cambia tu contraseña y cierra la sesión en todas partes, o pide ayuda a quien administra el servidor.

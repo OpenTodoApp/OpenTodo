@@ -58,6 +58,10 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'email.failed': msg('Email not sent'),
   'relay.enabled': msg('Device answers AI connectors'),
   'relay.disabled': msg('Device stopped answering AI connectors'),
+  'account.name_changed': msg('Name changed'),
+  'account.email_change_requested': msg('Email change requested'),
+  'account.email_changed': msg('Email changed'),
+  'account.avatar_changed': msg('Profile picture changed'),
 })
 
 const REASONS = translatedMap<string>({

@@ -1,0 +1,7 @@
+La tua email di OpenTodo sta per cambiare
+
+Questo è un avviso di sicurezza di OpenTodo.
+
+Qualcuno che ha effettuato l'accesso all'account {{.Email}} su {{.Origin}} ha chiesto di cambiarne l'email di accesso. Il cambio avviene solo quando viene aperto il link inviato al nuovo indirizzo.
+
+Se sei stato tu, non devi fare niente. Altrimenti accedi, cambia la password ed esci da tutti i dispositivi, oppure chiedi aiuto a chi gestisce il server.

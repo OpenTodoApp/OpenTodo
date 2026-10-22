@@ -168,6 +168,11 @@ var demoRules = []demoRule{
 	{"Sign-up", false, prefix("/api/v1/auth/verify")},
 	{"Changing the password", true, exact("/api/v1/me/password")},
 	{"Signing out everywhere", true, exact("/api/v1/me/sign-out-everywhere")},
+	// Profile changes (settings-refresh D10): the sandbox account keeps its name,
+	// email and picture; reading the profile and pictures works.
+	{"Profile", true, exact("/api/v1/me/profile")},
+	{"Profile", true, prefix("/api/v1/me/email")},
+	{"Profile", true, exact("/api/v1/me/avatar")},
 	{"Linked accounts", true, prefix("/api/v1/me/identities")},
 	{"API tokens", true, prefix("/api/v1/tokens")},
 	{"Passkeys", true, prefix("/api/v1/passkeys")},

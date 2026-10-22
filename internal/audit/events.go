@@ -99,6 +99,12 @@ const (
 	// opted out (mcp-device-relay): never a relayed value.
 	RelayEnabledName  Name = "relay.enabled"
 	RelayDisabledName Name = "relay.disabled"
+	// Profile changes (settings-refresh D10): never the old or new name, email
+	// or picture.
+	NameChangedName          Name = "account.name_changed"
+	EmailChangeRequestedName Name = "account.email_change_requested"
+	EmailChangedName         Name = "account.email_changed"
+	AvatarChangedName        Name = "account.avatar_changed"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -129,6 +135,7 @@ var Names = []Name{
 	AgentWriteName,
 	EmailSentName, EmailFailedName,
 	RelayEnabledName, RelayDisabledName,
+	NameChangedName, EmailChangeRequestedName, EmailChangedName, AvatarChangedName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -147,6 +154,7 @@ var PersonalNames = []Name{
 	SignedOutEverywhereName,
 	AgentWriteName,
 	RelayEnabledName, RelayDisabledName,
+	NameChangedName, EmailChangeRequestedName, EmailChangedName, AvatarChangedName,
 }
 
 // Known reports whether n is in the catalogue.
@@ -617,4 +625,28 @@ func TaskPagePublished(actorID, pageID, rights string) Event {
 // TaskPageRevoked records a task page being revoked (or replaced by a new one).
 func TaskPageRevoked(actorID, pageID string) Event {
 	return ev(TaskPageRevokedName, Success, actorID, "", "task_page_id", pageID)
+}
+
+// ---- profile (settings-refresh D10) ----
+
+// NameChanged records a user changing their display name (never the name).
+func NameChanged(userID string) Event {
+	return ev(NameChangedName, Success, userID, "")
+}
+
+// EmailChangeRequested records a request to change the account's email that
+// waits for the link sent to the new address (never either address).
+func EmailChangeRequested(userID string) Event {
+	return ev(EmailChangeRequestedName, Success, userID, "")
+}
+
+// EmailChanged records the account's email changing, by the link or at once on
+// a server without outgoing email (never either address).
+func EmailChanged(userID string) Event {
+	return ev(EmailChangedName, Success, userID, "")
+}
+
+// AvatarChanged records a profile picture being set or removed (never the picture).
+func AvatarChanged(userID string) Event {
+	return ev(AvatarChangedName, Success, userID, "")
 }

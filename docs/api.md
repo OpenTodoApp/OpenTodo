@@ -987,6 +987,7 @@ The server records security-relevant events in its own database (never synced to
 | `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
 | `relay.enabled` | success | actor = user | `relay_device_id`, `relay_device_label`. A device of an encrypted account opted in to answer AI connectors ([device relay](#device-relay)) |
 | `relay.disabled` | success | actor = user | `relay_device_id`, `relay_device_label`, `reason` (`user`, `locked`, `signed_out`, `encryption_off`). Relayed calls themselves are never relay events; relayed writes are `agent.write` |
+| `account.name_changed`, `account.email_change_requested`, `account.email_changed`, `account.avatar_changed` | success | actor = user | none: never the old or new name, email or picture ([profile](#profile)) |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |

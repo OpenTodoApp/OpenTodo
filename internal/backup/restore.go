@@ -489,7 +489,7 @@ func readExtras(tr *tar.Reader, m Manifest, dir string) (map[string][]byte, erro
 		if ok && h.Size != want.Size {
 			return nil, fmt.Errorf("%w: %s size does not match the manifest", ErrIntegrity, h.Name)
 		}
-		if ok && validAttachmentEntry(h.Name) {
+		if ok && validDataEntry(h.Name) {
 			if err := stageAttachment(tr, filepath.Join(dir, filepath.FromSlash(h.Name)), want); err != nil {
 				return nil, err
 			}
@@ -547,11 +547,25 @@ func stageAttachment(r io.Reader, path string, want ManifestFile) error {
 	return nil
 }
 
-// moveAttachments renames staged attachment files into dataDir/attachments. Files
-// already there that the archive does not list are kept (newer uploads; the
-// orphan sweep handles ones whose rows never return).
+// moveAttachments renames staged attachment files and profile pictures into
+// dataDir/attachments and dataDir/avatars. Files already there that the
+// archive does not list are kept (newer uploads; the orphan sweep handles
+// attachments whose rows never return).
 func moveAttachments(stageDir, dataDir string) (int, error) {
-	root := filepath.Join(stageDir, "attachments")
+	moved := 0
+	for _, dir := range dataDirs {
+		n, err := moveDataDir(stageDir, dataDir, dir)
+		moved += n
+		if err != nil {
+			return moved, err
+		}
+	}
+	return moved, nil
+}
+
+// moveDataDir moves the staged well-formed entries under stageDir/dir.
+func moveDataDir(stageDir, dataDir, dir string) (int, error) {
+	root := filepath.Join(stageDir, dir)
 	moved := 0
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -564,7 +578,7 @@ func moveAttachments(stageDir, dataDir string) (int, error) {
 			return nil
 		}
 		rel, err := filepath.Rel(stageDir, path)
-		if err != nil || !validAttachmentEntry(filepath.ToSlash(rel)) {
+		if err != nil || !validDataEntry(filepath.ToSlash(rel)) {
 			return nil
 		}
 		dst := filepath.Join(dataDir, rel)

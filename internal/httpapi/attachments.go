@@ -667,6 +667,8 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, doc map[
 		s.log.Error("export zip: document", "err", err)
 		return
 	}
+	// The account's profile picture (settings-refresh D10).
+	s.exportAvatar(zw, userFrom(r.Context()).ID)
 	if s.blobs == nil {
 		return
 	}

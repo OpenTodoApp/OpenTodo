@@ -255,7 +255,7 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 				if subj == "" || strings.Contains(subj, "{{") || strings.Contains(body, "{{") || !strings.Contains(body, "https://todo.example.com") {
 					t.Fatalf("%s %s: %q / %q", kind, lang, subj, body)
 				}
-				withLink := kind != KindTest && !existing
+				withLink := kind != KindTest && kind != KindEmailChangeNotice && !existing
 				if strings.Contains(body, "\n"+link+"\n") != withLink {
 					t.Fatalf("%s %s: link on its own line = %v", kind, lang, !withLink)
 				}

@@ -1370,6 +1370,10 @@ export const AUDIT_EVENT_NAMES = [
   'email.failed',
   'relay.enabled',
   'relay.disabled',
+  'account.name_changed',
+  'account.email_change_requested',
+  'account.email_changed',
+  'account.avatar_changed',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 

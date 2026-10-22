@@ -28,10 +28,15 @@ const (
 	KindTest          Kind = "test"
 	// KindDigest is the opt-in weekly digest (OpenSpec change stats-and-review).
 	KindDigest Kind = "digest"
+	// KindEmailChange carries the link that confirms a new sign-in email, to
+	// the new address; KindEmailChangeNotice tells the old address about it
+	// (OpenSpec change settings-refresh D10).
+	KindEmailChange       Kind = "email_change"
+	KindEmailChangeNotice Kind = "email_change_notice"
 )
 
 // Kinds lists every kind.
-var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest, KindDigest}
+var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice}
 
 // carriesContent marks kinds that include entity content and must never be
 // built for an account with end-to-end encryption (design D8). Only the

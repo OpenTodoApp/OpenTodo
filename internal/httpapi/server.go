@@ -84,6 +84,9 @@ type Server struct {
 	// account (10/hour) (OpenSpec `user-management` D9).
 	adminLimiter    *rateLimiter
 	passwordLimiter *rateLimiter
+	// emailChangeLimiter caps email change requests per account (5/hour) and
+	// avatarLimiter picture uploads per account (30/hour) (settings-refresh D10).
+	emailChangeLimiter, avatarLimiter *rateLimiter
 	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
 	// `push-test-delivery` D3), see push.go.
 	pushTestLimiter *rateLimiter
@@ -212,6 +215,7 @@ func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
+		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour),
 		importer:     importer.New(syncSvc.DB(), syncSvc, log)}

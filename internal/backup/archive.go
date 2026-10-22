@@ -159,6 +159,18 @@ func validAttachmentEntry(name string) bool {
 	return m != nil && strings.HasPrefix(m[2], m[1]) && (len(m[2]) <= 2 || len(m[1]) == 2)
 }
 
+// avatarEntry matches the archive name of a profile picture, <data>/avatars/<user id>.jpg
+// (OpenSpec change settings-refresh, design D10).
+var avatarEntry = regexp.MustCompile(`^avatars/[A-Za-z0-9-]{1,64}\.jpg$`)
+
+// dataDirs are the data-directory folders whose files are archived file by file.
+var dataDirs = []string{"attachments", "avatars"}
+
+// validDataEntry reports whether name is a well-formed attachment or profile picture entry.
+func validDataEntry(name string) bool {
+	return validAttachmentEntry(name) || avatarEntry.MatchString(name)
+}
+
 // writeArchive streams tar(manifest.json, opentodo.db) through optional gzip and
 // optional encryption into w. Only the database snapshot is packaged, so the
 // secrets directory and earlier backups are never part of an archive.

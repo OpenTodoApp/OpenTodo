@@ -1,0 +1,7 @@
+Votre adresse e-mail OpenTodo va changer
+
+Ceci est un avis de sécurité d’OpenTodo.
+
+Une personne connectée au compte {{.Email}} sur {{.Origin}} a demandé à changer son adresse de connexion. Le changement n’a lieu que lorsque le lien envoyé à la nouvelle adresse est ouvert.
+
+Si c’était vous, il n’y a rien à faire. Sinon, connectez-vous, changez votre mot de passe et déconnectez-vous partout, ou demandez de l’aide à la personne qui gère le serveur.

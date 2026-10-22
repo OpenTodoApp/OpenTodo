@@ -73,6 +73,7 @@ func (s *Server) registerAdminRoutes(mux *routes) {
 	mux.handle("GET /api/v1/invitations/{token}", public("the invitee previews the invitation before having an account"), s.handlePreviewInvitation)
 	// User administration (OpenSpec `user-management`).
 	s.registerUserRoutes(mux)
+	s.registerProfileRoutes(mux)
 	// Audit log: owner-only reads, export and settings; personal activity for
 	// everyone.
 	mux.handle("GET /api/v1/audit", ownerOnly("access the audit log"), s.handleAuditList)
