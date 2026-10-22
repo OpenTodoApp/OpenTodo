@@ -78,6 +78,18 @@ describe('inboxAge', () => {
   })
 })
 
+describe('sample tasks (moments-and-onboarding D3)', () => {
+  it('Never counted: a completed sample is not in the strip, and samples are neither caught nor the Inbox age', () => {
+    const sample = { sample: true } as Partial<Task>
+    const tasks = [task({ created_at: at(1), completed_at: at(0), ...sample }), task({ created_at: at(12), ...sample }), task({ created_at: at(2) })]
+    const strip = compute({ tasks, projects: [], shared: new Set<string>(), me: null, today: TODAY }, lastDays(TODAY))
+    expect(strip.perDay[13].count).toBe(0)
+    expect(strip.completed).toBe(0)
+    expect(decided(tasks, TODAY)).toEqual({ decided: 0, caught: 1 })
+    expect(inboxAge(tasks, TODAY)).toBe(2)
+  })
+})
+
 describe('nextMove', () => {
   it('follows method order', () => {
     expect(nextMove({ inbox: 3, withoutNext: 2, rhythmDue: true, nextCount: 4 })).toBe('clarify')

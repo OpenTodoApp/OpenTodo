@@ -5,7 +5,8 @@ import { TaskListView } from './TaskListView'
 
 // Core screen: the start guide (OpenSpec change lean-chrome D3-D5, D8; first-run
 // "Three-step first run"). Each step over the real, seeded Inbox: a bottom sheet of
-// at most two thirds of the screen at 375 px, a centred card at 1280 px.
+// at most two thirds of the screen at 375 px, a centred card at 1280 px. The last
+// view is the first-day checklist (moments-and-onboarding D5).
 const meta: Meta = { title: 'Screens/Start guide', ...withSeed(seedInbox) }
 export default meta
 
@@ -26,3 +27,5 @@ export const AddFirstTask: StoryObj = { render: () => <Over step={0} /> }
 export const HowYouWork: StoryObj = { render: () => <Over step={1} /> }
 /** Step 3: install the app, or skip. */
 export const Install: StoryObj = { render: () => <Over step={2} /> }
+/** The last view, "Your first day" (moments-and-onboarding D5): three steps read from the seeded data. */
+export const YourFirstDay: StoryObj = { name: 'Your first day', render: () => <Over step={3} /> }

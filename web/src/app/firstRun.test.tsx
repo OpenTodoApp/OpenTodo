@@ -3,7 +3,7 @@
 // start guide over the real Inbox, one step at a time, as a dialog (a bottom sheet
 // on phones), stored with the account's preferences so a second device never shows
 // it; it waits for the first sync, never opens on the demo, and follows the owner's
-// welcome note. A sample project made of ordinary ops. The empty views of the lists
+// welcome note. Sample tasks and the first-day checklist (moments-and-onboarding). The empty views of the lists
 // are in task-list/listChrome.test.tsx.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
@@ -17,12 +17,11 @@ vi.mock('../lib/sync', async (importOriginal) => ({
 }))
 import { db } from '../lib/db'
 import { setDemo } from '../lib/demo'
-import { applyOps, createTask, deleteProject, resetDeviceId } from '../lib/ops'
-import { trashItems } from '../lib/trash'
+import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { click, flush, key, render, type } from '../ui/test-utils'
-import { createSampleProject, FirstRunGuide, SAMPLE_PROJECT_NAME } from './FirstRun'
+import { FirstRunGuide } from './FirstRun'
 import { navigate, parseRoute, useRoute } from './router'
 import { HowYouWorkSection } from './method/HowYouWorkSection'
 import { closeStartGuide } from '../lib/startGuide'
@@ -98,9 +97,11 @@ describe('three-step first run', () => {
     expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('companion')
     expect(await db.labels.count()).toBe(0)
 
-    // Step three: skip installing closes the guide for good.
+    // Step three: skip installing ends on "Your first day"; Done closes the guide for good.
     expect(q('[data-first-run-install]')!.textContent).toBe('How to install')
     await click(q('[data-first-run-next]')!)
+    await waitFor(() => stepOf() === 'first-day')
+    await click(q('[data-first-day-done]')!)
     await waitFor(() => guide() === null)
     expect((await db.userPrefs.get(USER_PREFS_ID))?.first_run).toBe('done')
     expect(r.container.textContent).toContain('Call the dentist')
@@ -285,42 +286,103 @@ describe('the Start guide row in Settings (settings-refresh D3)', () => {
   })
 })
 
-describe('sample project', () => {
-  it('Show me around is offered once and creates six tasks through ops that delete like any project', async () => {
+describe('sample tasks (moments-and-onboarding D2)', () => {
+  it('Take the offer: three Inbox tasks marked sample, one due today at 10:00 with 15 m, one with a subtask; no label or project; the guide moves on', async () => {
     const r = await inbox()
     await waitFor(() => q('[data-first-run-sample]') !== null)
     const before = await db.outbox.count()
     await click(q('[data-first-run-sample]')!)
-    await waitFor(() => location.pathname.startsWith('/project/'))
-    const project = (await db.projects.toArray()).find((p) => p.name === SAMPLE_PROJECT_NAME)!
-    expect(project).toBeTruthy()
-    const tasks = (await db.tasks.toArray()).filter((t) => t.project_id === project.id)
+    await waitFor(() => stepOf() === 'work')
+    // The dated one leaves the Inbox for Today (inbox-means-unplaced): the planned line names it.
+    await waitFor(() => r.container.querySelector('[data-planned-line]')?.textContent === '1 planned task without a project')
+    await waitFor(() => r.container.querySelectorAll('[data-task-id] [data-sample]').length >= 2)
+    const tasks = await db.tasks.toArray()
     const top = tasks.filter((t) => !t.parent_id)
-    expect(top).toHaveLength(6)
-    expect(top.some((t) => t.due?.date === '2026-10-14')).toBe(true)
-    expect(top.some((t) => t.deadline)).toBe(true)
-    expect(top.some((t) => t.labels.length > 0)).toBe(true)
-    expect(tasks.some((t) => t.parent_id)).toBe(true)
-    expect(top.some((t) => t.recurrence)).toBe(true)
-    expect(top.some((t) => t.description)).toBe(true)
-    // Every row came from the op log.
-    expect(await db.outbox.count()).toBeGreaterThan(before)
+    expect(top).toHaveLength(3)
+    expect(tasks.every((t) => t.sample === true && t.project_id === null)).toBe(true)
+    expect(top.find((t) => t.due)).toMatchObject({ due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 15 })
+    expect(top.filter((t) => t.description)).toHaveLength(1)
+    expect(tasks.filter((t) => t.parent_id)).toHaveLength(1)
+    expect(await db.labels.count()).toBe(0)
+    expect(await db.projects.count()).toBe(0)
+    // Every row came from the op log, the marker included.
+    expect((await db.outbox.toArray()).slice(before).some((o) => o.field === 'sample' && o.value === true)).toBe(true)
     await r.unmount()
-
-    // Deleting it is the ordinary project deletion: the project is one Trash item and its tasks go with it.
-    await deleteProject(project.id)
-    expect((await db.projects.get(project.id))?.deleted_at).toBeTruthy()
-    const trashed = trashItems(await db.tasks.toArray(), await db.projects.toArray())
-    expect(trashed.map((i) => `${i.entity}:${i.id}`)).toEqual([`project:${project.id}`])
-    for (const t of await db.tasks.toArray()) expect(t.project_id).toBe(project.id)
   })
 
-  it('createSampleProject is idempotent about the label and sets the deadline after the due date', async () => {
-    const id = await createSampleProject('2026-10-14')
-    await createSampleProject('2026-10-14')
-    expect((await db.labels.toArray()).filter((l) => l.name === 'errand')).toHaveLength(1)
-    const dl = (await db.tasks.toArray()).find((t) => t.project_id === id && t.deadline)!
-    expect(dl.due?.date).toBe('2026-10-15')
-    expect(dl.deadline).toBe('2026-10-21')
+  it('Offered once: after the offer was taken, and in a guide reopened from Settings, the first step shows no offer', async () => {
+    const { createSampleTasks } = await import('../lib/sampleTasks')
+    const { openStartGuide, closeStartGuide } = await import('../lib/startGuide')
+    await createSampleTasks('2026-10-14')
+    // The tasks are trashed later: the offer still counts as taken.
+    for (const t of await db.tasks.toArray()) await db.tasks.update(t.id, { deleted_at: 1 })
+    openStartGuide()
+    const r = await inbox()
+    await waitFor(() => guide() !== null)
+    await flush(100)
+    expect(stepOf()).toBe('task')
+    expect(q('[data-first-run-sample]')).toBeNull()
+    closeStartGuide()
+    await r.unmount()
+  })
+})
+
+describe('first-day checklist (moments-and-onboarding D5)', () => {
+  const checklist = async () => {
+    const { openFirstDay, closeStartGuide } = await import('../lib/startGuide')
+    openFirstDay()
+    const r = await render(<FirstRunGuide user={member} />)
+    await waitFor(() => stepOf() === 'first-day' && q('[data-first-day-count]')!.textContent !== '\u00a0')
+    return { r, done: () => [...document.querySelectorAll('[data-first-day-step][data-done]')].map((e) => e.getAttribute('data-first-day-step')), closeStartGuide }
+  }
+
+  it('Steps tick from data: a real task with a date counts for two steps; the third offers to install', async () => {
+    await createTask({ title: 'Call the dentist', due: { date: '2026-10-15' } })
+    const { r, done, closeStartGuide } = await checklist()
+    expect(done()).toEqual(['add', 'plan'])
+    expect(q('[data-first-day-count]')!.textContent).toBe('2 of 3 done')
+    expect(q('[data-first-day-action="device"]')!.textContent).toBe('Install the app')
+    // Nothing is written for the ticks.
+    expect(await db.outbox.toArray().then((o) => o.filter((x) => x.entity === 'user_prefs'))).toEqual([])
+    closeStartGuide()
+    await r.unmount()
+  })
+
+  it('Samples do not count as "Add a task"; Today opened after the first real task counts for "Plan today"', async () => {
+    const { createSampleTasks } = await import('../lib/sampleTasks')
+    const { noteTodayOpened } = await import('../lib/firstDay')
+    await createSampleTasks('2026-10-14')
+    const { r, done, closeStartGuide } = await checklist()
+    expect(done()).toEqual([])
+    expect(q('[data-remove-samples]')).not.toBeNull()
+    await createTask({ title: 'Real one' })
+    await waitFor(() => done().includes('add'))
+    expect(done()).toEqual(['add'])
+    await noteTodayOpened()
+    await waitFor(() => done().includes('plan'))
+    closeStartGuide()
+    await r.unmount()
+  })
+
+  it('Second device counts: a personal row written by another browser device ticks the third step', async () => {
+    await createTask({ title: 'Mine', due: { date: '2026-10-15' } })
+    const { r, done, closeStartGuide } = await checklist()
+    expect(done()).not.toContain('device')
+    await applyOps([{ id: 'p1', entity: 'user_prefs', entityId: USER_PREFS_ID, field: 'theme_mode', value: 'dark', ts: Date.now() + 1, device: '6f1c2b9e-3a4d-4e5f-8a7b-9c0d1e2f3a4b' }])
+    await waitFor(() => done().includes('device'))
+    expect(done()).toEqual(['add', 'plan', 'device'])
+    closeStartGuide()
+    await r.unmount()
+  })
+
+  it('Done: an installed app ticks the third step', async () => {
+    await createTask({ title: 'Mine', due: { date: '2026-10-15' } })
+    const mm = vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({ matches: query.includes('standalone'), media: query, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList)
+    const { r, done, closeStartGuide } = await checklist()
+    expect(done()).toEqual(['add', 'plan', 'device'])
+    expect(q('[data-first-day-count]')!.textContent).toBe('3 of 3 done')
+    mm.mockRestore()
+    closeStartGuide()
+    await r.unmount()
   })
 })

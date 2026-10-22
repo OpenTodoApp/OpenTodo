@@ -176,6 +176,13 @@ export interface Task {
    * string: read it with `locationOf(task)` from `lib/locations.ts`.
    */
   location?: TaskLocation | string | null
+  /**
+   * A start guide sample task (OpenSpec change `moments-and-onboarding`, design D3):
+   * excluded from Statistics, the Loop pulse and the digest; completing it keeps the
+   * marker. Rows stored before the field read as undefined: read it with `?? false`
+   * or `isSample(task)` from `lib/sampleTasks.ts`.
+   */
+  sample?: boolean
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
@@ -586,6 +593,8 @@ export interface UserPrefs {
   welcome: string
   /** How you work (open-loops-method D2): lists | companion | first; unknown or empty values read as lists. */
   method_mode: string
+  /** The first-day checklist (moments-and-onboarding D5): "hidden" once hidden on any device; anything else reads as shown. */
+  start_checklist: string
   /**
    * Focus timer preferences (focus-mode D5): mode pomodoro | flowtime | countdown,
    * auto-start none | breaks | work | both, sound off | on; lengths in minutes

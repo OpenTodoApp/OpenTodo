@@ -57,7 +57,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [],
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [], sample: false,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -90,7 +90,7 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '',
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '', start_checklist: '',
   focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '' }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', carry_over: '' }

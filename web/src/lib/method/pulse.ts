@@ -11,7 +11,7 @@ import type { MoveId } from './index'
 /** How many local days the pulse looks back, today included. */
 export const PULSE_DAYS = 14
 
-type PulseTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'created_at' | 'completed_at' | 'deleted_at' | 'due'> & { start?: string | null }
+type PulseTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'created_at' | 'completed_at' | 'deleted_at' | 'due'> & { start?: string | null; sample?: boolean }
 
 /** Inbox membership, as triage defines it (lib/inbox: no project, not scheduled; top-level, open, live). */
 const inInbox = (t: PulseTask): boolean => qualifies({ ...t, position: 0 })
@@ -33,7 +33,8 @@ export function decided(tasks: readonly PulseTask[], today: string, days = PULSE
   let caught = 0
   let done = 0
   for (const task of tasks) {
-    if (task.deleted_at) continue
+    // A start guide sample is never part of the pulse (moments-and-onboarding D3), like Statistics.
+    if (task.deleted_at || task.sample) continue
     const created = dayOf(task.created_at)
     if (created < start || created > today) continue
     caught++
@@ -46,7 +47,7 @@ export function decided(tasks: readonly PulseTask[], today: string, days = PULSE
 export function inboxAge(tasks: readonly PulseTask[], today: string): number | null {
   let oldest: string | null = null
   for (const task of tasks) {
-    if (!inInbox(task)) continue
+    if (!inInbox(task) || task.sample) continue
     const created = dayOf(task.created_at)
     if (oldest === null || created < oldest) oldest = created
   }

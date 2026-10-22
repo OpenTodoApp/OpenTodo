@@ -6,7 +6,7 @@
 // board and the timeline.
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
@@ -51,6 +51,8 @@ import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
 import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
+import { noteTodayOpened } from '../lib/firstDay'
+import { InboxMenu } from './SampleNotice'
 
 export { BLOCKED_OPEN_KEY } from '../lib/listGroups'
 
@@ -98,6 +100,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
   const openId = usePanelTaskId()
   const quickAddRef = useRef<HTMLInputElement>(null)
+  // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
+  useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
   const focusQuickAdd = useCallback(() => quickAddRef.current?.focus(), [])
   // An empty view's "Add a task": the quick-add sheet on a touch device, the view's own field otherwise.
   const fine = useFinePointer()
@@ -266,7 +270,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={pageActions}
               leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
               meta={meta} subtitle={methodSubtitle}
-              menu={route.view === 'label' && currentLabel ? <LabelMenu label={currentLabel} /> : undefined} />
+              menu={route.view === 'label' && currentLabel ? <LabelMenu label={currentLabel} /> : route.view === 'inbox' ? <InboxMenu /> : undefined} />
           )}
 
           {route.view !== 'completed' && (

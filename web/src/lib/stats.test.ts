@@ -150,6 +150,14 @@ describe('excluded rows', () => {
     const s = run([...done, skipped], { kind: 'last-week' })
     expect([s.completed, s.late, s.slipped]).toEqual([4, 0, 0])
   })
+
+  it('Sample task excluded: two completed samples and one real task make Done 1, and samples are not created (moments-and-onboarding)', () => {
+    const created = at('2026-10-12')
+    const samples = ['s1', 's2'].map((id) => task(id, { sample: true, created_at: created, completed_at: at('2026-10-13') }))
+    const open = task('s3', { sample: true, created_at: created, due: { date: '2026-10-12' } })
+    const s = run([...samples, open, task('real', { created_at: created, completed_at: at('2026-10-13') })])
+    expect([s.completed, s.created, s.slipped, s.overdue]).toEqual([1, 1, 0, 0])
+  })
 })
 
 describe('whose tasks count in shared projects', () => {
