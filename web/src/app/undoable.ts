@@ -5,8 +5,17 @@
 import { completeUndoable, dueUndoable, moveUndoable, parkUndoable, trashUndoable } from '../lib/undoActions'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
+import { markCompleted, tick } from './motion'
 
+/**
+ * Completes or reopens a task. A completion is written at once; just before, the list
+ * learns that the row departs (motion-v2 D2) and the device ticks (D6).
+ */
 export async function completeWithUndo(id: string, completed: boolean): Promise<void> {
+  if (completed) {
+    markCompleted(id)
+    tick()
+  }
   const r = await completeUndoable(id, completed)
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }

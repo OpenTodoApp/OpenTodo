@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, type ReactNode, useMemo, useRef } from 'react'
 import { t } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
@@ -10,10 +10,12 @@ import type { Progress } from '../../lib/subtasks'
 import type { HabitStats } from '../../lib/habits'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
 import { Button, ListGroupHeader } from '../../ui'
-import { sectionTarget } from '../BoardView'
+import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
+import { isGhost, markGhost, withGhosts, type Departure } from '../motion'
+import type { RowMotion } from '../TaskRow'
 import { ListRow, SubtaskInput, type RowActions } from './ListRow'
 import type { ListRoute } from './useListModel'
 
@@ -48,7 +50,41 @@ export interface RowContext {
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
   renderInline?: (task: Task) => ReactNode
+  /** Running completion sequences (motion-v2). */
+  departures?: ReadonlyMap<string, Departure>
 }
+
+/** The sequence a row plays: a ghost departs, a completed row that stayed rolled forward, Undo restores. */
+function rowMotion(task: Task, departures: ReadonlyMap<string, Departure> | undefined): RowMotion | undefined {
+  if (isGhost(task)) return 'leave'
+  const d = departures?.get(task.id)
+  if (d === 'restored') return 'restored'
+  if (d === 'leave' && !task.completed_at) return 'rolled'
+  return undefined
+}
+
+/** A group's rows with its departing rows kept in place (motion-v2 D2); counts skip them. */
+export function useGhostGroups(groups: ListGroup[], departures: ReadonlyMap<string, Departure>): ListGroup[] {
+  const memory = useRef(new Map<string, { list: string; after: string | null; ghost: Row }>())
+  return useMemo(() => {
+    if (departures.size === 0 && memory.current.size === 0) return groups
+    const shown = withGhosts(groups.map((g) => ({ key: g.key, items: g.rows })), (r) => r.task.id, (r) => ({ ...r, task: markGhost({ ...r.task }) }), departures, memory.current)
+    return groups.map((g) => (shown.get(g.key)!.length === g.rows.length ? g : { ...g, rows: shown.get(g.key)! }))
+  }, [groups, departures])
+}
+
+/** A board's cards with their departing cards kept in place. */
+export function useGhostColumns(columns: BoardColumn[], departures: ReadonlyMap<string, Departure>): BoardColumn[] {
+  const memory = useRef(new Map<string, { list: string; after: string | null; ghost: Task }>())
+  return useMemo(() => {
+    if (departures.size === 0 && memory.current.size === 0) return columns
+    const shown = withGhosts(columns.map((c) => ({ key: c.key, items: c.cards })), (task) => task.id, (task) => ({ ...task }), departures, memory.current)
+    return columns.map((c) => (shown.get(c.key)!.length === c.cards.length ? c : { ...c, cards: shown.get(c.key)! }))
+  }, [columns, departures])
+}
+
+/** Rows that count: everything but the departing ones. */
+export const liveRows = (rows: Row[]): number => rows.reduce((n, r) => n + (isGhost(r.task) ? 0 : 1), 0)
 
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
 export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
@@ -56,9 +92,13 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
   const line = (r: Row) => {
     // The row being edited in place is not dragged: a press in its field selects text.
     const editing = !c.board && c.inlineId === r.task.id
+    const motion = rowMotion(r.task, c.departures)
+    // A departing row (motion-v2 D2) is a picture: no cursor, tick, drag or drop.
+    const ghost = motion === 'leave'
     return (
       <Fragment key={r.task.id}>
         <ListRow
+          motion={motion}
           task={r.task}
           depth={r.depth}
           breadcrumb={r.breadcrumb}
@@ -72,19 +112,19 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox'}
           implied={r.implied}
           omitLabel={c.view === 'label' ? c.labelId : undefined}
-          selected={r.task.id === c.selectedId}
+          selected={!ghost && r.task.id === c.selectedId}
           progress={c.progress.get(r.task.id)}
           blockedBy={c.blocked.get(r.task.id)}
           habit={c.habits.get(r.task.id)}
-          readOnly={c.isReadOnly(r.task)}
+          readOnly={ghost || c.isReadOnly(r.task)}
           shape={c.board ? 'card' : 'row'}
           timeColumn={c.timeColumn}
-          draggable={!editing && !c.isReadOnly(r.task)}
-          reorderable={c.manual}
+          draggable={!ghost && !editing && !c.isReadOnly(r.task)}
+          reorderable={!ghost && c.manual}
           collapsible={tree}
-          dropIndicator={c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
-          dragging={c.draggingId === r.task.id}
-          ticked={c.ticked.has(r.task.id)}
+          dropIndicator={!ghost && c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
+          dragging={!ghost && c.draggingId === r.task.id}
+          ticked={!ghost && c.ticked.has(r.task.id)}
           showCheckbox={c.showCheckbox}
           hideFieldBadges={c.fieldColumns}
           posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
@@ -180,7 +220,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(BLOCKED_OPEN_KEY)} tone="muted" />
       ) : g.heading && (
-        <ListGroupHeader title={g.heading} count={g.note ? undefined : g.rows.length} note={g.note} tone={g.key === 'overdue' ? 'danger' : 'default'}
+        <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} tone={g.key === 'overdue' ? 'danger' : 'default'}
           collapsed={collapsed} onToggle={() => setGroupCollapsed(view, g.key, !collapsed)} />
       )}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}

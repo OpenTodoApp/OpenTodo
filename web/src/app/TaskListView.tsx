@@ -6,7 +6,7 @@
 // board and the timeline.
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
@@ -30,6 +30,7 @@ import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
 import { taskDefaults } from './listActions'
+import { listCommitted, useDepartures } from './motion'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
@@ -47,7 +48,7 @@ import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
-import { GroupedList, LogbookMore, rowRenderer } from './task-list/ListGroups'
+import { GroupedList, LogbookMore, rowRenderer, useGhostColumns, useGhostGroups } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
@@ -88,7 +89,13 @@ const NO_DONE: Map<string, Task[]> = new Map()
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const m = useListModel(route, userId)
   const workspaceName = useWorkspaceName()
-  const { rows, groups, columns, board, timeline, projectId, today, taskMap, isReadOnly, collapsedSections, viewMode, sectionMap } = m
+  const { rows, groups: dataGroups, columns: dataColumns, board, timeline, projectId, today, taskMap, isReadOnly, collapsedSections, viewMode, sectionMap } = m
+  // Completed rows stay on screen for their sequence (motion-v2 D2); data stays as read.
+  const departures = useDepartures()
+  const groups = useGhostGroups(dataGroups, departures)
+  const columns = useGhostColumns(dataColumns, departures)
+  // A list transition takes its new snapshot after the list's next commit (motion-v2 D4).
+  useLayoutEffect(() => listCommitted())
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
@@ -160,7 +167,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Manual ordering (OpenSpec `manual-ordering`): project lists and boards (editors
   // and above) and the Inbox. Date and filter views keep their own sort.
   const manual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox'
-  const sectionOfRow = useMemo(() => sectionOfRows(board, columns, groups), [board, columns, groups])
+  const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, dataGroups), [board, dataColumns, dataGroups])
   const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked }, moveToSection, onDropped: setSelectedId })
   const { latestSectionMap } = drag
 
@@ -221,7 +228,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     act(toggleComplete(parent.id, true))
   }, [ui.prompt, setPrompt, toggleComplete])
 
-  const shared = { route, rows, columns, board, manual, selectedId, setSelectedId, openId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
+  const shared = { route, rows, columns: dataColumns, board, manual, selectedId, setSelectedId, openId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
   useListShortcuts({
     ...shared, projectId, tree: m.tree, tickRows, treeView: m.treeView, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
     today, userId, acceptPrompt, moveToSection, toggleViewMode,
@@ -234,7 +241,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || selection.ticked.size > 0, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null),
-    inlineId: inline?.id ?? null, renderInline,
+    inlineId: inline?.id ?? null, renderInline, departures,
   })
 
   // Planned tasks without a project (inbox-means-unplaced D4): in the Inbox header's meta, or its action row on phones.
@@ -314,7 +321,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
               projects={m.projects} labels={m.labels} renderCard={(task) => renderRow(flatRow(task))} onCurrentColumn={setCurrentColumn} placeholder={drag.placeholder} />
           ) : timeline && currentProject ? (
-            <TimelineView groups={groups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
+            <TimelineView groups={dataGroups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />
           ) : (
             <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs}

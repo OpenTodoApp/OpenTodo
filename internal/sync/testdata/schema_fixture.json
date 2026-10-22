@@ -164,6 +164,7 @@
       "focus_short_break_minutes",
       "focus_sound",
       "focus_work_minutes",
+      "haptics",
       "language",
       "maps",
       "method_mode",

@@ -15,7 +15,7 @@
 // revealed actions (RowActionCluster) appear on a fine pointer.
 import { isSample } from '../lib/sampleTasks'
 import { Icon, LabelChips, ReadAs, ToneText, type IconName, type Tone } from '../ui'
-import { memo, type ReactNode, useEffect, useRef, useState } from 'react'
+import { memo, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, localDueOf, logicalToday, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
@@ -26,7 +26,7 @@ import { AssigneeChip } from './AssigneePicker'
 import { useAttachmentCount, useCommentCount, useSharedProject } from './useCommentCounts'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { completionDelay, prefersReducedMotion } from './motion'
+import { prefersReducedMotion } from './motion'
 import { dragFeedback } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useFieldDefs } from './useFields'
@@ -235,30 +235,24 @@ export interface TaskRowProps {
   tracked?: number
   /** The inline editor in place of the title and metadata (inline-task-editing). */
   inline?: ReactNode
+  /** The completion sequence this row plays, if any (motion-v2). */
+  motion?: RowMotion
 }
 
-/** Completion feedback: the check mark animates and the row fades before it leaves; reopening is immediate. */
-function useCompletion(done: boolean, onToggle: () => void) {
-  const [completing, setCompleting] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => () => clearTimeout(timer.current), [])
-  useEffect(() => { if (done) setCompleting(false) }, [done])
-  const toggle = () => {
-    if (done || completing) { onToggle(); return }
-    const delay = completionDelay()
-    if (delay === 0) { onToggle(); return }
-    setCompleting(true)
-    timer.current = setTimeout(() => { setCompleting(false); onToggle() }, delay)
-  }
-  return { completing, toggle }
-}
+/**
+ * Where the row is in the completion sequence (task-list-presentation "Completion
+ * feedback", motion-v2 D2, D3): `leave` while it departs (the list renders it once more
+ * after the op was written), `rolled` while a repeating task rolls to its next date,
+ * `restored` while Undo brings it back.
+ */
+export type RowMotion = 'leave' | 'rolled' | 'restored'
 
 /**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
  */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion }: TaskRowProps) {
   const card = shape === 'card'
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
@@ -324,11 +318,12 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const meta = (items > 0 || m.project) && <RowMeta m={m} card={card} projectOnlyBelowSm={items === 0 && !card} />
   const revealed = !card && !readOnly && !inline && actions
 
-  const { completing, toggle } = useCompletion(done, onToggle)
-  const checked = done || completing
+  // A departing row is the last picture of a task that was completed: done, and out of reach.
+  const departing = motion === 'leave'
+  const checked = done || departing
+  const rowRef = useRowHeight(departing)
   const feedback = dragFeedback(prefersReducedMotion())
   const lift = dragging ? feedback.lift : ''
-  const fade = completing ? 'opacity-50' : '' // tone-lint-allow: a completing row fades out (motion), not quieter text
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
@@ -343,12 +338,18 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
 
   return (
     <li
-      data-task-id={task.id}
+      ref={rowRef}
+      // A departing row is not a row of the list: no id for the cursor, drops or tests.
+      data-task-id={departing ? undefined : task.id}
+      data-departing={departing ? task.id : undefined}
+      data-rolled={motion === 'rolled' || undefined}
+      data-restored={motion === 'restored' || undefined}
+      aria-hidden={departing || undefined}
+      inert={departing || undefined}
       data-depth={depth}
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
       data-ticked={ticked || undefined}
-      data-completing={completing || undefined}
       data-dragging={dragging || undefined}
       aria-current={selected || undefined}
       aria-level={card || setSize === undefined ? undefined : depth + 1}
@@ -356,7 +357,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       aria-setsize={card ? undefined : setSize}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${fade} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
@@ -389,11 +390,11 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
         <button
           type="button"
           aria-label={done ? t('Reopen {title}', { title: name }) : t('Complete {title}', { title: name })}
-          onClick={toggle}
+          onClick={onToggle}
           disabled={readOnly}
           className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
-          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${PRIORITY_RING[task.priority]} group-hover/check:bg-success-soft`} ${completing ? 'row-check-pop' : ''}`}>
+          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${PRIORITY_RING[task.priority]} group-hover/check:bg-success-soft`}`}>
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
@@ -427,6 +428,16 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
     </li>
   )
 })
+
+/** Measures a departing row so its collapse starts from its own height (motion-v2 D3). */
+function useRowHeight(departing: boolean) {
+  const ref = useRef<HTMLLIElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (departing && el) el.style.setProperty('--row-h', `${el.offsetHeight}px`)
+  }, [departing])
+  return ref
+}
 
 /** The board card: the same row data as a card (sections-and-boards "Card content"). */
 export function TaskCard(props: Omit<TaskRowProps, 'shape'>) {
