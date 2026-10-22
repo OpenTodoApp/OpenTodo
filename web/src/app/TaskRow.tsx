@@ -307,7 +307,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
     estimate, blockedBy: done ? 0 : blockedBy, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved),
     assignee: assignee && task.assignee_id ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
-    origin: card ? originChip : null,
+    origin: null,
     labels: <LabelChips labels={labels} omit={omitLabel} />,
     counts: card && counts.length > 0 ? <RowCounts counts={counts} /> : null,
   }
@@ -323,11 +323,15 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const feedback = dragFeedback(prefersReducedMotion())
   const lift = dragging ? feedback.lift : ''
   const fade = completing ? 'opacity-50' : '' // tone-lint-allow: a completing row fades out (motion), not quieter text
-  const trailing = !card && (projectName || counts.length > 0 || originChip) && (
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 shrink-0 items-center gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
-      {projectName && <span data-project="" className="hidden max-w-48 truncate text-meta text-muted sm:inline">{projectName}</span>}
+  // The origin is a link, so it never sits inside the open button: on a card it ends the
+  // card at the top right, as before rows-v2 (a link nested in a button is invalid).
+  const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
+    : (projectName || counts.length > 0 || originChip) && (
+    // min-w-0: in a narrow column (a dashboard panel) the project name gives way, never the page.
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
+      {projectName && <span data-project="" className="hidden max-w-48 min-w-0 truncate text-meta text-muted sm:inline">{projectName}</span>}
       {counts.length > 0 && <RowCounts counts={counts} />}
-      {originChip}
+      {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
   )
 
