@@ -134,7 +134,7 @@ Every date field in task editing SHALL offer a calendar to pick a date. Its week
 - **THEN** the task is due on 16 October and the calendar closes
 
 ### Requirement: Preferences in Settings
-Settings SHALL offer a Date and time panel with the four preferences and a live preview of a sample date, time and week. The day start SHALL be offered as the whole hours from `00:00` (named as midnight) to `06:00`, each shown in the user's time format, with one line explaining that work done before that time counts for the previous day; the preview SHALL name the day the device currently considers today. A change SHALL apply at once, without a reload.
+Settings SHALL offer a Date and time panel with the four preferences and a live preview of a sample date, time and week. The day start SHALL be offered as the whole hours from `00:00` (named as midnight) to `06:00`, each shown in the user's time format, with one line explaining that work done before that time counts for the previous day; the preview SHALL name the day the device currently considers today. A change SHALL apply at once, without a reload. The preview SHALL be one "Sample" box under the four rows, set in the body text style: a heading line naming today as the app names it, then the sample values as they appear in the app (a due date chip, a full date, a due time, a comment time) in a two-column grid of label and value aligned on one axis, then the week strip starting on the chosen first day with today marked; it SHALL fit within the card's width at 360 px without wrapping a value.
 
 #### Scenario: Live preview
 - **WHEN** the user switches the time format from `24h` to `12h` in Settings
@@ -147,6 +147,10 @@ Settings SHALL offer a Date and time panel with the four preferences and a live 
 #### Scenario: Keyboard
 - **WHEN** the user tabs to the day start control and chooses a value with the arrow keys
 - **THEN** the value is written and the preview updates, with no mouse
+
+#### Scenario: Sample box on a phone
+- **WHEN** the user opens Date and time at 360 px
+- **THEN** the Sample box shows today's heading, four label and value lines aligned on one axis, and the week strip, with no value wrapped and nothing wider than the card
 
 ### Requirement: Logical today
 The web app SHALL compute one logical today per device: the local calendar date, or the previous date while the local time is before the day start. Every screen and rule that asks which day it is SHALL use it and SHALL move to the next day within a minute of the day start while the app stays open. The preference is applied when reading: stored dates and instants never change, nothing new is written, and devices converge as before.

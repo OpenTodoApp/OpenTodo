@@ -82,3 +82,6 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 - **WHEN** the user opens the More group, in any "How you work" mode
 - **THEN** Locations is listed after Updates and before Trash, and it is never a primary destination
 
+#### Scenario: Rules in More
+- **WHEN** the user opens the More group, in any "How you work" mode
+- **THEN** Rules (OpenSpec `automation-rules`) is listed after Locations and before Trash, and it is never a primary destination

@@ -3,7 +3,7 @@ title: "Settings: You"
 summary: The Account and Appearance sections of Settings, your profile, session, password, two-factor authentication, passkeys, encryption, and the mode, theme, density, row detail and sidebar.
 audience: user
 section: Guides
-specs: [appearance-preferences]
+specs: [appearance-preferences, account-profile]
 screens: [settings/account#account, settings/appearance#appearance, settings/session#account, settings/activity#account, settings/linked-accounts#account]
 order: 141
 ---

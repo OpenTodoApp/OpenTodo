@@ -51,21 +51,6 @@ The parser SHALL recognise relative day words, weekday names with an optional "n
 - **WHEN** today is 2026-10-09 and the user enters `Renew passport 3 Feb`
 - **THEN** the task is due `2027-02-03`
 
-### Requirement: Numeric order and week start follow the preferences
-While the device's numeric date order is automatic, numeric dates SHALL be read in the order of the user's date format (OpenSpec `date-time-preferences`; `iso` and `system` keep the language's order). "next week" and the "next <weekday>" rule SHALL use weeks that start on the user's preferred first day of the week.
-
-#### Scenario: Numeric date follows the date format
-- **WHEN** the browser language is English (US), the quick-add order is automatic, the date format is `day-month`, today is 2026-10-09, and the user enters `Pay rent 3/11`
-- **THEN** the task is due `2026-11-03`
-
-#### Scenario: Explicit quick-add order wins
-- **WHEN** the device's quick-add numeric order is set to month-day and the date format is `day-month`, and the user enters `Pay rent 3/11` on 2026-10-09
-- **THEN** the task is due `2027-03-11`
-
-#### Scenario: Next week with a Sunday start
-- **WHEN** the first day of the week is `sun`, today is Wednesday 2026-10-14, and the user enters `Plan trip next week`
-- **THEN** the task is due Sunday `2026-10-18`
-
 ### Requirement: Multi-language vocabulary
 Date, time, recurrence and reminder vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese, available with no network. The active set SHALL be the interface language (OpenSpec `localization`) when not `system`, then the browser's bundled preferred languages, with English always active, overridable in Settings on the device. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent. The stored rule SHALL always be the canonical English form.
 
@@ -102,15 +87,15 @@ Date, time, recurrence and reminder vocabulary SHALL be bundled for English, Ger
 - **THEN** a relative reminder with offset −30 minutes is created in every case
 
 ### Requirement: Live preview chips
-While the user types, the client SHALL show one chip per recognised attribute (due, project, label, priority, estimate, recurrence, reminder) and the title as it will be saved. The preview SHALL update on every keystroke and be announced without stealing focus. A link to the quick add guide SHALL appear beside the chips during the first three uses on a device and in the input's tooltip afterwards; no shortcut badge SHALL be printed unless shortcut hints are on.
+While the user types, the client SHALL show one chip per recognised attribute (due, project, label, priority, estimate, recurrence, reminder) and the title as it will be saved, and SHALL tint each recognised span inside the field itself in that attribute's soft colour, aligned with the typed text, so the chips explain and the field shows where. The preview and the tints SHALL update on every keystroke and be announced without stealing focus; the tints SHALL be decorative, so assistive technology reads the field's text and the chips only. A dismissed token SHALL lose its tint. Under the high-contrast presentation the tint SHALL be a one-pixel underline in the attribute's colour. A link to the quick add guide SHALL appear beside the chips during the first three uses on a device and in the input's tooltip afterwards; no shortcut badge SHALL be printed unless shortcut hints are on. The same field, chips and tints SHALL be used by every quick add: the list's line, the phone's sheet, the capture screen and the command bar's Add mode.
 
 #### Scenario: Chips appear as tokens are typed
 - **WHEN** the user has typed `Buy milk tomorrow p2`
-- **THEN** a due chip reading tomorrow's date and a priority chip reading `P2` are shown, and the title preview reads `Buy milk`
+- **THEN** a due chip reading tomorrow's date and a priority chip reading `P2` are shown, the title preview reads `Buy milk`, and in the field `tomorrow` carries the due tint and `p2` the priority tint
 
 #### Scenario: Chips disappear when text changes
 - **WHEN** the user deletes `p2` from the line
-- **THEN** the priority chip disappears and the task would be created with priority 4
+- **THEN** the priority chip and its tint disappear and the task would be created with priority 4
 
 #### Scenario: Guide link fades out
 - **WHEN** the user has added four tasks on this device
@@ -122,11 +107,19 @@ While the user types, the client SHALL show one chip per recognised attribute (d
 
 #### Scenario: Dismissing the recurrence chip keeps the text
 - **WHEN** the user dismisses the recurrence chip, or presses Backspace twice with the caret at the end of `Water plants every Monday`
-- **THEN** the title is `Water plants every Monday`, no rule is set, and the chip does not reappear while that text is unchanged
+- **THEN** the title is `Water plants every Monday`, no rule is set, the chip does not reappear while that text is unchanged, and `every Monday` carries no tint
 
 #### Scenario: Quoted phrase is not a reminder
 - **WHEN** the user enters `Read "remind me at 9" essay`
-- **THEN** no reminder is created and the title is `Read remind me at 9 essay`
+- **THEN** no reminder is created, the quoted span carries no tint, and the title is `Read remind me at 9 essay`
+
+#### Scenario: Screen reader
+- **WHEN** a screen reader user types `Call Ana friday`
+- **THEN** the field reads back `Call Ana friday`, the due chip is announced, and nothing is announced for the tint
+
+#### Scenario: High contrast
+- **WHEN** the high-contrast presentation is on and the user types `Pay rent p1`
+- **THEN** `p1` is underlined in the priority colour instead of tinted
 
 ### Requirement: Dismiss and escape parsed tokens
 The user SHALL be able to reject an interpretation: activating a chip's dismiss control, or pressing Backspace when the caret is at the end of the line and the last chip is highlighted, SHALL keep that text literally in the title and SHALL suppress re-parsing of that span until the span's text changes. Text inside double quotes SHALL never be parsed, and the quotes SHALL be removed from the saved title.
@@ -448,3 +441,18 @@ An ordinal weekday date SHALL get the ordinary due chip and SHALL be dismissable
 #### Scenario: Offline capture
 - **WHEN** the device is offline and the user enters `Board second Tuesday #work`
 - **THEN** the task is created locally with the resolved date and project, survives a reload, and uploads on the next successful sync
+
+### Requirement: Numeric dates follow the date format
+Numeric dates SHALL be read in the order of the user's date format (OpenSpec `date-time-preferences`): `day-month` reads day first, `month-day` month first, and `iso` and `system` keep the order of the language the line is parsed in. There SHALL be no separate quick-add choice of numeric order; an order stored by an earlier version on a device SHALL be ignored. "next week" and the "next <weekday>" rule SHALL use weeks that start on the user's preferred first day of the week. The date format is a synced preference, so every device reads the same line the same way, offline included.
+
+#### Scenario: Numeric date follows the date format
+- **WHEN** the browser language is English (US), the date format is `day-month`, today is 2026-10-09, and the user enters `Pay rent 3/11`
+- **THEN** the task is due `2026-11-03`
+
+#### Scenario: An old device order is ignored
+- **WHEN** a device still holds a quick-add numeric order of month-day from an earlier version, the date format is `day-month`, and the user enters `Pay rent 3/11` on 2026-10-09
+- **THEN** the task is due `2026-11-03`, and Settings → Capture shows no numeric order choice
+
+#### Scenario: Next week with a Sunday start
+- **WHEN** the first day of the week is `sun`, today is Wednesday 2026-10-14, and the user enters `Plan trip next week`
+- **THEN** the task is due Sunday `2026-10-18`

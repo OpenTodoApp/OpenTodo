@@ -11,6 +11,10 @@ Interface transitions SHALL use one of three durations: 120 ms for interface fee
 - **WHEN** any sequence in the app is measured
 - **THEN** no transition or animation is declared longer than 400 ms and every exit is shorter than or equal to its entrance
 
+#### Scenario: Moment used for a hover
+- **WHEN** a change applies the moment duration to a hover or a menu transition
+- **THEN** the token lint fails naming the file and line
+
 #### Scenario: Reduced motion skips view transitions
 - **WHEN** reduced motion is requested and a reschedule moves three rows to another group
 - **THEN** no view transition starts and the list shows its new order at once
