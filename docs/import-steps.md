@@ -18,7 +18,7 @@ An import never writes anything until you've seen what it will do, and it can be
 Open **Settings → Data**, select **Import data** (or press <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>I</kbd>) and choose a file. OpenTodo accepts:
 
 - an **OpenTodo export**, for moving to another server or restoring (the ZIP export brings its attached files too),
-- a **CSV file**, from a spreadsheet or a script, with a `title` column and optional columns for project, due date, priority, labels and more,
+- a **[CSV](glossary.md) file**, from a spreadsheet or a script, with a `title` column and optional columns for project, due date, priority, labels and more,
 - **JSON exports from other task apps**, in the common shapes those apps use.
 
 Nothing is written straight away. OpenTodo first shows a preview:

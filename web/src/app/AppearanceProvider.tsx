@@ -13,8 +13,10 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const mode = a?.mode
   const accent = a?.accent
   const density = a?.density
+  const contrast = a?.contrast
+  const motion = a?.motion
   useEffect(() => {
-    if (mode && accent) applyAppearance({ mode, accent, density })
-  }, [mode, accent, density])
+    if (mode && accent) applyAppearance({ mode, accent, density, contrast, motion })
+  }, [mode, accent, density, contrast, motion])
   return <>{children}</>
 }

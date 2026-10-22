@@ -23,7 +23,7 @@ Use HTTPS. Calendar apps send the app password with every request (HTTP Basic); 
 
 ## Create an app password
 
-Calendar apps sign in with **your account email and an app password**, never your account password, an API token or a single sign-on login (all of those are refused at `/dav/`). App passwords work only for CalDAV: they cannot call the REST API or change the account.
+Calendar apps sign in with **your account email and an app password**, never your account password, an [API](glossary.md) token or a single sign-on login (all of those are refused at `/dav/`). App passwords work only for CalDAV: they cannot call the REST API or change the account.
 
 In **Settings → Integrations → Calendar apps** choose **New app password**, enter a name (for example "iPhone") and choose **Create app password**. The password (`otap_…`) is shown **once** in the same dialog; use **Copy** and paste it into the calendar app. Create one per device so you can revoke a lost phone without touching the others. The list shows when each was created and last used. To revoke one, open its **⋯** menu and choose **Revoke**, then confirm. Revoking takes effect on the next request. Deactivating an account revokes its app passwords; deleting it removes them.
 

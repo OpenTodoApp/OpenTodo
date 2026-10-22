@@ -102,6 +102,8 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
 | [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee. |
+| [Accessibility statement](accessibility.md) | What OpenTodo commits to (WCAG 2.2 AAA where it keeps the look), the exceptions it makes on purpose with the way to the criterion, what is checked, how to report |
+| [Glossary](glossary.md) | Every abbreviation and uncommon term the app shows, explained in plain sentences |
 
 ## Self-hosting and operations
 

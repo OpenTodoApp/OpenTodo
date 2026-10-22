@@ -1,4 +1,4 @@
-import { Button, Icon, IconPicker, PageHeader, Tooltip } from '../ui'
+import { Button, Icon, IconPicker, PageHeader, Tooltip, Trail } from '../ui'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { useMembership, useProjects } from '../lib/localData'
@@ -13,6 +13,7 @@ import { canDeleteProject, canEditProject, canEditTasks, canManageMembers } from
 import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
+import { useProjectTrail } from './trail'
 import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { ShareDialog } from './ShareDialog'
 import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
@@ -247,8 +248,12 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={() => setEditing(true)} data-project-name>{project.name}</button></Tooltip>
   ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>
 
+  // Where the project is (accessibility "Location and link purpose"): its ancestors as
+  // links in the lead line, nothing for a top-level project.
+  const trail = useProjectTrail(project.id, projects, false)
   const meta = (
     <>
+      {trail.length > 0 && <Trail steps={trail} label={t('You are here')} className="inline-flex max-w-full align-middle" />}
       {membership && (
         <button type="button" className="flex items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)}>
           {/* Named by its content (WCAG 2.5.3 Label in Name): the member list is visually hidden, the initials and count are not read. */}

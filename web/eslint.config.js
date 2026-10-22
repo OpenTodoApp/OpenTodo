@@ -7,6 +7,7 @@
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import noGenericAriaLabel from './eslint/no-generic-aria-label.js'
+import noBareLinkText from './eslint/no-bare-link-text.js'
 
 export default [
   { ignores: ['node_modules/**', 'storybook-static/**', 'public/**', 'scripts/**'] },
@@ -16,7 +17,7 @@ export default [
     // A suppression that no longer suppresses anything fails the lint, so every
     // remaining eslint-disable comment is load-bearing.
     linterOptions: { reportUnusedDisableDirectives: 'error' },
-    plugins: { 'react-hooks': reactHooks, a11y: { rules: { 'no-generic-aria-label': noGenericAriaLabel } } },
+    plugins: { 'react-hooks': reactHooks, a11y: { rules: { 'no-generic-aria-label': noGenericAriaLabel, 'no-bare-link-text': noBareLinkText } } },
     // Only the two classic hook rules. The plugin's React Compiler diagnostics
     // (refs, purity, set-state-in-effect, ...) target code compiled by the React
     // Compiler, which this app does not use; see the change's design.md.
@@ -24,6 +25,7 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'a11y/no-generic-aria-label': 'error',
+      'a11y/no-bare-link-text': 'error',
     },
   },
   {

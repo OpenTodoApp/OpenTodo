@@ -67,7 +67,7 @@ Connections to other tools, and your data: [Settings: Data](settings-data.md).
 
 ### Integrations
 
-[Integrations](settings-data.md#integrations): calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the in-app assistant and AI assistants over MCP.
+[Integrations](settings-data.md#integrations): calendar apps (CalDAV), calendar feeds, webhooks, [API](glossary.md) tokens, the in-app assistant and AI assistants over [MCP](glossary.md).
 
 ### Data
 

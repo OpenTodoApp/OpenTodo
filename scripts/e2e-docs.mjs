@@ -22,6 +22,7 @@ import { copyFileSync, createReadStream, existsSync, mkdirSync, readFileSync, st
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import { execSync } from 'node:child_process'
+import { registeredColours } from './ui-check/register.mjs'
 import { extname, join, normalize } from 'node:path'
 
 const outDir = process.argv[2] ?? 'docs-report'
@@ -41,6 +42,10 @@ function axeSource() {
   return readFileSync(join(execSync('npm root -g').toString().trim(), 'axe-core/axe.min.js'), 'utf8')
 }
 const AXE = axeSource()
+// WCAG 2.2 A, AA and AAA (OpenSpec documentation "Accessible documentation", accessibility
+// "Automated AAA gate"): an enhanced-contrast finding passes only on a registered pair.
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'wcag2aaa', 'wcag21aaa', 'wcag22aaa']
+const REGISTERED = await registeredColours(new URL('../web/src/index.css', import.meta.url).pathname, new URL('../web/src/ui/a11y/exceptions.json', import.meta.url).pathname)
 
 // A static server like the website's nginx: /docs/<page>/ serves index.html.
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'application/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp' }
@@ -76,12 +81,22 @@ for (const width of WIDTHS) for (const theme of THEMES) {
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     if (overflow > 1) await fail(p, where, `the page scrolls sideways by ${overflow}px`)
     await p.addScriptTag({ content: AXE })
-    const result = await p.evaluate(async () => {
+    const result = await p.evaluate(async (tags) => {
       // eslint-disable-next-line no-undef
-      const r = await axe.run(document, { resultTypes: ['violations'] })
-      return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
-    })
-    for (const m of result) await fail(p, where, `axe ${m}`)
+      const r = await axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] })
+      return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => ({
+        id: v.id, impact: v.impact, help: v.help,
+        nodes: v.nodes.map((n) => ({ target: n.target.join(' '), data: (n.any.find((c) => c.id === 'color-contrast-enhanced') ?? n.any[0])?.data ?? null })),
+      }))
+    }, TAGS)
+    for (const v of result) {
+      const nodes = v.id === 'color-contrast-enhanced'
+        ? v.nodes.filter((n) => !(n.data?.fgColor && n.data?.bgColor && REGISTERED.covers(theme, n.data.fgColor, n.data.bgColor)))
+        : v.nodes
+      if (!nodes.length) continue
+      const detail = nodes.slice(0, 3).map((n) => `${n.target}${n.data?.contrastRatio ? ` ${Number(n.data.contrastRatio).toFixed(2)}:1` : ''}`).join(', ')
+      await fail(p, where, `axe ${v.impact} ${v.id}: ${v.help}${v.id === 'color-contrast-enhanced' ? '; not in the exceptions register' : ''} (${detail})`)
+    }
   }
   for (const e of errors) failures.push(`${width}px ${theme}: page error ${e}`)
 

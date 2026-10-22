@@ -49,9 +49,9 @@ The writers are:
 | Writer | Path | Device id |
 | --- | --- | --- |
 | Web app on each device | `POST /api/v1/sync` → `sync.Apply` (refused ops reported per op, never block the outbox) | the device's id |
-| REST API, CLI | handler turns body fields into ops → `sync.ApplyStrict` (all or nothing) | `server:<boot id>` (`server` in ops from older releases) |
+| REST [API](glossary.md), [CLI](glossary.md) | handler turns body fields into ops → `sync.ApplyStrict` (all or nothing) | `server:<boot id>` (`server` in ops from older releases) |
 | CalDAV clients | `/dav/` PUT, PROPPATCH, MKCALENDAR, DELETE → one op per changed property | `caldav:<app password id>` |
-| Email to task | IMAP poller → `ApplyStrict`, ids derived from account and Message-ID | `server:<boot id>` |
+| Email to task | [IMAP](glossary.md) poller → `ApplyStrict`, ids derived from account and Message-ID | `server:<boot id>` |
 | Issue import | poller → `ApplyStrict` per page, ids derived from connection and issue | `issues:<connection id>` |
 | Automation rules | observer queues events after commit; worker and minute scheduler → `ApplyStrict` per task, op ids derived from rule, run key and field | `rule:<rule id>` |
 | Import | background job, batches of 1,000 ops | `import` |
@@ -67,7 +67,7 @@ Membership, accounts, tokens, settings, webhooks, audit events and backup runs a
 
 ### Reads
 
-REST collections, the export, MCP tools (the shared agent tool registry in `internal/agenttools`, whose write tools plan changes and apply them with `ApplyStrict` as device `agent:<token-id>`) and resources, CalDAV reports and webhook payloads all read materialised entities through `sync.List` / `sync.Get` (and helpers such as `TaskComments`, `Memberships`), restricted to the scopes the caller can see. History and activity are derived on request from the op log (`ActivityOps`, `activity.Derive`); there is no separate activity table on the server.
+REST collections, the export, [MCP](glossary.md) tools (the shared agent tool registry in `internal/agenttools`, whose write tools plan changes and apply them with `ApplyStrict` as device `agent:<token-id>`) and resources, CalDAV reports and webhook payloads all read materialised entities through `sync.List` / `sync.Get` (and helpers such as `TaskComments`, `Memberships`), restricted to the scopes the caller can see. History and activity are derived on request from the op log (`ActivityOps`, `activity.Derive`); there is no separate activity table on the server.
 
 ### Live updates
 
@@ -96,7 +96,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `host` | Optional multi-tenant host, built only with `OPENTODO_HOST_URL`: a registry of tenants beside their data directories, host-name routing, lazy open and idle close, one scheduler for every tenant's background work, per-tenant limits and the operator interface a control plane drives |
 | `settings` | Owner-level key/value settings (`settings` table, JSON values) and 0600 secret files under `<data>/secrets/` |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW, per-op authorisation and refusal reasons) and `ApplyStrict` (REST), `Pull` (cursor, member backfill), materialised reads, sharing scopes (`scope.go`) and membership (`members.go`), trash, history and purge, the post-commit observer and sinks, `Notifier` (per-user live wake-ups) |
-| `auth` | Users and roles, argon2id passwords, sessions, API tokens and their scopes, CalDAV app passwords, invitations, password resets, user administration, TOTP and recovery codes, step-up, passkeys storage, provider identities (subject-first matching, verified-email linking, provisioning, the SSO-only rule) |
+| `auth` | Users and roles, argon2id passwords, sessions, API tokens and their scopes, CalDAV app passwords, invitations, password resets, user administration, [TOTP](glossary.md) and recovery codes, step-up, passkeys storage, provider identities (subject-first matching, verified-email linking, provisioning, the SSO-only rule) |
 | `webauthn` | Passkey verification: clientDataJSON, authenticator data, COSE keys (ES256, Ed25519, RS256), signature checks; uses `fxamacker/cbor` for CBOR (the other third-party Go modules are SQLite and `golang.org/x/crypto` for argon2). `testauth` is a synthetic authenticator for tests |
 | `oidc` | Single sign-on with one OpenID Connect provider, standard library only: discovery, PKCE, code exchange, JWKS cache, identity-token verification, the signed flow-state cookie, owner configuration and `OPENTODO_OIDC_*` overrides. `oidctest` is an in-process provider for tests. See [self-hosting/sso.md](self-hosting/sso.md) |
 | `audit` | The closed catalogue of security events with typed constructors and an allow-list for details, recording (in the same transaction as credential changes), queries, NDJSON export and retention pruning |
@@ -107,14 +107,14 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `notify` | Post-commit events for people: the `Sink` interface the sync service calls after a batch commits, and the in-app sink that stores `notifications` for assignments and mentions |
 | `activity` | Pure derivation of attributed activity events from ops (fold by actor and entity within 5 s, classify by touched fields, page newest first); mirrored by `web/src/lib/activity.ts` and pinned by a shared fixture |
 | `webhook` | Maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
-| `push` | Web push for reminders with the standard library: VAPID key pair in `<data>/push_vapid.pem`, ES256 JWTs, RFC 8291 `aes128gcm`, per-device subscriptions and the scheduler. See [reminders.md](reminders.md) |
+| `push` | Web push for reminders with the standard library: [VAPID](glossary.md) key pair in `<data>/push_vapid.pem`, ES256 JWTs, RFC 8291 `aes128gcm`, per-device subscriptions and the scheduler. See [reminders.md](reminders.md) |
 | `recurrence` | Parser and next-occurrence calculator for recurrence rules; mirrored by `web/src/lib/recurrence.ts` against shared vectors. See [recurrence.md](recurrence.md) |
 | `quickadd` | Go port of the quick-add parser (`web/src/lib/nlp`): dates and times, `#project @label p1 +30m`, recurrence and reminder phrases in six languages, kept identical by shared vectors; used by the CLI and the importer |
 | `zoned` | Resolves time-zone-fixed due values to instants (gaps and overlaps included); mirrored by `web/src/lib/dates.ts` against shared vectors |
 | `inbox` | Inbox membership: open, without a project and not scheduled (no do-on date, start date or Someday), with no placed parent; mirrored by `web/src/lib/inbox.ts` against shared vectors and used by the agent tools, the MCP views and the CLI |
 | `filter` | Go port of the filter query parser, used to validate saved views; evaluation stays on the client. See [filters.md](filters.md) |
 | `origin` | A task's origin (where it came from): the one validation of the `task.origin` value (the sync schema's check, the CLI, the agent tools, the importers, email to task) and the table that recognises GitHub, GitLab, Jira and Linear issue links, kept identical to `web/src/lib/taskOrigin.ts` by shared vectors. Never requests a URL. See [capture.md](capture.md#where-a-task-came-from) |
-| `timetrack` | Tracked time (OpenSpec time-tracking): the one-running-entry rule every device and the time entry routes apply, an entry's minutes and the day it belongs to, typed durations (`45m`, `1h30`) and the time entries CSV, kept identical to `web/src/lib/time.ts` by shared fixtures. See [time-tracking.md](time-tracking.md) |
+| `timetrack` | Tracked time (OpenSpec time-tracking): the one-running-entry rule every device and the time entry routes apply, an entry's minutes and the day it belongs to, typed durations (`45m`, `1h30`) and the time entries [CSV](glossary.md), kept identical to `web/src/lib/time.ts` by shared fixtures. See [time-tracking.md](time-tracking.md) |
 | `importer` | Reads the own export, CSV and other apps' JSON exports into rows, plans projects, labels, parents and duplicates, and writes ops in background jobs with undo. `sanitize` is a command that turns a real export into a test fixture; it is never linked into the server. See [import.md](import.md) |
 | `blobs` | Attachment bytes as immutable files under `<data>/attachments/`, written once through a temporary file with the size and SHA-256 checked, streamed and never read whole. See [attachments.md](attachments.md) |
 | `calfeed` | Calendar feeds: other people's calendars read into read-only events (fetched through `outbound`), and the user's tasks written as an iCalendar feed. See [calendar-feeds.md](calendar-feeds.md) |
@@ -130,7 +130,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `email` | Email to task: minimal IMAP client (TLS or STARTTLS), MIME parsing to title and description, sub-address routing, per-account inboxes, limits and the poller. See [email.md](email.md) |
 | `location` | A task's location and a saved location's coordinates: the one validation every write path uses (sync, REST, the importers). See [locations-and-places.md](locations-and-places.md) |
 | `maps` | The map proxy: the owner's switch with `OPENTODO_MAPS*` overrides, the provider's style rewritten so every URL points back to the server, tiles, fonts and sprites cached under `<data>/cache/maps` (LRU, capped, never backed up), and Photon search. No viewer data reaches the provider. See [self-hosting/maps.md](self-hosting/maps.md) |
-| `mail` | Optional outgoing email: the owner's SMTP configuration with `OPENTODO_SMTP_*` overrides, a standard-library SMTP transport with an explicit TLS policy, plain-text templates in six languages, sending limits and audit events; every message goes through `Service.Send`. `smtptest` is an in-process SMTP server for tests |
+| `mail` | Optional outgoing email: the owner's [SMTP](glossary.md) configuration with `OPENTODO_SMTP_*` overrides, a standard-library SMTP transport with an explicit TLS policy, plain-text templates in six languages, sending limits and audit events; every message goes through `Service.Send`. `smtptest` is an in-process SMTP server for tests |
 | `digest` | The opt-in weekly email digest: per-user settings, the scheduler on the jobs leader, and the content built from the user's materialised rows with the same definitions as the Statistics screen |
 | `e2ee` | Server side of end-to-end encryption: stores the wrapped key record with optimistic versioning, recognises ciphertext so server-side features degrade explicitly, purges superseded content ops. The server runs no content cryptography; its sub-package `crypt` is the same format for the `ot` client only (`ot encryption`, `ot mcp --decrypt`), on the standard library, pinned by the shared vectors and never linked into the server. See [e2ee.md](e2ee.md) |
 | `ids` | UUID v4, name-based ids (SHA-256, version 8 UUIDs, for recurring occurrences and tasks created from email) and random secrets |

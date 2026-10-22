@@ -14,7 +14,7 @@ A task can repeat. The rule is a short English phrase stored in the task's
 The same grammar is implemented by the server (`internal/recurrence`) and the
 web app (`web/src/lib/recurrence.ts`), and both are tested against one shared file
 of test vectors (`web/src/lib/recurrence.vectors.json`), so every device and the
-REST API compute the same dates. Every example on this page is one of those vectors.
+REST [API](glossary.md) compute the same dates. Every example on this page is one of those vectors.
 
 ## Grammar
 

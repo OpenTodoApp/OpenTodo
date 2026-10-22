@@ -9,7 +9,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildAll, OUT_SITE, staleFiles } from './build.mjs'
-import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
+import { firstProseUse, glossaryTerms, headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 import { missingScreenshots } from '../../../scripts/site-bundle.mjs'
 
@@ -153,6 +153,21 @@ export async function runChecks(repoRoot) {
     for (const img of r.images) if (!img.alt.trim()) out.push(`${where}: image "${img.src}" has no alt text`)
     for (const m of r.html.matchAll(/(?:src|srcset)="(\/docs\/[^"\s]+)/g)) {
       if (!existsSync(join(repoRoot, m[1].slice(1)))) out.push(`${where}: image "${m[1]}" does not exist`)
+    }
+  }
+
+  // Abbreviations (OpenSpec accessibility "Glossary and reading level"): the first prose
+  // use of a glossary term on a page links to the glossary.
+  const glossary = pages.find((p) => p.rel === 'glossary.md')
+  if (!glossary && pages.some((p) => p.rel === 'README.md' && p.body.includes('glossary.md'))) out.push('docs/glossary.md: the glossary is missing (docs/README.md links it)')
+  if (glossary) {
+    const terms = glossaryTerms(glossary.body)
+    for (const p of pages) {
+      if (p.rel === 'glossary.md' || p.rel === 'README.md') continue
+      for (const t of terms) {
+        const use = firstProseUse(p.body, t)
+        if (use && !use.linked) out.push(`docs/${p.rel}: the first use of "${t}" does not link to the glossary (write [${t}](glossary.md); \`node scripts/docs/glossary-links.mjs --write\` does it)`)
+      }
     }
   }
 

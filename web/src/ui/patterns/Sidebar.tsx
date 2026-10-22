@@ -48,7 +48,7 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
   const quiet = countMode === 'hover' ? ' ui-reveal' : countMode === 'hidden' ? ' sr-only' : ''
   const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth} data-tone={active ? 'active' : 'quiet'}
-      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
+      className={`ui-hit flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
       {icon ? <span className={`flex w-5 shrink-0 justify-center${active ? ' text-accent' : ''}`} aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
@@ -101,7 +101,7 @@ export function SidebarGroup({ title, collapsible = false, open = true, onToggle
   // "Projects, 12 items" in every state; the visible number only while closed.
   const spoken = count !== undefined ? <span className="sr-only">{`, ${t('{n, plural, one {# item} other {# items}}', { n: count })}`}</span> : null
   const heading = collapsible ? (
-    <button type="button" className="flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted focus-visible:text-muted" onClick={onToggle} aria-expanded={open}>
+    <button type="button" className="ui-hit flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted focus-visible:text-muted" onClick={onToggle} aria-expanded={open}>
       <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />{title}
       {!open && count !== undefined && <span data-group-count aria-hidden="true" className="ml-0.5 font-medium normal-case tracking-normal tabular-nums">{count}</span>}
       {spoken}

@@ -72,6 +72,25 @@ export function checkCatalog(lang, catalog, messages, fmt) {
   return problems
 }
 
+/** Words in a sentence above which the English source is reported for shortening (OpenSpec accessibility "Glossary and reading level"). */
+export const MAX_SENTENCE_WORDS = 25
+
+/**
+ * English source strings with a sentence longer than MAX_SENTENCE_WORDS, each with its
+ * longest sentence's length (accessibility-aaa D11): a review aid printed with the
+ * summary, never a failure. ICU arguments count as one word; plural and select
+ * branches are read as text.
+ */
+export function longSentences(messages, max = MAX_SENTENCE_WORDS) {
+  const out = []
+  for (const id of messages) {
+    const text = id.replace(/\|[\w-]+$/, '').replace(/\{[^{}]*\{[^{}]*\}[^{}]*\}/g, ' x ').replace(/\{[^{}]*\}/g, ' x ').replace(/<[^>]+>/g, ' ')
+    const longest = Math.max(0, ...text.split(/(?<=[.!?…])\s+|\n+/).map((s) => s.split(/\s+/).filter((w) => /\w/.test(w)).length))
+    if (longest > max) out.push({ id, words: longest })
+  }
+  return out.sort((a, b) => b.words - a.words)
+}
+
 /** Every problem across the catalogs, plus summary lines for work-in-progress ones. */
 export async function check(root = repo) {
   const fmt = await loadFormat(root)
@@ -93,6 +112,8 @@ export async function check(root = repo) {
   for (const lang of shipped) {
     if (lang !== 'en' && !readdirSync(dir).includes(`${lang}.json`)) problems.push(`${lang}: listed in index.ts but web/src/locales/${lang}.json is missing`)
   }
+  const long = longSentences(messages)
+  if (long.length) summary.push(`${long.length} English string(s) have a sentence over ${MAX_SENTENCE_WORDS} words (reading level, accessibility "Glossary and reading level"); the longest: "${long[0].id.slice(0, 80)}" (${long[0].words} words)`)
   return { problems, summary, count: messages.length }
 }
 

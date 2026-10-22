@@ -59,7 +59,7 @@ OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `
 
 **Which proxies are believed.** `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and Cloudflare's `CF-Connecting-IP` count only when the connection comes from a trusted proxy. By default those are loopback, private and link-local addresses (`127.0.0.0/8`, `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`, `169.254.0.0/16`, `fe80::/10`), which covers a proxy on the same machine or a container network (Traefik, Caddy, nginx, Coolify, Dokploy, Kubernetes ingress). From any other address the headers are ignored and the connection's address is the client, so a client that reaches the container directly cannot choose its own address. From a trusted proxy the client is the nearest untrusted `X-Forwarded-For` hop, read from the right: the address your proxy appended (Traefik, Caddy, and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` append it). Make sure your proxy appends to or replaces the header rather than passing the client's through. Rate limits, the audit log, the demo sandbox limit and the [setup code](#the-setup-code) all use this address; IPv6 clients share a limit per `/64`.
 
-**Brute-force limits.** Each anonymous route has its own window per address (password sign-in counts failures only, 10 a minute; registration, password resets, invitation links, public links, MCP requests without a valid token and passkey sign-in 10 a minute each). On top of that, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes lock that account's sign-in for the rest of the window, from every address: the answer is 429 `account_locked` with `Retry-After`. A successful sign-in clears the count.
+**Brute-force limits.** Each anonymous route has its own window per address (password sign-in counts failures only, 10 a minute; registration, password resets, invitation links, public links, [MCP](../glossary.md) requests without a valid token and passkey sign-in 10 a minute each). On top of that, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes lock that account's sign-in for the rest of the window, from every address: the answer is 429 `account_locked` with `Retry-After`. A successful sign-in clears the count.
 
 **`OPENTODO_TRUSTED_PROXIES`** replaces the default with your own list: IP addresses, CIDR prefixes and the keywords `private` (the default ranges above) and `cloudflare` (Cloudflare's published edge ranges, built in, no network request; it keeps the default ranges too). Behind Cloudflare's orange cloud every visitor would otherwise look like a Cloudflare address and share one rate-limit bucket; with `cloudflare`, a hop from a Cloudflare edge is attributed to its `CF-Connecting-IP` header, which also works when your proxy drops the incoming `X-Forwarded-For`.
 
@@ -73,11 +73,11 @@ A proxy on a public address of yours is listed by address; add `private` when yo
 level=ERROR msg="OPENTODO_TRUSTED_PROXIES: invalid entries ignored" invalid=cloudflar hint="did you mean \"cloudflare\"?" accepted="IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keywords \"private\" and \"cloudflare\", separated by commas or spaces" applied="none (loopback and private networks are trusted, as when unset)"
 ```
 
-The owner also sees a **Server configuration warning** at the top of **Settings** and of **Settings → People**, naming the ignored value. Admins, members and API tokens do not see it. Correct the value and restart the container; the warning goes away.
+The owner also sees a **Server configuration warning** at the top of **Settings** and of **Settings → People**, naming the ignored value. Admins, members and [API](../glossary.md) tokens do not see it. Correct the value and restart the container; the warning goes away.
 
 ### Email to task
 
-[Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).
+[Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound [IMAP](../glossary.md) connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).
 
 ### Calendar apps (CalDAV) through the proxy
 
@@ -121,7 +121,7 @@ Troubleshooting "live updates disconnected" (the status pill says **Polling** in
 
 ## Reminders and web push
 
-Reminders are shown in the app on every device and, for devices that enable notifications in **Settings → Notifications**, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a VAPID key pair at `<data>/push_vapid.pem` (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.
+Reminders are shown in the app on every device and, for devices that enable notifications in **Settings → Notifications**, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a [VAPID](../glossary.md) key pair at `<data>/push_vapid.pem` (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.
 
 Push is the only outbound traffic that is on by default (webhooks, backups to S3 or WebDAV, single sign-on and email to task contact only what you configure; see [Privacy](../../README.md#privacy)). A push goes to the push service the user's own browser chose when it subscribed (Google, Mozilla, Apple…), carries an encrypted payload the push service cannot read, and by default contains only ids (the device opts in to task titles). Browsers require https for push, so set `OPENTODO_BASE_URL` to your public https URL (it is also sent as the VAPID contact). To forbid outbound traffic set `OPENTODO_PUSH=off`: the push routes answer 404, no push is sent, and reminders are still shown in the app.
 
@@ -239,7 +239,7 @@ docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ 
 docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .Provenance }}'
 ```
 
-Every file on a GitHub release (server and `ot` binaries, the extension and agent skill zips, the site bundle) has a build provenance attestation. Verify a download with the GitHub CLI, and compare it with `SHA256SUMS`:
+Every file on a GitHub release (server and `ot` binaries, the extension and agent skill zips, the site bundle) has a build provenance attestation. Verify a download with the GitHub [CLI](../glossary.md), and compare it with `SHA256SUMS`:
 
 ```bash
 gh attestation verify opentodo-linux-amd64 --repo pixari/opentodo

@@ -13,7 +13,7 @@ Your folders, lists, board columns, checklists, tags, priorities, due dates, rem
 
 ## Export from TickTick
 
-TickTick creates a backup as one CSV file from its settings (look for **Backup**). Download it; it is named like `TickTick-backup-2026-10-14.csv`.
+TickTick creates a backup as one [CSV](../glossary.md) file from its settings (look for **Backup**). Download it; it is named like `TickTick-backup-2026-10-14.csv`.
 
 ## Import into OpenTodo
 

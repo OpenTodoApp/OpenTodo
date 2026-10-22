@@ -9,11 +9,11 @@ order: 40
 ---
 # AI assistants (MCP)
 
-OpenTodo can let an AI assistant read your projects and tasks through the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), so you can ask it "what is on my plate today?" or "summarise the Garden project", and, if you allow it, act on them: "move the overdue ones to Friday", "add these three steps to the Garden project". The endpoint is:
+OpenTodo can let an AI assistant read your projects and tasks through the [Model Context Protocol](https://modelcontextprotocol.io) ([MCP](glossary.md)), so you can ask it "what is on my plate today?" or "summarise the Garden project", and, if you allow it, act on them: "move the overdue ones to Friday", "add these three steps to the Garden project". The endpoint is:
 
 - **Off by default.** The server owner turns it on; until then `/mcp` answers 404.
 - **Read-only unless you opt in three times.** Write tools exist only when the owner allows assistant changes, you allow them for your account, and the assistant uses a token created for that purpose (scope `agent`). See [Letting an assistant make changes](#letting-an-assistant-make-changes).
-- **Yours only.** Each request acts as the account whose API token it carries and sees exactly what that account sees in the app: its personal projects and tasks plus the shared projects it is a member of. Deleted items are never returned.
+- **Yours only.** Each request acts as the account whose [API](glossary.md) token it carries and sees exactly what that account sees in the app: its personal projects and tasks plus the shared projects it is a member of. Deleted items are never returned.
 - **Passive.** The assistant connects to your server. For MCP, OpenTodo never contacts a model provider, a registry or anything else on its own. (The separate [in-app assistant](assistant.md) does contact the provider the owner chooses, and only when it is turned on.)
 
 `opentodo://rules` is a read-only resource listing your [automation rules](automations.md): trigger, condition and actions as ids and enumerations, names as untrusted text. There is no tool that changes rules.
@@ -54,7 +54,7 @@ Clients that take a JSON server entry (Settings has a copy button that fills in 
 
 Menus differ between assistants; look for "add custom connector", "remote MCP server" or "HTTP server".
 
-Clients that only speak stdio can launch the bundled CLI bridge. Create a
+Clients that only speak stdio can launch the bundled [CLI](glossary.md) bridge. Create a
 read-only token (or an `agent` token for an assistant that may make changes),
 store it with `ot auth set-token`, then configure the client to run `ot mcp`
 using the stored profile (`ot mcp --decrypt` for an

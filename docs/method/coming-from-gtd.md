@@ -8,11 +8,11 @@ order: 11
 ---
 # Coming from GTD
 
-Open Loops is inspired by GTD (Getting Things Done) and keeps its core: capture everything, clarify once, organise by what the next step needs, review weekly. It is not affiliated with David Allen or the David Allen Company, and it is simpler in places: three horizons instead of six, and contexts as ordinary labels.
+Open Loops is inspired by [GTD](../glossary.md) (Getting Things Done) and keeps its core: capture everything, clarify once, organise by what the next step needs, review weekly. It is not affiliated with David Allen or the David Allen Company, and it is simpler in places: three horizons instead of six, and contexts as ordinary labels.
 
 | GTD | Open Loops | In OpenTodo |
 | --- | --- | --- |
-| Capture, collect | Catch | quick add <kbd>q</kbd>, email, share, voice, CLI |
+| Capture, collect | Catch | quick add <kbd>q</kbd>, email, share, voice, [CLI](../glossary.md) |
 | In-basket | Inbox | the Inbox |
 | Process, clarify | Clarify | triage <kbd>g</kbd> <kbd>p</kbd> |
 | Two-minute rule | Do it if it is quicker than filing it | <kbd>c</kbd> in triage |

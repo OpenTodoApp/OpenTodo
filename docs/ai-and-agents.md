@@ -13,7 +13,7 @@ order: 74
 
 OpenTodo doesn't come with an AI of its own and never sends your tasks anywhere by itself. You bring the model, and you decide what it can see and change. There are three ways to do it, and you can use any mix of them.
 
-| | In the app | Your assistant (MCP) | A coding agent (`ot`) |
+| | In the app | Your assistant ([MCP](glossary.md)) | A coding agent (`ot`) |
 | --- | --- | --- | --- |
 | **Where you talk to it** | A chat panel in OpenTodo (<kbd>Shift</kbd>+<kbd>I</kbd>) | Claude Desktop, an IDE or any MCP client | A terminal agent or an automation script |
 | **Which model** | Anthropic, OpenAI, Gemini or a model on your own network, chosen by the server owner | Whatever your assistant uses | Whatever your agent uses |

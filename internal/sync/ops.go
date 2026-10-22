@@ -645,6 +645,12 @@ var Schema = map[string]map[string]kind{
 		// design D6): "on" or "off"; clients read an empty or unknown value as
 		// "on" and keep the stored value, so the field stays additive.
 		"haptics": kString,
+		// Contrast and motion (OpenSpec change accessibility-aaa, design D3):
+		// contrast is "auto" (follow the system's request for more contrast) or
+		// "high"; motion is "system" or "none". Not restricted here; clients
+		// read an empty or unknown value as the default and keep the stored value.
+		"contrast": kString,
+		"motion":   kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

@@ -219,7 +219,7 @@ function SettingsSearch({ user }: { user: User }) {
               <ResultLink section={h.section} onOpen={() => open(h.section.id)} />
               {h.entries.map((en) => (
                 <a key={en.anchor + en.label} href={routePath({ view: 'settings', section: h.section.id })} data-settings-result={`${h.section.id}:${en.anchor}`}
-                  className="flex min-h-9 items-center gap-2 rounded-control px-2 py-1 pl-7 text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
+                  className="ui-hit flex min-h-9 items-center gap-2 rounded-control px-2 py-1 pl-7 text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
                   onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); open(h.section.id, en.anchor) }}>
                   {cardIcon(en.anchor) ? <Icon name={cardIcon(en.anchor) as IconName} size="xs" className="-ml-5 text-muted" /> : null}
                   <span className="min-w-0 flex-1 truncate">{en.label}</span>
@@ -237,7 +237,7 @@ function SettingsSearch({ user }: { user: User }) {
 function ResultLink({ section, onOpen }: { section: SettingsSection; onOpen: () => void }) {
   return (
     <a href={routePath({ view: 'settings', section: section.id })} data-settings-result={section.id}
-      className="flex min-h-9 items-center gap-2 rounded-control px-2 py-1 text-body font-medium hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
+      className="ui-hit flex min-h-9 items-center gap-2 rounded-control px-2 py-1 text-body font-medium hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
       onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); onOpen() }}>
       <span className="text-muted"><Icon name={section.icon} /></span>{section.label}
     </a>

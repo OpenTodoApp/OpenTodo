@@ -46,7 +46,7 @@ Each recovery code works once, in place of a code from the app, if you lose your
 
 ## Change your password
 
-Open **Settings → Account**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in and API tokens keep working.
+Open **Settings → Account**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in and [API](glossary.md) tokens keep working.
 
 Forgot it? If your server sends email, choose **Forgot password?** on the sign-in screen and enter your address: a reset link valid for 24 hours arrives by email, and the screen answers the same whether or not the address has an account. Otherwise ask the owner or an admin of your server for a reset link; an owner who can't receive mail: see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
 

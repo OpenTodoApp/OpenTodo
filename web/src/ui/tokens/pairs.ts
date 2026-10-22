@@ -2,14 +2,23 @@
 // UI is allowed to use, with its WCAG minimum. contrast.test.ts checks them against
 // the real values in index.css for light and dark. Add a pair here before using a
 // new foreground/background combination in src/ui.
+//
+// Text and chip pairs need 7:1 (WCAG 2.2 AAA, accessibility-aaa D2). The only way to
+// accept less is an entry in the exceptions register (src/ui/a11y/exceptions.json),
+// which lowers a listed pair to 4.5:1; a `min` below TEXT_MIN written here fails the test.
 export type Pair = { fg: string; bg: string; min: number; kind: 'text' | 'ui' | 'chip' }
+
+/** The AAA minimum for text and chips; the register is the only way below it. */
+export const TEXT_MIN = 7
+/** The minimum for non-text marks: borders of inputs, the focus ring, solid steps. */
+export const UI_MIN = 3
 
 const SURFACES = ['canvas', 'surface', 'raised', 'sunken']
 const TEXT = ['text-strong', 'text', 'muted', 'faint']
 export const HUE_NAMES = ['red', 'orange', 'yellow', 'lime', 'green', 'teal', 'cyan', 'blue', 'indigo', 'violet', 'pink', 'slate'] as const
 
-const text = (fg: string, bgs: string[]): Pair[] => bgs.map((bg) => ({ fg, bg, min: 4.5, kind: 'text' }))
-const ui = (fg: string, bgs: string[]): Pair[] => bgs.map((bg) => ({ fg, bg, min: 3, kind: 'ui' }))
+const text = (fg: string, bgs: string[]): Pair[] => bgs.map((bg) => ({ fg, bg, min: TEXT_MIN, kind: 'text' }))
+const ui = (fg: string, bgs: string[]): Pair[] => bgs.map((bg) => ({ fg, bg, min: UI_MIN, kind: 'ui' }))
 
 export const PAIRS: Pair[] = [
   ...TEXT.flatMap((fg) => text(fg, SURFACES)),
@@ -47,7 +56,7 @@ export const PAIRS: Pair[] = [
   ...['p1', 'p2', 'p3', 'p4'].flatMap((p) => ui(p, ['canvas', 'surface'])),
   ...HUE_NAMES.flatMap((h): Pair[] => [
     ...ui(`hue-${h}-solid`, ['surface']),
-    { fg: `hue-${h}-text`, bg: `hue-${h}-soft`, min: 4.5, kind: 'chip' },
+    { fg: `hue-${h}-text`, bg: `hue-${h}-soft`, min: TEXT_MIN, kind: 'chip' },
     // Filled calendar blocks (surfaces-v2 D1, D3): strong text on the soft fill, faint
     // text on the past block's dimmed fill (DERIVED_TOKENS), the edge on the canvas.
     ...text('text-strong', [`hue-${h}-soft`]),

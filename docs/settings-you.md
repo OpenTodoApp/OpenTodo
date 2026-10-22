@@ -17,7 +17,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 ## Account
 
 - **Profile**: your initials, name, email and role.
-- **Session**: **Sign out here** removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm. **Sign out everywhere** signs out every device and revokes your API tokens and app passwords.
+- **Session**: **Sign out here** removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm. **Sign out everywhere** signs out every device and revokes your [API](glossary.md) tokens and app passwords.
 - **Password**: **Change password** opens the form. See [Account security](account-security.md#change-your-password).
 - **Two-factor authentication**: a code from your phone on top of your password. The badge shows whether it's on, and the card warns when only a few recovery codes remain. See [Two-factor authentication](two-factor.md).
 - **Passkeys**: sign in with your fingerprint, face or device PIN. See [Account security](account-security.md#sign-in-with-a-passkey).
@@ -34,9 +34,11 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 These choices follow your account to every device, also when you change them offline:
 
 - **Mode**: **System** follows your device's light or dark setting (the default), **Light** and **Dark** keep the app that way whatever the device says.
-- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal** or **Graphite**. Each tile previews its theme; with the keyboard, the arrow keys move between them. On a phone the tiles are one row of swatches you can scroll sideways.
+- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal** or **Graphite**. Each tile previews its theme; the arrow keys move between them.
+- **Contrast**: **Auto** (the default) follows your device's increase-contrast setting; **High** draws everything black on white or white on black, the route to every exception in the [accessibility statement](accessibility.md).
+- **Motion**: **System** (the default) follows your device's reduced-motion setting; **None** turns every animation off.
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
-- **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with a long press. On by default; turning it off on one device turns it off on all of them. Computers without vibration do not show the switch.
+- **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with a long press. On by default; turning it off on one device turns it off on all.
 - **Sidebar**: one switch per destination of the sidebar's **More** group (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter). A destination you switch on moves up next to Inbox, Today, Upcoming and Calendar. Under **Open Loops first** the sidebar follows the Places, so these switches wait, kept, until you choose **Lists only** or **Companion**.
 
-Mode and theme apply at once, without a reload. They never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; the splash screen when it starts stays neutral, because it is the same for everyone on the server. Every theme meets the same contrast rules in light and dark.
+Everything applies at once, without a reload, and never changes other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; the splash screen stays neutral, the same for everyone on the server.

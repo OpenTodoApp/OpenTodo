@@ -50,7 +50,7 @@ Today's header adds `3h planned · 1h 20m tracked`: the estimates of the open ta
 
 ## Export
 
-**Export time entries** in Statistics downloads a CSV of the chosen period, made on your device. Its columns are `date`, `start`, `end`, `minutes`, `task`, `project`, `labels` (joined by `;`) and `note`, then one column per custom field of the projects present. Times are in your time zone, a running entry has no end and counts up to the export, and the file starts with a byte-order mark so spreadsheets read it as UTF-8. The server writes the same file for `ot time export` and the API; see [Command-line client](cli.md#time) and the [HTTP API](api.md#time-entries).
+**Export time entries** in Statistics downloads a [CSV](glossary.md) of the chosen period, made on your device. Its columns are `date`, `start`, `end`, `minutes`, `task`, `project`, `labels` (joined by `;`) and `note`, then one column per custom field of the projects present. Times are in your time zone, a running entry has no end and counts up to the export, and the file starts with a byte-order mark so spreadsheets read it as UTF-8. The server writes the same file for `ot time export` and the [API](glossary.md); see [Command-line client](cli.md#time) and the [HTTP API](api.md#time-entries).
 
 ## Shared projects and encryption
 

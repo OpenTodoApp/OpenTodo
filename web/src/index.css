@@ -123,10 +123,12 @@
   --ot-surface: oklch(1 0 0);
   --ot-raised: oklch(1 0 0);
   --ot-sunken: oklch(0.965 0.004 250);
-  /* The tone scale (tokens-v2 D6): to make text quieter, step down one tone. */
+  /* The tone scale (tokens-v2 D6): to make text quieter, step down one tone. Muted reaches
+     7:1 on every plain surface (accessibility-aaa D2); faint stays a third step and is in the
+     exceptions register (src/ui/a11y/exceptions.json). */
   --ot-text-strong: oklch(0.15 0.02 260);
   --ot-text: oklch(0.24 0.025 262);
-  --ot-muted: oklch(0.47 0.028 262);
+  --ot-muted: oklch(0.44 0.028 262);
   --ot-faint: oklch(0.52 0.026 262);
   /* Edges: a container, a softer divider, a control. */
   --ot-border: oklch(0.91 0.008 255);
@@ -155,7 +157,7 @@
   --ot-success-soft-text: oklch(0.4318 0.0865 166.91);
   --ot-warning: oklch(0.53 0.14 49);
   --ot-warning-soft: oklch(0.9869 0.0214 95.28);
-  --ot-warning-soft-text: oklch(0.4732 0.1247 46.2);
+  --ot-warning-soft-text: oklch(0.46 0.1247 46.2);
   --ot-danger: oklch(0.535 0.195 27.3);
   --ot-danger-soft: oklch(0.9705 0.0129 17.38);
   --ot-danger-soft-text: oklch(0.4437 0.1613 26.9);
@@ -195,14 +197,14 @@
   --ot-mix-accent-soft-text-light: 80%;
   --ot-mix-accent-focus-light: 85%;
   --ot-mix-accent-soft-dark: 14%;
-  --ot-mix-accent-soft-text-dark: 80%;
+  --ot-mix-accent-soft-text-dark: 68%;
   /* The sidebar column tint (sidebar-v2 D8): a trace of the accent over the canvas. */
   --ot-mix-sidebar-light: 3%;
   --ot-mix-sidebar-dark: 4%;
   --ot-mix-hue-soft-light: 14%;
-  --ot-mix-hue-text-light: 68%;
-  --ot-mix-hue-soft-dark: 22%;
-  --ot-mix-hue-text-dark: 78%;
+  --ot-mix-hue-text-light: 65%;
+  --ot-mix-hue-soft-dark: 18%;
+  --ot-mix-hue-text-dark: 74%;
 }
 @media (pointer: coarse) {
   :root { --size-row: 48px; }
@@ -217,7 +219,7 @@
     --ot-sunken: oklch(0.14 0.014 262);
     --ot-text-strong: oklch(1 0 0);
     --ot-text: oklch(0.95 0.008 262);
-    --ot-muted: oklch(0.74 0.02 262);
+    --ot-muted: oklch(0.77 0.02 262);
     --ot-faint: oklch(0.68 0.022 262);
     --ot-border: oklch(1 0 0 / 0.1);
     --ot-border-soft: oklch(1 0 0 / 0.06);
@@ -253,7 +255,7 @@
     --ot-info-soft: oklch(0.2935 0.0632 243.16);
     --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
     --ot-scrim: oklch(0 0 0 / 0.55);
-    --ot-highlight: oklch(0.4762 0.1034 61.91);
+    --ot-highlight: oklch(0.44 0.1034 61.91);
     --ot-highlight-text: oklch(0.9619 0.058 95.62);
     /* Palette (tokens-v2 D5): one solid per hue; the soft step is mixed into the canvas, the text step toward white. */
     --ot-hue-red-solid: oklch(0.7106 0.1661 22.22); --ot-hue-red-soft: color-mix(in oklab, var(--ot-hue-red-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-red-text: color-mix(in oklch, var(--ot-hue-red-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
@@ -279,7 +281,7 @@
   --ot-sunken: oklch(0.14 0.014 262);
   --ot-text-strong: oklch(1 0 0);
   --ot-text: oklch(0.95 0.008 262);
-  --ot-muted: oklch(0.74 0.02 262);
+  --ot-muted: oklch(0.77 0.02 262);
   --ot-faint: oklch(0.68 0.022 262);
   --ot-border: oklch(1 0 0 / 0.1);
   --ot-border-soft: oklch(1 0 0 / 0.06);
@@ -315,7 +317,7 @@
   --ot-info-soft: oklch(0.2935 0.0632 243.16);
   --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
   --ot-scrim: oklch(0 0 0 / 0.55);
-  --ot-highlight: oklch(0.4762 0.1034 61.91);
+  --ot-highlight: oklch(0.44 0.1034 61.91);
   --ot-highlight-text: oklch(0.9619 0.058 95.62);
   /* Palette (tokens-v2 D5): one solid per hue; the soft step is mixed into the canvas, the text step toward white. */
   --ot-hue-red-solid: oklch(0.7106 0.1661 22.22); --ot-hue-red-soft: color-mix(in oklab, var(--ot-hue-red-solid) var(--ot-mix-hue-soft-dark), var(--ot-canvas)); --ot-hue-red-text: color-mix(in oklch, var(--ot-hue-red-solid) var(--ot-mix-hue-text-dark), oklch(1 0 0));
@@ -336,7 +338,7 @@
    text tokens as plain sRGB so the app stays readable, though not themed. Outside the
    token blocks the token lint checks. */
 @supports not (color: oklch(0 0 0)) {
-  :root { --ot-canvas: #f9fafc; --ot-surface: #ffffff; --ot-raised: #ffffff; --ot-sunken: #f1f4f6; --ot-text: #191f2b; --ot-muted: #525b6b; }
+  :root { --ot-canvas: #f9fafc; --ot-surface: #ffffff; --ot-raised: #ffffff; --ot-sunken: #f1f4f6; --ot-text: #191f2b; --ot-muted: #4a5362; }
 }
 
 /* Accents (OpenSpec change theming, design D3, D4; tokens-v2 D4): a theme declares
@@ -682,6 +684,19 @@ body {
 .ui-btn--icon.ui-btn--sm { @apply h-8 w-8 p-0; }
 .ui-btn--icon.ui-btn--md { @apply h-10 w-10 p-0; }
 .ui-btn--icon.ui-btn--lg { @apply h-12 w-12 p-0; }
+/* Hit area (OpenSpec accessibility "Pointer targets", accessibility-aaa D4): a control
+   drawn smaller than 44 px gains the difference as an invisible area around it, so it
+   meets WCAG 2.5.5 without moving a pixel. The inset is negative only where the box is
+   smaller than 44 px on that axis; pseudo-elements are hit-tested as their element.
+   Small and medium buttons and icon buttons carry it; other controls add `ui-hit`. */
+/* `ui-hit` controls sit in lists whose later siblings are positioned too (rows, group
+   containers), so the area needs to paint above them to be hit; overlays are portaled. */
+.ui-hit { @apply relative z-[1]; }
+.ui-hit::after, .ui-btn--sm::after, .ui-btn--md::after, .ui-btn--icon::after {
+  content: '';
+  position: absolute;
+  inset: min(0px, calc((100% - 44px) / 2));
+}
 .ui-btn--primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover active:translate-y-px; }
 .ui-btn--secondary { @apply border border-input bg-surface text-default hover:bg-sunken active:bg-sunken dark:hover:bg-raised; }
 .ui-btn--ghost { @apply text-muted hover:bg-sunken hover:text-default active:bg-sunken dark:hover:bg-raised; }
@@ -700,6 +715,11 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .notes-editor {
   @apply relative min-h-8 w-full space-y-2 rounded-control border border-transparent px-2 py-1 text-body text-default
     focus:outline-none;
+  /* Reading blocks (accessibility-aaa D6): line height 1.5 and a measure under 80 characters;
+     the 8 px paragraph gap is the register's notes-rhythm entry, widened in high contrast. */
+  line-height: 1.5;
+  max-inline-size: 80ch;
+  text-align: start;
   word-wrap: break-word;
   white-space: pre-wrap;
   white-space: break-spaces;
@@ -720,7 +740,10 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .notes-plain {
   @apply -mx-2 min-h-8 w-[calc(100%+1rem)] resize-y rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-default
     placeholder:text-faint focus:min-h-28 focus:border-input focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus/30 dark:focus:bg-raised;
+  line-height: 1.5;
 }
+/* The notes-rhythm route: in high contrast, paragraphs of notes and comments sit 2 em apart. */
+html[data-contrast="high"] .notes-editor > * + *, html[data-contrast="high"] .user-text p + p { margin-top: 2em; }
 .notes-editor h1 { @apply text-h2 font-semibold; }
 .notes-editor h2 { @apply text-h3 font-semibold; }
 .notes-editor h3, .notes-editor h4, .notes-editor h5, .notes-editor h6 { @apply font-semibold; }
@@ -918,7 +941,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
   :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
 }
 /* User-written text wraps instead of pushing the page sideways. */
-.user-text { overflow-wrap: anywhere; }
+.user-text { overflow-wrap: anywhere; line-height: 1.5; max-inline-size: 80ch; text-align: start; }
 }
 
 /* A side scroller (OpenSpec change sidebar-compact-desktop): a thin scrollbar in the
@@ -979,13 +1002,17 @@ select.ui-input { @apply truncate; contain: layout paint; }
 
 @layer components {
 /* In-app Help (user-documentation): the guide HTML generated from docs/. */
-.help-prose { @apply text-body leading-relaxed text-default; overflow-wrap: break-word; }
+/* Reading blocks (OpenSpec accessibility "Reading blocks", accessibility-aaa D6): a line
+   height of at least 1.5, paragraphs 2 em apart (WCAG technique C21), at most 80
+   characters a line, never justified. */
+.help-prose { @apply text-body leading-relaxed text-default; overflow-wrap: break-word; max-inline-size: 80ch; text-align: start; }
 .help-prose h1 { @apply mb-3 text-h1 font-semibold; }
 .help-prose h2 { @apply mt-8 mb-2 scroll-mt-16 border-t border-default pt-4 text-h2 font-semibold; }
 .help-prose h3 { @apply mt-6 mb-1.5 scroll-mt-16 text-h3 font-semibold; }
 .help-prose h4 { @apply mt-4 mb-1 font-semibold; }
 .help-prose h1 + p { @apply text-muted; }
-.help-prose p, .help-prose ul, .help-prose ol, .help-prose details { @apply mb-3; }
+.help-prose p, .help-prose ul, .help-prose ol, .help-prose details { margin-bottom: 2em; }
+.help-prose li, .help-prose li + li { margin-bottom: 0.35em; }
 .help-prose ul { @apply list-disc pl-5; }
 .help-prose ol { @apply list-decimal pl-5; }
 .help-prose li { @apply my-1; }

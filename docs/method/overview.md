@@ -13,7 +13,7 @@ order: 1
 
 An open loop is anything that has your attention and has not been dealt with: a call to return, an idea for the garden, the tax form on the desk. Kept in your head, open loops nag. **Open Loops** is a calm method for closing them: everything that has your attention gets a home you trust, so your head is free for the work in front of you.
 
-It is OpenTodo's own method, inspired by David Allen's GTD and simplified. You can use as much of it as you like: the app works the same without it.
+It is OpenTodo's own method, inspired by David Allen's [GTD](../glossary.md) and simplified. You can use as much of it as you like: the app works the same without it.
 
 ## The five moves
 

@@ -222,6 +222,32 @@ export async function focusWalk(page, maxSteps = 80) {
       const el = document.activeElement
       if (!el || el === document.body) return null
       const key = el.id || window.__ux.d(el) + ':' + Math.round(el.getBoundingClientRect().top)
+      // Focus is never obscured (OpenSpec accessibility, accessibility-aaa D5): the
+      // focused element lies inside the viewport, and the topmost element at its
+      // corners and centre is itself, a descendant, or an overlay it opened.
+      const obscured = (() => {
+        const r = el.getBoundingClientRect()
+        if (!r.width || !r.height) return null
+        if (r.top < 0 || r.left < 0 || r.bottom > innerHeight || r.right > innerWidth) return 'partly outside the viewport'
+        const inset = 1
+        const points = [[r.left + inset, r.top + inset], [r.right - inset, r.top + inset], [r.left + inset, r.bottom - inset], [r.right - inset, r.bottom - inset], [(r.left + r.right) / 2, (r.top + r.bottom) / 2]]
+        for (const [x, y] of points) {
+          const top = document.elementFromPoint(x, y)
+          if (!top || top === el || el.contains(top) || top.contains(el)) continue
+          // A neighbour's invisible hit area (its ::after, accessibility-aaa D4) is hit-tested
+          // as the neighbour but paints nothing: it hides no part of the focused element.
+          const tb = top.getBoundingClientRect()
+          if (x < tb.left || x > tb.right || y < tb.top || y > tb.bottom) continue
+          // The element's own neighbourhood (a row's inline actions, a badge on a button,
+          // a sibling control in the same group) is not chrome the person did not open.
+          const home = el.parentElement?.parentElement
+          if (home && home !== document.body && home.contains(top)) continue
+          const opened = top.closest('[data-opened-by]')
+          if (opened && (opened.getAttribute('data-opened-by') === el.id || el.getAttribute('aria-controls') === opened.id)) continue
+          return 'under ' + window.__ux.d(top)
+        }
+        return null
+      })()
       // The element and its two nearest ancestors (a ring drawn by focus-within), focused and not.
       const chain = [el, el.parentElement, el.parentElement?.parentElement].filter((n) => n && n.nodeType === 1)
       const look = () => chain.map((n) => { const cs = getComputedStyle(n); return [cs.outlineStyle, cs.outlineWidth, cs.outlineColor, cs.boxShadow, cs.borderColor, cs.backgroundColor].join('|') })
@@ -231,13 +257,73 @@ export async function focusWalk(page, maxSteps = 80) {
       const resting = look()
       el.focus({ preventScroll: true })
       const changed = focused.some((v, i) => v !== resting[i])
-      return { key, name: window.__ux.d(el), shown: ring && changed, visible: window.__ux.shown(el) }
+      return { key, name: window.__ux.d(el), shown: ring && changed, visible: window.__ux.shown(el), obscured }
     })
     if (!r) continue
     if (seen.has(r.key)) break
     seen.add(r.key)
     if (r.visible && !r.shown) out.push({ rule: 'M8', element: r.name, value: 'no ring', limit: 'token ring' })
+    if (r.visible && r.obscured) out.push({ rule: 'M12', element: r.name, value: r.obscured, limit: 'fully visible' })
   }
   await page.keyboard.press('Escape').catch(() => {})
-  return out.slice(0, 10)
+  return out.slice(0, 20)
+}
+
+/**
+ * M11: the hit area of every pointer target (OpenSpec accessibility "Pointer targets",
+ * accessibility-aaa D4): a point just under 22 px from the element's centre in each of
+ * the four directions (inside a 44 px box) must hit the element (its own box or its
+ * invisible `::after`), unless the point lies outside the viewport or the element's
+ * scroller. Links inside a sentence and the browser's own controls are exempt by the
+ * criterion; a point that lands on a neighbouring target is the register's
+ * `dense-rows` entry (rows closer than 44 px with a mouse) and is not reported. Runs
+ * in the page.
+ */
+export function hitAreas() {
+  const out = []
+  const all = [...document.querySelectorAll(window.__ux.targets)].filter((el) => {
+    if (el.closest('[role="option"]') && el.getAttribute('role') !== 'option') return false
+    // A link or a text button inside a sentence is exempt by the criterion.
+    if (getComputedStyle(el).display === 'inline') return false
+    if (el.tagName === 'INPUT' && ['checkbox', 'radio', 'range', 'color', 'file'].includes(el.getAttribute('type'))) return false
+    if (el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['button', 'submit'].includes(el.getAttribute('type')))) return false
+    return window.__ux.shown(el)
+  })
+  const seen = new Set()
+  // Pinned chrome (a sticky group header, a fixed bar) claims the points it covers: a
+  // target's area cannot grow under it, and the chrome is not lost hit area.
+  const pinned = (n) => { for (let a = n; a && a !== document.body; a = a.parentElement) { const pos = getComputedStyle(a).position; if (pos === 'sticky' || pos === 'fixed') return true } return false }
+  for (const el of all) {
+    const r = el.getBoundingClientRect()
+    const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2
+    // An element whose own centre is under something else (a scrim, a coach mark) is covered, not small.
+    const centre = document.elementFromPoint(cx, cy)
+    if (!centre || !(centre === el || el.contains(centre))) continue
+    const misses = []
+    const d = 21.5
+    for (const [name, x, y] of [['up', cx, cy - d], ['down', cx, cy + d], ['left', cx - d, cy], ['right', cx + d, cy]]) {
+      if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue
+      const top = document.elementFromPoint(x, y)
+      if (top && (top === el || el.contains(top))) continue
+      // Another target claims the point: dense rows, registered; not lost hit area.
+      if (top && (top.matches(window.__ux.targets) || top.closest(window.__ux.targets))) continue
+      if (top && !el.contains(top) && !top.contains(el) && pinned(top)) continue
+      // A point beyond the element's scroller is not reachable: skip it.
+      let clipped = false
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        const cs = getComputedStyle(a)
+        if (/(auto|scroll|hidden|clip)/.test(cs.overflowX + cs.overflowY)) {
+          const ar = a.getBoundingClientRect()
+          if (x < ar.left || x > ar.right || y < ar.top || y > ar.bottom) { clipped = true; break }
+        }
+      }
+      if (!clipped) misses.push(name)
+    }
+    if (!misses.length) continue
+    const key = window.__ux.d(el)
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ rule: 'M11', element: key, value: `${Math.round(r.width)}×${Math.round(r.height)}, 22 px ${misses.join(', ')} misses`, limit: '44×44 hit area' })
+  }
+  return out.slice(0, 20)
 }

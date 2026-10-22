@@ -33,7 +33,7 @@ The repository SHALL hold one register of accessibility exceptions. Each entry S
 - **THEN** the statement page is a result, and it lists the current target and each exception with its route
 
 ### Requirement: Pointer targets
-Every pointer target in a screen SHALL offer a hit area of at least 44 × 44 CSS pixels in the comfortable density, whether or not its visible shape is that large; a target drawn smaller SHALL gain the difference as an invisible area that does not move its neighbours or change any story's visual baseline. Exceptions are a link inside a sentence, a target whose size is set by the browser, and a target that is the same action as a larger target on the same screen. The compact density SHALL be a register entry: its rows are closer than 44 px by the person's choice. The UI check SHALL measure the hit area of every interactive element of the core-screen stories in the comfortable density and SHALL fail naming the story, the theme and the element when a point 22 px from the element's centre in any of the four directions does not hit the element; an exemption list SHALL hold only the elements found by the first run and SHALL only shrink.
+Every pointer target in a screen SHALL offer a hit area of at least 44 × 44 CSS pixels in the comfortable density, whether or not its visible shape is that large; a target drawn smaller SHALL gain the difference as an invisible area that does not move its neighbours or change any story's visual baseline. Exceptions are a link inside a sentence, a target whose size is set by the browser, and a target that is the same action as a larger target on the same screen. Two cases SHALL be register entries: the compact density, whose rows are closer than 44 px by the person's choice, and, with a fine pointer, targets whose 44 px box would reach into a neighbouring target (sidebar rows, group headers, controls side by side), since the invisible area cannot grow into another target and a touch screen already gives them 44 px. The UI check SHALL measure the hit area of every interactive element of the core-screen stories in the comfortable density and SHALL fail naming the story, the theme and the element when a point just inside 22 px from the element's centre in any of the four directions hits neither the element nor another target; an exemption list SHALL hold only the elements found by the first run and SHALL only shrink.
 
 #### Scenario: Small icon button
 - **WHEN** a row shows a 32 px icon button for its menu
@@ -47,6 +47,10 @@ Every pointer target in a screen SHALL offer a hit area of at least 44 × 44 CSS
 - **WHEN** the person has chosen the compact density
 - **THEN** targets keep the comfortable density's invisible area where it does not overlap a neighbour, and the register entry explains the rest
 
+#### Scenario: Neighbouring rows with a mouse
+- **WHEN** the check probes a 36 px sidebar row 22 px below its centre and lands on the next row
+- **THEN** the point is claimed by another target, the row is not reported, and the register entry names the case with its touch-screen route
+
 ### Requirement: Focus is never obscured
 When an element receives keyboard focus, no part of it SHALL be hidden by content the person did not open: the phone tab bar, the add button, a toast, a sticky header or the edge of a scroller. The UI check's focus pass SHALL fail naming the story, the theme and the element when a focused element's rectangle is partly outside the viewport or when the topmost element at any of its corners or its centre is not the element, one of its descendants, or an overlay the element itself opened; an exemption list SHALL hold only the elements found by the first run and SHALL only shrink.
 
@@ -59,11 +63,15 @@ When an element receives keyboard focus, no part of it SHALL be hidden by conten
 - **THEN** the toast is positioned so the button stays fully visible, or the UI check fails naming the button
 
 ### Requirement: Reading blocks
-A block of text the person reads (a task's notes and description, a project's notes, a comment, Help) SHALL have a line height of at least 1.5, a space between paragraphs of at least 1.5 times the line height, a measure of at most 80 characters, and SHALL never be justified. Rows, chips, labels and controls are not blocks of text and keep their type scale. Foreground and background colours SHALL be selectable by the person through the mode, the theme and the contrast preference. Text SHALL reflow at 200 % browser zoom without horizontal scrolling (design-system "Comfortable reading scale").
+A block of text the person reads (a task's notes and description, a project's notes, a comment, Help) SHALL have a line height of at least 1.5, a measure of at most 80 characters, and SHALL never be justified. Help and the user guide SHALL space paragraphs at least 2 em apart (WCAG technique C21); notes and comments keep their close paragraphs by default so a note reads as one block in the panel, which SHALL be a register entry whose route is the high-contrast presentation spacing their paragraphs 2 em apart. Rows, chips, labels and controls are not blocks of text and keep their type scale. Foreground and background colours SHALL be selectable by the person through the mode, the theme and the contrast preference. Text SHALL reflow at 200 % browser zoom without horizontal scrolling (design-system "Comfortable reading scale").
+
+#### Scenario: Help rhythm
+- **WHEN** a Help page renders two paragraphs
+- **THEN** the computed line height is at least 1.5 times the font size, the paragraphs are at least 2 em apart and no line is longer than 80 characters
 
 #### Scenario: Notes rhythm
-- **WHEN** a task's notes render two paragraphs
-- **THEN** the computed line height is at least 1.5 times the font size and the gap between the paragraphs is at least 1.5 times the line height
+- **WHEN** a task's notes render two paragraphs in the default look and then under the high-contrast presentation
+- **THEN** the line height is at least 1.5 in both, and the paragraphs move from their close spacing to 2 em apart under high contrast
 
 #### Scenario: Justified text
 - **WHEN** a change sets justified alignment on a text block

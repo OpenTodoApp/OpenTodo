@@ -77,6 +77,17 @@ export function learnMoreProblems(file, text) {
   return out
 }
 
+// Justified text (OpenSpec accessibility "Reading blocks", WCAG 1.4.8; accessibility-aaa
+// D6): a block of text is never justified, in a screen, a shared component or the stylesheet.
+export function justifyProblems(file, text) {
+  const out = []
+  text.split('\n').forEach((line, i) => {
+    const code = line.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '')
+    if (/\btext-justify\b|text-align:\s*justify\b/.test(code)) out.push(`${file}:${i + 1}: justified text (OpenSpec accessibility "Reading blocks"): ${line.trim().slice(0, 100)}`)
+  })
+  return out
+}
+
 // Illustrations (OpenSpec change inbox-means-unplaced, design D9; design-system
 // "Illustrations") use the design tokens only: no hard-coded colour, no raster or
 // external image, no text, no gradient or filter, and at most 4 KB per file.
@@ -126,6 +137,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       .flatMap((f) => learnMoreProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...[...walk(app), ...walk(join(repo, 'web/src/ui')), join(repo, 'web/src/index.css')].filter((f) => /\.(tsx?|css)$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
+      .flatMap((f) => justifyProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),
   ]
   if (problems.length) {

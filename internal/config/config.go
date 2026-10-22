@@ -158,12 +158,16 @@ const (
 // design D2); Coolify's generated SERVICE_PASSWORD_* values are longer.
 const MinSetupTokenLen = 16
 
+// DefaultSessionTTL is how long a session lasts from sign-in unless OPENTODO_SESSION_DAYS
+// says otherwise; sessions never end for inactivity (the accessibility statement documents it).
+const DefaultSessionTTL = 90 * 24 * time.Hour
+
 // Load reads OPENTODO_* variables from the environment.
 func Load() (Config, error) {
 	c := Config{
 		Addr:        getenv("OPENTODO_ADDR", ":8080"),
 		DataDir:     getenv("OPENTODO_DATA_DIR", "./data"),
-		SessionTTL:  90 * 24 * time.Hour,
+		SessionTTL:  DefaultSessionTTL,
 		LogLevel:    slog.LevelInfo,
 		ImportMaxMB: DefaultImportMaxMB,
 

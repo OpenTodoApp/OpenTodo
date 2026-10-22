@@ -51,3 +51,16 @@ test('a path in an operating system’s settings keeps that system’s wording',
   const problems = checkCatalog('de', { ...de, [id]: 'Prüfe unter Android Einstellungen → Apps → dein Browser.' }, [...messages, id], fmt)
   assert.deepEqual(problems, [])
 })
+
+// OpenSpec accessibility "Glossary and reading level" (accessibility-aaa 8.3): long sentences are reported, not failed.
+test('an English string with a sentence over 25 words is reported with its length; ICU arguments count as one word', async () => {
+  const { longSentences } = await import('./i18n-check.mjs')
+  const long = 'This sentence goes on and on with far more words than anyone would want to read in one go before it finally comes to its end today.'
+  const found = longSentences([long, 'Short one. Another short one!', '{n, plural, one {# task} other {# tasks}} were moved to {name} and nothing else happened here at all.'])
+  assert.equal(found.length, 1)
+  assert.equal(found[0].id, long)
+  assert.ok(found[0].words > 25)
+  const { check } = await import('./i18n-check.mjs')
+  const { problems } = await check()
+  assert.deepEqual(problems, [])
+})

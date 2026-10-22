@@ -14,7 +14,7 @@ Each project comes with its sections, subtasks, tags, dates, priorities, depende
 ## Export from Asana
 
 1. Open the project and its menu (the arrow next to the project name).
-2. Choose **Export/Print → CSV**.
+2. Choose **Export/Print → [CSV](../glossary.md)**.
 3. Repeat for each project. The file name becomes the project name in OpenTodo, so rename the file if you like. Several project files in one ZIP import together.
 
 ## Import into OpenTodo

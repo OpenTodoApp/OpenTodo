@@ -30,7 +30,7 @@ const LABEL = msg('Inbox')                               // module level; transl
 - Write whole sentences. Never glue translated pieces or add an English ending (`{n} item` + `s`): use a plural message.
 - Placeholders are named for what they hold (`{name}`, `{date}`), never numbered. `{n}` prints a number as given; `{n, number}` groups digits in the reader's language.
 - Dates, times, numbers and lists come from `lib/dates.ts`, `formatNumber()` and `formatList()`, which follow the interface language.
-- Text that is data stays out of the catalogs: task titles, project and label names, filter keywords and repeat rules (their syntax is English everywhere), API field names and codes.
+- Text that is data stays out of the catalogs: task titles, project and label names, filter keywords and repeat rules (their syntax is English everywhere), [API](glossary.md) field names and codes.
 - Components re-render on a language change through `useT()`, `useLanguageVersion()` or `<T>`; module-level tables use `translatedMap()` or `translatedList()`.
 
 Server errors keep their English JSON envelope. The client shows a translated message per error code (`lib/i18n/errors.ts`), and the server's own message for a code it does not know yet.

@@ -4963,5 +4963,13 @@
   "Your own name and logo for this server, in the tab, the app icon and the sidebar": "Tu propio nombre y logotipo para este servidor, en la pestaña, el icono de la app y la barra lateral",
   "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Tu propio nombre y logotipo en la pestaña, el icono de la app, la pantalla de inicio de sesión y la barra lateral.",
   "No tasks match this panel.": "Ninguna tarea coincide con este panel.",
-  "Every task of these days is placed.": "Todas las tareas de estos días están colocadas."
+  "Every task of these days is placed.": "Todas las tareas de estos días están colocadas.",
+  "Contrast": "Contraste",
+  "Auto": "Automático",
+  "High": "Alto",
+  "Motion": "Movimiento",
+  "Sign in with a passkey instead": "Iniciar sesión con una llave de acceso en su lugar",
+  "You are here": "Estás aquí",
+  "Auto follows your device's contrast setting. High is black on white or white on black.": "Automático sigue el ajuste de contraste de tu dispositivo. Alto es negro sobre blanco o blanco sobre negro.",
+  "System follows your device's reduced-motion setting. None turns every animation off.": "Sistema sigue el ajuste de reducir movimiento de tu dispositivo. Ninguno desactiva toda animación."
 }

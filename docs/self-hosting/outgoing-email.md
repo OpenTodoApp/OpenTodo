@@ -8,7 +8,7 @@ order: 45
 ---
 # Outgoing email
 
-OpenTodo works without email. When you give it an SMTP server, it can also send:
+OpenTodo works without email. When you give it an [SMTP](../glossary.md) server, it can also send:
 
 - **Password resets.** "Forgot password?" appears on the sign-in screen, and administrators can send a reset link instead of copying it.
 - **Sign-up confirmations.** With open sign-up on (`OPENTODO_ALLOW_SIGNUP=true`), new accounts are created only after the person opens the link mailed to their address.

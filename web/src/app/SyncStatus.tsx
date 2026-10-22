@@ -44,7 +44,7 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
       onClick={() => (s.state === 'restricted' ? window.dispatchEvent(new Event(ENROLMENT_EVENT)) : requestSync(0))}
       aria-label={quiet ? name : `${name}. ${detail}`}
       data-sync-status={s.state}
-      className={`flex min-h-9 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
+      className={`ui-hit flex min-h-9 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
     >
       <span className={`h-2 w-2 shrink-0 rounded-full ${map.dot}`} />
       {!quiet && !compact && <span className="min-w-0 truncate">{map.text}</span>}

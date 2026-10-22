@@ -136,6 +136,12 @@ nav ul { list-style: none; margin: 0; padding: 0; }
 /* ------------------------------------------------------------- prose */
 .prose { max-width: 70ch; }
 .doc-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+/* The trail (OpenSpec accessibility "Location and link purpose"): one line of links; the separators are drawn, so a screen reader hears the list alone. */
+.crumbs ol { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; }
+.crumbs li { display: flex; align-items: center; }
+.crumbs li + li::before { content: ''; display: inline-block; width: 6px; height: 6px; margin: 0 8px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: rotate(45deg); opacity: .7; }
+.crumbs a { color: var(--muted); text-decoration: none; padding: 4px 0; min-height: 44px; display: inline-flex; align-items: center; }
+.crumbs a:hover { color: var(--text); text-decoration: underline; }
 .version { padding: 1px 10px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 13px; }
 .prose h1, .prose h2, .prose h3, .prose h4 { font-family: var(--display); letter-spacing: -.012em; line-height: 1.2; scroll-margin-top: calc(var(--header) + 16px); }
 .prose h1 { margin: 0 0 16px; font-size: clamp(32px, 7vw, 46px); font-weight: 800; letter-spacing: -.02em; }
@@ -145,7 +151,8 @@ nav ul { list-style: none; margin: 0; padding: 0; }
 .prose h1 + p { font-size: 19px; color: var(--muted); }
 .anchor { margin-left: .35em; color: var(--muted); text-decoration: none; font-weight: 400; opacity: 0; }
 h2:hover .anchor, h3:hover .anchor, h4:hover .anchor, .anchor:focus-visible { opacity: 1; }
-.prose p, .prose ul, .prose ol, .prose blockquote, .prose details { margin: 0 0 1.1em; }
+/* Reading blocks (OpenSpec accessibility): paragraphs 2em apart (WCAG technique C21), 70ch measure above, line height 1.7 on the body. */
+.prose p, .prose ul, .prose ol, .prose blockquote, .prose details { margin: 0 0 2em; }
 .prose ul, .prose ol { padding-left: 1.4em; }
 .prose li { margin: .3em 0; }
 .prose li > ul, .prose li > ol { margin: .3em 0; }

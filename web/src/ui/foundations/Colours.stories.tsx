@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect } from 'react'
 import { ACCENTS } from '../tokens/accents'
 import { PAIRS } from '../tokens/pairs'
+import { registeredMin } from '../a11y/exceptions'
 import { hex, ratio, Section, useTokenValues } from './tokens'
 
 const SURFACES = ['canvas', 'surface', 'raised', 'sunken']
@@ -70,7 +71,7 @@ function Colours() {
                     </span>
                   ) : (
                     <span key={p.bg} className="rounded-chip border border-default px-2 py-1 text-meta" style={{ background: `var(--ot-${p.bg})`, color: `var(--ot-${fg})` }}>
-                      {p.bg} {ratio(values[fg], values[p.bg])} (≥{p.min})
+                      {p.bg} {ratio(values[fg], values[p.bg])} (≥{registeredMin(fg, p.bg, p.min)}{registeredMin(fg, p.bg, p.min) < p.min ? ', registered' : ''})
                     </span>
                   ),
                 )}

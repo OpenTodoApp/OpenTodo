@@ -4,11 +4,16 @@
 // from DisplayScreen so the public page does not pull the local database in.
 import { useOverlayDepth } from '../../ui'
 import { useEffect, useState } from 'react'
+import { restorePresentation } from '../../lib/presentation'
 import { useShortcutScope } from '../shortcuts'
 import { isActivationTarget } from '../shortcuts/dispatch'
 import type { DisplayOptions } from './displayOptions'
 
-/** Sets the high-contrast and no-motion attributes on the document root while mounted (design D4). */
+/**
+ * Sets the high-contrast and no-motion attributes on the document root while mounted
+ * (design D4). The display's URL options win while it is shown; on leave the person's
+ * own contrast and motion preferences are applied again (accessibility-aaa D3).
+ */
 export function useRootPresentation(options: Pick<DisplayOptions, 'contrast' | 'motion'>, active = true): void {
   useEffect(() => {
     if (!active) return
@@ -18,6 +23,7 @@ export function useRootPresentation(options: Pick<DisplayOptions, 'contrast' | '
     return () => {
       root.removeAttribute('data-contrast')
       root.removeAttribute('data-motion')
+      restorePresentation()
     }
   }, [options.contrast, options.motion, active])
 }

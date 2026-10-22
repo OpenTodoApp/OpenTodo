@@ -4963,5 +4963,13 @@
   "Your own name and logo for this server, in the tab, the app icon and the sidebar": "Eigener Name und Logo für diesen Server, im Tab, im App-Symbol und in der Seitenleiste",
   "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Eigener Name und Logo im Tab, im App-Symbol, auf dem Anmeldebildschirm und in der Seitenleiste.",
   "No tasks match this panel.": "Keine Aufgaben passen zu diesem Feld.",
-  "Every task of these days is placed.": "Alle Aufgaben dieser Tage sind eingeplant."
+  "Every task of these days is placed.": "Alle Aufgaben dieser Tage sind eingeplant.",
+  "Contrast": "Kontrast",
+  "Auto": "Automatisch",
+  "High": "Hoch",
+  "Motion": "Bewegung",
+  "Sign in with a passkey instead": "Stattdessen mit einem Passkey anmelden",
+  "You are here": "Du bist hier",
+  "Auto follows your device's contrast setting. High is black on white or white on black.": "Automatisch folgt der Kontrasteinstellung deines Geräts. Hoch ist Schwarz auf Weiß oder Weiß auf Schwarz.",
+  "System follows your device's reduced-motion setting. None turns every animation off.": "System folgt der Einstellung „Bewegung reduzieren“ deines Geräts. Keine schaltet jede Animation ab."
 }

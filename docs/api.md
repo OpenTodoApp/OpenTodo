@@ -20,11 +20,11 @@ Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
 Two options:
 
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
-- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
+- **Bearer token** (scripts, [CLI](glossary.md), AI assistants). Create one in **Settings → Integrations → [API](glossary.md) tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
 A token has a **scope**: `full` (the default), `read`, `agent` or `admin`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
-An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, labels and comments) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the [MCP](glossary.md) write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, labels and comments) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
 
 ### Token scopes
 
@@ -292,7 +292,7 @@ The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login
 
 ### Two-factor authentication
 
-Accounts can add a time-based one-time password (TOTP, RFC 6238: HMAC-SHA1, 6 digits, 30-second steps) from any authenticator app. The server generates and checks the codes with its own clock and contacts nothing, so keep the host's clock synchronised (NTP). A code is accepted one step (30 s) either side of the server's time. Each code completes at most one authentication.
+Accounts can add a time-based one-time password ([TOTP](glossary.md), RFC 6238: HMAC-SHA1, 6 digits, 30-second steps) from any authenticator app. The server generates and checks the codes with its own clock and contacts nothing, so keep the host's clock synchronised (NTP). A code is accepted one step (30 s) either side of the server's time. Each code completes at most one authentication.
 
 **Profile.** `GET /api/v1/me`, `GET /api/v1/mfa` and `auth/status` (when signed in) carry:
 
@@ -396,7 +396,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 ### Outgoing email
 
-Optional SMTP, configured by the owner in **Settings → Server → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`. Links in reset, sign-up and invitation emails are built from `OPENTODO_BASE_URL` only: without it those flows answer 409 `base_url_required` (open sign-up included) and send nothing, and the owner's `config_warnings` names `OPENTODO_BASE_URL`.
+Optional [SMTP](glossary.md), configured by the owner in **Settings → Server → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`. Links in reset, sign-up and invitation emails are built from `OPENTODO_BASE_URL` only: without it those flows answer 409 `base_url_required` (open sign-up included) and send nothing, and the owner's `config_warnings` names `OPENTODO_BASE_URL`.
 
 **Configuration** — `GET /api/v1/settings/smtp` (the owner's session or an `admin` token; other tokens get 403) →
 
@@ -735,7 +735,7 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
 
 It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. After 20 consecutive failed sends and a day without a delivery (since the last success, or since it was registered) the server stops sending to it; posting it again from the device ("Re-enable") starts it afresh. An account keeps at most 20 subscriptions: registering a new device beyond that replaces the one registered least recently. Reminders are sent for up to 8 accounts at a time, and one account's sends take at most 20 seconds per pass; what is left is sent on the next pass (every 30 seconds) while the reminder is less than an hour overdue. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
 
-**Test push.** `POST /api/v1/push/test` with `{"deviceId": "…"}` sends one real push to the caller's subscription for that device, through the same encryption, VAPID signature and push service as a reminder, and records it in the subscription's delivery status (`lastOkAt`, `failures`, removal when gone). The payload is `{"type":"test","testId":"…","sentAt":…}` and carries no task data; the service worker always shows it as a system notification and reports receipt to the open page. A push-service outcome is a successful diagnostic, so it answers 200:
+**Test push.** `POST /api/v1/push/test` with `{"deviceId": "…"}` sends one real push to the caller's subscription for that device, through the same encryption, [VAPID](glossary.md) signature and push service as a reminder, and records it in the subscription's delivery status (`lastOkAt`, `failures`, removal when gone). The payload is `{"type":"test","testId":"…","sentAt":…}` and carries no task data; the service worker always shows it as a system notification and reports receipt to the open page. A push-service outcome is a successful diagnostic, so it answers 200:
 
 ```json
 {"outcome": "sent", "testId": "Zk3q…", "subscription": {"id": "…", "lastOkAt": 1760000000000, "failures": 0, …}}
@@ -1398,7 +1398,7 @@ Without credentials the route answers `401 unauthorized`; an unknown `kind`, a m
 
 ### Import
 
-Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
+Import tasks and projects from the app's own export, [CSV](glossary.md), or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
 
 Uploads are `multipart/form-data` with a `file` part. Options go either in one `options` part holding JSON or in individual fields of the same names: `format`, `targetProject`, `timeZone`, `sections` (`section`|`label`|`ignore`, default `section`), `duplicates` (`skip`|`import`), `errors` (`skip_rows`|`abort`), `existing` (`skip`|`overwrite`). The file may be at most `OPENTODO_IMPORT_MAX_MB` (default 20 MB) and 50,000 rows; these routes do not use the 4 MB JSON body limit.
 

@@ -1,0 +1,4 @@
+{
+  "reason": "Elements found by the first run of the hit-area pass on the Screens stories (2026-10-22, accessibility-aaa task 4.2). Each is fixed by a follow-up that removes its line; the gate fails on any element not listed.",
+  "elements": []
+}

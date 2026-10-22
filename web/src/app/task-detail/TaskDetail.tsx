@@ -11,7 +11,8 @@ import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery, Menu, playExit } from '../../ui'
 import { panelTaskId } from '../panel'
-import { Tooltip } from '../../ui'
+import { Tooltip, Trail } from '../../ui'
+import { useProjectTrail } from '../trail'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
 import { Markdown } from '../Markdown'
@@ -99,6 +100,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const titleField = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   // Labels for `@` in the title (smart-title-tokens).
   const labelList = useMemo(() => [...labelMap.values()], [labelMap])
+  const trail = useProjectTrail(task?.project_id, projects, true, variant === 'page') // where the task is, on the page only (accessibility "Location")
   useEffect(() => {
     if (!task) return
     const focused = !!titleField.current && titleField.current === document.activeElement
@@ -219,6 +221,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </Menu>
         {!page && <IconButton icon="x" label={t('Close')} onClick={onClose} data-overlay-close className="touch-target" />}
       </div>
+      {/* Where the task is (accessibility "Location and link purpose"): the project path as links, on the page only. */}
+      {page && trail.length > 0 && <Trail steps={trail} label={t('You are here')} className="border-b border-default px-4 py-1.5" />}
       {readOnly && (
         <p role="note" className="border-b border-default bg-sunken px-4 py-2 text-meta text-muted">
           {t('Read-only: you are a viewer of this shared project. You can still comment.')}

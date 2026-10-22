@@ -14,7 +14,7 @@ The feature is **optional and off by default**. The server operator turns it on 
 
 ## How it works
 
-1. The operator creates (or reuses) one mailbox at any provider that supports **plus addressing** (`todo+anything@example.com` lands in `todo@example.com`) or a catch-all domain, and gives OpenTodo its IMAP login.
+1. The operator creates (or reuses) one mailbox at any provider that supports **plus addressing** (`todo+anything@example.com` lands in `todo@example.com`) or a catch-all domain, and gives OpenTodo its [IMAP](glossary.md) login.
 2. Each user opens **Settings → Capture → Email to task** and gets a secret address such as `todo+k3f9w2…@example.com`.
 3. Mail sent to that address is delivered into the shared mailbox. OpenTodo checks the mailbox every minute over IMAP (TLS only), finds the secret in the recipient (`Delivered-To`, `X-Original-To`, `To`, then `Cc`) and creates the task in that user's account.
 4. The message is then marked read and moved to `OpenTodo/Processed` (or deleted, if the operator prefers). Messages that match no user are moved or deleted the same way, so the mailbox does not fill up.
@@ -42,7 +42,7 @@ Character sets: UTF-8, US-ASCII, ISO-8859-1, ISO-8859-15 and windows-1252 are de
 - **Messages over 10 MB** are discarded without being downloaded.
 - **Each message creates one task at most.** The Message-ID is remembered per account for 90 days, and the task id is derived from it, so a second poll, a restart in the middle of a batch or a message delivered twice never makes a duplicate.
 - **Deactivated accounts** get no tasks; their mail is discarded.
-- **Privacy:** OpenTodo keeps no copy of the message beyond the task and the Message-ID. Subjects, bodies and sender addresses are never logged at the default log level; the per-poll log line only counts outcomes (`created=2 unknown_secret=1`). The mailbox credentials stay in the server's memory and are never returned by any API or included in exports.
+- **Privacy:** OpenTodo keeps no copy of the message beyond the task and the Message-ID. Subjects, bodies and sender addresses are never logged at the default log level; the per-poll log line only counts outcomes (`created=2 unknown_secret=1`). The mailbox credentials stay in the server's memory and are never returned by any [API](glossary.md) or included in exports.
 - **Network:** the only outbound connection is to the IMAP server you configure. Credentials are sent only after TLS is established (implicit TLS on port 993, STARTTLS on any other port; a server without STARTTLS is refused).
 
 Creating, rotating and changing the address are recorded in the audit log as `email_inbox.created`, `email_inbox.rotated` and `email_inbox.updated` (never the secret or the allowlist addresses).
@@ -106,4 +106,4 @@ For an account with [end-to-end encryption](e2ee.md) the server creates the task
 
 ## Limits and what is not included
 
-Not in this version: a built-in SMTP receiver for operators who own an MX record (a [future idea](../ROADMAP.md#future-ideas), `email-smtp-receiver`), storing attachments, replying to or sending mail, per-project addresses, parsing dates and projects from the subject, and OAuth mailbox sign-in. This implementation was tested against an in-process IMAP server and realistic RFC 5322 messages, not yet against each provider listed above.
+Not in this version: a built-in [SMTP](glossary.md) receiver for operators who own an MX record (a [future idea](../ROADMAP.md#future-ideas), `email-smtp-receiver`), storing attachments, replying to or sending mail, per-project addresses, parsing dates and projects from the subject, and OAuth mailbox sign-in. This implementation was tested against an in-process IMAP server and realistic RFC 5322 messages, not yet against each provider listed above.

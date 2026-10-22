@@ -18,10 +18,10 @@ Open the **App Store** on your Umbrel, search for **OpenTodo** and click **Insta
 
 Umbrel asks for its own login before it shows OpenTodo. Account creation stays behind that login too, so nobody else on your network can create the owner account before you do. These routes are let through without it, because the clients that use them cannot sign in to Umbrel; OpenTodo checks them itself:
 
-- `/api/…`: API tokens, the browser extension and other clients;
+- `/api/…`: [API](../glossary.md) tokens, the browser extension and other clients;
 - `/dav` and `/.well-known/caldav`: CalDAV, with an app password;
 - `/feeds/…`: calendar feeds, with the secret in their address;
-- `/mcp`: MCP clients, with an API token;
+- `/mcp`: [MCP](../glossary.md) clients, with an API token;
 - `/public/…`: public list links, read-only, with the secret in their address (and the web app files such a page loads).
 
 Umbrel's login is one password for the whole device, so people you invite to OpenTodo would need it as well. On umbrelOS 2.0 you can turn off **Require Umbrel login** in OpenTodo's settings on Umbrel; OpenTodo's own login then protects it.

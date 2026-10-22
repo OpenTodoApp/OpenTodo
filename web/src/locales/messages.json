@@ -1482,6 +1482,12 @@
   "Authentication failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "Auto": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
+  "Auto follows your device's contrast setting. High is black on white or white on black.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Automatic": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
@@ -2570,6 +2576,10 @@
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Contrast": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Conversation": [
     "web/src/app/assistant/AssistantPanelBody.tsx",
@@ -4915,6 +4925,9 @@
   "Hide what is not now|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "High": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Highlight, then dismiss the last chip": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -6348,6 +6361,10 @@
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "Motion": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Move": [
     "web/src/app/TriageView.tsx"
   ],
@@ -7160,6 +7177,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "None": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/review/ProjectWalk.tsx",
@@ -10361,6 +10379,9 @@
   "Sign in with a passkey": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Sign in with a passkey instead": [
+    "web/src/app/AuthScreen.tsx"
+  ],
   "Sign in with an OpenID Connect provider you run; only that issuer is contacted.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10995,6 +11016,9 @@
     "web/src/app/DateTimeSettings.tsx"
   ],
   "System follows your device's light or dark setting.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "System follows your device's reduced-motion setting. None turns every animation off.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "System, light or dark": [
@@ -13756,6 +13780,10 @@
     "web/src/app/EmailScreens.tsx",
     "web/src/app/InviteScreen.tsx",
     "web/src/app/ResetScreen.tsx"
+  ],
+  "You are here": [
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx"
   ],
   "You are not a member of this project.": [
     "web/src/lib/i18n/errors.ts"

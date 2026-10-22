@@ -52,3 +52,25 @@ describe('project menu', () => {
     await r.unmount()
   })
 })
+
+// OpenSpec accessibility "Location and link purpose" (accessibility-aaa 6.2): the lead
+// line of a nested project shows the path to it as links; a top-level project shows none.
+describe('project trail', () => {
+  it('a nested project names its ancestors as links in the lead line, without a second row of chrome', async () => {
+    const r = await render(<ProjectHeader project={p('kitchen', 'Kitchen', 'home')} />)
+    await flush(40)
+    const nav = document.querySelector('[data-page-lead] nav[aria-label="You are here"]')
+    expect(nav).toBeTruthy()
+    expect([...nav!.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')])).toEqual([['Home', '/project/home']])
+    // One lead line: the trail sits inside it, not under it.
+    expect(document.querySelectorAll('[data-page-lead]').length).toBe(1)
+    await r.unmount()
+  })
+
+  it('a top-level project shows no trail', async () => {
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
+    await flush(40)
+    expect(document.querySelector('nav[aria-label="You are here"]')).toBeNull()
+    await r.unmount()
+  })
+})

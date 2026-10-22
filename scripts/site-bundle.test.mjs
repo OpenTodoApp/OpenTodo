@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
-  brandFiles, buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
+  brandFiles, buildManifest, CONTRAST_SELECTORS, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -33,6 +33,22 @@ test('tokens.css carries the same --ot-* values as index.css, light and both dar
     assert.deepEqual(got, want, sel)
   }
   assert.ok(!/@apply|@theme|tailwind/i.test(out), 'no Tailwind in tokens.css')
+})
+
+// OpenSpec site-bundle "Tokens include the high-contrast presentation" (accessibility-aaa 8.5).
+test('tokens.css carries the high-contrast override for light and dark, read from index.css', () => {
+  const index = read('web/src/index.css')
+  const out = tokensCss(index, 'v9.9.9')
+  for (const sel of [CONTRAST_SELECTORS.light, CONTRAST_SELECTORS.darkMedia, CONTRAST_SELECTORS.darkAttr]) {
+    const want = decls(index, sel)
+    const got = decls(out, sel)
+    assert.ok(Object.keys(want).length > 20, `${sel}: tokens found`)
+    assert.deepEqual(got, want, sel)
+  }
+  assert.equal(decls(out, CONTRAST_SELECTORS.light)['canvas'], 'oklch(1 0 0)')
+  assert.equal(decls(out, CONTRAST_SELECTORS.darkAttr)['canvas'], 'oklch(0 0 0)')
+  // A missing block fails the build naming it.
+  assert.throws(() => tokensCss(index.replace(CONTRAST_SELECTORS.darkAttr, 'html:root[data-contrast="loud"] {'), 'v9.9.9'), /token block not found: html:root\[data-contrast="high"\]\[data-theme="dark"\]/)
 })
 
 test('the icon sprite has one symbol per bundled icon', () => {

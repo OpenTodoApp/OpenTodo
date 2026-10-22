@@ -232,12 +232,16 @@ Storybook is a development tool only: it adds nothing to `internal/web/dist`, th
 
 Put a `*.stories.tsx` file next to the component, in Component Story Format; `make check` fails when a component in `web/src/ui` has no stories file importing it. Interaction tests opt into a DOM with `// @vitest-environment happy-dom` and use the helpers in `web/src/ui/test-utils.tsx`. Stories render with fixture data only, never Dexie or the network. Cover the states that matter (default, disabled, error, long text) and check them in both themes and at 375 px.
 
+## The AAA rule and the exceptions register
+
+Text reaches **7:1** (WCAG 2.2 AAA) against every surface it is allowed on, in light, dark and every accent, and `src/ui/tokens/pairs.ts` says so: `TEXT_MIN` is 7 and a text or chip pair written with a lower minimum fails the contrast test. The only way below 7:1 is an entry in the **exceptions register**, `web/src/ui/a11y/exceptions.json`: the criterion, where it applies, the measured values, why the look wins and the route to the criterion (the high-contrast presentation for every contrast entry). A registered pair must still reach 4.5:1. The register is mirrored by the [accessibility statement](accessibility.md), and `make check` fails when one lists an exception the other does not. To change a tone, measure first: `npm test` names every pair under its minimum; retune when the change keeps the look (muted moved from 6.5:1 to 7:1 by 0.03 of lightness), register when it does not (links and the status colours are their hue). The faint, muted and default tones stay at least 0.04 apart in lightness, so the three steps never merge.
+
 ## Checks
 
 | Check | Runs in | Fails on |
 |---|---|---|
 | Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; Storybook code in the production build |
-| Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark; on a `Screens/*` story, an element that shows no focus ring when tabbed to (elements of the first run are listed in `scripts/ux-audit/focus-exempt.json` until their fix) |
+| Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 A, AA and AAA) violation in a story, light or dark, except an enhanced-contrast finding on a pair of the exceptions register; on a `Screens/*` story, an element that takes focus without the token ring, a focused element partly outside the viewport or under something it did not open, and a pointer target whose 44 px hit area is lost to empty space (each pass with a shrinking list under `scripts/ux-audit/*-exempt.json`) |
 | Story coverage | `make ui-lint` (`scripts/ux-audit/stories.mjs`) | a core screen of the inventory without its story; rare screens are listed, not failed |
 | Visual regression | `make ui-check`, CI job "UI check" | a story × theme × width screenshot that differs from its baseline by more than 0.2% |
 | Motion | `make ui-check` (`scripts/ui-check/motion.mjs`) | a Foundations → Motion story that, with reduced motion emulated, runs an animation changing `transform`, `translate`, `scale`, `height`, `block-size`, `width` or `inline-size`, or that runs any animation under `data-motion="none"`; it names the story and the property |

@@ -13,7 +13,7 @@ OpenTodo is a good fit for small teams and personal work that want speed without
 
 ## Export from Linear
 
-Linear exports a workspace's issues as one CSV file from its workspace settings (look for **Import / Export**).
+Linear exports a workspace's issues as one [CSV](../glossary.md) file from its workspace settings (look for **Import / Export**).
 
 ## Import into OpenTodo
 

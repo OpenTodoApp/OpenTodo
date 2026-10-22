@@ -33,7 +33,7 @@ const here = fileURLToPath(import.meta.url)
 export const repoRoot = resolve(dirname(here), '..')
 
 /** Bundle layout version; README.md states the stability rule. */
-export const LAYOUT = 1
+export const LAYOUT = 2
 /** Manifest schema; fields are only ever added (spec "Feature manifest"). */
 export const MANIFEST_SCHEMA = 1
 
@@ -116,15 +116,31 @@ function block(css, selector) {
 
 const declarations = (body) => [...body.matchAll(/--ot-[\w-]+:\s*[^;]+;/g)].map((m) => m[0].replace(/\s+/g, ' '))
 
-/** The three --ot-* blocks of index.css (light, dark by preference, dark by attribute) as a standalone stylesheet. */
+/** The selectors of the high-contrast override blocks in index.css (OpenSpec site-bundle "Tokens include the high-contrast presentation"). */
+export const CONTRAST_SELECTORS = {
+  light: 'html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"] {',
+  darkMedia: '@media (prefers-color-scheme: dark) {\n  html:root[data-contrast="high"]:not([data-theme="light"])',
+  darkAttr: 'html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [data-theme="dark"] {',
+}
+
+/**
+ * The --ot-* blocks of index.css as a standalone stylesheet: light, dark by preference,
+ * dark by attribute, then the high-contrast override for light and dark (selected by
+ * `data-contrast="high"` on an ancestor), so a site built from the bundle can offer the
+ * app's high-contrast presentation. Every block is read from the app's stylesheet.
+ */
 export function tokensCss(indexCss, version) {
   const light = declarations(block(indexCss, ':root, [data-theme="light"] {'))
   const darkMedia = declarations(block(indexCss, '@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"])'))
   const darkAttr = declarations(block(indexCss, ':root[data-theme="dark"], [data-theme="dark"] {'))
+  const highLight = declarations(block(indexCss, CONTRAST_SELECTORS.light))
+  const highDarkMedia = declarations(block(indexCss, CONTRAST_SELECTORS.darkMedia))
+  const highDarkAttr = declarations(block(indexCss, CONTRAST_SELECTORS.darkAttr))
   const lines = (ds, indent) => ds.map((d) => `${indent}${d}`).join('\n')
   return `/* OpenTodo colour tokens ${version}, generated from web/src/index.css (site bundle layout v${LAYOUT}).
    Light by default; dark follows the system preference unless [data-theme="light"]
-   is set on an ancestor, and [data-theme="dark"] forces it. */
+   is set on an ancestor, and [data-theme="dark"] forces it. The high-contrast blocks
+   apply under [data-contrast="high"] on the html element. */
 :root, [data-theme="light"] {
 ${lines(light, '  ')}
 }
@@ -135,6 +151,17 @@ ${lines(darkMedia, '    ')}
 }
 :root[data-theme="dark"], [data-theme="dark"] {
 ${lines(darkAttr, '  ')}
+}
+${CONTRAST_SELECTORS.light}
+${lines(highLight, '  ')}
+}
+@media (prefers-color-scheme: dark) {
+  html:root[data-contrast="high"]:not([data-theme="light"]) {
+${lines(highDarkMedia, '    ')}
+  }
+}
+${CONTRAST_SELECTORS.darkAttr}
+${lines(highDarkAttr, '  ')}
 }
 `
 }

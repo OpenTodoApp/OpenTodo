@@ -6,6 +6,7 @@
 // first paint; the cache is written from the synced value only, never the reverse.
 import { ACCENTS, DARK_BAR, DEFAULT_ACCENT, isAccent, type AccentId } from '../ui/tokens/accents'
 import { mutate } from './ops'
+import { applyPresentation, type ContrastPref, type MotionPref, readPresentation } from './presentation'
 import type { ThemeModePref, UserPrefs } from './types'
 import { USER_PREFS_ID } from './userPrefs'
 
@@ -26,9 +27,13 @@ export interface Appearance {
   density?: Density
   /** Promoted sidebar destinations, in the More group's order; unknown stored entries are dropped on read, kept in the row. */
   sidebar?: Promotable[]
+  /** Contrast (accessibility-aaa D3): auto follows the system, high applies the high-contrast presentation; auto when absent. */
+  contrast?: ContrastPref
+  /** Motion (accessibility-aaa D3): system follows the system, none turns every transition off; system when absent. */
+  motion?: MotionPref
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, density: 'comfortable', sidebar: [] }
+export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, density: 'comfortable', sidebar: [], contrast: 'auto', motion: 'system' }
 
 /** Reads a stored row: a missing row or an unknown value (from a newer client) is the default. The row is not changed. */
 export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appearance {
@@ -39,6 +44,7 @@ export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appe
     accent: isAccent(row?.theme_accent) ? row!.theme_accent as AccentId : DEFAULT_ACCENT,
     density: row?.density === 'compact' ? 'compact' : 'comfortable',
     sidebar: PROMOTABLE.filter((id) => wanted.has(id)),
+    ...readPresentation(row?.contrast, row?.motion),
   }
 }
 
@@ -46,7 +52,7 @@ export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appe
  * Changes the mode, the accent or the density through the op log (offline-safe,
  * synced). `row_detail` is retired (rows-v2 D1): kept in the schema, never written.
  */
-export function setAppearance(field: 'theme_mode' | 'theme_accent' | 'density', value: string): Promise<void> {
+export function setAppearance(field: 'theme_mode' | 'theme_accent' | 'density' | 'contrast' | 'motion', value: string): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { [field]: value })
 }
 
@@ -76,6 +82,10 @@ export function applyAppearance(a: Appearance, doc: Document = document): void {
   // touch targets keep their size through the coarse-pointer rules.
   if (a.density === 'compact') root.setAttribute('data-density', 'compact')
   else root.removeAttribute('data-density')
+  // Contrast and motion (accessibility-aaa D3): the attributes the stylesheet's
+  // high-contrast and no-motion blocks read; `auto` follows the system setting.
+  const presentation = readPresentation(a.contrast, a.motion)
+  applyPresentation(presentation, doc)
   setMeta(doc, 'color-scheme', a.mode === 'system' ? 'light dark' : a.mode)
   // The bar: the accent in light mode, the dark canvas in dark mode; under system
   // both, with media queries, so the browser switches on its own (design D8).
@@ -92,7 +102,7 @@ export function applyAppearance(a: Appearance, doc: Document = document): void {
     add(DARK_BAR, '(prefers-color-scheme: dark)')
   } else add(a.mode === 'dark' ? DARK_BAR : lightBar(a.accent))
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ mode: a.mode, accent: a.accent, bar: lightBar(a.accent) }))
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ mode: a.mode, accent: a.accent, bar: lightBar(a.accent), contrast: presentation.contrast, motion: presentation.motion }))
   } catch {
     // Private mode or blocked storage: the next start shows the defaults until the row is read.
   }

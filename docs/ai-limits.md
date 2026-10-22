@@ -15,7 +15,7 @@ Whichever of the [three ways to use AI](ai-and-agents.md) you pick, the same rul
 
 ## What every option has in common
 
-- **Off until someone says yes.** The assistant in the app needs the owner to turn it on and each person to accept, before their first message, what is sent to which provider. MCP needs the owner's switch. Changes over MCP or `ot` need both the owner's and your own switch in **Settings → Integrations → AI assistants**, plus a token with the `agent` scope.
+- **Off until someone says yes.** The assistant in the app needs the owner to turn it on and each person to accept, before their first message, what is sent to which provider. [MCP](glossary.md) needs the owner's switch. Changes over MCP or `ot` need both the owner's and your own switch in **Settings → Integrations → AI assistants**, plus a token with the `agent` scope.
 - **Limited reach.** Assistants can read your tasks and projects and create and edit tasks, projects, labels and comments. They can't touch tokens, settings, sharing, members, encryption, imports or backups, and over MCP or `ot` they can move to the Trash only tasks they created themselves.
 - **Planning, not just dates.** Assistants can set a deadline, a start date, park a task in Someday, put it in This Evening, mark what it waits for and set its location, the same fields you use in the app.
 - **Projects you keep away.** A project's owner or admin can keep it away from every assistant (share dialog → **AI assistants**); assistants then act as if it did not exist.

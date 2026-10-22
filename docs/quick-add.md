@@ -157,7 +157,7 @@ Before voice capture can be switched on, Settings shows this statement and waits
 - Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.
 - The microphone is used only while you dictate; the browser asks for permission the first time.
 
-OpenTodo's code never records, stores or sends audio: the Web Speech API hands it text. On-device recognition is requested whenever the browser reports it available for the language (Chromium's `processLocally`); OpenTodo never asks the browser to download a speech model. The browser asks for microphone permission on your first dictation, not when you switch the setting on.
+OpenTodo's code never records, stores or sends audio: the Web Speech [API](glossary.md) hands it text. On-device recognition is requested whenever the browser reports it available for the language (Chromium's `processLocally`); OpenTodo never asks the browser to download a speech model. The browser asks for microphone permission on your first dictation, not when you switch the setting on.
 
 ## Repeat and remind
 

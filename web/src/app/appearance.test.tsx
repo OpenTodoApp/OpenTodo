@@ -16,6 +16,8 @@ beforeEach(async () => {
   resetDeviceId()
   document.documentElement.removeAttribute('data-theme')
   document.documentElement.removeAttribute('data-accent')
+  document.documentElement.removeAttribute('data-contrast')
+  document.documentElement.removeAttribute('data-motion')
   localStorage.clear()
 })
 afterEach(() => { document.body.innerHTML = '' })
@@ -44,6 +46,42 @@ describe('Appearance panel', () => {
     expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['theme_accent=blue', 'theme_accent=graphite', 'theme_mode=dark'])
     // The app is not remounted: the probe re-renders but is the same instance.
     expect(renders).toBeGreaterThanOrEqual(mounts)
+    await r.unmount()
+  })
+})
+
+describe('Appearance → Contrast and Motion (accessibility-aaa 3.3)', () => {
+  const radio = (testId: string, label: string) => [...document.querySelectorAll(`[data-testid="${testId}"] [role="radio"]`)].find((b) => b.textContent === label) as HTMLButtonElement
+
+  it('shows both rows after Mode and Theme, applies the choice at once and writes one op each', async () => {
+    const r = await render(<AppearanceProvider><AppearanceSection /></AppearanceProvider>)
+    await waitFor(() => radio('appearance-contrast', 'Auto')?.getAttribute('aria-checked') === 'true', 'auto by default')
+    expect(radio('appearance-motion', 'System').getAttribute('aria-checked')).toBe('true')
+    const rows = [...document.querySelectorAll('[data-setting-row]')].map((e) => e.getAttribute('data-setting-row'))
+    expect(rows.indexOf('appearance-contrast')).toBeGreaterThan(rows.indexOf('appearance-theme'))
+    expect(rows.indexOf('appearance-motion')).toBe(rows.indexOf('appearance-contrast') + 1)
+    await click(radio('appearance-contrast', 'High'))
+    await waitFor(() => root().getAttribute('data-contrast') === 'high', 'high contrast applied')
+    await click(radio('appearance-motion', 'None'))
+    await waitFor(() => root().getAttribute('data-motion') === 'none', 'no motion applied')
+    await waitFor(async () => (await db.outbox.count()) === 2, 'two ops queued')
+    expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['contrast=high', 'motion=none'])
+    expect(JSON.parse(localStorage.getItem('ot.appearance')!)).toMatchObject({ contrast: 'high', motion: 'none' })
+    await r.unmount()
+    root().removeAttribute('data-contrast'); root().removeAttribute('data-motion')
+  })
+
+  it('a synced value from another device applies on this one, and an unknown value reads as the default', async () => {
+    const r = await render(<AppearanceProvider><p>app</p></AppearanceProvider>)
+    await flush(30)
+    await applyOps([{ id: 'c1', entity: 'user_prefs', entityId: 'me', field: 'contrast', value: 'high', ts: Date.now(), device: 'laptop' }] as never)
+    await flush(40)
+    expect(root().getAttribute('data-contrast')).toBe('high')
+    await applyOps([{ id: 'c2', entity: 'user_prefs', entityId: 'me', field: 'contrast', value: 'maximum', ts: Date.now() + 1, device: 'laptop' }] as never)
+    await flush(40)
+    expect(root().hasAttribute('data-contrast')).toBe(false)
+    expect((await db.userPrefs.get('me'))?.contrast).toBe('maximum')
+    expect(await db.outbox.count()).toBe(0)
     await r.unmount()
   })
 })

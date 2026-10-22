@@ -40,7 +40,7 @@ variables can preset them (see [Environment presets](#environment-presets)).
    status shows the run in progress, then its outcome (**Succeeded** or
    **Failed**, with the error) and size. Each run is listed under **Recent runs**.
 
-The same is available over the API ([docs/api.md](api.md#backups)).
+The same is available over the [API](glossary.md) ([docs/api.md](api.md#backups)).
 
 ## Destinations
 

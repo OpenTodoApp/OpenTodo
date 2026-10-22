@@ -200,6 +200,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           onCode={setCode} onRecovery={(v) => { setRecovery(v); setCode(''); setError(null) }} onRemember={setRemember}
           onSubmit={() => void submitCode()}
           onBack={() => { setChallenge(null); setPassword(''); setError(null) }}
+          onPasskey={passkeys ? () => { setChallenge(null); setPassword(''); setError(null); void signInWithPasskey() } : undefined}
         />
       </AuthCard>
     )
@@ -395,9 +396,11 @@ export interface MfaStepViewProps {
   onRemember: (v: boolean) => void
   onSubmit: () => void
   onBack: () => void
+  /** Signs in with a passkey instead of the code, where the instance offers passkeys (accessibility "Authentication without a cognitive test"). */
+  onPasskey?: () => void
 }
 
-/** Second sign-in step: a code from the app or a recovery code. Pure, for tests. */
+/** Second sign-in step: a code from the app or a recovery code, or a passkey instead. Pure, for tests. */
 export function MfaStepView(p: MfaStepViewProps) {
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -426,6 +429,11 @@ export function MfaStepView(p: MfaStepViewProps) {
       </label>
       {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
       <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy}>{p.busy ? t('Please wait…') : t('Verify')}</button>
+      {p.onPasskey && (
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full border border-input" disabled={p.busy} onClick={p.onPasskey} data-mfa-passkey>
+          {t('Sign in with a passkey instead')}
+        </button>
+      )}
       <div className="flex justify-between gap-2">
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => p.onRecovery(!p.recovery)}>
           {p.recovery ? t('Use a code from the app') : t('Use a recovery code')}

@@ -621,6 +621,10 @@ export interface UserPrefs {
   maps?: string
   /** Haptic feedback on this user's devices (motion-v2 D6): 'off' turns the tick off; '' and anything else read as on. */
   haptics?: string
+  /** Contrast (accessibility-aaa D3): 'high' applies the high-contrast presentation; '' and anything else read as 'auto' (follow the system). */
+  contrast?: string
+  /** Motion (accessibility-aaa D3): 'none' turns every transition and animation off; '' and anything else read as 'system'. */
+  motion?: string
   _clock: Clock
 }
 

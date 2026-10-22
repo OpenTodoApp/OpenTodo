@@ -1,0 +1,200 @@
+[
+  {
+    "id": "faint-tone",
+    "criterion": "1.4.6 Contrast (Enhanced)",
+    "where": "The faint text tone: timestamps, hints, counts and the third step of the tone scale, on every surface and on a past calendar block",
+    "pairs": [
+      {
+        "fg": "faint",
+        "bg": "*"
+      }
+    ],
+    "measured": {
+      "light": "5.3:1 on the canvas",
+      "dark": "6.0:1 on a card"
+    },
+    "reason": "At 7:1 the faint tone would be the same lightness as the muted tone, and the three steps that give a row its hierarchy (title, metadata, hint) would collapse into two.",
+    "route": "Settings → Appearance → Contrast → High, or the system's increase-contrast setting with Contrast on Auto: every text tone then reaches at least 7:1."
+  },
+  {
+    "id": "accent-label",
+    "criterion": "1.4.6 Contrast (Enhanced)",
+    "where": "The white label of a primary button and of the current item on the accent colour, for every accent theme",
+    "pairs": [
+      {
+        "fg": "on-accent",
+        "bg": "accent"
+      },
+      {
+        "fg": "on-accent",
+        "bg": "accent-hover"
+      }
+    ],
+    "measured": {
+      "light": "5.5:1 on emerald, 5.2:1 on orange",
+      "dark": "5.5:1 on emerald"
+    },
+    "reason": "7:1 would need an accent a quarter darker than the brand's emerald (and every other accent the person can choose), which is the colour that makes OpenTodo recognisable.",
+    "route": "The high-contrast presentation draws the button black on white or white on black, at better than 7:1."
+  },
+  {
+    "id": "accent-text",
+    "criterion": "1.4.6 Contrast (Enhanced)",
+    "where": "Links, the current navigation item and accent icons drawn in the accent colour on the canvas, a card, a popover and a selected row",
+    "pairs": [
+      {
+        "fg": "accent-text",
+        "bg": "canvas"
+      },
+      {
+        "fg": "accent-text",
+        "bg": "surface"
+      },
+      {
+        "fg": "accent-text",
+        "bg": "raised"
+      },
+      {
+        "fg": "accent-text",
+        "bg": "accent-soft"
+      }
+    ],
+    "measured": {
+      "light": "5.3:1 on the canvas with emerald, 5.0:1 with orange",
+      "dark": "5.6:1 on a selected row with blue"
+    },
+    "reason": "Accent text is the accent itself; a 7:1 version would be a different, darker colour next to the buttons, so links and the sidebar would no longer match the accent the person chose.",
+    "route": "The high-contrast presentation draws links and the current item in the text colour with an underline or an outline."
+  },
+  {
+    "id": "status-text",
+    "criterion": "1.4.6 Contrast (Enhanced)",
+    "where": "Error, warning, success and information text in their status colours on the canvas, a card, a popover and a selected row (an overdue date, an error line, a completed check)",
+    "pairs": [
+      {
+        "fg": "danger",
+        "bg": "canvas"
+      },
+      {
+        "fg": "danger",
+        "bg": "surface"
+      },
+      {
+        "fg": "danger",
+        "bg": "raised"
+      },
+      {
+        "fg": "danger",
+        "bg": "accent-soft"
+      },
+      {
+        "fg": "warning",
+        "bg": "canvas"
+      },
+      {
+        "fg": "warning",
+        "bg": "surface"
+      },
+      {
+        "fg": "warning",
+        "bg": "raised"
+      },
+      {
+        "fg": "warning",
+        "bg": "accent-soft"
+      },
+      {
+        "fg": "success",
+        "bg": "canvas"
+      },
+      {
+        "fg": "success",
+        "bg": "surface"
+      },
+      {
+        "fg": "success",
+        "bg": "raised"
+      },
+      {
+        "fg": "success",
+        "bg": "accent-soft"
+      },
+      {
+        "fg": "info",
+        "bg": "canvas"
+      },
+      {
+        "fg": "info",
+        "bg": "surface"
+      },
+      {
+        "fg": "info",
+        "bg": "raised"
+      },
+      {
+        "fg": "info",
+        "bg": "accent-soft"
+      }
+    ],
+    "measured": {
+      "light": "5.5:1 for an error on the canvas, 5.3:1 for success",
+      "dark": "5.5:1 for an error on a popover"
+    },
+    "reason": "The status colours carry meaning by their hue; at 7:1 they turn into four shades of near-black that read as text, not as a warning or a success.",
+    "route": "The high-contrast presentation darkens or brightens every status colour to 7:1 while keeping its hue."
+  },
+  {
+    "id": "tinted-surfaces",
+    "criterion": "1.4.6 Contrast (Enhanced)",
+    "where": "The muted tone on a selected row and on the tinted sidebar column",
+    "pairs": [
+      {
+        "fg": "muted",
+        "bg": "accent-soft"
+      },
+      {
+        "fg": "muted",
+        "bg": "sidebar"
+      }
+    ],
+    "measured": {
+      "light": "6.8:1 on a selected row",
+      "dark": "6.6:1 on a selected row"
+    },
+    "reason": "The muted tone was retuned to 7:1 on every plain surface; reaching it on the accent tint too would push the tone to where it no longer differs from the default text.",
+    "route": "The high-contrast presentation replaces the tint with an outline, so the muted tone sits on the plain surface at 7:1."
+  },
+  {
+    "id": "dense-rows",
+    "criterion": "2.5.5 Target Size (Enhanced)",
+    "where": "With a mouse or trackpad: sidebar rows, group headers and controls that sit side by side closer than 44 px, so a 44 px hit area would reach into the neighbour",
+    "measured": {
+      "light": "sidebar rows 36 px apart, group headers 24 px",
+      "dark": "sidebar rows 36 px apart, group headers 24 px"
+    },
+    "reason": "Rows of 44 px with a fine pointer would make the sidebar and every group header a fifth taller, and the invisible hit area cannot grow into a neighbour that is itself a target.",
+    "route": "On a touch screen every row and control is at least 44 px tall (the coarse-pointer rules); with a mouse the pointer is precise, and every control still has the invisible area wherever no neighbour claims it."
+  },
+  {
+    "id": "notes-rhythm",
+    "criterion": "1.4.8 Visual Presentation",
+    "where": "Paragraph spacing in a task's notes, a project's notes and comments",
+    "measured": {
+      "light": "8 px between paragraphs, line height 1.5",
+      "dark": "8 px between paragraphs, line height 1.5"
+    },
+    "reason": "A note in the task panel reads as one block of text; paragraphs 2 em apart would turn it into a document and push the fields below it off the screen.",
+    "route": "The high-contrast presentation spaces the paragraphs of notes and comments 2 em apart, as the Help pages do by default."
+  },
+  {
+    "id": "compact-density",
+    "criterion": "2.5.5 Target Size (Enhanced)",
+    "where": "Rows and their controls in the compact density",
+    "measured": {
+      "light": "rows 36 px apart",
+      "dark": "rows 36 px apart"
+    },
+    "reason": "Compact density is the person's choice to see more rows; a 44 px hit area for every control would overlap the rows above and below.",
+    "route": "The comfortable density (the default) gives every control a hit area of at least 44 × 44 px, visible shape unchanged."
+  }
+]

@@ -9,6 +9,12 @@
     var root = document.documentElement
     if (a.mode === 'light' || a.mode === 'dark') root.setAttribute('data-theme', a.mode)
     if (typeof a.accent === 'string' && /^[a-z]+$/.test(a.accent) && a.accent !== 'emerald') root.setAttribute('data-accent', a.accent)
+    // Contrast and motion (accessibility-aaa D3): high contrast by preference, or by the
+    // system's request when the preference is auto; no motion by preference.
+    var more = false
+    try { more = typeof matchMedia === 'function' && matchMedia('(prefers-contrast: more)').matches } catch (e) { more = false }
+    if (a.contrast === 'high' || (a.contrast !== 'high' && more)) root.setAttribute('data-contrast', 'high')
+    if (a.motion === 'none') root.setAttribute('data-motion', 'none')
     var bar = /^#[0-9a-f]{6}$/i.test(a.bar) ? a.bar : null
     var metas = document.querySelectorAll('meta[name="theme-color"]')
     for (var i = 0; i < metas.length; i++) metas[i].parentNode.removeChild(metas[i])

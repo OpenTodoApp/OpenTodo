@@ -151,6 +151,7 @@
       "user_id"
     ],
     "user_prefs": [
+      "contrast",
       "date_format",
       "day_start",
       "density",
@@ -168,6 +169,7 @@
       "language",
       "maps",
       "method_mode",
+      "motion",
       "row_detail",
       "sidebar_destinations",
       "start_checklist",

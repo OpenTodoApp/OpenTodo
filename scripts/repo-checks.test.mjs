@@ -367,3 +367,36 @@ test('AGENTS.md lists every API token scope and does not call the MCP server rea
   assert.doesNotMatch(agents, /`internal\/mcp` read-only/, 'the MCP server has write tools (agent tokens)')
   assert.match(agents, /`internal\/mcp`[^;]*write tools/)
 })
+
+// ---- accessibility statement (OpenSpec change accessibility-aaa, design D1) ----
+
+/** The ids of the accessibility exceptions register. */
+export function exceptionIds(json) {
+  return JSON.parse(json).map((e) => e.id)
+}
+
+/** The exception markers a statement carries: `<!-- exception: id -->`. */
+export function statementMarkers(markdown) {
+  return [...markdown.matchAll(/<!--\s*exception:\s*([a-z0-9-]+)\s*-->/g)].map((m) => m[1])
+}
+
+/** Register ids without a marker and markers without an entry, each named. */
+export function statementDrift(json, markdown) {
+  const ids = exceptionIds(json), markers = statementMarkers(markdown)
+  return [
+    ...ids.filter((id) => !markers.includes(id)).map((id) => `register entry "${id}" is not in docs/accessibility.md (add a section with <!-- exception: ${id} -->)`),
+    ...markers.filter((m) => !ids.includes(m)).map((m) => `docs/accessibility.md lists "${m}", which is not in web/src/ui/a11y/exceptions.json`),
+  ]
+}
+
+test('docs/accessibility.md lists every register entry and nothing else', () => {
+  assert.deepEqual(statementDrift(read('web/src/ui/a11y/exceptions.json'), read('docs/accessibility.md')), [])
+})
+
+test('the statement check names a missing marker and a stale one', () => {
+  const json = JSON.stringify([{ id: 'faint-tone' }, { id: 'compact-density' }])
+  assert.deepEqual(statementDrift(json, '<!-- exception: faint-tone -->\n<!-- exception: old-entry -->'), [
+    'register entry "compact-density" is not in docs/accessibility.md (add a section with <!-- exception: compact-density -->)',
+    'docs/accessibility.md lists "old-entry", which is not in web/src/ui/a11y/exceptions.json',
+  ])
+})

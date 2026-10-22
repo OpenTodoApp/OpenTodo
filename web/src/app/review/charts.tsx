@@ -34,7 +34,7 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 id={`${id}-h`} className="text-body font-semibold text-default">{title}</h2>
         {note && <p className="text-meta text-muted">{note}</p>}
-        <button type="button" className="ml-auto touch-target rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
+        <button type="button" className="ui-hit ml-auto touch-target rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
           aria-expanded={open} aria-controls={`${id}-t`} onClick={() => setOpen(!open)} data-show-table>
           {open ? t('Hide table') : t('Show as table')}
         </button>

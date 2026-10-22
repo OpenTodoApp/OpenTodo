@@ -41,4 +41,4 @@ In a task's notes, put the caret on a checklist line and press <kbd>Ctrl</kbd>+<
 
 ## What other apps see
 
-Notes and comments are stored as Markdown text too, so the API, the command line, exports and email show them as `| pipe | tables |`, `> quotes`, fenced code, `![name](attachment:…)` for pictures and `@name` for mentions.
+Notes and comments are stored as Markdown text too, so the [API](glossary.md), the command line, exports and email show them as `| pipe | tables |`, `> quotes`, fenced code, `![name](attachment:…)` for pictures and `@name` for mentions.

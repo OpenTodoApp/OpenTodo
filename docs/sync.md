@@ -115,7 +115,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | time_entry | `task_id`, `user_id` | non-empty id string; fixed at creation (`user_id` is the author), see [Time entries](#time-entries) |
 | time_entry | `started_at` | positive number (Unix ms) |
 | time_entry | `ended_at` | positive number (Unix ms) or null while the entry runs |
-| time_entry | `device_id` | string: the device that started or logged it (`server` for the REST API) |
+| time_entry | `device_id` | string: the device that started or logged it (`server` for the REST [API](glossary.md)) |
 | time_entry | `note` | string (user-written; encrypted for an encrypted account) |
 | time_entry | `created_at` | number |
 | time_entry | `deleted_at` | number or null |
@@ -168,7 +168,7 @@ A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a re
 A task's note, and a project's note (OpenSpec `project-notes`), is rich text that merges instead of overwriting (OpenSpec `collaborative-rich-text`). Two fields carry it on both entities:
 
 - `notes_doc` holds the note as a **full-state document**: `""` (no document yet) or `"ydoc:v1:" + base64(Yjs update, format v1)`. It is an ordinary last-writer-wins register on the server and in every device's store; the server validates only the envelope shape (`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:` followed by standard or URL-safe base64, padding optional, at most `MaxDocBytes` = 256 KB characters, every other kind keeps 64 KB) and never decodes it. Any envelope format passes, so an end-to-end encrypted value (`enc:v1:…`, see below) is valid too.
-- `description` stays the **Markdown projection** of the document: `#` headings, `**bold**`, `_italic_` (`*italic*` inside words), `~~strike~~`, `` `code` ``, `[text](url)`, `-` and `1.` lists, `- [ ]` / `- [x]` check items; a single newline is a line break, a blank line separates blocks. Clients write it in the **same batch** (same `ts`) as `notes_doc`, so the REST API, the export, CalDAV, MCP, webhooks, search and older clients keep reading text.
+- `description` stays the **Markdown projection** of the document: `#` headings, `**bold**`, `_italic_` (`*italic*` inside words), `~~strike~~`, `` `code` ``, `[text](url)`, `-` and `1.` lists, `- [ ]` / `- [x]` check items; a single newline is a line break, a blank line separates blocks. Clients write it in the **same batch** (same `ts`) as `notes_doc`, so the REST API, the export, CalDAV, [MCP](glossary.md), webhooks, search and older clients keep reading text.
 
 Rules, all on the client (`web/src/lib/ops.ts`, `web/src/lib/richtext.ts`):
 
@@ -256,7 +256,7 @@ A `section` is a named, ordered container inside one project (OpenSpec change `b
 - **Scope.** A section lives in the sharing scope of its project, like a task: a new section's `project_id` in the batch decides its scope, sharing a project relabels its sections into the project scope, and a `project_id` op that would move a section to another scope is refused with `scope_change`. Editors, admins and the owner may write sections; viewers are refused with `forbidden`. Clients never change a section's project (the REST API refuses it).
 - **Task reference.** `task.section_id` names a section of the task's project. A reference to a deleted section, a section of another project, or one the device has not received yet is shown as "No section" and is never repaired by a write: a repair would depend on arrival order and could overwrite a newer move. Only user actions write: changing a task's `project_id` writes `section_id: null` in the same batch, and deleting a section writes its tombstone plus `section_id: null` for each of its open tasks, one op each, in one batch.
 - **Moves.** Moving a task to a column writes `section_id` and `position` (after the target column's last open task) in one batch with one timestamp, so concurrent moves resolve to the newer one for both fields together. Placement inside a column follows [Manual order](#manual-order).
-- **Unknown entities.** Clients skip ops for entities they do not know (an installed, not yet refreshed PWA receiving `section` ops), so future entities never break an older shell; a resync re-delivers them.
+- **Unknown entities.** Clients skip ops for entities they do not know (an installed, not yet refreshed [PWA](glossary.md) receiving `section` ops), so future entities never break an older shell; a resync re-delivers them.
 - **Purge.** Sections are not Trash items; purging a project purges its sections (live or deleted) with it.
 
 ### Custom fields

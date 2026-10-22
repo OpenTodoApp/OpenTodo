@@ -63,3 +63,17 @@ describe('second-step errors', () => {
     expect(mfaStepError(new TypeError('fetch failed')).message).toContain('server reachable')
   })
 })
+
+// OpenSpec accessibility "Authentication without a cognitive test" (accessibility-aaa 7.1).
+describe('MfaStepView without a cognitive test', () => {
+  it('offers a passkey beside the code where the instance has passkeys, and never blocks paste', () => {
+    const withPasskey = render({ onPasskey: noop })
+    expect(withPasskey).toContain('Sign in with a passkey instead')
+    expect(withPasskey).toMatch(/data-mfa-passkey/)
+    expect(render()).not.toContain('Sign in with a passkey instead')
+    // The code and recovery fields carry no paste handler and the code field lets a password manager fill it.
+    expect(withPasskey).not.toMatch(/onpaste/i)
+    expect(withPasskey).toMatch(/autocomplete="one-time-code"/i)
+    expect(render({ recovery: true })).not.toMatch(/onpaste/i)
+  })
+})

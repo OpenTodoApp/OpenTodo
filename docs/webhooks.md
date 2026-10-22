@@ -29,7 +29,7 @@ OpenTodo can notify other systems when your tasks and projects change: switch on
 | `rule.fired` | an [automation rule](automations.md) with a webhook action changed a task: sent only to the webhook the rule names, with `data.task`, `data.rule` (`id`, `name` as stored, ciphertext for an encrypted account) and the rule's changes |
 | `ping` | you pressed **Send test** (not subscribable, always sent on request) |
 
-Task and project events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST API, the `ot` CLI and CalDAV. Imports are the exception: they are reported once per job (see [Imports](#imports)). Rules:
+Task and project events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST [API](glossary.md), the `ot` [CLI](glossary.md) and CalDAV. Imports are the exception: they are reported once per job (see [Imports](#imports)). Rules:
 
 - **One event per entity per batch.** A sync batch that creates a task and sets six fields produces one `task.created`, not seven events. When several rules apply the first wins, in this order: created, deleted, completed, reopened, archived, updated.
 - **Only real changes.** An edit that loses under last-writer-wins (an older offline change arriving after a newer one), a duplicate retry, or a write of the value the field already had produces no event.

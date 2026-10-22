@@ -18,7 +18,7 @@ Use a **backup**: it holds every project and keeps their names.
 1. In Todoist, open its settings and find **Backups**.
 2. Download the latest backup. It is a ZIP file such as `Todoist_backup_2026-09-19.zip`.
 
-A single project can also be exported as CSV from the project's menu, but a lone CSV file does not say which project it was, so its tasks go to the project you choose when importing.
+A single project can also be exported as [CSV](../glossary.md) from the project's menu, but a lone CSV file does not say which project it was, so its tasks go to the project you choose when importing.
 
 ## Import into OpenTodo
 

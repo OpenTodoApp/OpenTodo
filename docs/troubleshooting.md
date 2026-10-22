@@ -78,7 +78,7 @@ OpenTodo needs a server to sign in and sync, but it can be small: a single conta
 
 ### Can I move my tasks from another task app?
 
-Usually, yes. OpenTodo imports CSV files and the JSON exports of other task apps. See [Import and export](import-export.md).
+Usually, yes. OpenTodo imports [CSV](glossary.md) files and the JSON exports of other task apps. See [Import and export](import-export.md).
 
 ### Can several people use one server?
 

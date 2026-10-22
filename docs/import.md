@@ -9,7 +9,7 @@ order: 60
 ---
 # Import formats
 
-OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), or drive the same endpoints from a script; see [API](#api) below.
+OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), [CSV](glossary.md) from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), or drive the same endpoints from a script; see [API](#api) below.
 
 Every import works in two steps:
 
@@ -354,7 +354,7 @@ Items and projects marked `is_deleted` are skipped.
 - **Recurrence** and **reminders**: see [Recurrence](#recurrence) and [Reminders](#reminders).
 - **Subtasks** are resolved after the whole file is read, so row order does not matter. A subtask joins its parent's project. A parent that is missing, invalid or would form a cycle leaves the task at the top level with a warning.
 - **Labels** are matched by name, ignoring case; missing ones are created.
-- **Dates**: plain dates stay dates; date-times without a zone keep their wall clock; date-times with a zone become the wall clock of that instant in the chosen time zone (default: the browser's zone in the web app, UTC through the API). Due dates are always stored floating. A deadline is a date only: a time on it is dropped with a warning, keeping the day as written. The preview counts the tasks that get a deadline.
+- **Dates**: plain dates stay dates; date-times without a zone keep their wall clock; date-times with a zone become the wall clock of that instant in the chosen time zone (default: the browser's zone in the web app, UTC through the [API](glossary.md)). Due dates are always stored floating. A deadline is a date only: a time on it is dropped with a warning, keeping the day as written. The preview counts the tasks that get a deadline.
 - **Completion**: a completed row keeps its source completion time, or the import time when the source has none.
 - **Unsupported attributes** (attachments that are not web addresses, comments, assignees, links, location reminders, recurrence rules the grammar cannot express) never block a row: the task is imported and the row carries a warning naming what was dropped.
 - **Custom fields**: see [Custom fields](#custom-fields).

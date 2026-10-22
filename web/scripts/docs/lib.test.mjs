@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSlugger, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
+import { createSlugger, firstProseUse, glossaryTerms, linkGlossaryTerms, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
 import { keysHtml, loadShortcuts, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
 import { QUICK_ADD_SYNTAX, SHORTCUTS, SHORTCUT_SECTIONS } from '../../src/lib/shortcuts.ts'
 import { normalize, prepare, search, snippet, stem } from './search-core.mjs'
@@ -137,4 +137,30 @@ describe('search', () => {
   it('builds an escaped snippet with marks', () => {
     expect(snippet('Use <b>every</b> monday', ['monday'])).toBe('Use &lt;b&gt;every&lt;/b&gt; <mark>monday</mark>')
   })
+})
+
+// OpenSpec accessibility "Glossary and reading level" (accessibility-aaa 8.1).
+
+describe('glossary', () => {
+it('glossary terms are the all-capital bold entries', () => {
+  expect(glossaryTerms('- **API** (x): y\n- **Passkey**: z\n- **CalDAV**: w\n- **TOTP** (t): u')).toEqual(['API', 'TOTP'])
+})
+
+it('the first prose use of an abbreviation is found outside code, HTML, headings and other links, and a glossary link satisfies it', () => {
+  const body = '# API reference\n\n`API` calls need a token. <a href="api.md">API</a> See the [API](api.md) page. An API token works. Another API.'
+  const use = firstProseUse(body, 'API')
+  expect(body.slice(use.index, use.index + 9)).toEqual('API token')
+  expect(use.linked).toEqual(false)
+  expect(firstProseUse('The [API](glossary.md) token and the API.', 'API')).toEqual({ index: 5, linked: true })
+  expect(firstProseUse('The [API](../glossary.md#api) token.', 'API')).toEqual({ index: 5, linked: true })
+  expect(firstProseUse('No abbreviation here, only an apiary and API-like words.', 'API')).toEqual(null)
+})
+
+it('linking the first use leaves the rest alone and is idempotent', () => {
+  const once = linkGlossaryTerms('Use the API. The API again; the CLI too.', ['API', 'CLI'])
+  expect(once).toEqual('Use the [API](glossary.md). The API again; the [CLI](glossary.md) too.')
+  expect(linkGlossaryTerms(once, ['API', 'CLI'])).toEqual(once)
+  expect(linkGlossaryTerms('The CLI.', ['CLI'], '../glossary.md')).toEqual('The [CLI](../glossary.md).')
+})
+
 })

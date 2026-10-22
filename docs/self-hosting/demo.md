@@ -33,7 +33,7 @@ Each sandbox is two accounts, both without a password, so nobody can sign into t
 
 Isolation comes from the ordinary sharing rules: a sandbox reads and writes its personal data and the project shared with its own collaborator. Membership changes are refused on a demo instance, so a sandbox can never share anything with another sandbox, and assignments and @mentions accept only members of the project. Notifications and activity stay inside the sandbox. Nothing is visible without a session: there is no share link and no public page.
 
-The hidden owner exists so that "first visit creates the owner" never happens on a public URL, and so that every owner-only setting (sign-up, single sign-on, backups, CalDAV, MCP, the audit log, the two-factor policy) stays at its default. Nobody can sign in as the owner. If you need to, stop the server and use `opentodo reset-owner-password`.
+The hidden owner exists so that "first visit creates the owner" never happens on a public URL, and so that every owner-only setting (sign-up, single sign-on, backups, CalDAV, [MCP](../glossary.md), the audit log, the two-factor policy) stays at its default. Nobody can sign in as the owner. If you need to, stop the server and use `opentodo reset-owner-password`.
 
 ### Creating a sandbox
 
@@ -73,7 +73,7 @@ Earlier versions gave every visitor the same account (`demo@example.com` / `open
 Every request below is refused with `403 {"error":{"code":"demo_restricted","message":"<feature> is disabled on this demo instance."}}` before authentication, whoever sends it. The web app shows a short note in their place in Settings: **Administration**, **Backups** and **Access policies** show only the note, and the other sections keep their remaining panels.
 
 - Sign-up, invitations, user administration and owner transfer, password change and password-reset links, linked accounts, single sign-on (`/api/v1/auth/oidc/*`)
-- API tokens, app passwords and CalDAV (`/dav/`, `/.well-known/caldav`), passkeys, two-factor enrolment, end-to-end encryption
+- [API](../glossary.md) tokens, app passwords and CalDAV (`/dav/`, `/.well-known/caldav`), passkeys, two-factor enrolment, end-to-end encryption
 - All owner settings writes (`/api/v1/settings/*`), backups, webhooks, calendar feeds (`/api/v1/calendar-feeds/*`), issue connections (`/api/v1/issues/*`, `/api/v1/settings/issues`), email to task, import, the MCP endpoint (`/mcp`)
 - Web push subscriptions, and any change to a project's members (add, remove, change role, leave, transfer)
 - Public links: creating, listing and revoking them, and the public list and tick routes (`/api/v1/projects/{id}/public-links`, `/api/v1/public/*`), since they would publish sandbox content to anyone

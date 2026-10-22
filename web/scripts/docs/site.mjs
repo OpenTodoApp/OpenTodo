@@ -79,6 +79,21 @@ function searchForm(id, big = false) {
 </form>`
 }
 
+/** The home page section a group of pages is listed under. */
+const HOME_ANCHOR = { 'Get started': 'h-start', 'Open Loops': 'h-method', 'Switch from another app': 'h-guides', Guides: 'h-guides', Reference: 'h-ref', 'Self-hosting': 'h-admin', Integrations: 'h-dev', Internals: 'h-dev' }
+const AUDIENCE_ANCHOR = { user: '', admin: '#h-admin', developer: '#h-dev' }
+
+/**
+ * Where a page is (OpenSpec documentation "Accessible documentation", accessibility
+ * "Location and link purpose"): the path from the docs home to the page's group, each
+ * step a link, as a navigation landmark; the separators are drawn, not read.
+ */
+export function trail(fm, group = groupOf(fm)) {
+  const steps = [['Docs', '/docs/'], [AUDIENCE_LABEL[fm.audience], `/docs/${AUDIENCE_ANCHOR[fm.audience] ?? ''}`]]
+  if (group !== AUDIENCE_LABEL[fm.audience]) steps.push([group, `/docs/#${HOME_ANCHOR[group] ?? 'h-guides'}`])
+  return `<nav class="crumbs" aria-label="You are here"><ol>${steps.map(([label, href]) => `<li><a href="${e(href)}">${e(label)}</a></li>`).join('')}</ol></nav>`
+}
+
 /** Sidebar navigation: every page grouped by audience and section. */
 export function sidebar(sorted, current) {
   const parts = []
@@ -129,7 +144,7 @@ export function pageHtml({ page, html, headings, sorted, version }) {
   const url = pageUrl(page.slug)
   const t = toc(headings)
   const group = groupOf(page.fm)
-  const crumbs = group === AUDIENCE_LABEL[page.fm.audience] ? e(group) : `${e(AUDIENCE_LABEL[page.fm.audience])} <span aria-hidden="true">›</span> ${e(group)}`
+  const crumbs = trail(page.fm, group)
   const nav = sidebar(sorted, page.slug)
   return `${head({ title: `${page.fm.title} · OpenTodo docs`, description: page.fm.summary, url })}
 <body class="docs">
@@ -145,7 +160,7 @@ ${header()}
   </aside>
   <main id="content" class="docs-main" tabindex="-1">
     <article class="prose" data-audience="${e(page.fm.audience)}">
-      <p class="doc-meta"><span class="crumbs">${crumbs}</span><span class="version" title="Latest release these docs describe">Version ${e(version.release)}</span></p>
+      <div class="doc-meta">${crumbs}<span class="version" title="Latest release these docs describe">Version ${e(version.release)}</span></div>
 ${withInlineToc(html, t)}
       <p class="edit"><a href="${REPO_URL}/edit/main/docs/${e(page.rel)}" rel="noopener">Edit this page on GitHub</a></p>
     </article>

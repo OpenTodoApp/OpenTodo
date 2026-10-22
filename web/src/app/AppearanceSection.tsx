@@ -1,6 +1,6 @@
 // Settings → Appearance (OpenSpec change theming, design D9; ux-overhaul,
 // appearance-preferences "Appearance in Settings without a Rows choice"): mode,
-// accent theme, density and the promoted sidebar destinations, all in the synced user_prefs row and
+// accent theme, contrast, motion, density and the promoted sidebar destinations, all in the synced user_prefs row and
 // applied at once. Theme tiles are a radio group with roving focus; each tile
 // previews its theme through the real tokens (a data-accent subtree). Below
 // 640 px the tiles are one scrollable row of named swatches. On a device that can
@@ -8,6 +8,7 @@
 import { readMethodMode } from '../lib/method/mode'
 import { type KeyboardEvent, useRef } from 'react'
 import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
+import { CONTRASTS, type ContrastPref, MOTIONS, type MotionPref } from '../lib/presentation'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
 import { SettingRow, SettingsSection, Switch } from '../ui'
@@ -21,6 +22,8 @@ import { canVibrate } from './motion'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
+const CONTRAST_LABEL = translatedMap<ContrastPref>({ auto: msg('Auto'), high: msg('High') })
+const MOTION_LABEL = translatedMap<MotionPref>({ system: msg('System'), none: msg('None') })
 
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
@@ -33,6 +36,9 @@ export interface AppearanceViewProps {
   onMode: (m: ThemeModePref) => void
   onAccent: (a: AccentId) => void
   onDensity?: (d: Density) => void
+  /** Contrast and motion (appearance-preferences "Appearance preferences", accessibility-aaa D3). */
+  onContrast?: (c: ContrastPref) => void
+  onMotion?: (m: MotionPref) => void
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
 }
@@ -69,7 +75,7 @@ function Segmented<T extends string>({ label, items, labels, value, onChange, te
   )
 }
 
-export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, onDensity, onContrast, onMotion, haptics }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
@@ -104,6 +110,14 @@ export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: 
           })}
         </div>
       </div>
+      {onContrast && (
+        <SettingRow id="appearance-contrast" {...rowCopy('appearance', 'contrast')}
+          control={<Segmented label={t('Contrast')} items={CONTRASTS} labels={CONTRAST_LABEL} value={value.contrast ?? 'auto'} onChange={onContrast} testId="appearance-contrast" />} />
+      )}
+      {onMotion && (
+        <SettingRow id="appearance-motion" {...rowCopy('appearance', 'motion')}
+          control={<Segmented label={t('Motion')} items={MOTIONS} labels={MOTION_LABEL} value={value.motion ?? 'system'} onChange={onMotion} testId="appearance-motion" />} />
+      )}
       {onDensity && (
         <SettingRow id="appearance-density" {...rowCopy('appearance', 'density')}
           control={<Segmented label={t('Density')} items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
@@ -138,6 +152,8 @@ export function AppearanceSection() {
   const value = readAppearance(row)
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
     onDensity={(d) => act(setAppearance('density', d))}
+    onContrast={(c) => act(setAppearance('contrast', c))}
+    onMotion={(m) => act(setAppearance('motion', m))}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />
 }
 

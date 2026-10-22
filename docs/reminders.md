@@ -13,7 +13,7 @@ A task can carry any number of reminders (OpenSpec change `reminders`). Open a t
 
 You can also type reminders in quick add: `Dentist tomorrow at 15:00 remind me 30 min before` (see [Repeat and remind](quick-add.md#repeat-and-remind)).
 
-- **Relative** reminders fire a number of minutes before or after the task's due time ("30 minutes before"). A task with a date but no time counts as due at 09:00. A task whose time is fixed to a time zone fires relative to that exact instant, wherever your devices are. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.
+- **Relative** reminders fire a number of minutes before or after the task's due time ("30 minutes before"). A task with a date but no time counts as due at 09:00. A task whose time is fixed to a time zone fires relative to that exact instant, wherever your devices are. When the due date or time changes, on any device or through the [API](glossary.md), the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.
 - **Deadline** reminders fire a number of minutes before or after 09:00 on the task's [deadline](tasks-and-projects.md#deadlines) ("1 day before the deadline"), in your device's time zone. They follow the deadline when it changes, on any device or through the API, and never move with the due date. Without a deadline the reminder is kept but does not fire. A device on an older version leaves them untouched.
 - **Absolute** reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device's local time.
 
@@ -43,4 +43,4 @@ For an account with [end-to-end encryption](e2ee.md) the server never puts a tit
 
 ## For operators
 
-Nothing to configure. The VAPID key pair is generated on first use at `<data>/push_vapid.pem` and travels with backup archives. `OPENTODO_PUSH=off` turns push off entirely (routes answer 404, no outbound requests); in-app reminders keep working. Push requires the app to be served over https (`OPENTODO_BASE_URL`), as browsers only allow push subscriptions on secure origins. See [self-hosting](self-hosting/docker.md#reminders-and-web-push) and [API](api.md#reminders-and-push).
+Nothing to configure. The [VAPID](glossary.md) key pair is generated on first use at `<data>/push_vapid.pem` and travels with backup archives. `OPENTODO_PUSH=off` turns push off entirely (routes answer 404, no outbound requests); in-app reminders keep working. Push requires the app to be served over https (`OPENTODO_BASE_URL`), as browsers only allow push subscriptions on secure origins. See [self-hosting](self-hosting/docker.md#reminders-and-web-push) and [API](api.md#reminders-and-push).

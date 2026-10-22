@@ -9,7 +9,7 @@ order: 20
 ---
 # Command-line client (`ot`)
 
-`ot` is a small, statically linked client for the OpenTodo REST API. It is built for two audiences: people who live in a terminal (`ot add "Call the plumber" --due tomorrow`, `ot today`) and scripts, cron jobs and editor integrations that want stable JSON output and exit codes instead of hand-written `curl`.
+`ot` is a small, statically linked client for the OpenTodo REST [API](glossary.md). It is built for two audiences: people who live in a terminal (`ot add "Call the plumber" --due tomorrow`, `ot today`) and scripts, cron jobs and editor integrations that want stable JSON output and exit codes instead of hand-written `curl`.
 
 It is an **online** client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. The one exception is [`ot vault`](vault.md), which keeps a folder of Markdown files and its own sync state. Every write goes through the REST API, which records it in the operation log, so changes made with `ot` reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.
 
@@ -181,7 +181,7 @@ ot time list --from 2026-10-12 --to 2026-10-18 [--task 8c2a] [--running] [--limi
 ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv
 ```
 
-A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 before a request. Without `--on` a duration ends now; on another day (`--on yesterday`, a weekday meaning the last one, or `YYYY-MM-DD`) it ends at 17:00 local time. `--from` and `--to` are times on that day. `start`, `stop` and `log` write, so `--dry-run`, `--read-only` and token scope apply: a `read` token exits 5 (`insufficient_scope`) before anything is sent, while `list` and `export` work with it. `ot time list` prints the id prefix, day, `09:00–09:25`, duration, task and project, newest first; `--json` prints the [`time_entry`](#machine-readable-help-ot-schema) objects (`endedAt: null` while running). `ot time export` downloads the server's CSV for those local days in your time zone; with `-o` and `--json` it reports the file and the row count. A weekly export for cron:
+A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 before a request. Without `--on` a duration ends now; on another day (`--on yesterday`, a weekday meaning the last one, or `YYYY-MM-DD`) it ends at 17:00 local time. `--from` and `--to` are times on that day. `start`, `stop` and `log` write, so `--dry-run`, `--read-only` and token scope apply: a `read` token exits 5 (`insufficient_scope`) before anything is sent, while `list` and `export` work with it. `ot time list` prints the id prefix, day, `09:00–09:25`, duration, task and project, newest first; `--json` prints the [`time_entry`](#machine-readable-help-ot-schema) objects (`endedAt: null` while running). `ot time export` downloads the server's [CSV](glossary.md) for those local days in your time zone; with `-o` and `--json` it reports the file and the row count. A weekly export for cron:
 
 ```bash
 0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
@@ -203,7 +203,7 @@ ot issues sync 7f3a --dry-run   # print the request, run nothing
 
 ## Tokens and export
 
-`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. Creating a token is a [credential route](api.md#token-scopes): `ot token create` needs an `admin` token in the profile (the token `ot login` stores is `full`, so run `ot login` again to mint a new one, or create it in Settings → Integrations → API tokens). An `admin` token can only be created in the web app, from a recently confirmed session; with it, scripts can also manage second factors, other tokens, app passwords, accounts and server secrets. A `full` token gets exit 5 (`insufficient_scope`) on those routes. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).
+`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. Creating a token is a [credential route](api.md#token-scopes): `ot token create` needs an `admin` token in the profile (the token `ot login` stores is `full`, so run `ot login` again to mint a new one, or create it in Settings → Integrations → API tokens). An `admin` token can only be created in the web app, from a recently confirmed session; with it, scripts can also manage second factors, other tokens, app passwords, accounts and server secrets. A `full` token gets exit 5 (`insufficient_scope`) on those routes. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the [MCP](glossary.md) write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).
 
 ```bash
 ot token list                           # with each token's scope
@@ -332,7 +332,7 @@ Or add a reminder task every Monday morning:
 
 ## Limits
 
-- Online only, apart from `ot vault`: no offline queue, no local cache. Offline capture is what the web app and PWA are for.
+- Online only, apart from `ot vault`: no offline queue, no local cache. Offline capture is what the web app and [PWA](glossary.md) are for.
 - `--due` understands a fixed set of words; the natural-language quick-add grammar lives in the web client.
 - Rate limits on `auth/login` apply (10 per minute per address); `ot auth set-token` avoids them entirely.
 - No shell completion scripts yet (`ot schema` has everything a completion script needs).

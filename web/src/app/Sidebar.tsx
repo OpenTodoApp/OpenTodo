@@ -462,7 +462,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
                     {has && (
                       <button type="button" tabIndex={-1} aria-label={isCollapsed ? t('Expand {name}', { name: p.name }) : t('Collapse {name}', { name: p.name })}
                         onClick={() => void toggleCollapsedProject(n.id)}
-                        className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11">
+                        className="ui-hit flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11">
                         <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
                       </button>
                     )}
@@ -653,7 +653,7 @@ function MoreMenu({ entries, active, collapsed, hints, extra }: {
       <Menu kind="menu" label={t('More')} namedByContent={!collapsed} title={t('More')} align="start" width="sm:w-64" triggerProps={{ 'aria-current': active ? 'true' : undefined }}
         triggerClassName={collapsed
           ? `flex min-h-8 w-full items-center justify-center rounded-control py-1 ${active ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised'}`
-          : `mt-2 flex min-h-6 w-full items-center gap-1 rounded-chip px-2 text-left ${SIDEBAR_HEADING} hover:text-muted focus-visible:text-muted ${active ? 'text-strong' : ''}`}
+          : `ui-hit mt-2 flex min-h-6 w-full items-center gap-1 rounded-chip px-2 text-left ${SIDEBAR_HEADING} hover:text-muted focus-visible:text-muted ${active ? 'text-strong' : ''}`}
         trigger={collapsed ? <span aria-hidden="true"><Icon name="ellipsis" /></span> : <>
           <span aria-hidden="true"><Icon name="chevron-right" size="xs" /></span>
           <span className="min-w-0 flex-1 truncate">{t('More')}</span>

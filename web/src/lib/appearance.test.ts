@@ -18,9 +18,9 @@ beforeEach(async () => {
 
 describe('readAppearance', () => {
   it('defaults to system and emerald, and reads an unknown value as the default without writing', async () => {
-    expect(readAppearance(null)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: [] })
-    expect(readAppearance({ theme_mode: 'dark', theme_accent: 'orange' } as never)).toEqual({ mode: 'dark', accent: 'orange', density: 'comfortable', sidebar: [] })
-    expect(readAppearance({ theme_mode: 'sepia', theme_accent: 'ultraviolet', sidebar_destinations: 'someday,bogus', density: 'cosy' } as never)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: ['someday'] })
+    expect(readAppearance(null)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: [], contrast: 'auto', motion: 'system' })
+    expect(readAppearance({ theme_mode: 'dark', theme_accent: 'orange' } as never)).toEqual({ mode: 'dark', accent: 'orange', density: 'comfortable', sidebar: [], contrast: 'auto', motion: 'system' })
+    expect(readAppearance({ theme_mode: 'sepia', theme_accent: 'ultraviolet', sidebar_destinations: 'someday,bogus', density: 'cosy' } as never)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: ['someday'], contrast: 'auto', motion: 'system' })
     expect(await db.outbox.count()).toBe(0)
   })
 
@@ -32,7 +32,7 @@ describe('readAppearance', () => {
       ['user_prefs', 'me', 'theme_accent', 'teal'],
       ['user_prefs', 'me', 'theme_mode', 'dark'],
     ])
-    expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', density: 'comfortable', sidebar: [] })
+    expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', density: 'comfortable', sidebar: [], contrast: 'auto', motion: 'system' })
   })
 })
 
@@ -62,7 +62,7 @@ describe('applyAppearance', () => {
     expect(root.getAttribute('data-accent')).toBe('orange')
     expect(document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!.content).toBe('dark')
     expect(metas()).toEqual([['#0c0f16', '']])
-    expect(JSON.parse(localStorage.getItem(CACHE_KEY)!)).toEqual({ mode: 'dark', accent: 'orange', bar: '#c2410c' })
+    expect(JSON.parse(localStorage.getItem(CACHE_KEY)!)).toEqual({ mode: 'dark', accent: 'orange', bar: '#c2410c', contrast: 'auto', motion: 'system' })
   })
 
   it('light mode uses the accent as the bar; system emits both with media queries; emerald removes the attribute', () => {

@@ -383,3 +383,55 @@ export function versionInfo(repoRoot) {
 export const specNames = (repoRoot) => readdirSync(join(repoRoot, 'openspec/specs')).filter((n) => statSync(join(repoRoot, 'openspec/specs', n)).isDirectory()).sort()
 
 export const repoRootFrom = (here) => resolve(dirname(here), '../../..')
+
+// ---- abbreviations and the glossary (OpenSpec documentation "Accessible documentation",
+// accessibility "Glossary and reading level"; accessibility-aaa D11) ----
+
+/** The abbreviations the glossary explains: the bold term of each `- **TERM**` entry that is all capitals. */
+export function glossaryTerms(glossaryBody) {
+  return [...glossaryBody.matchAll(/^- \*\*([A-Za-z]+)\*\*/gm)].map((m) => m[1]).filter((t) => /^[A-Z]{2,}$/.test(t))
+}
+
+/**
+ * The regions of a Markdown body that are not prose: fenced and inline code, HTML
+ * tags, heading lines, and links (text and target), each as [start, end, kind, href].
+ */
+function nonProse(body) {
+  const out = []
+  for (const m of body.matchAll(/```[\s\S]*?```|`[^`\n]*`/g)) out.push([m.index, m.index + m[0].length, 'code'])
+  for (const m of body.matchAll(/<a\b[^>]*\bhref="([^"]*)"[^>]*>[\s\S]*?<\/a>/g)) out.push([m.index, m.index + m[0].length, 'link', m[1]])
+  for (const m of body.matchAll(/<[^>\n]+>/g)) out.push([m.index, m.index + m[0].length, 'html'])
+  for (const m of body.matchAll(/^#{1,6} .*$/gm)) out.push([m.index, m.index + m[0].length, 'heading'])
+  for (const m of body.matchAll(/\[([^\]\n]*)\]\(([^)\n]*)\)/g)) out.push([m.index, m.index + m[0].length, 'link', m[2]])
+  return out
+}
+
+/**
+ * The first use of an abbreviation in a page's prose: `{ index, linked }`, where
+ * `linked` is true when that use is the text of a link to the glossary; null when the
+ * page never uses it in prose. Uses inside code, HTML, headings and other links are
+ * not the first use.
+ */
+export function firstProseUse(body, term) {
+  const regions = nonProse(body)
+  const re = new RegExp(`(?<![\\w-])${term}(?![\\w-])`, 'g')
+  for (const m of body.matchAll(re)) {
+    const i = m.index
+    const inside = regions.filter(([s, e]) => i >= s && i < e)
+    if (!inside.length) return { index: i, linked: false }
+    const link = inside.find(([, , kind]) => kind === 'link')
+    if (link && inside.every(([, , kind]) => kind === 'link') && /(^|\/)glossary\.md(#|$)/.test(link[3])) return { index: i, linked: true }
+  }
+  return null
+}
+
+/** Inserts a glossary link on the first prose use of every unlinked term; returns the new body. */
+export function linkGlossaryTerms(body, terms, href = 'glossary.md') {
+  let out = body
+  for (;;) {
+    const next = terms.map((t) => ({ t, use: firstProseUse(out, t) })).filter((x) => x.use && !x.use.linked).sort((a, b) => a.use.index - b.use.index)[0]
+    if (!next) return out
+    const { t, use } = next
+    out = `${out.slice(0, use.index)}[${t}](${href})${out.slice(use.index + t.length)}`
+  }
+}

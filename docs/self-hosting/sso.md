@@ -14,7 +14,7 @@ What it does:
 
 - Adds **Sign in with &lt;name&gt;** to the sign-in screen, next to the password form.
 - Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is **verified** is linked to the member account with that email. The owner, admins and accounts with two-factor authentication or a passkey are never linked by email alone: they sign in as usual and link the provider in **Settings → Account → Linked accounts**.
-- Optionally creates a `member` account for someone who has no account yet (**Allow new accounts via SSO**), or when open sign-up is on.
+- Optionally creates a `member` account for someone who has no account yet (**Allow new accounts via [SSO](../glossary.md)**), or when open sign-up is on.
 - Optionally requires single sign-on for everyone except the owner (**SSO only**).
 - Optionally signs people out of the provider when they sign out of OpenTodo.
 
@@ -99,7 +99,7 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 
 ## SSO only
 
-**Require single sign-on** refuses password and passkey sign-in, and password registration, for every account except the owner. Members see only the provider button. API tokens and the `ot` CLI keep working, because a token is already a delegated credential.
+**Require single sign-on** refuses password and passkey sign-in, and password registration, for every account except the owner. Members see only the provider button. [API](../glossary.md) tokens and the `ot` [CLI](../glossary.md) keep working, because a token is already a delegated credential.
 
 SSO-only mode only applies while a provider is configured: clearing the issuer turns it off too, so members are never locked out by removing the provider.
 

@@ -33,7 +33,7 @@ Each panel answers one question:
 
 Every chart has **Show as table**, and the arrow keys move through its days or values. A panel with nothing to show collapses to one line.
 
-**Export time entries** in the menu next to the period chooser downloads a CSV of the period's entries, made on this device. The columns are those of the [server's CSV](time-tracking.md#export).
+**Export time entries** in the menu next to the period chooser downloads a [CSV](glossary.md) of the period's entries, made on this device. The columns are those of the [server's CSV](time-tracking.md#export).
 
 In a shared project a completed task counts for whoever completed it; older tasks count for their assignee, or for you when unassigned. Tasks in the Trash and the start guide's sample tasks are left out.
 

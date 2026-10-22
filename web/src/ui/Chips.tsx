@@ -104,7 +104,7 @@ export function LabelChip({ name, color, onRemove, className }: LabelChipProps) 
       <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
       <span className="truncate">{name}</span>
       {onRemove && (
-        <button type="button" aria-label={t('Remove label {name}', { name })} onClick={onRemove} className="ml-0.5 leading-none text-faint hover:text-danger"><Icon name="x" size={10} /></button>
+        <button type="button" aria-label={t('Remove label {name}', { name })} onClick={onRemove} className="ui-hit ml-0.5 leading-none text-faint hover:text-danger"><Icon name="x" size={10} /></button>
       )}
     </span>
   )

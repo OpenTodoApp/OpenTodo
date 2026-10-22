@@ -75,7 +75,7 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
       <Menu kind="menu" label={updates ? t('Workspace: {name}, {updates}', { name: label, updates }) : t('Workspace: {name}', { name: label })} title={t('Workspaces')}
         align="start" width="sm:w-72" tip={collapsed || updates ? (updates || label) : undefined} tipSide={collapsed ? 'right' : 'bottom'}
         triggerProps={{ 'data-workspace-trigger': true }}
-        triggerClassName={`flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-control px-1 text-left hover:bg-sunken focus-visible:bg-sunken pointer-fine:min-h-8 dark:hover:bg-raised ${collapsed ? 'justify-center' : ''}`}
+        triggerClassName={`ui-hit flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-control px-1 text-left hover:bg-sunken focus-visible:bg-sunken pointer-fine:min-h-8 dark:hover:bg-raised ${collapsed ? 'justify-center' : ''}`}
         trigger={<>
           <WorkspaceMark workspace={current} />
           {!collapsed && <span className="min-w-0 flex-1 truncate font-semibold text-strong">
