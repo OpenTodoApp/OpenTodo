@@ -385,7 +385,7 @@ Release binaries and images SHALL be built with the Go toolchain named by the `t
 - **THEN** the repository checks fail
 
 ### Requirement: CI path filter covers every input
-The CI path filter SHALL classify every file that is compiled into the binary or checks the deploy templates (including `skills/`, `deploy/`, `scripts/deploy*` and the root `docker-compose.yml`) as code, so changes to them run the server jobs, and its classification SHALL be covered by a table of paths and expected outputs that runs in CI.
+The CI path filter SHALL classify every file that is compiled into the binary or checks the deploy templates (including `skills/`, `deploy/`, `scripts/deploy*` and the root `docker-compose.yml`) as code, so changes to them run the server jobs, and its classification SHALL be covered by a table of paths and expected outputs that runs in CI. Files under `mobile/` SHALL be classified as `mobile`, so a change there runs the Android shell job, and a change to nothing else runs only that job and the repository checks.
 
 #### Scenario: Agent skill only
 - **WHEN** a pull request changes only `skills/opentodo-cli/SKILL.md`
@@ -394,6 +394,10 @@ The CI path filter SHALL classify every file that is compiled into the binary or
 #### Scenario: Docs only
 - **WHEN** a pull request changes only files under `docs/` and the generated in-app help
 - **THEN** the filter reports `code=false` and `docs=true`
+
+#### Scenario: Android shell only
+- **WHEN** a pull request changes only `mobile/android/app/src/main/AndroidManifest.xml`
+- **THEN** the filter reports `mobile=true` and `code=false`, the Android job runs and the Go tests do not
 
 ### Requirement: Templates for general container platforms
 The repository SHALL include a checked template and a guide for Kubernetes (a Helm chart), Podman Quadlet, CapRover, Fly.io, Render and Synology Container Manager, each in `deploy/<platform>/` with a checker that applies the shared deployment facts and the image policy of that platform. Each template SHALL run a single instance with persistent storage on `/data` writable by the user the container runs as, the health check, closed sign-up by default and no required setting.
