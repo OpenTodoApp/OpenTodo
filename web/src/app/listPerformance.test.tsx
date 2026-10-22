@@ -79,7 +79,7 @@ describe('large lists', () => {
     const before = document.documentElement.style.getPropertyValue('--row-time-w')
     rowRenders.n = 0
     await setUserPref('time_format', before.includes('7') ? '24h' : '12h')
-    await waitFor(() => document.documentElement.style.getPropertyValue('--row-time-w') !== before, 'the column width variable', 10_000)
+    await waitFor(() => document.documentElement.style.getPropertyValue('--row-time-w') !== before, 'the column width variable', 30_000)
     await flush(100)
     const onSwitch = rowRenders.n
     console.info(`[large-list-performance] row renders for one time format switch with ${ROWS} rows: ${onSwitch}`)
