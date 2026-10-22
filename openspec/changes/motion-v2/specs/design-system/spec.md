@@ -15,6 +15,17 @@ Interface transitions SHALL use one of three durations: 120 ms for interface fee
 - **WHEN** reduced motion is requested and a reschedule moves three rows to another group
 - **THEN** no view transition starts and the list shows its new order at once
 
+### Requirement: Moment motion tokens
+The tokens SHALL include a spring easing curve (an ease-out that settles without overshoot, defined as a cubic bezier with no animation library) and a moment duration of 400 ms. The moment SHALL be zero under the no-motion attribute and SHALL fall under the reduced-motion rule. The motion foundation SHALL demonstrate both.
+
+#### Scenario: No motion zeroes the moment
+- **WHEN** the root carries `data-motion="none"` and an element transitions with the moment duration
+- **THEN** it changes instantly
+
+#### Scenario: Spring on a sheet
+- **WHEN** a phone sheet opens with the spring curve at the emphasis duration
+- **THEN** the sheet reaches its resting place within 250 ms without passing it, and under reduced motion it fades in without moving
+
 ## ADDED Requirements
 
 ### Requirement: Motion sequences in the workbench

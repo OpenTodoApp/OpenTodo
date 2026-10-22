@@ -28,11 +28,11 @@ New tasks without a project land in the **Inbox**. Tasks added inside a project 
 
 ## Complete, reopen and delete
 
-Click the circle next to a task, or press <kbd>c</kbd>. Completed tasks move to **Completed** in the sidebar, where you can reopen them.
+Click the circle next to a task, or press <kbd>c</kbd>. The completion is saved at once; for a moment the row stays on screen while the check fills, the title is struck through and the row folds away, so the tasks below move up. You can press <kbd>c</kbd> on the next task straight away: the cursor moves on at once. A repeating task stays in the list with its next date instead. Completed tasks move to **Completed** in the sidebar, where you can reopen them.
 
 Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. You can restore it from there. See [Trash and history](trash-and-history.md).
 
-Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes). Undo works offline too.
+Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes). Undo works offline too, and during the moment a completed row is folding away it keeps the row where it was. When you reschedule, drag or change a few tasks, the rows that stay slide to their new places; with your device's reduced-motion setting, everything changes at once.
 
 ## What a row shows
 

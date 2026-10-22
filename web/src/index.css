@@ -892,9 +892,11 @@ select.ui-input { @apply truncate; contain: layout paint; }
 :root[data-motion="none"] [data-departing] { display: none; }
 
 /* List reflow (task-list-presentation "List reflow", motion-v2 D4): the rows named for a
-   local change slide to their new places over the moment; old and new snapshots only
-   crossfade. The root keeps its default crossfade within the interface duration. */
-::view-transition-group(*) { animation-duration: var(--duration-moment); animation-timing-function: var(--ease-spring); }
+   local change slide to their new places within the moment: the slide takes the emphasis
+   duration, so with the browser's snapshot of the rows (about 100 ms on a slow phone,
+   measured in design.md) the whole change stays under 400 ms. Old and new snapshots
+   only crossfade; the root keeps a crossfade within the interface duration. */
+::view-transition-group(*) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-spring); }
 ::view-transition-old(*), ::view-transition-new(*) { animation-duration: var(--duration-ui); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--duration-ui); }
 @media (prefers-reduced-motion: reduce) {
