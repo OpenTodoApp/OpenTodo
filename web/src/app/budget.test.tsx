@@ -253,12 +253,14 @@ describe('visible properties', () => {
     await r.unmount()
   })
 
-  it('focus not obscured: the content scroller keeps room for a toast and the selection bar (rows-v2 D7)', async () => {
+  it('focus not obscured: the content scroller keeps room for a toast and the selection bar (rows-v2 D7) and for the sticky page header (accessibility-aaa 5.2)', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const content = r.container.querySelector('#content')!
     expect(content.className).toContain('scroll-pb-(--list-scroll-pad)')
+    expect(content.className).toContain('scroll-pt-(--head-scroll-pad)')
     const css = (await import('../index.css?raw')).default
     expect(css).toMatch(/--list-scroll-pad:\s*8rem/)
+    expect(css).toMatch(/--head-scroll-pad:\s*3\.5rem/)
     await r.unmount()
   })
 })

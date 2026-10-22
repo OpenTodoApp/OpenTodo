@@ -30,7 +30,7 @@
 ## 5. Focus never obscured
 
 - [x] 5.1 Extend the focus pass in `a11y.mjs` with viewport containment and the `elementsFromPoint` check at the corners and centre (allowing descendants and `data-opened-by` overlays), with `scripts/ux-audit/focus-obscured-exempt.json` and its test; verify `make ui-check` and a story that focuses a row under the phone tab bar fails naming it.
-- [ ] 5.2 Set `scroll-padding` on the phone list for the tab bar and the add button, on the content column for the sticky header, and lift the toast column by `--toast-lift` when a focused control is under it; verify the shell story at 375 px passes the pass and `npm test` covers the scroll padding values.
+- [x] 5.2 Set `scroll-padding` on the phone list for the tab bar and the add button, on the content column for the sticky header, and lift the toast column by `--toast-lift` when a focused control is under it; verify the shell story at 375 px passes the pass and `npm test` covers the scroll padding values.
 - [x] 5.3 Document the pass in `docs/interface-guide.md` (focus is never under chrome) and verify the guide's checks (`make docs-check`).
 
 ## 6. Reading blocks, location and links

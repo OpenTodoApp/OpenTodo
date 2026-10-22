@@ -8,7 +8,10 @@
 // focusable element and fails on one that shows no focus ring or is partly hidden
 // (design-system "Focus visibility in the accessibility gate"; the audit's M8 and M12),
 // and measures the hit area of every pointer target (accessibility "Pointer targets";
-// M11), each pass with its own shrinking exemption list under scripts/ux-audit/.
+// M11), each pass with its own shrinking exemption list under scripts/ux-audit/. The
+// phone stories (`Screens/Phone`, the shell's phone scrolling) run a third time at 375 px,
+// where the tab bar, the add button and the sticky page header meet the focused row
+// (accessibility "Focus is never obscured", task 5.2).
 //
 //   cd web && npm run build-storybook && node ../scripts/ui-check/a11y.mjs
 //
@@ -42,13 +45,27 @@ const OBSCURED_EXEMPT = readExempt(`${repo}scripts/ux-audit/focus-obscured-exemp
 const TARGET_EXEMPT = readExempt(`${repo}scripts/ux-audit/target-exempt.json`)
 let exempted = 0
 let registered = 0
-const queue = ids.flatMap((id) => [[id, 'light'], [id, 'dark']])
+const DESKTOP = { width: 1280, height: 900 }
+const PHONE = { width: 375, height: 812 }
+const onPhone = (id) => /^screens-(shell--phonescrolling|phone--)/.test(id)
+const queue = ids.flatMap((id) => [[id, 'light', DESKTOP], [id, 'dark', DESKTOP], ...(onPhone(id) ? [[id, 'light', PHONE], [id, 'dark', PHONE]] : [])])
 const CONCURRENCY = Math.max(1, Number(process.env.CONCURRENCY ?? 4))
 
-async function check(id, theme) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+async function check(id, theme, viewport) {
+  const page = await browser.newPage({ viewport })
+  const label = `${id} [${theme}${viewport === PHONE ? ' 375px' : ''}]`
   await page.goto(`${server.url}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`)
   await page.waitForFunction(() => document.querySelector('#storybook-root')?.childElementCount > 0, null, { timeout: 15000 })
+  // A Screens story seeds its data after it mounts (rows, counts, section totals arrive a
+  // moment later); measuring earlier reads an empty list and names its controls without
+  // their counts. Wait until the DOM has been quiet for 400 ms, 4 s at most.
+  await page.evaluate(() => new Promise((resolve) => {
+    let quiet = setTimeout(done, 400)
+    const observer = new MutationObserver(() => { clearTimeout(quiet); quiet = setTimeout(done, 400) })
+    const cap = setTimeout(done, 4000)
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true })
+    function done() { clearTimeout(quiet); clearTimeout(cap); observer.disconnect(); resolve() }
+  }))
   // A story that changes a control's colour once its data arrives (the review's
   // "Finish review" turns primary when every step is done) is mid-transition for
   // 120 ms; axe would then measure a blended background and report a contrast
@@ -94,10 +111,10 @@ async function check(id, theme) {
       nodes = kept
       if (!nodes.length) continue
       const detail = nodes.slice(0, 3).map((n) => `${n.target}${n.data?.contrastRatio ? ` ${Number(n.data.contrastRatio).toFixed(2)}:1` : ''}`).join(', ')
-      failures.push(`${id} [${theme}]: ${v.impact} ${v.id}: ${v.help}; not in the exceptions register (${detail})`)
+      failures.push(`${label}: ${v.impact} ${v.id}: ${v.help}; not in the exceptions register (${detail})`)
       continue
     }
-    failures.push(`${id} [${theme}]: ${v.impact} ${v.id}: ${v.help} (${nodes.slice(0, 3).map((n) => n.target).join(', ')})`)
+    failures.push(`${label}: ${v.impact} ${v.id}: ${v.help} (${nodes.slice(0, 3).map((n) => n.target).join(', ')})`)
   }
   if (id.startsWith('screens-')) {
     await installHelpers(page)
@@ -105,14 +122,14 @@ async function check(id, theme) {
     // leave rows under a sticky header, which is the obscured-focus pass's business.
     const hits = applyExempt(TARGET_EXEMPT, await page.evaluate(hitAreas))
     exempted += hits.exempt.length
-    for (const f of hits.kept) failures.push(`${id} [${theme}]: hit area under 44 px (${f.value}): ${f.element}`)
+    for (const f of hits.kept) failures.push(`${label}: hit area under 44 px (${f.value}): ${f.element}`)
     const walk = await focusWalk(page)
     const ring = applyExempt(FOCUS_EXEMPT, walk.filter((f) => f.rule === 'M8'))
     exempted += ring.exempt.length
-    for (const f of ring.kept) failures.push(`${id} [${theme}]: focus without the ring: ${f.element}`)
+    for (const f of ring.kept) failures.push(`${label}: focus without the ring: ${f.element}`)
     const obscured = applyExempt(OBSCURED_EXEMPT, walk.filter((f) => f.rule === 'M12'))
     exempted += obscured.exempt.length
-    for (const f of obscured.kept) failures.push(`${id} [${theme}]: focus obscured, ${f.value}: ${f.element}`)
+    for (const f of obscured.kept) failures.push(`${label}: focus obscured, ${f.value}: ${f.element}`)
   }
   await page.close()
 }
@@ -129,4 +146,4 @@ if (failures.length) {
   console.error(`UI a11y check: ${failures.length} problem(s)\n${failures.map((f) => `  - ${f}`).join('\n')}`)
   process.exit(1)
 }
-console.log(`UI a11y check: ${ids.length} stories × 2 themes at the A, AA and AAA rules (${registered} enhanced-contrast findings matched the exceptions register); focus ring, focus never obscured and a 44 px hit area on every element of the Screens stories (${exempted} listed in the scripts/ux-audit/*-exempt.json lists)`)
+console.log(`UI a11y check: ${ids.length} stories × 2 themes (${ids.filter(onPhone).length} phone stories also at 375 px) at the A, AA and AAA rules (${registered} enhanced-contrast findings matched the exceptions register); focus ring, focus never obscured and a 44 px hit area on every element of the Screens stories (${exempted} listed in the scripts/ux-audit/*-exempt.json lists)`)

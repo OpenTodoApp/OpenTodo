@@ -62,6 +62,10 @@ When an element receives keyboard focus, no part of it SHALL be hidden by conten
 - **WHEN** a toast appears while a button under its position has focus
 - **THEN** the toast is positioned so the button stays fully visible, or the UI check fails naming the button
 
+#### Scenario: The phone sheet keeps the keyboard
+- **WHEN** a task is open as a bottom sheet on a phone and a keyboard user presses Tab from its last control
+- **THEN** focus wraps to the sheet's first control and never reaches a row of the list behind it
+
 ### Requirement: Reading blocks
 A block of text the person reads (a task's notes and description, a project's notes, a comment, Help) SHALL have a line height of at least 1.5, a measure of at most 80 characters, and SHALL never be justified. Help and the user guide SHALL space paragraphs at least 2 em apart (WCAG technique C21); notes and comments keep their close paragraphs by default so a note reads as one block in the panel, which SHALL be a register entry whose route is the high-contrast presentation spacing their paragraphs 2 em apart. Rows, chips, labels and controls are not blocks of text and keep their type scale. Foreground and background colours SHALL be selectable by the person through the mode, the theme and the contrast preference. Text SHALL reflow at 200 % browser zoom without horizontal scrolling (design-system "Comfortable reading scale").
 

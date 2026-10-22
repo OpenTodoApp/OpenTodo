@@ -3,8 +3,11 @@
 // down on the handle or the header of more than 80 px, or a flick, closes it; a drag
 // on the body closes only while the body is scrolled to its top, so reading comments
 // never dismisses it. It sits above the on-screen keyboard (`--vv-bottom`), so the
-// focused field and the composer stay in view.
-import { type CSSProperties, type ReactNode, type RefObject, type TouchEvent, useRef } from 'react'
+// focused field and the composer stay in view. For the keyboard it is a dialog
+// (accessibility "Focus is never obscured"): focus moves into it as it opens and Tab
+// stays inside, so no row of the list behind it ever takes focus.
+import { type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject, type TouchEvent, useEffect, useRef } from 'react'
+import { focusInto, trapTab } from '../../ui/overlay/stack'
 import { prefersReducedMotion } from '../motion'
 
 /** Travel that closes the sheet, and the flick speed that closes it sooner (px per ms). */
@@ -24,10 +27,18 @@ export interface TaskSheet {
   header: Touches
   /** On the body's scroller: a drag down closes only at scroll top. */
   body: Touches
+  /** On the panel: a dialog that keeps Tab inside (the caller adds `aria-label`). */
+  dialog: { role: 'dialog'; 'aria-modal': 'true'; tabIndex: -1; onKeyDown: (e: KeyboardEvent<HTMLElement>) => void }
 }
 
-export function useTaskSheet({ on, onClose, panel, entering }: { on: boolean; onClose: () => void; panel: RefObject<HTMLElement | null>; entering: boolean }): TaskSheet | null {
+export function useTaskSheet({ on, ready, onClose, panel, entering }: { on: boolean; ready: boolean; onClose: () => void; panel: RefObject<HTMLElement | null>; entering: boolean }): TaskSheet | null {
   const drag = useRef<{ x: number; y: number; t: number; dy: number; body: boolean } | null>(null)
+  // Focus moves into the sheet once its panel is mounted (`ready`: the task has loaded).
+  const open = on && ready
+  useEffect(() => {
+    const el = panel.current
+    if (open && el && !el.contains(document.activeElement)) focusInto(el)
+  }, [open, panel])
   const set = (dy: number, animate: boolean) => {
     const el = panel.current
     if (!el) return
@@ -69,5 +80,6 @@ export function useTaskSheet({ on, onClose, panel, entering }: { on: boolean; on
     scrim: <div aria-hidden="true" data-sheet-scrim className="fixed inset-0 z-30 touch-none bg-scrim" onClick={onClose} />,
     header: touches(false),
     body: touches(true),
+    dialog: { role: 'dialog', 'aria-modal': 'true', tabIndex: -1, onKeyDown: (e) => { if (panel.current) trapTab(e, panel.current) } },
   }
 }

@@ -213,7 +213,14 @@ export function movingAnimations() {
  * from how they look unfocused.
  */
 export async function focusWalk(page, maxSteps = 80) {
-  await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0) })
+  // The walk starts where a person's does: inside an open modal layer (a dialog or sheet
+  // focuses itself as it opens and keeps Tab within it), else at the top of the page. An
+  // element behind the modal that the walk still reaches is a broken trap, and is reported.
+  await page.evaluate(() => {
+    document.activeElement?.blur?.(); window.scrollTo(0, 0)
+    const modal = [...document.querySelectorAll('[aria-modal="true"]')].filter((m) => window.__ux.shown(m)).pop()
+    if (modal) { if (!modal.hasAttribute('tabindex')) modal.setAttribute('tabindex', '-1'); modal.focus({ preventScroll: true }) }
+  })
   const seen = new Set()
   const out = []
   for (let i = 0; i < maxSteps; i++) {

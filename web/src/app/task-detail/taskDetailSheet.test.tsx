@@ -64,6 +64,27 @@ describe('below 768 px', () => {
     await r.unmount()
   })
 
+  it('is a dialog for the keyboard: named by the task, focus moves into it, and Tab never leaves it (accessibility "Focus is never obscured")', async () => {
+    width = 390
+    const id = await createTask({ title: 'Phone task' })
+    const r = await render(<TaskDetail taskId={id} projects={[]} labelMap={new Map<string, Label>()} onClose={() => {}} />)
+    await waitFor(() => !!document.querySelector(`[data-detail-for="${id}"]`))
+    const panel = document.querySelector<HTMLElement>(`[data-detail-for="${id}"]`)!
+    expect(panel.getAttribute('role')).toBe('dialog')
+    expect(panel.getAttribute('aria-modal')).toBe('true')
+    expect(panel.getAttribute('aria-label')).toBe('Phone task')
+    await flush(50)
+    expect(panel.contains(document.activeElement)).toBe(true)
+    // Shift+Tab from the first control wraps to the last; the key never reaches the list behind.
+    const first = panel.querySelector<HTMLElement>('button, [href], input, textarea, [tabindex="0"]')!
+    first.focus()
+    const back = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })
+    first.dispatchEvent(back)
+    expect(back.defaultPrevented).toBe(true)
+    expect(panel.contains(document.activeElement)).toBe(true)
+    await r.unmount()
+  })
+
   it('a drag down on the handle closes; on the body only at scroll top', async () => {
     width = 390
     const id = await createTask({ title: 'Drag me' })

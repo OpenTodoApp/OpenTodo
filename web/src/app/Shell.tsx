@@ -237,7 +237,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             document below the frame (issue #95). */}
         {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2). */}
         <div ref={content} id="content" data-add-room={phoneChrome || undefined}
-          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pt-(--head-scroll-pad) scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (

@@ -141,7 +141,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 
   const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
   // Below 768 px the panel is a bottom sheet with a handle over a scrim (phone-v2 D5).
-  const sheet = useTaskSheet({ on: phone && variant !== 'page', onClose, panel, entering })
+  const sheet = useTaskSheet({ on: phone && variant !== 'page', ready: !!task, onClose, panel, entering })
 
   if (!task) return null
 
@@ -171,7 +171,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }[task.priority] ?? 'border-p4'
   return (
     <>{sheet?.scrim}
-    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} data-sheet={sheet ? '' : undefined} style={sheet?.style}
+    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} data-sheet={sheet ? '' : undefined} style={sheet?.style} {...sheet?.dialog} aria-label={sheet ? task.title : undefined}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
         : sheet ? sheet.className : `fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem] ${entering ? 'panel-enter' : ''}`}>
