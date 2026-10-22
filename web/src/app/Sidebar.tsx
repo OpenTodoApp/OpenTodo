@@ -585,6 +585,8 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
  * the accessible name and the More menu's description.
  */
 function reviewMarker(review: Review | null | undefined, method: MethodMode, today: string): { due: boolean; text: string; marker: ReactNode } {
+  // Still loading (undefined, not null): no marker yet, rather than every rhythm due for a moment.
+  if (review === undefined) return { due: false, text: t('Review'), marker: null }
   const weeklyDue = reviewDue(review?.completed_at)
   const parts = [
     ...(weeklyDue ? [review?.completed_at ? t('last weekly review {ago}', { ago: reviewAgo(review.completed_at) }) : t('no weekly review yet')] : []),
