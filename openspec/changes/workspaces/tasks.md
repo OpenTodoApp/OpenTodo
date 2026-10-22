@@ -67,7 +67,7 @@
 ## 8. Translations and copy
 
 - [x] 8.1 Every new string in the five catalogues (`web/src/i18n/*.json`), the CLI messages and the six email templates for workspace invites in `internal/mail`; verify `node scripts/i18n-check.mjs` and `go test ./internal/mail/...` — done: 96 messages in the five catalogues, `node scripts/i18n-check.mjs` ok; six `workspace_invite` mail templates, `go test ./internal/mail/...` ok
-- [ ] 8.2 Check the Workspaces settings page and the switcher in German and Portuguese at 375 px through the workbench language switch; verify by eye that no row wraps to a third line and record it in this change's notes
+- [x] 8.2 Check the Workspaces settings page and the switcher in German and Portuguese at 375 px through the workbench language switch; verify by eye that no row wraps to a third line and record it in this change's notes — done: the workbench at 375 px with locale de and pt for Screens/Workspaces Settings (owner, member) and Screens/Sidebar Switcher open and Workspace control; a script found no sideways scroll, no overflowing element and no wrapped one-line control, and the full-page screenshots read cleanly by eye (results in design.md)
 
 ## 9. Documentation
 
