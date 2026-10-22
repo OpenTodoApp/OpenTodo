@@ -4558,7 +4558,7 @@
   "Not blocked": "No bloqueada",
   "Not run yet": "Aún no se ha ejecutado",
   "Notify me": "Avisarme",
-  "Off: no account’s rules run on this server. Rules stay and run again when turned back on.": "Desactivado: no se ejecuta ninguna regla en este servidor. Las reglas se conservan y vuelven a ejecutarse al reactivarlo.",
+  "Off: no account’s rules run on this server. Rules stay and run again when turned back on.": "Desactivado: no se ejecuta ninguna regla en este servidor. Las reglas se conservan y vuelven a ejecutarse al activarlo.",
   "Offline: rules are saved here and run on the server after the next sync.": "Sin conexión: las reglas se guardan aquí y se ejecutan en el servidor tras la próxima sincronización.",
   "On a schedule": "Según un horario",
   "Only for tasks that": "Solo para tareas que",
