@@ -6,7 +6,9 @@ import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../lib/nlp'
-import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
+import { useEncryption } from '../lib/e2ee'
+import { loadVoiceSettings, onVoiceSettingsChange, type Recognizer, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
+import { canRecord, useSpeechService } from '../lib/voice/speechService'
 import { isSupported } from '../lib/voice/support'
 import { t, preferredLanguages } from '../lib/i18n'
 import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
@@ -28,18 +30,43 @@ export function VoicePrivacyStatement() {
   )
 }
 
+/**
+ * The statement for the server's speech service (settings-refresh D7): where the
+ * phrase goes, named by the service's host, and that nothing is kept.
+ */
+export function ServerSpeechStatement({ host, encrypted }: { host: string; encrypted: boolean }) {
+  return (
+    <ul className="list-disc space-y-1 pl-5 text-body text-default" data-server-speech-statement>
+      <li>{t('Each phrase is recorded in this browser while the microphone is on, then sent once to your OpenTodo server.')}</li>
+      <li>{t('The server passes it to the speech service the owner connected, {host}, and returns the text.', { host })}</li>
+      <li>{t('Neither the server nor the app keeps the audio or the text. Only the task you save with Enter is stored and synced.')}</li>
+      {encrypted && <li>{t('Your account is end-to-end encrypted: while the request runs, the phrase and its text are readable by this server and the speech service.')}</li>}
+    </ul>
+  )
+}
+
+/** What the confirmation dialog is about: switching on, or changing the recogniser. */
+type Confirming = { recognizer: Recognizer; enable: boolean } | null
+
 /** Settings section for voice capture; stored on this device only, never synced. */
 export function VoiceSettingsSection() {
   const [s, setS] = useState<VoiceSettings>(loadVoiceSettings)
-  const [confirming, setConfirming] = useState(false)
+  const [confirming, setConfirming] = useState<Confirming>(null)
   useEffect(() => onVoiceSettingsChange(() => setS(loadVoiceSettings())), [])
-  const supported = isSupported()
+  const service = useSpeechService()
+  const encrypted = useEncryption().enabled
+  const serverOffered = service.connected && canRecord()
+  const browserOk = isSupported()
+  // A server choice without a connected service falls back to the browser's.
+  const recognizer: Recognizer = s.recognizer === 'server' && serverOffered ? 'server' : 'browser'
+  const supported = browserOk || serverOffered
   const update = (next: VoiceSettings) => {
     setS(next)
     saveVoiceSettings(next)
   }
   const browser = preferredLanguages()
   const followed = resolveLanguages(loadQuickAddSettings(), browser)[0] ?? 'en'
+  const firstChoice: Recognizer = browserOk ? recognizer : 'server'
 
   return (
     <SettingsSection {...cardCopy('voice-settings')}>
@@ -51,8 +78,17 @@ export function VoiceSettingsSection() {
         </span>
       } control={
         <Switch checked={supported && s.enabled} disabled={!supported} label={t('Dictate tasks into quick add')} hideLabel
-          onChange={(on) => (on ? setConfirming(true) : update({ ...s, enabled: false }))} />
+          onChange={(on) => (on ? setConfirming({ recognizer: firstChoice, enable: true }) : update({ ...s, enabled: false }))} />
       } />
+      {supported && s.enabled && serverOffered && (
+        <SettingRow {...rowCopy('voice-settings', 'recognizer')} htmlFor="voice-recognizer" control={
+          <Select id="voice-recognizer" className="sm:w-64" value={recognizer}
+            onChange={(e) => setConfirming({ recognizer: e.target.value as Recognizer, enable: false })}>
+            {browserOk && <option value="browser">{t('This browser')}</option>}
+            <option value="server">{t('This server’s speech service ({host})', { host: service.host ?? '' })}</option>
+          </Select>
+        } />
+      )}
       {supported && s.enabled && (
         <SettingRow {...rowCopy('voice-settings', 'lang')} htmlFor="voice-lang" control={
           <Select id="voice-lang" className="sm:w-56" value={s.lang ?? ''} onChange={(e) => update({ ...s, lang: e.target.value || null })}>
@@ -62,11 +98,13 @@ export function VoiceSettingsSection() {
         } />
       )}
       {confirming && (
-        <Dialog title={t('Turn on voice capture?')} onClose={() => setConfirming(false)} size="md">
-          <VoicePrivacyStatement />
+        <Dialog title={confirming.enable ? t('Turn on voice capture?') : t('Change who recognises speech?')} onClose={() => setConfirming(null)} size="md" testId="voice-statement">
+          {confirming.recognizer === 'server' ? <ServerSpeechStatement host={service.host ?? ''} encrypted={encrypted} /> : <VoicePrivacyStatement />}
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setConfirming(false)}>{t('Cancel')}</Button>
-            <Button variant="primary" data-autofocus onClick={() => { update({ ...s, enabled: true }); setConfirming(false) }}>{t('Turn on')}</Button>
+            <Button variant="ghost" onClick={() => setConfirming(null)}>{t('Cancel')}</Button>
+            <Button variant="primary" data-autofocus data-voice-confirm onClick={() => { update({ ...s, enabled: true, recognizer: confirming.recognizer }); setConfirming(null) }}>
+              {confirming.enable ? t('Turn on') : t('Use it')}
+            </Button>
           </div>
         </Dialog>
       )}

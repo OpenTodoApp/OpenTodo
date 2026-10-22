@@ -35,6 +35,7 @@ export const MESSAGES = {
   get denied() { return t('Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.') },
   get unavailable() { return t('Voice capture is unavailable right now. Typing works as usual.') },
   get noMicrophone() { return t('No microphone was found. Connect one, or keep typing.') },
+  get service() { return t('The speech service did not answer. Try again, or keep typing.') },
   language: (name: string) => t('This browser cannot recognise {name}; listening in the browser’s default language instead.', { name }),
 }
 
@@ -117,6 +118,7 @@ export function createDictation(host: DictationHost, recognize: Recognizer = sta
         const failure =
           error === 'denied' ? MESSAGES.denied
           : error === 'no-microphone' ? MESSAGES.noMicrophone
+          : error === 'service' ? MESSAGES.service
           : error === 'unavailable' || error === 'language' ? MESSAGES.unavailable
           : null
         // A language fallback notice stays visible through the retried session.

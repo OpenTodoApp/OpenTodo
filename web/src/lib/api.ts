@@ -10,6 +10,9 @@ import type { RelayDevice } from './relay'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   Profile,
+  SpeechService,
+  SpeechSettings,
+  SpeechSettingsInput,
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
@@ -128,9 +131,9 @@ async function upload<T>(path: string, file: Blob, filename: string, options: Im
   return parse<T>(res)
 }
 
-/** A raw body upload (the profile picture; its route needs no recent confirmation). */
-async function putRaw<T>(path: string, body: Blob): Promise<T> {
-  const res = await fetchWithTimeout(path, { method: 'PUT', headers: { 'Content-Type': body.type || 'application/octet-stream' }, body, credentials: 'same-origin' })
+/** A raw body upload (the profile picture, a recorded phrase; their routes need no recent confirmation). */
+async function sendRaw<T>(method: 'PUT' | 'POST', path: string, body: Blob, timeoutMs?: number): Promise<T> {
+  const res = await fetchWithTimeout(path, { method, headers: { 'Content-Type': body.type || 'application/octet-stream' }, body, credentials: 'same-origin', ...(timeoutMs ? { timeoutMs } : {}) })
   return parse<T>(res)
 }
 
@@ -247,7 +250,7 @@ export const api = {
   reauth: (input: { password: string } | { code: string }) =>
     request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
   /** `config_warnings` is present for the owner's session only (trusted-proxies-lenient). */
-  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean; agent_excluded_projects?: string[] }>('GET', '/api/v1/me'),
+  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean; agent_excluded_projects?: string[]; speech?: SpeechService }>('GET', '/api/v1/me'),
   mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
   enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
   confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),
@@ -525,8 +528,14 @@ export const api = {
   changeEmail: (email: string) => request<Profile>('POST', '/api/v1/me/email', { email }),
   cancelEmailChange: () => request<Profile>('DELETE', '/api/v1/me/email'),
   confirmEmail: (token: string) => request<Profile>('POST', '/api/v1/me/email/confirm', { token }),
-  putAvatar: (picture: Blob) => putRaw<Profile>('/api/v1/me/avatar', picture),
+  putAvatar: (picture: Blob) => sendRaw<Profile>('PUT', '/api/v1/me/avatar', picture),
   deleteAvatar: () => request<Profile>('DELETE', '/api/v1/me/avatar'),
+  // Speech to text (settings-refresh D7): the owner's service, and one phrase through it.
+  speechSettings: () => request<SpeechSettings>('GET', '/api/v1/settings/stt'),
+  updateSpeechSettings: (input: SpeechSettingsInput) => request<SpeechSettings>('PUT', '/api/v1/settings/stt', input),
+  testSpeechSettings: (draft: SpeechSettingsInput) => request<{ ok: boolean; text?: string; error?: string }>('POST', '/api/v1/settings/stt/test', draft),
+  transcribe: (phrase: Blob, language: string, seconds: number) =>
+    sendRaw<{ text: string }>('POST', `/api/v1/voice/transcribe?language=${encodeURIComponent(language)}&seconds=${Math.ceil(seconds)}`, phrase, 40_000),
 
   // Import runs on the server (docs/import.md): preview is a dry run, start returns a running job.
   previewImport: (file: Blob, filename: string, options: ImportOptions) =>

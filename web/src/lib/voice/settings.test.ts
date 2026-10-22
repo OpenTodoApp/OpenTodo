@@ -20,23 +20,23 @@ afterEach(() => {
 
 describe('voice settings', () => {
   it('are off by default and stored on this device only', () => {
-    expect(loadVoiceSettings()).toEqual({ enabled: false, lang: null })
-    saveVoiceSettings({ enabled: true, lang: 'it' })
-    expect(JSON.parse(store.get('opentodo.voice')!)).toEqual({ enabled: true, lang: 'it' })
-    expect(loadVoiceSettings()).toEqual({ enabled: true, lang: 'it' })
+    expect(loadVoiceSettings()).toEqual({ enabled: false, lang: null, recognizer: 'browser' })
+    saveVoiceSettings({ enabled: true, lang: 'it', recognizer: 'browser' })
+    expect(JSON.parse(store.get('opentodo.voice')!)).toEqual({ enabled: true, lang: 'it', recognizer: 'browser' })
+    expect(loadVoiceSettings()).toEqual({ enabled: true, lang: 'it', recognizer: 'browser' })
   })
 
   it('ignore junk and unknown languages', () => {
     store.set('opentodo.voice', JSON.stringify({ enabled: 'yes', lang: 'xx' }))
-    expect(loadVoiceSettings()).toEqual({ enabled: false, lang: null })
+    expect(loadVoiceSettings()).toEqual({ enabled: false, lang: null, recognizer: 'browser' })
     store.set('opentodo.voice', '{not json')
-    expect(loadVoiceSettings()).toEqual({ enabled: false, lang: null })
+    expect(loadVoiceSettings()).toEqual({ enabled: false, lang: null, recognizer: 'browser' })
   })
 
   it('survive blocked storage', () => {
     g.localStorage = { getItem: () => { throw new Error('blocked') }, setItem: () => { throw new Error('blocked') } }
     expect(loadVoiceSettings().enabled).toBe(false)
-    expect(() => saveVoiceSettings({ enabled: true, lang: null })).not.toThrow()
+    expect(() => saveVoiceSettings({ enabled: true, lang: null, recognizer: 'browser' })).not.toThrow()
   })
 })
 

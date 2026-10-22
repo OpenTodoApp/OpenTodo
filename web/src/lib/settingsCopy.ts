@@ -308,6 +308,7 @@ export const SETTINGS_COPY = {
           unsupported: msg('This browser has no speech recognition, so voice capture is not available here.'),
         },
       },
+      recognizer: { label: msg('Recognition'), description: msg('Who turns your speech into text; each choice shows what it means first.') },
       lang: { label: msg('Recognition language') },
     },
   },
@@ -412,6 +413,15 @@ export const SETTINGS_COPY = {
     learnMore: 'locations',
   },
   // Automation rules (automation-rules D9): the owner's switch for every account.
+  'speech-server': {
+    title: msg('Speech to text'),
+    icon: 'audio-lines',
+    description: msg('Dictation through a speech service you run; members choose it in Capture.'),
+    learnMore: 'settings/server',
+    notices: {
+      private: msg('A service on your own network needs “Allow private network targets” in Webhooks.'),
+    },
+  },
   'automations-server': {
     title: msg('Automations'),
     icon: 'repeat',

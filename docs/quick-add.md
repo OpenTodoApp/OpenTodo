@@ -123,6 +123,8 @@ Quick add still takes the view's context for anything the line does not set: tod
 
 Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → Capture → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.
 
+**Who recognises speech.** By default your browser does, and some browsers send the audio to their vendor. If the server owner connected a [speech service](self-hosting/speech-to-text.md), **Recognition** offers **This server's speech service** too. Each phrase is then recorded in the browser and sent once through your server to that service, which returns the text. Neither keeps the audio or the text. The statement you confirm names the service's host.
+
 With voice capture on, press the microphone button in quick add or `Shift+V` anywhere outside a text field (plain `v` already toggles list and board in a project). Words appear in the box as they are recognised; when you stop talking, press the button again or press `Esc`, the final transcript is inserted at the caret and parsed exactly like typed text, chips included. **Nothing is saved until you press Enter**, so you can correct the line by hand first.
 
 Spoken forms of the tokens are turned into their typed forms first, in the active quick-add languages (English is always on):

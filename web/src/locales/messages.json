@@ -238,6 +238,9 @@
   "A key is saved; type to replace it": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "A key is set. Type a new one to replace it.": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
   "A label is added": [
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -327,6 +330,9 @@
   ],
   "A server variable sets this; change it in the server configuration.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "A service on your own network needs “Allow private network targets” in Webhooks.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "A session is running": [
     "web/src/app/focus/FocusView.tsx"
@@ -1830,6 +1836,9 @@
   "Change task": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "Change who recognises speech?": [
+    "web/src/app/VoiceSettings.tsx"
+  ],
   "Change your password": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -2391,6 +2400,9 @@
   "Connect": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Connect a speech service for dictation": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "Connect issues": [
     "web/src/app/IssueEditor.tsx",
     "web/src/app/IssuesPanel.tsx"
@@ -2399,6 +2411,7 @@
     "web/src/app/locations/MapsSettings.tsx"
   ],
   "Connect to change this setting.": [
+    "web/src/app/SpeechServerPanel.tsx",
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
   "Connect to the internet to open this file.": [
@@ -3139,6 +3152,9 @@
     "web/src/app/VoiceSettings.tsx",
     "web/src/app/settingsIndex.ts"
   ],
+  "Dictation through a speech service you run; members choose it in Capture.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Direction": [
     "web/src/app/SavedViewView.tsx"
   ],
@@ -3371,6 +3387,9 @@
   ],
   "Each person may then choose Anthropic, OpenAI or Google Gemini with their own key and model for their turns, instead of yours. The compatible endpoint is never offered to members, so no one but you decides which other host the server connects to.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Each phrase is recorded in this browser while the microphone is on, then sent once to your OpenTodo server.": [
+    "web/src/app/VoiceSettings.tsx"
   ],
   "Each restore keeps the database it replaced. Delete old ones to free space.": [
     "web/src/app/RestoreSection.tsx"
@@ -4242,6 +4261,12 @@
   ],
   "For Gmail and similar services, an app password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "For example Systran/faster-whisper-small.": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
+  "For example http://stt.home.lan:8000 (Speaches or whisper.cpp).": [
+    "web/src/app/SpeechServerPanel.tsx"
   ],
   "For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -5263,6 +5288,9 @@
   "Kept until you delete them permanently": [
     "web/src/app/TrashView.tsx"
   ],
+  "Key": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
   "Key for manual entry (time-based, 6 digits, 30 s):": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -5962,6 +5990,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Model": [
+    "web/src/app/SpeechServerPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Model server": [
@@ -6237,6 +6266,9 @@
   ],
   "Neither": [
     "web/src/lib/boardTemplates.ts"
+  ],
+  "Neither the server nor the app keeps the audio or the text. Only the task you save with Enter is stored and synced.": [
+    "web/src/app/VoiceSettings.tsx"
   ],
   "Never": [
     "web/src/app/PublicLinksSection.tsx",
@@ -7314,6 +7346,9 @@
   ],
   "Only for tasks that": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Only if the service asks for one.": [
+    "web/src/app/SpeechServerPanel.tsx"
   ],
   "Only items in the Trash can be deleted permanently. Delete it first.": [
     "web/src/lib/i18n/errors.ts"
@@ -8446,6 +8481,9 @@
   "Recent runs": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Recognition": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Recognition language": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9128,6 +9166,7 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareCapture.tsx",
+    "web/src/app/SpeechServerPanel.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/locations/LocationEditor.tsx",
@@ -9487,6 +9526,9 @@
   "Server reaches the push service": [
     "web/src/lib/push.ts"
   ],
+  "Service address": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
   "Session": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9510,6 +9552,7 @@
   ],
   "Set by {variable}": [
     "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/app/SpeechServerPanel.tsx",
     "web/src/app/locations/MapsSettings.tsx",
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
@@ -10107,6 +10150,10 @@
   "Speech is recognised by your browser, not by OpenTodo.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Speech to text": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Spent {duration}": [
     "web/src/app/ParseChips.tsx"
   ],
@@ -10532,6 +10579,9 @@
   ],
   "Templates": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "Test": [
+    "web/src/app/SpeechServerPanel.tsx"
   ],
   "Test connection": [
     "web/src/app/SsoPanel.tsx",
@@ -11096,6 +11146,9 @@
   "The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.": [
     "web/src/app/SyncStatus.tsx"
   ],
+  "The server passes it to the speech service the owner connected, {host}, and returns the text.": [
+    "web/src/app/VoiceSettings.tsx"
+  ],
   "The server refused a change: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -11120,6 +11173,12 @@
   "The server’s database is unavailable.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The service answered with no words, as expected for the silent sample.": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
+  "The service answered: “{text}”": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
   "The setup token is missing or wrong.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -11140,6 +11199,15 @@
   ],
   "The size per file is 1 to {max} MB.": [
     "web/src/app/AttachmentSettingsPanel.tsx"
+  ],
+  "The speech service did not answer.": [
+    "web/src/app/SpeechServerPanel.tsx"
+  ],
+  "The speech service did not answer. Try again, or keep typing.": [
+    "web/src/lib/voice/dictation.ts"
+  ],
+  "The speech service did not answer. Try again, or type the task.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "The start must be on or before the due date.": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -11304,6 +11372,9 @@
   ],
   "This archive is encrypted. Enter the passphrase it was made with.": [
     "web/src/lib/restore.ts"
+  ],
+  "This browser": [
+    "web/src/app/VoiceSettings.tsx"
   ],
   "This browser can receive push notifications.": [
     "web/src/lib/push.ts"
@@ -11671,6 +11742,9 @@
   "This server has no file store.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This server has no speech service. Use this browser’s recognition instead.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This server is full. Your latest changes stay on this device until there is room: empty the Trash or ask your provider for more space.": [
     "web/src/lib/i18n/errors.ts",
     "web/src/lib/limits.ts"
@@ -11714,6 +11788,9 @@
   ],
   "This server was restored from a backup. Sign in again; sessions started after the backup ended.": [
     "web/src/lib/restore.ts"
+  ],
+  "This server’s speech service ({host})": [
+    "web/src/app/VoiceSettings.tsx"
   ],
   "This setting is available when you are online.": [
     "web/src/lib/settingsCopy.ts"
@@ -12549,6 +12626,9 @@
   "Use issue labels as labels": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Use it": [
+    "web/src/app/VoiceSettings.tsx"
+  ],
   "Use it with your email ({email}) in the calendar app.": [
     "web/src/app/CaldavPanel.tsx"
   ],
@@ -12877,6 +12957,9 @@
   "Who must use two-factor authentication. API tokens are never affected.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Who turns your speech into text; each choice shows what it means first.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Windows PC": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -13101,6 +13184,9 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
+    "web/src/app/VoiceSettings.tsx"
+  ],
+  "Your account is end-to-end encrypted: while the request runs, the phrase and its text are readable by this server and the speech service.": [
     "web/src/app/VoiceSettings.tsx"
   ],
   "Your account uses end-to-end encryption, so a remote assistant sees your text as “Encrypted item” and can change only colours, icons, order and dates. To let an assistant on your computer read and write your text, run {unlock} once, then connect it with {bridge}. Your AI provider then receives that text in plain form; the server still receives only ciphertext.": [

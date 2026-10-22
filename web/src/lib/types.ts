@@ -732,6 +732,23 @@ export interface User {
  * The Profile card's data (OpenSpec change settings-refresh, design D10): server
  * account data, never an op. `avatarVersion` is 0 without a picture.
  */
+/** Whether the owner connected a speech service, and its host (settings-refresh D7). */
+export interface SpeechService { connected: boolean; host?: string }
+
+/** The owner's view of the speech service: never the key. */
+export interface SpeechSettings {
+  url: string
+  model: string
+  keySet: boolean
+  /** Fields fixed by OPENTODO_STT_URL, _MODEL or _KEY_FILE. */
+  locked: ('url' | 'model' | 'key')[]
+  connected: boolean
+  host?: string
+}
+
+/** A change from the owner's card: an absent field is kept, an empty key removes it. */
+export interface SpeechSettingsInput { url?: string; model?: string; key?: string }
+
 export interface Profile {
   user: User
   avatarVersion: number
