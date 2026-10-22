@@ -78,7 +78,7 @@
 ## 10. Measurements
 
 - [x] 10.1 Measure the main bundle and the settings chunk before and after with `npm run build`, and the binary with `ls -l bin/opentodo`; record both in this design's D12; verify the main bundle grows by at most 6 KB gzipped — done: main bundle 281.68 → 282.07 KB gzipped, binary +32 KB; recorded in D12
-- [ ] 10.2 Manual smoke on `make dev` with two accounts: create "Family", add the second account, create the group "Adults", share a project with it, see it arrive on the second account's device without reload, move a project between workspaces offline and sync, open a notification across workspaces on a 390 px viewport; record the result in the change folder notes
+- [x] 10.2 Manual smoke on `make dev` with two accounts: create "Family", add the second account, create the group "Adults", share a project with it, see it arrive on the second account's device without reload, move a project between workspaces offline and sync, open a notification across workspaces on a 390 px viewport; record the result in the change folder notes — done as a two-browser Playwright script against the built binary, 11 of 11 checks passing (steps and which ones used REST in design.md Implementation notes)
 
 ## 11. Integration
 
