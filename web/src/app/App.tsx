@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { clearOwnAvatar } from '../lib/avatars'
 import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
@@ -19,7 +20,7 @@ import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
 import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
 import { ResetScreen } from './ResetScreen'
-import { ForgotScreen, VerifyScreen } from './EmailScreens'
+import { ConfirmEmailScreen, ForgotScreen, VerifyScreen } from './EmailScreens'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
 import { PublicListScreen } from './PublicListScreen'
 import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
@@ -223,6 +224,10 @@ export function App() {
         />
       )
     }
+    // Signed out, the sign-in screen shows first and the link's screen after it.
+    if (route.view === 'confirm-email' && phase.kind === 'ready') {
+      return <ConfirmEmailScreen token={route.token} onDone={() => void refresh()} />
+    }
     if (phase.kind === 'restricted' && route.view !== 'invite') {
       return <EnrolmentGate user={phase.user} onEnrolled={() => void refresh()} onLogout={() => void logout()} />
     }
@@ -321,6 +326,9 @@ async function clearDeviceData() {
   await clearInbox().catch(() => undefined)
   forgetMemoryKeys()
   localStorage.removeItem('opentodo.user')
+  // The profile's last loaded values and picture version (settings-refresh D10).
+  localStorage.removeItem('opentodo.profile')
+  clearOwnAvatar()
   cacheMfa(null)
 }
 

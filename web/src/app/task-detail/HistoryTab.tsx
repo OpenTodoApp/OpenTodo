@@ -16,7 +16,7 @@ import { getDeviceId } from '../../lib/ops'
 import { currentUserId, memberName } from '../../lib/sharing'
 import { syncNow } from '../../lib/sync'
 import type { ChangeSet, Label } from '../../lib/types'
-import { Avatar } from '../../ui'
+import { PersonAvatar } from '../PersonAvatar'
 import { Button } from '../../ui'
 import { Badge } from '../../ui'
 import { Icon } from '../../ui'
@@ -109,7 +109,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
   return (
     <div data-version={v.id}>
       <div className="flex items-start gap-3">
-        <Avatar id={who.id || 'unknown'} name={who.name || who.device} size="md" />
+        <PersonAvatar id={who.id || 'unknown'} name={who.name || who.device} size="md" />
         <div className="min-w-0 flex-1">
           <button type="button" aria-expanded={open} onClick={() => setOpen((x) => !x)}
             className="inline-flex max-w-full items-start gap-1 rounded-chip text-left text-body font-medium text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">

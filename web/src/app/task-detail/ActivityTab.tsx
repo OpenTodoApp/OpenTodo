@@ -11,7 +11,7 @@ import { useAllProjects, useTasksById } from '../../lib/localData'
 import { useOnline } from '../../lib/online'
 import { currentUserId, membershipMap, memberName } from '../../lib/sharing'
 import type { ActivityEvent, ActivityKind, Membership, Task } from '../../lib/types'
-import { Avatar } from '../../ui'
+import { PersonAvatar } from '../PersonAvatar'
 import { Tooltip } from '../../ui'
 import { Button } from '../../ui'
 import { Icon, type IconName } from '../../ui'
@@ -52,7 +52,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
   if (run.type === 'comment') {
     return (
       <div className="flex items-center gap-3 text-meta text-muted" data-run="comment">
-        <Avatar id={run.actor || 'unknown'} name={actor} size="sm" />
+        <PersonAvatar id={run.actor || 'unknown'} name={actor} size="sm" />
         <Icon name="message-circle" size="sm" className="shrink-0 text-faint" />
         <button type="button" className="min-w-0 flex-1 rounded-chip text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus"
           onClick={() => onOpenComment(first.entityId)}>
@@ -67,7 +67,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
   return (
     <div data-run="changes">
       <div className="flex items-start gap-3 text-meta">
-        <Avatar id={run.actor || 'unknown'} name={actor} size="sm" />
+        <PersonAvatar id={run.actor || 'unknown'} name={actor} size="sm" />
         <Icon name={KIND_ICON[first.kind] ?? 'pencil'} size="sm" className="mt-0.5 shrink-0 text-faint" />
         <div className="min-w-0 flex-1 text-default">
           {many ? (

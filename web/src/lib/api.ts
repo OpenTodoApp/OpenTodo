@@ -9,6 +9,7 @@ import type { KeyRecord } from './crypto'
 import type { RelayDevice } from './relay'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
+  Profile,
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
@@ -124,6 +125,12 @@ async function upload<T>(path: string, file: Blob, filename: string, options: Im
   form.append('options', JSON.stringify(options))
   form.append('file', file, filename)
   const res = await fetchWithTimeout(path, { method: 'POST', body: form, credentials: 'same-origin', timeoutMs: timeouts.transfer })
+  return parse<T>(res)
+}
+
+/** A raw body upload (the profile picture; its route needs no recent confirmation). */
+async function putRaw<T>(path: string, body: Blob): Promise<T> {
+  const res = await fetchWithTimeout(path, { method: 'PUT', headers: { 'Content-Type': body.type || 'application/octet-stream' }, body, credentials: 'same-origin' })
   return parse<T>(res)
 }
 
@@ -512,6 +519,14 @@ export const api = {
   getAuditSettings: () => request<AuditSettings>('GET', '/api/v1/settings/audit'),
   updateAuditSettings: (patch: Partial<AuditSettings>) => request<AuditSettings>('PUT', '/api/v1/settings/audit', patch),
   myActivity: () => request<{ events: AuditEvent[] }>('GET', '/api/v1/me/activity'),
+  // Profile (settings-refresh D10): server account data, every call needs a connection.
+  profile: () => request<Profile>('GET', '/api/v1/me/profile'),
+  renameProfile: (name: string) => request<Profile>('PATCH', '/api/v1/me/profile', { name }),
+  changeEmail: (email: string) => request<Profile>('POST', '/api/v1/me/email', { email }),
+  cancelEmailChange: () => request<Profile>('DELETE', '/api/v1/me/email'),
+  confirmEmail: (token: string) => request<Profile>('POST', '/api/v1/me/email/confirm', { token }),
+  putAvatar: (picture: Blob) => putRaw<Profile>('/api/v1/me/avatar', picture),
+  deleteAvatar: () => request<Profile>('DELETE', '/api/v1/me/avatar'),
 
   // Import runs on the server (docs/import.md): preview is a dry run, start returns a running job.
   previewImport: (file: Blob, filename: string, options: ImportOptions) =>

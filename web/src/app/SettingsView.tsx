@@ -1,5 +1,7 @@
 import { HowYouWorkSection } from './method/HowYouWorkSection'
-import { Avatar, Badge, Icon, type IconName, Input, LearnMore, Notice, PageBody, PageHeader, useMediaQuery } from '../ui'
+import { ProfileSection } from './profile/ProfileSection'
+import { PersonAvatar } from './PersonAvatar'
+import { Badge, Icon, type IconName, Input, LearnMore, Notice, PageBody, PageHeader, useMediaQuery } from '../ui'
 import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -244,7 +246,7 @@ function ResultLink({ section, onOpen }: { section: SettingsSection; onOpen: () 
 export function ProfileCard({ user, compact = false }: { user: User; compact?: boolean }) {
   return (
     <div id="profile" className={`flex items-center gap-3 rounded-card border border-default bg-surface ${compact ? 'p-3' : 'gap-4 p-4'} shadow-1`} data-profile-card>
-      <Avatar id={user.id} name={user.name || user.email} size={compact ? 'md' : 'lg'} />
+      <PersonAvatar id={user.id} name={user.name || user.email} size={compact ? 'md' : 'lg'} />
       <div className="min-w-0 flex-1">
         <p className="user-text truncate text-body font-semibold text-default">{user.name || user.email}</p>
         <p className="user-text truncate text-meta text-muted">{user.email}</p>
@@ -268,7 +270,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
       return (
         <>
           {note}
-          <ProfileCard user={user} />
+          <Anchor id="profile"><ProfileSection user={user} /></Anchor>
           <Anchor id="how-you-work"><HowYouWorkSection /></Anchor>
           <SessionPanel onLogout={onLogout} />
           <Anchor id="security">

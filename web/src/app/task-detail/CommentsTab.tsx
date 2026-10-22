@@ -15,7 +15,7 @@ import { useCommentAttachments, useCommentRows } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
 import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
 import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task } from '../../lib/types'
-import { Avatar } from '../../ui'
+import { PersonAvatar } from '../PersonAvatar'
 import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
 import { useTaskPublished } from './taskPageStatus'
@@ -160,7 +160,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
     const author = c.guest_name ? t('{name} (guest)', { name: c.guest_name }) : name(c.author_id)
     return (
       <article className="group relative flex gap-3" aria-label={t('Comment by {author}', { author })} data-guest-comment={c.guest_name ? '' : undefined}>
-        <Avatar id={c.guest_name ? `guest:${c.guest_name}` : c.author_id || 'unknown'} name={c.guest_name || author} size={isReply ? 'sm' : 'md'} />
+        <PersonAvatar id={c.guest_name ? `guest:${c.guest_name}` : c.author_id || 'unknown'} name={c.guest_name || author} size={isReply ? 'sm' : 'md'} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <span className="text-body font-semibold text-default">{author}</span>

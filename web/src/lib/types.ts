@@ -729,6 +729,21 @@ export interface User {
 }
 
 /**
+ * The Profile card's data (OpenSpec change settings-refresh, design D10): server
+ * account data, never an op. `avatarVersion` is 0 without a picture.
+ */
+export interface Profile {
+  user: User
+  avatarVersion: number
+  /** An email change waiting for the link sent to it. */
+  pendingEmail?: string
+  /** The sign-in provider of an account that signs in only through single sign-on. */
+  emailManagedBy?: string
+  /** Whether an email change waits for a link (otherwise it applies at once). */
+  emailByLink: boolean
+}
+
+/**
  * An entry of the server's user list (owner and admins only). Fetched live and
  * kept in component state: never written to IndexedDB or any cache.
  */
@@ -1523,6 +1538,8 @@ export interface ProjectMember {
   name: string
   email: string
   role: ProjectRole
+  /** Profile picture version, absent or 0 without one (settings-refresh D10). */
+  avatarVersion?: number
 }
 
 /**

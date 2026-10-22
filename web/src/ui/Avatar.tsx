@@ -1,5 +1,8 @@
 // Avatar (OpenSpec change ui-primitives, design D8): initials on a palette hue
-// derived from the account id, so a person has the same colour everywhere.
+// derived from the account id, so a person has the same colour everywhere. With
+// a picture (settings-refresh D10) the image covers the initials in the same
+// circle; while it loads, offline or when it fails, the initials show.
+import { useState } from 'react'
 import { HUE_NAMES } from './tokens/pairs'
 import type { HueName } from './tokens/palette'
 
@@ -27,17 +30,23 @@ export interface AvatarProps {
   size?: keyof typeof SIZES
   /** Decorative next to a visible name (default); otherwise the name is announced. */
   decorative?: boolean
+  /** The profile picture's address; the initials stay underneath as the fallback. */
+  src?: string
   className?: string
 }
 
-export function Avatar({ id, name, size = 'sm', decorative = true, className }: AvatarProps) {
+export function Avatar({ id, name, size = 'sm', decorative = true, src, className }: AvatarProps) {
+  const [failed, setFailed] = useState<string | null>(null)
+  const picture = src && failed !== src ? src : undefined
   return (
     <span
       data-hue={avatarHue(id)}
-      className={`inline-flex shrink-0 select-none items-center justify-center rounded-full bg-hue-soft font-semibold text-hue ${SIZES[size]}${className ? ` ${className}` : ''}`}
+      data-avatar-picture={picture ? true : undefined}
+      className={`relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-hue-soft font-semibold text-hue ${SIZES[size]}${className ? ` ${className}` : ''}`}
       {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': name })}
     >
       {initials(name)}
+      {picture && <img src={picture} alt="" draggable={false} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" onError={() => setFailed(picture)} />}
     </span>
   )
 }

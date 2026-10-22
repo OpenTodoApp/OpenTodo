@@ -5,7 +5,8 @@
 // one's own entries. Every write goes through lib/timeEntries (ops, offline-safe).
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, useId, useMemo, useState } from 'react'
-import { Avatar, Button, Field, Icon, Input, Menu, MenuItem } from '../../ui'
+import { PersonAvatar } from '../PersonAvatar'
+import { Button, Field, Icon, Input, Menu, MenuItem } from '../../ui'
 import { formatMinutes, parseDuration } from '../../lib/duration'
 import { formatDate, formatTime, logicalToday } from '../../lib/dates'
 import { keysOf } from '../../lib/shortcuts'
@@ -145,7 +146,7 @@ function EntryRow({ entry, now, author, own, onEdit }: { entry: TimeEntry; now: 
   const inverted = entry.ended_at !== null && entry.ended_at < entry.started_at
   return (
     <li className="flex items-start gap-2 rounded-control px-2 py-1.5 hover:bg-sunken dark:hover:bg-raised" data-time-entry={entry.id} data-running={entry.ended_at === null || undefined}>
-      {author && <Avatar id={entry.user_id} name={author} className="mt-0.5" />}
+      {author && <PersonAvatar id={entry.user_id} name={author} className="mt-0.5" />}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 text-body">
           <span className="font-medium tabular-nums" data-time-duration-text>{formatMinutes(minutes)}</span>

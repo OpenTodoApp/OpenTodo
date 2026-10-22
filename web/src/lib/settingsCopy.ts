@@ -38,6 +38,27 @@ export interface CardCopyEntry {
 
 export const SETTINGS_COPY = {
   // Settings → Account
+  profile: {
+    title: msg('Profile'),
+    icon: 'user-round',
+    description: msg('How people who share a project with you see you.'),
+    rows: {
+      picture: { label: msg('Picture'), description: msg('Shown instead of your initials. Not end-to-end encrypted.') },
+      name: { label: msg('Name') },
+      email: {
+        label: msg('Email'),
+        description: {
+          link: msg('You sign in with it. A new address is confirmed by a link sent to it.'),
+          now: msg('You sign in with it. A new address applies at once.'),
+          managed: msg('Your sign-in provider manages it: {provider}.'),
+        },
+      },
+    },
+    notices: {
+      offline: msg('Changing your profile needs a connection.'),
+      pending: msg('Waiting for confirmation: {email}'),
+    },
+  },
   'how-you-work': {
     title: msg('How you work'),
     icon: 'compass',
@@ -394,6 +415,7 @@ export const SETTINGS_COPY = {
   // Automation rules (automation-rules D9): the owner's switch for every account.
   'automations-server': {
     title: msg('Automations'),
+    icon: 'repeat',
     description: msg('Off: no account’s rules run on this server. Rules stay and run again when turned back on.'),
     learnMore: 'rules',
   },

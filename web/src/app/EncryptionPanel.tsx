@@ -136,6 +136,7 @@ export function EncryptionView(p: EncryptionViewProps) {
       {!state.enabled && mode.kind === 'idle' && (
         <p className="py-3 text-meta text-muted">
           {t('Still visible to the server: {PLAINTEXT_FIELDS}. Shared projects are not encrypted, and new projects cannot be shared while encryption is on.', { PLAINTEXT_FIELDS: t(PLAINTEXT_FIELDS) })}
+          {' '}{t('Your name, email and profile picture are account data and are never encrypted.')}
         </p>
       )}
 

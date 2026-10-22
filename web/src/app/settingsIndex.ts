@@ -27,7 +27,7 @@ export interface SettingsEntry {
 const owner = (u: User) => u.role === 'owner'
 
 export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsEntry, 'label' | 'description'>([
-  // Account
+  { section: 'account', label: msg('Profile'), description: msg('Your picture, name and email'), anchor: 'profile-heading', keywords: 'avatar photo picture rename name email address' },
   { section: 'account', label: msg('Profile'), description: msg('Your name, email and role'), anchor: 'profile' },
   { section: 'account', label: msg('How you work'), description: msg('Lists only, Companion or Open Loops first: how much the app shows its method'), anchor: 'how-you-work-heading', keywords: 'open loops gtd method mode loop home' },
   { section: 'account', label: msg('Sign out of this device'), description: msg('Removes your tasks from this device after uploading pending changes'), anchor: 'session-heading', keywords: 'logout log out' },
