@@ -103,7 +103,7 @@ describe('theme blocks', () => {
   it('the derivation ratios are declared once, as percentages', () => {
     const constants = parseConstants(css)
     const ratios = Object.entries(constants).filter(([k]) => k.startsWith('mix-'))
-    expect(ratios.length).toBe(10)
+    expect(ratios.length).toBe(12) // ten accent and hue steps, two sidebar tints (sidebar-v2 D8)
     for (const [k, v] of ratios) expect(v, k).toMatch(/^\d{1,3}%$/)
   })
 

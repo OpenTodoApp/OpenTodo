@@ -41,6 +41,8 @@
   --color-canvas: var(--ot-canvas);
   --color-surface: var(--ot-surface);
   --color-raised: var(--ot-raised);
+  /* The sidebar column (sidebar-v2 D8): the canvas with a trace of the accent. */
+  --color-sidebar: var(--ot-sidebar);
   --color-sunken: var(--ot-sunken);
   --color-accent: var(--ot-accent);
   --color-accent-hover: var(--ot-accent-hover);
@@ -135,6 +137,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-accent);
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent) var(--ot-mix-accent-soft-light), var(--ot-surface));
+  --ot-sidebar: color-mix(in oklab, var(--ot-accent) var(--ot-mix-sidebar-light), var(--ot-canvas));
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-soft-text-light), oklch(0 0 0));
   --ot-chart-base: var(--ot-accent);
   --ot-focus: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-focus-light), oklch(1 0 0));
@@ -191,6 +194,9 @@
   --ot-mix-accent-focus-light: 85%;
   --ot-mix-accent-soft-dark: 14%;
   --ot-mix-accent-soft-text-dark: 80%;
+  /* The sidebar column tint (sidebar-v2 D8): a trace of the accent over the canvas. */
+  --ot-mix-sidebar-light: 3%;
+  --ot-mix-sidebar-dark: 4%;
   --ot-mix-hue-soft-light: 14%;
   --ot-mix-hue-text-light: 68%;
   --ot-mix-hue-soft-dark: 22%;
@@ -220,6 +226,7 @@
     --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
     --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
     --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+    --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
     --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
     --ot-chart-base: var(--ot-accent-text);
     --ot-focus: var(--ot-accent-text);
@@ -281,6 +288,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+  --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
   --ot-chart-base: var(--ot-accent-text);
   --ot-focus: var(--ot-accent-text);
@@ -351,6 +359,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-accent);
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent) var(--ot-mix-accent-soft-light), var(--ot-surface));
+  --ot-sidebar: color-mix(in oklab, var(--ot-accent) var(--ot-mix-sidebar-light), var(--ot-canvas));
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-soft-text-light), oklch(0 0 0));
   --ot-chart-base: var(--ot-accent);
   --ot-focus: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-focus-light), oklch(1 0 0));
@@ -362,6 +371,7 @@
     --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
     --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
     --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+    --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
     --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
     --ot-chart-base: var(--ot-accent-text);
     --ot-focus: var(--ot-accent-text);
@@ -374,6 +384,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
+  --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
   --ot-chart-base: var(--ot-accent-text);
   --ot-focus: var(--ot-accent-text);
@@ -420,6 +431,7 @@ html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"]
   --ot-on-accent: oklch(1 0 0);
   --ot-accent-text: oklch(0 0 0);
   --ot-accent-soft: oklch(1 0 0);
+  --ot-sidebar: oklch(1 0 0);
   --ot-accent-soft-text: oklch(0 0 0);
   --ot-focus: oklch(0 0 0);
   --ot-p1: oklch(0.4437 0.1613 26.9);
@@ -476,6 +488,7 @@ html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"]
     --ot-on-accent: oklch(0 0 0);
     --ot-accent-text: oklch(1 0 0);
     --ot-accent-soft: oklch(0 0 0);
+    --ot-sidebar: oklch(0 0 0);
     --ot-accent-soft-text: oklch(1 0 0);
     --ot-focus: oklch(1 0 0);
     --ot-p1: oklch(0.8077 0.1035 19.57);
@@ -532,6 +545,7 @@ html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [
   --ot-on-accent: oklch(0 0 0);
   --ot-accent-text: oklch(1 0 0);
   --ot-accent-soft: oklch(0 0 0);
+  --ot-sidebar: oklch(0 0 0);
   --ot-accent-soft-text: oklch(1 0 0);
   --ot-focus: oklch(1 0 0);
   --ot-p1: oklch(0.8077 0.1035 19.57);

@@ -42,7 +42,7 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: 'script-defer',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-maskable-512.png'],
       manifest: {
         name: 'OpenTodo',
         short_name: 'OpenTodo',
@@ -64,10 +64,15 @@ export default defineConfig({
             files: [{ name: 'files', accept: ['image/*', 'application/pdf', 'text/*', 'audio/*', 'video/*', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip'] }],
           },
         },
+        // Rendered from web/src/ui/icons/brand.svg by scripts/brand-icons.mjs (sidebar-v2
+        // D3). The paths stay, so installed apps pick up a new mark by content; the
+        // maskable icon fills its square, the mark inside the safe zone.
         icons: [
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
         ],
       },
       injectManifest: {

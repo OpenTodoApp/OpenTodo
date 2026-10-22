@@ -1,0 +1,13 @@
+{
+  "source": "0a66b478a8abcc9424c28c2e3f38559dcd3acd74e1dcc6a3a649136d1a871456",
+  "outputs": {
+    "web/public/favicon.svg": "85c50a5b795910fe1afabe7dc11fabcf92245ff92cf481a3bc1462f89796077d",
+    "web/public/pwa-192.png": "72009c1ed85a93344eb6358c5a6453ad841299fb34c38cd3c9dfad66cf9e5ae4",
+    "web/public/pwa-512.png": "a61aeea49bb03e8d913fe0750ba2298455eca3f45543203fd96c9a02bb02cfb7",
+    "web/public/pwa-maskable-512.png": "ee222accd9257c335cc0ba9d09a5cb39988baed97ed11e9f61d497e18c730909",
+    "web/public/apple-touch-icon.png": "fe5b4fa969d3968c82c9cfa005f093ba088e9666c93a6abd47425b2ba9c442e4",
+    "extension/icons/icon-16.png": "f31eb6b11ec14bf646665b8ecd6ff1d278859fc6ccea9d34d2be7d530f004a1b",
+    "extension/icons/icon-48.png": "a924696fd7daa47cbd40b7f4ada426fba7a654f5a89e6bcfe65bc62b143f6dfd",
+    "extension/icons/icon-128.png": "e253dcd4743cd0e83a171bb0fd99df07ca1c2403e19163d50163e0e0f652b34a"
+  }
+}
