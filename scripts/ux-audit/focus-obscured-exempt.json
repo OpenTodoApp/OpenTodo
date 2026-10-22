@@ -1,4 +1,14 @@
 {
-  "reason": "Elements found by the first run of the focus-not-obscured pass on the Screens stories (2026-10-22, accessibility-aaa task 5.1). Each is fixed by a follow-up that removes its line; the gate fails on any element not listed.",
-  "elements": []
+ "reason": "Elements found by the first run of the focus-not-obscured pass on the Screens stories (2026-10-22, accessibility-aaa task 5.1): fields of the rules editor under an open picker list, and the template detail's fields under its sticky action row. Each is fixed by a follow-up that removes its line; the gate fails on any element not listed.",
+ "elements": [
+  "<button.ui-btn.ui-btn--icon> \"Open calendar\"",
+  "<button.ui-hit.flex> \"Read the sync protocol draft\"",
+  "<button.ui-hit.flex> \"Water the plants\"",
+  "<button.ui-input.flex> \"Parent project: Top level\"",
+  "<button.ui-input.flex> \"Project: Keep\"",
+  "<input.ui-input.aria-invalid:border-danger>",
+  "<input.ui-input.pl-9> \"Have none of the labels\"",
+  "<input.ui-input.pl-9> \"Remove labels\"",
+  "<select.ui-input.w-44> \"AnyPriority 1Priority 2Priority 3Priorit\""
+ ]
 }

@@ -32,7 +32,7 @@ export function Trail({ steps, label, className }: TrailProps) {
         {steps.map((s, i) => (
           <li key={`${s.href}-${i}`} className="flex min-w-0 items-center">
             {i > 0 && <Icon name="chevron-right" size="xs" className="mx-0.5 shrink-0 text-faint" aria-hidden="true" />}
-            <a href={s.href} className="ui-hit truncate rounded-chip px-0.5 hover:text-default hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            <a href={s.href} className="ui-hit min-w-0 overflow-visible whitespace-nowrap rounded-chip px-0.5 hover:text-default hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               onClick={(e) => { if (!s.onSelect || !plain(e)) return; e.preventDefault(); s.onSelect() }}>
               {s.label}
             </a>
