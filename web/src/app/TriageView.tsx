@@ -235,7 +235,7 @@ export function TriageView() {
       ) : (
         <>
           <section ref={card} tabIndex={-1} aria-label={t('Task {n} of {total}', { n: p.n, total: p.total })} data-triage-card={task.id}
-            className="rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-focus">
+            className="rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
             <h2 className="user-text text-h2 font-semibold text-strong">{task.title || t('Untitled')}</h2>
             {(task.due || task.labels.length > 0 || reminders.some((r) => !r.deleted_at)) && (
               <p className="mt-2 flex flex-wrap gap-2 text-meta text-muted">

@@ -8,7 +8,7 @@ import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
 import type { CalendarSubscription, Project, Task } from '../../lib/types'
-import { Button, hueFor, Tooltip } from '../../ui'
+import { Button, hueFor, Tooltip, TruncatedText } from '../../ui'
 import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
@@ -51,9 +51,7 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
     <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
-          <span className={`truncate text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`}>
-            {weekdayName} {d}
-          </span>
+          <TruncatedText className={`text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
         ) : <span />}
         <Tooltip label={[load.over ? t('Over capacity.') : '', t('Planned estimates against a {minutes} day', { minutes: formatMinutes(prefs.dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')].filter(Boolean).join(' ')}>
           <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ConfirmDialog, Tooltip, Dialog } from '../ui'
+import { ConfirmDialog, Tooltip, TruncatedText, Dialog } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { HelpLink } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
@@ -114,12 +114,11 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
             const manage = !locked && !self && canManage(myRole, m.role)
             return (
               <li key={m.userId} className="flex items-center gap-2 rounded-control px-1 py-1 text-body">
-                <Tooltip label={m.email}>
-                  <span className="min-w-0 flex-1 truncate">
-                    {self ? t('{name} (you)', { name: m.name || m.email }) : m.name || m.email}
-                    <span className="block truncate text-meta text-faint">{m.via?.length ? t('{email} · via {groups}', { email: m.email, groups: m.via.map((g) => g.name || groupName(g.id)).join(', ') }) : m.email}</span>
-                  </span>
-                </Tooltip>
+                {/* Each line keeps its full text when cut (ux-fixes-phone D2). */}
+                <span className="min-w-0 flex-1">
+                  <TruncatedText className="block" text={self ? t('{name} (you)', { name: m.name || m.email }) : m.name || m.email} />
+                  <TruncatedText className="block text-meta text-faint" text={m.via?.length ? t('{email} · via {groups}', { email: m.email, groups: m.via.map((g) => g.name || groupName(g.id)).join(', ') }) : m.email} />
+                </span>
                 {manage ? (
                   <select className="ui-input w-auto py-1 text-meta" aria-label={t('Role of {name}', { name: m.name || m.email })} value={m.role} disabled={busy}
                     onChange={(e) => void run(() => api.setMemberRole(project.id, m.userId, e.target.value as ProjectRole))}>

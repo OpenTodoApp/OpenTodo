@@ -34,7 +34,7 @@ export function StepCard({ step, position, title, titleRef, icon, badge, onBack,
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-hint font-semibold uppercase tracking-wide text-accent" data-review-position>{position}</p>
-            <h2 id="review-step-title" ref={titleRef} tabIndex={-1} className="mt-0.5 text-h2 font-semibold text-strong outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+            <h2 id="review-step-title" ref={titleRef} tabIndex={-1} className="mt-0.5 text-h2 font-semibold text-strong outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus">
               {title}
             </h2>
           </div>

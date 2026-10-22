@@ -19,6 +19,8 @@ export interface TooltipProps {
   children: ReactElement<Record<string, unknown>>
   /** Hover delay in milliseconds (focus opens at once). */
   delay?: number
+  /** Never opens and leaves no text on the control (cut text that fits: TruncatedText). */
+  disabled?: boolean
 }
 
 const GAP = 6
@@ -27,7 +29,7 @@ function coarsePointer(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
 }
 
-export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 400 }: TooltipProps) {
+export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 400, disabled = false }: TooltipProps) {
   const id = useId()
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLElement | null>(null)
@@ -39,15 +41,17 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
 
   const show = useCallback((immediate: boolean) => {
     clearTimeout(timer.current)
+    if (disabled) return
     if (immediate) setOpen(true)
     else timer.current = setTimeout(() => setOpen(true), delay)
-  }, [delay])
+  }, [delay, disabled])
   const hide = useCallback(() => {
     clearTimeout(timer.current)
     setOpen(false)
   }, [])
 
   useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => { if (disabled) hide() }, [disabled, hide])
 
   // Escape closes the tip wherever focus is (also from the control itself).
   useEffect(() => {
@@ -91,7 +95,7 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     'aria-describedby': described,
     // The tooltip's text on its control while closed: the interface audit's truncation
     // check (ux-audit-three-widths M10) finds the full text of a cut name here.
-    'data-tip': typeof label === 'string' ? label : '',
+    'data-tip': !disabled && typeof label === 'string' ? label : undefined,
     onPointerEnter: (e: PointerEvent) => { (child.props.onPointerEnter as ((e: PointerEvent) => void) | undefined)?.(e); if (e.pointerType !== 'touch' && !coarsePointer()) show(false) },
     onPointerLeave: (e: PointerEvent) => { (child.props.onPointerLeave as ((e: PointerEvent) => void) | undefined)?.(e); hide() },
     onPointerDown: (e: PointerEvent) => { (child.props.onPointerDown as ((e: PointerEvent) => void) | undefined)?.(e); pressed.current = true; hide() },

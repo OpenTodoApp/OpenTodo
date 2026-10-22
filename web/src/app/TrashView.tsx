@@ -1,4 +1,4 @@
-import { Button, EmptyState, Icon, PageBody, PageHeader } from '../ui'
+import { Button, EmptyState, Icon, PageBody, PageHeader, TruncatedText } from '../ui'
 import { keysOf } from '../lib/shortcuts'
 import { navigate } from './router'
 import { useEffect, useMemo, useState } from 'react'
@@ -103,7 +103,7 @@ export function TrashView() {
                 className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-2 text-body ${i === selected ? 'bg-accent-soft' : ''}`}>
                 <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name="circle" size="xs" />}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate">{it.title}</span>
+                  <TruncatedText className="block" text={it.title} />
                   <span className="block text-meta text-faint">
                     {[
                       it.entity === 'project' ? t('Project') : it.projectName,

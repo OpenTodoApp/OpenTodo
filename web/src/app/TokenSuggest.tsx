@@ -127,7 +127,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
       className="surface-overlay absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:right-auto sm:w-72">
       {items.map((item, i) => (
         <li key={item.key} id={`${listId}-${i}`} role="option" aria-selected={i === Math.min(active, items.length - 1)}
-          className={`flex cursor-pointer items-center gap-2 rounded-control px-2 py-1.5 text-body ${i === Math.min(active, items.length - 1) ? 'bg-sunken dark:bg-raised' : ''}`}
+          className={`flex cursor-pointer items-center gap-2 rounded-control px-2 py-1.5 text-body pointer-coarse:min-h-11 ${i === Math.min(active, items.length - 1) ? 'bg-sunken dark:bg-raised' : ''}`}
           // Keep focus in the field: the pick happens on mouse down.
           onMouseDown={(e) => { e.preventDefault(); void pick(item) }} onMouseEnter={() => setActive(i)} data-suggestion={item.create ? 'create' : item.key}>
           {item.create

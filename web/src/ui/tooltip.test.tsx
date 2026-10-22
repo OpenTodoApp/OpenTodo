@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { IconButton } from './Button'
 import { render } from './test-utils'
 import { Tooltip } from './Tooltip'
+import { TruncatedText } from './TruncatedText'
 
 const tip = () => document.querySelector<HTMLElement>('[role="tooltip"]')
 
@@ -93,6 +94,46 @@ describe('Tooltip', () => {
     expect(button.getAttribute('title')).toBeNull()
     await focus(button, 'focus')
     expect(tip()!.textContent).toBe('Close')
+    await r.unmount()
+  })
+})
+
+describe('TruncatedText (ux-fixes-phone D2)', () => {
+  function measure(scroll: number, client: number) {
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(scroll)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(client)
+  }
+  afterEach(() => { vi.restoreAllMocks() })
+
+  it('leaves text that fits plain: no tab stop, no tip', async () => {
+    measure(80, 80)
+    const r = await render(<TruncatedText text="Garden" />)
+    const el = r.container.querySelector('span')!
+    expect(el.textContent).toBe('Garden')
+    expect(el.hasAttribute('tabindex')).toBe(false)
+    expect(el.hasAttribute('data-tip')).toBe(false)
+    await pointer(el, 'pointerenter')
+    await advance(500)
+    expect(tip()).toBeNull()
+    await r.unmount()
+  })
+
+  it('makes cut text focusable and shows the whole text in the tip on focus', async () => {
+    measure(300, 100)
+    const r = await render(<TruncatedText as="h1" text="Home renovation with a rather long project name" />)
+    const el = r.container.querySelector('h1')!
+    expect(el.getAttribute('tabindex')).toBe('0')
+    expect(el.getAttribute('data-tip')).toBe('Home renovation with a rather long project name')
+    await focus(el, 'focus')
+    expect(tip()!.textContent).toBe('Home renovation with a rather long project name')
+    await r.unmount()
+  })
+
+  it('a disabled Tooltip never opens', async () => {
+    const r = await render(<Tooltip label="Rename" disabled><button>Garden</button></Tooltip>)
+    const button = r.container.querySelector('button')!
+    await focus(button, 'focus')
+    expect(tip()).toBeNull()
     await r.unmount()
   })
 })

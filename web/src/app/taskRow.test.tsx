@@ -489,11 +489,11 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     const slot = li.querySelector('[data-row-controls]')!
     expect(slot.querySelector('button[aria-label="Complete Task"]')).toBeTruthy()
     expect(slot.querySelector('[data-tick]')).toBeTruthy()
-    // Leading slot, the one control slot, then the title: nothing is inserted on hover or tick.
-    const children = [...li.children].map((c) => (c.hasAttribute('data-leading-slot') ? 'slot' : c.hasAttribute('data-row-controls') ? 'controls' : c.hasAttribute('data-row-actions') ? 'actions' : c.tagName.toLowerCase()))
-    expect(children).toEqual(['slot', 'controls', 'button', 'actions'])
+    // Leading slot, the one control slot, the title, then the trailing group that keeps the actions' width: nothing is inserted on hover or tick.
+    const children = [...li.children].map((c) => (c.hasAttribute('data-leading-slot') ? 'slot' : c.hasAttribute('data-row-controls') ? 'controls' : c.hasAttribute('data-row-actions') ? 'actions' : c.hasAttribute('data-row-trailing') ? 'trailing' : c.tagName.toLowerCase()))
+    expect(children).toEqual(['slot', 'controls', 'button', 'trailing', 'actions'])
     await r.rerender(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} ticked showCheckbox /></ul>)
-    const after = [...r.container.querySelector('[data-task-id]')!.children].map((c) => (c.hasAttribute('data-leading-slot') ? 'slot' : c.hasAttribute('data-row-controls') ? 'controls' : c.hasAttribute('data-row-actions') ? 'actions' : c.tagName.toLowerCase()))
+    const after = [...r.container.querySelector('[data-task-id]')!.children].map((c) => (c.hasAttribute('data-leading-slot') ? 'slot' : c.hasAttribute('data-row-controls') ? 'controls' : c.hasAttribute('data-row-actions') ? 'actions' : c.hasAttribute('data-row-trailing') ? 'trailing' : c.tagName.toLowerCase()))
     expect(after).toEqual(children)
     expect(r.container.querySelector('[data-row-controls]')!.hasAttribute('data-selecting')).toBe(true)
     await r.unmount()

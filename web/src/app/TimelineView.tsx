@@ -257,7 +257,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         </span>
       </div>
       <div ref={scroller} role="grid" aria-label={t('Project timeline')} aria-rowcount={rowCount + headerRows} tabIndex={0} data-scroll-x
-        className="relative max-w-full overflow-x-auto rounded-card border border-default outline-none focus-visible:outline-2 focus-visible:outline-focus">
+        className="relative max-w-full overflow-x-auto rounded-card border border-default outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
         <div className="relative" style={{ width: `calc(min(40vw, 16rem) + ${width}px)` }}>
           {/* Axis */}
           <div role="row" className="sticky top-0 z-20 flex border-b border-default bg-surface" style={{ height: ROW_PX }}>

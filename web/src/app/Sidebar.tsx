@@ -1,4 +1,4 @@
-import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -431,7 +431,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         <SidebarGroupAction active={route.view === 'projects'} onClick={() => navigate({ view: 'projects' })} aria-label={t('All projects')}>{t('All')}</SidebarGroupAction>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
         <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
-          triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
+          triggerClassName={SIDEBAR_GROUP_ACTION} width="sm:w-56">
           <MenuItem label={t('New project')} icon="plus" onSelect={startAdding} />
           <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
           <MenuSeparator />
@@ -458,11 +458,12 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
                     className={`pointer-events-none absolute inset-x-0 h-0.5 rounded-control bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
                 )}
                 {!collapsed && (
-                  <span className="flex h-6 w-4 shrink-0 items-center justify-center">
+                  // On touch the slot widens with its 44 px chevron, which then reaches at most 4 px under the destination (ux-fixes-phone, audit M11).
+                  <span className="flex h-6 w-4 shrink-0 items-center justify-center pointer-coarse:w-9">
                     {has && (
                       <button type="button" tabIndex={-1} aria-label={isCollapsed ? t('Expand {name}', { name: p.name }) : t('Collapse {name}', { name: p.name })}
                         onClick={() => void toggleCollapsedProject(n.id)}
-                        className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11">
+                        className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-mx-1 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11">
                         <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
                       </button>
                     )}

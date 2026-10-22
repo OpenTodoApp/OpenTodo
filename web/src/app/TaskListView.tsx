@@ -294,6 +294,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
+  // Nothing until the tasks (and a project's own row) are read: a page that fills in stages moves what it already shows (ux-fixes-phone, audit M12).
+  if (!m.loaded || (route.view === 'project' && !currentProject)) return <div className="min-w-0 px-4 py-5 md:px-8" data-list-loading />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">

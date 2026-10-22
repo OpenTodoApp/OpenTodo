@@ -216,7 +216,7 @@ export function MonthView({ date }: { date?: string }) {
                   aria-selected={isFocused} aria-current={d === today ? 'date' : undefined}
                   onClick={() => { setFocused(d); setSelectedId(null) }}
                   onFocus={(e) => { if (e.target === e.currentTarget) setFocused(d) }}
-                  className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${narrow ? 'min-h-14' : 'min-h-28'} ${outside ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
+                  className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${narrow ? 'min-h-14' : 'min-h-28'} ${outside ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
                   {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
                   <span className="sr-only">{[d, list.length ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length }) : '', load.over ? t('over capacity') : ''].filter(Boolean).join(', ')}</span>
                   <div aria-hidden className="mb-0.5 flex items-center justify-between gap-1">

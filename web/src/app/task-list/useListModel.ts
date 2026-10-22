@@ -130,7 +130,8 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Every live task once; views, breadcrumbs and progress badges derive from this set,
   // so a remote op that lands in IndexedDB updates all of them without a reload. The
   // snapshot is shared with the sidebar and the panel (large-list-performance D2).
-  const allTasks = useLiveTasks() ?? NO_TASKS
+  const liveTasks = useLiveTasks()
+  const allTasks = liveTasks ?? NO_TASKS
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
@@ -184,6 +185,8 @@ export function useListModel(route: ListRoute, userId?: string) {
   const currentPlace = usePlace(placeId)
 
   return {
+    /** The tasks are read: until then the list shows nothing rather than filling in stages. */
+    loaded: liveTasks !== undefined,
     dt, today, zone, projects, projectMap, labels, labelMap, memberMap, isReadOnly, treeView, projectId,
     currentProject: route.view === 'project' ? projectMap.get(route.id) : undefined,
     currentLabel: route.view === 'label' ? labelMap.get(route.id) : undefined,

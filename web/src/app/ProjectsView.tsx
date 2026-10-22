@@ -99,7 +99,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           return (
             <li key={n.id} data-projects-row={n.id} className="group flex items-center rounded-control hover:bg-sunken dark:hover:bg-raised"
               style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * 1.25}rem` }}>
-              <span className="flex h-8 w-6 shrink-0 items-center justify-center">
+              <span className="flex h-8 w-6 shrink-0 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11">
                 {has && !found && (
                   <button type="button" onClick={() => toggle(n.id)} aria-expanded={!isFolded}
                     aria-label={isFolded ? t('Expand {name}', { name: p.name }) : t('Collapse {name}', { name: p.name })}

@@ -134,7 +134,7 @@ export function LabelChips({ labels, omit, max = 2 }: LabelChipsProps) {
     // The chips wrap in a narrow row (a dashboard panel); the full list is read once, as
     // visually hidden text, while the chips themselves are hidden from assistive technology.
     <span role="group" data-label-chips="" tabIndex={more > 0 ? 0 : undefined}
-      className="relative inline-flex max-w-full min-w-0 flex-wrap items-center gap-1 rounded-chip outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      className="relative inline-flex max-w-full min-w-0 flex-wrap items-center gap-1 rounded-chip outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus">
       <span className="sr-only">{t('Labels: {names}', { names })}</span>
       {shown.slice(0, max).map((l) => (
         <span key={l.id} aria-hidden="true" className="inline-flex max-w-full min-w-0"><LabelChip name={l.name} color={l.color} className="max-w-32" /></span>

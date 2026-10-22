@@ -21,7 +21,7 @@ export function originText(origin: Origin): string {
 }
 
 const QUIET = 'inline-flex max-w-40 min-w-0 items-center gap-1 text-meta text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted'
-const LINK = 'inline-flex max-w-40 min-w-0 rounded-chip outline-none hover:text-default focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
+const LINK = 'inline-flex max-w-40 min-w-0 rounded-chip outline-none hover:text-default focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus'
 
 export function OriginChip({ origin, quiet = false }: { origin: Origin; quiet?: boolean }) {
   const text = originText(origin)

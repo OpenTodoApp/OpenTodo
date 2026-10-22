@@ -14,7 +14,7 @@
 // the project, the counts and the origin form the trailing group, in whose place the
 // revealed actions (RowActionCluster) appear on a fine pointer.
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, TruncatedText, type IconName, type Tone } from '../ui'
 import { memo, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint } from '../lib/dates'
@@ -377,7 +377,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   }
   if (!labels.some((l) => l.id !== omitLabel)) m.labels = null
   // The project (rows-v2 D6): the trailing group from 640 px, the end of the line below (and always on a card).
-  if (projectName) m.project = <span data-project="" className={`inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted ${card ? '' : 'sm:hidden'}`}><span className="truncate">{projectName}</span></span>
+  if (projectName) m.project = <span data-project="" className={`inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted ${card ? '' : 'sm:hidden'}`}><TruncatedText text={projectName} /></span>
   const items = metaItems(m)
   const meta = (items > 0 || m.project) && <RowMeta m={m} card={card} projectOnlyBelowSm={items === 0 && !card} />
   const revealed = !card && !readOnly && !inline && actions
@@ -393,10 +393,11 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (projectName || counts.length > 0 || originChip) && (
+    : (projectName || counts.length > 0 || originChip || revealed) && (
     // min-w-0: in a narrow column (a dashboard panel) the project name gives way, never the page.
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
-      {projectName && <span data-project="" className="hidden max-w-48 min-w-0 truncate text-meta text-muted sm:inline">{projectName}</span>}
+    // While the row can reveal its actions the group keeps their width (7 rem), so they never cover the open control (ux-fixes-phone, audit M11) and revealing them moves nothing.
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? `md:pointer-fine:min-w-28 ${forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0'}` : ''}`}>
+      {projectName && <TruncatedText text={projectName} data-project="" className="hidden max-w-48 min-w-0 text-meta text-muted sm:inline" />}
       {counts.length > 0 && <RowCounts counts={counts} />}
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
@@ -441,7 +442,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
               aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
-              className="flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
+              className="flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
             >
               <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             </button>
@@ -459,21 +460,21 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           aria-label={done ? t('Reopen {title}', { title: name }) : t('Complete {title}', { title: name })}
           onClick={onToggle}
           disabled={readOnly}
-          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
+          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6 pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
           <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${PRIORITY_RING[task.priority]} group-hover/check:bg-success-soft`}`}>
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
         {onTick && !readOnly && (
-          <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
+          <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
             <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>
         )}
       </span>
       {column && <TimeCell time={due?.time ?? null} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
-      {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left" data-row-open
+      {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }

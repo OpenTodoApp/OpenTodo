@@ -54,7 +54,7 @@ export function usePlannedWithoutProject(on: boolean): number {
 
 export function PlannedWithoutProject({ count }: { count: number }) {
   return (
-    <button type="button" className="text-meta text-muted underline-offset-2 hover:text-default hover:underline" data-planned-line
+    <button type="button" className="max-w-full truncate text-meta text-muted underline-offset-2 hover:text-default hover:underline" data-planned-line
       onClick={() => navigate({ view: 'filter', q: 'no project' })}>
       {t('{n, plural, one {# planned task without a project} other {# planned tasks without a project}}', { n: count })}
     </button>

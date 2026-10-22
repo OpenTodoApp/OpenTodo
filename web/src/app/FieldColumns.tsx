@@ -7,6 +7,7 @@ import { formatValue, matchesType, taskFields } from '../lib/fields'
 import type { FieldDef, Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { TruncatedText } from '../ui'
 
 /** The grid columns: the task, then one column per field. */
 export function columnsTemplate(n: number): string {
@@ -39,9 +40,9 @@ export function FieldColumnsRow({ task, defs, row }: { task: Task; defs: readonl
         const ok = matchesType(d, v)
         const text = v === null || v === undefined ? '' : ok ? formatValue(d, v, resolved) : String(v)
         return (
-          <div key={d.id} role="cell" className={`user-text truncate pt-2 text-meta ${ok ? 'text-default' : 'text-faint italic'} ${d.type === 'number' ? 'tabular-nums' : ''}`}
+          <div key={d.id} role="cell" className={`user-text min-w-0 pt-2 text-meta ${ok ? 'text-default' : 'text-faint italic'} ${d.type === 'number' ? 'tabular-nums' : ''}`}
             data-cell={d.id}>
-            {text}{!ok && <span className="sr-only">{' '}{t('(does not match the field type)')}</span>}
+            <TruncatedText className="block" text={text} />{!ok && <span className="sr-only">{' '}{t('(does not match the field type)')}</span>}
           </div>
         )
       })}

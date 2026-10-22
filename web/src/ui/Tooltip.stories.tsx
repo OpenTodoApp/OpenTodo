@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Button, IconButton } from './Button'
 import { Tooltip } from './Tooltip'
+import { TruncatedText } from './TruncatedText'
 
 const meta: Meta = { title: 'UI/Tooltip' }
 export default meta
@@ -32,6 +33,16 @@ export const LongLabel: StoryObj = {
   render: () => (
     <div className="p-8">
       <Tooltip label="This task is fixed to Europe/Rome; it shows at 15:00 there and at 09:00 in New York. Press z to release it to a floating time."><IconButton icon="clock" label="Time zone" /></Tooltip>
+    </div>
+  ),
+}
+
+/** Cut text keeps its full text (ux-fixes-phone D2): the cut name takes focus and shows it in the tip; the whole one is plain text. */
+export const CutText: StoryObj = {
+  render: () => (
+    <div className="space-y-2 p-8 text-meta text-muted">
+      <div className="w-40"><TruncatedText className="block" text="Home renovation with a rather long project name" /></div>
+      <div className="w-40"><TruncatedText className="block" text="Garden" /></div>
     </div>
   ),
 }

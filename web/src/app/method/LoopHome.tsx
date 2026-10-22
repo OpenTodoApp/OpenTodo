@@ -198,7 +198,7 @@ function Rail({ moves, up }: { moves: Move[]; up: MoveId }) {
         return (
           <li key={m.id} data-loop-tile={m.id} data-loop-up={lit || undefined} className={`flex flex-col rounded-card border shadow-1 transition duration-(--duration-ui) ease-calm ${lit ? 'border-accent bg-accent-soft' : 'border-default bg-surface'}`}>
             <a href={routePath(m.route)} onClick={linkTo(m.route)}
-              className="flex flex-1 flex-col gap-1 rounded-card p-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+              className="flex flex-1 flex-col gap-1 rounded-card p-3 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus">
               <h2 className={`flex items-center gap-1.5 text-meta font-semibold uppercase tracking-wide ${lit ? 'text-on-accent-soft' : 'text-muted'}`}>
                 <Icon name={m.icon} />{termName(move(m.id))}
               </h2>{' '}
@@ -271,7 +271,7 @@ function Pulse({ pulse }: { pulse: PulseData }) {
   const pct = pulse.caught ? Math.round((100 * pulse.decided) / pulse.caught) : 0
   const stale = pulse.age !== null && pulse.age > INBOX_AGE_CAUTION_DAYS
   const figure = 'flex min-w-0 flex-col gap-0.5 rounded-card border border-default bg-surface px-3 py-2.5'
-  const label = 'truncate text-hint font-semibold uppercase tracking-wide text-muted'
+  const label = 'break-words text-hint font-semibold uppercase tracking-wide text-muted'
   const value = 'flex items-baseline gap-1.5 text-h2 font-semibold tabular-nums text-strong'
   return (
     <section className="mt-6" aria-labelledby="loop-pulse" data-loop-pulse>
@@ -283,12 +283,12 @@ function Pulse({ pulse }: { pulse: PulseData }) {
         <div className={figure} data-pulse="week">
           <span className={label}>{t('Done this week')}</span>
           <span className={value}>{pulse.week}<span className="text-meta font-normal text-muted">{t('{n, plural, one {task} other {tasks}}', { n: pulse.week })}</span></span>
-          <span className={`truncate text-meta ${delta < 0 ? 'text-on-warning-soft' : 'text-on-success-soft'}`}>{t('{n} vs last week', { n: delta > 0 ? `+${delta}` : String(delta) })}</span>
+          <span className={`break-words text-meta ${delta < 0 ? 'text-on-warning-soft' : 'text-on-success-soft'}`}>{t('{n} vs last week', { n: delta > 0 ? `+${delta}` : String(delta) })}</span>
         </div>
         <div className={figure} data-pulse="decided">
           <span className={label}>{t('Caught, decided')}</span>
           <span className={value}>{pulse.decided}<span className="text-meta font-normal text-muted">{t('of {n}', { n: pulse.caught })}</span></span>
-          <span className="truncate text-meta text-muted">{t('{pct}% left the Inbox', { pct })}</span>
+          <span className="break-words text-meta text-muted">{t('{pct}% left the Inbox', { pct })}</span>
         </div>
         <div className={figure} data-pulse="age">
           <span className={label}>{t('Oldest in Inbox')}</span>
@@ -296,7 +296,7 @@ function Pulse({ pulse }: { pulse: PulseData }) {
             {pulse.age === null ? <span className="text-body font-semibold text-success">{t('empty')}</span>
               : <>{pulse.age}<span className="text-meta font-normal text-muted">{t('{n, plural, one {day} other {days}}', { n: pulse.age })}</span></>}
           </span>
-          <span className={`truncate text-meta ${stale ? 'text-on-warning-soft' : 'text-muted'}`}>{pulse.age === null ? t('nothing waiting') : stale ? t('older than a week') : t('within the week')}</span>
+          <span className={`break-words text-meta ${stale ? 'text-on-warning-soft' : 'text-muted'}`}>{pulse.age === null ? t('nothing waiting') : stale ? t('older than a week') : t('within the week')}</span>
         </div>
         <div className={`${figure} col-span-2 lg:col-span-1`} data-pulse="strip">
           <span className={label}>{t('Completed per day')}</span>
