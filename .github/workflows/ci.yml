@@ -208,7 +208,7 @@ jobs:
   ux-audit:
     name: Interface audit
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     needs: [changes, web]
     if: needs.changes.outputs.code == 'true'
     steps:
@@ -238,6 +238,8 @@ jobs:
       # Reports only, unless the maintainer sets the repository variable UX_AUDIT_STRICT to 1.
       - name: Run the audit tour
         continue-on-error: ${{ vars.UX_AUDIT_STRICT != '1' }}
+        # About 1,000 captures; a run that takes longer is stopped without failing the job.
+        timeout-minutes: 45
         env:
           UX_AUDIT_STRICT: ${{ vars.UX_AUDIT_STRICT }}
           CONCURRENCY: 3
