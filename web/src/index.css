@@ -854,6 +854,8 @@ select.ui-input { @apply truncate; contain: layout paint; }
    a toast (3.5 rem) and the selection bar (3.5 rem) plus their gap, so a focused row
    action scrolled into view with `block: 'nearest'` stays clear of both. */
 :root { --list-scroll-pad: 8rem; }
+/* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap. */
+:root { --add-room: 4.75rem; }
 /* Completion feedback (task-list-presentation; motion-v2 D3). The op is written at
    once; the list keeps the row as a departing row (`data-departing`) for the moment:
    0-250 ms the check mark pops, 60-260 ms the strike draws and the text fades to half,

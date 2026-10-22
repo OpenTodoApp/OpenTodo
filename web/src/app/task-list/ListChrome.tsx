@@ -2,6 +2,7 @@
 // actions, the layout switch, the duration filter, empty views, the "complete the
 // parent too?" prompt and the label and assignee dialogs. Each is a small
 // component with props only; TaskListView decides when they show.
+import type { ReactNode } from 'react'
 import { DURATION_FILTERS, type DurationFilter } from '../../lib/filters'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { isPlannedWithoutProject } from '../../lib/inbox'
@@ -9,18 +10,19 @@ import { useOpenTasks } from '../../lib/liveTasks'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
-import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IllustrationName, IconButton, MenuItem, MenuSeparator, Tooltip } from '../../ui'
-import { TodayAskAction } from '../assistant/AskEntry'
+import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IconName, type IllustrationName, IconButton, MenuGroup, MenuItem, MenuSeparator, Tooltip } from '../../ui'
+import { TodayAskAction, useTodayAsk } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
 import { LabelPicker } from '../LabelPicker'
+import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
 import { Dialog, Menu } from '../../ui'
 import { navigate } from '../router'
 import { Kbd } from '../shortcuts/Kbd'
 import type { ListRoute } from './useListModel'
 
 /** The project layouts, in `v` order (month-and-timeline-views). */
-const LAYOUT_LABEL = translatedMap<ProjectViewMode>({ list: msg('List'), board: msg('Board'), timeline: msg('Timeline') })
+export const LAYOUT_LABEL = translatedMap<ProjectViewMode>({ list: msg('List'), board: msg('Board'), timeline: msg('Timeline') })
 
 /** The project header's List / Board / Timeline switch. */
 export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoose: (m: ProjectViewMode) => void }) {
@@ -102,6 +104,91 @@ export function ListPageActions({ route, userRole, rowCount, topLevelCount, sele
   )
 }
 
+/** One overflow item of the phone bar (phone-v2 D1): plain data, so a Menu and an ActionMenu can both show it. */
+export interface PhoneItem { id: string; label: string; icon?: IconName; checked?: boolean; group?: string; onSelect: () => void }
+
+/**
+ * A list's actions on a phone (phone-v2 D1): two visible slots in the shell's bar
+ * (Process the Inbox or Ask in Today first, then the duration filter) and the rest
+ * as overflow items: Select tasks, Display mode, and the duration filter when it
+ * had no slot (its active choice then shows as a chip in the bar).
+ */
+export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration }: {
+  route: ListRoute
+  userRole?: AccountRole
+  rowCount: number
+  topLevelCount: number
+  onSelectMode: () => void
+  filterKey: string | null
+  duration: DurationFilter | null
+  onDuration: (kind: DurationFilter | null) => void
+}): { slots: ReactNode; items: PhoneItem[] } {
+  const ask = useTodayAsk(userRole) && route.view === 'today'
+  const process = route.view === 'inbox' && rowCount > 0
+  const filterSlot = !!filterKey && !ask && !process
+  const items: PhoneItem[] = []
+  if (route.view !== 'completed' && rowCount > 0) items.push({ id: 'select', label: t('Select tasks'), icon: 'list-checks', onSelect: onSelectMode })
+  if (route.view === 'today' || route.view === 'upcoming') {
+    const target = { kind: route.view }
+    items.push({ id: 'display', label: t('Display mode'), icon: 'monitor', onSelect: () => navigate({ view: 'display', target, options: { ...DEFAULT_DISPLAY_OPTIONS } }) })
+  }
+  if (filterKey && !filterSlot) {
+    for (const f of DURATION_FILTERS) items.push({ id: `duration-${f.kind}`, label: f.label, checked: duration === f.kind, group: t('Filter by duration'), onSelect: () => onDuration(duration === f.kind ? null : f.kind) })
+  }
+  const current = DURATION_FILTERS.find((f) => f.kind === duration)
+  const slots = (
+    <>
+      {ask && <TodayAskAction role={userRole} />}
+      {process && (
+        <Button variant="secondary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start>
+          {t.rich('Process {count}', { count: <span className="tabular-nums text-muted">{topLevelCount}</span> })}
+        </Button>
+      )}
+      {filterSlot && <DurationFilterControl active={duration} onChange={onDuration} />}
+      {!filterSlot && current && <DurationChip label={current.label} onClear={() => onDuration(null)} />}
+    </>
+  )
+  return { slots, items }
+}
+
+/** The phone overflow items as ActionMenu groups (the project and label menus). */
+export function phoneGroups(items: PhoneItem[]): ActionGroup[] {
+  const toItem = (i: PhoneItem): ActionItem => (i.checked === undefined
+    ? { kind: 'action', id: i.id, label: i.label, icon: i.icon, onSelect: i.onSelect }
+    : { kind: 'check', id: i.id, label: i.label, checked: i.checked, onSelect: i.onSelect })
+  const plain = items.filter((i) => !i.group)
+  const named = [...new Set(items.filter((i) => i.group).map((i) => i.group!))]
+  return [...(plain.length ? [{ items: plain.map(toItem) }] : []), ...named.map((g) => ({ label: g, items: items.filter((i) => i.group === g).map(toItem) }))]
+}
+
+/** The phone overflow items as menu items, grouped where they carry a group name. */
+export function PhoneMenuItems({ items }: { items: PhoneItem[] }) {
+  const plain = items.filter((i) => !i.group)
+  const groups = [...new Set(items.filter((i) => i.group).map((i) => i.group!))]
+  return (
+    <>
+      {plain.map((i) => <MenuItem key={i.id} label={i.label} icon={i.icon} onSelect={i.onSelect} data-phone-item={i.id} />)}
+      {groups.map((g) => (
+        <MenuGroup key={g} label={g}>
+          {items.filter((i) => i.group === g).map((i) => <MenuItem key={i.id} label={i.label} checked={i.checked} onSelect={i.onSelect} data-phone-item={i.id} />)}
+        </MenuGroup>
+      ))}
+    </>
+  )
+}
+
+/** The active duration filter as one chip with its clear control. */
+function DurationChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
+      {label}
+      <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label={t('Clear filter')} onClick={onClear} data-clear-duration>
+        <Icon name="x" size="xs" />
+      </button>
+    </span>
+  )
+}
+
 /**
  * The duration filter as a page action (ux-overhaul, time-blocking "Duration filter"):
  * a Filter menu in the header, and one chip with a clear control while a filter is on.
@@ -110,14 +197,7 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
   const current = DURATION_FILTERS.find((f) => f.kind === active)
   return (
     <span className="flex items-center gap-1" data-duration-filter>
-      {current && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
-          {current.label}
-          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label={t('Clear filter')} onClick={() => onChange(null)} data-clear-duration>
-            <Icon name="x" size="xs" />
-          </button>
-        </span>
-      )}
+      {current && <DurationChip label={current.label} onClear={() => onChange(null)} />}
       <Menu kind="menu" label={t('Filter')} title={t('Filter by duration')} trigger={<Icon name="filter" />} triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
         {DURATION_FILTERS.map((f) => (
           <MenuItem key={f.kind} label={f.label} description={f.title} checked={active === f.kind} onSelect={() => onChange(active === f.kind ? null : f.kind)} />

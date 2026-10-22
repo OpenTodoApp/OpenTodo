@@ -153,22 +153,27 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
 }
 
 /** "3 selected · Actions · Clear" above a list while tasks are ticked. */
-export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker }: {
+export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone }: {
   ids: readonly string[]
   onClear: () => void
   menuOpen: boolean
   onMenuOpenChange: (open: boolean) => void
   startPicker?: string | null
+  /** Select mode on touch (phone-v2 D8): Done hides the checkboxes and keeps the ticks; the bar shows with nothing ticked. */
+  onDone?: () => void
 }) {
-  if (ids.length === 0) return null
+  if (ids.length === 0 && !onDone) return null
   return (
     <div className="mb-2 flex items-center gap-2 rounded-control border border-accent/40 bg-accent-soft px-3 py-1.5 text-body" data-selection-bar>
       <span role="status" className="min-w-0 flex-1 font-medium text-on-accent-soft">{t('{count} selected', { count: ids.length })}</span>
-      <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-        trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />
-      <Tooltip label={t('Clear the selection')} shortcut="Esc">
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>
-      </Tooltip>
+      {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
+        trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
+      {ids.length > 0 && (
+        <Tooltip label={t('Clear the selection')} shortcut="Esc">
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>
+        </Tooltip>
+      )}
+      {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Done')}</button>}
     </div>
   )
 }

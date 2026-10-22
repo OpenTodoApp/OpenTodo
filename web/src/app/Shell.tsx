@@ -232,7 +232,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        <div ref={content} id="content" className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2). */}
+        <div ref={content} id="content" data-add-room={phoneChrome || undefined}
+          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (
@@ -364,7 +366,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       </div>
       <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
-        {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
+        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>
     </header>
   )

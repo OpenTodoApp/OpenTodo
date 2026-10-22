@@ -67,6 +67,8 @@ export interface PageHeaderProps {
   leading?: ReactNode
   /** Up to two visible actions; everything else goes in `overflow`. */
   actions?: ReactNode
+  /** Below 768 px `actions` sit in the shell's bar (two slots at most) instead of a row in the page (phone-v2 D1). */
+  barActions?: boolean
   /** Menu items (MenuItem, MenuSeparator) of the overflow menu. */
   overflow?: ReactNode
   /** A complete menu element in place of the default overflow (a menu with picker steps). */
@@ -92,7 +94,7 @@ export interface PageHeaderProps {
 /** The page title at the display step (page-rhythm D1, tokens-v2). */
 const TITLE = 'text-display text-strong'
 
-export function PageHeader({ title, subtitle, meta, leading, actions, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, meta, leading, actions, barActions = false, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
   // The shell's phone bar shows this page's title and actions below 768 px (app-shell
   // "No desktop top bar"); the header's own row exists only above it, so the actions
@@ -100,16 +102,19 @@ export function PageHeader({ title, subtitle, meta, leading, actions, overflow, 
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   const ownRow = level !== 1 || desktop
   // The bar takes the title, Back, the overflow menu, the page menu and Help; the
-  // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px.
+  // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px,
+  // unless the page fitted them into the bar's two slots (phone-v2 D1).
   useEffect(() => {
     if (ownRow) return
-    setPageBar({ title, subtitle: subtitle ?? meta, overflow, menu, help, back })
+    setPageBar({ title, subtitle: subtitle ?? meta, overflow, menu, help, back, actions: barActions ? actions : undefined })
     return () => setPageBar(null)
   })
+  // Everything went to the phone bar: no empty header row in the page.
+  if (!ownRow && (!actions || barActions) && !children) return null
   return (
     <header data-page-header data-testid={testId}
-      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} ${ownRow || actions ? 'mb-3 pb-3' : ''} ${level === 1 ? (ownRow ? 'pt-2 md:pt-4' : '') : 'pt-5'}`}>
-      {!ownRow && actions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
+      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} ${ownRow || (actions && !barActions) ? 'mb-3 pb-3' : ''} ${level === 1 ? (ownRow ? 'pt-2 md:pt-4' : '') : 'pt-5'}`}>
+      {!ownRow && actions && !barActions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
       {ownRow && <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1" data-page-header-row>
         {back && (
           <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back

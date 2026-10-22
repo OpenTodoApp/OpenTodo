@@ -33,6 +33,11 @@ export function ask(r: AskRequest): void {
  * button in the header when the assistant is available, nothing otherwise. The
  * composer and the example cards live on the Ask screen.
  */
+/** Whether Today offers Ask (the composer is available to this account). */
+export function useTodayAsk(role?: AccountRole): boolean {
+  return askMode(useAssistantStatus(), role) === 'composer'
+}
+
 export function TodayAskAction({ role }: { role?: AccountRole }) {
   const status = useAssistantStatus()
   if (askMode(status, role) !== 'composer') return null

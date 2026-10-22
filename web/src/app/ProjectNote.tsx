@@ -5,7 +5,7 @@
 // Long notes fold after about eight lines; the fold is a per-device preference
 // in Dexie meta, never synced. It sits above the sections, the board and the
 // timeline, below the quick add, so chrome stays together above content.
-import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../ui'
 import { setProjectNoteFolded, useMembership, useProjectNoteFolded } from '../lib/localData'
 import { canEditProjectNote, roleOf } from '../lib/sharing'
@@ -18,9 +18,15 @@ import { t } from '../lib/i18n'
 
 const NotesEditor = lazy(() => import('./NotesEditor'))
 
+/** "Add a note" from the project menu on a phone, where the empty note's line is not shown (phone-v2 D1). */
+const noteRequests = new Set<(id: string) => void>()
+export function requestProjectNote(projectId: string): void {
+  noteRequests.forEach((fn) => fn(projectId))
+}
+
 /** Folded height: about eight lines of body text. */
 const FOLD_PX = 8 * 22
-export function ProjectNote({ project }: { project: Project }) {
+export function ProjectNote({ project, phone = false }: { project: Project; phone?: boolean }) {
   // null: a personal project; undefined: still loading (render nothing rather than flash "Add a note" to a viewer).
   const membership = useMembership(project.id)
   const editable = canEditProjectNote(roleOf(project.id, new Map(membership ? [[project.id, membership]] : [])))
@@ -35,6 +41,12 @@ export function ProjectNote({ project }: { project: Project }) {
   useShortcutScope('view', {
     'project.note': () => { if (!editable) return false; setEditing(true) },
   }, { view: 'project' })
+
+  useEffect(() => {
+    const on = (id: string) => { if (id === project.id) setEditing(true) }
+    noteRequests.add(on)
+    return () => { noteRequests.delete(on) }
+  }, [project.id])
 
   useLayoutEffect(() => {
     const el = body.current
@@ -56,6 +68,8 @@ export function ProjectNote({ project }: { project: Project }) {
     )
   }
 
+  // On a phone the empty line would be a row of chrome; the project menu offers "Add a note" instead.
+  if (!note.trim() && phone) return null
   if (!note.trim()) {
     // One quiet line for people who may edit (the interface budget counts it as content, not chrome).
     return (
