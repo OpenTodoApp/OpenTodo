@@ -44,7 +44,7 @@
 ## 6. Layout and accessibility checks
 
 - [x] 6.1 Run `make layout-check` at 360, 768 and 1280 px; verify no horizontal overflow on Today, Upcoming, a project list and the board with the column shown and a long title — done: e2e-layout ONLY=inbox,today,upcoming,project, Chromium and WebKit
-- [ ] 6.2 Verify in `make dev` on a fine pointer at 1280 px: hovering a row shows the three actions over the counts without moving the title, Tab from a row reaches them and `j` skips them, Schedule → Tomorrow writes one op with Undo; and on a 390 px touch emulation no action buttons exist and a long press opens the row menu; record the result in this change's design.md Implementation notes
+- [x] 6.2 Verify in `make dev` on a fine pointer at 1280 px: hovering a row shows the three actions over the counts without moving the title, Tab from a row reaches them and `j` skips them, Schedule → Tomorrow writes one op with Undo; and on a 390 px touch emulation no action buttons exist and a long press opens the row menu; record the result in this change's design.md Implementation notes — done as a Playwright script against the built binary (results in design.md Implementation notes): the six desktop and touch checks pass; the long press follows phone-v2 (it selects; the actions are in the phone bar), and the "Touch screen" scenario now says so
 
 ## 7. Integration
 
