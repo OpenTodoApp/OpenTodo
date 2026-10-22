@@ -40,6 +40,8 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
   const [dropAt, setDropAt] = useState<DropAt | null>(null)
   // The row being dragged lifts (task-list-presentation "Drag feedback").
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  // On a board, the column under the pointer and the card's height (surfaces-v2 D7).
+  const [placeholder, setPlaceholder] = useState<{ key: string; height: number } | null>(null)
   // The drag session outlives renders; it reads the latest rows through this ref.
   const dragState = useRef(source)
   dragState.current = source
@@ -48,6 +50,13 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
     const st = dragState.current
     const node = st.tree?.nodes.get(task.id)
     const own = new Set(node ? flattenTree([node]).map((n) => n.id) : [task.id])
+    const height = (e.currentTarget as HTMLElement | null)?.offsetHeight ?? 0
+    let column: string | null = null
+    const showColumn = (key: string | null) => {
+      if (key === column) return
+      column = key
+      setPlaceholder(key === null ? null : { key, height })
+    }
     let current: DropAt | null = null
     const show = (d: DropAt | null) => {
       if (sameDrop(d, current)) return
@@ -63,6 +72,8 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
         const id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !dragState.current.board) : null
         show(id && zone ? { id, zone } : null)
+        // A drop on a column lands last in it, so the placeholder follows its last card.
+        showColumn(manual && dragState.current.board && target?.startsWith('section:') ? target.slice('section:'.length) : null)
       },
       onDrop: (target) => {
         const { rows: rs, sectionOfRow: secs, board: b, ticked } = dragState.current
@@ -86,11 +97,11 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
         } else return
         onDropped(task.id)
       },
-      onEnd: () => { show(null); setDraggingId(null) },
+      onEnd: () => { show(null); showColumn(null); setDraggingId(null) },
     })
   }, [manual, moveToSection, onDropped])
 
   /** The section map of the latest render, for code that runs later (an `o` insertion). */
   const latestSectionMap = useCallback(() => dragState.current.sectionMap, [])
-  return { dropAt, draggingId, startDrag, latestSectionMap }
+  return { dropAt, draggingId, placeholder, startDrag, latestSectionMap }
 }

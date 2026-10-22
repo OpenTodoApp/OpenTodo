@@ -2,7 +2,7 @@
 // by "No section", each listing its open top-level tasks by position. A pure
 // rendering of the same local query as the list (design D5); the parent view owns
 // selection and keyboard handling. Columns are drop targets for lib/dnd.
-import { useWide } from '../ui'
+import { Button, useWide } from '../ui'
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { Label, Project, Section, Task } from '../lib/types'
@@ -19,7 +19,7 @@ export interface BoardColumn {
 /** The drop target key of a section ('' = "No section"); shared with the list headings. */
 export const sectionTarget = (key: string) => `section:${key}`
 
-export function BoardView({ project, columns, editable, addingTo, setAddingTo, projects, labels, renderCard, onCurrentColumn }: {
+export function BoardView({ project, columns, editable, addingTo, setAddingTo, projects, labels, renderCard, onCurrentColumn, placeholder = null }: {
   project: Project
   columns: BoardColumn[]
   editable: boolean
@@ -31,6 +31,8 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
   renderCard: (task: Task) => ReactNode
   /** Below 640 px: the name of the column in view, for the page bar (sections-and-boards "Board on a phone"). */
   onCurrentColumn?: (name: string | null) => void
+  /** While a card is dragged over a column: that column and the card's height (surfaces-v2 D7). */
+  placeholder?: { key: string; height: number } | null
 }) {
   const sections = columns.filter((c) => c.section)
   const names = columns.map((col) => (col.section ? col.section.name || t('Untitled section') : t('No section')))
@@ -77,7 +79,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
             aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: col.cards.length })}
-            className="flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken data-drop-active:ring-2 data-drop-active:ring-accent sm:w-72 sm:max-w-72"
+            className="ui-column flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72"
           >
             <SectionHeader
               section={col.section}
@@ -88,9 +90,16 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               last={idx === sections.length - 1}
               onAdd={() => setAddingTo(col.key)}
             />
-            <ul className="min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
+            {/* Cards lift on hover and focus; the dragged one fades while its placeholder shows where it lands. */}
+            <ul className="ui-cards--lift min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
               {col.cards.map((tk) => renderCard(tk))}
+              {placeholder?.key === col.key && <li aria-hidden data-drop-placeholder className="ui-drop-placeholder" style={{ height: placeholder.height }} />}
             </ul>
+            {editable && col.cards.length === 0 && addingTo !== col.key && (
+              <Button variant="ghost" size="sm" icon="plus" className="w-full justify-start text-muted" data-column-add={col.key} onClick={() => setAddingTo(col.key)}>
+                {t('Add a task')}
+              </Button>
+            )}
             {addingTo === col.key && editable && (
               <SectionQuickAdd project={project} sectionId={col.key || null} sectionName={name} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
             )}

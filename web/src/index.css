@@ -798,7 +798,8 @@ select.ui-input { @apply truncate; contain: layout paint; }
   border-radius: var(--radius-control);
   background: var(--ot-accent-soft);
 }
-.ui-card--lift { @apply transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2; }
+.ui-card--lift, .ui-cards--lift > li:not([data-drop-placeholder]) { @apply transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2; }
+.ui-cards--lift > li[data-dragging] { opacity: 0.4; }
 .ui-section-flat { @apply py-5; }
 .ui-section-flat + .ui-section-flat,
 .surface-card + .ui-section-flat { @apply border-t border-default; }
