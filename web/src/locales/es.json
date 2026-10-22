@@ -290,7 +290,6 @@
   "Ask about your tasks, or pick a skill…": "Pregunta por tus tareas o elige una habilidad…",
   "Ask about your tasks…": "Pregunta por tus tareas…",
   "Ask the assistant": "Preguntar al asistente",
-  "Ask the assistant (Shift+I)": "Preguntar al asistente (Mayús+I)",
   "Ask the server owner to turn it on.": "Pide a la persona propietaria del servidor que lo active.",
   "Asks for your passphrase again before showing your tasks.": "Vuelve a pedir tu frase de contraseña antes de mostrar tus tareas.",
   "Assign": "Asignar",
@@ -1700,7 +1699,6 @@
   "Nothing delivered yet": "Aún no se ha entregado nada",
   "Nothing delivered yet; send a test.": "Aún no se ha entregado nada; envía una prueba.",
   "Nothing fetched yet.": "Aún no se ha obtenido nada.",
-  "Nothing here.": "Aquí no hay nada.",
   "Nothing is due in the next seven days.": "Nada vence en los próximos siete días.",
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": "No se envía nada hasta que añadas uno. Un webhook envía una solicitud firmada a tu endpoint cuando cambian tareas o proyectos.",
   "Nothing left for today": "No queda nada para hoy",
@@ -4946,5 +4944,7 @@
   "Swipe right to complete, left to schedule. Also in a task's menu.": "Desliza a la derecha para completar, a la izquierda para programar. También en el menú de una tarea.",
   "Right completes, left schedules; the same two actions start the task's menu": "A la derecha completa, a la izquierda programa; las mismas dos acciones abren el menú de la tarea",
   "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La marca y muestra todas las casillas; «Seleccionar tareas» en el menú de la página hace lo mismo, «Listo» las oculta",
-  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Este proyecto pertenece a un espacio de trabajo del que no formas parte. Pide primero a quien es dueño del espacio que te añada y vuelve a abrir el enlace."
+  "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": "Este proyecto pertenece a un espacio de trabajo del que no formas parte. Pide primero a quien es dueño del espacio que te añada y vuelve a abrir el enlace.",
+  "No tasks match this panel.": "Ninguna tarea coincide con este panel.",
+  "Every task of these days is placed.": "Todas las tareas de estos días están colocadas."
 }

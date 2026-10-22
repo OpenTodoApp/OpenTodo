@@ -5,7 +5,7 @@
 // is a drop target: dragging a card onto it, or Shift+← / Shift+→, applies the rule.
 import { blockedMap } from '../lib/dependencies'
 import { beginDrag } from '../lib/dnd'
-import { Badge, Button, Icon, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
+import { Badge, Button, EmptyState, Icon, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
 import { useId, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
@@ -240,7 +240,8 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
       {!summary.ok ? (
         <p role="alert" className="text-meta text-danger">{summary.error}</p>
       ) : tasks.length === 0 ? (
-        <p className="px-2 py-3 text-meta text-faint">{t('Nothing here.')}</p>
+        // The empty-state pattern with the sentence this panel needs (ux-audit-three-widths F2, F13).
+        <EmptyState compact title={t('No tasks match this panel.')} />
       ) : (
         <ul>
           {tasks.map((tk) => {

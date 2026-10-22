@@ -1299,10 +1299,8 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Ask the assistant": [
+    "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/palette/BarParts.tsx"
-  ],
-  "Ask the assistant (Shift+I)": [
-    "web/src/app/assistant/AskEntry.tsx"
   ],
   "Ask the server owner to turn it on.": [
     "web/src/lib/settingsCopy.ts"
@@ -3962,6 +3960,9 @@
   ],
   "Every stored client address will be erased from the audit log. This cannot be undone.": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Every task of these days is placed.": [
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
@@ -7101,6 +7102,9 @@
   "No task matches this view.": [
     "web/src/app/SavedViewView.tsx"
   ],
+  "No tasks match this panel.": [
+    "web/src/app/DashboardView.tsx"
+  ],
   "No template matches. Try another word, or upload a template file.": [
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
@@ -7322,10 +7326,6 @@
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
-  ],
-  "Nothing here.": [
-    "web/src/app/DashboardView.tsx",
-    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Nothing is assigned to you.": [
     "web/src/app/task-list/ListChrome.tsx"

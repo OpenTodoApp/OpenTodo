@@ -205,8 +205,9 @@ export function movingAnimations() {
 
 // ---------------------------------------------------------------- driven from Node
 /**
- * M8: Tab through the page and report focusable elements that show no outline and
- * no box-shadow (on themselves or the two nearest ancestors) while focused.
+ * M8: Tab through the page and report focusable elements that, while focused, show
+ * no outline or box-shadow (on themselves or the two nearest ancestors) that differs
+ * from how they look unfocused.
  */
 export async function focusWalk(page, maxSteps = 80) {
   await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0) })
@@ -218,13 +219,16 @@ export async function focusWalk(page, maxSteps = 80) {
       const el = document.activeElement
       if (!el || el === document.body) return null
       const key = el.id || window.__ux.d(el) + ':' + Math.round(el.getBoundingClientRect().top)
-      const ring = (n) => {
-        if (!n || n.nodeType !== 1) return false
-        const cs = getComputedStyle(n)
-        return (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || (cs.boxShadow && cs.boxShadow !== 'none')
-      }
-      const shown = ring(el) || ring(el.parentElement) || ring(el.parentElement?.parentElement)
-      return { key, name: window.__ux.d(el), shown, visible: window.__ux.shown(el) }
+      // The element and its two nearest ancestors (a ring drawn by focus-within), focused and not.
+      const chain = [el, el.parentElement, el.parentElement?.parentElement].filter((n) => n && n.nodeType === 1)
+      const look = () => chain.map((n) => { const cs = getComputedStyle(n); return [cs.outlineStyle, cs.outlineWidth, cs.outlineColor, cs.boxShadow, cs.borderColor, cs.backgroundColor].join('|') })
+      const focused = look()
+      const ring = chain.some((n) => { const cs = getComputedStyle(n); return (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || (cs.boxShadow && cs.boxShadow !== 'none') })
+      el.blur()
+      const resting = look()
+      el.focus({ preventScroll: true })
+      const changed = focused.some((v, i) => v !== resting[i])
+      return { key, name: window.__ux.d(el), shown: ring && changed, visible: window.__ux.shown(el) }
     })
     if (!r) continue
     if (seen.has(r.key)) break
