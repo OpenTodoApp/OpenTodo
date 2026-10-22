@@ -154,7 +154,7 @@ function RowMeta({ m, card, projectOnlyBelowSm }: { m: MetaValues; card: boolean
       {more.length > 0 && (
         <ToneText data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>
       )}
-      {m.assignee}
+      {m.assignee && <span data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
       {m.origin}
       {m.project}
       {m.labels && <span data-row-labels="" className="ml-1 inline-flex min-w-0 first:ml-0">{m.labels}</span>}
