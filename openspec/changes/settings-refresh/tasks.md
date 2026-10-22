@@ -42,7 +42,7 @@
 
 ## 7. Server audit log
 
-- [ ] 7.1 Audit log card as a compact list with the filter row or disclosure, chips, Export in the header, and the separate "Audit settings" card (D4). Verify: `auditSettings.test.tsx` cases for filters as chips, export carrying the filters and the phone disclosure; the layout check on `/settings/server` at 360, 390 and 768 px
+- [x] 7.1 Audit log card as a compact list with the filter row or disclosure, chips, Export in the header, and the separate "Audit settings" card (D4). Verify: `auditSettings.test.tsx` cases for filters as chips, export carrying the filters and the phone disclosure; the layout check on `/settings/server` at 360, 390 and 768 px — Done: `AuditPanel.tsx`. The log is one-line rows (icon, event, account, client from 640 px, time) whose details open in place, Export sits at the top right and carries the applied filters, and the filters are one row from 768 px and behind a "Filters" toggle below it, with the active filters as removable chips. Retention and addresses moved to their own "Audit settings" card (copy `audit-settings`, search entry). Verified by `auditSettings.test.tsx` (chips, export carrying the filters, phone disclosure, details in place, settings card with the erase confirmation) and `AuditPanel.test.ts`. The 360/390/768 px layout check runs with e2e in 8.3.
 
 ## 8. Wrap-up
 

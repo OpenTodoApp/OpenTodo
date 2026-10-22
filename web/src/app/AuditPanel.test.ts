@@ -38,13 +38,14 @@ describe('AuditTable', () => {
       status: 'ready',
       events: [ev({}), ev({ id: 2, name: 'token.created', outcome: 'success', actorId: 'o', actorEmail: 'owner@example.com', targetId: null, targetEmail: null, ip: '192.0.2.1', details: { token_id: 't', token_name: 'laptop script' } })],
     }))
+    // One line each (settings-refresh D4): the event, the account, the client and the time; details open in place.
     expect(html).toContain('Sign-in failed')
-    expect(html).toContain('wrong password')
     expect(html).toContain('member@example.com')
     expect(html).toContain('API token created')
-    expect(html).toContain('laptop script')
-    expect(html).toContain('192.0.2.1')
+    expect(html).toContain('owner@example.com')
     expect(html).toContain('Firefox on Linux')
+    expect(html).toContain('aria-expanded="false"')
+    expect(html).not.toContain('laptop script')
     expect(html).toContain('tabindex="0"')
   })
 
@@ -52,7 +53,7 @@ describe('AuditTable', () => {
     const html = renderToStaticMarkup(createElement(AuditTable, { status: 'offline', events: [ev({})] }))
     expect(html).toContain('needs a connection')
     expect(html).not.toContain('Sign-in failed')
-    expect(html).not.toContain('<table')
+    expect(html).not.toContain('data-audit-list')
   })
 
   it('says when nothing matches', () => {

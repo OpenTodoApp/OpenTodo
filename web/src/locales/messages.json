@@ -566,6 +566,9 @@
     "web/src/app/UsersPanel.tsx",
     "web/src/lib/webhooks.ts"
   ],
+  "Active filters": [
+    "web/src/app/AuditPanel.tsx"
+  ],
   "Active public links": [
     "web/src/app/PublicLinksSection.tsx"
   ],
@@ -1417,7 +1420,8 @@
     "web/src/app/auditFormat.ts"
   ],
   "Audit settings": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Authentication failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -2710,6 +2714,9 @@
   "Custom fields": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Custom range": [
+    "web/src/app/AuditPanel.tsx"
+  ],
   "Custom…": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/RemindersField.tsx",
@@ -3959,11 +3966,9 @@
     "web/src/app/InviteLinksSection.tsx"
   ],
   "Export": [
+    "web/src/app/AuditPanel.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
-  ],
-  "Export (NDJSON)": [
-    "web/src/app/AuditPanel.tsx"
   ],
   "Export time entries": [
     "web/src/app/review/StatsView.tsx"
@@ -4101,6 +4106,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Filters": [
+    "web/src/app/AuditPanel.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/ViewsView.tsx",
     "web/src/app/palette/entries.ts",
@@ -4733,6 +4739,12 @@
   ],
   "How good are my estimates?": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "How long audit events are kept and whether addresses are recorded": [
+    "web/src/app/settingsIndex.ts"
+  ],
+  "How long the audit log keeps events, and whether it records addresses.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "How much the app shows its method, Open Loops. Synced; never changes a task.": [
     "web/src/lib/settingsCopy.ts"
@@ -8601,6 +8613,9 @@
   ],
   "Remove attachment?": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Remove filter: {name}": [
+    "web/src/app/AuditPanel.tsx"
   ],
   "Remove label {name}": [
     "web/src/ui/Chips.tsx"

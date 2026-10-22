@@ -668,6 +668,12 @@ export const SETTINGS_COPY = {
     },
     notices: { offline: msg('You are offline. The {what} needs a connection and is not shown until you are back.') },
   },
+  'audit-settings': {
+    title: msg('Audit settings'),
+    icon: 'settings',
+    description: msg('How long the audit log keeps events, and whether it records addresses.'),
+    learnMore: 'settings/server',
+  },
 
   // The demo note at the top of a settings page (settings-navigation "Demo instance sections").
   demo: {

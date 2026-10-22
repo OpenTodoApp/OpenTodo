@@ -1034,7 +1034,6 @@
   "Expires {instant}": "Scade {instant}",
   "Expires {when} · created by {name}": "Scade {when} · creato da {name}",
   "Export": "Esporta",
-  "Export (NDJSON)": "Esporta (NDJSON)",
   "Export, import, sync status and archived projects": "Esportazione, importazione, stato della sincronizzazione e progetti archiviati",
   "Extend the ticked range down": "Estendi l’intervallo spuntato verso il basso",
   "Extend the ticked range up": "Estendi l’intervallo spuntato verso l’alto",
@@ -4805,5 +4804,10 @@
   "What the assistant may do": "Cosa può fare l'assistente",
   "Which issues and where they go": "Quali issue e dove vanno",
   "gitlab.com or the address of your own instance.": "gitlab.com o l'indirizzo della tua istanza.",
-  "http://stt.home.lan:8000": "http://stt.home.lan:8000"
+  "http://stt.home.lan:8000": "http://stt.home.lan:8000",
+  "Active filters": "Filtri attivi",
+  "Custom range": "Periodo personalizzato",
+  "How long audit events are kept and whether addresses are recorded": "Per quanto restano gli eventi di audit e se si registrano gli indirizzi",
+  "How long the audit log keeps events, and whether it records addresses.": "Per quanto il registro di audit conserva gli eventi e se registra gli indirizzi.",
+  "Remove filter: {name}": "Rimuovi filtro: {name}"
 }
