@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The test APK only. okhttp 5 (the tests' local server) registers an androidx.startup provider
+     here; androidx.test's BootstrapActivity, behind launchActivityForResult, lives in this APK, so
+     the provider ran first and that launch never left PRE_ON_CREATE. OkHttp works without it. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove" />
+    </application>
+</manifest>
