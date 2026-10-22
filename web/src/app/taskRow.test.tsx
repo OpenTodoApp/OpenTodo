@@ -10,7 +10,7 @@ import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { Label, Project, Task } from '../lib/types'
 import { flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
-import { TaskRow } from './TaskRow'
+import { TaskRow, type TaskRowProps } from './TaskRow'
 
 // The project header asks the server for its public links.
 beforeEach(() => mockFetch(noPublicLinks))
@@ -94,7 +94,7 @@ describe('metadata line', () => {
 // One row language (OpenSpec change rows-v2, task-list-presentation "Metadata
 // language", "Time column", "One row anatomy"; design D1 to D6).
 describe('one row language (rows-v2)', () => {
-  const row = (over: Partial<Task>, extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) =>
+  const row = (over: Partial<Task>, extra: Partial<TaskRowProps> = {}) =>
     render(<ul><TaskRow task={task(over)} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} {...extra} /></ul>)
   const L = (id: string, name: string) => ({ id, name, color: '#0f0' }) as unknown as Label
   const atNoon = async <T,>(fn: () => Promise<T>) => {
@@ -126,7 +126,7 @@ describe('one row language (rows-v2)', () => {
   }))
 
   // The due ladder (page-rhythm D7, task-list-presentation "Due ladder in Calm rows").
-  const dateOf = async (over: Partial<Task>, extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) => {
+  const dateOf = async (over: Partial<Task>, extra: Partial<TaskRowProps> = {}) => {
     const r = await row(over, extra)
     const d = r.container.querySelector('[data-date]')
     const out = d ? { text: visibleText(d), cls: d.className } : null
@@ -287,7 +287,7 @@ describe('one row language (rows-v2)', () => {
 })
 
 describe('time column (rows-v2 D2, D3)', () => {
-  const row = (over: Partial<Task>, extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) =>
+  const row = (over: Partial<Task>, extra: Partial<TaskRowProps> = {}) =>
     render(<ul><TaskRow task={task(over)} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} timeColumn {...extra} /></ul>)
   const atNoon = async <T,>(fn: () => Promise<T>) => {
     vi.useFakeTimers({ toFake: ['Date'] })
@@ -365,7 +365,7 @@ describe('time column (rows-v2 D2, D3)', () => {
 })
 
 describe('revealed row actions (rows-v2 D7)', () => {
-  const row = (extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) =>
+  const row = (extra: Partial<TaskRowProps> = {}) =>
     render(<ul><TaskRow task={task({ priority: 3 })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} {...extra} /></ul>)
 
   it('three real buttons after the open control, shown only on a fine pointer from 768 px, revealed on hover and focus', async () => {
@@ -503,7 +503,7 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
 // Task origins (OpenSpec change task-origin, task-list-presentation "Metadata language").
 describe('origin chip', () => {
   const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
-  const row = (over: Partial<Task>, extra: Partial<React.ComponentProps<typeof TaskRow>> = {}) =>
+  const row = (over: Partial<Task>, extra: Partial<TaskRowProps> = {}) =>
     render(<ul><TaskRow task={task(over)} selected={false} showProject={false} onToggle={() => {}} onOpen={extra.onOpen ?? (() => {})} {...extra} /></ul>)
 
   {

@@ -1,18 +1,17 @@
 // The rows and the capacity bar of the Plan (OpenSpec change planner-view, design
-// D3 and D5), shared by the columns and the phone agenda. A task row shows its time,
-// title, estimate and priority in the one row language (rows-v2: the column already
-// says the day, so no date words; only P1 and P2 are coloured and the time only when
-// overdue or timed today). Projected rows are dimmed, read-only
-// and never selected; event rows are read-only buttons that open their details.
+// D3 and D5), shared by the columns and the phone agenda. A task is the one row in its
+// compact shape (rows-v2 D8: time, title, estimate and priority ring; the column says
+// the day). Projected rows are dimmed, read-only and never selected; event rows are
+// read-only buttons that open their details.
 import type { EventBlock } from '../../lib/calendar'
 import { formatTime } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import { formatPlanLoad, planLoadTooltip, type PlanEntry, type PlanLoad, type Projection } from '../../lib/plan'
 import type { CalendarEvent, CalendarSubscription, Project, Task } from '../../lib/types'
-import { hueFor, Icon, Tooltip } from '../../ui'
+import { Icon, Tooltip } from '../../ui'
 import { EventChip, EventRow } from '../CalendarEvents'
-import { ladderTone, PRIORITY_RING } from '../rowTone'
+import { TaskRow } from '../TaskRow'
 
 /** One day of the Plan: its rows, its events and its load. */
 export interface PlanDayData {
@@ -23,12 +22,7 @@ export interface PlanDayData {
   load: PlanLoad
 }
 
-/** The time's colour: the due ladder of the rows (page-rhythm D7, rowTone's ladderTone). */
-function timeTone(date: string, today: string): string {
-  const tone = ladderTone(date, today)
-  return tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accent' : tone === 'default' ? 'text-default' : 'text-muted'
-}
-
+/** A task in the Plan: the one row in its compact shape (rows-v2 D8), placed on the column's day. */
 export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, large, onPointerDown, onSelect, onOpen }: {
   task: Task
   date: string
@@ -43,27 +37,9 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
   onSelect: () => void
   onOpen: () => void
 }) {
-  const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
   return (
-    <button type="button" tabIndex={large ? 0 : -1} data-plan-task={task.id} data-hue={hueFor(project?.color ?? null)} aria-pressed={selected}
-      onPointerDown={canEdit ? onPointerDown : undefined}
-      onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
-      onDoubleClick={onOpen}
-      onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canEdit ? 'cursor-grab' : ''}`}>
-      {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
-      {time && <span data-plan-time className={`shrink-0 tabular-nums ${timeTone(date, today)}`}>{formatTime(time)}</span>}
-      {/* In a column the title takes the first line and the time, estimate and priority the second (seven columns are narrow). */}
-      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
-      {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
-      {/* The row's priority ring (rows-v2): coloured for P1 and P2, neutral for P3; read as "P1". */}
-      {priority && (
-        <span data-priority={task.priority} className="inline-flex shrink-0 items-center">
-          <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">P{task.priority}</span>
-        </span>
-      )}
-      {!canEdit && <span className="sr-only">{`, ${t('read-only')}`}</span>}
-    </button>
+    <TaskRow shape="compact" task={task} date={date} time={time} today={today} selected={selected} readOnly={!canEdit} project={project} large={large}
+      onPointerDown={onPointerDown} onSelect={onSelect} onOpen={onOpen} attrs={{ 'data-plan-task': task.id }} />
   )
 }
 

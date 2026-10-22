@@ -14,10 +14,10 @@
 // the project, the counts and the origin form the trailing group, in whose place the
 // revealed actions (RowActionCluster) appear on a fine pointer.
 import { isSample } from '../lib/sampleTasks'
-import { Icon, LabelChips, ReadAs, ToneText, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, type IconName, type Tone } from '../ui'
 import { memo, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
-import { describeDeadline, describeDue, formatDate, localDueOf, logicalToday, zoneHint } from '../lib/dates'
+import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
@@ -201,7 +201,7 @@ export interface TaskRowProps {
   /** Tick or untick; `range` for Shift (extend from the anchor). */
   onTick?: (range: boolean) => void
   onToggleCollapse?: () => void
-  /** A list row, or a board card (rows-v2 D8: the card has no column; its line leads with the time). */
+  /** A list row, or a board card (rows-v2 D8: the card has no column; its line leads with the time); the compact shape takes CompactRowProps. */
   shape?: 'row' | 'card'
   /** The list shows the time column (rows-v2 D2): one fact of the whole list, never per row. */
   timeColumn?: boolean
@@ -253,11 +253,68 @@ export interface TaskRowProps {
 export type RowMotion = 'leave' | 'rolled' | 'restored'
 
 /**
+ * The compact shape (rows-v2 D8, task-list-presentation "One row on the board, in Plan
+ * and in the review screens"): the Plan's rows and the calendar's day lists. The column
+ * already says the day, so the row shows the time (in the due ladder's colour), the
+ * title, the estimate and the priority ring only. It is one `aria-pressed` button that
+ * selects, drags and opens: a compact row has no checkbox.
+ */
+export interface CompactRowProps {
+  shape: 'compact'
+  task: Task
+  /** The column's day and the row's time there (the Plan places a task on a day). */
+  date: string
+  time?: string
+  today: string
+  selected: boolean
+  readOnly?: boolean
+  project?: Project
+  /** The phone agenda's 44 px rows. */
+  large?: boolean
+  onPointerDown?: (e: React.PointerEvent) => void
+  onSelect: () => void
+  onOpen: () => void
+  /** Hooks of the screen that hosts the row (`data-plan-task`). */
+  attrs?: Record<`data-${string}`, string>
+}
+
+const TONE_TEXT: Partial<Record<Tone, string>> = { danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
+
+function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs }: CompactRowProps) {
+  const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
+  return (
+    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hueFor(project?.color ?? null)} aria-pressed={selected}
+      onPointerDown={readOnly ? undefined : onPointerDown}
+      onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
+      onDoubleClick={onOpen}
+      onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${readOnly ? '' : 'cursor-grab'}`}>
+      {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
+      {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
+      {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}
+      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
+      {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+      {/* The row's priority ring: coloured for P1 and P2, neutral for P3; read as "P1". */}
+      {priority && (
+        <span data-priority={task.priority} className="inline-flex shrink-0 items-center">
+          <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">P{task.priority}</span>
+        </span>
+      )}
+      {readOnly && <span className="sr-only">{`, ${t('read-only')}`}</span>}
+    </button>
+  )
+}
+
+/**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
  */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowProps) {
+  return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
+})
+
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe }: TaskRowProps) {
   const card = shape === 'card'
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
@@ -438,7 +495,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
       {swipe && swiping.layers}
     </li>
   )
-})
+}
 
 /** Measures a departing row so its collapse starts from its own height (motion-v2 D3). */
 function useRowHeight(departing: boolean) {
