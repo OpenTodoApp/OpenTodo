@@ -291,7 +291,6 @@
   "Ask about your tasks, or pick a skill…": "Pergunte sobre suas tarefas ou escolha uma habilidade…",
   "Ask about your tasks…": "Pergunte sobre suas tarefas…",
   "Ask the assistant": "Perguntar ao assistente",
-  "Ask the assistant (Shift+I)": "Perguntar ao assistente (Shift+I)",
   "Ask the server owner to turn it on.": "Peça ao proprietário do servidor para ativar.",
   "Asks for your passphrase again before showing your tasks.": "Pede sua frase secreta de novo antes de mostrar suas tarefas.",
   "Assign": "Atribuir",
@@ -1701,7 +1700,6 @@
   "Nothing delivered yet": "Nada entregue ainda",
   "Nothing delivered yet; send a test.": "Nada entregue ainda; envie um teste.",
   "Nothing fetched yet.": "Nada obtido ainda.",
-  "Nothing here.": "Nada aqui.",
   "Nothing is due in the next seven days.": "Nada vence nos próximos sete dias.",
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": "Nada é enviado até você adicionar um. Um webhook envia uma requisição assinada ao seu endpoint quando tarefas ou projetos mudam.",
   "Nothing left for today": "Nada mais para hoje",
@@ -4963,5 +4961,7 @@
   "The logo must be at most 2 MB.": "O logotipo deve ter no máximo 2 MB.",
   "The name is at most {max} characters.": "O nome tem no máximo {max} caracteres.",
   "Your own name and logo for this server, in the tab, the app icon and the sidebar": "Seu próprio nome e logotipo para este servidor, na aba, no ícone do app e na barra lateral",
-  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Seu próprio nome e logotipo na aba, no ícone do app, na tela de entrada e na barra lateral."
+  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Seu próprio nome e logotipo na aba, no ícone do app, na tela de entrada e na barra lateral.",
+  "No tasks match this panel.": "Nenhuma tarefa corresponde a este painel.",
+  "Every task of these days is placed.": "Todas as tarefas destes dias estão colocadas."
 }

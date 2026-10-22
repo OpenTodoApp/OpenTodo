@@ -66,7 +66,7 @@
 
 ## 7. Integration
 
-- [ ] 7.1 After `calm-rows` and `time-tracking` are archived, fold the due ladder into "Metadata language" in `openspec/specs/task-list-presentation/spec.md` (one requirement, the ladder replacing the Calm date tones) and re-read "Page template" and "Standard views" against their archived text; verify with `make openspec-validate`
+- [x] 7.1 After `calm-rows` and `time-tracking` are archived, fold the due ladder into "Metadata language" in `openspec/specs/task-list-presentation/spec.md` (one requirement, the ladder replacing the Calm date tones) and re-read "Page template" and "Standard views" against their archived text; verify with `make openspec-validate`
   - Left for the archive step: `rows-v2` (not archived yet) also modifies "Metadata language" and retired Calm rows, so the ladder is folded in when both archive. `make openspec-validate` passes.
 - [x] 7.2 Regenerate the screenshots with `make docs-screenshots` (`today`, `upcoming`, `project-list`, `settings`, `display-today`, `review`) and verify the images show the lead line, the group labels, Earlier and a centred Today; verify with `make docs-check`
   - Done: the screenshot scripts wait for the Earlier heading; screenshots regenerated with `make docs-screenshots` where they changed.

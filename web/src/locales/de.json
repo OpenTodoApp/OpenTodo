@@ -291,7 +291,6 @@
   "Ask about your tasks, or pick a skill…": "Frag nach deinen Aufgaben oder wähle eine Fähigkeit…",
   "Ask about your tasks…": "Frag nach deinen Aufgaben…",
   "Ask the assistant": "Den Assistenten fragen",
-  "Ask the assistant (Shift+I)": "Den Assistenten fragen (Shift+I)",
   "Ask the server owner to turn it on.": "Bitte den Eigentümer des Servers, es einzuschalten.",
   "Asks for your passphrase again before showing your tasks.": "Fragt erneut nach deiner Passphrase, bevor deine Aufgaben angezeigt werden.",
   "Assign": "Zuweisen",
@@ -1701,7 +1700,6 @@
   "Nothing delivered yet": "Noch nichts zugestellt",
   "Nothing delivered yet; send a test.": "Noch nichts zugestellt; sende einen Test.",
   "Nothing fetched yet.": "Noch nichts abgerufen.",
-  "Nothing here.": "Hier ist nichts.",
   "Nothing is due in the next seven days.": "In den nächsten sieben Tagen ist nichts fällig.",
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": "Es wird nichts gesendet, bis du einen hinzufügst. Ein Webhook sendet eine signierte Anfrage an deinen Endpunkt, wenn sich Aufgaben oder Projekte ändern.",
   "Nothing left for today": "Für heute ist nichts mehr übrig",
@@ -4963,5 +4961,7 @@
   "The logo must be at most 2 MB.": "Das Logo darf höchstens 2 MB groß sein.",
   "The name is at most {max} characters.": "Der Name hat höchstens {max} Zeichen.",
   "Your own name and logo for this server, in the tab, the app icon and the sidebar": "Eigener Name und Logo für diesen Server, im Tab, im App-Symbol und in der Seitenleiste",
-  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Eigener Name und Logo im Tab, im App-Symbol, auf dem Anmeldebildschirm und in der Seitenleiste."
+  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Eigener Name und Logo im Tab, im App-Symbol, auf dem Anmeldebildschirm und in der Seitenleiste.",
+  "No tasks match this panel.": "Keine Aufgaben passen zu diesem Feld.",
+  "Every task of these days is placed.": "Alle Aufgaben dieser Tage sind eingeplant."
 }

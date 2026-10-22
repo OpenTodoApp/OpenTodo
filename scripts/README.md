@@ -59,9 +59,26 @@ npm i -g playwright@1.56.1 && playwright install chromium webkit   # once
 node scripts/e2e-layout.mjs [report-dir]
 ```
 
-Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`, `OPENTODO_LANG` (an interface language such as `de`: the run writes the synced language preference before capturing, to find labels that a longer translation makes overflow). When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in the script.
+Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`, `OPENTODO_LANG` (an interface language such as `de`: the run writes the synced language preference before capturing, to find labels that a longer translation makes overflow). When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in `scripts/ux-audit/layout-screens.mjs` and an entry to the screen inventory. The seed (`ux-audit/seed.mjs`), the screens and overlay openers (`ux-audit/layout-screens.mjs`) and the page measurements (`ux-audit/measure.mjs`) are shared with the interface audit. With `OPENTODO_LANG` set to another language, each screen is checked once a heading, a task row or an alert shows, without its overlays or layout switches (their openers find controls by English names); CI runs a German leg at 360 px.
 
 Every screen, and every overlay on its own, is also run through axe-core in light and dark; serious and critical issues (colour contrast below WCAG AA, missing names and labels, invalid roles or ARIA) fail the check. The check also covers the in-app Help (OpenSpec change `user-documentation`): Help is opened offline from the service worker's precache (Chromium), and the contextual help panel is opened over the share dialog with an email typed into it, which must still be there after the panel closes. axe-core comes from `web/node_modules` (run `npm ci` in `web/`); the context uses `bypassCSP` so it can be injected.
+
+## `ux-audit/`
+
+The interface audit (OpenSpec change `ux-audit-three-widths`); what it measures is in [Design system](../docs/design-system.md#the-interface-audit).
+
+- `screens.json`: the screen inventory, one entry per screen or overlay: `id`, `route` (a router view), `kind` (`screen`, `overlay`, `settings`, `signed-out`, `display`), `seed`, `frequency` (`daily`, `weekly`, `rare`), `core` (true exactly for daily and weekly), `layoutCheck` (the layout check's screen name or overlay key) or `layoutCheckReason` with `path` and `ready` (a CSS selector), `story` (the story title that shows it), and for overlays `on` (the screen it opens on) and `open` (`overlay`, a layout-check opener, and `steps`: `click`, `clickIfVisible`, `focus`, `type`). `tour: false` marks the two entries no tour can reach.
+- To add a route: add its entry; if the layout check opens it, name its screen; otherwise give the reason, a `path` (`{home}`, `{quotes}` and the other seed ids are filled in) and a `ready` selector. Mark it daily or weekly only if it is, and then give it a story.
+- `ux-audit.test.mjs` (in `make ui-lint`): every router view has an entry, every `layoutCheck` name exists, `core` matches the frequency, overlays say how they open, and `screens.mjs` shots name inventory entries; plus the report's ranking.
+- `stories.mjs` (in `make ui-lint`): every core entry's story title exists.
+- `tour.mjs`, `report.mjs`, `audit-measures.mjs`, `measure.test.mjs` (fixture tests in Chromium, run by the CI job).
+
+```bash
+make ux-audit                                        # builds, runs the tour, prints the report path
+ONLY=inbox,today WIDTHS=1280 LANGS=en node scripts/ux-audit/tour.mjs   # a quick local look
+```
+
+Environment: `OUT_DIR` (`ux-audit-report`), `ONLY`, `WIDTHS` (`360,768,1280`), `THEMES` (`light,dark`), `LANGS` (`en,de`), `CONCURRENCY` (2), `CHROMIUM_PATH`, `OPENTODO_BIN` (`bin/opentodo`), `UX_AUDIT_STRICT=1`.
 
 ## `e2e-docs.mjs`
 

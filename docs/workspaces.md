@@ -3,7 +3,7 @@ title: Workspaces
 summary: Keep work and home apart with separate workspaces, each with its own projects, labels, filters and people, and share a project with a whole group in one step.
 audience: user
 section: Guides
-specs: [project-sharing, app-shell]
+specs: [workspaces, project-sharing, app-shell]
 screens: [settings/workspaces]
 order: 72
 card: workspaces

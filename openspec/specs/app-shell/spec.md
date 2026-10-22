@@ -17,22 +17,30 @@ From 768 px wide the shell SHALL fill the viewport height with the sidebar and t
 - **THEN** it fails if more than three elements can scroll vertically, naming the screen and the extra element
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the app name with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Locations, Rules, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything, then Projects, Labels and Filters, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Filters SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Filters group SHALL be shown only once the user has a saved filter and the Labels group only once the user has a label; an empty group shows nothing, not a placeholder sentence.
+The sidebar SHALL show, top to bottom: the workspace control (the current workspace's icon or colour and name, opening the workspace switcher; the app name is shown beside it only while the account has one workspace) with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything in the current workspace, then Projects, Labels and Filters, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. Every group, row and count SHALL be those of the current workspace. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Filters SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Filters group SHALL be shown only once the user has a saved filter in the current workspace and the Labels group only once the user has a label there; an empty group shows nothing, not a placeholder sentence.
 
-Counts SHALL be visible at all times on Inbox, Today and collapsed group headers only. A project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer; favourites follow the rule of their own kind. Filter rows and label rows SHALL show no count. Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged.
+Counts SHALL be visible at all times on Inbox, Today and collapsed group headers only. A project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer; favourites follow the rule of their own kind. Filter rows and label rows SHALL show no count. Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged. The workspace control SHALL carry one accent dot while another workspace has unread updates, with the workspace names in its tooltip and accessible name.
 
 The primary destinations and the More group SHALL depend on the user's "How you work" preference:
 
 | Preference | Primary destinations | More group |
 | --- | --- | --- |
-| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Rules, Trash, Filter, Review, Statistics, Ask when available |
-| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Rules, Trash, Filter, Statistics, Ask when available |
+| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Review, Statistics, Ask when available |
+| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Statistics, Ask when available |
 
-In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged.
+In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged. The workspace control is not a destination and SHALL not count against the six.
 
 #### Scenario: Default sidebar
 - **WHEN** a user with projects, labels, saved filters and no favourites opens the app on a 1280×800 screen on a device that never stored a group state
-- **THEN** five primary destinations and the More group are visible above Projects (open), Labels (closed, "Labels 3") and Filters (closed, "Filters 2"), no Favourites group is shown, the footer is one row that is visible without scrolling, and only the middle part scrolls when the project tree is long
+- **THEN** the workspace control, five primary destinations and the More group are visible above Projects (open), Labels (closed, "Labels 3") and Filters (closed, "Filters 2"), no Favourites group is shown, the footer is one row that is visible without scrolling, and only the middle part scrolls when the project tree is long
+
+#### Scenario: One workspace
+- **WHEN** an account that never created a workspace opens the app
+- **THEN** the control reads "OpenTodo · Personal" and opens the switcher with the one workspace, "New workspace" and "Manage workspaces"
+
+#### Scenario: Groups follow the workspace
+- **WHEN** the user switches from "Personal" (4 projects, 2 labels, 1 filter) to "Work" (6 projects, no labels, no filters)
+- **THEN** the Projects group lists Work's six projects, no Labels or Filters group is shown, the Favourites group shows Work's pinned items or nothing, and Inbox and Today show Work's counts
 
 #### Scenario: Only two numbers at rest
 - **WHEN** the same user has 8 Inbox tasks, 10 due today, projects with open tasks, labels in use and saved filters with matches, and nothing is hovered or focused
@@ -60,7 +68,7 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 
 #### Scenario: More open on a phone
 - **WHEN** a user with 25 projects opens the drawer on a 390×640 phone, opens More and swipes up on the drawer
-- **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the primary destinations and the footer stay in place, and the page behind the drawer does not move
+- **THEN** the drawer's scroller, which holds More and the groups below it, scrolls and reaches the last project, the workspace control, the primary destinations and the footer stay in place, and the page behind the drawer does not move
 
 #### Scenario: More on a desktop
 - **WHEN** a user on a 1280×600 screen with a mouse selects More
@@ -76,38 +84,77 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 
 #### Scenario: Open Loops first sidebar
 - **WHEN** a user picks Open Loops first and opens the app on a 1280×800 screen
-- **THEN** the primary destinations are Loop home, Inbox, Today, Next, Waiting and Review in that order, Upcoming and Calendar are in the More group, and the Review entry carries its rhythm marker as a dot
+- **THEN** the primary destinations are Loop home, Inbox, Today, Next, Waiting and Review in that order, Upcoming and Calendar are in the More group, the workspace control sits above them without counting as a seventh, and the Review entry carries its rhythm marker as a dot
 
 #### Scenario: Promotions kept across modes
 - **WHEN** a user who promoted Someday switches to Open Loops first and later back to Companion
 - **THEN** Someday is in the More group while in Open Loops first, and is a primary destination again after switching back, on every device after sync
 
+#### Scenario: Unread in another workspace
+- **WHEN** the user is in "Personal" and a shared project in "Work" receives activity the user has not seen
+- **THEN** the workspace control shows one accent dot, its tooltip reads "Updates in Work", and the dot leaves once the user has seen the updates
+
 #### Scenario: Locations in More
 - **WHEN** the user opens the More group, in any "How you work" mode
-- **THEN** Locations is listed after Updates and before Rules, and it is never a primary destination
+- **THEN** Locations is listed after Updates and before Trash, and it is never a primary destination
 
 #### Scenario: Rules in More
 - **WHEN** the user opens the More group, in any "How you work" mode
 - **THEN** Rules (OpenSpec `automation-rules`) is listed after Locations and before Trash, and it is never a primary destination
 
 ### Requirement: Page template
-Every view SHALL render a page header with the title in one size, optional meta text beside it, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, boards, timelines and calendars the whole frame. Every page type SHALL share one page frame: centred in the column, at most 80 rem wide, with the same side padding. The header, and any footer line a page shows below its content, SHALL span the whole frame, so at a given window width the title starts and the last header action ends at the same place on every page; the content SHALL start at the frame's left edge and wide content SHALL scroll inside the frame rather than widen it. Switching a project between list, board and timeline SHALL not move its title or actions. The header SHALL stay visible while the content scrolls.
+Every view SHALL render a page header with the title in the page title size, an optional lead line under the title (the page's meta: a date, totals, members and role, a count, a read-only note) in the muted tone at the metadata size, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, a list with field columns and a project's list layout 72 rem, boards, timelines and calendars the whole frame. The header SHALL stay visible while the content scrolls. Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle.
+
+There SHALL be two page frames, both with the same side padding and both inside the content column:
+
+- A **standalone page**, one that offers no layout switch (Inbox, Today, Upcoming, Anytime, Someday, Next, Waiting, Assigned to me, Completed, a label, Filter, a saved filter, Trash, Updates, settings, Import, Ask, Help, the review screens), SHALL have a frame as wide as its content width plus the padding, centred in the content column, with the header and the content inside it, so the title and the content start at the same left edge and no page is left-aligned in a wider column.
+- A **layout page**, one that offers a layout switch (a project, a saved view that offers a board or a timeline, the calendars), SHALL have one frame of at most 80 rem centred in the column, shared by every layout: the header and any footer line span the frame, the content starts at the frame's left edge, wide content scrolls inside the frame rather than widening it, and switching a project between list, board and timeline SHALL not move its title or actions.
+
+When the panel opens as a column, the content column SHALL narrow by the panel's width and a standalone frame SHALL re-centre in the remaining width, moving with the emphasis duration and the calm easing, or at once under reduced motion; where the column is already no wider than the frame, nothing SHALL move. This is presentation only, reads nothing from the server and behaves the same offline.
 
 #### Scenario: Same left edge
-- **WHEN** the user moves between Inbox, a project, Labels, Trash and the Filter view on a 1280 px screen
-- **THEN** the title and the content start at the same horizontal position in all five, and the header's last action ends at the same position in all five
+- **WHEN** the user moves between Inbox, Today, Labels, Trash and the Filter view on a 1280 px screen
+- **THEN** the title and the first row start at the same horizontal position in all five, and the frame is centred in the content column
 
-#### Scenario: Actions in the header
-- **WHEN** a project has Share, Rename, Move, Archive, Activity and History actions
-- **THEN** the header shows the List/Board control and Share, and the remaining actions are in the overflow menu
+#### Scenario: A lead line under the title
+- **WHEN** Today is opened on a 1280 px screen with 5 h 15 m planned and 40 m tracked
+- **THEN** the title "Today" is on its own line and "Wednesday 21 October · 5 h 15 m planned · 40 m tracked" is a muted line under it, and the two header actions and Help are on the title's line
+
+#### Scenario: Centred on a wide screen
+- **WHEN** Today is open with the panel closed on a 1536 px screen with the sidebar at its default width
+- **THEN** the frame is 52 rem wide and the space on its left equals the space on its right, within 1 px
+
+#### Scenario: The panel docks
+- **WHEN** Today is open on a 1920 px screen and the user opens a task
+- **THEN** the panel is a 30 rem column at the right, the frame re-centres in the remaining column within the emphasis duration, and the list keeps its 48 rem width
+
+#### Scenario: No room to move
+- **WHEN** Today is open on a 1280 px screen and the user opens a task
+- **THEN** the frame fills the narrowed column and the title does not move horizontally
+
+#### Scenario: Reduced motion
+- **WHEN** the system asks for reduced motion and a task is opened on a 1920 px screen
+- **THEN** the frame is at its new place at once, with no slide
 
 #### Scenario: List, board and timeline keep the header still
 - **WHEN** the user switches "Q4 launch" from List to Board to Timeline on a 1440 px screen
 - **THEN** the project title and the List/Board/Timeline control stay at the same position in all three, and only the content below changes width
 
+#### Scenario: A project list fills its frame
+- **WHEN** a project is shown as a list on a 1440 px screen with the panel closed
+- **THEN** its rows span the 72 rem content width from the frame's left edge, and the title starts at the same place as on the board
+
 #### Scenario: Wide board inside the frame
 - **WHEN** a board has eight columns on a 1280 px screen
 - **THEN** the board scrolls sideways inside the frame and the header keeps its width and position
+
+#### Scenario: Actions in the header
+- **WHEN** a project has Share, Rename, Move, Archive, Activity and History actions
+- **THEN** the header shows the List/Board control and Share, and the remaining actions are in the overflow menu
+
+#### Scenario: Phone bar carries the lead line
+- **WHEN** Today is open on a 390 px screen
+- **THEN** the shell's bar shows "Today" with the date line under it as its subtitle, and the page header row shows no second title
 
 ### Requirement: No desktop top bar
 From 768 px wide the shell SHALL have no bar above the content column; search SHALL be a button beside the app name in the sidebar, notifications, sync status and help SHALL live in the sidebar footer, and page actions in the page header. Below 768 px a bar SHALL show the menu button, the page title and up to two page actions, with the remaining actions in an overflow menu.
@@ -150,14 +197,18 @@ The shell SHALL own one panel slot to the right of the content. The open task's 
 - **THEN** the task replaces the activity in the slot, and Close returns to the list, not to the activity
 
 ### Requirement: Panel width and expansion
-From 1024 px the panel SHALL be a 26 rem column, 30 rem from 1440 px, and SHALL offer an Expand action that opens the task as a full page at `/task/<id>` with the same content and a Back action. Between 768 and 1023 px it SHALL be a sheet of at most 28 rem over the content column; below 768 px it SHALL open as a full-screen sheet over the list with a sticky header.
+From 1024 px the panel SHALL be a 26 rem column, 30 rem from 1440 px, and SHALL offer an Expand action that opens the task as a full page at `/task/<id>` with the same content and a Back action. Between 768 and 1023 px it SHALL be a sheet of at most 28 rem over the content column; below 768 px it SHALL open as a bottom sheet over the dimmed list, at most 90 percent of the viewport height, with a drag handle above its sticky header (see `web-app` "Task detail panel").
 
 #### Scenario: Expand a long note
 - **WHEN** the user activates Expand on an open task
 - **THEN** the task fills the content column, the address is `/task/<id>`, and Back returns to the list with the panel open
 
+#### Scenario: The list stays in sight on a phone
+- **WHEN** the user opens a task from Today on a 390×844 phone
+- **THEN** the task opens as a bottom sheet with a drag handle, the top of Today stays visible and dimmed above it, and the sheet is no taller than 90 percent of the screen
+
 ### Requirement: Phone navigation
-Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, Search and More (More opens the sidebar as a drawer), and a floating add button that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet or the task panel is open. Tabs SHALL be at least 44 px tall and SHALL respect the bottom safe area.
+Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, Search and More (More opens the phone drawer, see "Phone drawer"), and a floating add button at the bottom right above the bar that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet or the task sheet is open. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
 
 #### Scenario: Two taps to any primary view
 - **WHEN** the user is in a project on a phone and taps Today in the bar
@@ -166,6 +217,18 @@ Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, 
 #### Scenario: Add from anywhere
 - **WHEN** the user taps the floating add button in Upcoming
 - **THEN** quick add opens as a bottom sheet with its field focused and the Upcoming default date applied, and the list stays visible above the keyboard
+
+#### Scenario: The last row is readable
+- **WHEN** a list of twenty tasks is scrolled to its end on a 390×844 phone
+- **THEN** the last row's title and metadata are fully visible above the add button and the tab bar, and nothing is under the button
+
+#### Scenario: The bar minimises while reading
+- **WHEN** the user scrolls a long list down by 100 px on a phone without reduced motion
+- **THEN** the tab bar shows only its icons at a smaller height and the add button is off screen, and a scroll up of any distance brings both back at full size
+
+#### Scenario: Reduced motion keeps the bar
+- **WHEN** reduced motion is requested and the user scrolls a long list down
+- **THEN** the tab bar and the add button do not move
 
 ### Requirement: Resizable sidebar
 From 1024 px the sidebar SHALL be resizable by dragging its edge between 15 rem and 22.5 rem, remembered per device, and SHALL be collapsible to icons with a control in its footer and the shortcut `[`.
@@ -397,3 +460,22 @@ From 768 px with a fine pointer the sidebar's background SHALL be the sidebar su
 #### Scenario: Phone keeps the surface
 - **WHEN** the drawer opens on a 390 px phone
 - **THEN** its background is the surface colour of sheets, with no accent tint
+
+### Requirement: Phone drawer
+Below 768 px, More SHALL open a drawer from the left edge, at most 85 percent of the viewport width and at most 20 rem, over a scrim that closes it on tap. The drawer SHALL NOT repeat the tab bar's destinations. It SHALL show, top to bottom, in one scroller: the find field, the primary destinations the tab bar does not hold (Calendar in Lists and Companion; Loop home, Next, Waiting and Review in Open Loops first), the More group, then Favourites, Projects, Labels and Filters as rows at least 48 px tall following the sidebar's counts and grouping rules; then a pinned footer with the account row (opening Settings, Help, Keyboard shortcuts and Sign out), the assistant launcher when the assistant is available, notifications and the sync status. Choosing a destination SHALL close the drawer. The drawer SHALL use the sidebar's tones. The page behind the drawer SHALL NOT scroll while it is open.
+
+#### Scenario: No repeated destinations
+- **WHEN** a user in Companion mode opens the drawer on a 390 px phone
+- **THEN** Calendar is the first destination, Today, Inbox and Upcoming are not listed, and the More group follows
+
+#### Scenario: Open Loops first on a phone
+- **WHEN** a user in Open Loops first mode opens the drawer
+- **THEN** Loop home, Next, Waiting and Review are listed above the More group, and Today, Inbox and Upcoming are not, since the tab bar holds them
+
+#### Scenario: Forty projects
+- **WHEN** a user with forty projects opens the drawer and swipes up
+- **THEN** the scroller reaches the last project and the Labels and Filters groups, the footer stays in place, and the page behind does not move
+
+#### Scenario: Settings from the drawer
+- **WHEN** the user taps the account row in the drawer's footer and chooses Settings
+- **THEN** Settings opens and the drawer is closed

@@ -121,6 +121,6 @@ describe('editor-everywhere additions', () => {
     expect(parseInline('hi @Bob and @eve', 0, { mention: (x) => x === 'Bob' })).toEqual([
       { t: 'text', v: 'hi ' }, { t: 'mention', v: 'Bob' }, { t: 'text', v: ' and @eve' },
     ])
-    expect(renderToStaticMarkup(createElement(Markdown, { source: 'hi @Bob', mentions: new Map([['Bob', 'Bob Smith']]) }))).toContain('<span class="mention-chip" data-mention-token="Bob">@Bob</span>')
+    expect(renderToStaticMarkup(createElement(Markdown, { source: 'hi @Bob', mentions: new Map([['Bob', 'Bob Smith']]) }))).toContain('<span class="mention-chip" data-mention-token="Bob" data-tip="Bob Smith">@Bob</span>')
   })
 })

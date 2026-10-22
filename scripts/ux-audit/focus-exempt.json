@@ -1,0 +1,18 @@
+{
+ "reason": "Elements found without a focus ring by the first run of the focus pass on the Screens stories (2026-10-22, ux-audit-three-widths task 4.3). Each is fixed in the follow-up change ux-fixes-phone, which removes its line here; the gate fails on any element not listed.",
+ "elements": [
+  "<span.relative.inline-flex>",
+  "<input.min-w-0.flex-1>",
+  "<div.hidden.w-1>",
+  "<div.group.flex>",
+  "<textarea.block.w-full>",
+  "<div.size-(--heat).rounded-[3px]>",
+  "<div.relative.min-h-0>",
+  "<div.relative.max-w-full>",
+  "<div.h-full.min-w-0>",
+  "<div.group.relative>",
+  "<div.flex.size-(--dot)>",
+  "<div.flex.min-h-6>",
+  "<div.relative.min-w-0>"
+ ]
+}

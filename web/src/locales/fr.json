@@ -291,7 +291,6 @@
   "Ask about your tasks, or pick a skill…": "Posez une question sur vos tâches, ou choisissez une compétence…",
   "Ask about your tasks…": "Posez une question sur vos tâches…",
   "Ask the assistant": "Poser une question à l’assistant",
-  "Ask the assistant (Shift+I)": "Demander à l’assistant (Maj+I)",
   "Ask the server owner to turn it on.": "Demandez au propriétaire du serveur de l’activer.",
   "Asks for your passphrase again before showing your tasks.": "Redemande votre phrase secrète avant d’afficher vos tâches.",
   "Assign": "Attribuer",
@@ -1701,7 +1700,6 @@
   "Nothing delivered yet": "Rien de livré pour l’instant",
   "Nothing delivered yet; send a test.": "Rien de livré pour l’instant ; envoyez un test.",
   "Nothing fetched yet.": "Rien de récupéré pour l’instant.",
-  "Nothing here.": "Rien ici.",
   "Nothing is due in the next seven days.": "Rien n’est à échéance dans les sept prochains jours.",
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": "Rien n’est envoyé tant que vous n’en ajoutez pas. Un webhook envoie une requête signée à votre point de terminaison quand des tâches ou des projets changent.",
   "Nothing left for today": "Plus rien pour aujourd’hui",
@@ -4963,5 +4961,7 @@
   "The logo must be at most 2 MB.": "Le logo doit faire au plus 2 Mo.",
   "The name is at most {max} characters.": "Le nom fait au plus {max} caractères.",
   "Your own name and logo for this server, in the tab, the app icon and the sidebar": "Votre nom et votre logo pour ce serveur, dans l’onglet, l’icône de l’app et la barre latérale",
-  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Votre nom et votre logo dans l’onglet, l’icône de l’app, l’écran de connexion et la barre latérale."
+  "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": "Votre nom et votre logo dans l’onglet, l’icône de l’app, l’écran de connexion et la barre latérale.",
+  "No tasks match this panel.": "Aucune tâche ne correspond à ce panneau.",
+  "Every task of these days is placed.": "Toutes les tâches de ces jours sont placées."
 }

@@ -237,7 +237,8 @@ Put a `*.stories.tsx` file next to the component, in Component Story Format; `ma
 | Check | Runs in | Fails on |
 |---|---|---|
 | Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; Storybook code in the production build |
-| Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark |
+| Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark; on a `Screens/*` story, an element that shows no focus ring when tabbed to (elements of the first run are listed in `scripts/ux-audit/focus-exempt.json` until their fix) |
+| Story coverage | `make ui-lint` (`scripts/ux-audit/stories.mjs`) | a core screen of the inventory without its story; rare screens are listed, not failed |
 | Visual regression | `make ui-check`, CI job "UI check" | a story × theme × width screenshot that differs from its baseline by more than 0.2% |
 | Motion | `make ui-check` (`scripts/ui-check/motion.mjs`) | a Foundations → Motion story that, with reduced motion emulated, runs an animation changing `transform`, `translate`, `scale`, `height`, `block-size`, `width` or `inline-size`, or that runs any animation under `data-motion="none"`; it names the story and the property |
 
@@ -251,3 +252,25 @@ Font rendering differs between operating systems, so baselines are only generate
 - Without Docker: run the **UI baselines** workflow on GitHub (Actions → UI baselines → Run workflow), download the `ui-baselines` artifact and commit its PNGs. For a story that has no baseline yet, the CI "UI check (visual regression)" job also writes one and fails; its `ui-check-report-<shard>` artifact contains it under `web/src/ui/__screenshots__`.
 
 Update baselines only for intended visual changes, in the same pull request as the change.
+
+## The interface audit
+
+The workbench checks stories; the audit checks the built app. `make ux-audit` starts a throwaway server, seeds it the way the layout check does, and opens every entry of the screen inventory (`scripts/ux-audit/screens.json`: every route, settings section, signed-out screen, display route and the main overlays) at 360, 768 (both with touch) and 1280 px, light and dark, in English and German. It writes `ux-audit-report/index.html`, a contact sheet with a screenshot of each capture and the findings ranked, and `report.json`. CI runs it on every code change as the "Interface audit" job and uploads the report; it does not block a pull request.
+
+| Id | Measures | Limit |
+| --- | --- | --- |
+| M1, M9 | axe-core, WCAG 2.2 AA; contrast reported apart | no serious or critical issue |
+| M2 to M5 | the interface budget: chrome rows, a row's metadata, primary destinations, vertical scrollers | `web/src/app/budget.json` |
+| M6 | an element or the page wider than the viewport, outside `data-scroll-x` | none |
+| M7 | target size | 44 px on touch; 24 px, or 24 px of space around it, with a mouse |
+| M8 | focus: Tab through the screen at 1280 px | a ring on every focusable element |
+| M10 | text cut with an ellipsis | its full text in the accessible name, the tooltip (`data-tip`) or an `sr-only` neighbour |
+| M11 | two controls overlapping | at most 4 px |
+| M12 | layout shift from navigation to idle | 0.1 |
+| M13 | the first task row on a second visit with the server stopped | reported |
+| M14 | story coverage of the core screens | none missing |
+| M15 | movement under reduced motion (completing a task, opening the panel and a dialog) | none |
+
+German captures cover every screen; overlays are opened in English, because their openers find controls by name. A finding seen only in German is marked so (M16). Each finding is scored by severity (4 blocks a task, 3 slows it, 2 breaks a guideline, 1 is cosmetic) times how often the screen is used (3 daily, 2 weekly, 1 rare), and the report lists the highest first.
+
+`ONLY` (inventory ids), `WIDTHS`, `THEMES`, `LANGS`, `CONCURRENCY` and `OUT_DIR` narrow a local run. With `UX_AUDIT_STRICT=1` the audit exits non-zero on budget, overflow and story-coverage findings; in CI the repository variable `UX_AUDIT_STRICT` turns that on. The measurements have fixture tests in `scripts/ux-audit/measure.test.mjs` (one passing and one failing case each), and `scripts/ux-audit/ux-audit.test.mjs` keeps the inventory in step with the router and the layout check.

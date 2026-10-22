@@ -28,6 +28,7 @@ coverage.out
 /web/playwright-report/
 /web/test-results/
 /layout-report/
+/ux-audit-report/
 
 # Agent worktrees
 /.claude/worktrees/

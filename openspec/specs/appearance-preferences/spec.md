@@ -91,25 +91,6 @@ The colour the browser or operating system uses around the app (address bar, ins
 - **WHEN** the installed app is launched
 - **THEN** the splash screen shows the server's neutral colour, and the first frame after it uses the user's remembered appearance
 
-### Requirement: Appearance in Settings
-Settings → Appearance SHALL be its own section offering a mode control, one tile per theme (a horizontal row of swatches below 640 px), the density choice, the row detail choice (Calm or Detailed, with one sentence saying what Calm leaves out) and the sidebar destination switches. Each tile SHALL preview its theme's accent on the current mode and name the theme in text. A choice SHALL apply at once, without a reload. Every control SHALL be operable by keyboard alone, and the current mode, theme, density and row detail SHALL be announced to assistive technology.
-
-#### Scenario: Pick a theme by keyboard
-- **WHEN** the user tabs to the theme tiles, moves with the arrow keys to `teal` and presses Enter or Space
-- **THEN** the app switches to the teal accent at once and the teal tile is marked as selected
-
-#### Scenario: Previews follow the mode
-- **WHEN** the user switches the mode from `light` to `dark` in the panel
-- **THEN** the app and every tile preview turn dark at once
-
-#### Scenario: Swatches on a phone
-- **WHEN** the user opens Appearance on a 390 px screen
-- **THEN** the eight themes are a single scrollable row of named swatches, not a grid of cards
-
-#### Scenario: Pick Detailed by keyboard
-- **WHEN** the user tabs to the Rows control after Density and chooses Detailed with the arrow keys
-- **THEN** the choice is announced, every open list shows Detailed rows at once, and the setting is on the user's other devices after sync
-
 ### Requirement: Density preference
 Each user SHALL have a density preference, `comfortable` (default) or `compact`, stored and synced like mode and theme as an additive preference, applied at once to task rows, group headers and the sidebar. A client SHALL treat an unknown value as `comfortable` and keep the stored value unchanged. Touch targets SHALL stay 44 px on coarse pointers in both densities.
 
@@ -136,25 +117,6 @@ Each user SHALL have a synced list of promoted destinations, shown among the pri
 - **WHEN** a user in `first` mode opens Settings → Appearance
 - **THEN** the destination switches are disabled with the explanation, and switching back to `companion` restores the promotions they show
 
-### Requirement: Row detail preference
-Each user SHALL have a row detail preference, `calm` (default) or `detailed`, stored and synced like density as an additive preference written through the operation log on the user's personal data, so it applies on every device of that user and never on another user's. It SHALL be editable offline, take effect at once on the editing device, and converge by last-writer-wins on the field. A client SHALL treat an unknown or empty value as `calm` and keep the stored value unchanged.
-
-#### Scenario: Detailed on two devices
-- **WHEN** the user picks Detailed on a laptop
-- **THEN** rows show every chip and colour there at once and on the user's phone after sync
-
-#### Scenario: Chosen offline
-- **WHEN** the device is offline and the user picks Detailed
-- **THEN** the rows change immediately, one operation is queued, and it reaches the other devices on the next sync
-
-#### Scenario: Concurrent choices
-- **WHEN** device A picks Detailed and device B picks Calm, both offline, and both sync
-- **THEN** every device ends with the value written with the greater timestamp, and a density change made in the meantime is kept
-
-#### Scenario: Unknown value from a newer client
-- **WHEN** a device receives `row_detail` set to a value it does not know
-- **THEN** it shows Calm rows and leaves the stored value as it is
-
 ### Requirement: Favourites preference
 Each user SHALL have a synced, ordered list of favourites, each an entry naming a kind (project, label or saved filter) and an id, stored and synced like the promoted destinations as an additive preference; the default is empty. A client SHALL ignore entries of an unknown kind or whose item is missing, archived or deleted, and keep the stored value unchanged. A saved filter whose own pinned flag is set SHALL be treated as a favourite even when the list does not name it, after the listed entries.
 
@@ -173,3 +135,56 @@ Each user SHALL have a synced, ordered list of favourites, each an entry naming 
 #### Scenario: Concurrent pins converge
 - **WHEN** two devices pin different projects while offline and then sync
 - **THEN** both devices show the same Favourites group, the later write's order winning for the list and no project duplicated
+
+### Requirement: Retired row detail preference
+The `row_detail` field of the user's appearance preferences SHALL remain in the operation schema and the client defaults as a retired field: it is accepted, stored, synced and exported exactly as before, converges by last-writer-wins on the field, and SHALL have no effect on how rows render. No client SHALL write it, and no client SHALL remove or rename it; an older client that still writes `detailed` SHALL cause no change on a current client.
+
+#### Scenario: Older client writes Detailed
+- **WHEN** a device running the previous version picks Detailed and syncs
+- **THEN** the current devices receive the op, keep the value, and keep rendering the one row
+
+#### Scenario: Export round-trip
+- **WHEN** a user whose stored `row_detail` is `detailed` exports and imports into a new account
+- **THEN** the value travels in the export and is stored, and the rows are unchanged
+
+#### Scenario: Nothing is written
+- **WHEN** a user opens Settings → Appearance and changes the density
+- **THEN** one op for `density` is queued and none for `row_detail`
+
+### Requirement: Appearance in Settings without a Rows choice
+Settings → Appearance SHALL be its own section offering a mode control, one tile per theme (a horizontal row of swatches below 640 px), the density choice, the haptic feedback switch on devices that can vibrate, and the sidebar destination switches. Each tile SHALL preview its theme's accent on the current mode and name the theme in text. A choice SHALL apply at once, without a reload. Every control SHALL be operable by keyboard alone, and the current mode, theme, density and haptics state SHALL be announced to assistive technology. The section SHALL NOT offer a row detail choice.
+
+#### Scenario: Pick a theme by keyboard
+- **WHEN** the user tabs to the theme tiles, moves with the arrow keys to `teal` and presses Enter or Space
+- **THEN** the app switches to the teal accent at once and the teal tile is marked as selected
+
+#### Scenario: Previews follow the mode
+- **WHEN** the user switches the mode from `light` to `dark` in the panel
+- **THEN** the app and every tile preview turn dark at once
+
+#### Scenario: Swatches on a phone
+- **WHEN** the user opens Appearance on a 390 px screen
+- **THEN** the eight themes are a single scrollable row of named swatches, not a grid of cards
+
+#### Scenario: No Rows control
+- **WHEN** the user tabs through Settings → Appearance after Density
+- **THEN** the next control is the haptic feedback switch on a device that can vibrate and otherwise the first sidebar destination switch, and searching settings for "Calm" or "Detailed" finds nothing
+
+### Requirement: Haptic feedback preference
+Each user SHALL have a `haptics` preference, `on` or `off`, defaulting to `on`, synced like the other appearance preferences as an additive field and editable offline, converging by last-writer-wins. With it on, a device that can vibrate SHALL give a short tick (at most 15 ms) when a task is completed and when a long press lifts a task for dragging; with it off, or on a device that cannot vibrate, nothing SHALL vibrate. The switch SHALL appear in Settings → Appearance only on devices that can vibrate; a client that receives an unknown value SHALL treat it as `on` and keep the stored value.
+
+#### Scenario: Complete on a phone
+- **WHEN** the preference is on and the user completes a task on a phone whose browser supports vibration
+- **THEN** the device ticks once as the check mark fills, and does not tick again when the row leaves
+
+#### Scenario: Turned off on one device
+- **WHEN** the user turns haptics off on their phone while offline and later opens a tablet
+- **THEN** the phone stops ticking at once, the preference syncs when online, and the tablet stops ticking too
+
+#### Scenario: Desktop hides the switch
+- **WHEN** the user opens Settings → Appearance in a desktop browser without vibration support
+- **THEN** no haptics row is shown and nothing is written to the preference
+
+#### Scenario: Older device
+- **WHEN** a device with an app version before this preference receives the field
+- **THEN** it ignores the field and keeps syncing as before

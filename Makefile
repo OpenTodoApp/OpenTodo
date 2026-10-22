@@ -10,7 +10,7 @@ EXT_ZIPS := dist/opentodo-browser-extension-chrome.zip dist/opentodo-browser-ext
 WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
 all: build
 
@@ -73,6 +73,15 @@ layout-check: build
 	@d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18080 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
 	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18080/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
 	  OPENTODO_URL=http://127.0.0.1:18080 node scripts/e2e-layout.mjs layout-report; s=$$?; kill $$pid; rm -rf $$d; exit $$s
+
+## Interface audit (ux-audit-three-widths): every screen of scripts/ux-audit/screens.json
+## at 360/768/1280 px, light and dark, English and German, against a throwaway server
+## on a free port; writes ux-audit-report/index.html and report.json. Needs Playwright
+## with Chromium. ONLY, WIDTHS, THEMES, LANGS, CONCURRENCY, OUT_DIR narrow it;
+## UX_AUDIT_STRICT=1 fails on budget, overflow and story-coverage findings.
+ux-audit: build
+	node scripts/ux-audit/tour.mjs
+	@echo "report: $${OUT_DIR:-ux-audit-report}/index.html"
 
 ## Design workbench (design-language): Storybook on http://localhost:6006.
 storybook:
@@ -242,8 +251,9 @@ e2e: cli
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
 ui-lint:
-	node --test scripts/ui-check.test.mjs
+	node --test scripts/ui-check.test.mjs scripts/ux-audit/ux-audit.test.mjs
 	node scripts/ui-check.mjs
+	node scripts/ux-audit/stories.mjs
 
 ## React hooks lint (web-lint-and-test-hygiene): Rules of Hooks and effect
 ## dependencies as errors; every remaining suppression carries its reason.
