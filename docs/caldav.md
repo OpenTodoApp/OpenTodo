@@ -89,16 +89,17 @@ What a VTODO does to the due date and the deadline depends only on which date pr
 | `DUE` only, task without a deadline | from `DUE` | none |
 | `DUE` only, task with a deadline | cleared | from the day of `DUE` |
 | `DTSTART` and `DUE`, equal | from `DUE` | unchanged |
+| `DTSTART` and `DUE`, different, task without a deadline and `DUE` exactly its current due | from `DTSTART` (a move; the `DUE` is the one the client was served) | unchanged |
 | `DTSTART` and `DUE`, different | from `DTSTART` | from the day of `DUE` |
 | `DTSTART` and a duration, no `DUE` | from `DTSTART` | unchanged |
 | `DTSTART` alone | unchanged (`DTSTART` kept as client data) | unchanged |
 | neither, no duration | cleared | unchanged |
 
-So a scheduling client such as Mitra, which writes `DTSTART` and `ESTIMATED-DURATION` without `DUE`, moves a task with a deadline or a repeat rule without erasing either.
+So a scheduling client such as Mitra, which writes `DTSTART` and `ESTIMATED-DURATION` without `DUE`, moves a task with a deadline or a repeat rule without erasing either. A task with a due **time** is served with `DTSTART` equal to `DUE`, so such clients show it as scheduled; when they move it and send the old `DUE` back unchanged, the task moves and gains no deadline. To give a task a deadline from a calendar app, change `DUE` (to another day than the start), or set the deadline in OpenTodo.
 
 ### Recurrence
 
-Rules that the [recurrence grammar](recurrence.md) can express map both ways: `FREQ=DAILY/WEEKLY/MONTHLY/YEARLY` with `INTERVAL`, weekday lists, `BYMONTHDAY` (including `-1`), `BYDAY=2TU` / `-1FR`, the last weekday of the month, `UNTIL` and `COUNT`. A recurring task is served with `DTSTART` equal to its due date. A completion-relative rule (`every 3 days after completion`) is served as its plain interval and kept as is when the client sends the same `RRULE` back.
+Rules that the [recurrence grammar](recurrence.md) can express map both ways: `FREQ=DAILY/WEEKLY/MONTHLY/YEARLY` with `INTERVAL`, weekday lists, `BYMONTHDAY` (including `-1`), `BYDAY=2TU` / `-1FR`, the last weekday of the month, `UNTIL` and `COUNT`. A recurring task is served with `DTSTART` equal to its due date, like any task with a due time. A completion-relative rule (`every 3 days after completion`) is served as its plain interval and kept as is when the client sends the same `RRULE` back.
 
 Completing a recurring task in a calendar app does what completing it in OpenTodo does: an occurrence record is added to Completed and the task moves to its next due date. Apple Reminders and DAVx⁵ apps that advance the due date themselves keep working: their edit is applied as an ordinary due-date change.
 
@@ -120,7 +121,7 @@ Upgrading from a server without this mapping: alarms set earlier in a calendar a
 
 ## Lists, sharing and deletion
 
-- **Discovery**: `/.well-known/caldav` redirects to `/dav/`; the principal is `/dav/principals/<user id>/`, the calendar home `/dav/calendars/<user id>/`, the Inbox `…/inbox/` and each project `…/<project id>/`. Every other [workspace](workspaces.md) has its own Inbox at `…/inbox-<workspace id>/`, and outside the default workspace a list's name starts with the workspace's ("Work · Website", "Work · Inbox"). Moving a project to another workspace renames its list; the path stays. Archived and deleted projects are not listed. Another account's paths answer 404.
+- **Discovery**: `/.well-known/caldav` redirects to `/dav/` with the server's full address (`OPENTODO_BASE_URL`, or the address the client used, behind a trusted proxy the forwarded one); a `PROPFIND` on the host root or on `/principals/…` is redirected the same way and an `OPTIONS` on the root reports the DAV capabilities, which is what Apple's clients need when they probe the root. The principal is `/dav/principals/<user id>/`, the calendar home `/dav/calendars/<user id>/`, the Inbox `…/inbox/` and each project `…/<project id>/`. Every other [workspace](workspaces.md) has its own Inbox at `…/inbox-<workspace id>/`, and outside the default workspace a list's name starts with the workspace's ("Work · Website", "Work · Inbox"). Moving a project to another workspace renames its list; the path stays. Archived and deleted projects are not listed. Another account's paths answer 404.
 - **Shared projects** appear for every member. Viewers get a read-only list (writes answer 403); editors may add, change and delete tasks; renaming or recolouring needs admin or owner, deleting the list needs the owner.
 - **Creating a list** in the app (MKCALENDAR) creates a project with that name and colour. Renaming or recolouring it (PROPPATCH) renames or recolours the project.
 - **Deleting a list** moves the project to the Trash and its open tasks to the Inbox (for a shared project as copies, since a task never changes sharing scope). The Inbox cannot be deleted or renamed (403).

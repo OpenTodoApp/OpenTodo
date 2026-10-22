@@ -296,16 +296,26 @@ func (s *Server) writeBlobError(w http.ResponseWriter, err error) {
 }
 
 // markUploaded writes uploaded_at as the author with device "server" and wakes devices.
+// markUploaded records the server's word that the file is stored. The op's
+// timestamp beats the device's own write of the field (its creation set
+// uploaded_at to null): a phone whose clock runs ahead of the server would
+// otherwise win last-writer-wins, the op would be dropped, and the file would
+// stay "uploading" on every device for good (issue #246).
 func (s *Server) markUploaded(ctx context.Context, uid, id string) error {
 	now := time.Now().UnixMilli()
-	res, err := s.sync.ApplyStrict(ctx, uid, []opsync.Op{{ID: ids.New(), Entity: "attachment", EntityID: id, Field: "uploaded_at",
-		Value: json.RawMessage(strconv.FormatInt(now, 10)), TS: s.opTS(), Device: serverDevice}})
+	fieldTS, err := s.sync.FieldTS(ctx, uid, "attachment", id, "uploaded_at")
 	if err != nil {
 		return err
 	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, serverDevice)
+	res, err := s.sync.ApplyStrict(ctx, uid, []opsync.Op{{ID: ids.New(), Entity: "attachment", EntityID: id, Field: "uploaded_at",
+		Value: json.RawMessage(strconv.FormatInt(now, 10)), TS: s.sync.ServerTSAt(max(now, fieldTS+1)), Device: serverDevice}})
+	if err != nil {
+		return err
 	}
+	if res.Applied == 0 {
+		return fmt.Errorf("attachment %s: uploaded_at was not applied", id)
+	}
+	s.sync.NotifyApplied(res, serverDevice)
 	return nil
 }
 

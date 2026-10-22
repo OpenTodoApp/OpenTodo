@@ -38,6 +38,13 @@ func (s *Server) registerCaldavRoutes(mux *routes) {
 	mux.handle("/dav", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
 	mux.handle("/.well-known/caldav", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
 	mux.handle("/.well-known/caldav/", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
+	// Discovery from the host root (issue #249): Apple's clients probe the root
+	// and /principals/ with WebDAV methods when the well-known address does not
+	// lead them; without CalDAV these answer as the web app did (405, 404).
+	mux.handle("PROPFIND /{$}", public("CalDAV discovery from the host root; redirects to /dav/").demoDenied(), s.handleDAVRoot)
+	mux.handle("OPTIONS /{$}", public("CalDAV discovery from the host root; reports the DAV capabilities").demoDenied(), s.handleDAVRoot)
+	mux.handle("/principals", public("CalDAV discovery; redirects to the principal under /dav/").demoDenied(), s.handleDAVRoot)
+	mux.handle("/principals/", public("CalDAV discovery; redirects to the principal under /dav/").demoDenied(), s.handleDAVRoot)
 }
 
 // seedCaldav applies the OPENTODO_CALDAV preset on first start only.

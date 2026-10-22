@@ -213,6 +213,7 @@ var demoRules = []demoRule{
 	{"Automations", false, exact("/api/v1/settings/automations")},
 	{"CalDAV", false, prefix("/dav")},
 	{"CalDAV", false, prefix("/.well-known/caldav")},
+	{"CalDAV", false, prefix("/principals")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},
 	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
 	// Keeping a project away from assistants (agent-planning-fields D9).
@@ -250,6 +251,11 @@ var demoRules = []demoRule{
 
 // demoRestricted returns the refused feature's name, or "" when allowed.
 func demoRestricted(method, path string) string {
+	// CalDAV discovery probes on the host root (issue #249); the web app itself
+	// (GET, and the 405 a POST gets) stays.
+	if path == "/" && (method == "PROPFIND" || method == http.MethodOptions) {
+		return "CalDAV"
+	}
 	write := method != http.MethodGet && method != http.MethodHead
 	for _, r := range demoRules {
 		if r.writes && !write {

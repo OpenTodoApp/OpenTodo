@@ -244,6 +244,7 @@ func (d *decoder) dates() {
 			start = st
 		}
 	}
+	in.SentDue = in.Due
 	switch {
 	case in.Due != nil && start != nil && sameDue(start, in.Due):
 		in.Shape = ShapeStartDueEqual
@@ -273,8 +274,13 @@ func (d *decoder) dates() {
 			d.extra = append(d.extra, rrule.Line())
 		}
 	}
+	// A DTSTART equal to a timed DUE is what this server serves for a scheduled
+	// time (Encode); echoed back it is not client data, or the copy would go
+	// stale when a device moves the task. An equal DTSTART on a date-only DUE
+	// (a "started" task in Thunderbird) is the client's and stays.
+	servedStart := in.Shape == ShapeStartDueEqual && in.Due.Time != nil
 	keepStart := in.Shape == ShapeStartAlone || (dtstart != nil && start == nil) ||
-		(in.Shape == ShapeStartDueEqual && in.Rule == "") || (in.Shape == ShapeDueOnly && dtstart != nil)
+		(in.Shape == ShapeStartDueEqual && in.Rule == "" && !servedStart) || (in.Shape == ShapeDueOnly && dtstart != nil)
 	if keepStart {
 		d.extra = append([]string{dtstart.Line()}, d.extra...)
 	}

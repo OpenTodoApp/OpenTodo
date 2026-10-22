@@ -206,9 +206,71 @@ func TestMitraScheduledUndated(t *testing.T) {
 	if d := got["due"].(map[string]any); d["date"] != "2026-10-20" || d["time"] != "14:00" || got["estimate_minutes"] != float64(30) {
 		t.Fatalf("scheduled: %v", got)
 	}
+	// Served back with DTSTART = DUE, so Mitra keeps showing it as scheduled (issue #248).
 	_, ics := c.must("GET", c.cal("inbox")+"mitra-scheduled.ics", "", 200)
-	if !strings.Contains(ics, "DUE:20261020T140000\r\n") || !strings.Contains(ics, "ESTIMATED-DURATION:PT30M\r\n") || strings.Contains(ics, "DTSTART") {
+	if !strings.Contains(ics, "DUE:20261020T140000\r\n") || !strings.Contains(ics, "DTSTART:20261020T140000\r\n") || !strings.Contains(ics, "ESTIMATED-DURATION:PT30M\r\n") {
 		t.Fatalf("served:\n%s", ics)
+	}
+	// The served object sent back unchanged writes nothing.
+	before := fmt.Sprint(e.caldavOps("mitra-scheduled"))
+	c.must("PUT", c.cal("inbox")+"mitra-scheduled.ics", ics, 204)
+	if fmt.Sprint(e.caldavOps("mitra-scheduled")) != before {
+		t.Fatal("unchanged PUT wrote ops")
+	}
+}
+
+// TestMitraEchoedDue: Mitra (since its fix for issue #196) moves a task by
+// sending the new DTSTART with the DUE it was served (issue #248). The echo is a
+// move, not a deadline; a DUE the client changed is still one.
+func TestMitraEchoedDue(t *testing.T) {
+	e, c := davSetup(t)
+	mitra := func(name string) string {
+		raw, err := os.ReadFile("../caldav/testdata/mitra/" + name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(raw)
+	}
+	// A timed task moved: due follows DTSTART, no deadline appears.
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Call the bank", "due": map[string]any{"date": "2026-10-22", "time": "14:00"}})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	_, ics := c.must("GET", c.cal("inbox")+id+".ics", "", 200)
+	if !strings.Contains(ics, "DTSTART:20261022T140000\r\n") || !strings.Contains(ics, "DUE:20261022T140000\r\n") {
+		t.Fatalf("served:\n%s", ics)
+	}
+	c.must("PUT", c.cal("inbox")+id+".ics", strings.ReplaceAll(mitra("timed-moved-echoed-due.ics"), "mitra-timed-moved", id), 204)
+	got := e.task(id)
+	if d := got["due"].(map[string]any); d["date"] != "2026-10-23" || d["time"] != "10:00" || got["deadline"] != nil || got["estimate_minutes"] != float64(30) {
+		t.Fatalf("timed moved: %v", got)
+	}
+	// A recurring task moved the same way keeps its rule and gains no deadline.
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Weekly sync", "due": map[string]any{"date": "2026-10-13", "time": "09:00"}, "recurrence": "every week"})
+	e.mustStatus(resp, 201, out)
+	id = out["id"].(string)
+	c.must("PUT", c.cal("inbox")+id+".ics", strings.ReplaceAll(mitra("recurring-moved-echoed-due.ics"), "mitra-recurring-echo", id), 204)
+	got = e.task(id)
+	if d := got["due"].(map[string]any); d["date"] != "2026-10-14" || d["time"] != "09:00" || got["deadline"] != nil || got["recurrence"] != "every week" {
+		t.Fatalf("recurring moved: %v", got)
+	}
+	// A due-date task scheduled in Mitra: the echoed date is not a deadline.
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Renew the passport", "due": map[string]any{"date": "2026-10-22"}})
+	e.mustStatus(resp, 201, out)
+	id = out["id"].(string)
+	c.must("PUT", c.cal("inbox")+id+".ics", strings.ReplaceAll(mitra("dated-scheduled-echoed-due.ics"), "mitra-dated-scheduled", id), 204)
+	got = e.task(id)
+	if d := got["due"].(map[string]any); d["date"] != "2026-10-21" || d["time"] != "15:00" || got["deadline"] != nil {
+		t.Fatalf("dated scheduled: %v", got)
+	}
+	// A DUE the client changed is a deadline, as before.
+	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Renew the passport", "DTSTART:20261021T150000", "DUE;VALUE=DATE:20261031"), 204)
+	if got = e.task(id); got["deadline"] != "2026-10-31" {
+		t.Fatalf("changed due: %v", got)
+	}
+	// With a deadline, the echoed DUE is the deadline and stays one.
+	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Renew the passport", "DTSTART:20261024T150000", "DUE;VALUE=DATE:20261031"), 204)
+	if got = e.task(id); got["deadline"] != "2026-10-31" || got["due"].(map[string]any)["date"] != "2026-10-24" {
+		t.Fatalf("deadline kept: %v", got)
 	}
 }
 

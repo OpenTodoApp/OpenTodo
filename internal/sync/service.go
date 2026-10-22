@@ -828,6 +828,25 @@ func listQuery(n int) string {
 	return `SELECT scope_id,entity_id,field,value FROM scope_fields WHERE scope_id IN (` + placeholders(n) + `) AND entity = ?`
 }
 
+// FieldTS is the timestamp of the winning op of one field of an entity the user
+// can see, over every visible scope; 0 when the field was never written. A
+// server write that must win over a device whose clock runs ahead (an
+// attachment's uploaded_at, issue #246) uses ServerTSAt(FieldTS+1).
+func (s *Service) FieldTS(ctx context.Context, userID, entity, id, field string) (int64, error) {
+	acc, err := loadAccess(ctx, s.reader(), userID)
+	if err != nil {
+		return 0, err
+	}
+	scopes := acc.scopes()
+	var ts sql.NullInt64
+	err = s.reader().QueryRowContext(ctx, `SELECT MAX(ts) FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? AND entity_id = ? AND field = ?`,
+		append(anys(scopes), entity, id, field)...).Scan(&ts)
+	if err != nil {
+		return 0, err
+	}
+	return ts.Int64, nil
+}
+
 // Get materializes one entity the user can see or returns nil when it does not exist.
 func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, error) {
 	if _, ok := Schema[entity]; !ok {
