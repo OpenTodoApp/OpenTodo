@@ -17,10 +17,12 @@ The calendar shows your dated tasks by day, week, month or as a two-week plan. D
 
 Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. The sidebar opens the calendar the way you last left it on this device.
 
-- Tasks with a date **and** a time appear as blocks at that time. The block is as tall as the estimate.
-- A timed task without an estimate gets a 30-minute block with a dashed outline.
+- Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
+- A timed task without an estimate gets a 30-minute block with a dashed edge.
 - Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
-- A red line marks the current time.
+- Days before today are dimmed; their tasks still move.
+- A red line marks the current time, in today's column.
+- A day shows three all-day events; **+N** shows the rest, and this device remembers it.
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 

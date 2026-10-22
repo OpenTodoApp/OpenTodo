@@ -11,7 +11,7 @@ order: 31
 
 <picture><source srcset="images/project-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-list-light.webp" alt="A project's tasks with their dates, the starting point for its timeline."></picture>
 
-Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it shows). Each open task is a row, in list order under its sections and with subtasks indented. Its bar runs from its start to its due date or deadline, whichever is later; a task with a single date gets a one-day bar. A thin mark shows the due day inside a longer bar, a flag shows the deadline, and a deadline that has passed turns the bar red. Tasks with no dates, or parked in Someday, wait under **Unscheduled** at the end.
+Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it shows). Each open task is a row, in list order under its sections and with subtasks indented. Its bar, in the project's colour, runs from its start to its due date or deadline, whichever is later; a task with a single date gets a one-day bar, and the part before today is dimmed. A thin mark shows the due day inside a longer bar, a flag shows the deadline, and a deadline that has passed gives the bar a red edge. Tasks with no dates, or parked in Someday, wait under **Unscheduled** at the end.
 
 - **Drag a bar** to move all its dates by the same number of days. The due time stays the same.
 - **Drag the left or right end** to set the start or the deadline. If the task has none yet, one is created.

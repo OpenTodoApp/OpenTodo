@@ -19,7 +19,7 @@ Open **Settings** from the menu of your name at the bottom of the sidebar, or pr
 
 Every section has its own address, such as `/settings/integrations`, to bookmark or share. Older links keep working: `/settings/security` opens **Account** at its security rows.
 
-Inside a section, each card leads with a heading and one sentence saying what it is for, then its settings as rows: label and description on the left, the control on the right (below the label on a narrow screen), and a badge with the current state. Forms with several fields open from a button; actions that remove something ask you to confirm first and say what will be lost.
+Inside a section, the setting the page is mostly about sits in a card at the top; the other groups follow, separated by a thin line. Each group leads with a heading and one sentence saying what it is for, then its settings as rows: label and description on the left, the control on the right (below the label on a narrow screen), and a badge with the current state. Forms with several fields open from a button; actions that remove something ask you to confirm first and say what will be lost.
 
 Some settings follow your account to every device; others belong to the device you're on, marked "this device", so your phone and laptop can differ. Each section page has a **Help** button in its header that opens its part of this guide next to Settings.
 
