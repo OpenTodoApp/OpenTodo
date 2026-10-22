@@ -39,11 +39,11 @@ The client SHALL provide Day and Week views as one Calendar destination, reachab
 - **THEN** the current week renders with every timed task as a block and date-only tasks in each day's lane
 
 ### Requirement: Tasks as calendar blocks
-An open task with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid.
+An open task with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid. A task block SHALL be drawn as a soft fill of its project's palette hue (the Inbox hue for a task without a project) with a 3 px edge of the solid hue on its leading side and the strong text tone for its title, never as a white box with a coloured border; its edge SHALL meet 3:1 against the grid. A block on a day before today, and a block whose task is a completed occurrence shown by a view, SHALL be dimmed to the faint tone with its fill lightened, so the past reads as past at a glance. Today's grid SHALL carry one now line across its column at the current time, updated while the view is open, and no other day SHALL carry one. The selected block SHALL keep the accent ring as the one selection style.
 
 #### Scenario: Unestimated block
 - **WHEN** a task due today at 10:00 has no estimate
-- **THEN** it appears as a 30-minute block with a dashed outline and no duration label, and its tooltip explains the dashed outline and offers Set estimate
+- **THEN** it appears as a 30-minute block with a dashed edge and no duration label, and its tooltip explains the dashed edge and offers Set estimate
 
 #### Scenario: Completed tasks
 - **WHEN** a task shown as a block is completed
@@ -52,6 +52,18 @@ An open task with a due date and time SHALL appear as a block at that time, size
 #### Scenario: Capacity as a bar
 - **WHEN** a day has 2 h 50 planned of 8 h with five unestimated tasks
 - **THEN** the lane shows a capacity bar whose tooltip reads "2 h 50 of 8 h planned · 5 tasks without estimate"
+
+#### Scenario: Filled block in the project hue
+- **WHEN** a task of the blue project "Work" is due today at 14:00 with a 1 h estimate
+- **THEN** its block has the blue soft fill, a 3 px solid blue edge on the left and the title in the strong text tone, in light and in dark
+
+#### Scenario: Yesterday is dimmed
+- **WHEN** the Week shows yesterday with two open timed tasks
+- **THEN** both blocks are drawn in the faint tone with a lightened fill, today's blocks are not, and both remain draggable and keyboard-movable as before
+
+#### Scenario: Now line on today only
+- **WHEN** the Week is open at 10:17
+- **THEN** today's column shows a line at 10:17 that moves as time passes, and the other six columns show none
 
 ### Requirement: Planning list and phone agenda
 The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source. Below 640 px the Week SHALL render as a vertical agenda grouped by day.
@@ -102,7 +114,7 @@ With a block or lane task selected, arrow keys SHALL move it by 15 minutes or on
 - **THEN** the Day view opens with that task in placement mode, arrows pick a slot and Enter confirms
 
 ### Requirement: Overlap and capacity
-Blocks that overlap in time SHALL be laid out side by side without hiding each other and SHALL carry an overlap marker. Each day column SHALL show the sum of estimates of its open timed and untimed tasks against a configurable day length (default 8 hours) and SHALL mark the day when the sum exceeds it. Blocks of subscribed calendar events (OpenSpec `calendar-feeds`) SHALL take part in the side-by-side layout and the marker, and SHALL NOT count toward the sum.
+Blocks that overlap in time SHALL be laid out side by side without hiding each other and SHALL carry an overlap marker. Each day column SHALL show the sum of estimates of its open timed and untimed tasks against a configurable day length (default 8 hours) and SHALL mark the day when the sum exceeds it. The capacity line SHALL be set in the muted text tone with tabular figures of the interface typeface, and SHALL turn to the danger tone with the over-capacity text when the day is over capacity; it SHALL never use a monospace face. Blocks of subscribed calendar events (OpenSpec `calendar-feeds`) SHALL take part in the side-by-side layout and the marker, and SHALL NOT count toward the sum.
 
 #### Scenario: Two tasks at the same time
 - **WHEN** two tasks are due today at 10:00
@@ -110,7 +122,11 @@ Blocks that overlap in time SHALL be laid out side by side without hiding each o
 
 #### Scenario: Over capacity
 - **WHEN** today's open tasks total 9 hours of estimates with an 8-hour day length
-- **THEN** the day header shows `9h / 8h` marked as over capacity
+- **THEN** the day header shows `9h / 8h` in the danger tone, marked as over capacity
+
+#### Scenario: Capacity line at rest
+- **WHEN** today's open tasks total 2 hours of estimates with an 8-hour day length
+- **THEN** the day header shows `2h / 8h` in the muted tone with tabular figures, so the figures of neighbouring days line up
 
 #### Scenario: Task during a meeting
 - **WHEN** a subscribed calendar has a meeting 10:00 to 11:00 and a 30-minute task is due today at 10:00
