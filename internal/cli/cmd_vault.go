@@ -376,6 +376,9 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, wake <-
 	var retryAt time.Time
 	last := map[string]string{}
 	run := func() {
+		// Taken before the sync: a save that lands while it runs must still look
+		// new afterwards. The sync's own writes cost one more sync, which writes nothing.
+		before := snapshot(dir)
 		rep, _, err := a.syncVault(ctx, g, dir)
 		if ctx.Err() != nil {
 			return
@@ -397,7 +400,7 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, wake <-
 			return
 		}
 		fail, retryAt = 0, time.Time{}
-		last = snapshot(dir)
+		last = before
 		if g.json {
 			_ = a.printJSON(rep)
 		} else if len(rep.Events) > 0 || len(rep.Warnings) > 0 {

@@ -74,6 +74,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Fixed
 
 - **Empty dashboard panels and an empty Plan panel say what would be there** ("No tasks match this panel.", "Every task of these days is placed.") instead of "Nothing here.", and the Ask button and the Calendars toggles show their name in the app's tooltip instead of the browser's.
+- **`ot vault watch` no longer misses a save made during a sync.** A file saved while the watch was syncing counted as already synced, and with the live channel up it waited for the next change in the app; it is now synced on the next check. ([Markdown vault](docs/vault.md))
 - **Scheduling clients no longer erase dates over CalDAV.** A calendar app that writes a start and a duration without a due date (Mitra, issue #196) cleared the task's due date and deadline; it now sets the due date from the start and keeps the deadline and the repeat rule. A VTODO without a due date never clears a deadline, and equal start and due keep it too. ([Scheduled times and estimates](docs/caldav.md#scheduled-times-and-estimates))
 - **A click selects a task in the Plan.** Clicking a task in the Plan selected it and cleared the selection in the same moment, so the arrow keys moved nothing; the arrows now move the clicked task.
 - **Task rows line up on phones.** On touch screens the circle sat about half a line above the title; it is centred on the title's first line again, keeping the 44 px tap areas. The layout check now fails when they drift apart.

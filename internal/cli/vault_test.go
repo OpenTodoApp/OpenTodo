@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -204,8 +205,13 @@ func TestVaultWatch(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "Tasks")
 	h.mustRun("vault", "init", dir)
 	home := filepath.Join(dir, "Home.md")
-	done := make(chan int)
+	done := make(chan int, 1)
 	stop := make(chan struct{})
+	var stopOnce sync.Once
+	exit := 0
+	halt := func() int { stopOnce.Do(func() { close(stop); exit = <-done }); return exit }
+	// A failed wait still stops the watch before the harness's server closes.
+	t.Cleanup(func() { halt() })
 	go func() {
 		a := &App{Stdin: strings.NewReader(""), Stdout: &strings.Builder{}, Stderr: &strings.Builder{}, ConfigPath: h.configPath,
 			Getenv: func(k string) string { return "" }, Now: time.Now, Hostname: "testbox", IsTerminal: func() bool { return false }}
@@ -236,8 +242,7 @@ func TestVaultWatch(t *testing.T) {
 		b, _ := os.ReadFile(home)
 		return strings.Contains(string(b), "Oil the hinge 🆔 ")
 	})
-	close(stop)
-	if code := <-done; code != 0 {
+	if code := halt(); code != 0 {
 		t.Fatalf("watch exit %d", code)
 	}
 }
