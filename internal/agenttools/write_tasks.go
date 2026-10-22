@@ -110,16 +110,8 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 			}
 			patch["parent_id"] = raw(parent)
 		}
-		for _, f := range []string{"priority", "due", "estimate_minutes"} {
-			if it.present(f) {
-				patch[f] = it[f]
-			}
-		}
-		// A task without a project lives in a workspace (OpenSpec change workspaces).
-		if v, has, err := snap.workspaceValue(it); err != nil {
+		if err := snap.copyPlainFields(it, pid, patch); err != nil {
 			return Plan{}, argErr(p + err.Error())
-		} else if has && pid == "" {
-			patch["workspace_id"] = v
 		}
 		if it.present("labels") {
 			lids, err := snap.labelIDsFor(p, it["labels"])
@@ -647,4 +639,22 @@ func overlayCreated(cs ChangeSet, id string) bool {
 		}
 	}
 	return false
+}
+
+// copyPlainFields copies priority, due and the estimate as given, and the
+// workspace of a task without a project (OpenSpec change workspaces).
+func (snap *snapshot) copyPlainFields(it args, pid string, patch map[string]json.RawMessage) error {
+	for _, f := range []string{"priority", "due", "estimate_minutes"} {
+		if it.present(f) {
+			patch[f] = it[f]
+		}
+	}
+	v, has, err := snap.workspaceValue(it)
+	if err != nil {
+		return err
+	}
+	if has && pid == "" {
+		patch["workspace_id"] = v
+	}
+	return nil
 }
