@@ -13,7 +13,6 @@ afterEach(() => {
   act(() => hideBulkToast())
   vi.useRealTimers()
   document.body.innerHTML = ''
-  document.documentElement.style.removeProperty('--toast-clearance')
 })
 
 const toastEl = () => document.querySelector<HTMLElement>('[data-bulk-toast]')
@@ -73,14 +72,22 @@ describe('the toast primitive', () => {
     await r.unmount()
   })
 
-  it('Focused row stays visible: the content column gets a bottom scroll padding of the toast height while it shows', async () => {
+  it('Focused row stays visible: a focused row under the toast is scrolled into view, the content keeping room for it', async () => {
+    const css = (await import('../../index.css?raw')).default
+    expect(css).toMatch(/--list-scroll-pad:\s*8rem/)
+    const row = document.createElement('button')
+    document.body.append(row)
+    row.getBoundingClientRect = () => ({ left: 0, right: 375, top: 760, bottom: 800, width: 375, height: 40, x: 0, y: 760, toJSON() {} }) as DOMRect
+    const scrolled = vi.fn()
+    row.scrollIntoView = scrolled
+    row.focus()
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return (this.hasAttribute('data-toast-region') ? { left: 12, right: 363, top: 730, bottom: 784, width: 351, height: 54 } : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 }) as DOMRect
+    })
     const r = await render(<UndoToast />)
     act(() => showUndoToast('Completed', 'u1'))
-    expect(document.documentElement.style.getPropertyValue('--toast-clearance')).toMatch(/^\d+px$/)
-    const css = (await import('../../index.css?raw')).default
-    expect(css).toMatch(/\.ui-toast-clear \{ scroll-padding-bottom: var\(--toast-clearance, 0px\); \}/)
-    act(() => hideBulkToast())
-    expect(document.documentElement.style.getPropertyValue('--toast-clearance')).toBe('')
+    expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' })
+    rect.mockRestore()
     await r.unmount()
   })
 

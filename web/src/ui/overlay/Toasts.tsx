@@ -26,21 +26,20 @@ const overlaps = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.righ
 
 /**
  * A toast never covers the element that has focus (WCAG 2.2, 2.4.11; design-system
- * "Toast primitive"). While `active`, the content column keeps a bottom scroll padding
- * of the toast's height (`--toast-clearance`, read by `.ui-toast-clear`), so a focused
- * row scrolls above it; from 640 px up, a focused element still under the region
- * (an open panel's field) sends the toast to the opposite corner. Returns the side.
+ * "Toast primitive"). The content column keeps a bottom scroll padding taller than a
+ * toast (`--list-scroll-pad`, rows-v2 D7), so while `active` a focused element under
+ * the region is scrolled into view with `block: 'nearest'`, as far as that needs; from
+ * 640 px up, one still under it (an open panel's field) sends the toast to the
+ * opposite corner. Returns the side.
  */
 export function useToastClearance(region: RefObject<HTMLDivElement | null>, active: boolean): 'end' | 'start' {
   const [side, setSide] = useState<'end' | 'start'>('end')
   useEffect(() => {
-    const root = document.documentElement
-    if (!active) { root.style.removeProperty('--toast-clearance'); setSide('end'); return }
+    if (!active) { setSide('end'); return }
     const check = () => {
       const el = region.current
       const focused = document.activeElement as HTMLElement | null
       if (!el) return
-      root.style.setProperty('--toast-clearance', `${Math.ceil(el.getBoundingClientRect().height) + 16}px`)
       if (!focused || focused === document.body || el.contains(focused)) return
       let box = el.getBoundingClientRect()
       if (!overlaps(focused.getBoundingClientRect(), box)) return
@@ -51,10 +50,7 @@ export function useToastClearance(region: RefObject<HTMLDivElement | null>, acti
     }
     check()
     document.addEventListener('focusin', check)
-    return () => {
-      document.removeEventListener('focusin', check)
-      root.style.removeProperty('--toast-clearance')
-    }
+    return () => document.removeEventListener('focusin', check)
   }, [region, active])
   return side
 }

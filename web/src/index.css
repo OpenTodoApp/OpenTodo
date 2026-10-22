@@ -997,10 +997,8 @@ select.ui-input { @apply truncate; contain: layout paint; }
    recognised span; under the high-contrast presentation a 1 px underline in its colour. */
 .quick-add-tint { background-color: var(--hue-soft); color: transparent; border-radius: 0.1875rem; }
 html:root[data-contrast="high"] .quick-add-tint { background-color: transparent; text-decoration: underline 1px var(--hue-solid); text-decoration-color: var(--hue-solid); text-underline-offset: 0.2em; }
-/* The toast primitive (moments-and-onboarding D9): it fades in, never moves; the content
-   column keeps the focused element above it with a bottom scroll padding of its height. */
+/* The toast primitive (moments-and-onboarding D9): it fades in and never moves. */
 .ui-toast { animation: dialog-sheet-fade var(--duration-ui) var(--ease-calm, ease-out) both; }
-.ui-toast-clear { scroll-padding-bottom: var(--toast-clearance, 0px); }
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }
