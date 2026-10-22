@@ -3,12 +3,9 @@
 // motion"; appearance-preferences "Haptic feedback preference"): the motion tokens,
 // the reduced-motion and no-motion guards, the departing rows of the completion
 // sequence, the bounded list transition and the haptic tick.
-import { liveQuery } from 'dexie'
 import { flushSync } from 'react-dom'
 import { useSyncExternalStore } from 'react'
-import { db } from '../lib/db'
-import { USER_PREFS_ID } from '../lib/userPrefs'
-import type { UserPrefs } from '../lib/types'
+import { readHapticsPref, watchHapticsPref } from '../lib/haptics'
 
 /** A duration token in milliseconds, or the fallback when the stylesheet has none (tests). */
 function tokenMs(name: string, fallback: number): number {
@@ -248,15 +245,10 @@ export async function withListTransition<T>(affected: number, update: () => Prom
 let hapticsOn: boolean | null = null
 let watching = false
 
-/** The preference: anything but "off" reads as on. */
-export function hapticsPrefOn(row: Partial<UserPrefs> | null | undefined): boolean {
-  return row?.haptics !== 'off'
-}
-
 function watchHaptics(): void {
   if (watching) return
   watching = true
-  liveQuery(() => db.userPrefs.get(USER_PREFS_ID)).subscribe({ next: (row) => { hapticsOn = hapticsPrefOn(row) }, error: () => {} })
+  watchHapticsPref((on) => { hapticsOn = on })
 }
 
 /** Whether this device can vibrate at all (the Appearance switch shows only then). */
@@ -269,7 +261,7 @@ export function tick(): void {
   if (!canVibrate()) return
   watchHaptics()
   if (hapticsOn === null) {
-    void db.userPrefs.get(USER_PREFS_ID).then((row) => { hapticsOn = hapticsPrefOn(row); if (hapticsOn) navigator.vibrate(10) }, () => {})
+    void readHapticsPref().then((on) => { hapticsOn = on; if (on) navigator.vibrate(10) }, () => {})
     return
   }
   if (hapticsOn) navigator.vibrate(10)

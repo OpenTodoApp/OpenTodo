@@ -1077,3 +1077,4 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }
+

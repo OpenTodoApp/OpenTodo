@@ -16,9 +16,8 @@ import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
-import { mutate } from '../lib/ops'
-import { USER_PREFS_ID } from '../lib/userPrefs'
-import { canVibrate, hapticsPrefOn } from './motion'
+import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
+import { canVibrate } from './motion'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
@@ -139,7 +138,7 @@ export function AppearanceSection() {
   const value = readAppearance(row)
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
     onDensity={(d) => act(setAppearance('density', d))}
-    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(mutate('user_prefs', USER_PREFS_ID, { haptics: on ? 'on' : 'off' })) } : undefined} />
+    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />
 }
 
 export function SidebarSection() {
