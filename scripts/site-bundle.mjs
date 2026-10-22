@@ -8,6 +8,7 @@
 //     tokens/tokens.css  the --ot-* colour tokens, light and dark, no Tailwind
 //     icons/icons.svg    SVG sprite of the bundled Lucide icons and the website-only ones
 //                        (web/src/ui/icons/site-icons.json), plus names.json and the licence
+//     brand/             the brand mark: source, mono, colour, wordmark, icon-512.png (sidebar-v2)
 //     changelog.json     CHANGELOG.md as data
 //     method.json        the Open Loops vocabulary in every shipped language (open-loops-method D1)
 //     templates/         the template library: index.json and <slug>.json (template-library)
@@ -26,6 +27,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync,
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { compileLibrary } from './templates-build.mjs'
+import { NOTICE, SOURCE as BRAND_SOURCE, symbolSvg } from './brand-icons.mjs'
 
 const here = fileURLToPath(import.meta.url)
 export const repoRoot = resolve(dirname(here), '..')
@@ -135,6 +137,25 @@ ${lines(darkMedia, '    ')}
 ${lines(darkAttr, '  ')}
 }
 `
+}
+
+// ---- brand (sidebar-v2 D3) ----
+
+/**
+ * The brand/ folder: the source, the mono and colour marks, the wordmark and the
+ * 512 px icon, from the app's one brand source and its generated raster, so the
+ * website draws the same mark as this version of the app.
+ */
+export function brandFiles(root = repoRoot) {
+  const source = readFileSync(join(root, BRAND_SOURCE), 'utf8')
+  const wordmark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 24">${NOTICE}<text x="0" y="18" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600" fill="currentColor">OpenTodo</text></svg>\n`
+  return new Map([
+    ['mark.svg', Buffer.from(source)],
+    ['mark-mono.svg', Buffer.from(symbolSvg(source, 'mono'))],
+    ['mark-colour.svg', Buffer.from(symbolSvg(source, 'colour'))],
+    ['wordmark.svg', Buffer.from(wordmark)],
+    ['icon-512.png', readFileSync(join(root, 'web/public/pwa-512.png'))],
+  ])
 }
 
 // ---- icons (D4) ----
@@ -270,6 +291,7 @@ tagged commit. Layout version ${LAYOUT}.
 | \`shots/\` | product screenshots, WebP; \`-dark\` names are the dark theme |
 | \`tokens/tokens.css\` | the \`--ot-*\` colour tokens for light and dark, standalone CSS |
 | \`icons/icons.svg\` | SVG sprite of the icon set (\`<use href="icons.svg#icon-inbox"/>\`), with \`names.json\` and \`LICENSE-lucide.txt\` (ISC) |
+| \`brand/\` | the brand mark: \`mark.svg\` (the source, two symbols), \`mark-mono.svg\` (\`currentColor\`, the closing stroke in the accent), \`mark-colour.svg\` (the app icon), \`wordmark.svg\` and \`icon-512.png\`, byte-identical to the app's assets of this version; AGPL-3.0 like the rest of OpenTodo |
 | \`changelog.json\` | \`[{version, date, intro, sections: {Added: [markdown, ...]}}]\`, newest first |
 | \`templates/\` | schema ${TEMPLATES_SCHEMA}: \`index.json\` (\`{schema, templates: [{slug, category, icon, languages, title, summary}]}\`) and one \`<slug>.json\` per template (metadata, \`text\`, \`labels\`, \`projects\` with relative \`due\` offsets such as \`+2d\`, \`counts\`); every text is \`{en, <lang>: ...}\`, English where a language is missing; compiled from the repository's \`templates/\` folder |
 | \`method.json\` | schema ${METHOD_SCHEMA}: the Open Loops vocabulary, \`{name, languages, tagline, moves, principles, places, rhythms, horizons}\`, each term \`{id, name: {<lang>: text}, description: {<lang>: text}}\` (moves add \`route\` and \`keys\`), in the words the app of this version shows |
@@ -325,6 +347,8 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
   const appNames = JSON.parse(readFileSync(join(iconsDir, 'names.json'), 'utf8'))
   writeFileSync(join(dir, 'icons/names.json'), JSON.stringify([...appNames, ...Object.keys(siteIcons).filter((n) => !appNames.includes(n))], null, 2) + '\n')
   copyFileSync(join(iconsDir, 'LICENSE-lucide.txt'), join(dir, 'icons/LICENSE-lucide.txt'))
+  mkdirSync(join(dir, 'brand'))
+  for (const [name, bytes] of brandFiles()) writeFileSync(join(dir, 'brand', name), bytes)
 
   // changelog.json, manifest.json, README.md
   const changelog = parseChangelog(readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8'))

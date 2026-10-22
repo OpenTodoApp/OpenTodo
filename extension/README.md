@@ -53,9 +53,10 @@ Keep `share-url.js` in step with `web/src/lib/share.ts` (limits and the `/share`
 ## Release checklist
 
 1. Bump `version` in `manifest.src.json` and add the matching entry at the top of `CHANGELOG.md` (the build fails otherwise).
-2. `make extension`: tests, both packages, no lint error.
-3. Chrome Web Store: upload `dist/opentodo-browser-extension-chrome.zip`; paste the listing from `store/listing.<lang>.md` per language; answer the privacy tab and the permission justifications from `store/privacy.md`; upload the shots listed in `store/screenshots.md`.
-4. addons.mozilla.org: upload `dist/opentodo-browser-extension-firefox.zip` with the same texts; the review notes are `store/privacy.md`.
-5. Once a listing is live, link it from `docs/capture.md`.
+2. If the brand mark changed, regenerate the icons with `make brand-icons` (they are rendered from `web/src/ui/icons/brand.svg`, never edited by hand; `make test-extension` fails while they are stale).
+3. `make extension`: tests, both packages, no lint error.
+4. Chrome Web Store: upload `dist/opentodo-browser-extension-chrome.zip`; paste the listing from `store/listing.<lang>.md` per language; answer the privacy tab and the permission justifications from `store/privacy.md`; upload the shots listed in `store/screenshots.md`.
+5. addons.mozilla.org: upload `dist/opentodo-browser-extension-firefox.zip` with the same texts; the review notes are `store/privacy.md`.
+6. Once a listing is live, link it from `docs/capture.md`.
 
 CI builds and lints both packages on every push and attaches both zips to tagged releases.

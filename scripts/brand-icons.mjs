@@ -35,14 +35,20 @@ export const OUTPUTS = [
 
 export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
-/** The colour symbol of the source as a standalone SVG document. */
-export function colourSvg(source, { full = false, size } = {}) {
-  const m = /<symbol id="colour" viewBox="([^"]+)">([\s\S]*?)<\/symbol>/.exec(source)
-  if (!m) throw new Error(`${SOURCE} has no symbol "colour"`)
+/** The licence note every standalone brand file carries. */
+export const NOTICE = '<!-- OpenTodo brand mark. Part of OpenTodo, AGPL-3.0 (see LICENSE). -->'
+
+/** One symbol of the source (`mono` or `colour`) as a standalone SVG document; `full` drops the colour square's rounding. */
+export function symbolSvg(source, id, { full = false, size } = {}) {
+  const m = new RegExp(`<symbol id="${id}" viewBox="([^"]+)">([\\s\\S]*?)</symbol>`).exec(source)
+  if (!m) throw new Error(`${SOURCE} has no symbol "${id}"`)
   const body = full ? m[2].replace(/ rx="[^"]*"/, '') : m[2]
   const dims = size ? ` width="${size}" height="${size}"` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${m[1]}"${dims}>${body}</svg>\n`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${m[1]}"${dims}>${NOTICE}${body}</svg>\n`
 }
+
+/** The colour symbol as a standalone SVG document: the favicon, and the page each raster is rendered from. */
+export const colourSvg = (source, opts) => symbolSvg(source, 'colour', opts)
 
 async function main() {
   const { chromium } = await import('playwright').catch(async () => {

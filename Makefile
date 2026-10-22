@@ -124,6 +124,7 @@ test-web:
 
 test-extension:
 	cd extension && npm test
+	node --test scripts/brand-icons.test.mjs
 
 lint:
 	go vet ./...
