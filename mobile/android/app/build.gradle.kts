@@ -19,7 +19,6 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "app.opentodo"
     compileSdk = 35
-    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "app.opentodo"
