@@ -323,9 +323,10 @@ console.log('  B sidebar:', cb.join(' | '))
 await shot(pageA, 'views-converged-A.png')
 await shot(pageB, 'views-converged-B.png')
 
-step('two page frames: standalone pages centred on one left edge; a project keeps its header still (page-rhythm)')
+step('two page frames on one left edge; a project keeps its header still; opening a task moves nothing (page-rhythm, list-stays-still)')
 // app-shell "Page template": Inbox, Today, Labels, Trash and Filter are standalone
-// pages; a project's list, board and timeline share one layout frame.
+// pages; a project's list, board and timeline share one layout frame. Both start at
+// the column's left edge.
 const frameEdges = () => pageA.evaluate(() => {
   const row = document.querySelector('[data-page-header-row]')
   const body = row?.closest('[data-page-body]')
@@ -348,11 +349,10 @@ for (const path of ['/inbox', '/today', '/labels', '/trash', '/filter']) {
   const e = await frameEdges()
   assert(e && e.frame === 'standalone', `${path}: a standalone frame at 1536 px (${e?.frame})`)
   assert(Math.abs(e.content - e.left) <= 1, `${path}: content starts at ${e.content}, title at ${e.left}`)
-  assert(Math.abs(e.spaceLeft - e.spaceRight) <= 1, `${path}: centred (${e.spaceLeft.toFixed(1)} left, ${e.spaceRight.toFixed(1)} right)`)
   standalone.push([path, e])
 }
 for (const [path, e] of standalone) assert(Math.abs(e.left - standalone[0][1].left) <= 1, `${path} title at ${e.left}, ${standalone[0][0]} at ${standalone[0][1].left}`)
-console.log(`  1536 px: ${standalone.length} standalone pages centred, title at ${standalone[0][1].left}`)
+console.log(`  1536 px: ${standalone.length} standalone pages on one left edge, title at ${standalone[0][1].left}`)
 for (const width of [1280, 1440]) {
   await pageA.setViewportSize({ width, height: 900 })
   await pageA.goto(`${base}/project/${pWork}`)
@@ -367,18 +367,47 @@ for (const width of [1280, 1440]) {
   }
   console.log(`  ${width} px: project header ${first[1].left}–${first[1].actionsRight} in list, board and timeline`)
 }
-// Where the column is no wider than the frame, opening a task moves nothing (page-rhythm D4).
-await pageA.setViewportSize({ width: 1024, height: 860 })
-await pageA.goto(`${base}/today`); await settle()
-const closed = await frameEdges()
-// Open the first task from the keyboard (j selects it, Enter opens it in the panel).
-await pageA.keyboard.press('j')
-await pageA.keyboard.press('Enter')
-await pageA.locator('aside[data-detail-for]').waitFor()
-await pageA.waitForTimeout(400)
-const docked = await frameEdges()
-assert(Math.abs(docked.left - closed.left) <= 1, `opening a task at 1024 px moved the title from ${closed.left} to ${docked.left}`)
-await pageA.keyboard.press('Escape')
+// Opening and closing a task moves no row and not the title (list-stays-still D1):
+// the frame starts at the column's left edge at every width.
+const rowAndTitle = () => pageA.evaluate(() => {
+  const row = [...document.querySelectorAll('[data-task-id]')].map((r) => r.getBoundingClientRect()).find((r) => r.width > 0)
+  const title = document.querySelector('[data-page-header-row]')?.getBoundingClientRect()
+  return row && title ? { row: Math.round(row.left), title: Math.round(title.left) } : null
+})
+const openFirst = async () => {
+  await pageA.keyboard.press('j'); await pageA.keyboard.press('Enter')
+  await pageA.locator('aside[data-detail-for]').waitFor(); await pageA.waitForTimeout(400)
+}
+const closeIt = async () => {
+  await pageA.keyboard.press('Escape')
+  await pageA.locator('aside[data-detail-for]').waitFor({ state: 'detached' }); await pageA.waitForTimeout(400)
+}
+for (const width of [1280, 1440, 1920]) {
+  await pageA.setViewportSize({ width, height: 860 })
+  for (const path of ['/today', `/project/${pWork}`]) {
+    await pageA.goto(base + path); await settle()
+    // The project shows its list (the step above may have left it on the timeline).
+    if (path.startsWith('/project')) { await layout('List').click(); await settle(); await pageA.evaluate(() => (document.activeElement)?.blur()) }
+    await pageA.locator('[data-task-id]:visible').first().waitFor()
+    const closed = await rowAndTitle()
+    await openFirst()
+    const open = await rowAndTitle()
+    await closeIt()
+    const again = await rowAndTitle()
+    for (const [when, at] of [['opening', open], ['closing', again]]) {
+      assert(Math.abs(at.row - closed.row) <= 1 && Math.abs(at.title - closed.title) <= 1,
+        `${path} at ${width} px: ${when} a task moved the first row ${closed.row} → ${at.row}, the title ${closed.title} → ${at.title}`)
+    }
+  }
+  console.log(`  ${width} px: opening and closing a task moves nothing on Today and a project`)
+}
+// On a wide screen too, every page starts at the column's left edge: Today, Labels and
+// a project share one title edge, and the panel opens into the space on the right.
+await pageA.setViewportSize({ width: 2560, height: 900 })
+const edges = []
+for (const path of ['/today', '/labels', `/project/${pWork}`]) { await pageA.goto(base + path); await settle(); edges.push([path, await frameEdges()]) }
+for (const [path, e] of edges) assert(Math.abs(e.left - edges[0][1].left) <= 1, `2560 px: ${path} title at ${e.left}, /today at ${edges[0][1].left}`)
+console.log(`  2560 px: Today, Labels and a project share the left edge ${edges[0][1].left}`)
 await pageA.setViewportSize({ width: 1280, height: 860 })
 
 step('Help lists the new shortcuts')

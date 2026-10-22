@@ -1092,11 +1092,18 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 
 
 /* A standalone page frame (page-rhythm D3, app-shell "Page template"): the page's
-   content width plus the side padding, centred in the content column, so a page
-   without a layout switch is never left-aligned in a wider column. Unlayered so it
-   overrides the frame's 80 rem utility; a layout page keeps that frame. The slide
-   when the panel docks is frameSlide.ts. */
+   content width plus the side padding. Unlayered so it overrides the frame's 80 rem
+   utility; a layout page keeps that frame. */
 .page-frame[data-page-frame="standalone"] { --page-gutter: 1rem; max-width: calc(var(--page-width, 80rem) + 2 * var(--page-gutter)); }
 @media (min-width: 48rem) { .page-frame[data-page-frame="standalone"] { --page-gutter: 2rem; } }
 /* A frame whose padding sits on its parent (the task lists): the width alone. */
 .page-frame[data-page-frame="standalone"][data-page-gutter="outside"] { --page-gutter: 0px; }
+/* The docked panel's width (web-app "Task panel layout"): 26 rem, 30 rem from 1440 px,
+   read by both panels (`lg:w-(--panel-w)`). A `min-[1440px]` utility lost to `lg` in
+   Tailwind's order (px and rem do not sort), so the panel stayed 26 rem. */
+:root { --panel-w: 26rem; }
+@media (min-width: 1440px) { :root { --panel-w: 30rem; } }
+/* Where a frame sits (list-stays-still D1, app-shell "Page template"): at the content
+   column's left edge, both frames, so a project and the Inbox share one left edge and
+   the docked panel opens into the empty space on the right: nothing moves. */
+.page-frame { margin-left: 0; margin-right: auto; }

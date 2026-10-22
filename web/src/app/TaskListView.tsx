@@ -21,7 +21,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Label, Task } from '../lib/types'
-import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer, useFrameSlide } from '../ui'
+import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
@@ -90,13 +90,12 @@ function useListUi() {
 
 /**
  * The list's frame (page-rhythm D3): a project is a layout page (one 80 rem frame for
- * list, board and timeline; its list spans 72 rem); every other list is standalone,
- * centred, and slides when the panel docks.
+ * list, board and timeline; its list spans 72 rem); every other list is standalone.
+ * Both start at the column's left edge, so opening the panel moves neither (list-stays-still).
  */
 function useListFrame(layoutPage: boolean, full: boolean, fieldColumns: boolean) {
-  const ref = useFrameSlide<HTMLDivElement>(!layoutPage)
   const width = full ? 'full' as const : fieldColumns || layoutPage ? 'wide' as const : 'list' as const
-  return { ref, width, kind: frameKind(width, layoutPage ? 'layout' : 'standalone') }
+  return { width, kind: frameKind(width, layoutPage ? 'layout' : 'standalone') }
 }
 
 /** Today's Earlier group header actions (page-rhythm D6). */
@@ -308,7 +307,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
-        <div ref={frame.ref} className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
+        <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
