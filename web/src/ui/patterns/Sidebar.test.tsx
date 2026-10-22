@@ -32,11 +32,11 @@ describe('SidebarItem counts', () => {
     }
     const always = await shown('always')
     expect(always.visible).toBe('Website launch5')
-    expect(always.cls).not.toContain('ui-count-quiet')
+    expect(always.cls).not.toContain('ui-reveal')
     const hover = await shown('hover')
     // Opacity, not display: the number keeps its width, so the row never moves when it appears.
     expect(hover.visible).toBe('Website launch5')
-    expect(hover.cls).toContain('ui-count-quiet')
+    expect(hover.cls).toContain('ui-reveal')
     expect(hover.cls).not.toMatch(/\b(hidden|sr-only)\b/)
     const hidden = await shown('hidden')
     expect(hidden.visible).toBe('Website launch')

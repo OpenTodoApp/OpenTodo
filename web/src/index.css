@@ -810,11 +810,12 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .ui-scroller:hover::-webkit-scrollbar-thumb { background: var(--ot-border-input); }
 .ui-scroller[data-fade-top] { --fade-top: 0.75rem; }
 .ui-scroller[data-fade-bottom] { --fade-bottom: 1rem; }
-/* A sidebar count shown on hover or focus (quiet-sidebar D1): opacity, not display, so
-   the number keeps its width and the row never moves; always shown where there is no hover. */
+/* Shown on hover or focus (quiet-sidebar D1, sidebar-v2 D5): a row's count, a group
+   header's actions. Opacity, not display, so it keeps its width, stays in the Tab order
+   and the accessibility tree, and nothing moves; always shown where there is no hover. */
 @media (hover: hover) {
-  .ui-count-quiet { opacity: 0; transition: opacity var(--duration-ui); }
-  :is(.group, [data-sidebar-item]):is(:hover, :focus-within) .ui-count-quiet { opacity: 1; }
+  .ui-reveal { opacity: 0; transition: opacity var(--duration-ui); }
+  :is(.group, [data-sidebar-item], [data-sidebar-group-header]):is(:hover, :focus-within) .ui-reveal, .ui-reveal:focus-within { opacity: 1; }
 }
 .ui-scroller:is([data-fade-top], [data-fade-bottom]) {
   mask-image: var(--fade), linear-gradient(black, black);

@@ -1,4 +1,4 @@
-import { Button, CatalogueIcon, Icon, IconButton, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SidebarGroup, SidebarGroupAction, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { BrandMark, BrandWordmark, Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -368,7 +368,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label={t('unread updates')} /> : undefined
   // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
   const method = readMethodMode(prefsRow)
-  const { due, text: reviewText, marker: reviewDot } = reviewMarker(review, method, today)
+  // More carries no marker (sidebar-v2 D7): the dot sits on the Review entry, the unread badge on Updates.
+  const { text: reviewText, marker: reviewDot } = reviewMarker(review, method, today)
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
   const moreEntries = moreEntriesOf({ shared: sharedIds.size > 0, reviewDot, reviewText, unreadBadge, unreadTotal: unread.total, ask: !!assistant?.available })
@@ -377,9 +378,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
   const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge, m.tip) }))
   const primaryExtra = first ? [] : more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
-  // A due review shows on the closed More heading too, so the marker is never hidden.
-  // In Open Loops first the Review entry is a primary item, so More does not repeat its marker.
-  const moreBadge = unreadBadge ?? (due && !first ? <Tooltip label={reviewText} side="right"><StatusDot label={reviewText} data-review-due-more /></Tooltip> : undefined)
   const rest = more.filter((m) => !primaryExtra.includes(m))
 
   return (
@@ -390,20 +388,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     // without room (sidebar-drawer-scroll).
     <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
       <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
-        <div className={`mb-4 flex items-center gap-2 pointer-fine:mb-3 ${collapsed ? 'justify-center' : 'px-1'}`}>
-          <img src="/favicon.svg" alt="" className="h-7 w-7" />
-          {!collapsed && <span className="flex-1 font-semibold">{t('OpenTodo')}</span>}
-          {/* Search and commands beside the name (sidebar-compact-desktop); the icon rail keeps it in the footer. */}
-          {!collapsed && onSearch && (
-            <IconButton icon="search" label={t('Search and commands')} shortcut={keysOf('global.palette')} size="sm" onClick={onSearch}
-              aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />
-          )}
-        </div>
+        {/* The header row is a slot (sidebar-v2 D1): the mark and the name now, the workspace switcher later; search beside it, in the rail's footer when collapsed. */}
+        <SidebarHeader left={<><BrandMark size={24} /><BrandWordmark className="truncate" /></>} rail={<BrandMark size={24} />} railLabel="OpenTodo"
+          collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {primaryDestinations(first, calendarMode, counts, reviewDot, reviewText).map((d) => item(d.route, d.label, d.icon, d.count, d.badge, d.tip))}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
-            <MoreMenu entries={rest} badge={moreBadge} collapsed={collapsed} hints={hints}
+            <MoreMenu entries={rest} collapsed={collapsed} hints={hints}
               active={rest.some((m) => m.route.view === route.view)} />
           )}
         </nav>
@@ -416,7 +408,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
           {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
         </div>
       )}
-      {!moreAsMenu && <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
+      {!moreAsMenu && <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} collapsed={collapsed} tight testId="sidebar-more">
         {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
       </SidebarGroup>}
       {/* Favourites first (sidebar-favourites D5); while finding, the matches show in their own groups. */}
@@ -632,25 +624,25 @@ function primaryDestinations(first: boolean, calendarMode: Route['view'], counts
     : [inbox, today, { route: { view: 'upcoming' }, label: t('Upcoming'), icon: 'calendar-days' }, { route: { view: calendarMode } as Route, label: t('Calendar'), icon: 'calendar-range' }]
 }
 
-function MoreMenu({ entries, badge, active, collapsed, hints }: {
-  entries: { id: string; route: Route; label: string; icon: IconName; note?: string }[]
-  badge?: ReactNode
+function MoreMenu({ entries, active, collapsed, hints }: {
+  entries: { id: string; route: Route; label: string; icon: IconName; note?: string; badge?: ReactNode }[]
   active: boolean
   collapsed: boolean
   hints: boolean
 }) {
   return (
     <div data-sidebar-more-menu>
-      <Menu kind="menu" label={t('More')} namedByContent={!collapsed} title={t('More')} align="start" width="sm:w-64"
-        triggerClassName={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised'}`}
-        trigger={<>
-          <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name="ellipsis" /></span>
-          {!collapsed && <span className="min-w-0 flex-1 truncate">{t('More')}</span>}
-          {!collapsed && badge}
-          {!collapsed && <span className="text-faint" aria-hidden="true"><Icon name="chevron-right" size="xs" /></span>}
+      {/* A group heading that opens a menu (sidebar-v2 D7): the heading's type, a chevron, no icon; the rail keeps the ellipsis. */}
+      <Menu kind="menu" label={t('More')} namedByContent={!collapsed} title={t('More')} align="start" width="sm:w-64" triggerProps={{ 'aria-current': active ? 'true' : undefined }}
+        triggerClassName={collapsed
+          ? `flex min-h-8 w-full items-center justify-center rounded-control py-1 ${active ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised'}`
+          : `mt-2 flex min-h-6 w-full items-center gap-1 rounded-chip px-2 text-left ${SIDEBAR_HEADING} hover:text-muted focus-visible:text-muted ${active ? 'text-strong' : ''}`}
+        trigger={collapsed ? <span aria-hidden="true"><Icon name="ellipsis" /></span> : <>
+          <span aria-hidden="true"><Icon name="chevron-right" size="xs" /></span>
+          <span className="min-w-0 flex-1 truncate">{t('More')}</span>
         </>}>
         {entries.map((m) => (
-          <MenuItem key={m.id} icon={m.icon} label={m.label} description={m.note}
+          <MenuItem key={m.id} icon={m.icon} label={m.label} description={m.note} marker={m.badge}
             shortcut={hints ? GO_KEYS[m.route.view] : undefined} onSelect={() => navigate(m.route)} />
         ))}
       </Menu>

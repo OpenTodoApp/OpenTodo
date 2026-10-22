@@ -19,11 +19,13 @@ export interface MenuItemProps {
   disabled?: boolean
   /** Checkable item (pin, start view): announced as checked or not. */
   checked?: boolean
+  /** A small visual marker after the label (a status dot, an unread count, sidebar-v2 D7); its meaning belongs in `description`. */
+  marker?: ReactNode
   /** Test and script hooks (`data-help-button`). */
   [hook: `data-${string}`]: string | boolean | undefined
 }
 
-export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, ...hooks }: MenuItemProps) {
+export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, marker, ...hooks }: MenuItemProps) {
   const close = useContext(MenuCloseContext)
   const id = useId()
   const describedBy = [shortcut && `${id}-k`, description && `${id}-d`].filter(Boolean).join(' ') || undefined
@@ -52,6 +54,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
         <span className="block">{label}</span>
         {description && <span id={`${id}-d`} aria-hidden className="block text-meta text-muted">{description}</span>}
       </span>
+      {marker && <span aria-hidden className="mt-1 flex shrink-0 items-center" data-menu-marker>{marker}</span>}
       {shortcut && <kbd id={`${id}-k`} aria-hidden className="ui-kbd mt-0.5 shrink-0">{shortcut}</kbd>}
     </button>
   )
