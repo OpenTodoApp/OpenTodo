@@ -3486,6 +3486,18 @@
   "Email <span>(optional, only they can use it)</span>": [
     "web/src/app/InviteLinksSection.tsx"
   ],
+  "Email change confirmation": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Email change notice": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Email change requested": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Email changed": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Email me the digest": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -6203,6 +6215,9 @@
   "Name (optional)": [
     "web/src/app/PublicLinksSection.tsx"
   ],
+  "Name changed": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Name of the saved location": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
@@ -8098,6 +8113,9 @@
   ],
   "Profile": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Profile picture changed": [
+    "web/src/app/auditFormat.ts"
   ],
   "Profile, sessions, password, two-factor, passkeys, linked accounts and encryption": [
     "web/src/app/settingsSections.ts"
@@ -11531,6 +11549,9 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "This link is no longer valid.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This link is not valid any more. Ask for a new one.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "This link no longer works": [

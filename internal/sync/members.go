@@ -101,8 +101,8 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 		return out, nil
 	}
 	// Every project's members in one query rather than one per project.
-	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, MAX(COALESCE(u.avatar_version,0),0) FROM project_members m
-		LEFT JOIN users u ON u.id = m.user_id
+	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0) FROM project_members m
+		LEFT JOIN users u ON u.id = m.user_id LEFT JOIN user_profiles up ON up.user_id = m.user_id
 		WHERE m.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?) ORDER BY m.project_id, m.user_id`, userID)
 	if err != nil {
 		return nil, err
@@ -138,8 +138,8 @@ func (s *Service) SharesProject(ctx context.Context, a, b string) (bool, error) 
 var roleOrder = map[string]int{RoleOwner: 0, RoleAdmin: 1, RoleEditor: 2, RoleViewer: 3}
 
 func members(ctx context.Context, q querier, projectID string) ([]Member, error) {
-	rows, err := q.QueryContext(ctx, `SELECT m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, MAX(COALESCE(u.avatar_version,0),0) FROM project_members m
-		LEFT JOIN users u ON u.id = m.user_id WHERE m.project_id = ?`, projectID)
+	rows, err := q.QueryContext(ctx, `SELECT m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0) FROM project_members m
+		LEFT JOIN users u ON u.id = m.user_id LEFT JOIN user_profiles up ON up.user_id = m.user_id WHERE m.project_id = ?`, projectID)
 	if err != nil {
 		return nil, err
 	}

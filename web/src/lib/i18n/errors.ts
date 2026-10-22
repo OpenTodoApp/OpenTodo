@@ -63,6 +63,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   invalid_file: msg('The file could not be read: {detail}'),
   invalid_input: msg('The server did not accept this: {detail}'),
   invalid_op: msg('The server refused a change: {detail}'),
+  invalid_token: msg('This link is not valid any more. Ask for a new one.'),
   invitation_email_mismatch: msg('This invite link was issued for a different email address.'),
   invitation_invalid: msg('This invite link is not valid.'),
   invitation_spent: msg('This invite link has already been used.'),

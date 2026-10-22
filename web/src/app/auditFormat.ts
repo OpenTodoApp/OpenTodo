@@ -98,6 +98,8 @@ const EMAIL_KINDS = translatedMap<string>({
   invitation: msg('Invitation'),
   project_invite: msg('Project invite'),
   test: msg('Test message'),
+  email_change: msg('Email change confirmation'),
+  email_change_notice: msg('Email change notice'),
 })
 
 const SETTINGS = translatedMap<string>({

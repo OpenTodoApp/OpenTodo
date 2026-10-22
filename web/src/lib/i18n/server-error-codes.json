@@ -44,6 +44,7 @@
   "invalid_file",
   "invalid_input",
   "invalid_op",
+  "invalid_token",
   "invitation_email_mismatch",
   "invitation_invalid",
   "invitation_spent",

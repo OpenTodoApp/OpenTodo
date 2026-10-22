@@ -17,7 +17,7 @@ import (
 // Profile (OpenSpec change settings-refresh, design D10): every user changes
 // their own name, email and picture. Server-side account data like the name set
 // at sign-up: never an op, never synced. The picture's bytes live in
-// <data>/avatars (internal/httpapi/avatars.go); the account keeps its version.
+// <data>/avatars (internal/httpapi/avatars.go); user_profiles keeps its version.
 
 var (
 	ErrInvalidName = errors.New("enter a name of 1 to 80 characters")
@@ -52,7 +52,8 @@ func (s *Service) Profile(ctx context.Context, u *User) (*ProfileInfo, error) {
 	var p ProfileInfo
 	var pending sql.NullString
 	var sentAt sql.NullInt64
-	err := s.db.QueryRowContext(ctx, "SELECT MAX(avatar_version, 0), pending_email, pending_email_sent_at FROM users WHERE id = ?", u.ID).
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(p.avatar_version, 0), 0), p.pending_email, p.pending_email_sent_at FROM users u
+		LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?`, u.ID).
 		Scan(&p.AvatarVersion, &pending, &sentAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -173,7 +174,9 @@ func (s *Service) RequestEmailChange(ctx context.Context, u *User, email string)
 		hashToken(secret), u.ID, normalized, now.UnixMilli(), now.Add(EmailChangeTTL).UnixMilli()); err != nil {
 		return "", "", err
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE users SET pending_email = ?, pending_email_sent_at = ? WHERE id = ?", normalized, now.UnixMilli(), u.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO user_profiles(user_id,pending_email,pending_email_sent_at) VALUES(?,?,?)
+		ON CONFLICT(user_id) DO UPDATE SET pending_email = excluded.pending_email, pending_email_sent_at = excluded.pending_email_sent_at`,
+		u.ID, normalized, now.UnixMilli()); err != nil {
 		return "", "", err
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.EmailChangeRequested(u.ID)); err != nil {
@@ -192,7 +195,7 @@ func (s *Service) CancelEmailChange(ctx context.Context, userID string) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM email_changes WHERE user_id = ?", userID); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE users SET pending_email = NULL, pending_email_sent_at = NULL WHERE id = ?", userID); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE user_profiles SET pending_email = NULL, pending_email_sent_at = NULL WHERE user_id = ?", userID); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -254,10 +257,13 @@ func (s *Service) ChangeEmailNow(ctx context.Context, u *User, email string) (*U
 }
 
 func (s *Service) applyEmailTx(ctx context.Context, tx *sql.Tx, userID, email string) (*User, error) {
-	if _, err := tx.ExecContext(ctx, "UPDATE users SET email = ?, pending_email = NULL, pending_email_sent_at = NULL WHERE id = ?", email, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET email = ? WHERE id = ?", email, userID); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
 		}
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE user_profiles SET pending_email = NULL, pending_email_sent_at = NULL WHERE user_id = ?", userID); err != nil {
 		return nil, err
 	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM email_changes WHERE user_id = ?", userID); err != nil {
@@ -279,7 +285,8 @@ func (s *Service) BumpAvatar(ctx context.Context, userID string, set bool) (int,
 	}
 	defer tx.Rollback()
 	var version int
-	if err := tx.QueryRowContext(ctx, "SELECT avatar_version FROM users WHERE id = ?", userID).Scan(&version); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(p.avatar_version, 0) FROM users u
+		LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?`, userID).Scan(&version); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrNotFound
 		}
@@ -295,7 +302,8 @@ func (s *Service) BumpAvatar(ctx context.Context, userID string, set bool) (int,
 	if !set {
 		stored, next = -version, 0
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE users SET avatar_version = ? WHERE id = ?", stored, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO user_profiles(user_id,avatar_version) VALUES(?,?)
+		ON CONFLICT(user_id) DO UPDATE SET avatar_version = excluded.avatar_version`, userID, stored); err != nil {
 		return 0, err
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.AvatarChanged(userID)); err != nil {
@@ -307,7 +315,8 @@ func (s *Service) BumpAvatar(ctx context.Context, userID string, set bool) (int,
 // AvatarVersion is the account's picture version, 0 without a picture.
 func (s *Service) AvatarVersion(ctx context.Context, userID string) (int, error) {
 	var v int
-	err := s.db.QueryRowContext(ctx, "SELECT MAX(avatar_version, 0) FROM users WHERE id = ?", userID).Scan(&v)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(p.avatar_version, 0), 0) FROM users u
+		LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?`, userID).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrNotFound
 	}

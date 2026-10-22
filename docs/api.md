@@ -790,6 +790,18 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
 
+### Profile
+
+Every user changes their own name, email and picture. Profile data is server-side account data: never written to the op log, never synced. Members of shared projects see changes on their next sync. Changes are recorded as `account.name_changed`, `account.email_change_requested`, `account.email_changed` and `account.avatar_changed`, never with a name, an address or a picture.
+
+**Read** — `GET /api/v1/me/profile` → `{"user": {…}, "avatarVersion": 2, "pendingEmail": "new@example.com", "emailManagedBy": "https://id.example.com", "emailByLink": true}`. `avatarVersion` is 0 without a picture. `pendingEmail` is set while a change waits for its link. `emailManagedBy` names the provider of an account that signs in only through single sign-on, which can't change its email here. `emailByLink` says whether a change waits for a link. Every route below answers the same document.
+
+**Name** — `PATCH /api/v1/me/profile` with `{"name": "Raffaele"}`: 1 to 80 characters after trimming, no control characters (400 `invalid_input` otherwise). A session or a `full` token; refused on the demo.
+
+**Email** — `POST /api/v1/me/email` with `{"email": "new@example.com"}`, from a session confirmed in the last ten minutes (403 `reauth_required`). With outgoing email and `OPENTODO_BASE_URL`, the address becomes pending, a 24-hour link `/confirm-email/<token>` goes to it and a notice goes to the old address. A newer request replaces the pending one, and `DELETE /api/v1/me/email` cancels it. Without outgoing email the change applies at once. The link's page calls `POST /api/v1/me/email/confirm` with `{"token": "…"}` from the same account: another account gets 403 `forbidden`, and an unknown, used or expired token gets 400 `invalid_token`. Other errors: 409 `email_taken`, 400 `invalid_input`, 403 `forbidden` (single sign-on only), 429 `rate_limited` (5 an hour), 502 `email_failed` (nothing changed). Sessions stay signed in.
+
+**Picture** — `PUT /api/v1/me/avatar` with a 256×256 PNG or JPEG body of at most 512 KB (413 `too_large`; anything else is 400 `invalid_input`). The server re-encodes it as JPEG, so no metadata is kept, and stores it as `<data>/avatars/<user id>.jpg`. It is included in backups and in the ZIP export as `profile/picture.jpg`. `DELETE /api/v1/me/avatar` removes it. `GET /api/v1/users/{id}/avatar?v=<avatarVersion>` serves it to the account and to members of a project it shares (404 for anyone else and for no picture), cached for a year at the current version. Member lists carry each member's `avatarVersion`.
+
 ### User administration
 
 The owner, and admins within narrower limits, administer the accounts on the server. User administration is server-side account data: never written to the op log, never synced, and every action needs a connection. Roles:

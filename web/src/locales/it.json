@@ -4716,5 +4716,12 @@
   "Not finished": "Non completata",
   "Open the start guide": "Apri la guida iniziale",
   "Show all ({n})": "Mostra tutto ({n})",
-  "{what} ×{n}": "{what} ×{n}"
+  "{what} ×{n}": "{what} ×{n}",
+  "This link is not valid any more. Ask for a new one.": "Questo link non è più valido. Chiedine uno nuovo.",
+  "Name changed": "Nome cambiato",
+  "Email change requested": "Cambio email richiesto",
+  "Email changed": "Email cambiata",
+  "Profile picture changed": "Foto del profilo cambiata",
+  "Email change confirmation": "Conferma del cambio email",
+  "Email change notice": "Avviso del cambio email"
 }

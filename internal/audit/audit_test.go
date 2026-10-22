@@ -26,6 +26,7 @@ func newRecorder(t *testing.T) (*Recorder, *sql.DB) {
 // the catalogue without a constructor here fails TestEveryNameHasAConstructor.
 func allConstructors() []Event {
 	return []Event{
+		NameChanged("u"), EmailChangeRequested("u"), EmailChanged("u"), AvatarChanged("u"),
 		LoginSucceeded("u", "u@example.com", "password"),
 		LoginFailed("u", "u@example.com", ReasonWrongPassword),
 		Logout("u"),
